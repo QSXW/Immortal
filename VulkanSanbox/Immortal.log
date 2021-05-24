@@ -1,11 +1,152 @@
-[20:18:26] [info] Immortal: Creating window Vulkan Test (1920, 1080)
-[20:18:26] [info] Immortal: VK_KHR_get_physical_device_properties2 is available. Enabling it!
-[20:18:26] [info] Immortal: VK_EXT_debug_utils is available. Enabling it!
-[20:18:26] [info] Immortal: Enabled Validation Layers: 
-[20:18:26] [info] Immortal:   	VK_LAYER_KHRONOS_synchronization2
-[20:18:26] [info] Immortal:   	VK_LAYER_KHRONOS_validation
-[20:18:26] [info] Immortal:   	VK_LAYER_LUNARG_monitor
-[20:18:26] [info] Immortal: Found GPU: NVIDIA GeForce RTX 2060
-[20:18:26] [info] Immortal: Selected GPU: NVIDIA GeForce RTX 2060
-[20:18:26] [error] Immortal: GLFW Error (65538): Cannot set swap interval without a current OpenGL or OpenGL ES context
-[20:18:26] [error] Immortal: GLFW Error (65538): Cannot set swap interval without a current OpenGL or OpenGL ES context
+[00:51:26] [info] Immortal: Creating window Vulkan Test (1920, 1080)
+[00:51:27] [info] Immortal: VK_KHR_get_physical_device_properties2 is available. Enabling it!
+[00:51:27] [info] Immortal: VK_EXT_debug_utils is available. Enabling it!
+[00:51:27] [info] Immortal: Enabled Validation Layers: 
+[00:51:27] [info] Immortal:   	VK_LAYER_KHRONOS_synchronization2
+[00:51:27] [info] Immortal:   	VK_LAYER_KHRONOS_validation
+[00:51:27] [info] Immortal:   	VK_LAYER_LUNARG_monitor
+[00:51:27] [info] Immortal: Found GPU: NVIDIA GeForce RTX 2060
+[00:51:27] [info] Immortal: Selected GPU: NVIDIA GeForce RTX 2060
+[00:51:27] [info] Immortal: Device supports the following extensions: 
+[00:51:27] [info] Immortal:   	VK_KHR_16bit_storage
+[00:51:27] [info] Immortal:   	VK_KHR_8bit_storage
+[00:51:27] [info] Immortal:   	VK_KHR_acceleration_structure
+[00:51:27] [info] Immortal:   	VK_KHR_bind_memory2
+[00:51:27] [info] Immortal:   	VK_KHR_buffer_device_address
+[00:51:27] [info] Immortal:   	VK_KHR_copy_commands2
+[00:51:27] [info] Immortal:   	VK_KHR_create_renderpass2
+[00:51:27] [info] Immortal:   	VK_KHR_dedicated_allocation
+[00:51:27] [info] Immortal:   	VK_KHR_deferred_host_operations
+[00:51:27] [info] Immortal:   	VK_KHR_depth_stencil_resolve
+[00:51:27] [info] Immortal:   	VK_KHR_descriptor_update_template
+[00:51:27] [info] Immortal:   	VK_KHR_device_group
+[00:51:27] [info] Immortal:   	VK_KHR_draw_indirect_count
+[00:51:27] [info] Immortal:   	VK_KHR_driver_properties
+[00:51:27] [info] Immortal:   	VK_KHR_external_fence
+[00:51:27] [info] Immortal:   	VK_KHR_external_fence_win32
+[00:51:27] [info] Immortal:   	VK_KHR_external_memory
+[00:51:27] [info] Immortal:   	VK_KHR_external_memory_win32
+[00:51:27] [info] Immortal:   	VK_KHR_external_semaphore
+[00:51:27] [info] Immortal:   	VK_KHR_external_semaphore_win32
+[00:51:27] [info] Immortal:   	VK_KHR_fragment_shading_rate
+[00:51:27] [info] Immortal:   	VK_KHR_get_memory_requirements2
+[00:51:27] [info] Immortal:   	VK_KHR_image_format_list
+[00:51:27] [info] Immortal:   	VK_KHR_imageless_framebuffer
+[00:51:27] [info] Immortal:   	VK_KHR_maintenance1
+[00:51:27] [info] Immortal:   	VK_KHR_maintenance2
+[00:51:27] [info] Immortal:   	VK_KHR_maintenance3
+[00:51:27] [info] Immortal:   	VK_KHR_multiview
+[00:51:27] [info] Immortal:   	VK_KHR_pipeline_executable_properties
+[00:51:27] [info] Immortal:   	VK_KHR_pipeline_library
+[00:51:27] [info] Immortal:   	VK_KHR_push_descriptor
+[00:51:27] [info] Immortal:   	VK_KHR_ray_query
+[00:51:27] [info] Immortal:   	VK_KHR_ray_tracing_pipeline
+[00:51:27] [info] Immortal:   	VK_KHR_relaxed_block_layout
+[00:51:27] [info] Immortal:   	VK_KHR_sampler_mirror_clamp_to_edge
+[00:51:27] [info] Immortal:   	VK_KHR_sampler_ycbcr_conversion
+[00:51:27] [info] Immortal:   	VK_KHR_separate_depth_stencil_layouts
+[00:51:27] [info] Immortal:   	VK_KHR_shader_atomic_int64
+[00:51:27] [info] Immortal:   	VK_KHR_shader_clock
+[00:51:27] [info] Immortal:   	VK_KHR_shader_draw_parameters
+[00:51:27] [info] Immortal:   	VK_KHR_shader_float16_int8
+[00:51:27] [info] Immortal:   	VK_KHR_shader_float_controls
+[00:51:27] [info] Immortal:   	VK_KHR_shader_non_semantic_info
+[00:51:27] [info] Immortal:   	VK_KHR_shader_subgroup_extended_types
+[00:51:27] [info] Immortal:   	VK_KHR_shader_terminate_invocation
+[00:51:27] [info] Immortal:   	VK_KHR_spirv_1_4
+[00:51:27] [info] Immortal:   	VK_KHR_storage_buffer_storage_class
+[00:51:27] [info] Immortal:   	VK_KHR_swapchain
+[00:51:27] [info] Immortal:   	VK_KHR_swapchain_mutable_format
+[00:51:27] [info] Immortal:   	VK_KHR_synchronization2
+[00:51:27] [info] Immortal:   	VK_KHR_timeline_semaphore
+[00:51:27] [info] Immortal:   	VK_KHR_uniform_buffer_standard_layout
+[00:51:27] [info] Immortal:   	VK_KHR_variable_pointers
+[00:51:27] [info] Immortal:   	VK_KHR_vulkan_memory_model
+[00:51:27] [info] Immortal:   	VK_KHR_win32_keyed_mutex
+[00:51:27] [info] Immortal:   	VK_KHR_workgroup_memory_explicit_layout
+[00:51:27] [info] Immortal:   	VK_KHR_zero_initialize_workgroup_memory
+[00:51:27] [info] Immortal:   	VK_EXT_4444_formats
+[00:51:27] [info] Immortal:   	VK_EXT_blend_operation_advanced
+[00:51:27] [info] Immortal:   	VK_EXT_buffer_device_address
+[00:51:27] [info] Immortal:   	VK_EXT_calibrated_timestamps
+[00:51:27] [info] Immortal:   	VK_EXT_conditional_rendering
+[00:51:27] [info] Immortal:   	VK_EXT_conservative_rasterization
+[00:51:27] [info] Immortal:   	VK_EXT_custom_border_color
+[00:51:27] [info] Immortal:   	VK_EXT_depth_clip_enable
+[00:51:27] [info] Immortal:   	VK_EXT_depth_range_unrestricted
+[00:51:27] [info] Immortal:   	VK_EXT_descriptor_indexing
+[00:51:27] [info] Immortal:   	VK_EXT_discard_rectangles
+[00:51:27] [info] Immortal:   	VK_EXT_extended_dynamic_state
+[00:51:27] [info] Immortal:   	VK_EXT_external_memory_host
+[00:51:27] [info] Immortal:   	VK_EXT_fragment_shader_interlock
+[00:51:27] [info] Immortal:   	VK_EXT_full_screen_exclusive
+[00:51:27] [info] Immortal:   	VK_EXT_hdr_metadata
+[00:51:27] [info] Immortal:   	VK_EXT_host_query_reset
+[00:51:27] [info] Immortal:   	VK_EXT_image_robustness
+[00:51:27] [info] Immortal:   	VK_EXT_index_type_uint8
+[00:51:27] [info] Immortal:   	VK_EXT_inline_uniform_block
+[00:51:27] [info] Immortal:   	VK_EXT_line_rasterization
+[00:51:27] [info] Immortal:   	VK_EXT_memory_budget
+[00:51:27] [info] Immortal:   	VK_EXT_memory_priority
+[00:51:27] [info] Immortal:   	VK_EXT_pci_bus_info
+[00:51:27] [info] Immortal:   	VK_EXT_pipeline_creation_cache_control
+[00:51:27] [info] Immortal:   	VK_EXT_pipeline_creation_feedback
+[00:51:27] [info] Immortal:   	VK_EXT_post_depth_coverage
+[00:51:27] [info] Immortal:   	VK_EXT_private_data
+[00:51:27] [info] Immortal:   	VK_EXT_robustness2
+[00:51:27] [info] Immortal:   	VK_EXT_sample_locations
+[00:51:27] [info] Immortal:   	VK_EXT_sampler_filter_minmax
+[00:51:27] [info] Immortal:   	VK_EXT_scalar_block_layout
+[00:51:27] [info] Immortal:   	VK_EXT_separate_stencil_usage
+[00:51:27] [info] Immortal:   	VK_EXT_shader_atomic_float
+[00:51:27] [info] Immortal:   	VK_EXT_shader_demote_to_helper_invocation
+[00:51:27] [info] Immortal:   	VK_EXT_shader_image_atomic_int64
+[00:51:27] [info] Immortal:   	VK_EXT_shader_subgroup_ballot
+[00:51:27] [info] Immortal:   	VK_EXT_shader_subgroup_vote
+[00:51:27] [info] Immortal:   	VK_EXT_shader_viewport_index_layer
+[00:51:27] [info] Immortal:   	VK_EXT_subgroup_size_control
+[00:51:27] [info] Immortal:   	VK_EXT_texel_buffer_alignment
+[00:51:27] [info] Immortal:   	VK_EXT_tooling_info
+[00:51:27] [info] Immortal:   	VK_EXT_transform_feedback
+[00:51:27] [info] Immortal:   	VK_EXT_vertex_attribute_divisor
+[00:51:27] [info] Immortal:   	VK_EXT_ycbcr_image_arrays
+[00:51:27] [info] Immortal:   	VK_NV_acquire_winrt_display
+[00:51:27] [info] Immortal:   	VK_NV_clip_space_w_scaling
+[00:51:27] [info] Immortal:   	VK_NV_compute_shader_derivatives
+[00:51:27] [info] Immortal:   	VK_NV_cooperative_matrix
+[00:51:27] [info] Immortal:   	VK_NV_corner_sampled_image
+[00:51:27] [info] Immortal:   	VK_NV_coverage_reduction_mode
+[00:51:27] [info] Immortal:   	VK_NV_cuda_kernel_launch
+[00:51:27] [info] Immortal:   	VK_NV_dedicated_allocation
+[00:51:27] [info] Immortal:   	VK_NV_dedicated_allocation_image_aliasing
+[00:51:27] [info] Immortal:   	VK_NV_device_diagnostic_checkpoints
+[00:51:27] [info] Immortal:   	VK_NV_device_diagnostics_config
+[00:51:27] [info] Immortal:   	VK_NV_device_generated_commands
+[00:51:27] [info] Immortal:   	VK_NV_external_memory
+[00:51:27] [info] Immortal:   	VK_NV_external_memory_win32
+[00:51:27] [info] Immortal:   	VK_NV_fill_rectangle
+[00:51:27] [info] Immortal:   	VK_NV_fragment_coverage_to_color
+[00:51:27] [info] Immortal:   	VK_NV_fragment_shader_barycentric
+[00:51:27] [info] Immortal:   	VK_NV_fragment_shading_rate_enums
+[00:51:27] [info] Immortal:   	VK_NV_framebuffer_mixed_samples
+[00:51:27] [info] Immortal:   	VK_NV_geometry_shader_passthrough
+[00:51:27] [info] Immortal:   	VK_NV_mesh_shader
+[00:51:27] [info] Immortal:   	VK_NV_ray_tracing
+[00:51:27] [info] Immortal:   	VK_NV_representative_fragment_test
+[00:51:27] [info] Immortal:   	VK_NV_sample_mask_override_coverage
+[00:51:27] [info] Immortal:   	VK_NV_scissor_exclusive
+[00:51:27] [info] Immortal:   	VK_NV_shader_image_footprint
+[00:51:27] [info] Immortal:   	VK_NV_shader_sm_builtins
+[00:51:27] [info] Immortal:   	VK_NV_shader_subgroup_partitioned
+[00:51:27] [info] Immortal:   	VK_NV_shading_rate_image
+[00:51:27] [info] Immortal:   	VK_NV_viewport_array2
+[00:51:27] [info] Immortal:   	VK_NV_viewport_swizzle
+[00:51:27] [info] Immortal:   	VK_NV_win32_keyed_mutex
+[00:51:27] [info] Immortal:   	VK_NVX_binary_import
+[00:51:27] [info] Immortal:   	VK_NVX_image_view_handle
+[00:51:27] [info] Immortal:   	VK_NVX_multiview_per_view_attributes
+[00:51:27] [info] Immortal: Dedicated Allocation enabled
+[00:51:27] [info] Immortal: Device supports the following requested extensions:
+[00:51:27] [info] Immortal:   	VK_KHR_get_memory_requirements2
+[00:51:27] [info] Immortal:   	VK_KHR_dedicated_allocation
+[00:51:27] [info] Immortal:   	VK_KHR_swapchain

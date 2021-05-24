@@ -10,6 +10,12 @@ namespace Immortal
 
 	namespace Vulkan
 	{
+		template <class T>
+		constexpr inline UINT32 ToUINT32(T x)
+		{
+			return static_cast<UINT32>(x);
+		}
+
 		template <class T, void (*F)(T, const VkAllocationCallbacks *)>
 		constexpr inline void IfNotNullThen(T handle)
 		{
@@ -94,7 +100,13 @@ namespace Immortal
 #else
 		constexpr inline void Check(VkResult err) { }
 #endif
+
+		static inline bool Equals(const char *str1, const char *str2)
+		{
+			return (strcmp(str1, str2) == 0);
+		}
 	}
+
 
 }
 

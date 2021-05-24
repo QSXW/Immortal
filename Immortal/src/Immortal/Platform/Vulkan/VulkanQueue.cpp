@@ -13,4 +13,7 @@ namespace Immortal
 	{
 		vkGetDeviceQueue(device.Handle(), familyIndex, index, &mHandle);
 	}
+	VulkanQueue::VulkanQueue(VulkanQueue && other)
+	{
+	}
 }

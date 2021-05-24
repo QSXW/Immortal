@@ -49,11 +49,6 @@ namespace Immortal
 		}
 #endif
 
-		static inline bool Equals(const char *str1, const char *str2)
-		{
-			return (strcmp(str1, str2) == 0);
-		}
-
 		static bool ValidateLayers(const std::vector<const char *> &required, const std::vector<VkLayerProperties> &available)
 		{
 			for (auto &layer : required)
@@ -310,6 +305,14 @@ namespace Immortal
 
 		IM_CORE_WARN("Couldn't find a discrete physical device. Picking default GPU");
 		return *mGraphicsProcessingUnits.at(0);
+	}
+
+	bool VulkanInstance::IsEnabled(const char * extension) const NOEXCEPT
+	{
+		return std::find_if(mEnabledExtensions.begin(), mEnabledExtensions.end(), [extension](const char *enabledExtension)
+			{
+				return Vulkan::Equals(extension, enabledExtension);
+			}) != mEnabledExtensions.end();
 	}
 
 #if  IMMORTAL_CHECK_DEBUG

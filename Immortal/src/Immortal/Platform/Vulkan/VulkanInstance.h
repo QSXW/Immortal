@@ -28,6 +28,8 @@ namespace Immortal
 
 		VulkanPhysicalDevice &SuitableGraphicsProcessingUnit() NOEXCEPT;
 
+		bool IsEnabled(const char *extension) const NOEXCEPT;
+
 #if defined( IM_DEBUG )
 		bool CheckValidationLayerSupport() NOEXCEPT;
 #endif
