@@ -5,27 +5,12 @@ workspace "Immortal"
 	configurations
 	{
 		"Debug",
-		"Release",
-		"Distributable"
+		"Release"
 	}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
-IncludeDir = {}
-IncludeDir["GLFW"] = "Immortal/3rdparty/GLFW/include"
-IncludeDir["Glad"] = "Immortal/3rdparty/Glad/include"
-IncludeDir["ImGui"] = "Immortal/3rdparty/imgui"
-IncludeDir["glm"] = "Immortal/3rdparty/glm"
-IncludeDir["opencv"] = "Immortal/3rdparty/opencv"
-IncludeDir["yaml"] = "Immortal/3rdparty/yaml-cpp/include"
-IncludeDir["assimp"] = "Immortal/3rdparty/assimp/include"
-IncludeDir["mono"] = "Immortal/3rdparty/mono/include"
-
-group "Dependencies"
-	include "Immortal/3rdparty/GLFW"
-	include "Immortal/3rdparty/Glad"
-	include "Immortal/3rdparty/imgui"
-	include "Immortal/3rdparty/yaml-cpp"
+include "Dependencies.lua"
 
 project "Immortal"
 	location "Immortal"
@@ -50,8 +35,8 @@ project "Immortal"
 
 	includedirs
 	{
-		"%{prj.name}/3rdparty/spdlog/include",
 		"%{prj.name}/src",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
@@ -59,7 +44,13 @@ project "Immortal"
 		"%{IncludeDir.opencv}",
 		"%{IncludeDir.yaml}",
 		"%{IncludeDir.assimp}",
-		"%{IncludeDir.mono}"
+		"%{IncludeDir.mono}",
+		"%{IncludeDir.Vulkan}"
+	}
+
+	flags
+	{
+		"MultiProcessorCompile"
 	}
 
 	links
@@ -69,14 +60,9 @@ project "Immortal"
 		"opengl32.lib",
 		"ImGui",
 		"yaml-cpp",
-		"bin/%{outputdir}/opencv_world452d",
-		"Immortal/3rdparty/assimp/bin/Debug/assimp-vc141-mtd.lib",
-		"Immortal/3rdparty/mono/lib/Debug/mono-2.0-sgen.lib"
-	}
-
-	flags
-	{
-		"MultiProcessorCompile"
+		"%{Library.mono}",
+		"%{Library.Vulkan}",
+		"%{Library.VulkanUtils}"
 	}
 
 	filter "system:windows"
@@ -94,16 +80,28 @@ project "Immortal"
 		defines "IM_DEBUG"
 		buildoptions "/MDd"
 		symbols "on"
+		links
+		{
+			"%{Library.OpencvDebug}",
+			"%{Library.AssimpDebug}",
+			"%{Library.ShadercDebug}",
+			"%{Library.SPIRVCrossDebug}",
+			"%{Library.SPIRVCrossGLSLDebug}",
+			"%{Library.SPIRVToolsDebug}"
+		}
 
 	filter "configurations:Release"
 		defines "IM_RELEASE"
 		buildoptions "/MD"
 		optimize "on"
-
-	filter "configurations:Distributable"
-		defines "IM_DISTRUTABLE"
-		buildoptions "/MD"
-		optimize "on"
+		links
+		{
+			"%{Library.OpencvRelease}",
+			"%{Library.AssimpRelease}",
+			"%{Library.ShadercRelease}",
+			"%{Library.SPIRVCrossRelease}",
+			"%{Library.SPIRVCrossGLSLRelease}"
+		}
 
 project "ImmortalEditor"
 	location "ImmortalEditor"
@@ -123,8 +121,8 @@ project "ImmortalEditor"
 	includedirs
 	{
 		"Immortal",
-		"Immortal/3rdparty/spdlog/include",
 		"Immortal/src",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.opencv}",
@@ -156,10 +154,6 @@ project "ImmortalEditor"
 		buildoptions "/MD"
 		defines "IM_RELEASE"
 		optimize "on"
-
-	filter "configurations:Distributable"
-		buildoptions "/MD"
-		defines "IM_DISTRUTABLE"
 
 project "RuntimeTest"
 	location "RuntimeTest"
@@ -179,8 +173,8 @@ project "RuntimeTest"
 	includedirs
 	{
 		"Immortal",
-		"Immortal/3rdparty/spdlog/include",
 		"Immortal/src",
+		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.opencv}",
@@ -213,10 +207,6 @@ project "RuntimeTest"
 		defines "IM_RELEASE"
 		optimize "on"
 
-	filter "configurations:Distributable"
-		buildoptions "/MD"
-		defines "IM_DISTRUTABLE"
-
 project "Sandbox"
 	location "Sandbox"
 	kind "ConsoleApp"
@@ -235,7 +225,7 @@ project "Sandbox"
 	includedirs
 	{
 		"Immortal",
-		"Immortal/3rdparty/spdlog/include",
+		"%{IncludeDir.spdlog}",
 		"Immortal/src",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}"
@@ -265,6 +255,54 @@ project "Sandbox"
 		defines "IM_RELEASE"
 		optimize "on"
 
-	filter "configurations:Distributable"
+project "VulkanSanbox"
+	location "VulkanSanbox"
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++17"
+
+	targetdir ("bin/" .. outputdir)
+	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"Immortal",
+		"Immortal/src",
+		"%{IncludeDir.spdlog}",
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.opencv}",
+		"%{IncludeDir.assimp}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}"
+	}
+
+	links
+	{
+		"Immortal"
+	}
+
+	filter "system:windows"
+		staticruntime "On"
+		systemversion "latest"
+
+		defines
+		{
+			"IMMORTAL_PLATFORM_WINDOWS",
+		}
+
+	filter "configurations:Debug"
+		defines "IM_DEBUG"
+		buildoptions "/MDd"
+		symbols "on"
+
+	filter "configurations:Release"
 		buildoptions "/MD"
-		defines "IM_DISTRUTABLE"
+		defines "IM_RELEASE"
+		optimize "on"

@@ -1,0 +1,8 @@
+[14:06:07] [info] Immortal: Creating window Vulkan Test (1920, 1080)
+[14:06:08] [info] Immortal: VK_KHR_get_physical_device_properties2 is available. Enabling it!
+[14:06:08] [info] Immortal: VK_EXT_debug_utils is available. Enabling it!
+[14:06:08] [info] Immortal: Enabled Validation Layers: 
+[14:06:08] [info] Immortal:   	VK_LAYER_KHRONOS_synchronization2
+[14:06:08] [info] Immortal:   	VK_LAYER_KHRONOS_validation
+[14:06:08] [info] Immortal:   	VK_LAYER_LUNARG_monitor
+[14:06:08] [info] Immortal: Found GPU: NVIDIA GeForce RTX 2060
