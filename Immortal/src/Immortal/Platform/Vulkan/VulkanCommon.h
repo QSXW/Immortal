@@ -1,12 +1,33 @@
 #pragma once
 
+#include <vulkan/vulkan.h>
 #include "vk_mem_alloc.h"
 #include "ImmortalCore.h"
 
 namespace Immortal
 {
+#define DefineGetHandleFunc(Type) Type &Handle() NOEXCEPT { return mHandle; }
+
 	namespace Vulkan
 	{
+		template <class T, void (*F)(T, const VkAllocationCallbacks *)>
+		constexpr inline void IfNotNullThen(T handle)
+		{
+			if (handle != VK_NULL_HANDLE)
+			{
+				F(handle, nullptr);
+			}
+		}
+
+		template <class T, void (*F)(T)>
+		constexpr inline void IfNotNullThen(T handle)
+		{
+			if (handle != VK_NULL_HANDLE)
+			{
+				F(handle);
+			}
+		}
+
 		inline const char *ErrorToString(VkResult err)
 		{
 #define XX(x) case x: return #x;

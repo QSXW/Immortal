@@ -17,14 +17,17 @@ namespace Immortal
 		virtual void Init() override;
 		virtual void SwapBuffers() override;
 
+		void CreateSurface();
+
 	private:
 		void *mHandle;
 		Unique<VulkanInstance> mInstance;
-		VulkanDevice   mDevice;
+		Unique<VulkanDevice>   mDevice;
 		VkSurfaceKHR   mSurface;
 
 	public:
 		static std::unordered_map<const char *, bool> InstanceExtensions;
+		static std::unordered_map<const char *, bool> DeviceExtensions;
 	};
 }
 

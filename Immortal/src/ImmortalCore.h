@@ -11,6 +11,7 @@
 #pragma warning( disable: 4251 )
 #pragma warning( disable: 4996 )
 #pragma warning( disable: 4006 )
+#pragma warning( disable: 26812 )
 
 #if defined IMMORTAL_PLATFORM_WINDOWS
 	#ifdef IMMORTAL_BUILD_NO_STATIC

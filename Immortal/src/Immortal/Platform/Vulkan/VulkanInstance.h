@@ -3,10 +3,10 @@
 #include "ImmortalCore.h"
 
 #include "VulkanCommon.h"
-#include "VulkanDevice.h"
 
 namespace Immortal
 {
+	class VulkanPhysicalDevice;
 	class VulkanInstance
 	{
 	public:
@@ -21,6 +21,8 @@ namespace Immortal
 		VulkanInstance(VkInstance instance);
 
 		~VulkanInstance();
+
+		DefineGetHandleFunc(VkInstance)
 
 		void QueryGraphicsProcessingUnits() NOEXCEPT;
 

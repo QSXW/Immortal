@@ -1,6 +1,8 @@
 #include "impch.h"
 #include "VulkanInstance.h"
 
+#include "VulkanDevice.h"
+
 namespace Immortal
 {
 	namespace Vulkan
@@ -290,7 +292,7 @@ namespace Immortal
 
 		for (auto &d : physicalDevices)
 		{
-			mGraphicsProcessingUnits.emplace_back(MakeUnique<VulkanPhysicalDevice>(d));
+			mGraphicsProcessingUnits.emplace_back(MakeUnique<VulkanPhysicalDevice>(*this, d));
 		}
 	}
 
@@ -300,7 +302,7 @@ namespace Immortal
 		
 		for (auto &g : mGraphicsProcessingUnits)
 		{
-			if (g->Properties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			if (g->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
 				return *g;
 			}

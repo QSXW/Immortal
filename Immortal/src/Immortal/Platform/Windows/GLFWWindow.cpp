@@ -7,6 +7,8 @@
 
 #include "glad/glad.h"
 
+#include "Immortal/Render/RendererAPI.h"
+
 namespace Immortal
 {
 	UINT8 GLFWWindow::GLFWWindowCount = 0;
@@ -69,6 +71,11 @@ namespace Immortal
 
 			int success = glfwInit();
 			IM_CORE_ASSERT(success, "Could not initialize GLFW!")
+		}
+
+		if (RendererAPI::API == RendererAPI::Type::VulKan)
+		{
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		}
 
 		mWindow = glfwCreateWindow((int)props.Width, (int)props.Height, mData.Title.c_str(), nullptr, nullptr);

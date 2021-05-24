@@ -333,6 +333,7 @@
     <ClInclude Include="src\stb_image\stb_image.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp" />
@@ -360,6 +361,7 @@
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLShader.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLTexture.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLVertexArray.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanDevice.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanInstance.cpp" />
@@ -402,6 +404,7 @@
     <ClCompile Include="src\stb_image\stb_image.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="3rdparty\GLFW\GLFW.vcxproj">
