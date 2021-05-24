@@ -1,0 +1,423 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6A4660A7-5613-BBB2-7F2C-A95A6B58F040}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Immortal</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\bin\Debug-windows-x86_64\</OutDir>
+    <IntDir>..\bin-int\Debug-windows-x86_64\Immortal\</IntDir>
+    <TargetName>Immortal</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\bin\Release-windows-x86_64\</OutDir>
+    <IntDir>..\bin-int\Release-windows-x86_64\Immortal\</IntDir>
+    <TargetName>Immortal</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>impch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>IMMORTAL_PLATFORM_WINDOWS;IMMORTAL_BUILD_DLL;GLFW_INCLUDE_NONE;IM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\yaml-cpp\include;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/MDd %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>opengl32.lib;3rdparty\mono\lib\Debug\mono-2.0-sgen.lib;3rdparty\Vulkan\Lib\Release\vulkan-1.lib;3rdparty\Vulkan\Lib\Release\VkLayer_utils.lib;3rdparty\opencv\Lib\Debug\opencv_world452d.lib;3rdparty\assimp\bin\Debug\assimp-vc141-mtd.lib;3rdparty\Vulkan\Lib\Debug\shaderc_sharedd.lib;3rdparty\Vulkan\Lib\Debug\spirv-cross-cored.lib;3rdparty\Vulkan\Lib\Debug\spirv-cross-glsld.lib;3rdparty\Vulkan\Lib\Debug\SPIRV-Toolsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>impch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>IMMORTAL_PLATFORM_WINDOWS;IMMORTAL_BUILD_DLL;GLFW_INCLUDE_NONE;IM_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\yaml-cpp\include;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>opengl32.lib;3rdparty\mono\lib\Debug\mono-2.0-sgen.lib;3rdparty\Vulkan\Lib\Release\vulkan-1.lib;3rdparty\Vulkan\Lib\Release\VkLayer_utils.lib;3rdparty\opencv\Lib\Release\opencv_world452.lib;3rdparty\assimp\bin\Release\assimp-vc141-mtd.lib;3rdparty\Vulkan\Lib\Release\shaderc_shared.lib;3rdparty\Vulkan\Lib\Release\spirv-cross-core.lib;3rdparty\Vulkan\Lib\Release\spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="3rdparty\glm\glm\detail\func_common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_common_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_exponential.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_exponential_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_geometric.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_geometric_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_integer_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_matrix.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_matrix_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_packing.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_packing_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_trigonometric.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_trigonometric_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_vector_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\func_vector_relational_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_half.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat2x2.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat2x3.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat2x4.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat3x2.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat3x3.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat3x4.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat4x2.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat4x3.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat4x4.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_mat4x4_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_quat.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_quat_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_vec1.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_vec2.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_vec3.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_vec4.inl" />
+    <ClInclude Include="3rdparty\glm\glm\detail\type_vec4_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_clip_space.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_projection.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\matrix_transform.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_common_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_exponential.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_geometric.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_transform.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\quaternion_trigonometric.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_constants.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_packing.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_reciprocal.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\scalar_ulp.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_packing.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_reciprocal.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\ext\vector_ulp.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\bitfield.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\color_space.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\constants.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\epsilon.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\matrix_access.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\matrix_inverse.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\matrix_transform.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\noise.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\packing.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\quaternion.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\quaternion_simd.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\random.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\round.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\type_precision.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\type_ptr.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtc\ulp.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\associated_min_max.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\bit.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\closest_point.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\color_encoding.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\color_space.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\color_space_YCoCg.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\common.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\compatibility.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\component_wise.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\dual_quaternion.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\easing.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\euler_angles.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\extend.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\extended_min_max.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\exterior_product.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\fast_exponential.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\fast_square_root.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\fast_trigonometry.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\float_notmalize.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\functions.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\gradient_paint.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\handed_coordinate_space.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\hash.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\integer.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\intersect.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\io.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\log_base.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_cross_product.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_decompose.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_factorisation.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_interpolation.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_major_storage.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_operation.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_query.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\matrix_transform_2d.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\mixed_product.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\norm.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\normal.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\normalize_dot.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\number_precision.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\optimum_pow.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\orthonormalize.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\perpendicular.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\polar_coordinates.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\projection.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\quaternion.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\raw_data.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\rotate_normalized_axis.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\rotate_vector.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\scalar_relational.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\spline.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\std_based_type.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\string_cast.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\texture.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\transform.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\transform2.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\type_aligned.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\type_trait.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\vector_angle.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\vector_query.inl" />
+    <ClInclude Include="3rdparty\glm\glm\gtx\wrap.inl" />
+    <ClInclude Include="3rdparty\glm\glm\simd\common.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\exponential.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\geometric.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\integer.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\matrix.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\neon.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\packing.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\platform.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\trigonometric.h" />
+    <ClInclude Include="3rdparty\glm\glm\simd\vector_relational.h" />
+    <ClInclude Include="src\Immortal.h" />
+    <ClInclude Include="src\Immortal\Core\Application.h" />
+    <ClInclude Include="src\Immortal\Core\Assert.h" />
+    <ClInclude Include="src\Immortal\Core\EntryPoint.h" />
+    <ClInclude Include="src\Immortal\Core\Input.h" />
+    <ClInclude Include="src\Immortal\Core\KeyCodes.h" />
+    <ClInclude Include="src\Immortal\Core\Layer.h" />
+    <ClInclude Include="src\Immortal\Core\LayerStack.h" />
+    <ClInclude Include="src\Immortal\Core\Log.h" />
+    <ClInclude Include="src\Immortal\Core\Math.h" />
+    <ClInclude Include="src\Immortal\Core\Object.h" />
+    <ClInclude Include="src\Immortal\Core\Timer.h" />
+    <ClInclude Include="src\Immortal\Core\Utils.h" />
+    <ClInclude Include="src\Immortal\Core\Vector.h" />
+    <ClInclude Include="src\Immortal\Core\Window.h" />
+    <ClInclude Include="src\Immortal\Editor\EditorCamera.h" />
+    <ClInclude Include="src\Immortal\Events\ApplicationEvent.h" />
+    <ClInclude Include="src\Immortal\Events\Event.h" />
+    <ClInclude Include="src\Immortal\Events\KeyEvent.h" />
+    <ClInclude Include="src\Immortal\Events\MouseEvent.h" />
+    <ClInclude Include="src\Immortal\IO\FileSystem.h" />
+    <ClInclude Include="src\Immortal\ImGui\GuiLayer.h" />
+    <ClInclude Include="src\Immortal\ImGui\ImGuizmo.h" />
+    <ClInclude Include="src\Immortal\ImGui\ui.h" />
+    <ClInclude Include="src\Immortal\Image\ColorSpace.h" />
+    <ClInclude Include="src\Immortal\Interface\Delegate.h" />
+    <ClInclude Include="src\Immortal\Physics\Physics.h" />
+    <ClInclude Include="src\Immortal\Platform\D3D12\D3D12Common.h" />
+    <ClInclude Include="src\Immortal\Platform\D3D12\D3D12Framebuffer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLShader.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLTexture.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLVertexArray.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanCommon.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanDevice.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanInstance.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\vk_mem_alloc.h" />
+    <ClInclude Include="src\Immortal\Platform\Windows\DirectWindow.h" />
+    <ClInclude Include="src\Immortal\Platform\Windows\GLFWWindow.h" />
+    <ClInclude Include="src\Immortal\Platform\Windows\WindowsInput.h" />
+    <ClInclude Include="src\Immortal\Profiler\Profiler.h" />
+    <ClInclude Include="src\Immortal\Render\Buffer.h" />
+    <ClInclude Include="src\Immortal\Render\Camera.h" />
+    <ClInclude Include="src\Immortal\Render\CommandBuffer.h" />
+    <ClInclude Include="src\Immortal\Render\CommandQueue.h" />
+    <ClInclude Include="src\Immortal\Render\Environment.h" />
+    <ClInclude Include="src\Immortal\Render\Frame.h" />
+    <ClInclude Include="src\Immortal\Render\Framebuffer.h" />
+    <ClInclude Include="src\Immortal\Render\RenderContext.h" />
+    <ClInclude Include="src\Immortal\Render\Material.h" />
+    <ClInclude Include="src\Immortal\Render\Mesh.h" />
+    <ClInclude Include="src\Immortal\Render\OrthographicCamera.h" />
+    <ClInclude Include="src\Immortal\Render\OrthographicCameraController.h" />
+    <ClInclude Include="src\Immortal\Render\Pipeline.h" />
+    <ClInclude Include="src\Immortal\Render\RenderCommand.h" />
+    <ClInclude Include="src\Immortal\Render\Renderer.h" />
+    <ClInclude Include="src\Immortal\Render\Renderer2D.h" />
+    <ClInclude Include="src\Immortal\Render\RendererAPI.h" />
+    <ClInclude Include="src\Immortal\Render\Shader.h" />
+    <ClInclude Include="src\Immortal\Render\Texture.h" />
+    <ClInclude Include="src\Immortal\Render\VertexArray.h" />
+    <ClInclude Include="src\Immortal\Scene\Component.h" />
+    <ClInclude Include="src\Immortal\Scene\Entity.h" />
+    <ClInclude Include="src\Immortal\Scene\ObserverCamera.h" />
+    <ClInclude Include="src\Immortal\Scene\Scene.h" />
+    <ClInclude Include="src\Immortal\Scene\SceneCamera.h" />
+    <ClInclude Include="src\Immortal\Scene\SceneSerializer.h" />
+    <ClInclude Include="src\Immortal\Scene\ScriptableObject.h" />
+    <ClInclude Include="src\Immortal\Script\ScriptDriver.h" />
+    <ClInclude Include="src\Immortal\String\ChineseString.h" />
+    <ClInclude Include="src\Immortal\Utils\PlatformUtils.h" />
+    <ClInclude Include="src\ImmortalCore.h" />
+    <ClInclude Include="src\PlatformDetection.h" />
+    <ClInclude Include="src\impch.h" />
+    <ClInclude Include="src\stb_image\stb_image.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Immortal\Core\Application.cpp" />
+    <ClCompile Include="src\Immortal\Core\Core.cpp" />
+    <ClCompile Include="src\Immortal\Core\Layer.cpp" />
+    <ClCompile Include="src\Immortal\Core\LayerStack.cpp" />
+    <ClCompile Include="src\Immortal\Core\Log.cpp" />
+    <ClCompile Include="src\Immortal\Core\Vector.cpp" />
+    <ClCompile Include="src\Immortal\Core\Window.cpp" />
+    <ClCompile Include="src\Immortal\Editor\EditorCamera.cpp" />
+    <ClCompile Include="src\Immortal\Events\ApplicationEvent.cpp" />
+    <ClCompile Include="src\Immortal\IO\FileSystem.cpp" />
+    <ClCompile Include="src\Immortal\ImGui\GuiLayer.cpp" />
+    <ClCompile Include="src\Immortal\ImGui\ImGuiBuild.cpp" />
+    <ClCompile Include="src\Immortal\ImGui\ImGuizmo.cpp" />
+    <ClCompile Include="src\Immortal\Image\ColorSpace.cpp" />
+    <ClCompile Include="src\Immortal\Interface\Delegate.cpp" />
+    <ClCompile Include="src\Immortal\Physics\Physics.cpp" />
+    <ClCompile Include="src\Immortal\Platform\D3D12\D3D12Framebuffer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLShader.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLTexture.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLVertexArray.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanDevice.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanInstance.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Windows\DirectWindow.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Windows\GLFWWindow.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Windows\WindowPlatformUtils.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Windows\WindowsInput.cpp" />
+    <ClCompile Include="src\Immortal\Render\Buffer.cpp" />
+    <ClCompile Include="src\Immortal\Render\Camera.cpp" />
+    <ClCompile Include="src\Immortal\Render\CommandBuffer.cpp" />
+    <ClCompile Include="src\Immortal\Render\CommandQueue.cpp" />
+    <ClCompile Include="src\Immortal\Render\Environment.cpp" />
+    <ClCompile Include="src\Immortal\Render\Frame.cpp" />
+    <ClCompile Include="src\Immortal\Render\Framebuffer.cpp" />
+    <ClCompile Include="src\Immortal\Render\RenderContext.cpp" />
+    <ClCompile Include="src\Immortal\Render\Material.cpp" />
+    <ClCompile Include="src\Immortal\Render\Mesh.cpp" />
+    <ClCompile Include="src\Immortal\Render\OrthographicCamera.cpp" />
+    <ClCompile Include="src\Immortal\Render\OrthographicCameraController.cpp" />
+    <ClCompile Include="src\Immortal\Render\Pipeline.cpp" />
+    <ClCompile Include="src\Immortal\Render\RenderCommand.cpp" />
+    <ClCompile Include="src\Immortal\Render\Renderer.cpp" />
+    <ClCompile Include="src\Immortal\Render\Renderer2D.cpp" />
+    <ClCompile Include="src\Immortal\Render\RendererAPI.cpp" />
+    <ClCompile Include="src\Immortal\Render\Shader.cpp" />
+    <ClCompile Include="src\Immortal\Render\Texture.cpp" />
+    <ClCompile Include="src\Immortal\Render\VertexArray.cpp" />
+    <ClCompile Include="src\Immortal\Scene\Component.cpp" />
+    <ClCompile Include="src\Immortal\Scene\Entity.cpp" />
+    <ClCompile Include="src\Immortal\Scene\ObserverCamera.cpp" />
+    <ClCompile Include="src\Immortal\Scene\Scene.cpp" />
+    <ClCompile Include="src\Immortal\Scene\SceneCamera.cpp" />
+    <ClCompile Include="src\Immortal\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="src\Immortal\Scene\ScriptableObject.cpp" />
+    <ClCompile Include="src\Immortal\Script\ScriptDriver.cpp" />
+    <ClCompile Include="src\impch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="3rdparty\GLFW\GLFW.vcxproj">
+      <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="3rdparty\Glad\Glad.vcxproj">
+      <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="3rdparty\imgui\ImGui.vcxproj">
+      <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
+    </ProjectReference>
+    <ProjectReference Include="3rdparty\yaml-cpp\yaml-cpp.vcxproj">
+      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
