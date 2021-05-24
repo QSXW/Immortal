@@ -1,0 +1,92 @@
+#pragma once
+
+#ifndef __IMMORTAL_CORE_H__
+#define __IMMORTAL_CORE_H__
+
+#include <cstdint>
+#include <memory>
+
+#include "PlatformDetection.h"
+
+#pragma warning( disable: 4251 )
+#pragma warning( disable: 4996 )
+#pragma warning( disable: 4006 )
+
+#if defined IMMORTAL_PLATFORM_WINDOWS
+	#ifdef IMMORTAL_BUILD_NO_STATIC
+		#if defined IMMORTAL_BUILD_DLL
+			#define IMMORTAL_API __declspec(dllexport)
+		#else
+			#define IMMORTAL_API __declspec(dllimport
+		#endif
+	#else
+		#define IMMORTAL_API
+	#endif
+#else
+	#error Only support Windows!
+#endif
+
+#ifndef NOEXCEPT
+#define NOEXCEPT noexcept
+#endif
+
+#ifndef NODISCARD
+#define NODISCARD [[nodiscard]]
+#endif
+
+#define BIT(x) (1 << (x))
+#define UNICODE8(str) u8##str
+#define IM_BIND_EVENT_FUNC(x) std::bind(&x, this, std::placeholders::_1)
+
+namespace Immortal {
+
+	using INT8   = int8_t;
+	using UINT8  = uint8_t;
+	using INT16  = int16_t;
+	using UINT16 = uint16_t;
+	using INT32  = int32_t;
+	using UINT32 = uint32_t;
+	using INT64  = int64_t;
+	using UINT64 = uint64_t;
+
+	template <class T>
+	using Scope = std::unique_ptr<T>;
+
+	template <class T>
+	using Unique = Scope<T>;
+
+	template <class T, class ... Args>
+	constexpr Scope<T> CreateScope(Args&& ... args)
+	{
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
+
+
+	template <class T, class ... Args>
+	constexpr Unique<T> MakeUnique(Args&& ... args)
+	{
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
+
+	template <class T>
+	using Ref = std::shared_ptr<T>;
+	
+	template <class T, class ... Args>
+	constexpr Ref<T> CreateRef(Args&& ... args)
+	{
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
+
+
+}
+
+#include "Immortal/Core/Vector.h"
+
+#define HZ_ENABLE_ASSERTS
+#include "Immortal/Core/Log.h"
+#include "Immortal/Core/Assert.h"
+
+#define IMMORTAL_CHECK_DEBUG defined( IM_DEBUG )
+#define IMMORTAL_END_CHECK endif
+
+#endif /* __IMMORTAL_CORE_H__ */
