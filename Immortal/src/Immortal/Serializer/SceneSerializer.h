@@ -1,7 +1,8 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Scene.h"
+
+#include "Immortal/Scene/Scene.h"
 
 namespace Immortal {
 

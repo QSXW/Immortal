@@ -79,9 +79,25 @@ namespace Immortal
 				XX(VK_PIPELINE_COMPILE_REQUIRED_EXT)
 			}
 			return "";
-#undef XX
 		}
 
+		const char *ToString(VkFormat format);
+		const char *ToString(VkPresentModeKHR presentMode);
+
+		inline const std::string ToString(VkSurfaceFormatKHR surfaceFormat)
+		{
+			std::string surfaceFormatString = std::string(ToString(surfaceFormat.format)) + ", ";
+
+			switch (surfaceFormat.colorSpace)
+			{
+			case VK_COLORSPACE_SRGB_NONLINEAR_KHR:
+				surfaceFormatString += "VK_COLORSPACE_SRGB_NONLINEAR_KHR";
+				break;
+			default:
+				surfaceFormatString += "UNKNOWN COLOR SPACE";
+			}
+			return surfaceFormatString;
+		}
 		
 #if defined( IM_DEBUG )
 		/** @brief Helper macro to test the result of Vulkan calls which can return an error.
@@ -106,7 +122,6 @@ namespace Immortal
 			return (strcmp(str1, str2) == 0);
 		}
 	}
-
 
 }
 

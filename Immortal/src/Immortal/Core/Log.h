@@ -61,3 +61,13 @@ namespace Immortal {
 	#define IM_APP_FATAL(...)
 	#define IM_APP_CRITICAL(...)
 #endif
+
+#define IMMORTAL_USE_CN_LOG
+
+#if defined( IMMORTAL_USE_CN_LOG )
+#    define LOGB(CN, EN) UNICODE8(CN)
+#elif defined( IMMORTAL_USE_EN_LOG )
+#    define LOGB(CN, EN) EN
+#elif defined( IMMORTAL_USE_BILINGUAL_LOG )
+#    define LOGB(CN, EN) EN "(" CN ")"
+#endif

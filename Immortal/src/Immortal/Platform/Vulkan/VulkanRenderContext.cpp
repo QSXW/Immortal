@@ -7,8 +7,20 @@
 
 namespace Immortal
 {
-	std::unordered_map<const char *, bool> VulkanRenderContext::InstanceExtensions{ { IMMORTAL_PLATFORM_SURFACE, false } };
-	std::unordered_map<const char *, bool> VulkanRenderContext::DeviceExtensions{ { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false } };
+	std::unordered_map<const char *, bool> VulkanRenderContext::InstanceExtensions{
+		{ IMMORTAL_PLATFORM_SURFACE, false }
+	};
+
+	/**
+	 * @brief Not all graphics cards are capable of presenting images directly to a screen for various reasons,
+	 * for example because they are designed for servers and don't have any display outputs. Secondly, since
+	 * image presentation is heavily tied into the window system and the surfaces associated with windows, it 
+	 * is not actually part of the Vulkan core. We have to enable the VK_KHR_swapchain device for RenderContext.
+	 * 
+	 */
+	std::unordered_map<const char *, bool> VulkanRenderContext::DeviceExtensions{ 
+		{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, false }
+	};
 
 	/**
 	 * @breif Vulkan is a platform agnostic API, which means that we need
@@ -36,6 +48,9 @@ namespace Immortal
 		gpu.RequestedFeatures.robustBufferAccess = VK_TRUE;
 
 		mDevice = MakeUnique<VulkanDevice>(gpu, mSurface, DeviceExtensions);
+		mQueue = &(mDevice->SuitableGraphicsQueue());
+
+		mSwapchain = MakeUnique<VulkanSwapchain>(*mDevice, mSurface);
 	}
 
 	VulkanRenderContext::~VulkanRenderContext()

@@ -292,6 +292,7 @@
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanInstance.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
@@ -326,7 +327,7 @@
     <ClInclude Include="src\Immortal\Scene\ObserverCamera.h" />
     <ClInclude Include="src\Immortal\Scene\Scene.h" />
     <ClInclude Include="src\Immortal\Scene\SceneCamera.h" />
-    <ClInclude Include="src\Immortal\Scene\SceneSerializer.h" />
+    <ClInclude Include="src\Immortal\Serializer\SceneSerializer.h" />
     <ClInclude Include="src\Immortal\Scene\ScriptableObject.h" />
     <ClInclude Include="src\Immortal\Script\ScriptDriver.h" />
     <ClInclude Include="src\Immortal\String\ChineseString.h" />
@@ -367,6 +368,7 @@
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanInstance.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
@@ -400,7 +402,8 @@
     <ClCompile Include="src\Immortal\Scene\ObserverCamera.cpp" />
     <ClCompile Include="src\Immortal\Scene\Scene.cpp" />
     <ClCompile Include="src\Immortal\Scene\SceneCamera.cpp" />
-    <ClCompile Include="src\Immortal\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="src\Immortal\Serializer\json.h" />
+    <ClCompile Include="src\Immortal\Serializer\SceneSerializer.cpp" />
     <ClCompile Include="src\Immortal\Scene\ScriptableObject.cpp" />
     <ClCompile Include="src\Immortal\Script\ScriptDriver.cpp" />
     <ClCompile Include="src\impch.cpp">

@@ -26,12 +26,27 @@ namespace Immortal
 	public:
 		VulkanQueue(VulkanDevice &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
 		VulkanQueue(const VulkanQueue &) = default;
-		VulkanQueue(VulkanQueue && other);
+		VulkanQueue(VulkanQueue && other) NOEXCEPT;
 
+	// @inline
+	public:
+		VkQueueFamilyProperties Properties() const NOEXCEPT
+		{
+			return mProperties;
+		}
+
+		VkBool32 IsPresentSupported() const NOEXCEPT
+		{
+			return mCanPresent;
+		}
+
+	//@predefine
+	public:
 		DefineGetHandleFunc(VkQueue)
-
+	
+	//@private
 	private:
-		VulkanDevice *device;
+		VulkanDevice &mDevice;
 
 		VkQueue mHandle{ VK_NULL_HANDLE };
 
@@ -43,8 +58,9 @@ namespace Immortal
 
 		VkQueueFamilyProperties mProperties{};
 
+	//@deleted
 	private:
-		VulkanQueue &operator=(const VulkanQueue &) = delete;
+		//VulkanQueue &operator=(const VulkanQueue &) = delete;
 		VulkanQueue &operator=(VulkanQueue &&) = delete;
 	};
 }

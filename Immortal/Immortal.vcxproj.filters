@@ -765,7 +765,7 @@
     <ClInclude Include="src\Immortal\Scene\SceneCamera.h">
       <Filter>src\Immortal\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="src\Immortal\Scene\SceneSerializer.h">
+    <ClInclude Include="src\Immortal\Serializer\SceneSerializer.h">
       <Filter>src\Immortal\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Scene\ScriptableObject.h">
@@ -792,6 +792,7 @@
     <ClInclude Include="src\stb_image\stb_image.h">
       <Filter>src\stb_image</Filter>
     </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp">
@@ -983,7 +984,7 @@
     <ClCompile Include="src\Immortal\Scene\SceneCamera.cpp">
       <Filter>src\Immortal\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="src\Immortal\Scene\SceneSerializer.cpp">
+    <ClCompile Include="src\Immortal\Serializer\SceneSerializer.cpp">
       <Filter>src\Immortal\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Scene\ScriptableObject.cpp">
@@ -998,5 +999,7 @@
     <ClCompile Include="src\stb_image\stb_image.cpp">
       <Filter>src\stb_image</Filter>
     </ClCompile>
+    <ClCompile Include="src\Immortal\Serializer\json.h" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.cpp" />
   </ItemGroup>
 </Project>

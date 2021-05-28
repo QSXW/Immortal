@@ -37,7 +37,8 @@
 #include "Immortal/Scene/Entity.h"
 #include "Immortal/Scene/Scene.h"
 #include "Immortal/Scene/ScriptableObject.h"
-#include "Immortal/Scene/SceneSerializer.h"
 #include "Immortal/Scene/ObserverCamera.h"
+
+#include "Immortal/Serializer/SceneSerializer.h"
 
 #include "Immortal/String/ChineseString.h"

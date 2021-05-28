@@ -79,7 +79,18 @@ namespace Immortal {
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
-
+	namespace Utils
+	{
+		/**
+	     * @brief Use to Avoid return warning. This Value should never be used.
+	     *
+	     */
+		template <class T>
+		constexpr inline T NullValue()
+		{
+			return *(T *)(nullptr);
+		}
+	}
 }
 
 #include "Immortal/Core/Vector.h"

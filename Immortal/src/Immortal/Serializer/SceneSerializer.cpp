@@ -2,13 +2,30 @@
 #include "SceneSerializer.h"
 
 #include <fstream>
+#include "Immortal/Scene/Entity.h"
 
-#include "Entity.h"
+#include "json.h"
 
+using json = nlohmann::json;
 
 namespace Immortal {
 
-	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
+	void get_to(Vector3 &v)
+	{
+
+	}
+
+	void to_json(json &j, const TransformComponent &t)
+	{
+
+	}
+
+	void from_json(const json& j, TransformComponent &p)
+	{
+
+	}
+
+	SceneSerializer::SceneSerializer(const Ref<Scene> &scene)
 		: mScene(scene)
 	{
 

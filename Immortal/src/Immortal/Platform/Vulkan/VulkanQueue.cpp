@@ -6,6 +6,7 @@
 namespace Immortal
 {
 	VulkanQueue::VulkanQueue(VulkanDevice &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index) :
+		mDevice{ device },
 		mFamilyIndex{ familyIndex },
 		mIndex{ index },
 		mCanPresent{ canPresent },
@@ -13,7 +14,14 @@ namespace Immortal
 	{
 		vkGetDeviceQueue(device.Handle(), familyIndex, index, &mHandle);
 	}
-	VulkanQueue::VulkanQueue(VulkanQueue && other)
+
+	VulkanQueue::VulkanQueue(VulkanQueue && other) NOEXCEPT :
+		mDevice{ other.mDevice },
+		mFamilyIndex{ other.mFamilyIndex },
+		mIndex{ other.mIndex },
+		mCanPresent{ mCanPresent },
+		mProperties{ mProperties }
 	{
+
 	}
 }

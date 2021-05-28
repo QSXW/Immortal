@@ -23,7 +23,22 @@ namespace Immortal
 		};
 
 	public:
+		VulkanSwapchain(VulkanDevice                         &device,
+			            VkSurfaceKHR                         surface,
+			            const VkExtent2D                     &extent          = {},
+			            const UINT32                         imageCount       = 3,
+			            const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+			            const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
+			            const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT});
 
+		VulkanSwapchain(VulkanSwapchain &                     old_swapchain,
+			            VulkanDevice &                        device,
+			            VkSurfaceKHR                          surface,
+			            const VkExtent2D &                    extent          = {},
+			            const uint32_t                        imageCount      = 3,
+			            const VkSurfaceTransformFlagBitsKHR   transform       = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+			            const VkPresentModeKHR                presentMode     = VK_PRESENT_MODE_FIFO_KHR,
+			            const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
 
 	private:
 		VulkanDevice &mDevice;

@@ -4,6 +4,7 @@
 
 #include "VulkanDevice.h"
 #include "VulkanInstance.h"
+#include "VulkanSwapchain.h"
 
 namespace Immortal
 {
@@ -21,9 +22,13 @@ namespace Immortal
 
 	private:
 		void *mHandle;
-		Unique<VulkanInstance> mInstance;
-		Unique<VulkanDevice>   mDevice;
+		Unique<VulkanInstance>  mInstance;
+		Unique<VulkanDevice>    mDevice;
+		Unique<VulkanSwapchain> mSwapchain;
+
 		VkSurfaceKHR   mSurface;
+
+		const VulkanQueue *mQueue;
 
 	public:
 		static std::unordered_map<const char *, bool> InstanceExtensions;

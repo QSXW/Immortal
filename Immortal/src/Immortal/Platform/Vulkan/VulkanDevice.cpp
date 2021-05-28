@@ -5,34 +5,10 @@
 #include "vk_mem_alloc.h"
 
 #include "VulkanCommon.h"
+#include "VulkanPhysicalDevice.h"
 
 namespace Immortal
 {
-	VulkanPhysicalDevice::VulkanPhysicalDevice(VulkanInstance &instance, VkPhysicalDevice physicalDevice) :
-		mHandle{ physicalDevice },
-		Instance{ instance }
-	{
-		vkGetPhysicalDeviceFeatures(mHandle, &Features);
-		vkGetPhysicalDeviceProperties(mHandle, &Properties);
-		vkGetPhysicalDeviceMemoryProperties(mHandle, &MemoryProperties);
-
-		IM_CORE_INFO("Found GPU: {0}", Properties.deviceName);
-
-		UINT32 queueFamilyPropertiesCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(mHandle, &queueFamilyPropertiesCount, nullptr);
-		QueueFamilyProperties.resize(queueFamilyPropertiesCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(mHandle, &queueFamilyPropertiesCount, QueueFamilyProperties.data());
-	}
-
-	VkBool32 VulkanPhysicalDevice::IsPresentSupported(VkSurfaceKHR surface, UINT32 queueFamilyIndex) NOEXCEPT
-	{
-		VkBool32 presentSupported{ VK_FALSE };
-
-		Vulkan::Check(vkGetPhysicalDeviceSurfaceSupportKHR(mHandle, queueFamilyIndex, surface, &presentSupported));
-
-		return presentSupported;
-	}
-
 	VulkanDevice::VulkanDevice(VulkanPhysicalDevice &gpu, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
 		: mGraphicsProcessingUnit(gpu),
 		  mSurface(surface)
@@ -334,5 +310,42 @@ namespace Immortal
 			auto &host_query_reset_features = mGraphicsProcessingUnit.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
 			IM_CORE_INFO("Performance query enabled");
 		}
+	}
+
+	const VulkanQueue &VulkanDevice::SuitableGraphicsQueue()
+	{
+		for (UINT32 familyIndex = 0U; familyIndex < mQueues.size(); familyIndex++)
+		{
+			VulkanQueue &firstQueue = mQueues[familyIndex][0];
+
+			UINT32 queueCount = firstQueue.Properties().queueCount;
+
+			if (firstQueue.IsPresentSupported() && 0 < queueCount)
+			{
+				return mQueues[familyIndex][0];
+			}
+		}
+
+		return FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
+	}
+
+
+	const VulkanQueue &VulkanDevice::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
+	{
+		for (uint32_t familyIndex = 0U; familyIndex < mQueues.size(); ++familyIndex)
+		{
+			VulkanQueue &firstQueue = mQueues[familyIndex][0];
+
+			VkQueueFlags queueFlags = firstQueue.Properties().queueFlags;
+			uint32_t     queueCount = firstQueue.Properties().queueCount;
+
+			if (((queueFlags & flags) == flags) && queueIndex < queueCount)
+			{
+				return mQueues[familyIndex][queueIndex];
+			}
+		}
+
+		IM_CORE_ERROR("Queue not found");
+		return Utils::NullValue<VulkanQueue>();
 	}
 }
