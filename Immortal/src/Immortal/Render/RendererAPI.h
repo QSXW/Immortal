@@ -6,6 +6,13 @@
 
 namespace Immortal {
 	
+
+	/**
+	 * @breif Implementation based
+	 * @Vulkan https://www.khronos.org/registry/vulkan/specs/1.2-extensions/pdf/vkspec.pdf
+	 * @D3D12 https://microsoft.github.io/DirectX-Specs/
+	 * 
+	 */
 	class IMMORTAL_API RendererAPI
 	{
 	public:

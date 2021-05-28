@@ -21,6 +21,10 @@ namespace Immortal
 		Super::OnAttach();
 		Application *app = Application::App();
 
+		std::vector<VkDescriptorPoolSize> poolSizes = { 
+			VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , 1 }
+		};
+
 	}
 
 	void VulkanGuiLayer::OnDetach()

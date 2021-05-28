@@ -3,6 +3,7 @@
 #ifndef __IMMORTAL_CORE_H__
 #define __IMMORTAL_CORE_H__
 
+#include "impch.h"
 #include <cstdint>
 #include <memory>
 

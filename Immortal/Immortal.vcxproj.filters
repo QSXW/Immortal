@@ -783,6 +783,7 @@
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp">
@@ -978,5 +979,6 @@
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanCommon.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.cpp" />
   </ItemGroup>
 </Project>

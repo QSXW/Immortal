@@ -69,3 +69,6 @@
 /bin
 /bin-int
 /Sandbox
+/dll
+/VulkanSandbox/assets
+/VulkanSanbox/assets

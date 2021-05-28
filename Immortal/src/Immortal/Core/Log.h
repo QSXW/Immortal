@@ -34,9 +34,11 @@ namespace Immortal {
 }
 
 #if defined( DEBUG ) | defined( _DEBUG )
+	#define __FILENAME__ (static_cast<const char *>(__FILE__) + 30)
 	#define IM_CORE_WARN(...)		::Immortal::Log::GetCoreLogger()->warn(__VA_ARGS__);
 	#define IM_CORE_INFO(...)		::Immortal::Log::GetCoreLogger()->info(__VA_ARGS__);
-	#define IM_CORE_ERROR(...)		::Immortal::Log::GetCoreLogger()->error(__VA_ARGS__);
+	#define IM_CORE_ERROR(...)		::Immortal::Log::GetCoreLogger()->error("[{}:{}] {}", __FILENAME__, __LINE__, fmt::format(__VA_ARGS__));
+	#define IM_CORE_DEBUG(...)		::Immortal::Log::GetCoreLogger()->debug(__VA_ARGS__);
 	#define IM_CORE_TRACE(...)		::Immortal::Log::GetCoreLogger()->trace(__VA_ARGS__);
 	#define IM_CORE_CRITICAL(...)   ::Immortal::Log::GetCoreLogger()->critical(__VA_ARGS__);
 	#define IM_APP_WARN(...)		::Immortal::Log::GetClientLogger()->warn(__VA_ARGS__);
@@ -45,12 +47,13 @@ namespace Immortal {
 	#define IM_APP_TRACE(...)		::Immortal::Log::GetClientLogger()->trace(__VA_ARGS__);
 	#define IM_APP_CRITICAL(...)	::Immortal::Log::GetClientLogger()->critical(__VA_ARGS__);
 #else
-	#define _WARN(...)	
-	#define _INFO(...)	
-	#define _ERROR(...)	
-	#define _TRACE(...)	
-	#define _FATAL(...)	
-	#define _CRITICAL(...)
+	#define IM_CORE_WARN(...)	
+	#define IM_CORE_INFO(...)	
+	#define IM_CORE_ERROR(...)	
+	#define IM_CORE_DEBUG(...)
+	#define IM_CORE_TRACE(...)	
+	#define IM_CORE_FATAL(...)	
+	#define IM_CORE_CRITICAL(...)
 	#define IM_APP_WARN(...)		
 	#define IM_APP_INFO(...)		
 	#define IM_APP_ERROR(...)		

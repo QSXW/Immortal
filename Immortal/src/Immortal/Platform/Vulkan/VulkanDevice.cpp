@@ -216,9 +216,10 @@ namespace Immortal
 	{
 		const auto &queueFamilyProperties = mGraphicsProcessingUnit.QueueFamilyProperties;
 
+		// @required Compute Queue
 		if (queueFlag & VK_QUEUE_COMPUTE_BIT)
 		{
-			for (UINT32 i = 0; i < static_cast<UINT32>(queueFamilyProperties.size()); i++)
+			for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
 			{
 				if ((queueFamilyProperties[i].queueFlags & queueFlag) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
 				{
@@ -227,6 +228,31 @@ namespace Immortal
 				}
 			}
 		}
+
+		// @required Graphics Queue
+		if (queueFlag & VK_QUEUE_TRANSFER_BIT)
+		{
+			for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
+			{
+				if ((queueFamilyProperties[i].queueFlags & queueFlag) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
+				{
+					return i;
+					break;
+				}
+			}
+		}
+
+		for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
+		{
+			if (queueFamilyProperties[i].queueFlags & queueFlag)
+			{
+				return i;
+				break;
+			}
+		}
+
+		IM_CORE_ERROR("Counld not find a matching queue family index");
+		return 0;
 	}
 
 
