@@ -93,15 +93,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Immortal\Immortal.vcxproj">
-      <Project>{6A4660A7-5613-BBB2-7F2C-A95A6B58F040}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\VulkanSample.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\VulkanSample.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Immortal\Immortal.vcxproj">
+      <Project>{6A4660A7-5613-BBB2-7F2C-A95A6B58F040}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,8 +19,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sandbox", "Sandbox\Sandbox.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanSanbox", "VulkanSanbox\VulkanSanbox.vcxproj", "{C1A96883-AD0C-F827-5692-30DE42D4C3AA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yaml-cpp", "Immortal\3rdparty\yaml-cpp\yaml-cpp.vcxproj", "{88F1A057-74BE-FB62-9DD7-E90A890331F1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -59,10 +57,6 @@ Global
 		{C1A96883-AD0C-F827-5692-30DE42D4C3AA}.Debug|x64.Build.0 = Debug|x64
 		{C1A96883-AD0C-F827-5692-30DE42D4C3AA}.Release|x64.ActiveCfg = Release|x64
 		{C1A96883-AD0C-F827-5692-30DE42D4C3AA}.Release|x64.Build.0 = Release|x64
-		{88F1A057-74BE-FB62-9DD7-E90A890331F1}.Debug|x64.ActiveCfg = Debug|x64
-		{88F1A057-74BE-FB62-9DD7-E90A890331F1}.Debug|x64.Build.0 = Debug|x64
-		{88F1A057-74BE-FB62-9DD7-E90A890331F1}.Release|x64.ActiveCfg = Release|x64
-		{88F1A057-74BE-FB62-9DD7-E90A890331F1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -76,6 +70,5 @@ Global
 		{89DE752F-F593-EE24-7E88-E8FBEA3CE528} = {53E47842-3FC8-3998-A828-34EB942B241A}
 		{F4C124E3-60A1-A37E-69B9-2E55D5170AE0} = {53E47842-3FC8-3998-A828-34EB942B241A}
 		{C1A96883-AD0C-F827-5692-30DE42D4C3AA} = {53E47842-3FC8-3998-A828-34EB942B241A}
-		{88F1A057-74BE-FB62-9DD7-E90A890331F1} = {53E47842-3FC8-3998-A828-34EB942B241A}
 	EndGlobalSection
 EndGlobal

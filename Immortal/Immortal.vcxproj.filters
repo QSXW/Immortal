@@ -627,13 +627,13 @@
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.h">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClInclude>
-    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.h">
-      <Filter>src\Immortal\Platform\OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.h">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.h">
+      <Filter>src\Immortal\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.h">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.h">
@@ -657,10 +657,22 @@
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.h">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClInclude>
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanInstance.h">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClInclude>
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.h">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.h">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Platform\Vulkan\vk_mem_alloc.h">
@@ -699,9 +711,6 @@
     <ClInclude Include="src\Immortal\Render\Framebuffer.h">
       <Filter>src\Immortal\Render</Filter>
     </ClInclude>
-    <ClInclude Include="src\Immortal\Render\RenderContext.h">
-      <Filter>src\Immortal\Render</Filter>
-    </ClInclude>
     <ClInclude Include="src\Immortal\Render\Material.h">
       <Filter>src\Immortal\Render</Filter>
     </ClInclude>
@@ -718,6 +727,9 @@
       <Filter>src\Immortal\Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Render\RenderCommand.h">
+      <Filter>src\Immortal\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Immortal\Render\RenderContext.h">
       <Filter>src\Immortal\Render</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\Render\Renderer.h">
@@ -780,10 +792,6 @@
     <ClInclude Include="src\stb_image\stb_image.h">
       <Filter>src\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp">
@@ -840,13 +848,13 @@
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.cpp">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.cpp">
-      <Filter>src\Immortal\Platform\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.cpp">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.cpp">
+      <Filter>src\Immortal\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.cpp">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.cpp">
@@ -861,16 +869,31 @@
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLVertexArray.cpp">
       <Filter>src\Immortal\Platform\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanCommon.cpp">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanDevice.cpp">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.cpp">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanInstance.cpp">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClCompile>
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.cpp">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp">
+      <Filter>src\Immortal\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.cpp">
       <Filter>src\Immortal\Platform\Vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Platform\Windows\DirectWindow.cpp">
@@ -906,9 +929,6 @@
     <ClCompile Include="src\Immortal\Render\Framebuffer.cpp">
       <Filter>src\Immortal\Render</Filter>
     </ClCompile>
-    <ClCompile Include="src\Immortal\Render\RenderContext.cpp">
-      <Filter>src\Immortal\Render</Filter>
-    </ClCompile>
     <ClCompile Include="src\Immortal\Render\Material.cpp">
       <Filter>src\Immortal\Render</Filter>
     </ClCompile>
@@ -925,6 +945,9 @@
       <Filter>src\Immortal\Render</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Render\RenderCommand.cpp">
+      <Filter>src\Immortal\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Immortal\Render\RenderContext.cpp">
       <Filter>src\Immortal\Render</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\Render\Renderer.cpp">
@@ -975,10 +998,5 @@
     <ClCompile Include="src\stb_image\stb_image.cpp">
       <Filter>src\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanCommon.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.cpp" />
   </ItemGroup>
 </Project>

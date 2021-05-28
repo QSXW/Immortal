@@ -58,7 +58,7 @@
       <PrecompiledHeaderFile>impch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>IMMORTAL_PLATFORM_WINDOWS;IMMORTAL_BUILD_DLL;GLFW_INCLUDE_NONE;IM_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\yaml-cpp\include;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
@@ -81,7 +81,7 @@
       <PrecompiledHeaderFile>impch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>IMMORTAL_PLATFORM_WINDOWS;IMMORTAL_BUILD_DLL;GLFW_INCLUDE_NONE;IM_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\yaml-cpp\include;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;3rdparty\spdlog\include;3rdparty\GLFW\include;3rdparty\Glad\include;3rdparty\imgui;3rdparty\glm;3rdparty\opencv;3rdparty\assimp\include;3rdparty\mono\include;3rdparty\Vulkan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -280,9 +280,9 @@
     <ClInclude Include="src\Immortal\Platform\D3D12\D3D12Common.h" />
     <ClInclude Include="src\Immortal\Platform\D3D12\D3D12Framebuffer.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.h" />
-    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.h" />
+    <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLShader.h" />
     <ClInclude Include="src\Immortal\Platform\OpenGL\OpenGLTexture.h" />
@@ -290,8 +290,12 @@
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanCommon.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanDevice.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanInstance.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\vk_mem_alloc.h" />
     <ClInclude Include="src\Immortal\Platform\Windows\DirectWindow.h" />
     <ClInclude Include="src\Immortal\Platform\Windows\GLFWWindow.h" />
@@ -304,13 +308,13 @@
     <ClInclude Include="src\Immortal\Render\Environment.h" />
     <ClInclude Include="src\Immortal\Render\Frame.h" />
     <ClInclude Include="src\Immortal\Render\Framebuffer.h" />
-    <ClInclude Include="src\Immortal\Render\RenderContext.h" />
     <ClInclude Include="src\Immortal\Render\Material.h" />
     <ClInclude Include="src\Immortal\Render\Mesh.h" />
     <ClInclude Include="src\Immortal\Render\OrthographicCamera.h" />
     <ClInclude Include="src\Immortal\Render\OrthographicCameraController.h" />
     <ClInclude Include="src\Immortal\Render\Pipeline.h" />
     <ClInclude Include="src\Immortal\Render\RenderCommand.h" />
+    <ClInclude Include="src\Immortal\Render\RenderContext.h" />
     <ClInclude Include="src\Immortal\Render\Renderer.h" />
     <ClInclude Include="src\Immortal\Render\Renderer2D.h" />
     <ClInclude Include="src\Immortal\Render\RendererAPI.h" />
@@ -331,10 +335,6 @@
     <ClInclude Include="src\PlatformDetection.h" />
     <ClInclude Include="src\impch.h" />
     <ClInclude Include="src\stb_image\stb_image.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderer.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanQueue.h" />
-    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp" />
@@ -355,9 +355,9 @@
     <ClCompile Include="src\Immortal\Physics\Physics.cpp" />
     <ClCompile Include="src\Immortal\Platform\D3D12\D3D12Framebuffer.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLBuffer.cpp" />
-    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLFramebuffer.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLGuiLayer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderContext.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLRenderer.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLShader.cpp" />
     <ClCompile Include="src\Immortal\Platform\OpenGL\OpenGLTexture.cpp" />
@@ -365,8 +365,12 @@
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanCommon.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanDevice.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanFramebuffer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanInstance.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderContext.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.cpp" />
     <ClCompile Include="src\Immortal\Platform\Windows\DirectWindow.cpp" />
     <ClCompile Include="src\Immortal\Platform\Windows\GLFWWindow.cpp" />
     <ClCompile Include="src\Immortal\Platform\Windows\WindowPlatformUtils.cpp" />
@@ -378,13 +382,13 @@
     <ClCompile Include="src\Immortal\Render\Environment.cpp" />
     <ClCompile Include="src\Immortal\Render\Frame.cpp" />
     <ClCompile Include="src\Immortal\Render\Framebuffer.cpp" />
-    <ClCompile Include="src\Immortal\Render\RenderContext.cpp" />
     <ClCompile Include="src\Immortal\Render\Material.cpp" />
     <ClCompile Include="src\Immortal\Render\Mesh.cpp" />
     <ClCompile Include="src\Immortal\Render\OrthographicCamera.cpp" />
     <ClCompile Include="src\Immortal\Render\OrthographicCameraController.cpp" />
     <ClCompile Include="src\Immortal\Render\Pipeline.cpp" />
     <ClCompile Include="src\Immortal\Render\RenderCommand.cpp" />
+    <ClCompile Include="src\Immortal\Render\RenderContext.cpp" />
     <ClCompile Include="src\Immortal\Render\Renderer.cpp" />
     <ClCompile Include="src\Immortal\Render\Renderer2D.cpp" />
     <ClCompile Include="src\Immortal\Render\RendererAPI.cpp" />
@@ -403,10 +407,6 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderer.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanGuiLayer.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanQueue.cpp" />
-    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanSwapchain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="3rdparty\GLFW\GLFW.vcxproj">
@@ -417,9 +417,6 @@
     </ProjectReference>
     <ProjectReference Include="3rdparty\imgui\ImGui.vcxproj">
       <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
-    </ProjectReference>
-    <ProjectReference Include="3rdparty\yaml-cpp\yaml-cpp.vcxproj">
-      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

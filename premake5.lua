@@ -42,7 +42,6 @@ project "Immortal"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.opencv}",
-		"%{IncludeDir.yaml}",
 		"%{IncludeDir.assimp}",
 		"%{IncludeDir.mono}",
 		"%{IncludeDir.Vulkan}"
@@ -59,7 +58,6 @@ project "Immortal"
 		"Glad",
 		"opengl32.lib",
 		"ImGui",
-		"yaml-cpp",
 		"%{Library.mono}",
 		"%{Library.Vulkan}",
 		"%{Library.VulkanUtils}"

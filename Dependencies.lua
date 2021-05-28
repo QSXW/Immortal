@@ -3,7 +3,6 @@ group "Dependencies"
     include "Immortal/3rdparty/GLFW"
     include "Immortal/3rdparty/Glad"
     include "Immortal/3rdparty/imgui"
-    include "Immortal/3rdparty/yaml-cpp"
 
 VulkanSdk = os.getenv("VULKAN_SDK")
 
@@ -16,7 +15,6 @@ IncludeDir["Glad"]   = "%{ThirdPartyDir}/Glad/include"
 IncludeDir["ImGui"]  = "%{ThirdPartyDir}/imgui"
 IncludeDir["glm"]    = "%{ThirdPartyDir}/glm"
 IncludeDir["opencv"] = "%{ThirdPartyDir}/opencv"
-IncludeDir["yaml"]   = "%{ThirdPartyDir}/yaml-cpp/include"
 IncludeDir["assimp"] = "%{ThirdPartyDir}/assimp/include"
 IncludeDir["mono"]   = "%{ThirdPartyDir}/mono/include"
 IncludeDir["Vulkan"] = "%{ThirdPartyDir}/Vulkan/include"
