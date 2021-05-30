@@ -293,7 +293,7 @@ namespace Immortal
 
 	VulkanPhysicalDevice &VulkanInstance::SuitableGraphicsProcessingUnit() NOEXCEPT
 	{
-		IM_CORE_ASSERT(!mGraphicsProcessingUnits.empty(), "No gpu??? Unbelievable!");
+		IM_CORE_ASSERT(!mGraphicsProcessingUnits.empty(), LOGB("该主机没有任何可用的显卡", "No gpu??? Unbelievable!"));
 		
 		for (auto &g : mGraphicsProcessingUnits)
 		{
@@ -331,7 +331,7 @@ namespace Immortal
 		{
 			if (Vulkan::Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
 			{
-				IM_CORE_INFO("{0} is available. Enabling it!", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+				IM_CORE_INFO(LOGB("{0} 可用. 已启用!", "{0} is available. Enabling it!"), VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 				mEnabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 				return true;
 			}

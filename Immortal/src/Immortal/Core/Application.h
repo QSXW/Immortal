@@ -27,8 +27,8 @@ namespace Immortal {
 		struct Props
 		{
 			std::string Name;
-			uint32_t Width;
-			uint32_t Height;
+			UINT32 Width;
+			UINT32 Height;
 		};
 
 	public:
@@ -69,8 +69,8 @@ namespace Immortal {
 		}
 
 	public:
-		static float Width() { return (float)Instance->mProps.Width; }
-		static float Height() { return (float)Instance->mProps.Height; }
+		static UINT32 Width() { return Instance->mProps.Width; }
+		static UINT32 Height() { return Instance->mProps.Height; }
 		static const char *Name() { return Instance->mProps.Name.c_str(); }
 		static float DeltaTime() { return Instance->mTime.DeltaTime(); }
 

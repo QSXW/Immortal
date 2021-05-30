@@ -47,6 +47,11 @@ namespace Immortal
 			return mGraphicsProcessingUnit;
 		}
 
+		void WaitIdle() NOEXCEPT
+		{
+			vkDeviceWaitIdle(mHandle);
+		}
+
 	private:
 		VulkanPhysicalDevice &mGraphicsProcessingUnit;
 

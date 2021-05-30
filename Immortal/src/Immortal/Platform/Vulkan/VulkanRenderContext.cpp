@@ -2,8 +2,9 @@
 #include "VulkanRenderContext.h"
 
 #include "Immortal/Core/Application.h"
-
 #include <GLFW/glfw3.h>
+
+#include "VulkanImage.h"
 
 namespace Immortal
 {
@@ -50,7 +51,10 @@ namespace Immortal
 		mDevice = MakeUnique<VulkanDevice>(gpu, mSurface, DeviceExtensions);
 		mQueue = &(mDevice->SuitableGraphicsQueue());
 
-		mSwapchain = MakeUnique<VulkanSwapchain>(*mDevice, mSurface);
+		mSurfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
+		mSwapchain = MakeUnique<VulkanSwapchain>(*mDevice, mSurface, mSurfaceExtent);
+
+		this->Init();
 	}
 
 	VulkanRenderContext::~VulkanRenderContext()
@@ -61,7 +65,26 @@ namespace Immortal
 
 	void VulkanRenderContext::Init()
 	{
+		mPresentModePriorities = {
+			VK_PRESENT_MODE_MAILBOX_KHR,
+			VK_PRESENT_MODE_IMMEDIATE_KHR,
+			VK_PRESENT_MODE_FIFO_KHR
+		};
+	
+		mSurfaceFormatPriorities = {
+			{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+			{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+			{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+			{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
+		};
 
+		if (mSwapchain)
+		{
+			// This is commonly known as "triple buffering",
+			mSwapchain->Set(VK_PRESENT_MODE_MAILBOX_KHR);
+			mSwapchain->Set(VK_FORMAT_B8G8R8A8_UNORM);
+		}
+		this->Prepare();
 	}
 
 	void VulkanRenderContext::CreateSurface()
@@ -73,6 +96,26 @@ namespace Immortal
 		}
 
 		Vulkan::Check(glfwCreateWindowSurface(mInstance->Handle(), static_cast<GLFWwindow *>(mHandle), nullptr, &mSurface));
+	}
+
+	void VulkanRenderContext::Prepare(size_t threadCount, VulkanRenderTarget::CreateFunc CreateRenderTargetfunc)
+	{
+		mDevice->WaitIdle();
+
+		if (mSwapchain)
+		{
+			mSwapchain->Set(mPresentModePriorities);
+			mSwapchain->Set(mSurfaceFormatPriorities);
+			mSwapchain->Create();
+
+			VkExtent3D extent{ mSurfaceExtent.width, mSurfaceExtent.height, 1 };
+
+			for (auto &image : mSwapchain->Images())
+			{
+				auto swapchainImage = VulkanImage{ *mDevice, image, extent, mSwapchain->Format(), mSwapchain->Usage() };
+				auto renderTarget = CreateRenderTargetfunc(std::move(swapchainImage));
+			}
+		}
 	}
 
 	void VulkanRenderContext::SwapBuffers()

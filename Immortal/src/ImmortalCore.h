@@ -38,6 +38,7 @@
 
 #define BIT(x) (1 << (x))
 #define UNICODE8(str) u8##str
+#define ARRAY_LEN(a) sizeof(a) / sizeof((a)[0])
 #define IM_BIND_EVENT_FUNC(x) std::bind(&x, this, std::placeholders::_1)
 
 namespace Immortal {

@@ -16,6 +16,16 @@ namespace Immortal
 			return static_cast<UINT32>(x);
 		}
 
+
+		template <class T, void (*F)(VkDevice, T, const VkAllocationCallbacks *)>
+		constexpr inline void IfNotNullThen(VkDevice device, T handle)
+		{
+			if (handle != VK_NULL_HANDLE)
+			{
+				F(device, handle, nullptr);
+			}
+		}
+
 		template <class T, void (*F)(T, const VkAllocationCallbacks *)>
 		constexpr inline void IfNotNullThen(T handle)
 		{
@@ -83,6 +93,10 @@ namespace Immortal
 
 		const char *ToString(VkFormat format);
 		const char *ToString(VkPresentModeKHR presentMode);
+		const char *ToString(VkImageUsageFlagBits imageUsage);
+		const char *ToString(VkSurfaceTransformFlagBitsKHR transform);
+		const char *ToString(VkCompositeAlphaFlagBitsKHR compositeAlpha);
+
 
 		inline const std::string ToString(VkSurfaceFormatKHR surfaceFormat)
 		{

@@ -70,6 +70,12 @@ namespace Immortal {
             v = Min(Max(v, min), max);
         }
 
+        template <class T>
+        constexpr inline void Clamp(T &v, const T &min, const T &max) noexcept
+        {
+            v = Min(Max(v, min), max);
+        }
+
         template <int min, int max>
         constexpr inline void Clamp(int &v) noexcept
         {
