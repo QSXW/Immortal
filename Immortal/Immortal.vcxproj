@@ -338,6 +338,7 @@
     <ClInclude Include="src\impch.h" />
     <ClInclude Include="src\stb_image\stb_image.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanImage.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanImageView.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderTarget.cpp" />
@@ -414,6 +415,7 @@
     </ClCompile>
     <ClCompile Include="src\stb_image\stb_image.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanImage.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanImageView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="3rdparty\GLFW\GLFW.vcxproj">

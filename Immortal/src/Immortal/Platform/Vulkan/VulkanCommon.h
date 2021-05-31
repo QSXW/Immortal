@@ -135,6 +135,24 @@ namespace Immortal
 		{
 			return (strcmp(str1, str2) == 0);
 		}
+
+
+		/**
+		 * @brief Helper function to determine a suitable supported depth format based on a priority list
+		 * @param physicalDevice The physical device to check the depth formats against
+		 * @param depthOnly (Optional) Wether to include the stencil component in the format or not
+		 * @param depthFormatPriorities (Optional) The list of depth formats to prefer over one another
+		 *		  By default we start with the highest precision packed format
+		 * @return The valid suited depth format
+		 */
+		VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice,
+			                         bool depthOnly = false,
+			                         const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });
+
+		inline bool IsDepthOnlyFormat(VkFormat format)
+		{
+			return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT;
+		}
 	}
 
 }

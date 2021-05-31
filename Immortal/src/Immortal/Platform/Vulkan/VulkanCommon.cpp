@@ -210,5 +210,35 @@ namespace Immortal
 				return "UNKNOWN COMPOSITE ALPHA FLAG";
 			}
 		}
+
+		VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, const std::vector<VkFormat>& depthFormatPriorities)
+		{
+			VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
+
+			for (auto &format : depthFormatPriorities)
+			{
+				if (depthOnly && IsDepthOnlyFormat(format))
+				{
+					continue;
+				}
+
+				VkFormatProperties properties;
+				vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &properties);
+				if (properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+				{
+					depthFormat = format;
+					break;
+				}
+			}
+
+			if (depthFormat != VK_FORMAT_UNDEFINED)
+			{
+				IM_CORE_INFO(LOGB("选择了深度格式: {0}", "Depth format selected: {0}"), ToString(depthFormat));
+				return depthFormat;
+			}
+
+			IM_CORE_ASSERT(false, LOGB("没有可用的深度格式", "No suitable depth format could be determined"));
+			return Utils::NullValue<VkFormat>();
+		}
 	}
 }

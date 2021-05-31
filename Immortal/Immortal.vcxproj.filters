@@ -795,6 +795,7 @@
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanRenderTarget.h" />
     <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanImage.h" />
+    <ClInclude Include="src\Immortal\Platform\Vulkan\VulkanImageView.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Immortal\Core\Application.cpp">
@@ -1005,5 +1006,6 @@
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanPhysicalDevice.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanRenderTarget.cpp" />
     <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanImage.cpp" />
+    <ClCompile Include="src\Immortal\Platform\Vulkan\VulkanImageView.cpp" />
   </ItemGroup>
 </Project>

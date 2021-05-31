@@ -82,6 +82,8 @@ namespace Immortal {
 
 	namespace Utils
 	{
+		extern "C" static void *SafeChunk;
+
 		/**
 	     * @brief Use to Avoid return warning. This Value should never be used.
 	     *
@@ -89,7 +91,7 @@ namespace Immortal {
 		template <class T>
 		constexpr inline T NullValue()
 		{
-			return *(T *)(nullptr);
+			return *(T*)SafeChunk;
 		}
 	}
 }

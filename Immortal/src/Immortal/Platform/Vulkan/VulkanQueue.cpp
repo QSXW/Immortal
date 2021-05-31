@@ -24,4 +24,9 @@ namespace Immortal
 	{
 
 	}
+
+	VulkanQueue::~VulkanQueue()
+	{
+		
+	}
 }

@@ -52,6 +52,11 @@ namespace Immortal
 			vkDeviceWaitIdle(mHandle);
 		}
 
+		VmaAllocator MemoryAllocator() const
+		{
+			return mMemoryAllocator;
+		}
+
 	private:
 		VulkanPhysicalDevice &mGraphicsProcessingUnit;
 

@@ -27,6 +27,8 @@ namespace Immortal
 		VulkanQueue(VulkanDevice &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
 		VulkanQueue(const VulkanQueue &) = default;
 		VulkanQueue(VulkanQueue && other) NOEXCEPT;
+		
+		~VulkanQueue();
 
 	// @inline
 	public:

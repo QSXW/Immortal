@@ -44,7 +44,7 @@ namespace Immortal
 		return UINT32();
 	}
 
-	const Framebuffer::Specification & VulkanFramebuffer::GetSpecification() const
+	const Framebuffer::Specification &VulkanFramebuffer::GetSpecification() const
 	{
 		return Framebuffer::Specification();
 	}

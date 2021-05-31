@@ -59,4 +59,49 @@ namespace Vulkan
 		mSubresource.mipLevel   = 1;
 		mSubresource.arrayLayer = 1;
 	}
+
+	VulkanImage::VulkanImage(VulkanDevice &device, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage, VkSampleCountFlagBits sampleCount, UINT32 mipLevels, UINT32 arrayLayers, VkImageTiling tiling, VkImageCreateFlags flags, UINT32 numQueueFamilies, const UINT32 * queueFamilies) :
+		mDevice{ device },
+		mType{ Vulkan::ImageType(extent) },
+		mExtent{ extent },
+		mFormat{ format },
+		mSampleCount{ sampleCount },
+		mUsage{ imageUsage },
+		mArrayLayerCount{ arrayLayers },
+		mTiling{ tiling }
+	{
+		IM_CORE_ASSERT(mipLevels > 0, LOGB("Mip贴图应该大于一个层级", "Image should have at least one level"));
+		IM_CORE_ASSERT(arrayLayers > 0, LOGB("图片至少有一层", "Image should have at least one level"));
+
+		mSubresource.mipLevel = mipLevels;
+		mSubresource.arrayLayer = arrayLayers;
+
+		VkImageCreateInfo imageInfo{};
+		imageInfo.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType   = mType;
+		imageInfo.format      = format;
+		imageInfo.extent      = extent;
+		imageInfo.mipLevels   = mipLevels;
+		imageInfo.arrayLayers = arrayLayers;
+		imageInfo.samples     = sampleCount;
+		imageInfo.tiling      = tiling;
+		imageInfo.usage       = imageUsage;
+		
+		if (numQueueFamilies != 0)
+		{
+			imageInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+			imageInfo.queueFamilyIndexCount = numQueueFamilies;
+			imageInfo.pQueueFamilyIndices   = queueFamilies;
+		}
+
+		VmaAllocationCreateInfo memoryInfo{};
+		memoryInfo.usage = memoryUsage;
+		if (imageUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
+		{
+			memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+		}
+
+		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &imageInfo, &memoryInfo, &mHandle, &mMemory, nullptr));
+	}
+
 }

@@ -53,8 +53,6 @@ namespace Immortal
 
 		mSurfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
 		mSwapchain = MakeUnique<VulkanSwapchain>(*mDevice, mSurface, mSurfaceExtent);
-
-		this->Init();
 	}
 
 	VulkanRenderContext::~VulkanRenderContext()
