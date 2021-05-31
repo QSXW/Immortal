@@ -271,7 +271,7 @@
     <ClInclude Include="src\Immortal\Events\Event.h" />
     <ClInclude Include="src\Immortal\Events\KeyEvent.h" />
     <ClInclude Include="src\Immortal\Events\MouseEvent.h" />
-    <ClInclude Include="src\Immortal\IO\FileSystem.h" />
+    <ClInclude Include="src\Immortal\InputOutput\FileSystem.h" />
     <ClInclude Include="src\Immortal\ImGui\GuiLayer.h" />
     <ClInclude Include="src\Immortal\ImGui\ImGuizmo.h" />
     <ClInclude Include="src\Immortal\ImGui\ui.h" />
@@ -351,7 +351,7 @@
     <ClCompile Include="src\Immortal\Core\Window.cpp" />
     <ClCompile Include="src\Immortal\Editor\EditorCamera.cpp" />
     <ClCompile Include="src\Immortal\Events\ApplicationEvent.cpp" />
-    <ClCompile Include="src\Immortal\IO\FileSystem.cpp" />
+    <ClCompile Include="src\Immortal\InputOutput\FileSystem.cpp" />
     <ClCompile Include="src\Immortal\ImGui\GuiLayer.cpp" />
     <ClCompile Include="src\Immortal\ImGui\ImGuiBuild.cpp" />
     <ClCompile Include="src\Immortal\ImGui\ImGuizmo.cpp" />

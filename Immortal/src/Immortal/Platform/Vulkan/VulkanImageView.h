@@ -17,7 +17,16 @@ namespace Immortal
 			            UINT32          nMipLevels     = 0,
 			            UINT32          nArrayLayers   = 0);
 
+		VulkanImageView(VulkanImageView &&other);
+
 		~VulkanImageView();
+
+	// @inline
+	public:
+		void Set(VulkanImage *image)
+		{
+			mImage = image;
+		}
 
 	private:
 		VulkanDevice &mDevice;

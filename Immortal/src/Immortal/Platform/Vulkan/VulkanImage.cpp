@@ -1,6 +1,8 @@
 #include "impch.h"
 #include "VulkanImage.h"
 
+#include "VulkanImageView.h"
+
 namespace Immortal
 {
 namespace Vulkan
@@ -102,6 +104,31 @@ namespace Vulkan
 		}
 
 		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &imageInfo, &memoryInfo, &mHandle, &mMemory, nullptr));
+	}
+
+	VulkanImage::VulkanImage(VulkanImage && other) noexcept :
+		mDevice{ other.mDevice },
+		mHandle{ other.mHandle },
+		mMemory{ other.mMemory },
+		mType{ other.mType },
+		mExtent{ other.mExtent },
+		mFormat{ other.mFormat },
+		mSampleCount{ other.mSampleCount },
+		mUsage{ other.mUsage },
+		mTiling{ other.mTiling },
+		mSubresource{ other.mSubresource },
+		mMappedData{ other.mMappedData },
+		mMapped{ other.mMapped }
+	{
+		other.mHandle     = VK_NULL_HANDLE;
+		other.mMemory     = VK_NULL_HANDLE;
+		other.mMappedData = nullptr;
+		other.mMapped     = false;
+
+		for (auto &v : mViews)
+		{
+			v->Set(this);
+		}
 	}
 
 }

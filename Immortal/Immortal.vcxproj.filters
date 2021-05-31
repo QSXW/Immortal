@@ -597,7 +597,7 @@
     <ClInclude Include="src\Immortal\Events\MouseEvent.h">
       <Filter>src\Immortal\Events</Filter>
     </ClInclude>
-    <ClInclude Include="src\Immortal\IO\FileSystem.h">
+    <ClInclude Include="src\Immortal\InputOutput\FileSystem.h">
       <Filter>src\Immortal\IO</Filter>
     </ClInclude>
     <ClInclude Include="src\Immortal\ImGui\GuiLayer.h">
@@ -825,7 +825,7 @@
     <ClCompile Include="src\Immortal\Events\ApplicationEvent.cpp">
       <Filter>src\Immortal\Events</Filter>
     </ClCompile>
-    <ClCompile Include="src\Immortal\IO\FileSystem.cpp">
+    <ClCompile Include="src\Immortal\InputOutput\FileSystem.cpp">
       <Filter>src\Immortal\IO</Filter>
     </ClCompile>
     <ClCompile Include="src\Immortal\ImGui\GuiLayer.cpp">

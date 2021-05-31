@@ -23,6 +23,9 @@ namespace Immortal
 					UINT32                numQueueFamilies = 0,
 			        const UINT32          *queueFamilies = nullptr);
 
+
+		VulkanImage(VulkanImage &&other) noexcept;
+
 	// @inline
 	public:
 		VulkanDevice &Device()

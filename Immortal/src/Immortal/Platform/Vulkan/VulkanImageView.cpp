@@ -30,6 +30,20 @@ namespace Immortal
 		mImage->Views().emplace(this);
 	}
 
+	VulkanImageView::VulkanImageView(VulkanImageView && other) :
+		mDevice{ other.mDevice },
+		mImage{ other.mImage },
+		mHandle{ other.mHandle },
+		mFormat{ other.mFormat },
+		mSubresourceRange{ other.mSubresourceRange }
+	{
+		auto &views = mImage->Views();
+		views.erase(&other);
+		views.emplace(this);	
+
+		other.mHandle = VK_NULL_HANDLE;
+	}
+
 	VulkanImageView::~VulkanImageView()
 	{
 		Vulkan::IfNotNullThen<VkImageView, &vkDestroyImageView>(mDevice.Handle(), mHandle);
