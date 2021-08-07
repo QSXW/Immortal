@@ -29,8 +29,8 @@ project "Immortal"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
-		"%{prj.name}/3rdparty/glm/glm/**.h",
-		"%{prj.name}/3rdparty/glm/glm/**.inl"
+		"3rdparty/glm/glm/**.h",
+		"3rdparty/glm/glm/**.inl"
 	}
 
 	includedirs

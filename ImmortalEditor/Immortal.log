@@ -1,27 +1,19 @@
-[17:17:02] [info] Immortal: Creating window Immortal 编辑器 (1920, 1080)
-[17:17:03] [info] Immortal: Renderer: NVIDIA GeForce RTX 2060/PCIe/SSE2
-[17:17:03] [info] Immortal: Vecdor: NVIDIA Corporation
-[17:17:03] [info] Immortal: Version: 4.6.0 NVIDIA 466.47
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Capsule.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Capsule.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cone.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cone.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cube.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cube.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cylinder.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cylinder.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Plane.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Plane.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Sphere.fbx
-[17:17:03] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Torus.fbx
-[17:17:03] [info] Immortal: Loading mesh: Assets/Meshes/Default/Torus.fbx
-[17:17:03] [info] Immortal: Loading mesh: assets/meshes/skybox.obj
-[17:17:03] [trace] Immortal: OpenGLTexture2D Loading: assets/textures/environment.hdr
-[17:17:04] [trace] Immortal: OpenGLTexture2D Loading: assets/Icon/Play.png
-[17:17:04] [trace] Immortal: OpenGLTexture2D Completed: assets/Icon/Play.png
-[17:17:04] [trace] Immortal: OpenGLTexture2D Loading: assets/Icon/Pause.png
-[17:17:04] [trace] Immortal: OpenGLTexture2D Completed: assets/Icon/Pause.png
-[17:17:04] [trace] Immortal: OpenGLTexture2D Loading: assets/Icon/Stop.png
-[17:17:04] [trace] Immortal: OpenGLTexture2D Completed: assets/Icon/Stop.png
-[17:17:17] [warning] Immortal: pixel = 1056840496
-[17:17:28] [warning] Immortal: pixel = 1060811828
+[14:48:14] [info] Immortal: Creating window Immortal 编辑器 (1920, 1080)
+[14:48:14] [info] Immortal: Renderer: Intel(R) UHD Graphics 750
+[14:48:14] [info] Immortal: Vecdor: Intel
+[14:48:14] [info] Immortal: Version: 4.6.0 - Build 27.20.100.9127
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Capsule.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Capsule.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cone.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cone.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cube.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cube.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Cylinder.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Cylinder.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Plane.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Plane.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Sphere.fbx
+[14:48:14] [info] Immortal: Loading Mesh Primitive: Assets/Meshes/Default/Torus.fbx
+[14:48:14] [info] Immortal: Loading mesh: Assets/Meshes/Default/Torus.fbx
+[14:48:14] [info] Immortal: Loading mesh: assets/meshes/skybox.obj
+[14:48:14] [trace] Immortal: OpenGLTexture2D Loading: assets/textures/environment.hdr

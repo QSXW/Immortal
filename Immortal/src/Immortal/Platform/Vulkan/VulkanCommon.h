@@ -1,5 +1,7 @@
 #pragma once
 
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
 #include <vulkan/vulkan.h>
 #include "vk_mem_alloc.h"
 #include "ImmortalCore.h"

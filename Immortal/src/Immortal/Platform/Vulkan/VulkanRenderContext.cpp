@@ -30,13 +30,14 @@ namespace Immortal
 	VulkanRenderContext::VulkanRenderContext(RenderContext::Description &desc)
 		: mHandle(desc.WindowHandle)
 	{
-		std::vector<const char *> validationLayers = {
+		static std::vector<const char *> validationLayers = {
 #if			IMMORTAL_CHECK_DEBUG
-			// "VK_LAYER_LUNARG_api_dump",
-			// "VK_LAYER_LUNARG_device_simulation",
-			"VK_LAYER_KHRONOS_synchronization2",
+			/*"VK_LAYER_LUNARG_api_dump",
+			"VK_LAYER_LUNARG_device_simulation",
+			"VK_LAYER_LUNARG_assistant_layer",
 			"VK_LAYER_KHRONOS_validation",
-			"VK_LAYER_LUNARG_monitor"
+			"VK_LAYER_LUNARG_monitor",
+			"VK_LAYER_LUNARG_screenshot"*/
 #endif
 		};
 

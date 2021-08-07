@@ -1,12 +1,12 @@
 
 group "Dependencies"
-    include "Immortal/3rdparty/GLFW"
-    include "Immortal/3rdparty/Glad"
-    include "Immortal/3rdparty/imgui"
+    include "3rdparty/GLFW"
+    include "3rdparty/Glad"
+    include "3rdparty/imgui"
 
 VulkanSdk = os.getenv("VULKAN_SDK")
 
-ThirdPartyDir = "%{wks.location}/Immortal/3rdparty";
+ThirdPartyDir = "%{wks.location}/3rdparty";
 
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{ThirdPartyDir}/spdlog/include"
