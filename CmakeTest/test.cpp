@@ -1,20 +1,17 @@
 #include <iostream>
 #include <memory>
 
+#include "Immortal.h"
+
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/LogStream.hpp>
-#define VOLK_IMPLEMENTATION
-#include "volk.h"
 
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -22,13 +19,23 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include <Immortal.h>
+
+#include <Platform/Vulkan/VulkanCommon.h>
+
+#include <mono/jit/jit.h>
+#include <mono/metadata/assembly.h>
+#include <mono/metadata/debug-helpers.h>
+#include <mono/metadata/attrdefs.h>
+
 int main()
 {
-    volkInitialize();
+    
+    auto domain = mono_jit_init("Immortal");
 
     glm::vec4 v;
     std::shared_ptr<spdlog::logger> log;
-    glfwInit();
+
     Assimp::Importer importer;
 
     VkInstanceCreateInfo appinfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
@@ -47,9 +54,7 @@ int main()
     createInfo.pApplicationInfo = &appInfo;
 
     uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    const char** glfwExtensions = nullptr;
 
     createInfo.enabledExtensionCount = glfwExtensionCount;
     createInfo.ppEnabledExtensionNames = glfwExtensions;

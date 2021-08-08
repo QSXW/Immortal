@@ -1,5 +1,3 @@
-/.vs*
-.vscode/settings.json
 /ImmortalEditor/std
 /.vs/Immortal/v16/ipch
 /RuntimeTest
@@ -12,13 +10,15 @@
 
 # Misc
 *bin-int*
+/3rdparty*
 
 # cmake
 /build*
-/3rdparty*
 /out*
 
 # Visual Studio Misc
+/.vscode*
+/.vs*
 *.sln
 *.vcxproj
 *.idb
