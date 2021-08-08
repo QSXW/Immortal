@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#ifdef  IMMORTAL_PLATFORM_WINDOWS
+#ifdef  WIN32
+	#define UNICODE
 	#include <Windows.h>
-#endif //  IMMORTAL_PLATFORM_WINDOWS
+#endif

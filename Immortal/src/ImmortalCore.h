@@ -3,16 +3,22 @@
 #ifndef __IMMORTAL_CORE_H__
 #define __IMMORTAL_CORE_H__
 
+#define UNICODE
+
 #include "impch.h"
 #include <cstdint>
 #include <memory>
 
-#include "PlatformDetection.h"
+#if WIN32
+#    define IMMORTAL_PLATFORM_SURFACE "VK_KHR_win32_surface"
+#endif
 
 #pragma warning( disable: 4251 )
 #pragma warning( disable: 4996 )
 #pragma warning( disable: 4006 )
 #pragma warning( disable: 26812 )
+
+#define IMMORTAL_PLATFORM_WINDOWS
 
 #if defined IMMORTAL_PLATFORM_WINDOWS
 	#ifdef IMMORTAL_BUILD_NO_STATIC
@@ -96,11 +102,11 @@ namespace Immortal {
 	}
 }
 
-#include "Immortal/Core/Vector.h"
+#include "Framework/Vector.h"
 
 #define HZ_ENABLE_ASSERTS
-#include "Immortal/Core/Log.h"
-#include "Immortal/Core/Assert.h"
+#include "Framework/Log.h"
+#include "Framework/Assert.h"
 
 #define IMMORTAL_CHECK_DEBUG defined( IM_DEBUG )
 #define IMMORTAL_END_CHECK endif
