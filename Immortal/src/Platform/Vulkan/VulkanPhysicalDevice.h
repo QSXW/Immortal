@@ -54,7 +54,7 @@ namespace Immortal
 
 			auto vkGetPhysicalDeviceFeatures2KHR = (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(Instance.Handle(), "vkGetPhysicalDeviceFeatures2KHR");
 
-			vkGetPhysicalDeviceFeatures2KHR(mHandle, &physicalDeviceFeatures);
+			vkGetPhysicalDeviceFeatures2KHR(handle, &physicalDeviceFeatures);
 
 			// Insert the extension feature into the extension feature map so its ownership is held
 			ExtensionFeatures.insert({ type, CreateRef<T>(extension) });
@@ -88,7 +88,7 @@ namespace Immortal
 		DefineGetHandleFunc(VkPhysicalDevice)
 
 	private:
-		VkPhysicalDevice mHandle{ VK_NULL_HANDLE };
+		VkPhysicalDevice handle{ VK_NULL_HANDLE };
 
 	public:
 		VulkanInstance &Instance;

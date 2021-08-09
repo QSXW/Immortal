@@ -49,7 +49,7 @@ namespace Immortal
 
 		void WaitIdle() NOEXCEPT
 		{
-			vkDeviceWaitIdle(mHandle);
+			vkDeviceWaitIdle(handle);
 		}
 
 		VmaAllocator MemoryAllocator() const
@@ -62,7 +62,7 @@ namespace Immortal
 
 		VkSurfaceKHR mSurface{ VK_NULL_HANDLE };
 
-		VkDevice mHandle{ VK_NULL_HANDLE };
+		VkDevice handle{ VK_NULL_HANDLE };
 
 		std::vector<VkExtensionProperties> mDeviceExtensions;
 

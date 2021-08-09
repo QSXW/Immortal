@@ -286,13 +286,13 @@ namespace Immortal
 		mProperties.ImageUsage     = CompositeImageFlags(mImageUsageFlags);
 		mProperties.PreTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
 		mProperties.CompositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
-		mProperties.OldSwapchain   = oldSwapchain.mHandle;
+		mProperties.OldSwapchain   = oldSwapchain.handle;
 		mProperties.PresentMode    = presentMode;
 	}
 
 	VulkanSwapchain::~VulkanSwapchain()
 	{
-		Vulkan::IfNotNullThen<VkSwapchainKHR>(vkDestroySwapchainKHR, mDevice.Handle(), mHandle);
+		Vulkan::IfNotNullThen<VkSwapchainKHR>(vkDestroySwapchainKHR, mDevice.Handle(), handle);
 	}
 
 	void VulkanSwapchain::Create()
@@ -318,12 +318,12 @@ namespace Immortal
 		createInfo.clipped          = VK_TRUE; // Get the best performance by enabling clipping.
 
 		auto &device = mDevice.Handle();
-		Vulkan::Check(vkCreateSwapchainKHR(device, &createInfo, nullptr, &mHandle));
+		Vulkan::Check(vkCreateSwapchainKHR(device, &createInfo, nullptr, &handle));
 
 		UINT32 imageAvailable{ 0U };
-		Vulkan::Check(vkGetSwapchainImagesKHR(device, mHandle, &imageAvailable, nullptr));
+		Vulkan::Check(vkGetSwapchainImagesKHR(device, handle, &imageAvailable, nullptr));
 
 		mImages.resize(imageAvailable);
-		Vulkan::Check(vkGetSwapchainImagesKHR(device, mHandle, &imageAvailable, mImages.data()));
+		Vulkan::Check(vkGetSwapchainImagesKHR(device, handle, &imageAvailable, mImages.data()));
 	}
 }

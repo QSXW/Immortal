@@ -29,7 +29,7 @@ namespace Immortal
 		virtual const Specification& GetSpecification() const override;
 
 	private:
-		VkFramebuffer mHandle{ VK_NULL_HANDLE };
+		VkFramebuffer handle{ VK_NULL_HANDLE };
 	};
 }
 

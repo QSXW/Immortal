@@ -108,7 +108,7 @@ namespace Immortal {
 #include "Framework/Log.h"
 #include "Framework/Assert.h"
 
-#define IMMORTAL_CHECK_DEBUG defined( IM_DEBUG )
+#define IMMORTAL_CHECK_DEBUG defined( DEBUG) || defined( _DEBUG )
 #define IMMORTAL_END_CHECK endif
 
 #endif /* __IMMORTAL_CORE_H__ */

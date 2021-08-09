@@ -26,14 +26,14 @@ namespace Immortal
 		viewInfo.subresourceRange = mSubresourceRange;
 		viewInfo.image            = image.Handle();
 
-		Vulkan::Check(vkCreateImageView(mDevice.Handle(), &viewInfo, nullptr, &mHandle));
+		Vulkan::Check(vkCreateImageView(mDevice.Handle(), &viewInfo, nullptr, &handle));
 		mImage->Views().emplace(this);
 	}
 
 	VulkanImageView::VulkanImageView(VulkanImageView && other) :
 		mDevice{ other.mDevice },
 		mImage{ other.mImage },
-		mHandle{ other.mHandle },
+		handle{ other.handle },
 		mFormat{ other.mFormat },
 		mSubresourceRange{ other.mSubresourceRange }
 	{
@@ -41,11 +41,11 @@ namespace Immortal
 		views.erase(&other);
 		views.emplace(this);	
 
-		other.mHandle = VK_NULL_HANDLE;
+		other.handle = VK_NULL_HANDLE;
 	}
 
 	VulkanImageView::~VulkanImageView()
 	{
-		Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, mDevice.Handle(), mHandle);
+		Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, mDevice.Handle(), handle);
 	}
 }

@@ -51,7 +51,7 @@ namespace Vulkan
 
 	VulkanImage::VulkanImage(VulkanDevice &device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
 		mDevice{ device },
-		mHandle{ handle },
+		handle{ handle },
 		mType{ Vulkan::ImageType(extent) },
 		mExtent{ extent },
 		mFormat{ format },
@@ -103,12 +103,12 @@ namespace Vulkan
 			memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
 		}
 
-		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &imageInfo, &memoryInfo, &mHandle, &mMemory, nullptr));
+		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &imageInfo, &memoryInfo, &handle, &mMemory, nullptr));
 	}
 
 	VulkanImage::VulkanImage(VulkanImage && other) noexcept :
 		mDevice{ other.mDevice },
-		mHandle{ other.mHandle },
+		handle{ other.handle },
 		mMemory{ other.mMemory },
 		mType{ other.mType },
 		mExtent{ other.mExtent },
@@ -120,7 +120,7 @@ namespace Vulkan
 		mMappedData{ other.mMappedData },
 		mMapped{ other.mMapped }
 	{
-		other.mHandle     = VK_NULL_HANDLE;
+		other.handle     = VK_NULL_HANDLE;
 		other.mMemory     = VK_NULL_HANDLE;
 		other.mMappedData = nullptr;
 		other.mMapped     = false;

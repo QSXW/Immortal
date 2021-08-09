@@ -2,6 +2,7 @@
 #include "VulkanInstance.h"
 
 #include "VulkanDevice.h"
+#include "VulkanRenderContext.h"
 
 namespace Immortal
 {
@@ -86,6 +87,14 @@ namespace Immortal
 		                           bool                                          headless,
 		                           UINT32                                        apiVersion)
 	{
+		if (VulkanRenderContext::Status == VK_NOT_READY)
+		{
+			VulkanRenderContext::Status = volkInitialize();
+			if (VulkanRenderContext::Status == VK_SUCCESS)
+			{
+				LOGB("Vulkan 动态库加载成功...", "");
+			}
+		}
 		UINT32 instanceExtensionCount;
 		Vulkan::Check(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr));
 
@@ -224,20 +233,22 @@ namespace Immortal
 		}
 #endif
 
-		Vulkan::Check(vkCreateInstance(&instanceInfo, nullptr, &mHandle));
+		Vulkan::Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
+		volkLoadInstance(handle);
+		
 
 #if     IMMORTAL_CHECK_DEBUG
 		if (debugUtils)
 		{
-			auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mHandle, "vkCreateDebugUtilsMessengerEXT");
+			auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(handle, "vkCreateDebugUtilsMessengerEXT");
 			IM_CORE_ASSERT(vkCreateDebugUtilsMessengerEXT != nullptr, "");
-			Vulkan::Check(vkCreateDebugUtilsMessengerEXT(mHandle, &debugUtilsCreateInfo, nullptr, &mDebugUtilsMessengers));
+			Vulkan::Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &mDebugUtilsMessengers));
 		}
 		else
 		{
-			auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(mHandle, "vkCreateDebugReportCallbackEXT");
+			auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(handle, "vkCreateDebugReportCallbackEXT");
 			IM_CORE_ASSERT(vkCreateDebugReportCallbackEXT != nullptr, "");
-			Vulkan::Check(vkCreateDebugReportCallbackEXT(mHandle, &debugReportCreateInfo, nullptr, &mDebugReportCallback));
+			Vulkan::Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &mDebugReportCallback));
 		}
 #endif
 
@@ -245,9 +256,9 @@ namespace Immortal
 	}
 
 	VulkanInstance::VulkanInstance(VkInstance instance)
-		: mHandle(instance)
+		: handle(instance)
 	{
-		IM_CORE_ASSERT(mHandle != VK_NULL_HANDLE, "Instance not valid");
+		IM_CORE_ASSERT(handle != VK_NULL_HANDLE, "Instance not valid");
 		QueryGraphicsProcessingUnits();
 	}
 
@@ -256,18 +267,18 @@ namespace Immortal
 #if defined( IM_DEBUG )
 		if (mDebugUtilsMessengers)
 		{
-			auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(mHandle, "vkDestroyDebugUtilsMessengerEXT");
-			vkDestroyDebugUtilsMessengerEXT(mHandle, mDebugUtilsMessengers, nullptr);
+			auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(handle, "vkDestroyDebugUtilsMessengerEXT");
+			vkDestroyDebugUtilsMessengerEXT(handle, mDebugUtilsMessengers, nullptr);
 		}
 		if (mDebugReportCallback)
 		{
-			auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(mHandle, "vkDestroyDebugReportCallbackEXT");
-			vkDestroyDebugReportCallbackEXT(mHandle, mDebugReportCallback, nullptr);
+			auto vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(handle, "vkDestroyDebugReportCallbackEXT");
+			vkDestroyDebugReportCallbackEXT(handle, mDebugReportCallback, nullptr);
 		}
 #endif
-		if (mHandle)
+		if (handle)
 		{
-			vkDestroyInstance(mHandle, nullptr);
+			vkDestroyInstance(handle, nullptr);
 		}
 	}
 
@@ -278,12 +289,12 @@ namespace Immortal
 	void VulkanInstance::QueryGraphicsProcessingUnits() NOEXCEPT
 	{
 		UINT32 physicalDeviceCount{ 0 };
-		Vulkan::Check(vkEnumeratePhysicalDevices(mHandle, &physicalDeviceCount, nullptr));
+		Vulkan::Check(vkEnumeratePhysicalDevices(handle, &physicalDeviceCount, nullptr));
 
 		IM_CORE_ASSERT(physicalDeviceCount >= 1, "Couldn't find a physical device that supports Vulkan.");
 
 		std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-		Vulkan::Check(vkEnumeratePhysicalDevices(mHandle, &physicalDeviceCount, physicalDevices.data()));
+		Vulkan::Check(vkEnumeratePhysicalDevices(handle, &physicalDeviceCount, physicalDevices.data()));
 
 		for (auto &d : physicalDevices)
 		{
@@ -315,11 +326,7 @@ namespace Immortal
 			}) != mEnabledExtensions.end();
 	}
 
-#if  IMMORTAL_CHECK_DEBUG
-	/**
-     * @brief It is what it is literally.
-     */
-	bool VulkanInstance::CheckValidationLayerSupport() NOEXCEPT
+	bool VulkanInstance::CheckValidationLayerSupport()
 	{
 		UINT32 layerInstanceExtensionCount;
 		Vulkan::Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, nullptr));
@@ -338,5 +345,4 @@ namespace Immortal
 		}
 		return false;
 	}
-#endif
 }

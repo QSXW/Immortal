@@ -1,6 +1,9 @@
 #include "impch.h"
 #include "VulkanCommon.h"
 
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
+
 namespace Immortal
 {
 	namespace Vulkan

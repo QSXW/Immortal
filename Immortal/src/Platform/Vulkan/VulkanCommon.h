@@ -1,14 +1,12 @@
 #pragma once
 
-#define VOLK_IMPLEMENTATION
 #include "volk.h"
-#include <vulkan/vulkan.h>
 #include "vk_mem_alloc.h"
 #include "ImmortalCore.h"
 
 namespace Immortal
 {
-#define DefineGetHandleFunc(Type) Type &Handle() NOEXCEPT { return mHandle; }
+#define DefineGetHandleFunc(Type) Type &Handle() NOEXCEPT { return handle; }
 
 	namespace Vulkan
 	{

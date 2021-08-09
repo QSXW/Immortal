@@ -74,7 +74,7 @@ namespace Immortal
 	private:
 		VulkanDevice &mDevice;
 
-		VkImage mHandle{ VK_NULL_HANDLE };
+		VkImage handle{ VK_NULL_HANDLE };
 
 		VmaAllocation mMemory{ VK_NULL_HANDLE };
 

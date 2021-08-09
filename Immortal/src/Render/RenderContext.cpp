@@ -21,6 +21,5 @@ namespace Immortal {
 			IM_CORE_ERROR("Not support api");
 			return nullptr;
 		}
-		
 	}
 }

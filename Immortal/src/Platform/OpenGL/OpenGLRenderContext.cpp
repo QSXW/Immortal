@@ -7,14 +7,14 @@
 namespace Immortal {
 
 	OpenGLRenderContext::OpenGLRenderContext(RenderContext::Description &desc)
-		: mHandle(static_cast<GLFWwindow*>(desc.WindowHandle))
+		: handle(static_cast<GLFWwindow*>(desc.WindowHandle))
 	{
-		IM_CORE_ASSERT(mHandle, "Window Handle is null!")
+		IM_CORE_ASSERT(handle, "Window Handle is null!")
 	}
 
 	void OpenGLRenderContext::Init()
 	{
-		glfwMakeContextCurrent(mHandle);
+		glfwMakeContextCurrent(handle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		IM_CORE_ASSERT(status, "Failed to initialize Glad!")
 
@@ -29,7 +29,7 @@ namespace Immortal {
 
 	void OpenGLRenderContext::SwapBuffers()
 	{
-		glfwSwapBuffers(mHandle);
+		glfwSwapBuffers(handle);
 	}
 
 }

@@ -50,7 +50,7 @@ namespace Immortal
 	private:
 		VulkanDevice &mDevice;
 
-		VkQueue mHandle{ VK_NULL_HANDLE };
+		VkQueue handle{ VK_NULL_HANDLE };
 
 		UINT32 mFamilyIndex = 0;
 

@@ -1,0 +1,52 @@
+Scene: ""
+Entities:
+  - Entity: 18054007
+    TagComponent:
+      Tag: Left
+    TransformComponent:
+      Position: [-0.354999989, 0, 0.349999994]
+      Rotation: [0, -0.785398185, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 0, 0.949807167, 1]
+      TextureAssetPath: ""
+      TilingFactor: 1
+  - Entity: 18054007
+    TagComponent:
+      Tag: Right
+    TransformComponent:
+      Position: [0.351999998, 0, 0.349999994]
+      Rotation: [0, 0.785398185, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.54842025, 0, 0.586872578, 1]
+      TextureAssetPath: ""
+      TilingFactor: 1
+  - Entity: 18054007
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [-0.0500000007, 1.70000005, 2.8499999]
+      Rotation: [-0.593411922, -0.0174532924, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 90
+        PerspectiveNear: 0.00999999978
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+  - Entity: 18054007
+    TagComponent:
+      Tag: Top
+    TransformComponent:
+      Position: [0, 0.5, 0]
+      Rotation: [1.57079637, 0.785398185, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.876447856, 0, 0.834712803, 1]
+      TextureAssetPath: ""
+      TilingFactor: 1

@@ -95,7 +95,7 @@ namespace Immortal
 	private:
 		VulkanDevice &mDevice;
 		VkSurfaceKHR mSurface{ VK_NULL_HANDLE };
-		VkSwapchainKHR mHandle{ VK_NULL_HANDLE };
+		VkSwapchainKHR handle{ VK_NULL_HANDLE };
 
 		std::vector<VkImage> mImages;
 		std::vector<VkSurfaceFormatKHR> mSurfaceFormats{};

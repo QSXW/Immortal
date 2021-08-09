@@ -33,7 +33,7 @@ namespace Immortal
 
 		VulkanImage *mImage{};
 
-		VkImageView mHandle{ VK_NULL_HANDLE };
+		VkImageView handle{ VK_NULL_HANDLE };
 
 		VkFormat mFormat{};
 

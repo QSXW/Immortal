@@ -13,13 +13,13 @@ namespace Immortal {
 	public:
 		Entity() = default;
 		Entity(entt::entity handle, Scene *scene)
-			: mHandle(handle), mScene(scene)
+			: handle(handle), mScene(scene)
 		{
 
 		}
 
 		Entity(int handle, Scene *scene)
-			: mHandle(entt::entity(handle)), mScene(scene)
+			: handle(entt::entity(handle)), mScene(scene)
 		{
 
 		}
@@ -29,7 +29,7 @@ namespace Immortal {
 		template <class T>
 		void RemoveComponent()
 		{
-			mScene->mRegistry.remove<T>(mHandle);
+			mScene->mRegistry.remove<T>(handle);
 		}
 
 		template <class T, class... Args>
@@ -40,19 +40,19 @@ namespace Immortal {
 				IM_CORE_WARN("Add component to a enity which alread has an identical component. The previous one would be remove.");
 				RemoveComponent<T>();
 			}
-			return mScene->mRegistry.emplace<T>(mHandle, std::forward<Args>(args)...);
+			return mScene->mRegistry.emplace<T>(handle, std::forward<Args>(args)...);
 		}
 
 		template <class T>
 		T &GetComponent() const
 		{
-			return mScene->mRegistry.get<T>(mHandle);
+			return mScene->mRegistry.get<T>(handle);
 		}
 
 		template <class T>
 		bool HasComponent()
 		{
-			return mScene->mRegistry.has<T>(mHandle);
+			return mScene->mRegistry.has<T>(handle);
 		}
 
 		TransformComponent &Transform() 
@@ -67,22 +67,22 @@ namespace Immortal {
 
 		operator uint64_t() const
 		{
-			return (uint64_t)mHandle;
+			return (uint64_t)handle;
 		}
 
 		operator entt::entity() const
 		{
-			return mHandle;
+			return handle;
 		}
 
 		operator bool() const
 		{
-			return uint64_t(mHandle) && mScene;
+			return uint64_t(handle) && mScene;
 		}
 
 		bool operator==(const Entity &other) const
 		{
-			return mHandle == other.mHandle && mScene == other.mScene;
+			return handle == other.handle && mScene == other.mScene;
 		}
 
 		bool operator!=(const Entity &other) const
@@ -91,7 +91,7 @@ namespace Immortal {
 		}
 
 	private:
-		entt::entity mHandle{ entt::null };
+		entt::entity handle{ entt::null };
 		Scene *mScene{ nullptr };
 
 		friend class Scene;

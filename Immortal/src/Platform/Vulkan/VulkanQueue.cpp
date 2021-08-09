@@ -12,7 +12,7 @@ namespace Immortal
 		mCanPresent{ canPresent },
 		mProperties{ properties }
 	{
-		vkGetDeviceQueue(device.Handle(), familyIndex, index, &mHandle);
+		vkGetDeviceQueue(device.Handle(), familyIndex, index, &handle);
 	}
 
 	VulkanQueue::VulkanQueue(VulkanQueue && other) NOEXCEPT :

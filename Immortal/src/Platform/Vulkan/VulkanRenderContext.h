@@ -25,7 +25,7 @@ namespace Immortal
 		void Prepare(size_t threadCount = 1, VulkanRenderTarget::CreateFunc func = VulkanRenderTarget::DefaultCreateFunc);
 
 	private:
-		void *mHandle;
+		void *handle;
 		Unique<VulkanInstance>  mInstance;
 		Unique<VulkanDevice>    mDevice;
 		Unique<VulkanSwapchain> mSwapchain;
@@ -50,6 +50,7 @@ namespace Immortal
 
 		size_t mThreadCount{ 1 };
 	public:
+		static VkResult Status;
 		static std::unordered_map<const char *, bool> InstanceExtensions;
 		static std::unordered_map<const char *, bool> DeviceExtensions;
 	};

@@ -15,7 +15,7 @@ namespace Immortal {
 		__forceinline void SwapBuffers() override;
 
 	private:
-		GLFWwindow* mHandle;
+		GLFWwindow* handle;
 	};
 
 }

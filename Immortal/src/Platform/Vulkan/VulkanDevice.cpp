@@ -123,7 +123,7 @@ namespace Immortal
 		createInfo.ppEnabledExtensionNames = mEnabledExtensions.data();
 		createInfo.pEnabledFeatures        = &gpu.RequestedFeatures;
 
-		Vulkan::Check(vkCreateDevice(gpu.Handle(), &createInfo, nullptr, &mHandle));
+		Vulkan::Check(vkCreateDevice(gpu.Handle(), &createInfo, nullptr, &handle));
 
 		mQueues.resize(propsCount);
 		for (UINT32 queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
@@ -160,7 +160,7 @@ namespace Immortal
 		// @required
 		VmaAllocatorCreateInfo allocatorInfo{};
 		allocatorInfo.physicalDevice = mGraphicsProcessingUnit.Handle();
-		allocatorInfo.device = mHandle;
+		allocatorInfo.device = handle;
 		allocatorInfo.instance = mGraphicsProcessingUnit.Instance.Handle();
 
 		if (mHasBufferDeviceAddressName)
@@ -172,7 +172,6 @@ namespace Immortal
 		{
 			allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
 
-			VkDevice &handle = mHandle;
 			auto vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vkGetDeviceProcAddr(handle, "vkGetBufferMemoryRequirements2KHR");
 			auto vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(handle, "vkGetImageMemoryRequirements2KHR");
 			vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
@@ -248,7 +247,7 @@ namespace Immortal
 		};
 
 		Vulkan::IfNotNullThen<VmaAllocator, DestroyVmaAllocator>(mMemoryAllocator);
-		Vulkan::IfNotNullThen(vkDestroyDevice, mHandle);
+		Vulkan::IfNotNullThen(vkDestroyDevice, handle);
 	}
 
 	bool VulkanDevice::IsExtensionSupport(const char * extension) NOEXCEPT

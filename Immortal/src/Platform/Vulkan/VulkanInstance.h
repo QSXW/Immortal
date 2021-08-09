@@ -30,15 +30,13 @@ namespace Immortal
 
 		bool IsEnabled(const char *extension) const NOEXCEPT;
 
-#if defined( IM_DEBUG )
-		bool CheckValidationLayerSupport() NOEXCEPT;
-#endif
+		bool CheckValidationLayerSupport();
 
 	private:
-		VkInstance mHandle{ VK_NULL_HANDLE };
+		VkInstance handle{ VK_NULL_HANDLE };
 		std::vector<const char *> mEnabledExtensions{};
 
-#if defined ( IM_DEBUG ) || defined ( VKB_VALIDATION_LAYERS )
+#if defined ( _DEBUG ) || defined ( VKB_VALIDATION_LAYERS )
 		VkDebugUtilsMessengerEXT mDebugUtilsMessengers{ VK_NULL_HANDLE };
 		VkDebugReportCallbackEXT mDebugReportCallback{ VK_NULL_HANDLE };
 #endif

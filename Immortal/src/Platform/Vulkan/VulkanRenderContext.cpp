@@ -8,6 +8,8 @@
 
 namespace Immortal
 {
+	VkResult VulkanRenderContext::Status = VK_NOT_READY;
+
 	std::unordered_map<const char *, bool> VulkanRenderContext::InstanceExtensions{
 		{ IMMORTAL_PLATFORM_SURFACE, false }
 	};
@@ -28,7 +30,7 @@ namespace Immortal
 	 * an extension to inteface with the window system.
 	 */
 	VulkanRenderContext::VulkanRenderContext(RenderContext::Description &desc)
-		: mHandle(desc.WindowHandle)
+		: handle(desc.WindowHandle)
 	{
 		static std::vector<const char *> validationLayers = {
 #if			IMMORTAL_CHECK_DEBUG
@@ -42,7 +44,6 @@ namespace Immortal
 		};
 
 		mInstance = MakeUnique<VulkanInstance>(Application::Name(), InstanceExtensions, validationLayers);
-
 		this->CreateSurface();
 
 		auto &gpu = mInstance->SuitableGraphicsProcessingUnit();
@@ -64,7 +65,6 @@ namespace Immortal
 
 	void VulkanRenderContext::Init()
 	{
-		Vulkan::Check(volkInitialize());
 		mPresentModePriorities = {
 			VK_PRESENT_MODE_MAILBOX_KHR,
 			VK_PRESENT_MODE_IMMEDIATE_KHR,
@@ -89,13 +89,13 @@ namespace Immortal
 
 	void VulkanRenderContext::CreateSurface()
 	{
-		if (mInstance->Handle() == VK_NULL_HANDLE && !mHandle)
+		if (mInstance->Handle() == VK_NULL_HANDLE && !handle)
 		{
 			mSurface = VK_NULL_HANDLE;
 			return;
 		}
 
-		Vulkan::Check(glfwCreateWindowSurface(mInstance->Handle(), static_cast<GLFWwindow *>(mHandle), nullptr, &mSurface));
+		Vulkan::Check(glfwCreateWindowSurface(mInstance->Handle(), static_cast<GLFWwindow *>(handle), nullptr, &mSurface));
 	}
 
 	void VulkanRenderContext::Prepare(size_t threadCount, VulkanRenderTarget::CreateFunc CreateRenderTargetfunc)
