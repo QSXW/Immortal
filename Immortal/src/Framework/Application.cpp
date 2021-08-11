@@ -29,7 +29,6 @@ namespace Immortal {
 		Renderer::Init();
 		mGuiLayer = GuiLayer::Create();
 		PushOverlay(mGuiLayer);
-
 		mTimer.Start();
 	}
 

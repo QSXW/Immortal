@@ -13,6 +13,8 @@
 #include "Framework/Log.h"
 #include "ImGui/GuiLayer.h"
 #include "ImGui/ImGuizmo.h"
+#include "ImGui/ui.h"
+
 #include "Framework/Input.h"
 
 #include "Utils/PlatformUtils.h"

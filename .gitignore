@@ -8,6 +8,9 @@
 /VulkanSandbox/assets
 /VulkanSanbox/assets
 
+/3rdparty/vulkan*
+/3rdparty/opencv*
+
 # Misc
 *bin-int*
 

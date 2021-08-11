@@ -1,0 +1,3 @@
+C:/SDK/C/Immortal/3rdparty/GLFW/out/build/x64-Debug/CMakeFiles/CMakeTmp/CMakeFiles/cmTC_8ce97.dir
+C:/SDK/C/Immortal/3rdparty/GLFW/out/build/x64-Debug/CMakeFiles/CMakeTmp/CMakeFiles/edit_cache.dir
+C:/SDK/C/Immortal/3rdparty/GLFW/out/build/x64-Debug/CMakeFiles/CMakeTmp/CMakeFiles/rebuild_cache.dir
