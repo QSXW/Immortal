@@ -33,6 +33,3 @@ Immortal::Application* Immortal::CreateApplication()
 	RendererAPI::SetAPI(RendererAPI::Type::VulKan);
 	return new VulkanSample();
 }
-
-
-

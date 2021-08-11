@@ -26,9 +26,9 @@ namespace Immortal {
 		mWindow->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));
 		mWindow->SetVSync(false);
 
-		// Renderer::Init();
-		//mGuiLayer = GuiLayer::Create();
-		//PushOverlay(mGuiLayer);
+		Renderer::Init();
+		mGuiLayer = GuiLayer::Create();
+		PushOverlay(mGuiLayer);
 
 		mTimer.Start();
 	}
@@ -118,6 +118,4 @@ namespace Immortal {
 
 		return mMinimized;
 	}
-
-
 }

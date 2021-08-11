@@ -239,15 +239,14 @@ set(PROJECT_FILES
     ${SERIALIZER_FILES}
     ${UTILS_FILES})
 
-message(${PROJECT_FILES})
+source_group("\\" FILES ${PROJECT_FILES})
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_FILES})
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/std:c++17>)
-else()
-	target_compile_options(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>)
-endif()
+target_sources(${PROJECT_NAME}
+    PRIVATE
+        ${PROJECT_FILES}
+    )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

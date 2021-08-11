@@ -21,6 +21,5 @@ namespace Immortal {
 	private:
 		Ref<Scene> mScene;
 	};
-
 }
 
