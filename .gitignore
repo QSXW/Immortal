@@ -10,7 +10,6 @@
 
 # Misc
 *bin-int*
-/3rdparty*
 
 # cmake
 /build*
