@@ -19,15 +19,45 @@ namespace Immortal {
 
 		static Ref<spdlog::logger>& GetCoreLogger()
 		{ 
-			return sCoreLogger; 
+			return logger; 
 		}
 		static Ref<spdlog::logger>& GetClientLogger()
 		{ 
 			return sClientLogger;
 		}
 
+		template <class... Args>
+		static constexpr inline void Warn(Args&& ... args)
+		{
+			logger->warn(std::forward<Args>(args)...);
+		}
+
+		template <class... Args>
+		static constexpr inline void Info(Args&& ... args)
+		{
+			logger->info(std::forward<Args>(args)...);
+		}
+
+		template <class... Args>
+		static constexpr inline void Debug(Args&& ... args)
+		{
+			logger->debug(std::forward<Args>(args)...);
+		}
+
+		template <class... Args>
+		static constexpr inline void Error(Args&& ... args)
+		{
+			logger->error(std::forward<Args>(args)...);
+		}
+
+		template <class... Args>
+		static constexpr inline void Critical(Args&& ... args)
+		{
+			logger->critical(std::forward<Args>(args)...);
+		}
+
 	private:
-		static Ref<spdlog::logger> sCoreLogger;
+		static Ref<spdlog::logger> logger;
 		static Ref<spdlog::logger> sClientLogger;
 	};
 
@@ -71,3 +101,4 @@ namespace Immortal {
 #elif defined( IMMORTAL_USE_BILINGUAL_LOG )
 #    define LOGB(CN, EN) EN "(" CN ")"
 #endif
+

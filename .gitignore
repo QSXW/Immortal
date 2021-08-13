@@ -1,18 +1,5 @@
-/ImmortalEditor/std
-/.vs/Immortal/v16/ipch
-/RuntimeTest
-/bin
-/bin-int
-/Sandbox
-/lib
-/VulkanSandbox/assets
-/VulkanSanbox/assets
-
 /3rdparty/vulkan*
 /3rdparty/opencv*
-
-# Misc
-*bin-int*
 
 # cmake
 /build*

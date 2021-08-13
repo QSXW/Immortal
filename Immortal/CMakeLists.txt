@@ -15,7 +15,7 @@ set(FRAMEWORK_FILES
     src/Framework/Application.h
     src/Framework/Assert.h
     src/Framework/Core.cpp
-    src/Framework/EntryPoint.h
+    src/Framework/Main.h
     src/Framework/Input.h
     src/Framework/KeyCodes.h
     src/Framework/Layer.cpp
@@ -77,32 +77,32 @@ set(D3D12_FILES
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
    src/Platform/Vulkan/volk.h
-   src/Platform/Vulkan/VulkanCommon.cpp
-   src/Platform/Vulkan/VulkanCommon.h
-   src/Platform/Vulkan/VulkanDevice.cpp
-   src/Platform/Vulkan/VulkanDevice.h
+   src/Platform/Vulkan/vkcommon.cpp
+   src/Platform/Vulkan/vkcommon.h
+   src/Platform/Vulkan/Device.cpp
+   src/Platform/Vulkan/Device.h
    src/Platform/Vulkan/VulkanFramebuffer.cpp
    src/Platform/Vulkan/VulkanFramebuffer.h
    src/Platform/Vulkan/VulkanGuiLayer.cpp
    src/Platform/Vulkan/VulkanGuiLayer.h
-   src/Platform/Vulkan/VulkanImage.cpp
-   src/Platform/Vulkan/VulkanImage.h
-   src/Platform/Vulkan/VulkanImageView.cpp
-   src/Platform/Vulkan/VulkanImageView.h
-   src/Platform/Vulkan/VulkanInstance.cpp
-   src/Platform/Vulkan/VulkanInstance.h
-   src/Platform/Vulkan/VulkanPhysicalDevice.cpp
-   src/Platform/Vulkan/VulkanPhysicalDevice.h
-   src/Platform/Vulkan/VulkanQueue.cpp
-   src/Platform/Vulkan/VulkanQueue.h
-   src/Platform/Vulkan/VulkanRenderContext.cpp
-   src/Platform/Vulkan/VulkanRenderContext.h
+   src/Platform/Vulkan/Image.cpp
+   src/Platform/Vulkan/Image.h
+   src/Platform/Vulkan/ImageView.cpp
+   src/Platform/Vulkan/ImageView.h
+   src/Platform/Vulkan/Instance.cpp
+   src/Platform/Vulkan/Instance.h
+   src/Platform/Vulkan/PhysicalDevice.cpp
+   src/Platform/Vulkan/PhysicalDevice.h
+   src/Platform/Vulkan/Queue.cpp
+   src/Platform/Vulkan/Queue.h
+   src/Platform/Vulkan/RenderContext.cpp
+   src/Platform/Vulkan/RenderContext.h
    src/Platform/Vulkan/VulkanRenderer.cpp
    src/Platform/Vulkan/VulkanRenderer.h
-   src/Platform/Vulkan/VulkanRenderTarget.cpp
-   src/Platform/Vulkan/VulkanRenderTarget.h
-   src/Platform/Vulkan/VulkanSwapchain.cpp
-   src/Platform/Vulkan/VulkanSwapchain.h)
+   src/Platform/Vulkan/RenderTarget.cpp
+   src/Platform/Vulkan/RenderTarget.h
+   src/Platform/Vulkan/Swapchain.cpp
+   src/Platform/Vulkan/Swapchain.h)
 
 set(OPENGL_FILES
     src/Platform/OpenGL/OpenGLBuffer.cpp

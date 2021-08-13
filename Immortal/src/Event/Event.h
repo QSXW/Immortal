@@ -40,7 +40,7 @@ namespace Immortal {
 		virtual EventType Type() const = 0;
 		virtual const char *Name() const = 0;
 		virtual int GetCategoryFlags() const = 0;
-		virtual std::string ToString() const { return Name(); }
+		virtual std::string Stringify() const { return Name(); }
 
 		inline bool IsInCategory(EventCategory category)
 		{
@@ -77,7 +77,7 @@ namespace Immortal {
 
 	inline std::ostream& operator<<(std::ostream &os, const Event &e)
 	{
-		return os << e.ToString();
+		return os << e.Stringify();
 	}
 
 }

@@ -1,6 +1,6 @@
 #include "Immortal.h"
 #include "EditorLayer.h"
-#include "Framework/EntryPoint.h"
+#include "Framework/Main.h"
 
 
 class Editor : public Immortal::Application

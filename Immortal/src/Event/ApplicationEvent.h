@@ -13,7 +13,7 @@ namespace Immortal {
 		inline uint32_t Width() const { return m_width; }
 		inline uint32_t Height() const { return m_height; }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s.append("WindowResizeEvent: ").append(std::to_string(m_width)).append(", ").append(std::to_string(m_height));

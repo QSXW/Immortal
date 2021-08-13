@@ -27,7 +27,7 @@ namespace Immortal {
 		
 		uint16_t RepeatCount() const { return m_repeatCount; }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s.append("KeyPressedEvent: ").append(std::to_string(m_keyCode)).append(" (").append(std::to_string(m_repeatCount)).append(" repeats");
@@ -45,7 +45,7 @@ namespace Immortal {
 		KeyReleasedEvent(const int keyCode)
 			: KeyEvent(keyCode) { }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s.append("KeyReleasedEvent: ").append(std::to_string(m_keyCode));
@@ -60,7 +60,7 @@ namespace Immortal {
 		KeyTypedEvent(const int keyCode)
 			: KeyEvent(keyCode) { }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s.append("KeyTypedEvent: ").append(std::to_string(m_keyCode));

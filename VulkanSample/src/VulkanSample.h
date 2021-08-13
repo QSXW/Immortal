@@ -1,6 +1,6 @@
 #pragma once
 #include <Immortal.h>
-#include "Framework/EntryPoint.h"
+#include "Framework/Main.h"
 
 using namespace Immortal;
 

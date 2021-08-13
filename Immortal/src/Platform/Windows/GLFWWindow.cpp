@@ -185,8 +185,6 @@ namespace Immortal
 
 	void GLFWWindow::OnUpdate()
 	{
-		// Check Events
-	
 		mContext->SwapBuffers();
 		glfwPollEvents();
 	}

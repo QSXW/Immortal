@@ -6,7 +6,7 @@
 
 namespace Immortal {
 
-	Ref<spdlog::logger> Log::sCoreLogger;
+	Ref<spdlog::logger> Log::logger;
 	Ref<spdlog::logger> Log::sClientLogger;
 
 	void Log::Init()
@@ -18,10 +18,10 @@ namespace Immortal {
 		logSinks[0]->set_pattern("%n: [%^%l%$][%T]: %v");
 		logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-		sCoreLogger = std::make_shared<spdlog::logger>("Immortal", begin(logSinks), end(logSinks));
-		spdlog::register_logger(sCoreLogger);
-		sCoreLogger->set_level(spdlog::level::trace);
-		sCoreLogger->flush_on(spdlog::level::trace);
+		logger = std::make_shared<spdlog::logger>("Immortal", begin(logSinks), end(logSinks));
+		spdlog::register_logger(logger);
+		logger->set_level(spdlog::level::trace);
+		logger->flush_on(spdlog::level::trace);
 
 		sClientLogger = std::make_shared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
 		spdlog::register_logger(sClientLogger);

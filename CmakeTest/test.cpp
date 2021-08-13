@@ -21,7 +21,7 @@
 
 #include <Immortal.h>
 
-#include <Platform/Vulkan/VulkanCommon.h>
+#include <Platform/Vulkan/vkcommon.h>
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/assembly.h>

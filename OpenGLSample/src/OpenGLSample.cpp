@@ -1,6 +1,6 @@
 #include "Immortal.h"
 #include "OpenGLSample2D.h"
-#include "Framework/EntryPoint.h"
+#include "Framework/Main.h"
 
 class ImageShowLayer : public Immortal::Layer
 {

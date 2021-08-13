@@ -14,7 +14,7 @@ namespace Immortal {
 		float GetX() const NOEXCEPT { return mMouseX; }
 		float GetY() const NOEXCEPT { return mMouseY; }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s += "MouseMovedEvent: " + std::to_string(mMouseX) + ", " + std::to_string(mMouseY);
@@ -38,7 +38,7 @@ namespace Immortal {
 		float GetXOffset() const NOEXCEPT { return mXOffset; }
 		float GetYOffset() const NOEXCEPT { return mYOffset; }
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s += "MouseScrolledEvent: " + std::to_string(mXOffset) + ", " + std::to_string(mYOffset);
@@ -72,7 +72,7 @@ namespace Immortal {
 		MouseButtonPressedEvent(const MouseCode button)
 			: MouseButtonEvent(button) {}
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s += "MouseButtonPressedEvent: " + std::to_string((int)mButton);
@@ -88,7 +88,7 @@ namespace Immortal {
 		MouseButtonReleasedEvent(const MouseCode button)
 			: MouseButtonEvent(button) {}
 
-		std::string ToString() const override
+		std::string Stringify() const override
 		{
 			std::string s;
 			s += "MouseButtonReleasedEvent: " + std::to_string((int)mButton);

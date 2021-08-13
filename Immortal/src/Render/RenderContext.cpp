@@ -3,7 +3,7 @@
 
 #include "Renderer.h"
 #include "Platform/OpenGL/OpenGLRenderContext.h"
-#include "Platform/Vulkan/VulkanRenderContext.h"
+#include "Platform/Vulkan/RenderContext.h"
 
 namespace Immortal {
 
@@ -15,7 +15,7 @@ namespace Immortal {
 			return MakeUnique<OpenGLRenderContext>(desc);
 
 		case RendererAPI::Type::VulKan:
-			return MakeUnique<VulkanRenderContext>(desc);
+			return MakeUnique<Vulkan::RenderContext>(desc);
 
 		default:
 			IM_CORE_ERROR("Not support api");
