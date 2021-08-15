@@ -23,7 +23,7 @@ namespace Immortal {
 		case GL_DEBUG_SEVERITY_NOTIFICATION: IM_CORE_TRACE(message); return;
 		}
 
-		IM_CORE_ASSERT(false, "Unknown severity level!");
+		SLASSERT(false, "Unknown severity level!");
 	}
 
 	void OpenGLRenderer::Init()

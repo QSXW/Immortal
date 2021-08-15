@@ -8,6 +8,7 @@
 #include "Instance.h"
 #include "PhysicalDevice.h"
 #include "Queue.h"
+#include "CommandPool.h"
 
 namespace Immortal
 {
@@ -25,13 +26,13 @@ namespace Vulkan
 	class Device
 	{
 	public:
+
+	public:
 		Device() = default;
-		Device(PhysicalDevice& gpu, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions = {});
+		Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions = {});
 		~Device();
 
-		DefineGetHandleFunc(VkDevice)
-
-			UINT32 QueueFailyIndex(VkQueueFlagBits queueFlag);
+		UINT32 QueueFailyIndex(VkQueueFlagBits queueFlag);
 
 		void CheckExtensionSupported() NOEXCEPT;
 
@@ -39,17 +40,33 @@ namespace Vulkan
 
 		bool IsEnabled(const char* extension) const NOEXCEPT;
 
-		const Queue& FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
+		Queue& FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
 		const Queue& SuitableGraphicsQueue();
-
 		//@inline
 	public:
-		NODISCARD PhysicalDevice& GraphicsProcessingUnit() NOEXCEPT
+		VkDevice &Handle()
 		{
-			return mGraphicsProcessingUnit;
+			return handle;
 		}
 
-		void WaitIdle() NOEXCEPT
+		template <class T>
+		T& Get()
+		{
+			if constexpr (std::is_same_v<T, VkDevice>)
+			{
+				return handle;
+			}
+			if constexpr (std::is_same_v<T, PhysicalDevice>)
+			{
+				return physicalDevice;
+			}
+			if constexpr (std::is_same_v<T, Queue>)
+			{
+				return queues;
+			}
+		}
+
+		void WaitIdle()
 		{
 			vkDeviceWaitIdle(handle);
 		}
@@ -60,24 +77,24 @@ namespace Vulkan
 		}
 
 	private:
-		PhysicalDevice& mGraphicsProcessingUnit;
+		PhysicalDevice &physicalDevice;
 
-		VkSurfaceKHR mSurface{ VK_NULL_HANDLE };
+		VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
 		VkDevice handle{ VK_NULL_HANDLE };
 
 		std::vector<VkExtensionProperties> mDeviceExtensions;
 
-		std::vector<const char*> mEnabledExtensions{};
+		std::vector<const char*> enabledExtensions{};
 
 		VmaAllocator mMemoryAllocator{ VK_NULL_HANDLE };
 
-		std::vector<std::vector<Queue>> mQueues;
+		std::vector<std::vector<Queue>> queues;
+		Unique<CommandPool> commandPool;
 
 		bool mHasGetMemoryRequirements = false;
 		bool mHasDedicatedAllocation = false;
 		bool mHasBufferDeviceAddressName = false;
-
 	};
 }
 }

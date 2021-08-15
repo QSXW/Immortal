@@ -2,6 +2,7 @@
 #include "Instance.h"
 
 #include "Device.h"
+#include "PhysicalDevice.h"
 #include "RenderContext.h"
 
 namespace Immortal
@@ -9,42 +10,42 @@ namespace Immortal
 namespace Vulkan
 {
 #if IMMORTAL_CHECK_DEBUG
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-		const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
-		void *userData)
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		                                                              VkDebugUtilsMessageTypeFlagsEXT messageType,
+		                                                              const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+		                                                              void *userData)
 	{
-		// Log debug messge
-		if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			IM_CORE_WARN("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+			Log::Warn("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
 		}
-		else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			IM_CORE_ERROR("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+			Log::Error("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
 		}
 
 		return VK_FALSE;
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT /*type*/,
-		uint64_t /*object*/, size_t /*location*/, int32_t /*message_code*/,
-		const char *LayerPrefix, const char *message, void * /*userData*/)
+		                                                uint64_t /*object*/,  size_t /*location*/, int32_t /*message_code*/,
+		                                                const char *layerPrefix, const char *message,void * /*userData*/)
 	{
 		if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 		{
-			IM_CORE_ERROR("{0}: {1}", LayerPrefix, message);
+			Log::Error("{0}: {1}", layerPrefix, message);
 		}
 		else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 		{
-			IM_CORE_WARN("{0}: {1}", LayerPrefix, message);
+			Log::Warn("{0}: {1}", layerPrefix, message);
 		}
 		else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 		{
-			IM_CORE_WARN("{0}: {1}", LayerPrefix, message);
+			Log::Warn("{0}: {1}", layerPrefix, message);
 		}
 		else
 		{
-			IM_CORE_INFO("{0}: {1}", LayerPrefix, message);
+			Log::Info("{0}: {1}", layerPrefix, message);
 		}
 		return VK_FALSE;
 	}
@@ -65,7 +66,7 @@ namespace Vulkan
 			}
 			if (!found)
 			{
-				IM_CORE_ERROR("Validation Layer {} not found", layer);
+				Log::Error("Validation Layer {} not found", layer);
 				return false;
 			}
 		}
@@ -88,7 +89,10 @@ namespace Vulkan
 		}
 	}
 
-#define VkEnableExtension(msg) Log::Info("{0} is available. Enabling it!", msg);
+	static inline void VkEnableExtension(const char *message)
+	{
+		Log::Info("{0} is available. Enabling it!", message);
+	}
 
 	Instance::Instance(const char                                   *applicationName,
 		               const std::unordered_map<const char *, bool> &requiredExtension,
@@ -114,23 +118,26 @@ namespace Vulkan
 			{
 				debugUtils = true;
 				VkEnableExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-				mEnabledExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+				enabledExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 			}
-#endif		
+#endif
 			if (headless && Equals(ext.extensionName, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
 			{
 				headlessExtension = true;
 				VkEnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-				mEnabledExtensions.emplace_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+				enabledExtensions.emplace_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 			}
 
 			/**
-				* @brief VK_KHR_get_physical_device_properties2 is a prerequisite of VK_KHR_performance_query
-				         which will be used for stats gathering where available.
-			*/
+		     * @brief VK_KHR_get_physical_device_properties2 is a prerequisite of
+			 *        VK_KHR_performance_query which will be used for stats gathering
+			 *        where available.
+			 * 
+			 */
 			if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 			{
 				VkEnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+				enabledExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 			}
 		}
 		if (headless && !headlessExtension)
@@ -139,38 +146,39 @@ namespace Vulkan
 		}
 		else
 		{
-			mEnabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
+			enabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
 		}
 
 #if     IMMORTAL_CHECK_DEBUG
 		if (!debugUtils)
 		{
-			mEnabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+			enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 		}
 #endif
 
 		for (auto &ext : requiredExtension)
 		{
 			auto extensionName = ext.first;
-			auto isOptional = ext.second;
+			auto isOptional    = ext.second;
+
 			if (std::find_if(availableExtension.begin(), availableExtension.end(), [&extensionName](VkExtensionProperties &availableExtension)
 				{
-					return Vulkan::Equals(availableExtension.extensionName, extensionName);
+					return Equals(availableExtension.extensionName, extensionName);
 				}) == availableExtension.end())
 			{
 				if (isOptional)
 				{
-					IM_CORE_WARN("Optional instance extension {0} not available, some features may be disabled", extensionName);
+					Log::Warn("Optional instance extension {0} not available, some features may be disabled", extensionName);
 				}
 				else
 				{
-					IM_CORE_ERROR("Required instance extension {0} not available, cannot run", extensionName);
-					IM_CORE_ERROR("Required instance extensions are missing.");
+					Log::Error("Required instance extension {0} not available, cannot run", extensionName);
+					Log::Error("Required instance extensions are missing.");
 				}
 			}
 			else
 			{
-				mEnabledExtensions.emplace_back(extensionName);
+				enabledExtensions.emplace_back(extensionName);
 			}
 		}
 
@@ -207,8 +215,8 @@ namespace Vulkan
 		instanceInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 		instanceInfo.pNext                   = nullptr;
 		instanceInfo.pApplicationInfo        = &appInfo;
-		instanceInfo.enabledExtensionCount   = static_cast<UINT32>(mEnabledExtensions.size());
-		instanceInfo.ppEnabledExtensionNames = mEnabledExtensions.data();
+		instanceInfo.enabledExtensionCount   = static_cast<UINT32>(enabledExtensions.size());
+		instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
 		instanceInfo.enabledLayerCount       = static_cast<UINT32>(requiredValidationLayers.size());
 		instanceInfo.ppEnabledLayerNames     = requiredValidationLayers.data();
 
@@ -229,7 +237,7 @@ namespace Vulkan
 			debugReportCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 			debugReportCreateInfo.pfnCallback = Vulkan::DebugCallback;
 
-			instanceInfo.pNext = &mDebugReportCallback;
+			instanceInfo.pNext = &debugReportCallback;
 		}
 #endif
 
@@ -239,36 +247,35 @@ namespace Vulkan
 #if     IMMORTAL_CHECK_DEBUG
 		if (debugUtils)
 		{
-			IM_CORE_ASSERT(vkCreateDebugUtilsMessengerEXT != nullptr, "");
-			Vulkan::Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &mDebugUtilsMessengers));
+			SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr, "");
+			Vulkan::Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));
 		}
 		else
 		{
-			IM_CORE_ASSERT(vkCreateDebugReportCallbackEXT != nullptr, "");
-			Vulkan::Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &mDebugReportCallback));
+			SLASSERT(vkCreateDebugReportCallbackEXT != nullptr, "");
+			Vulkan::Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &debugReportCallback));
 		}
 #endif
-
-		QueryGraphicsProcessingUnits();
+		QueryPhysicalDevice();
 	}
 
 	Instance::Instance(VkInstance instance)
 		: handle(instance)
 	{
-		IM_CORE_ASSERT(handle != VK_NULL_HANDLE, "Instance not valid");
-		QueryGraphicsProcessingUnits();
+		SLASSERT(handle != VK_NULL_HANDLE, "Instance not valid");
+		QueryPhysicalDevice();
 	}
 
 	Instance::~Instance()
 	{
 #if defined( Debug ) || defined( _DEBUG )
-		if (mDebugUtilsMessengers)
+		if (debugUtilsMessengers)
 		{
-			vkDestroyDebugUtilsMessengerEXT(handle, mDebugUtilsMessengers, nullptr);
+			vkDestroyDebugUtilsMessengerEXT(handle, debugUtilsMessengers, nullptr);
 		}
-		if (mDebugReportCallback)
+		if (debugReportCallback)
 		{
-			vkDestroyDebugReportCallbackEXT(handle, mDebugReportCallback, nullptr);
+			vkDestroyDebugReportCallbackEXT(handle, debugReportCallback, nullptr);
 		}
 #endif
 		if (handle)
@@ -277,44 +284,36 @@ namespace Vulkan
 		}
 	}
 
-	void Instance::QueryGraphicsProcessingUnits() NOEXCEPT
+	void Instance::QueryPhysicalDevice()
 	{
-		UINT32 physicalDeviceCount{ 0 };
-		Check(vkEnumeratePhysicalDevices(handle, &physicalDeviceCount, nullptr));
+		UINT32 count{ 0 };
+		Check(vkEnumeratePhysicalDevices(handle, &count, nullptr));
 
-		IM_CORE_ASSERT(physicalDeviceCount >= 1, "Couldn't find a physical device that supports Vulkan.");
+		SLASSERT(count >= 1, "Couldn't find a physical device that supports Vulkan.");
 
-		std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-		Vulkan::Check(vkEnumeratePhysicalDevices(handle, &physicalDeviceCount, physicalDevices.data()));
+		std::vector<VkPhysicalDevice> physicalDevices{ count };
+		Check(vkEnumeratePhysicalDevices(handle, &count, physicalDevices.data()));
 
-		for (auto &d : physicalDevices)
+		for (auto &pd : physicalDevices)
 		{
-			mGraphicsProcessingUnits.emplace_back(MakeUnique<PhysicalDevice>(*this, d));
+			this->physicalDevices.emplace_back(MakeUnique<PhysicalDevice>(*this, pd));
 		}
 	}
 
-	PhysicalDevice &Instance::SuitableGraphicsProcessingUnit() NOEXCEPT
+	PhysicalDevice &Instance::SuitablePhysicalDevice()
 	{
-		IM_CORE_ASSERT(!mGraphicsProcessingUnits.empty(), LOGB("该主机没有任何可用的显卡", "No gpu??? Unbelievable!"));
+		SLASSERT(!physicalDevices.empty(), "There is no GPU on this device.");
 
-		for (auto &g : mGraphicsProcessingUnits)
+		for (auto &pd : physicalDevices)
 		{
-			if (g->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+			if (pd->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 			{
-				return *g;
+				return *pd;
 			}
 		}
 
-		IM_CORE_WARN("Couldn't find a discrete physical device. Picking default GPU");
-		return *mGraphicsProcessingUnits.at(0);
-	}
-
-	bool Instance::IsEnabled(const char *extension) const NOEXCEPT
-	{
-		return std::find_if(mEnabledExtensions.begin(), mEnabledExtensions.end(), [extension](const char *enabledExtension)
-			{
-				return Vulkan::Equals(extension, enabledExtension);
-			}) != mEnabledExtensions.end();
+		Log::Warn("Couldn't find a discrete physical device. Picking default GPU");
+		return *physicalDevices.at(0);
 	}
 
 	bool Instance::CheckValidationLayerSupport()
@@ -330,7 +329,7 @@ namespace Vulkan
 			if (Vulkan::Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
 			{
 				IM_CORE_INFO(LOGB("{0} 可用. 已启用!", "{0} is available. Enabling it!"), VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-				mEnabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+				enabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 				return true;
 			}
 		}

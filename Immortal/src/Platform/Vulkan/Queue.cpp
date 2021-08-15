@@ -9,20 +9,20 @@ namespace Vulkan
 {
 	Queue::Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index) :
 		device{ device },
-		mFamilyIndex{ familyIndex },
-		mIndex{ index },
-		mCanPresent{ canPresent },
-		mProperties{ properties }
+		familyIndex{ familyIndex },
+		index{ index },
+		presented{ canPresent },
+		properties{ properties }
 	{
 		vkGetDeviceQueue(device.Handle(), familyIndex, index, &handle);
 	}
 
-	Queue::Queue(Queue &&other) NOEXCEPT :
+	Queue::Queue(Queue &&other) :
 		device{ other.device },
-		mFamilyIndex{ other.mFamilyIndex },
-		mIndex{ other.mIndex },
-		mCanPresent{ mCanPresent },
-		mProperties{ mProperties }
+		familyIndex{ other.familyIndex },
+		index{ other.index },
+		presented{ other.presented },
+		properties{ properties }
 	{
 
 	}

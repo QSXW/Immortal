@@ -71,11 +71,12 @@ namespace Vulkan
 			return *pExtension;
 		}
 
-		VkBool32 IsPresentSupported(VkSurfaceKHR surface, UINT32 queueFamilyIndex) NOEXCEPT;
-
-		DefineGetHandleFunc(VkPhysicalDevice)
-
 	public:
+		VkPhysicalDevice &Handle()
+		{
+			return handle;
+		}
+
 		template <class T>
 		T &Get()
 		{
@@ -83,6 +84,13 @@ namespace Vulkan
 			{
 				return instance;
 			}
+		}
+
+		VkBool32 IsPresentSupported(VkSurfaceKHR surface, UINT32 queueFamilyIndex)
+		{
+			VkBool32 presentSupported{ VK_FALSE };
+			Check(vkGetPhysicalDeviceSurfaceSupportKHR(handle, queueFamilyIndex, surface, &presentSupported));
+			return presentSupported;
 		}
 
 	private:

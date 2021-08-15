@@ -32,24 +32,35 @@ namespace Vulkan
 	RenderContext::RenderContext(RenderContext::Description &desc)
 		: handle(desc.WindowHandle)
 	{
-		mInstance = MakeUnique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
-		this->CreateSurface();
+		instance = MakeUnique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
+		CreateSurface();
 
-		auto &gpu = mInstance->SuitableGraphicsProcessingUnit();
-		gpu.RequestedFeatures.samplerAnisotropy = VK_TRUE;
-		gpu.RequestedFeatures.robustBufferAccess = VK_TRUE;
+		auto &physicalDevice = instance->SuitablePhysicalDevice();
+		physicalDevice.HighPriorityGraphicsQueue            = true;
+		physicalDevice.RequestedFeatures.samplerAnisotropy  = VK_TRUE;
+		physicalDevice.RequestedFeatures.robustBufferAccess = VK_TRUE;
 
-		mDevice = MakeUnique<Device>(gpu, mSurface, DeviceExtensions);
-		mQueue = &(mDevice->SuitableGraphicsQueue());
+		if (physicalDevice.Features.textureCompressionASTC_LDR)
+		{
+			physicalDevice.RequestedFeatures.textureCompressionASTC_LDR = VK_TRUE;
+		}
+
+		if (instance->IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
+		{
+			AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+		}
+
+		device = MakeUnique<Device>(physicalDevice, surface, DeviceExtensions);
+		mQueue = &(device->SuitableGraphicsQueue());
 
 		mSurfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
-		mSwapchain = MakeUnique<Swapchain>(*mDevice, mSurface, mSurfaceExtent);
+		mSwapchain = MakeUnique<Swapchain>(*device, surface, mSurfaceExtent);
 	}
 
 	RenderContext::~RenderContext()
 	{
-		vkDestroySurfaceKHR(mInstance->Handle(), mSurface, nullptr);
-		mInstance.release();
+		vkDestroySurfaceKHR(instance->Handle(), surface, nullptr);
+		instance.release();
 	}
 
 	void RenderContext::Init()
@@ -78,18 +89,18 @@ namespace Vulkan
 
 	void RenderContext::CreateSurface()
 	{
-		if (mInstance->Handle() == VK_NULL_HANDLE && !handle)
+		if (instance->Handle() == VK_NULL_HANDLE && !handle)
 		{
-			mSurface = VK_NULL_HANDLE;
+			surface = VK_NULL_HANDLE;
 			return;
 		}
 
-		Vulkan::Check(glfwCreateWindowSurface(mInstance->Handle(), static_cast<GLFWwindow *>(handle), nullptr, &mSurface));
+		Check(glfwCreateWindowSurface(instance->Handle(), static_cast<GLFWwindow *>(handle), nullptr, &surface));
 	}
 
 	void RenderContext::Prepare(size_t threadCount, RenderTarget::CreateFunc CreateRenderTargetfunc)
 	{
-		mDevice->WaitIdle();
+		device->WaitIdle();
 
 		if (mSwapchain)
 		{
@@ -101,7 +112,7 @@ namespace Vulkan
 
 			for (auto &image : mSwapchain->Images())
 			{
-				auto swapchainImage = Image{ *mDevice, image, extent, mSwapchain->Format(), mSwapchain->Usage() };
+				auto swapchainImage = Image{ *device, image, extent, mSwapchain->Format(), mSwapchain->Usage() };
 				auto renderTarget = CreateRenderTargetfunc(std::move(swapchainImage));
 			}
 		}

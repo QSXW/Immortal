@@ -16,7 +16,7 @@ namespace Immortal
 			return CreateScope<DirectWindow>(props);
 		#endif
 	#else
-		IM_CORE_ASSERT(false, "Unknown platform!");
+		SLASSERT(false, "Unknown platform!");
 		return nullptr;
 	#endif
 	}

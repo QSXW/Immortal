@@ -18,7 +18,7 @@ namespace Immortal {
 			case RendererAPI::Type::VulKan:
 				return MakeUnique<VulkanRenderer>();
 			default:
-				IM_CORE_ASSERT(false, "RendererAPI::None is currently not supported!");
+				SLASSERT(false, "RendererAPI::None is currently not supported!");
 				return nullptr;
 		}
 

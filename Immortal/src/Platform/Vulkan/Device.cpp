@@ -11,21 +11,20 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	Device::Device(PhysicalDevice& gpu, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
-		: mGraphicsProcessingUnit(gpu),
-		mSurface(surface)
+	Device::Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
+		: physicalDevice(physicalDevice),
+		  surface(surface)
 	{
-		IM_CORE_INFO("Selected GPU: {0}", gpu.Properties.deviceName);
+		Log::Info("Selected GPU: {0}", physicalDevice.Properties.deviceName);
 
-		UINT32 propsCount = static_cast<UINT32>(gpu.QueueFamilyProperties.size());
-
+		UINT32 propsCount = U32(physicalDevice.QueueFamilyProperties.size());
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
 		std::vector<std::vector<float>>      queueProps(propsCount);
 
 		for (UINT32 index = 0; index < propsCount; index++)
 		{
-			const VkQueueFamilyProperties& prop = gpu.QueueFamilyProperties[index];
-			if (gpu.HighPriorityGraphicsQueue)
+			const VkQueueFamilyProperties& prop = physicalDevice.QueueFamilyProperties[index];
+			if (physicalDevice.HighPriorityGraphicsQueue)
 			{
 				UINT32 graphicsQueueFamily = QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT);
 				if (graphicsQueueFamily == index)
@@ -42,29 +41,26 @@ namespace Vulkan
 			{
 				queueProps[index].resize(prop.queueCount, 0.5f);
 			}
-
-			auto& createInfo = queueCreateInfos[index];
-
-			createInfo.pNext = nullptr;
-			createInfo.queueFamilyIndex = index; // This index corresponds to the index of an element of the pQueueFamilyProperties array that was returned by vkGetPhysicalDeviceQueueFamilyProperties
-			createInfo.queueCount = prop.queueCount; // must be greater than 0
-			createInfo.pQueuePriorities = queueProps[index].data(); //e a valid pointer to an array of queueCount float value, must be between 0.0 and 1.0 inclusive
+			queueCreateInfos[index].pNext            = nullptr;
+			queueCreateInfos[index].queueFamilyIndex = index;
+			queueCreateInfos[index].queueCount       = prop.queueCount;
+			queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
 		}
 
 		// Check extensions to enable Vma dedicated Allocation
 		UINT32 deviceExtensionCount;
-		Vulkan::Check(vkEnumerateDeviceExtensionProperties(gpu.Handle(), nullptr, &deviceExtensionCount, nullptr));
+		Vulkan::Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, nullptr));
 
 		mDeviceExtensions.resize(deviceExtensionCount);
-		Vulkan::Check(vkEnumerateDeviceExtensionProperties(gpu.Handle(), nullptr, &deviceExtensionCount, mDeviceExtensions.data()));
+		Vulkan::Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, mDeviceExtensions.data()));
 
 #if     IMMORTAL_CHECK_DEBUG
 		if (!mDeviceExtensions.empty())
 		{
-			IM_CORE_INFO("Device supports the following extensions: ");
+			Log::Info("Device supports the following extensions: ");
 			for (auto& ext : mDeviceExtensions)
 			{
-				IM_CORE_INFO("  \t{0}", ext.extensionName);
+				Log::Debug("  \t{0}", ext.extensionName);
 			}
 		}
 #endif
@@ -79,7 +75,7 @@ namespace Vulkan
 		{
 			if (IsExtensionSupport(ext.first))
 			{
-				mEnabledExtensions.emplace_back(ext.first);
+				enabledExtensions.emplace_back(ext.first);
 			}
 			else
 			{
@@ -87,12 +83,12 @@ namespace Vulkan
 			}
 		}
 
-		if (!mEnabledExtensions.empty())
+		if (!enabledExtensions.empty())
 		{
-			IM_CORE_INFO("Device supports the following requested extensions:");
-			for (auto& ext : mEnabledExtensions)
+			Log::Info("Device supports the following requested extensions:");
+			for (auto& ext : enabledExtensions)
 			{
-				IM_CORE_INFO("  \t{0}", ext);
+				Log::Info("  \t{0}", ext);
 			}
 		}
 
@@ -103,11 +99,11 @@ namespace Vulkan
 				auto isOptional = requestedExtensions[ext];
 				if (isOptional)
 				{
-					IM_CORE_WARN("Optional device extension {0} not available. Some features may be disabled", ext);
+					Log::Warn("Optional device extension {0} not available. Some features may be disabled", ext);
 				}
 				else
 				{
-					IM_CORE_ERROR("Required device extension {0} not available. Stop running!", ext);
+					Log::Error("Required device extension {0} not available. Stop running!", ext);
 					Vulkan::Check(VK_ERROR_EXTENSION_NOT_PRESENT);
 				}
 			}
@@ -117,53 +113,53 @@ namespace Vulkan
 		// @info flags is reserved for future use.
 		// @warn enableLayer related is deprecated and ignored
 		VkDeviceCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		createInfo.pNext = gpu.LastRequestedExtensionFeature;
-		createInfo.queueCreateInfoCount = Vulkan::ToUINT32(queueCreateInfos.size());
-		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-		createInfo.enabledExtensionCount = Vulkan::ToUINT32(mEnabledExtensions.size());
-		createInfo.ppEnabledExtensionNames = mEnabledExtensions.data();
-		createInfo.pEnabledFeatures = &gpu.RequestedFeatures;
+		createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		createInfo.pNext                   = physicalDevice.LastRequestedExtensionFeature;
+		createInfo.queueCreateInfoCount    = U32(queueCreateInfos.size());
+		createInfo.pQueueCreateInfos       = queueCreateInfos.data();
+		createInfo.enabledExtensionCount   = U32(enabledExtensions.size());
+		createInfo.ppEnabledExtensionNames = enabledExtensions.data();
+		createInfo.pEnabledFeatures        = &physicalDevice.RequestedFeatures;
 
-		Vulkan::Check(vkCreateDevice(gpu.Handle(), &createInfo, nullptr, &handle));
+		Check(vkCreateDevice(physicalDevice.Handle(), &createInfo, nullptr, &handle));
 
-		mQueues.resize(propsCount);
+		queues.resize(propsCount);
 		for (UINT32 queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
 		{
-			const auto& queueFamilyProps = gpu.QueueFamilyProperties[queueFamilyIndex];
-			VkBool32 presentSupported = gpu.IsPresentSupported(mSurface, queueFamilyIndex);
+			const auto& queueFamilyProps = physicalDevice.QueueFamilyProperties[queueFamilyIndex];
+			VkBool32 presentSupported = physicalDevice.IsPresentSupported(surface, queueFamilyIndex);
 
 			for (UINT32 queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
 			{
-				mQueues[queueFamilyIndex].emplace_back(*this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
+				queues[queueFamilyIndex].emplace_back(*this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
 			}
 		}
 
 		// @required
 		VmaVulkanFunctions vmaVulkanFunc{};
-		vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
-		vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
-		vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
-		vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
-		vmaVulkanFunc.vkCreateImage = vkCreateImage;
-		vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
-		vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
-		vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
-		vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
-		vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
-		vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+		vmaVulkanFunc.vkAllocateMemory                    = vkAllocateMemory;
+		vmaVulkanFunc.vkBindBufferMemory                  = vkBindBufferMemory;
+		vmaVulkanFunc.vkBindImageMemory                   = vkBindImageMemory;
+		vmaVulkanFunc.vkCreateBuffer                      = vkCreateBuffer;
+		vmaVulkanFunc.vkCreateImage                       = vkCreateImage;
+		vmaVulkanFunc.vkDestroyBuffer                     = vkDestroyBuffer;
+		vmaVulkanFunc.vkDestroyImage                      = vkDestroyImage;
+		vmaVulkanFunc.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
+		vmaVulkanFunc.vkFreeMemory                        = vkFreeMemory;
+		vmaVulkanFunc.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
+		vmaVulkanFunc.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
 		vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-		vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
-		vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
-		vmaVulkanFunc.vkMapMemory = vkMapMemory;
-		vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
-		vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
+		vmaVulkanFunc.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
+		vmaVulkanFunc.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
+		vmaVulkanFunc.vkMapMemory                         = vkMapMemory;
+		vmaVulkanFunc.vkUnmapMemory                       = vkUnmapMemory;
+		vmaVulkanFunc.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
 
 		// @required
 		VmaAllocatorCreateInfo allocatorInfo{};
-		allocatorInfo.physicalDevice = mGraphicsProcessingUnit.Handle();
-		allocatorInfo.device = handle;
-		allocatorInfo.instance = mGraphicsProcessingUnit.Get<Instance>().Handle();
+		allocatorInfo.physicalDevice = physicalDevice.Handle();
+		allocatorInfo.device         = handle;
+		allocatorInfo.instance       = physicalDevice.Get<Instance>().Handle();
 
 		if (mHasBufferDeviceAddressName)
 		{
@@ -173,32 +169,29 @@ namespace Vulkan
 		if (mHasGetMemoryRequirements && mHasDedicatedAllocation)
 		{
 			allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-
-			auto vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vkGetDeviceProcAddr(handle, "vkGetBufferMemoryRequirements2KHR");
-			auto vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(handle, "vkGetImageMemoryRequirements2KHR");
 			vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-			vmaVulkanFunc.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
+			vmaVulkanFunc.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
 		}
 
 		allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
-		Vulkan::Check(vmaCreateAllocator(&allocatorInfo, &mMemoryAllocator));
+		Check(vmaCreateAllocator(&allocatorInfo, &mMemoryAllocator));
 
 		// @required Command Pool
-
+		commandPool = MakeUnique<CommandPool>(*this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>());
 		// @required Fence Pool
 
 	}
 
 	UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
 	{
-		const auto& queueFamilyProperties = mGraphicsProcessingUnit.QueueFamilyProperties;
+		const auto& queueFamilyProperties = physicalDevice.QueueFamilyProperties;
 
 		// @required Compute Queue
 		if (queueFlag & VK_QUEUE_COMPUTE_BIT)
 		{
-			for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
+			for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
 			{
-				if ((queueFamilyProperties[i].queueFlags & queueFlag) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
+				if ((queueFamilyProperties[i].queueFlags & queueFlag) && !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT))
 				{
 					return i;
 					break;
@@ -206,12 +199,14 @@ namespace Vulkan
 			}
 		}
 
-		// @required Graphics Queue
+		// @required Transfer Queue
 		if (queueFlag & VK_QUEUE_TRANSFER_BIT)
 		{
-			for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
+			for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
 			{
-				if ((queueFamilyProperties[i].queueFlags & queueFlag) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
+				if ((queueFamilyProperties[i].queueFlags & queueFlag) &&
+				   !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
+				   !(queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT))
 				{
 					return i;
 					break;
@@ -219,7 +214,7 @@ namespace Vulkan
 			}
 		}
 
-		for (UINT32 i = 0; i < Vulkan::ToUINT32(queueFamilyProperties.size()); i++)
+		for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
 		{
 			if (queueFamilyProperties[i].queueFlags & queueFlag)
 			{
@@ -228,15 +223,10 @@ namespace Vulkan
 			}
 		}
 
-		IM_CORE_ERROR("Counld not find a matching queue family index");
+		Log::Error("Counld not find a matching queue family index");
 		return 0;
 	}
 
-
-	/**
-	 * @breif Queues are created along with a logical device during vkCreateDevice. All queues associated with a
-	 *  logical device are destroyed when vkDestroyDevice is called on that device
-	 */
 	Device::~Device()
 	{
 		static auto DestroyVmaAllocator = [](VmaAllocator memoryAllocator)
@@ -262,10 +252,10 @@ namespace Vulkan
 
 	bool Device::IsEnabled(const char* extension) const NOEXCEPT
 	{
-		return std::find_if(mEnabledExtensions.begin(), mEnabledExtensions.end(), [extension](const char* enabledExtension)
+		return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const char* enabledExtension)
 			{
 				return Vulkan::Equals(extension, enabledExtension);
-			}) != mEnabledExtensions.end();
+			}) != enabledExtensions.end();
 	}
 
 	void Device::CheckExtensionSupported() NOEXCEPT
@@ -275,23 +265,23 @@ namespace Vulkan
 
 		for (auto& e : mDeviceExtensions)
 		{
-			if (Vulkan::Equals(e.extensionName, "VK_KHR_get_memory_requirements2"))
+			if (Equals(e.extensionName, "VK_KHR_get_memory_requirements2"))
 			{
 				mHasGetMemoryRequirements = true;
 			}
-			if (Vulkan::Equals(e.extensionName, "VK_KHR_dedicated_allocation"))
+			if (Equals(e.extensionName, "VK_KHR_dedicated_allocation"))
 			{
 				mHasDedicatedAllocation = true;
 			}
-			if (Vulkan::Equals(e.extensionName, "VK_KHR_performance_query"))
+			if (Equals(e.extensionName, "VK_KHR_performance_query"))
 			{
 				hasPerformanceQuery = true;
 			}
-			if (Vulkan::Equals(e.extensionName, "VK_EXT_host_query_reset"))
+			if (Equals(e.extensionName, "VK_EXT_host_query_reset"))
 			{
 				hasHostQueryReset = true;
 			}
-			if (Vulkan::Equals(e.extensionName, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+			if (Equals(e.extensionName, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
 			{
 				mHasBufferDeviceAddressName = true;
 			}
@@ -299,31 +289,31 @@ namespace Vulkan
 
 		if (mHasGetMemoryRequirements && mHasDedicatedAllocation)
 		{
-			mEnabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
-			mEnabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
+			enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
+			enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
 
-			IM_CORE_INFO("Dedicated Allocation enabled");
+			Log::Info("Dedicated Allocation enabled");
 		}
 
 		if (hasPerformanceQuery && hasHostQueryReset)
 		{
-			auto& perfCounterFeatures = mGraphicsProcessingUnit.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
-			auto& host_query_reset_features = mGraphicsProcessingUnit.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
-			IM_CORE_INFO("Performance query enabled");
+			auto& perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+			auto& host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
+			Log::Info("Performance query enabled");
 		}
 	}
 
 	const Queue& Device::SuitableGraphicsQueue()
 	{
-		for (UINT32 familyIndex = 0U; familyIndex < mQueues.size(); familyIndex++)
+		for (UINT32 familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
 		{
-			Queue& firstQueue = mQueues[familyIndex][0];
+			Queue& firstQueue = queues[familyIndex][0];
 
 			UINT32 queueCount = firstQueue.Properties().queueCount;
 
 			if (firstQueue.IsPresentSupported() && 0 < queueCount)
 			{
-				return mQueues[familyIndex][0];
+				return queues[familyIndex][0];
 			}
 		}
 
@@ -331,22 +321,22 @@ namespace Vulkan
 	}
 
 
-	const Queue& Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
+	Queue& Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
 	{
-		for (uint32_t familyIndex = 0U; familyIndex < mQueues.size(); ++familyIndex)
+		for (uint32_t familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
 		{
-			Queue& firstQueue = mQueues[familyIndex][0];
+			Queue& firstQueue = queues[familyIndex][0];
 
 			VkQueueFlags queueFlags = firstQueue.Properties().queueFlags;
 			uint32_t     queueCount = firstQueue.Properties().queueCount;
 
 			if (((queueFlags & flags) == flags) && queueIndex < queueCount)
 			{
-				return mQueues[familyIndex][queueIndex];
+				return queues[familyIndex][queueIndex];
 			}
 		}
 
-		IM_CORE_ERROR("Queue not found");
+		Log::Error("Queue not found");
 		return Utils::NullValue<Queue>();
 	}
 }

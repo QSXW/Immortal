@@ -121,7 +121,7 @@ namespace Vulkan
 			}
 		}
 
-		IM_CORE_ASSERT(!validated.empty(), LOGB("没有找到兼容的Image Usage", "No compatible image usage found."));
+		SLASSERT(!validated.empty(), LOGB("没有找到兼容的Image Usage", "No compatible image usage found."));
 #if     IMMORTAL_CHECK_DEBUG
 		IM_CORE_INFO(LOGB("(Swapchain)Image使用标识:", "(Swapchain) Image usage flags:"));
 		for (auto &flag : validated)
@@ -179,7 +179,7 @@ namespace Vulkan
 			}
 		}
 
-		IM_CORE_ASSERT(false, LOGB("没有兼容的Composite Alpha", "No compatible composite alpha found."));
+		SLASSERT(false, LOGB("没有兼容的Composite Alpha", "No compatible composite alpha found."));
 		return Utils::NullValue<VkCompositeAlphaFlagBitsKHR>();
 	}
 
@@ -248,7 +248,7 @@ namespace Vulkan
 		mPresentModePriorities = oldSwapchain.mPresentModePriorities;
 		mSurfaceFormatPriorities = oldSwapchain.mSurfaceFormatPriorities;
 
-		VkPhysicalDevice &physicalDeviceHandle = mDevice.GraphicsProcessingUnit().Handle();
+		VkPhysicalDevice &physicalDeviceHandle = mDevice.Get<PhysicalDevice>().Handle();
 		VkSurfaceCapabilitiesKHR surfaceCapabilities{};
 		Vulkan::Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDeviceHandle, mSurface, &surfaceCapabilities));
 

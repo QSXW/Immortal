@@ -23,27 +23,36 @@ namespace Vulkan {
 
 		~Instance();
 
-		void QueryGraphicsProcessingUnits() NOEXCEPT;
+		void QueryPhysicalDevice();
 
-		PhysicalDevice& SuitableGraphicsProcessingUnit() NOEXCEPT;
-
-		bool IsEnabled(const char* extension) const NOEXCEPT;
+		PhysicalDevice& SuitablePhysicalDevice();
 
 		bool CheckValidationLayerSupport();
+
+	public:
+		bool IsEnabled(const char *extension) const
+		{
+			return std::find_if(enabledExtensions.begin(), enabledExtensions.end(),
+			[extension](const char *enabledExtension)
+			{
+				return Equals(extension, enabledExtension);
+			}) != enabledExtensions.end();
+		}
+
 	public:
 		DefineGetHandleFunc(VkInstance)
 
 	private:
 		VkInstance handle{ VK_NULL_HANDLE };
-		std::vector<const char*> mEnabledExtensions{};
+
+		std::vector<const char*> enabledExtensions{};
+
+		std::vector<Unique<PhysicalDevice>> physicalDevices{};
 
 #if defined ( _DEBUG ) || defined ( VKB_VALIDATION_LAYERS )
-		VkDebugUtilsMessengerEXT mDebugUtilsMessengers{ VK_NULL_HANDLE };
-		VkDebugReportCallbackEXT mDebugReportCallback{ VK_NULL_HANDLE };
+		VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };
+		VkDebugReportCallbackEXT debugReportCallback{ VK_NULL_HANDLE };
 #endif
-
-		std::vector<Unique<PhysicalDevice>> mGraphicsProcessingUnits{};
 	};
 }
 }
-

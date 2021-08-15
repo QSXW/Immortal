@@ -38,7 +38,7 @@ namespace Immortal {
 
 	void SceneSerializer::SerializeRuntime(const std::string & filepath)
 	{
-		IM_CORE_ASSERT(false, "SceneSerializer::SerializeRuntime: Not Implemented");
+		SLASSERT(false, "SceneSerializer::SerializeRuntime: Not Implemented");
 	}
 
 	bool SceneSerializer::Deserialize(const std::string & filepath)
@@ -48,7 +48,7 @@ namespace Immortal {
 
 	bool SceneSerializer::DeserializeRuntime(const std::string & filepath)
 	{
-		IM_CORE_ASSERT(false, "SceneSerializer::DeserializeRuntime: Not Implemented");
+		SLASSERT(false, "SceneSerializer::DeserializeRuntime: Not Implemented");
 		return false;
 	}
 

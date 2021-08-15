@@ -23,7 +23,7 @@ namespace Immortal {
 			case Shader::DataType::Bool:     return GL_BOOL;
 		}
 
-		IM_CORE_ASSERT(false, "Unknown ShaderDataType!");
+		SLASSERT(false, "Unknown ShaderDataType!");
 		return 0;
 	}
 
@@ -51,7 +51,7 @@ namespace Immortal {
 	/*
 	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 	{
-		IM_CORE_ASSERT(vertexBuffer->Layout().Elements().size(), "Vertex Buffer has no layout!");
+		SLASSERT(vertexBuffer->Layout().Elements().size(), "Vertex Buffer has no layout!");
 		glBindVertexArray(mRendererID);
 
 		vertexBuffer->Bind();

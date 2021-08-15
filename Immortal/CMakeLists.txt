@@ -81,6 +81,12 @@ set(VULKAN_FILES
    src/Platform/Vulkan/vkcommon.h
    src/Platform/Vulkan/Device.cpp
    src/Platform/Vulkan/Device.h
+   src/Platform/Vulkan/CommandBuffer.cpp
+   src/Platform/Vulkan/CommandBuffer.h
+   src/Platform/Vulkan/CommandPool.cpp
+   src/Platform/Vulkan/CommandPool.h
+   src/Platform/Vulkan/FencePool.cpp
+   src/Platform/Vulkan/FencePool.h
    src/Platform/Vulkan/VulkanFramebuffer.cpp
    src/Platform/Vulkan/VulkanFramebuffer.h
    src/Platform/Vulkan/VulkanGuiLayer.cpp

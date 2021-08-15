@@ -90,7 +90,7 @@ namespace Immortal {
 				break;
 
 			default:
-				IM_CORE_ASSERT(false, "Invalid Texture Format.");
+				SLASSERT(false, "Invalid Texture Format.");
 				break;
 			}
 

@@ -18,7 +18,7 @@ namespace Vulkan
 #define VK_LAYER_LUNARG_SCREENSHOT            "VK_LAYER_LUNARG_screenshot"
 
 	template <class T>
-	constexpr inline UINT32 ToUINT32(T x)
+	constexpr inline UINT32 U32(T x)
 	{
 		return static_cast<UINT32>(x);
 	}
@@ -137,20 +137,16 @@ namespace Vulkan
 		return surfaceFormatString;
 	}
 		
-#if defined( IM_DEBUG )
-	/** @brief Helper macro to test the result of Vulkan calls which can return an error.
-		*
-		*/
-	inline void Check(VkResult err)
+#if defined( DEBUG ) || defined( _DEBUG )
+	inline void Check(VkResult status)
 	{
-		auto msg = ErrorToString(err);
-		if (err)
+		auto msg = ErrorToString(status);
+		if (status)
 		{
-			IM_CORE_ERROR("Detected Vulkan error: {0}", msg);
+			Log::Error("Detected Vulkan error: {0}", msg);
 			abort();
 		}
 	}
-
 #else
 	constexpr inline void Check(VkResult err) { }
 #endif
@@ -160,19 +156,13 @@ namespace Vulkan
 		return (strcmp(str1, str2) == 0);
 	}
 
-
 	VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice,
 			                     bool depthOnly = false,
 			                     const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });
 
-	inline bool IsDepthOnlyFormat(VkFormat format)
+	static inline bool IsDepthOnlyFormat(VkFormat format)
 	{
 		return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT;
 	}
 }
-
 }
-
-
-
-

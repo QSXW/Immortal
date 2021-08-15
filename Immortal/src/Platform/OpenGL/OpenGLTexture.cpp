@@ -170,7 +170,7 @@ namespace Immortal {
 	void OpenGLTexture2D::SetData(void * data, uint32_t size)
 	{
 		uint32_t bpp = mType.DataFormat == GL_RGBA ? 4 : 3;
-		IM_CORE_ASSERT(size == mWidth * mHeight * bpp, "Data must be entire texture!");
+		SLASSERT(size == mWidth * mHeight * bpp, "Data must be entire texture!");
 
 		// glTextureStorage2D(mTexture, 1, mInternalFormat, mWidth, mHeight);
 		glTextureSubImage2D(mTexture, 0, 0, 0, mWidth, mHeight, mType.DataFormat, mType.BinaryType, data);

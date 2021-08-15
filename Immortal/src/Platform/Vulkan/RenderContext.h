@@ -25,15 +25,21 @@ namespace Vulkan
 		void CreateSurface();
 
 	public:
+		void AddDeviceExtension(const char *extension, bool optional = false)
+		{
+			DeviceExtensions[extension] = optional;
+		}
+
+	public:
 		void Prepare(size_t threadCount = 1, RenderTarget::CreateFunc func = RenderTarget::DefaultCreateFunc);
 
 	private:
 		void *handle;
-		Unique<Instance>  mInstance;
-		Unique<Device>    mDevice;
+		Unique<Instance>  instance;
+		Unique<Device>    device;
 		Unique<Swapchain> mSwapchain;
 
-		VkSurfaceKHR   mSurface;
+		VkSurfaceKHR   surface;
 		VkExtent2D mSurfaceExtent;
 
 		const Queue *mQueue;

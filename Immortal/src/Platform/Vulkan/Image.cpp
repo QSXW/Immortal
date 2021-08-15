@@ -71,8 +71,8 @@ namespace Vulkan
 		mArrayLayerCount{ arrayLayers },
 		mTiling{ tiling }
 	{
-		IM_CORE_ASSERT(mipLevels > 0, LOGB("Mip贴图应该大于一个层级", "Image should have at least one level"));
-		IM_CORE_ASSERT(arrayLayers > 0, LOGB("图片至少有一层", "Image should have at least one level"));
+		SLASSERT(mipLevels > 0, LOGB("Mip贴图应该大于一个层级", "Image should have at least one level"));
+		SLASSERT(arrayLayers > 0, LOGB("图片至少有一层", "Image should have at least one level"));
 
 		mSubresource.mipLevel = mipLevels;
 		mSubresource.arrayLayer = arrayLayers;

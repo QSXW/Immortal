@@ -51,7 +51,7 @@ namespace Immortal {
 		static inline Ref<Immortal::Shader> Shader(const ShaderName index)
 		{
 			size_t i = static_cast<size_t>(index);
-			IM_CORE_ASSERT(i < ShaderContainer.size(), "Shader Index out of bound.");
+			SLASSERT(i < ShaderContainer.size(), "Shader Index out of bound.");
 			return ShaderContainer[i];
 		}
 
@@ -146,7 +146,7 @@ namespace Immortal {
 		case RendererAPI::Type::D3D12:
 			return CreateRef<D3D12>(std::forward<Args>(args)...);
 		default:
-			IM_CORE_ASSERT(false, "RendererAPI::None is currently not supported!");
+			SLASSERT(false, "RendererAPI::None is currently not supported!");
 			return nullptr;
 		}
 	}

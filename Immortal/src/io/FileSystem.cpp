@@ -127,7 +127,7 @@ namespace Immortal
 	void FileSystem::WorkFunc(Work * w)
 	{
 		FileSystem *req = reinterpret_cast<FileSystem*>((((INT8 *)(w)-((size_t)&(((FileSystem*)0)->work_req)))));
-		IM_CORE_ASSERT((dynamic_cast<Request *>(req))->type == Request::Type::FS, "");
+		SLASSERT((dynamic_cast<Request *>(req))->type == Request::Type::FS, "");
 
 #define XX(uc, lc)  case FileSystem::Type::##uc: ##req->lc(); break;
 		switch (req->type) {

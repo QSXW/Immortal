@@ -240,7 +240,7 @@ namespace Vulkan
 			return depthFormat;
 		}
 
-		IM_CORE_ASSERT(false, LOGB("没有可用的深度格式", "No suitable depth format could be determined"));
+		SLASSERT(false, LOGB("没有可用的深度格式", "No suitable depth format could be determined"));
 		return Utils::NullValue<VkFormat>();
 	}
 }
