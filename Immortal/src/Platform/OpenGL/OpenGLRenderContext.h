@@ -11,8 +11,8 @@ namespace Immortal {
 	public:
 		OpenGLRenderContext(RenderContext::Description &desc);
 
-		__forceinline void Init() override;
-		__forceinline void SwapBuffers() override;
+		void Init() override;
+		void SwapBuffers() override;
 
 	private:
 		GLFWwindow* handle;

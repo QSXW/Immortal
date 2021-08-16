@@ -103,8 +103,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/Queue.h
    src/Platform/Vulkan/RenderContext.cpp
    src/Platform/Vulkan/RenderContext.h
-   src/Platform/Vulkan/VulkanRenderer.cpp
-   src/Platform/Vulkan/VulkanRenderer.h
+   src/Platform/Vulkan/Renderer.cpp
+   src/Platform/Vulkan/Renderer.h
    src/Platform/Vulkan/RenderTarget.cpp
    src/Platform/Vulkan/RenderTarget.h
    src/Platform/Vulkan/Swapchain.cpp

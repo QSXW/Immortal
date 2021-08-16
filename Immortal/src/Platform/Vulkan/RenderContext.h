@@ -42,7 +42,7 @@ namespace Vulkan
 		VkSurfaceKHR   surface;
 		VkExtent2D mSurfaceExtent;
 
-		const Queue *mQueue;
+		const Queue *queue;
 		Swapchain::Properties mSwapchainProperties;
 
 		std::vector<VkPresentModeKHR> mPresentModePriorities = {

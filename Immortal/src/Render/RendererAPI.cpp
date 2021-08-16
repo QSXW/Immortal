@@ -2,7 +2,7 @@
 #include "RendererAPI.h"
 
 #include "Platform/OpenGL/OpenGLRenderer.h"
-#include "Platform/Vulkan/VulkanRenderer.h"
+#include "Platform/Vulkan/Renderer.h"
 
 namespace Immortal {
 
@@ -16,7 +16,7 @@ namespace Immortal {
 				return MakeUnique<OpenGLRenderer>();
 
 			case RendererAPI::Type::VulKan:
-				return MakeUnique<VulkanRenderer>();
+				return MakeUnique<Vulkan::Renderer>();
 			default:
 				SLASSERT(false, "RendererAPI::None is currently not supported!");
 				return nullptr;

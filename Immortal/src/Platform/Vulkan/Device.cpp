@@ -179,7 +179,7 @@ namespace Vulkan
 		// @required Command Pool
 		commandPool = MakeUnique<CommandPool>(*this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>());
 		// @required Fence Pool
-
+		fencePool = MakeUnique<FencePool>(*this);
 	}
 
 	UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)

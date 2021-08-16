@@ -51,10 +51,11 @@ namespace Vulkan
 		}
 
 		device = MakeUnique<Device>(physicalDevice, surface, DeviceExtensions);
-		mQueue = &(device->SuitableGraphicsQueue());
+
+		/*queue = &(device->SuitableGraphicsQueue());
 
 		mSurfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
-		mSwapchain = MakeUnique<Swapchain>(*device, surface, mSurfaceExtent);
+		mSwapchain = MakeUnique<Swapchain>(*device, surface, mSurfaceExtent);*/
 	}
 
 	RenderContext::~RenderContext()

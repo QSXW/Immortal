@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vkcommon.h""
+#include "vkcommon.h"
 
 namespace Immortal
 {
@@ -11,9 +11,22 @@ namespace Vulkan
 	class FencePool
 	{
 	public:
+		FencePool(Device &device);
+		
+		~FencePool();
+
+		VkResult Wait(UINT32 timeout = std::numeric_limits<UINT32>::max()) const;
+
+		VkResult Reset();
+
+		VkFence RequestFence();
 
 	private:
 		Device &device;
+		
+		std::vector<VkFence> fences;
+
+		UINT32 activeFenceCount{ 0 };
 	};
 }
 }

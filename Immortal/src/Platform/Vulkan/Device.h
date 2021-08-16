@@ -9,6 +9,7 @@
 #include "PhysicalDevice.h"
 #include "Queue.h"
 #include "CommandPool.h"
+#include "FencePool.h"
 
 namespace Immortal
 {
@@ -91,6 +92,7 @@ namespace Vulkan
 
 		std::vector<std::vector<Queue>> queues;
 		Unique<CommandPool> commandPool;
+		Unique<FencePool> fencePool;
 
 		bool mHasGetMemoryRequirements = false;
 		bool mHasDedicatedAllocation = false;
