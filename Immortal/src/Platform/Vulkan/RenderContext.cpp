@@ -3,7 +3,7 @@
 
 #include "Framework/Application.h"
 #include <GLFW/glfw3.h>
-
+#include "Renderer.h"
 #include "Image.h"
 
 namespace Immortal
@@ -52,10 +52,33 @@ namespace Vulkan
 
 		device = MakeUnique<Device>(physicalDevice, surface, DeviceExtensions);
 
-		/*queue = &(device->SuitableGraphicsQueue());
+		{
+			surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
+			if (surface != VK_NULL_HANDLE)
+			{
+				VkSurfaceCapabilitiesKHR surfaceProperties;
+				Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, &surfaceProperties));
+				if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
+				{
+					swapchain = MakeUnique<Swapchain>(*device, surface, surfaceExtent);
+				}
+				else
+				{
+					swapchain = MakeUnique<Swapchain>(*device, surface);
+				}
+			}
 
-		mSurfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
-		mSwapchain = MakeUnique<Swapchain>(*device, surface, mSurfaceExtent);*/
+			Set<VkFormat>(surfaceFormatPriorities[0].format);
+
+			Set<VkPresentModeKHR>(VK_PRESENT_MODE_MAILBOX_KHR);
+			Set<PresentModePriority>({
+				VK_PRESENT_MODE_MAILBOX_KHR,
+				VK_PRESENT_MODE_FIFO_KHR,
+				VK_PRESENT_MODE_IMMEDIATE_KHR
+			});
+			
+			this->Prepare();
+		}
 	}
 
 	RenderContext::~RenderContext()
@@ -66,26 +89,7 @@ namespace Vulkan
 
 	void RenderContext::Init()
 	{
-		mPresentModePriorities = {
-			VK_PRESENT_MODE_MAILBOX_KHR,
-			VK_PRESENT_MODE_IMMEDIATE_KHR,
-			VK_PRESENT_MODE_FIFO_KHR
-		};
 
-		mSurfaceFormatPriorities = {
-			{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
-		};
-
-		if (mSwapchain)
-		{
-			// This is commonly known as "triple buffering",
-			mSwapchain->Set(VK_PRESENT_MODE_MAILBOX_KHR);
-			mSwapchain->Set(VK_FORMAT_B8G8R8A8_UNORM);
-		}
-		this->Prepare();
 	}
 
 	void RenderContext::CreateSurface()
@@ -103,17 +107,17 @@ namespace Vulkan
 	{
 		device->WaitIdle();
 
-		if (mSwapchain)
+		if (swapchain)
 		{
-			mSwapchain->Set(mPresentModePriorities);
-			mSwapchain->Set(mSurfaceFormatPriorities);
-			mSwapchain->Create();
+			swapchain->Set(presentModePriority);
+			swapchain->Set(surfaceFormatPriorities);
+			swapchain->Create();
 
-			VkExtent3D extent{ mSurfaceExtent.width, mSurfaceExtent.height, 1 };
+			VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
 
-			for (auto &image : mSwapchain->Images())
+			for (auto &image : swapchain->Images())
 			{
-				auto swapchainImage = Image{ *device, image, extent, mSwapchain->Format(), mSwapchain->Usage() };
+				auto swapchainImage = Image{ *device, image, extent, swapchain->Format(), swapchain->Usage() };
 				auto renderTarget = CreateRenderTargetfunc(std::move(swapchainImage));
 			}
 		}
