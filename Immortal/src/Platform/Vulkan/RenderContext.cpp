@@ -105,22 +105,7 @@ namespace Vulkan
 
 	void RenderContext::Prepare(size_t threadCount, RenderTarget::CreateFunc CreateRenderTargetfunc)
 	{
-		device->WaitIdle();
-
-		if (swapchain)
-		{
-			swapchain->Set(presentModePriority);
-			swapchain->Set(surfaceFormatPriorities);
-			swapchain->Create();
-
-			VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
-
-			for (auto &image : swapchain->Images())
-			{
-				auto swapchainImage = Image{ *device, image, extent, swapchain->Format(), swapchain->Usage() };
-				auto renderTarget = CreateRenderTargetfunc(std::move(swapchainImage));
-			}
-		}
+		
 	}
 
 	void RenderContext::SwapBuffers()

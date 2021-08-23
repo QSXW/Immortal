@@ -223,17 +223,6 @@ namespace Vulkan
 
     }
 
-    /**
-        * @brief Checking if a swap chain is available is not sufficient, because it may not actually be compatible
-        * with our window surface. Creating a swap chain also involves a lot more settings than instance and device
-        * creation, so we need to query for some more details before we're able to proceed.
-        *
-        * @check
-        *  - Basic surface capabilities (min/max number of images in swap chain, min/max width and height of images)
-        *  - Surface formats (pixel format, color space)
-        *  - Available presentation modes
-        *
-        */
     Swapchain::Swapchain(Swapchain &oldSwapchain,
                          Device                              &device,
                          VkSurfaceKHR                         surface,
