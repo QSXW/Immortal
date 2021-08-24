@@ -19,14 +19,14 @@ namespace Immortal {
 
 	__forceinline void ShaderMap::Add(const std::string &name, const Ref<Shader> &shader)
 	{
-		SLASSERT(!Exists(name), "Shader already exists!");
+		SLASSERT(!Exists(name) && "Shader already exists!");
 		mShaders[name] = shader;
 	}
 
 	__forceinline void ShaderMap::Add(const Ref<Shader> &shader)
 	{
 		auto name = shader->Name();
-		SLASSERT(!Exists(name), "Shader already exists!");
+		SLASSERT(!Exists(name) && "Shader already exists!");
 		mShaders[name] = shader;
 	}
 
@@ -46,7 +46,7 @@ namespace Immortal {
 
 	Ref<Shader> ShaderMap::Get(const std::string &name)
 	{
-		SLASSERT(Exists(name), "Shader not found!");
+		SLASSERT(Exists(name) && "Shader not found!");
 		return mShaders[name];
 	}
 

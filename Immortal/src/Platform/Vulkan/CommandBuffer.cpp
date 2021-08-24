@@ -12,7 +12,7 @@ namespace Vulkan
 	{
 		VkResult result = VK_SUCCESS;
 
-		SLASSERT(resetMode == commandPool.Get<ResetMode>(),
+		SLASSERT(resetMode == commandPool.Get<ResetMode>() &&
 			"The resetMode of Command buffer must match the one used by the pool to allocated it");
 		state = State::Initial;
 		if (resetMode == ResetMode::ResetIndividually)

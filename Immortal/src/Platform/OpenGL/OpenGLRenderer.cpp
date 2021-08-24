@@ -17,13 +17,13 @@ namespace Immortal {
 	{
 		switch (severity)
 		{
-		case GL_DEBUG_SEVERITY_HIGH:         IM_CORE_ERROR(message); return;
+		case GL_DEBUG_SEVERITY_HIGH:         Log::Error(message); return;
 		case GL_DEBUG_SEVERITY_MEDIUM:       IM_CORE_ERROR(message); return;
 		case GL_DEBUG_SEVERITY_LOW:          IM_CORE_WARN(message); return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: IM_CORE_TRACE(message); return;
 		}
 
-		SLASSERT(false, "Unknown severity level!");
+		SLASSERT(false && "Unknown severity level!");
 	}
 
 	void OpenGLRenderer::Init()

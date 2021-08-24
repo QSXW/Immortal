@@ -61,7 +61,7 @@ namespace Immortal {
 	{
 		cv::Mat dst;
 		cv::Mat	src = cv::imread(path, cv::IMREAD_UNCHANGED);
-		SLASSERT(src.data, "Failed to load image!");
+		SLASSERT(src.data && "Failed to load image!");
 
 		if (src.data)
 		{

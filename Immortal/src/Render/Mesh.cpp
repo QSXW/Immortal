@@ -39,15 +39,15 @@ namespace Immortal {
 	{
 		LogStream::initialize();
 
-		IM_CORE_INFO("Loading mesh: {0}", filepath.c_str());
+		Log::Info("Loading mesh: {0}", filepath.c_str());
 
 		mImporter.reset(new Assimp::Importer());
 
 		const aiScene *scene = mImporter->ReadFile(filepath, ImportFlags);
-		SLASSERT(scene && scene->HasMeshes(), "Failed to load Mesh file: {0}", filepath.c_str());
+		SLASSERT(scene && scene->HasMeshes() && "Failed to load Mesh file: {0}" && filepath.c_str());
 
 		const aiMesh *mesh = scene->mMeshes[0];
-		SLASSERT(mesh->HasPositions() && mesh->HasNormals(), "No Position and Normals in the mesh object");
+		SLASSERT(mesh->HasPositions() && mesh->HasNormals() && "No Position and Normals in the mesh object");
 
 		// Set the capacity to the number of vertieces
 		mVertices.reserve(mesh->mNumVertices);
@@ -72,7 +72,7 @@ namespace Immortal {
 		mFaces.reserve(mesh->mNumFaces);
 		for (size_t i = 0; i < mesh->mNumFaces; ++i)
 		{
-			SLASSERT(mesh->mFaces[i].mNumIndices == 3, "Must have three indices per face.");
+			SLASSERT(mesh->mFaces[i].mNumIndices == 3 && "Must have three indices per face.");
 			Face face = { mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2] };
 			mFaces.push_back(face);
 		}

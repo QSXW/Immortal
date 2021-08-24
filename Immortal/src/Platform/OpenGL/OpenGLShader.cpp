@@ -23,7 +23,7 @@ namespace Immortal {
 			return GL_COMPUTE_SHADER;
 		}
 
-		SLASSERT(false, "Unknown shader type!");
+		SLASSERT(false && "Unknown shader type!");
 		return 0;
 	}
 
@@ -91,7 +91,7 @@ namespace Immortal {
 			}
 
 			IM_CORE_ERROR("{0}", infoLog.get());
-			SLASSERT(isLinked == GL_FALSE, "Shader compilation failure!");
+			SLASSERT(isLinked == GL_FALSE && "Shader compilation failure!");
 		}
 
 		for (int i = 0; i < source.size(); i++)
@@ -118,7 +118,7 @@ namespace Immortal {
 			glGetShaderInfoLog(shader, maxLength, &maxLength, infoLog.get());
 			glDeleteShader(shader);
 			IM_CORE_ERROR("{0}", infoLog.get());
-			SLASSERT(isCompiled, "Shader compilation failure!");
+			SLASSERT(isCompiled && "Shader compilation failure!");
 		}
 
 		return shader;
@@ -137,18 +137,10 @@ namespace Immortal {
 				result.resize(size);
 				in.seekg(0, std::ios::beg);
 				in.read(&result[0], size);
-			}
-			else
-			{
-				IM_CORE_ERROR("Could not read from file '{0}'", filepath);
+				return result;
 			}
 		}
-		else
-		{
-			IM_CORE_ERROR("Could not open file '{0}'", filepath);
-		}
-
-		return result;
+		Log::Error("Could not open file '{0}'", filepath);
 	}
 
 	std::unordered_map<GLenum, std::string> OpenGLShader::Preprocess(const std::string & source)
@@ -161,13 +153,13 @@ namespace Immortal {
 		while (pos != std::string::npos)
 		{
 			size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
-			SLASSERT(eol != std::string::npos, "Syntax error");
+			SLASSERT(eol != std::string::npos && "Syntax error");
 			size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
 			std::string type = source.substr(begin, eol - begin);
-			SLASSERT(ShaderTypeFromString(type), "Invalid shader type specified");
+			SLASSERT(ShaderTypeFromString(type) && "Invalid shader type specified");
 
 			size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
-			SLASSERT(nextLinePos != std::string::npos, "Syntax error");
+			SLASSERT(nextLinePos != std::string::npos && "Syntax error");
 			pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
 
 			shaderSources[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
@@ -229,7 +221,7 @@ namespace Immortal {
 	}
 	void OpenGLShader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
 	{
-		SLASSERT(mType == Shader::Type::Compute, "The shader type is not compute.");
+		SLASSERT(mType == Shader::Type::Compute && "The shader type is not compute.");
 		glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
 	}
 } 

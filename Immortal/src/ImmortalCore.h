@@ -104,9 +104,10 @@ namespace Immortal {
 
 #include "Framework/Vector.h"
 
-#define HZ_ENABLE_ASSERTS
 #include "Framework/Log.h"
-#include "Framework/Assert.h"
+
+#include <cassert>
+#define SLASSERT(...) assert(__VA_ARGS__)
 
 #define IMMORTAL_CHECK_DEBUG defined( DEBUG) || defined( _DEBUG )
 #define IMMORTAL_END_CHECK endif

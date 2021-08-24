@@ -45,7 +45,7 @@ namespace Vulkan
 	class RenderTarget
 	{
 	public:
-		using CreateFunc = std::function<Unique<RenderTarget>(Image &&swapchainImage)>;
+		using CreateFunc = std::function<Unique<RenderTarget>(Image &&iamge)>;
 		static const CreateFunc DefaultCreateFunc;
 
 		RenderTarget(std::vector<Image> &&images);
@@ -53,17 +53,17 @@ namespace Vulkan
 	private:
 		Device &device;
 
-		VkExtent2D mExtent{};
+		VkExtent2D extent{};
 
-		std::vector<Image> mImages;
+		std::vector<Image> images;
 
-		std::vector<Attachment> mAttachments;
+		std::vector<Attachment> attachments;
 
-		std::vector<ImageView> mViews;
+		std::vector<ImageView> views;
 
-		std::vector<UINT32> mInputAttachments{};
+		std::vector<UINT32> inputAttachments{};
 
-		std::vector<UINT32> mOutputAttachments{ 0 };
+		std::vector<UINT32> outputAttachments{ 0 };
 	};
 }
 }

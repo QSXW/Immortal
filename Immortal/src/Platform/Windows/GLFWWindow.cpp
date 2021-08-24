@@ -68,7 +68,7 @@ namespace Immortal
 			glfwSetErrorCallback(GLFWErrorCallback);
 
 			int success = glfwInit();
-			SLASSERT(success, "Could not initialize GLFW!")
+			SLASSERT(success && "Could not initialize GLFW!");
 		}
 
 		if (RendererAPI::API == RendererAPI::Type::VulKan)

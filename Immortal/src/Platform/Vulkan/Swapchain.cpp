@@ -121,7 +121,7 @@ namespace Vulkan
             }
         }
 
-        SLASSERT(!validated.empty(), "No compatible image usage found.");
+        SLASSERT(!validated.empty() && "No compatible image usage found.");
 #if     IMMORTAL_CHECK_DEBUG
         Log::Info("(Swapchain) Image usage flags:");
         for (auto &flag : validated)
@@ -179,7 +179,7 @@ namespace Vulkan
             }
         }
 
-        SLASSERT(false, "No compatible composite alpha found.");
+        SLASSERT(false && "No compatible composite alpha found.");
         return Utils::NullValue<VkCompositeAlphaFlagBitsKHR>();
     }
 
@@ -266,20 +266,20 @@ namespace Vulkan
         }
 #endif
 
-        properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-        properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
-        properties.ArrayLayers   = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
-        properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, surfaceFormatPriorities);
+        this->properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        this->properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
+        this->properties.ArrayLayers   = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
+        this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, surfaceFormatPriorities);
 
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(physicalDeviceHandle, properties.SurfaceFormat.format, &formatProperties);
-        mImageUsageFlags          = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
-        properties.ImageUsage     = CompositeImageFlags(mImageUsageFlags);
-        properties.PreTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
-        properties.CompositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
+        vkGetPhysicalDeviceFormatProperties(physicalDeviceHandle, this->properties.SurfaceFormat.format, &formatProperties);
+        this->imageUsageFlags     = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
+        this->properties.ImageUsage     = CompositeImageFlags(this->imageUsageFlags);
+        this->properties.PreTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
+        this->properties.CompositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
 
-        properties.OldSwapchain   = oldSwapchain.handle;
-        properties.PresentMode    = presentMode;
+        this->properties.OldSwapchain   = oldSwapchain.handle;
+        this->properties.PresentMode    = presentMode;
     }
 
     Swapchain::~Swapchain()
@@ -290,7 +290,7 @@ namespace Vulkan
     void Swapchain::Create()
     {
         // Revalidate the present mode and surface format
-        properties.PresentMode = SelectPresentMode(properties.PresentMode, presentModes, presentModePriorities);
+        properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, presentModePriorities);
         properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, surfaceFormatPriorities);
 
         VkSwapchainCreateInfoKHR createInfo{};

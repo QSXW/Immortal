@@ -68,15 +68,9 @@ namespace Vulkan
 				}
 			}
 
-			Set<VkFormat>(surfaceFormatPriorities[0].format);
-
-			Set<VkPresentModeKHR>(VK_PRESENT_MODE_MAILBOX_KHR);
-			Set<PresentModePriority>({
-				VK_PRESENT_MODE_MAILBOX_KHR,
-				VK_PRESENT_MODE_FIFO_KHR,
-				VK_PRESENT_MODE_IMMEDIATE_KHR
-			});
-			
+			this->Set<VkFormat>(surfaceFormatPriorities[0].format);
+			this->Set<VkPresentModeKHR>(presentModePriorities[0]);
+		
 			this->Prepare();
 		}
 	}
@@ -105,7 +99,24 @@ namespace Vulkan
 
 	void RenderContext::Prepare(size_t threadCount, RenderTarget::CreateFunc CreateRenderTargetfunc)
 	{
-		
+		device->WaitIdle();
+
+		if (swapchain)
+		{
+			swapchain->Set(presentModePriorities);
+			swapchain->Set(surfaceFormatPriorities);
+			swapchain->Create();
+
+			surfaceExtent = swapchain->Get<VkExtent2D>();
+			VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
+
+			for (auto &handle : swapchain->Get<Swapchain::Images>())
+			{
+				Image image{ *device, handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
+				auto rendertarget = CreateRenderTargetfunc(std::move(image));
+				
+			}
+		}
 	}
 
 	void RenderContext::SwapBuffers()

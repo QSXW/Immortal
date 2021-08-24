@@ -21,7 +21,7 @@ namespace Immortal
 			case RendererAPI::Type::VulKan:
 				return dynamic_cast<GuiLayer*>(new VulkanGuiLayer());
 			default:
-				SLASSERT(false, "RendererAPI::Target API is currently not supported! But it should be On schedule.");
+				SLASSERT(false && "RendererAPI::Target API is currently not supported! But it should be On schedule.");
 				return nullptr;
 		}
 	}

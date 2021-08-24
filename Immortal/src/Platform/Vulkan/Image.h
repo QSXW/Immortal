@@ -10,9 +10,15 @@ namespace Vulkan {
 	class Image
 	{
 	public:
-		Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
-		Image(Device& device,
-			  const VkExtent3D&     extent,
+		Image(Device&               device,
+			  VkImage               handle,
+			  const VkExtent3D     &extent,
+			  VkFormat              format,
+			  VkImageUsageFlags     imageUsage,
+			  VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
+
+		Image(Device               &device,
+			  const VkExtent3D     &extent,
 			  VkFormat              format,
 			  VkImageUsageFlags     imageUsage,
 			  VmaMemoryUsage        memoryUsage,
@@ -24,11 +30,14 @@ namespace Vulkan {
 			  UINT32                numQueueFamilies  = 0,
 			  const UINT32*         queueFamilies     = nullptr);
 
-
 		Image(Image&& other) noexcept;
 
-		// @inline
 	public:
+		VkImage &Handle()
+		{
+			return handle;
+		}
+
 		template <class T>
 		T& Get()
 		{
@@ -72,9 +81,6 @@ namespace Vulkan {
 		{
 			return mViews;
 		}
-
-	public:
-		DefineGetHandleFunc(VkImage)
 
 	private:
 		Device& device;

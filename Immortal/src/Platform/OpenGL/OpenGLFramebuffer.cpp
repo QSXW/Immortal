@@ -118,7 +118,7 @@ namespace Immortal {
 
 		if (mColorAttachments.size() > 1)
 		{
-			SLASSERT(mColorAttachments.size() <= 4, "Only Support Four Color Attchments");
+			SLASSERT(mColorAttachments.size() <= 4 && "Only Support Four Color Attchments");
 			GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 			glDrawBuffers((GLsizei)mColorAttachments.size(), buffers);
 		}
@@ -153,7 +153,7 @@ namespace Immortal {
 	void* OpenGLFramebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Texture::Format format, int width, int height)
 	{
 		this->Bind();
-		SLASSERT(attachmentIndex < mColorAttachments.size(), "The attachmentIndex out of bound.");
+		SLASSERT(attachmentIndex < mColorAttachments.size() && "The attachmentIndex out of bound.");
 		glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
 		
 		int pixel = -1;
@@ -172,7 +172,7 @@ namespace Immortal {
 
 	void OpenGLFramebuffer::ClearAttachment(uint32_t index, int value)
 	{
-		SLASSERT(index < mColorAttachments.size(), "OpenGLFramebuffer::ClearAttachment: index out of bound");
+		SLASSERT(index < mColorAttachments.size() && "OpenGLFramebuffer::ClearAttachment: index out of bound");
 
 		auto type = OpenGLTexture::NativeTypeToOpenGl(mColorAttachmentSpecifications[index].Format);
 		glClearTexImage(mColorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
@@ -180,7 +180,7 @@ namespace Immortal {
 
 	uint32_t OpenGLFramebuffer::ColorAttachmentRendererID(uint32_t index) const 
 	{
-		SLASSERT(index < mColorAttachments.size(), "OpenGLFramebuffer::ColorAttachmentRendererID: index out of bound");
+		SLASSERT(index < mColorAttachments.size() && "OpenGLFramebuffer::ColorAttachmentRendererID: index out of bound");
 		return mColorAttachments[index];
 	}
 

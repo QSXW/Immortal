@@ -7,19 +7,11 @@
 
 namespace Immortal
 {
-    namespace Vulkan
-    {
-        /**
-         * @brief The swap chain is essentially a queue of images that are waiting to be presented to the screen.
-         */
+namespace Vulkan
+{
     class Swapchain
     {
     public:
-
-        /**
-            * @ArrayLayers specifies the amount of layers each image consists of. This is always 1 unless you are developing a stereoscopic 3D application.
-            * @ImageUsage  specifies what kind of operations we'll use the images in the swap chain for.
-            */
         struct Properties
         {
             VkSwapchainKHR                OldSwapchain;
@@ -56,12 +48,37 @@ namespace Immortal
         void Create();
 
     public:
+        using Images = std::vector<VkImage>;
+        using Format = VkFormat;
+        using Usage  = VkImageUsageFlags;
+
+        VkSwapchainKHR &Handle()
+        {
+            return handle;
+        }
+
         template <class T>
         T &Get()
         {
             if constexpr (std::is_same_v<T, Properties>)
             {
                 return properties;
+            }
+            if constexpr (std::is_same_v<T, VkExtent2D>)
+            {
+                return properties.Extent;
+            }
+            if constexpr (std::is_same_v<T, Images>)
+            {
+                return images;
+            }
+            if constexpr (std::is_same_v <T, VkFormat>)
+            {
+                return properties.SurfaceFormat.format;
+            }
+            if constexpr (std::is_same_v<T, VkImageUsageFlags>)
+            {
+                return properties.ImageUsage;
             }
         }
 
@@ -85,42 +102,26 @@ namespace Immortal
             surfaceFormatPriorities = surfaceFormatPriorities;
         }
 
-        std::vector<VkImage> &Images()
-        {
-            return images;
-        }
-
-        VkFormat &Format()
-        {
-            return properties.SurfaceFormat.format;
-        }
-
-        VkImageUsageFlags &Usage()
-        {
-            return properties.ImageUsage;
-        }
-
-    public:
-        DefineGetHandleFunc(VkSwapchainKHR)
-
     private:
         Device &device;
+
         VkSurfaceKHR surface{ VK_NULL_HANDLE };
+
         VkSwapchainKHR handle{ VK_NULL_HANDLE };
 
         std::vector<VkImage> images;
+
         std::vector<VkSurfaceFormatKHR> surfaceFormats{};
+
         std::vector<VkPresentModeKHR> presentModes{};
 
         Swapchain::Properties properties;
 
-        // A list of present modes in order of priority (index is the priority 0 - hight, And so on.)
         std::vector<VkPresentModeKHR> presentModePriorities = {
             VK_PRESENT_MODE_FIFO_KHR,
             VK_PRESENT_MODE_MAILBOX_KHR
         };
 
-        // A list of surface formats in order of priority (index is the priority 0 - hight, And so on.)
         std::vector<VkSurfaceFormatKHR> surfaceFormatPriorities = {
             VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
             VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
@@ -130,7 +131,7 @@ namespace Immortal
 
         VkPresentModeKHR presentMode{};
 
-        std::set<VkImageUsageFlagBits> mImageUsageFlags;
+        std::set<VkImageUsageFlagBits> imageUsageFlags;
     };
 }
 }

@@ -90,7 +90,7 @@ namespace Immortal {
 				break;
 
 			default:
-				SLASSERT(false, "Invalid Texture Format.");
+				SLASSERT(false && "Invalid Texture Format.");
 				break;
 			}
 

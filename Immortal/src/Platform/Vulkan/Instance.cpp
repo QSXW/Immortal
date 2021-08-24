@@ -247,12 +247,12 @@ namespace Vulkan
 #if     IMMORTAL_CHECK_DEBUG
 		if (debugUtils)
 		{
-			SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr, "");
+			SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
 			Vulkan::Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));
 		}
 		else
 		{
-			SLASSERT(vkCreateDebugReportCallbackEXT != nullptr, "");
+			SLASSERT(vkCreateDebugReportCallbackEXT != nullptr && "");
 			Vulkan::Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &debugReportCallback));
 		}
 #endif
@@ -262,7 +262,7 @@ namespace Vulkan
 	Instance::Instance(VkInstance instance)
 		: handle(instance)
 	{
-		SLASSERT(handle != VK_NULL_HANDLE, "Instance not valid");
+		SLASSERT(handle != VK_NULL_HANDLE && "Instance not valid");
 		QueryPhysicalDevice();
 	}
 
@@ -289,7 +289,7 @@ namespace Vulkan
 		UINT32 count{ 0 };
 		Check(vkEnumeratePhysicalDevices(handle, &count, nullptr));
 
-		SLASSERT(count >= 1, "Couldn't find a physical device that supports Vulkan.");
+		SLASSERT(count >= 1 && "Couldn't find a physical device that supports Vulkan.");
 
 		std::vector<VkPhysicalDevice> physicalDevices{ count };
 		Check(vkEnumeratePhysicalDevices(handle, &count, physicalDevices.data()));
@@ -302,7 +302,7 @@ namespace Vulkan
 
 	PhysicalDevice &Instance::SuitablePhysicalDevice()
 	{
-		SLASSERT(!physicalDevices.empty(), "There is no GPU on this device.");
+		SLASSERT(!physicalDevices.empty() && "There is no GPU on this device.");
 
 		for (auto &pd : physicalDevices)
 		{

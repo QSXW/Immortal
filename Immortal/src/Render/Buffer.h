@@ -23,7 +23,7 @@ namespace Immortal {
 			case Shader::DataType::Bool:     return sizeof(bool);
 		}
 
-		SLASSERT(false, "Unknown ShaderDataType!");
+		SLASSERT(false && "Unknown ShaderDataType!");
 		return 0;
 	}
 
@@ -60,7 +60,7 @@ namespace Immortal {
 				case ShaderDataType::Bool:    return 1;
 			}
 
-			SLASSERT(false, "Unknown ShaderDataType!");
+			SLASSERT(false && "Unknown ShaderDataType!");
 			return 0;
 		}
 

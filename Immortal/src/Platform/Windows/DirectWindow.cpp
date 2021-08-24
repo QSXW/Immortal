@@ -325,7 +325,7 @@ namespace Immortal {
 
 		m_hwnd = ::CreateWindow(m_WindowClass.lpszClassName, title.c_str(), WS_OVERLAPPEDWINDOW, 100, 100, m_Data.Width, m_Data.Height, NULL, NULL, m_WindowClass.hInstance, NULL);
 
-        SLASSERT(!CreateDeviceD3D(m_hwnd), "Failed to initialize Direct Window!")
+        SLASSERT(!CreateDeviceD3D(m_hwnd) && "Failed to initialize Direct Window!");
 
         ::ShowWindow(m_hwnd, SW_SHOWDEFAULT);
         ::UpdateWindow(m_hwnd);

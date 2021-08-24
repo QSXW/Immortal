@@ -75,7 +75,7 @@ namespace Immortal {
 					return 4 * 4;
 				}
 				default:
-					SLASSERT(false, "The Input format was incorrect.");
+					SLASSERT(false && "The Input format was incorrect.");
 					return 0;
 			}
 		}

@@ -21,34 +21,33 @@ namespace Vulkan
 		return MakeUnique<RenderTarget>(std::move(images));
 	};
 
-
 	RenderTarget::RenderTarget(std::vector<Image> &&images) :
 		device{ images.back().Get<Device>() },
-		mImages{ std::move(images) }
+		images{ std::move(images) }
 	{
-		SLASSERT(!mImages.empty(), "Should specify at least 1 image");
+		SLASSERT(!images.empty() && "Should specify at least 1 image");
 		std::set<VkExtent2D, CompareExtent2D> uniqueExtent;
 
 		auto ImageExtent = [](const Image &image) -> VkExtent2D
 		{
-			auto extent = image.Extent();
+			auto &extent = image.Extent();
 			return { extent.width,  extent.height };
 		};
 
-		std::transform(mImages.begin(), mImages.end(), std::inserter(uniqueExtent, uniqueExtent.end()), ImageExtent);
-		SLASSERT(uniqueExtent.size() == 1, "Extent size is not unique");
+		std::transform(images.begin(), images.end(), std::inserter(uniqueExtent, uniqueExtent.end()), ImageExtent);
+		SLASSERT(uniqueExtent.size() == 1 && "Extent size is not unique");
 
-		mExtent = *uniqueExtent.begin();
+		extent = *uniqueExtent.begin();
 
-		for (auto &image : mImages)
+		for (auto &image : images)
 		{
 			if (image.Type() != VK_IMAGE_TYPE_2D)
 			{
-				IM_CORE_ERROR("Image type is not 2D");
+				Log::Error("Image type is not 2D");
 			}
 
-			mViews.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
-			mAttachments.emplace_back(Attachment{ image.Format(), image.SampleCount(), image.Usage() });
+			views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
+			attachments.emplace_back(Attachment{ image.Format(), image.SampleCount(), image.Usage() });
 		}
 	}
 }

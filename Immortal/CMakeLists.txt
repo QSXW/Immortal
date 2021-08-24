@@ -13,7 +13,6 @@ set(CORE_FILES
 set(FRAMEWORK_FILES
     src/Framework/Application.cpp
     src/Framework/Application.h
-    src/Framework/Assert.h
     src/Framework/Core.cpp
     src/Framework/Main.h
     src/Framework/Input.h
@@ -105,6 +104,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/RenderContext.h
    src/Platform/Vulkan/Renderer.cpp
    src/Platform/Vulkan/Renderer.h
+   src/Platform/Vulkan/RenderFrame.cpp
+   src/Platform/Vulkan/RenderFrame.h
    src/Platform/Vulkan/RenderTarget.cpp
    src/Platform/Vulkan/RenderTarget.h
    src/Platform/Vulkan/Swapchain.cpp
