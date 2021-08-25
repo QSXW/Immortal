@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 	Immortal::Utils::SafeChunk = new UINT8[1024];
 
 	system("chcp 65001 & cls");
-	Immortal::Log::Init();
+	Immortal::LOG::Init();
 	auto app = Immortal::CreateApplication();
 	app->Run();
 	delete app;

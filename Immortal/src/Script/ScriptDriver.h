@@ -94,7 +94,7 @@ namespace Immortal
 			_M_moudle = LoadLibraryA("ScriptsCore/bin/Runtime.dll");
 			if (!_M_moudle)
 			{
-				IM_CORE_WARN("Failed to load Runtime.dll");
+				LOG::WARN("Failed to load Runtime.dll");
 				return objects;
 			}
 

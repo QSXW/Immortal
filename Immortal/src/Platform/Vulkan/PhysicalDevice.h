@@ -15,27 +15,13 @@ namespace Vulkan
 		PhysicalDevice() = default;
 		PhysicalDevice(Instance &instance, VkPhysicalDevice physicalDevice);
 
-		/**
-		 * @brief Requests a third party extension to be used by the framework
-		 *
-		 *    To have the features enabled, this function must be called before the logical device
-		 *    is created. To do this request sample specific features inside
-		 *    VulkanSample::RequestExtensionFeatures(PhysicalDevice &gpu).
-		 *
-		 *    If the feature extension requires you to ask for certain features to be enabled, you can
-		 *    modify the struct returned by this function, it will propegate the changes to the logical
-		 *    device.
-		 * 
-		 * @param type The VkStructureType for the extension you are requesting
-		 * @returns The extension feature struct
-		 */
 		template <typename T>
 		T &RequestExtensionFeatures(VkStructureType type)
 		{
 			// We cannot request extension features if the physical device properties 2 instance extension isnt enabled
 			if (!instance.IsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
 			{
-				IM_CORE_ERROR("Couldn't request feature from device as " + std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) + " isn't enabled!");
+				LOG::ERR("Couldn't request feature from device as " + std::string(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) + " isn't enabled!");
 			}
 
 			// If the type already exists in the map, return a casted pointer to get the extension feature struct

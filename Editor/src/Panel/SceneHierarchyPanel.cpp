@@ -418,7 +418,7 @@ namespace Immortal
 						bool isSelected = (current == projectionTypeStrings[i]);
 						if (ImGui::Selectable(projectionTypeStrings[i], isSelected))
 						{
-							IM_CORE_WARN("{0}", i);
+							LOG::WARN("{0}", i);
 							current = projectionTypeStrings[i];
 							camera.SetProjectionType(static_cast<Camera::ProjectionType>(i));
 							isChanged = true;

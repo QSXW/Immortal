@@ -43,10 +43,10 @@ namespace Immortal
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#define LOG_VEC2(v) IM_CORE_INFO("{0} {1}", v.x, v.y)
-#define LOG_VEC3(v) IM_CORE_INFO("{0} {1} {2}", v.x, v.y, v.z)
-#define LOG_VEC4(v) IM_CORE_INFO("\n{0} {1} {2} {3}", v.x, v.y, v.z, v.w)
-#define LOG_MAT4(v) IM_CORE_INFO("\n{0} {1} {2} {3}\n{4} {5} {6} {7} \n{8} {9} {10} {11}\n{11} {12} {13} {14}\n", v[0].x, v[0].y, v[0].z, v[0].w, v[1].x, v[1].y, v[1].z, v[1].w, v[2].x, v[2].y, v[2].z, v[2].w, v[3].x, v[3].y, v[3].z, v[3].w)
+#define LOG_VEC2(v) LOG::INFO("{0} {1}", v.x, v.y)
+#define LOG_VEC3(v) LOG::INFO("{0} {1} {2}", v.x, v.y, v.z)
+#define LOG_VEC4(v) LOG::INFO("\n{0} {1} {2} {3}", v.x, v.y, v.z, v.w)
+#define LOG_MAT4(v) LOG::INFO("\n{0} {1} {2} {3}\n{4} {5} {6} {7} \n{8} {9} {10} {11}\n{11} {12} {13} {14}\n", v[0].x, v[0].y, v[0].z, v[0].w, v[1].x, v[1].y, v[1].z, v[1].w, v[2].x, v[2].y, v[2].z, v[2].w, v[3].x, v[3].y, v[3].z, v[3].w)
 
 
 namespace Immortal {

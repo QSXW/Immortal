@@ -24,7 +24,7 @@ namespace Immortal {
 
 		for (size_t i = 0; i < sizeof(pathes) / sizeof(pathes[0]); i++)
 		{
-			IM_CORE_INFO("Loading Mesh Primitive: {0}", pathes[i]);
+			LOG::INFO("Loading Mesh Primitive: {0}", pathes[i]);
 			if (i == static_cast<size_t>(Mesh::Primitive::Sphere))
 			{
 				Primitives.emplace_back(CreateSphere(0.5f));
@@ -39,7 +39,7 @@ namespace Immortal {
 	{
 		LogStream::initialize();
 
-		Log::Info("Loading mesh: {0}", filepath.c_str());
+		LOG::INFO("Loading mesh: {0}", filepath.c_str());
 
 		mImporter.reset(new Assimp::Importer());
 

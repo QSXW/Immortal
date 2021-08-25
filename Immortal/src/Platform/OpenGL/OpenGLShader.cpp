@@ -90,7 +90,7 @@ namespace Immortal {
 				glDeleteShader(shaderIDs[i]);
 			}
 
-			IM_CORE_ERROR("{0}", infoLog.get());
+			LOG::ERR("{0}", infoLog.get());
 			SLASSERT(isLinked == GL_FALSE && "Shader compilation failure!");
 		}
 
@@ -117,7 +117,7 @@ namespace Immortal {
 			Scope<GLchar> infoLog = CreateScope<GLchar>(maxLength);
 			glGetShaderInfoLog(shader, maxLength, &maxLength, infoLog.get());
 			glDeleteShader(shader);
-			IM_CORE_ERROR("{0}", infoLog.get());
+			LOG::ERR("{0}", infoLog.get());
 			SLASSERT(isCompiled && "Shader compilation failure!");
 		}
 
@@ -140,7 +140,7 @@ namespace Immortal {
 				return result;
 			}
 		}
-		Log::Error("Could not open file '{0}'", filepath);
+		LOG::ERR("Could not open file '{0}'", filepath);
 	}
 
 	std::unordered_map<GLenum, std::string> OpenGLShader::Preprocess(const std::string & source)

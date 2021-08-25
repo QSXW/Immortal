@@ -25,7 +25,7 @@ namespace Vulkan
 		device{ images.back().Get<Device>() },
 		images{ std::move(images) }
 	{
-		SLASSERT(!images.empty() && "Should specify at least 1 image");
+		SLASSERT(!this->images.empty() && "Should specify at least 1 image");
 		std::set<VkExtent2D, CompareExtent2D> uniqueExtent;
 
 		auto ImageExtent = [](const Image &image) -> VkExtent2D
@@ -34,16 +34,16 @@ namespace Vulkan
 			return { extent.width,  extent.height };
 		};
 
-		std::transform(images.begin(), images.end(), std::inserter(uniqueExtent, uniqueExtent.end()), ImageExtent);
+		std::transform(this->images.begin(), this->images.end(), std::inserter(uniqueExtent, uniqueExtent.end()), ImageExtent);
 		SLASSERT(uniqueExtent.size() == 1 && "Extent size is not unique");
 
 		extent = *uniqueExtent.begin();
 
-		for (auto &image : images)
+		for (auto &image : this->images)
 		{
 			if (image.Type() != VK_IMAGE_TYPE_2D)
 			{
-				Log::Error("Image type is not 2D");
+				LOG::ERR("Image type is not 2D");
 			}
 
 			views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);

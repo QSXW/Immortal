@@ -180,14 +180,14 @@ namespace Immortal
 		}
 		else
 		{
-			IM_CORE_CRITICAL("Error: Failed to read the pipe to the end.\n");
+			LOG::FATAL("Error: Failed to read the pipe to the end.\n");
 		}
 
 		switch(Compiler::Status)
 		{
 		case 0:
 			ret = Compiler::Flag::Succeed;
-			IM_CORE_INFO(Compiler::Log);
+			LOG::INFO(Compiler::Log);
 			Compiler::Log.append(UNICODE8("±‡“Î≥…π¶\n"));
 			break;
 		case 1:

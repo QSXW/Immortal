@@ -6,10 +6,9 @@
 
 namespace Immortal {
 
-	Ref<spdlog::logger> Log::logger;
-	Ref<spdlog::logger> Log::sClientLogger;
+	Ref<spdlog::logger> LOG::logger;
 
-	void Log::Init()
+	void LOG::Init()
 	{
 		std::vector<spdlog::sink_ptr> logSinks;
 		logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
@@ -22,11 +21,6 @@ namespace Immortal {
 		spdlog::register_logger(logger);
 		logger->set_level(spdlog::level::trace);
 		logger->flush_on(spdlog::level::trace);
-
-		sClientLogger = std::make_shared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
-		spdlog::register_logger(sClientLogger);
-		sClientLogger->set_level(spdlog::level::trace);
-		sClientLogger->flush_on(spdlog::level::trace);
 	}
 
 }

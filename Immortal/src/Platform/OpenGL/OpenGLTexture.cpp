@@ -48,7 +48,7 @@ namespace Immortal {
 
 	OpenGLTexture2D::OpenGLTexture2D(const std::string & path, bool flip, Texture::Wrap wrap, Texture::Filter filter)
 	{
-		IM_CORE_TRACE("{0} Loading: {1}", __func__, path);
+		LOG::INFO("{0} Loading: {1}", __func__, path);
 		Frame frame = Frame(path, flip);
 
 		mWidth = frame.Width();
@@ -70,7 +70,7 @@ namespace Immortal {
 	OpenGLTexture2D::OpenGLTexture2D(const std::string & path, bool flip)
 		: mPath(path), mTexture(0)
 	{
-		IM_CORE_TRACE("{0} Loading: {1}", __func__, path);
+		LOG::INFO("{0} Loading: {1}", __func__, path);
 		Frame frame = Frame(path, flip);
 
 		mWidth  = frame.Width();
@@ -94,12 +94,12 @@ namespace Immortal {
 		{
 			glGenerateTextureMipmap(mTexture);
 		}
-		IM_CORE_TRACE("{0} Completed: {1}", __func__, path);
+		LOG::INFO("{0} Completed: {1}", __func__, path);
 	}
 
 	OpenGLTexture2D::OpenGLTexture2D(const std::string & path, Texture::Wrap wrap, Texture::Filter filter)
 	{
-		IM_CORE_TRACE("{0} Loading: {1}", __func__, path);
+		LOG::INFO("{0} Loading: {1}", __func__, path);
 		Frame frame = Frame(path);
 
 		mWidth = frame.Width();
@@ -123,7 +123,7 @@ namespace Immortal {
 		{
 			glGenerateTextureMipmap(mTexture);
 		}
-		IM_CORE_TRACE("{0} Completed: {1}", __func__, path);
+		LOG::INFO("{0} Completed: {1}", __func__, path);
 	}
 
 	OpenGLTexture2D::OpenGLTexture2D(const uint32_t width, const uint32_t height, Texture::Description & spec, int levels)

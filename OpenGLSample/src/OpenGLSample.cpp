@@ -206,7 +206,7 @@ public:
 
 	bool OnKeyPressed(Immortal::KeyPressedEvent &e)
 	{
-		IM_CORE_INFO(e);
+		LOG::INFO(e);
 
 		return false;
 	}

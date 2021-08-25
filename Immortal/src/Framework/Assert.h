@@ -16,7 +16,7 @@
 
 	// Currently accepts at least the condition and one additional parameter (the message) being optional
 	#define IM_APP_ASSERT(...) IM_EXPAND_MACRO( HZ_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__) )
-	#define SLASSERT(x, ...) { if(!(x)) { IM_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
+	#define SLASSERT(x, ...) { if(!(x)) { LOG::ERR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 	#else
 	#define IM_ASSERT(...)
 	#define SLASSERT(...)

@@ -23,7 +23,7 @@ namespace Vulkan
     {
         if (request.width < 1 || request.height < 1)
         {
-            Log::Warn("(Swapchain) Image extent ({0}, {1}) not supported. Selecting ({2}, {3}).",
+            LOG::WARN("(Swapchain) Image extent ({0}, {1}) not supported. Selecting ({2}, {3}).",
                 request.width, request.height, current.width, current.height);
             return current;
         }
@@ -60,7 +60,7 @@ namespace Vulkan
                 if (it != available.end())
                 {
                 __IM__000_000_001_ReturnSurfaceFormat:
-                    Log::Warn("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
+                    LOG::WARN("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
                                Stringify(request), Stringify(*it));
                     return *it;
                 }
@@ -70,7 +70,7 @@ namespace Vulkan
         }
         else
         {
-            Log::Info("(Swapchain) Surface format selected: {0}", Stringify(request));
+            LOG::INFO("(Swapchain) Surface format selected: {0}", Stringify(request));
         }
         return *it;
     }
@@ -98,7 +98,7 @@ namespace Vulkan
             }
             else
             {
-                Log::Warn("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
+                LOG::WARN("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
             }
         }
 
@@ -123,10 +123,10 @@ namespace Vulkan
 
         SLASSERT(!validated.empty() && "No compatible image usage found.");
 #if     IMMORTAL_CHECK_DEBUG
-        Log::Info("(Swapchain) Image usage flags:");
+        LOG::INFO("(Swapchain) Image usage flags:");
         for (auto &flag : validated)
         {
-            Log::Info("  \t{0}", Stringify(flag));
+            LOG::INFO("  \t{0}", Stringify(flag));
         }
 #endif
 
@@ -150,7 +150,7 @@ namespace Vulkan
             return request;
         }
 
-        Log::Warn("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
+        LOG::WARN("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
 
         return current;
     }
@@ -173,7 +173,7 @@ namespace Vulkan
         {
             if (compositeAlphaFlags[i] & support)
             {
-                Log::Warn("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
+                LOG::WARN("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
                           Stringify(request), Stringify(compositeAlphaFlags[i]));
                 return compositeAlphaFlags[i];
             }
@@ -200,13 +200,13 @@ namespace Vulkan
                 }
             }
 
-            Log::Warn("(Swapchain) Present mode '{}' not supported. Selecting '{}'."),
+            LOG::WARN("(Swapchain) Present mode '{}' not supported. Selecting '{}'."),
                       Stringify(request), Stringify(chosen);
             return chosen;
         }
         else
         {
-            Log::Info("(Swapchain) Present mode selected: {0}"), Stringify(request);
+            LOG::INFO("(Swapchain) Present mode selected: {0}"), Stringify(request);
             return *it;
         }
     }
@@ -247,10 +247,10 @@ namespace Vulkan
         Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDeviceHandle, surface, &surfaceFormatCount, surfaceFormats.data()));
 
 #if     IMMORTAL_CHECK_DEBUG
-        Log::Info("Surface supports the following surface formats:");
+        LOG::INFO("Surface supports the following surface formats:");
         for (auto &f : surfaceFormats)
         {
-            Log::Info("  \t{0}", Vulkan::Stringify(f));
+            LOG::INFO("  \t{0}", Vulkan::Stringify(f));
         }
 #endif
         UINT32 presentModeCount{ 0U };
@@ -259,10 +259,10 @@ namespace Vulkan
         Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDeviceHandle, surface, &presentModeCount, presentModes.data()));
 
 #if     IMMORTAL_CHECK_DEBUG
-        Log::Info("Surface supports the following present modes:");
+        LOG::INFO("Surface supports the following present modes:");
         for (auto &p : presentModes)
         {
-             Log::Info("  \t{0}", Vulkan::Stringify(p));
+             LOG::INFO("  \t{0}", Vulkan::Stringify(p));
         }
 #endif
 

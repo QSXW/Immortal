@@ -37,7 +37,7 @@ namespace Immortal {
 		{
 			if (HasComponent<T>())
 			{
-				IM_CORE_WARN("Add component to a enity which alread has an identical component. The previous one would be remove.");
+				LOG::WARN("Add component to a enity which alread has an identical component. The previous one would be remove.");
 				RemoveComponent<T>();
 			}
 			return mScene->mRegistry.emplace<T>(handle, std::forward<Args>(args)...);

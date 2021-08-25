@@ -18,7 +18,7 @@ namespace Immortal {
 			return MakeUnique<Vulkan::RenderContext>(desc);
 
 		default:
-			IM_CORE_ERROR("Not support api");
+			LOG::ERR("Not support api");
 			return nullptr;
 		}
 	}

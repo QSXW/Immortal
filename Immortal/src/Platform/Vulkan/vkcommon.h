@@ -143,7 +143,7 @@ namespace Vulkan
 		auto msg = ErrorToString(status);
 		if (status)
 		{
-			Log::Error("Detected Vulkan error: {0}", msg);
+			LOG::ERR("Detected Vulkan error: {0}", msg);
 			abort();
 		}
 	}

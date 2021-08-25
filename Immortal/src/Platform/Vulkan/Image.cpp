@@ -40,13 +40,12 @@ namespace Vulkan
 			result = VK_IMAGE_TYPE_3D;
 			break;
 		default:
-			IM_CORE_ERROR(LOGB("图片格式错误", "No image type found."));
+			LOG::ERR("No image type found.");
 			break;
 		}
 
 		return result;
 	}
-
 
 	Image::Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
 		device{ device },
@@ -71,8 +70,8 @@ namespace Vulkan
 		mArrayLayerCount{ arrayLayers },
 		mTiling{ tiling }
 	{
-		SLASSERT(mipLevels > 0 && LOGB("Mip贴图应该大于一个层级", "Image should have at least one level"));
-		SLASSERT(arrayLayers > 0 && LOGB("图片至少有一层", "Image should have at least one level"));
+		SLASSERT(mipLevels > 0 && "Image should have at least one level");
+		SLASSERT(arrayLayers > 0 && "Image should have at least one level");
 
 		mSubresource.mipLevel = mipLevels;
 		mSubresource.arrayLayer = arrayLayers;

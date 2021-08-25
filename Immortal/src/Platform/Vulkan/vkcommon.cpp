@@ -236,11 +236,11 @@ namespace Vulkan
 
 		if (depthFormat != VK_FORMAT_UNDEFINED)
 		{
-			Log::Info(LOGB("选择了深度格式: {0}", "Depth format selected: {0}"), Stringify(depthFormat));
+			LOG::INFO("Depth format selected: {0}", Stringify(depthFormat));
 			return depthFormat;
 		}
 
-		SLASSERT(false, LOGB("没有可用的深度格式" && "No suitable depth format could be determined"));
+		SLASSERT(false && "No suitable depth format could be determined");
 		return Utils::NullValue<VkFormat>();
 	}
 }

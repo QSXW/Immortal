@@ -262,12 +262,6 @@ namespace Immortal {
 		}
 		ImGui::End();
 
-		ImGui::Begin(UNICODE8("控制台"));
-		{
-			ImGui::LogText("%s", Log::GetCoreLogger());
-		}
-		ImGui::End();
-
 		ImGui::Begin(UNICODE8("调色板"));
 		{
 			ImGui::NextColumn();
@@ -385,7 +379,7 @@ namespace Immortal {
 						auto cameraEntity = mActiveScene->PrimaryCameraEntity();
 						if (cameraEntity)
 						{
-							auto camera = cameraEntity.GetComponent<CameraComponent>().Camera;
+							auto &camera = cameraEntity.GetComponent<CameraComponent>().Camera;
 							cameraProjectionMatrix = camera.Projection();
 							cameraViewMatrix = Vector::Inverse(cameraEntity.Transform());
 						}
@@ -535,7 +529,7 @@ namespace Immortal {
 			}
 
 			// _WARN("pixel = {0}, {1}, {2}, {3}", ((uint8_t *)&pixel)[0], ((uint8_t *)&pixel)[1], ((uint8_t *)&pixel)[2], ((uint8_t *)&pixel)[3]);
-			IM_CORE_WARN("pixel = {0}", pixel);
+			LOG::WARN("pixel = {0}", pixel);
 
 			return false;
 		}
@@ -666,7 +660,7 @@ namespace Immortal {
 				}
 			});
 
-		auto scene = mActiveScene;
+		auto &scene = mActiveScene;
 		NativeScriptDriver::On(sWorkspace, scripts,
 			[&scene](std::vector<ScriptableObject *> objects)
 			{

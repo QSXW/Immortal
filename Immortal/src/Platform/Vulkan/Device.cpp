@@ -15,7 +15,7 @@ namespace Vulkan
 		: physicalDevice(physicalDevice),
 		  surface(surface)
 	{
-		Log::Info("Selected GPU: {0}", physicalDevice.Properties.deviceName);
+		LOG::INFO("Selected GPU: {0}", physicalDevice.Properties.deviceName);
 
 		UINT32 propsCount = U32(physicalDevice.QueueFamilyProperties.size());
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
@@ -57,10 +57,10 @@ namespace Vulkan
 #if     IMMORTAL_CHECK_DEBUG
 		if (!mDeviceExtensions.empty())
 		{
-			Log::Info("Device supports the following extensions: ");
+			LOG::INFO("Device supports the following extensions: ");
 			for (auto& ext : mDeviceExtensions)
 			{
-				Log::Debug("  \t{0}", ext.extensionName);
+				LOG::INFO("  \t{0}", ext.extensionName);
 			}
 		}
 #endif
@@ -85,10 +85,10 @@ namespace Vulkan
 
 		if (!enabledExtensions.empty())
 		{
-			Log::Info("Device supports the following requested extensions:");
+			LOG::INFO("Device supports the following requested extensions:");
 			for (auto& ext : enabledExtensions)
 			{
-				Log::Info("  \t{0}", ext);
+				LOG::INFO("  \t{0}", ext);
 			}
 		}
 
@@ -99,11 +99,11 @@ namespace Vulkan
 				auto isOptional = requestedExtensions[ext];
 				if (isOptional)
 				{
-					Log::Warn("Optional device extension {0} not available. Some features may be disabled", ext);
+					LOG::WARN("Optional device extension {0} not available. Some features may be disabled", ext);
 				}
 				else
 				{
-					Log::Error("Required device extension {0} not available. Stop running!", ext);
+					LOG::ERR("Required device extension {0} not available. Stop running!", ext);
 					Vulkan::Check(VK_ERROR_EXTENSION_NOT_PRESENT);
 				}
 			}
@@ -223,7 +223,7 @@ namespace Vulkan
 			}
 		}
 
-		Log::Error("Counld not find a matching queue family index");
+		LOG::ERR("Counld not find a matching queue family index");
 		return 0;
 	}
 
@@ -233,7 +233,7 @@ namespace Vulkan
 		{
 			VmaStats stats;
 			vmaCalculateStats(memoryAllocator, &stats);
-			IM_CORE_INFO("Total device memory leaked: {0} bytes.", stats.total.usedBytes);
+			LOG::INFO("Total device memory leaked: {0} bytes.", stats.total.usedBytes);
 
 			vmaDestroyAllocator(memoryAllocator);
 		};
@@ -292,14 +292,14 @@ namespace Vulkan
 			enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
 			enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
 
-			Log::Info("Dedicated Allocation enabled");
+			LOG::INFO("Dedicated Allocation enabled");
 		}
 
 		if (hasPerformanceQuery && hasHostQueryReset)
 		{
 			auto& perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
 			auto& host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
-			Log::Info("Performance query enabled");
+			LOG::INFO("Performance query enabled");
 		}
 	}
 
@@ -336,7 +336,7 @@ namespace Vulkan
 			}
 		}
 
-		Log::Error("Queue not found");
+		LOG::ERR("Queue not found");
 		return Utils::NullValue<Queue>();
 	}
 }

@@ -13,7 +13,7 @@ namespace Immortal
 
 	static void GLFWErrorCallback(int error, const char *description)
 	{
-		IM_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
+		LOG::ERR("GLFW Error ({0}): {1}", error, description);
 	}
 
 	GLFWWindow::GLFWWindow(const WindowProps& props)
@@ -61,7 +61,7 @@ namespace Immortal
 		mData.Width  = props.Width;
 		mData.Height = props.Height;
 
-		IM_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+		LOG::INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
 		if (GLFWWindowCount == 0)
 		{

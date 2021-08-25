@@ -17,11 +17,11 @@ namespace Vulkan
 	{
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			Log::Warn("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+			LOG::WARN("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
 		}
 		else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			Log::Error("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+			LOG::ERR("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
 		}
 
 		return VK_FALSE;
@@ -33,19 +33,19 @@ namespace Vulkan
 	{
 		if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 		{
-			Log::Error("{0}: {1}", layerPrefix, message);
+			LOG::ERR("{0}: {1}", layerPrefix, message);
 		}
 		else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 		{
-			Log::Warn("{0}: {1}", layerPrefix, message);
+			LOG::WARN("{0}: {1}", layerPrefix, message);
 		}
 		else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 		{
-			Log::Warn("{0}: {1}", layerPrefix, message);
+			LOG::WARN("{0}: {1}", layerPrefix, message);
 		}
 		else
 		{
-			Log::Info("{0}: {1}", layerPrefix, message);
+			LOG::INFO("{0}: {1}", layerPrefix, message);
 		}
 		return VK_FALSE;
 	}
@@ -66,7 +66,7 @@ namespace Vulkan
 			}
 			if (!found)
 			{
-				Log::Error("Validation Layer {} not found", layer);
+				LOG::ERR("Validation Layer {} not found", layer);
 				return false;
 			}
 		}
@@ -80,18 +80,17 @@ namespace Vulkan
 		{
 			if ((RenderContext::Status = volkInitialize()) != VK_SUCCESS)
 			{
-				Log::Critical("Unable to initialize Vulkan Library."
-					          "Please confirm your device support "
-					          "and get Vulkan Installed");
+				LOG::FATAL("Unable to initialize Vulkan Library. Please confirm your device support "
+					        "and get Vulkan Installed");
 				Check(RenderContext::Status);
 			}
-			Log::Info("Load Vulkan library with success...");
+			LOG::INFO("Load Vulkan library with success...");
 		}
 	}
 
 	static inline void VkEnableExtension(const char *message)
 	{
-		Log::Info("{0} is available. Enabling it!", message);
+		LOG::INFO("{0} is available. Enabling it!", message);
 	}
 
 	Instance::Instance(const char                                   *applicationName,
@@ -142,7 +141,7 @@ namespace Vulkan
 		}
 		if (headless && !headlessExtension)
 		{
-			Log::Warn("{0} is not available. Disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+			LOG::WARN("{0} is not available. Disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
 		}
 		else
 		{
@@ -168,12 +167,12 @@ namespace Vulkan
 			{
 				if (isOptional)
 				{
-					Log::Warn("Optional instance extension {0} not available, some features may be disabled", extensionName);
+					LOG::WARN("Optional instance extension {0} not available, some features may be disabled", extensionName);
 				}
 				else
 				{
-					Log::Error("Required instance extension {0} not available, cannot run", extensionName);
-					Log::Error("Required instance extensions are missing.");
+					LOG::ERR("Required instance extension {0} not available, cannot run", extensionName);
+					LOG::ERR("Required instance extensions are missing.");
 				}
 			}
 			else
@@ -190,15 +189,15 @@ namespace Vulkan
 
 		if (ValidateLayers(requiredValidationLayers, supportedValidationLayers))
 		{
-			Log::Info("Enabled Validation Layers: ");
+			LOG::INFO("Enabled Validation Layers: ");
 			for (const auto &layer : requiredValidationLayers)
 			{
-				Log::Debug("  \t{0}", layer);;
+				LOG::DEBUG("  \t{0}", layer);;
 			}
 		}
 		else
 		{
-			Log::Error("Required validation layers are missing.");
+			LOG::ERR("Required validation layers are missing.");
 		}
 
 		VkApplicationInfo appInfo{};
@@ -312,7 +311,7 @@ namespace Vulkan
 			}
 		}
 
-		Log::Warn("Couldn't find a discrete physical device. Picking default GPU");
+		LOG::WARN("Couldn't find a discrete physical device. Picking default GPU");
 		return *physicalDevices.at(0);
 	}
 
@@ -328,7 +327,7 @@ namespace Vulkan
 		{
 			if (Vulkan::Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
 			{
-				IM_CORE_INFO(LOGB("{0} 可用. 已启用!", "{0} is available. Enabling it!"), VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+				LOG::INFO("{0} is available. Enabling it!", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 				enabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 				return true;
 			}
