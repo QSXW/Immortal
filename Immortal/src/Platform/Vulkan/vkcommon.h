@@ -68,7 +68,7 @@ namespace Vulkan
 		}
 	}
 
-	inline const char *ErrorToString(VkResult err)
+	inline const char *Stringify(VkResult err)
 	{
 #define XX(x) case x: return #x;
 		switch (err)
@@ -140,7 +140,7 @@ namespace Vulkan
 #if defined( DEBUG ) || defined( _DEBUG )
 	inline void Check(VkResult status)
 	{
-		auto msg = ErrorToString(status);
+		auto msg = Stringify(status);
 		if (status)
 		{
 			LOG::ERR("Detected Vulkan error: {0}", msg);
@@ -156,8 +156,8 @@ namespace Vulkan
 		return (strcmp(str1, str2) == 0);
 	}
 
-	VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice,
-			                     bool depthOnly = false,
+	VkFormat SuitableDepthFormat(VkPhysicalDevice             physicalDevice,
+			                     bool                         depthOnly             = false,
 			                     const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });
 
 	static inline bool IsDepthOnlyFormat(VkFormat format)
