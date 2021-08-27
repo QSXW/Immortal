@@ -57,7 +57,7 @@ namespace Immortal {
 	void EditorCamera::OnEvent(Event & e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<MouseScrolledEvent>(IM_BIND_EVENT_FUNC(EditorCamera::OnMouseScroll));
+		dispatcher.Dispatch<MouseScrolledEvent>(std::bind(&EditorCamera::OnMouseScroll, this, std::placeholders::_1));
 	}
 
 	Vector::Vector3 EditorCamera::UpDirection()

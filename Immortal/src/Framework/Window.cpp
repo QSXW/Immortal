@@ -9,7 +9,7 @@ namespace Immortal
 {
 	Scope<Window> Window::Create(const WindowProps& props)
 	{
-	#ifdef IMMORTAL_PLATFORM_WINDOWS
+	#ifdef WINDOWS
 		#ifndef IMMORTAL_WINDOWS_DIRECT
 			return CreateScope<GLFWWindow>(props);
 		#else

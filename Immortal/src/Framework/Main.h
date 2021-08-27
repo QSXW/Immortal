@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined( IMMORTAL_PLATFORM_WINDOWS )
+#ifdef WINDOWS
 #include "ImmortalCore.h"
 extern Immortal::Application* Immortal::CreateApplication();
 
@@ -9,16 +9,16 @@ extern Immortal::Application* Immortal::CreateApplication();
 
 int main(int argc, char **argv)
 {
-	Immortal::Utils::SafeChunk = new UINT8[1024];
+    Immortal::Utils::SafeChunk = new UINT8[1024];
 
-	system("chcp 65001 & cls");
-	Immortal::LOG::Init();
-	auto app = Immortal::CreateApplication();
-	app->Run();
-	delete app;
+    system("chcp 65001 & cls");
+    Immortal::LOG::Init();
+    auto app = Immortal::CreateApplication();
+    app->Run();
+    delete app;
 
-	delete[] Immortal::Utils::SafeChunk;
-	return 0;
+    delete[] Immortal::Utils::SafeChunk;
+    return 0;
 }
 
 #endif

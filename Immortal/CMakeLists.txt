@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
 project(Immortal LANGUAGES CXX)
 
@@ -259,7 +259,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sr
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/impch.h>)
 
+add_subdirectory(sl)
+
 target_link_libraries(${PROJECT_NAME}
+    slapi
     glm
     glad
     glfw

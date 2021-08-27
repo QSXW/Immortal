@@ -9,7 +9,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
-#if IMMORTAL_CHECK_DEBUG
+#if SLDEBUG
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		                                                              VkDebugUtilsMessageTypeFlagsEXT messageType,
 		                                                              const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
@@ -106,13 +106,13 @@ namespace Vulkan
 		std::vector<VkExtensionProperties> availableExtension{ extensionCount };
 		Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
 		bool debugUtils = false;
 #endif
 		bool headlessExtension = false;
 		for (auto &ext : availableExtension)
 		{
-#if			IMMORTAL_CHECK_DEBUG
+#if			SLDEBUG
 			if (Equals(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
 			{
 				debugUtils = true;
@@ -148,7 +148,7 @@ namespace Vulkan
 			enabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
 		}
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
 		if (!debugUtils)
 		{
 			enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -219,7 +219,7 @@ namespace Vulkan
 		instanceInfo.enabledLayerCount       = static_cast<UINT32>(requiredValidationLayers.size());
 		instanceInfo.ppEnabledLayerNames     = requiredValidationLayers.data();
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
 		VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
 		VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT };
 
@@ -243,7 +243,7 @@ namespace Vulkan
 		Vulkan::Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
 		volkLoadInstance(handle);
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
 		if (debugUtils)
 		{
 			SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");

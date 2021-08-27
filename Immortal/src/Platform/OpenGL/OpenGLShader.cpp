@@ -63,7 +63,7 @@ namespace Immortal {
 
     void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& source)
     {
-        std::array<GLenum, 2> shaderIDs;
+        std::array<GLenum, 2> shaderIDs{};
 
         int index = 0;
         handle = glCreateProgram();

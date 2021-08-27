@@ -63,8 +63,8 @@ namespace Immortal {
 	void OrthographicCameraController::OnEvent(Event & e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<MouseScrolledEvent>(IM_BIND_EVENT_FUNC(OrthographicCameraController::OnMouseScrolled));
-		dispatcher.Dispatch<WindowResizeEvent>(IM_BIND_EVENT_FUNC(OrthographicCameraController::OnWindowResized));
+		dispatcher.Dispatch<MouseScrolledEvent>(std::bind(&OrthographicCameraController::OnMouseScrolled, this, std::placeholders::_1));
+		dispatcher.Dispatch<WindowResizeEvent>(std::bind(&OrthographicCameraController::OnWindowResized, this, std::placeholders::_1));
 	}
 
 	void OrthographicCameraController::Reset(Vector::Vector3 &position, float rotation)

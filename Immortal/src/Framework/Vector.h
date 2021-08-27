@@ -1,36 +1,5 @@
 #pragma once
 
-#if 0
-#include "ImmortalCore.h"
-#include <intrin.h>
-
-namespace Immortal
-{
-	union IMMORTAL_API Vector
-	{
-		Vector(float x, float y, float z = 0.0, float w = 1.0)
-			: position{ x, y, z, w }
-		{
-
-		}
-
-		__m128 reg;
-		struct
-		{
-			float x;
-			float y;
-			float z;
-			float w;
-		} position;
-	};
-	 
-	using Vector2 = Vector;
-	using Vector3 = Vector;
-	using Vector4 = Vector;
-}
-#endif
-
-
 #ifndef __IMMORTAL_VECTOR_H__
 #define __IMMORTAL_VECTOR_H__
 

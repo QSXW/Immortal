@@ -111,7 +111,7 @@ namespace Vulkan
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT
             };
 
-            for (size_t i = 0; i < ARRAY_LEN(imageUsageFlags); i++)
+            for (size_t i = 0; i < SL_ARRAY_LEN(imageUsageFlags); i++)
             {
                 if ((imageUsageFlags[i] & support) && ValidateFormatFeature(imageUsageFlags[i], supportedFeatures))
                 {
@@ -122,7 +122,7 @@ namespace Vulkan
         }
 
         SLASSERT(!validated.empty() && "No compatible image usage found.");
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
         LOG::INFO("(Swapchain) Image usage flags:");
         for (auto &flag : validated)
         {
@@ -169,7 +169,7 @@ namespace Vulkan
             VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
         };
 
-        for (size_t i = 0; i < ARRAY_LEN(compositeAlphaFlags); i++)
+        for (size_t i = 0; i < SL_ARRAY_LEN(compositeAlphaFlags); i++)
         {
             if (compositeAlphaFlags[i] & support)
             {
@@ -246,7 +246,7 @@ namespace Vulkan
         surfaceFormats.resize(surfaceFormatCount);
         Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDeviceHandle, surface, &surfaceFormatCount, surfaceFormats.data()));
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
         LOG::INFO("Surface supports the following surface formats:");
         for (auto &f : surfaceFormats)
         {
@@ -258,7 +258,7 @@ namespace Vulkan
         presentModes.resize(presentModeCount);
         Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDeviceHandle, surface, &presentModeCount, presentModes.data()));
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
         LOG::INFO("Surface supports the following present modes:");
         for (auto &p : presentModes)
         {

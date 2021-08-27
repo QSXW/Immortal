@@ -54,7 +54,7 @@ namespace Vulkan
 		mDeviceExtensions.resize(deviceExtensionCount);
 		Vulkan::Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, mDeviceExtensions.data()));
 
-#if     IMMORTAL_CHECK_DEBUG
+#if     SLDEBUG
 		if (!mDeviceExtensions.empty())
 		{
 			LOG::INFO("Device supports the following extensions: ");
