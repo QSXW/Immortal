@@ -13,8 +13,8 @@ namespace Immortal
 
 		uint32_t RendererID() const override { return mRendererID; }
 
-		void Bind() const override;
-		void UnBind() const override;
+		void Map() const override;
+		void UnMap() const override;
 
 		void SetLayout(const VertexLayout &layout) override
 		{
@@ -40,8 +40,8 @@ namespace Immortal
 		~OpenGLIndexBuffer();
 
 		uint32_t RendererID() const override { return mRendererID; }
-		void Bind() const override;
-		void UnBind() const override;
+		void Map() const override;
+		void UnMap() const override;
 
 		virtual uint32_t Count() const override
 		{
@@ -60,8 +60,8 @@ namespace Immortal
 		~OpenGLUniformBuffer();
 
 		virtual void SetData(size_t size, const void *data) const override;
-		void Bind() const;
-		void UnBind() const override;
+		void Map() const;
+		void UnMap() const override;
 
 	private:
 		uint32_t mRendererID{};

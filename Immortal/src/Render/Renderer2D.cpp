@@ -107,7 +107,7 @@ namespace Immortal {
 		}
 
 		sData.TextureShader = Renderer::Shader<ShaderName::Texture>();
-		sData.TextureShader->Bind();
+		sData.TextureShader->Map();
 		sData.TextureShader->SetUniform("u_Textures", samplers, sData.MaxTextureSlots);
 
 		// Set first texture slot = 0;
@@ -126,7 +126,7 @@ namespace Immortal {
 
 	void Renderer2D::BeginScene(const Camera & camera)
 	{
-		sData.TextureShader->Bind();
+		sData.TextureShader->Map();
 		sData.TextureShader->SetUniform("u_ViewProjection", camera.ViewProjection());
 
 		StartBatch();
@@ -134,7 +134,7 @@ namespace Immortal {
 
 	void Renderer2D::BeginScene(const Camera & camera, const Vector::mat4 & transform)
 	{
-		sData.TextureShader->Bind();
+		sData.TextureShader->Map();
 		sData.TextureShader->SetUniform("u_ViewProjection", camera.Projection() * Vector::Inverse(transform));
 
 		StartBatch();
@@ -142,7 +142,7 @@ namespace Immortal {
 
 	void Renderer2D::BeginScene(const OrthographicCamera camera)
 	{
-		sData.TextureShader->Bind();
+		sData.TextureShader->Map();
 		sData.TextureShader->SetUniform("u_ViewProjection", camera.ViewPorjectionMatrix());
 
 		StartBatch();
@@ -151,7 +151,7 @@ namespace Immortal {
 	void Renderer2D::EndScene()
 	{
 		Flush();
-		sData.TextureShader->Unbind();
+		sData.TextureShader->UnMap();
 	}
 
 	void Renderer2D::Flush()
@@ -168,10 +168,10 @@ namespace Immortal {
 		);
 		sData.QuadVertexBuffer->SetData(sData.QuadVertexBufferBase, dataSize);
 
-		/* Bind Texture */
+		/* Map Texture */
 		for (uint32_t i = 0; i < sData.TextureSlotIndex; i++)
 		{
-			sData.TextureSlots[i]->Bind(i);
+			sData.TextureSlots[i]->Map(i);
 		}
 
 		RenderCommand::DrawIndexed(sData.QuadVertexArray, sData.QuadIndexCount);

@@ -24,9 +24,9 @@ namespace Vulkan
 	private:
 		Device &device;
 		
-		std::vector<VkFence> fences;
+		std::vector<VkFence> handles;
 
-		UINT32 activeFenceCount{ 0 };
+		UINT32 activeCount{ 0 };
 	};
 }
 }

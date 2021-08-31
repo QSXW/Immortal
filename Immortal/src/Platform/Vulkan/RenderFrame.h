@@ -4,6 +4,7 @@
 #include "Device.h"
 #include "CommandPool.h"
 #include "FencePool.h"
+#include "SemaphorePool.h"
 #include "RenderTarget.h"
 
 namespace Immortal
@@ -28,9 +29,13 @@ namespace Vulkan
     private:
         Device &device;
 
+        Unique<RenderTarget> renderTarget{};
+
         std::map<UINT32, std::vector<Unique<CommandPool>>> commandPools;
 
         FencePool fencePool;
+
+        SemaphorePool semaphorePool;
 
         size_t threadCount;
 

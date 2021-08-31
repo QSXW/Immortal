@@ -35,8 +35,8 @@ namespace Immortal {
 	public:
 		virtual ~Shader() = default;
 
-		virtual void Bind() const = 0;
-		virtual void Unbind() const = 0;
+		virtual void Map() const = 0;
+		virtual void UnMap() const = 0;
 		
 		virtual const std::string &Name() const = 0;
 		virtual const uint32_t RendererID() const = 0;

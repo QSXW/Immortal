@@ -45,9 +45,9 @@ namespace Vulkan
     class RenderTarget
     {
     public:
-        using CreateFunc = std::function<Unique<RenderTarget>(Image &&iamge)>;
-        static const CreateFunc DefaultCreateFunc;
+        static Unique<RenderTarget> Create(Image &&image);
 
+    public:
         RenderTarget(std::vector<Image> &&images);
 
     private:

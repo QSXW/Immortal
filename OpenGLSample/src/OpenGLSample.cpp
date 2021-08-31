@@ -67,7 +67,7 @@ public:
 		mSquareVertexArray->SetIndexBuffer(squareIndexBuffer);
 
 		shaderLib.Load("assets/shaders/Texture.glsl");
-		shaderLib.Get("Texture")->Bind();
+		shaderLib.Get("Texture")->Map();
 		shaderLib.Get("Texture")->SetUniform("u_Texture", 0);
 	}
 
@@ -79,10 +79,10 @@ public:
 
 		Immortal::Renderer::BeginScene(mCamera.Camera());
 
-		shaderLib.Get("Texture")->Bind();
+		shaderLib.Get("Texture")->Map();
 		shaderLib.Get("Texture")->SetUniform("u_RGBA", mSquareColor);
 		shaderLib.Get("Texture")->SetUniform("u_Luminance", mLuminance);
-		mTexture->Bind();
+		mTexture->Map();
 		Immortal::Renderer::Submit(shaderLib.Get("Texture"), mSquareVertexArray);
 
 		Immortal::Renderer::EndScene();

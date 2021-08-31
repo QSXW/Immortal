@@ -53,14 +53,14 @@ namespace Immortal {
         }
 
         template <Callee func>
-        void Bind(void)
+        void Map(void)
         {
             _M_stub.first = nullptr;
             _M_stub.second = &Delegate::FunctionStub<func>;
         }
 
         template <class C, F (C::*func)()>
-        void Bind(C* instance)
+        void Map(C* instance)
         {
             _M_stub.first = instance;
             _M_stub.second = &Delegate::ClassMethodStub<C, func>;

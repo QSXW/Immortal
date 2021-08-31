@@ -11,24 +11,24 @@ namespace Vulkan
 	{
 		VkImageType result{};
 
-		uint32_t dimension{ 0 };
+		uint32_t depth{ 0 };
 
 		if (extent.width >= 1)
 		{
-			dimension++;
+			depth++;
 		}
 
 		if (extent.height >= 1)
 		{
-			dimension++;
+			depth++;
 		}
 
 		if (extent.depth > 1)
 		{
-			dimension++;
+			depth++;
 		}
 
-		switch (dimension)
+		switch (depth)
 		{
 		case 1:
 			result = VK_IMAGE_TYPE_1D;
@@ -44,54 +44,54 @@ namespace Vulkan
 			break;
 		}
 
-		return result;
+		 return result;
 	}
 
 	Image::Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
 		device{ device },
 		handle{ handle },
-		mType{ Vulkan::ImageType(extent) },
-		mExtent{ extent },
-		mFormat{ format },
-		mSampleCount{ sampleCount },
-		mUsage{ imageUsage }
+		type{ Vulkan::ImageType(extent) },
+		extent{ extent },
+		format{ format },
+		sampleCount{ sampleCount },
+		usage{ imageUsage }
 	{
-		mSubresource.mipLevel = 1;
-		mSubresource.arrayLayer = 1;
+		subresource.mipLevel   = 1;
+		subresource.arrayLayer = 1;
 	}
 
 	Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage, VkSampleCountFlagBits sampleCount, UINT32 mipLevels, UINT32 arrayLayers, VkImageTiling tiling, VkImageCreateFlags flags, UINT32 numQueueFamilies, const UINT32* queueFamilies) :
 		device{ device },
-		mType{ Vulkan::ImageType(extent) },
-		mExtent{ extent },
-		mFormat{ format },
-		mSampleCount{ sampleCount },
-		mUsage{ imageUsage },
-		mArrayLayerCount{ arrayLayers },
-		mTiling{ tiling }
+		type{ Vulkan::ImageType(extent) },
+		extent{ extent },
+		format{ format },
+		sampleCount{ sampleCount },
+		usage{ imageUsage },
+		arrayLayerCount{ arrayLayers },
+		tiling{ tiling }
 	{
 		SLASSERT(mipLevels > 0 && "Image should have at least one level");
 		SLASSERT(arrayLayers > 0 && "Image should have at least one level");
 
-		mSubresource.mipLevel = mipLevels;
-		mSubresource.arrayLayer = arrayLayers;
+		subresource.mipLevel    = mipLevels;
+		subresource.arrayLayer = arrayLayers;
 
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = mType;
-		imageInfo.format = format;
-		imageInfo.extent = extent;
-		imageInfo.mipLevels = mipLevels;
-		imageInfo.arrayLayers = arrayLayers;
-		imageInfo.samples = sampleCount;
-		imageInfo.tiling = tiling;
-		imageInfo.usage = imageUsage;
+		VkImageCreateInfo createInfo{};
+		createInfo.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		createInfo.imageType   = type;
+		createInfo.format      = format;
+		createInfo.extent      = extent;
+		createInfo.mipLevels   = mipLevels;
+		createInfo.arrayLayers = arrayLayers;
+		createInfo.samples     = sampleCount;
+		createInfo.tiling      = tiling;
+		createInfo.usage       = imageUsage;
 
 		if (numQueueFamilies != 0)
 		{
-			imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-			imageInfo.queueFamilyIndexCount = numQueueFamilies;
-			imageInfo.pQueueFamilyIndices = queueFamilies;
+			createInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+			createInfo.queueFamilyIndexCount = numQueueFamilies;
+			createInfo.pQueueFamilyIndices   = queueFamilies;
 		}
 
 		VmaAllocationCreateInfo memoryInfo{};
@@ -101,29 +101,29 @@ namespace Vulkan
 			memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
 		}
 
-		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &imageInfo, &memoryInfo, &handle, &mMemory, nullptr));
+		Vulkan::Check(vmaCreateImage(device.MemoryAllocator(), &createInfo, &memoryInfo, &handle, &memory, nullptr));
 	}
 
 	Image::Image(Image&& other) noexcept :
 		device{ other.device },
 		handle{ other.handle },
-		mMemory{ other.mMemory },
-		mType{ other.mType },
-		mExtent{ other.mExtent },
-		mFormat{ other.mFormat },
-		mSampleCount{ other.mSampleCount },
-		mUsage{ other.mUsage },
-		mTiling{ other.mTiling },
-		mSubresource{ other.mSubresource },
-		mMappedData{ other.mMappedData },
-		mMapped{ other.mMapped }
+		memory{ other.memory },
+		type{ other.type },
+		extent{ other.extent },
+		format{ other.format },
+		sampleCount{ other.sampleCount },
+		usage{ other.usage },
+		tiling{ other.tiling },
+		subresource{ other.subresource },
+		mappedData{ other.mappedData },
+		mapped{ other.mapped }
 	{
-		other.handle = VK_NULL_HANDLE;
-		other.mMemory = VK_NULL_HANDLE;
-		other.mMappedData = nullptr;
-		other.mMapped = false;
+		other.handle     = VK_NULL_HANDLE;
+		other.memory     = VK_NULL_HANDLE;
+		other.mappedData = nullptr;
+		other.mapped     = false;
 
-		for (auto& v : mViews)
+		for (auto& v : views)
 		{
 			v->Set(this);
 		}

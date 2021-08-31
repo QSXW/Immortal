@@ -176,7 +176,7 @@ namespace Immortal {
 		glTextureSubImage2D(mTexture, 0, 0, 0, mWidth, mHeight, mType.DataFormat, mType.BinaryType, data);
 	}
 
-	void OpenGLTexture2D::Bind(uint32_t slot) const
+	void OpenGLTexture2D::Map(uint32_t slot) const
 	{
 		glBindTextureUnit(slot, mTexture);
 	}
@@ -228,8 +228,8 @@ namespace Immortal {
 			OpenGLShader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl");
 			OpenGLTexture2D envEquirect(path, false, Texture::Wrap::Clamp, Texture::Filter::Linear);
 
-			equirectangleToCubeShader.Bind();
-			envEquirect.Bind(1);
+			equirectangleToCubeShader.Map();
+			envEquirect.Map(1);
 			glBindImageTexture(0, envCubeUnfiltered.RendererID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 			glDispatchCompute(envCubeUnfiltered.Width() / 32, envCubeUnfiltered.Height() / 32, 6);
 		}
@@ -245,8 +245,8 @@ namespace Immortal {
 								this->RendererID(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
 								this->Width(), this->Height(), 6);
 
-			spmapShader.Bind();
-			envCubeUnfiltered.Bind();
+			spmapShader.Map();
+			envCubeUnfiltered.Map();
 
 			// Pre-filter rest of the mip chain.
 			const float deltaRoughness = 1.0f / std::max(float(mLevel - 1), 1.0f);
@@ -270,7 +270,7 @@ namespace Immortal {
 		glBindImageTexture(0, mTexture, 0, layered ? GL_TRUE : GL_FALSE, 0, GL_WRITE_ONLY, mType.InternalFromat);
 	}
 
-	void OpenGLTextureCube::Bind(uint32_t slot) const
+	void OpenGLTextureCube::Map(uint32_t slot) const
 	{
 		glBindTextureUnit(slot, mTexture);
 	}

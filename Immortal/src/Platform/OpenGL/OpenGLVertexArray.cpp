@@ -39,12 +39,12 @@ namespace Immortal {
 		glDeleteVertexArrays(1, &mRendererID);
 	}
 
-	void OpenGLVertexArray::Bind() const
+	void OpenGLVertexArray::Map() const
 	{
 		glBindVertexArray(mRendererID);
 	}
 
-	void OpenGLVertexArray::UnBind() const
+	void OpenGLVertexArray::UnMap() const
 	{
 		glBindVertexArray(0);
 	}
@@ -54,7 +54,7 @@ namespace Immortal {
 		SLASSERT(vertexBuffer->Layout().Elements().size(), "Vertex Buffer has no layout!");
 		glBindVertexArray(mRendererID);
 
-		vertexBuffer->Bind();
+		vertexBuffer->Map();
 
 		uint32_t index = 0;
 		const auto &layout = vertexBuffer->Layout();
@@ -79,7 +79,7 @@ namespace Immortal {
 	//  and Int type should use glVertexAttribIPointer
 	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 	{
-		vertexBuffer->Bind();
+		vertexBuffer->Map();
 		glBindVertexArray(mRendererID);
 
 		const auto& layout = vertexBuffer->Layout();
@@ -107,16 +107,16 @@ namespace Immortal {
 			}
 			attribIndex++;
 		}
-		vertexBuffer->UnBind();
+		vertexBuffer->UnMap();
 		mVertexBuffers.push_back(vertexBuffer);
 	}
 
 	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
 	{
-		indexBuffer->Bind();
+		indexBuffer->Map();
 		glBindVertexArray(mRendererID);
 		glVertexArrayElementBuffer(mRendererID, indexBuffer->RendererID());
-		indexBuffer->UnBind();
+		indexBuffer->UnMap();
 		mIndexBuffer = indexBuffer;
 	}
 }

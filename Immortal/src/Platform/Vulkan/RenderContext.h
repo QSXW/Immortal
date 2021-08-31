@@ -36,7 +36,7 @@ namespace Vulkan
 		}
 
 	public:
-		void Prepare(size_t threadCount = 1, RenderTarget::CreateFunc func = RenderTarget::DefaultCreateFunc);
+		void Prepare(size_t threadCount = 1);
 
 		template <class T>
 		inline constexpr void Set(const T &value)

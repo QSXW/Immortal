@@ -108,6 +108,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/RenderFrame.h
    src/Platform/Vulkan/RenderTarget.cpp
    src/Platform/Vulkan/RenderTarget.h
+   src/Platform/Vulkan/SemaphorePool.cpp
+   src/Platform/Vulkan/SemaphorePool.h
    src/Platform/Vulkan/Swapchain.cpp
    src/Platform/Vulkan/Swapchain.h)
 

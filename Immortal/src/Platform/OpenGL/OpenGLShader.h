@@ -15,8 +15,8 @@ namespace Immortal {
         OpenGLShader(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
         ~OpenGLShader();
 
-        void Bind() const override;
-        void Unbind() const override;
+        void Map() const override;
+        void UnMap() const override;
 
         void SetUniform(const std::string& name, int value) override;
         void SetUniform(const std::string& name, int* values, uint32_t count) override;

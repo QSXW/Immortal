@@ -132,13 +132,13 @@ namespace Immortal {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	void OpenGLFramebuffer::Bind()
+	void OpenGLFramebuffer::Map()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, mRendererID);
 		glViewport(0, 0, mSpecification.Width, mSpecification.Height);
 	}
 
-	void OpenGLFramebuffer::Unbind()
+	void OpenGLFramebuffer::UnMap()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -152,7 +152,7 @@ namespace Immortal {
 
 	void* OpenGLFramebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Texture::Format format, int width, int height)
 	{
-		this->Bind();
+		this->Map();
 		SLASSERT(attachmentIndex < mColorAttachments.size() && "The attachmentIndex out of bound.");
 		glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
 		

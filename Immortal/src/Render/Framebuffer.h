@@ -60,8 +60,8 @@ namespace Immortal {
 	public:
 		virtual ~Framebuffer() = default;
 
-		virtual void Bind() = 0;
-		virtual void Unbind() = 0;
+		virtual void Map() = 0;
+		virtual void UnMap() = 0;
 		 
 		virtual void Resize(UINT32 width, UINT32 height) = 0;
 		virtual void* ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width = 1, int height = 1) = 0;

@@ -11,8 +11,8 @@ namespace Immortal {
 	public:
 		virtual ~VertexArray() = default;
 
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
+		virtual void Map() const = 0;
+		virtual void UnMap() const = 0;
 
 		virtual void AddVertexBuffer(const Ref<VertexBuffer> &vertexBuffer) = 0;
 		virtual void SetIndexBuffer(const Ref<IndexBuffer> &indexBuffer) = 0;

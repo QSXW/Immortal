@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include "Renderer.h"
 #include "Image.h"
+#include "RenderFrame.h"
 
 namespace Immortal
 {
@@ -97,25 +98,22 @@ namespace Vulkan
 		Check(glfwCreateWindowSurface(instance->Handle(), static_cast<GLFWwindow *>(handle), nullptr, &surface));
 	}
 
-	void RenderContext::Prepare(size_t threadCount, RenderTarget::CreateFunc CreateRenderTargetfunc)
+	void RenderContext::Prepare(size_t threadCount)
 	{
 		device->WaitIdle();
 
-		if (swapchain)
+		swapchain->Set(presentModePriorities);
+		swapchain->Set(surfaceFormatPriorities);
+		swapchain->Create();
+
+		surfaceExtent = swapchain->Get<VkExtent2D>();
+		VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
+
+		for (auto &handle : swapchain->Get<Swapchain::Images>())
 		{
-			swapchain->Set(presentModePriorities);
-			swapchain->Set(surfaceFormatPriorities);
-			swapchain->Create();
-
-			surfaceExtent = swapchain->Get<VkExtent2D>();
-			VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
-
-			for (auto &handle : swapchain->Get<Swapchain::Images>())
-			{
-				Image image{ *device, handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
-				auto rendertarget = CreateRenderTargetfunc(std::move(image));
-				
-			}
+			Image image{ *device, handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
+			auto renderTarget = RenderTarget::Create(std::move(image));
+			frames.emplace_back(MakeUnique<RenderFrame>(*device, std::move(renderTarget)));
 		}
 	}
 

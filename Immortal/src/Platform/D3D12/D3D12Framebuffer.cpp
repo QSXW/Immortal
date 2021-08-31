@@ -4,12 +4,12 @@
 #include "D3D12Common.h"
 
 namespace Immortal {
-	void D3D12Framebuffer::Bind()
+	void D3D12Framebuffer::Map()
 	{
 
 	}
 
-	void D3D12Framebuffer::Unbind()
+	void D3D12Framebuffer::UnMap()
 	{
 
 	}

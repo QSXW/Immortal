@@ -67,9 +67,9 @@ namespace Immortal {
 
 	void OpenGLRenderer::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
 	{
-		vertexArray->GetVertexBuffers()[0]->Bind();
-		vertexArray->Bind();
-		vertexArray->GetIndexBuffer()->Bind();
+		vertexArray->GetVertexBuffers()[0]->Map();
+		vertexArray->Map();
+		vertexArray->GetIndexBuffer()->Map();
 		uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->Count();
 		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
 	}

@@ -110,8 +110,8 @@ namespace Immortal {
 
 		virtual uint32_t RendererID() const = 0;
 
-		virtual void Bind() const  = 0;
-		virtual void UnBind() const = 0;
+		virtual void Map() const  = 0;
+		virtual void UnMap() const = 0;
 
 		virtual void SetLayout(const VertexLayout &layout) = 0;
 		virtual const VertexLayout &Layout() const = 0;
@@ -129,8 +129,8 @@ namespace Immortal {
 
 		virtual uint32_t RendererID() const = 0;
 
-		virtual void Bind() const = 0;
-		virtual void UnBind() const = 0;
+		virtual void Map() const = 0;
+		virtual void UnMap() const = 0;
 
 		virtual uint32_t Count() const = 0;
 
@@ -143,7 +143,7 @@ namespace Immortal {
 		virtual ~UniformBuffer() = default;
 
 		virtual void SetData(size_t size, const void *data) const = 0;
-		virtual void UnBind() const = 0;
+		virtual void UnMap() const = 0;
 
 		static Ref<UniformBuffer> Create(size_t size, int biding = 0);
 	};

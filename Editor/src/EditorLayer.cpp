@@ -74,28 +74,28 @@ namespace Immortal {
 					}
 					mActiveScene->OnRenderEditor(mEditorCamera);
 
-					mFramebuffer->Bind();
+					mFramebuffer->Map();
 					RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
 					RenderCommand::Clear();
-					Renderer::Shader<ShaderName::Tonemap>()->Bind();
+					Renderer::Shader<ShaderName::Tonemap>()->Map();
 					glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
 					RenderCommand::DrawIndexed(mActiveScene->mToneMap);
-					Renderer::Shader<ShaderName::Tonemap>()->Unbind();
-					mFramebuffer->Unbind();
+					Renderer::Shader<ShaderName::Tonemap>()->UnMap();
+					mFramebuffer->UnMap();
 					break;
 				}
 				case SceneState::Play:
 				{
 					mActiveScene->OnRenderRuntime();
-					mFramebuffer->Bind();
+					mFramebuffer->Map();
 					RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
 					RenderCommand::Clear();
-					Renderer::Shader<ShaderName::Tonemap>()->Bind();
+					Renderer::Shader<ShaderName::Tonemap>()->Map();
 					glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
-					mActiveScene->mToneMap->Bind();
+					mActiveScene->mToneMap->Map();
 					RenderCommand::DrawIndexed(mActiveScene->mToneMap);
-					Renderer::Shader<ShaderName::Tonemap>()->Unbind();
-					mFramebuffer->Unbind();
+					Renderer::Shader<ShaderName::Tonemap>()->UnMap();
+					mFramebuffer->UnMap();
 					break;
 				}
 				case SceneState::Pause:
@@ -674,7 +674,7 @@ namespace Immortal {
 						scriptComponent.Status = NativeScriptComponent::Status::Ready;
 						// Not necessary to release memory here. The previous would 
 						// be removed automatically with the DLL
-						scriptComponent.Bind({ e, scene.get() }, objects[i++]);
+						scriptComponent.Map({ e, scene.get() }, objects[i++]);
 					}
 					else
 					{

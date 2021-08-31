@@ -168,12 +168,12 @@ namespace Immortal {
         return shaderSources;
     }
 
-    void OpenGLShader::Bind() const
+    void OpenGLShader::Map() const
     {
         glUseProgram(handle);
     }
 
-    void OpenGLShader::Unbind() const
+    void OpenGLShader::UnMap() const
     {
         glUseProgram(0);
     }

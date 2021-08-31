@@ -132,7 +132,7 @@ namespace Immortal {
 
 		virtual void SetData(void* data, uint32_t size) override;
 
-		virtual void Bind(uint32_t slot = 0) const override;
+		virtual void Map(uint32_t slot = 0) const override;
 		virtual void BindImageTexture(bool layered = false) override;
 
 		virtual uint32_t MipLevelCount() const override;
@@ -166,7 +166,7 @@ namespace Immortal {
 		OpenGLTextureCube(const std::string& path);
 		virtual ~OpenGLTextureCube();
 
-		virtual void Bind(uint32_t slot = 0) const;
+		virtual void Map(uint32_t slot = 0) const;
 
 		virtual uint32_t Width() const { return mWidth; }
 		virtual uint32_t Height() const { return mHeight; }

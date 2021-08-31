@@ -8,38 +8,36 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class ImageView
-	{
-	public:
-		ImageView(Image&          image,
-			      VkImageViewType viewType,
-			      VkFormat        format         = VK_FORMAT_UNDEFINED,
-			      UINT32          baseMipLevel   = 0,
-			      UINT32          baseArrayLevel = 0,
-			      UINT32          nMipLevels     = 0,
-			      UINT32          nArrayLayers   = 0);
+    class ImageView
+    {
+    public:
+        ImageView(Image&          image,
+                  VkImageViewType viewType,
+                  VkFormat        format         = VK_FORMAT_UNDEFINED,
+                  UINT32          baseMipLevel   = 0,
+                  UINT32          baseArrayLevel = 0,
+                  UINT32          nMipLevels     = 0,
+                  UINT32          nArrayLayers   = 0);
 
-		ImageView(ImageView&& other);
+        ImageView(ImageView&& other);
 
-		~ImageView();
+        ~ImageView();
+    public:
+        void Set(Image* image)
+        {
+            this->image = image;
+        }
 
-		// @inline
-	public:
-		void Set(Image* image)
-		{
-			mImage = image;
-		}
+    private:
+        Device &device;
 
-	private:
-		Device &device;
+        Image* image{};
 
-		Image* mImage{};
+        VkImageView handle{ VK_NULL_HANDLE };
 
-		VkImageView handle{ VK_NULL_HANDLE };
+        VkFormat format{};
 
-		VkFormat mFormat{};
-
-		VkImageSubresourceRange mSubresourceRange{};
-	};
+        VkImageSubresourceRange subresourceRange{};
+    };
 }
 }

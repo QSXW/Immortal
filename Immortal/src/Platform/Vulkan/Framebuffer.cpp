@@ -15,11 +15,11 @@ namespace Vulkan
 
     }
 
-    void Framebuffer::Bind()
+    void Framebuffer::Map()
     {
     }
 
-    void Framebuffer::Unbind()
+    void Framebuffer::UnMap()
     {
     }
 

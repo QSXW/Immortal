@@ -17,9 +17,9 @@ namespace Vulkan
         Framebuffer(const Super::Specification &spec);
         ~Framebuffer();
 
-        virtual void Bind() override;
+        virtual void Map() override;
 
-        virtual void Unbind() override;
+        virtual void UnMap() override;
 
         virtual void Resize(UINT32 width, UINT32 height) override;
 

@@ -49,37 +49,37 @@ namespace Vulkan {
 
 		const VkExtent3D& Extent() const
 		{
-			return mExtent;
+			return extent;
 		}
 
 		const VkImageType& Type() const
 		{
-			return mType;
+			return type;
 		}
 
 		const VkFormat& Format() const
 		{
-			return mFormat;
+			return format;
 		}
 
 		const VkSampleCountFlagBits& SampleCount() const
 		{
-			return mSampleCount;
+			return sampleCount;
 		}
 
 		const VkImageUsageFlags& Usage() const
 		{
-			return mUsage;
+			return usage;
 		}
 
 		const VkImageSubresource& Subresource() const
 		{
-			return mSubresource;
+			return subresource;
 		}
 
 		std::unordered_set<ImageView*>& Views()
 		{
-			return mViews;
+			return views;
 		}
 
 	private:
@@ -87,27 +87,29 @@ namespace Vulkan {
 
 		VkImage handle{ VK_NULL_HANDLE };
 
-		VmaAllocation mMemory{ VK_NULL_HANDLE };
+		VmaAllocation memory{ VK_NULL_HANDLE };
 
-		VkImageType mType{};
+		VkImageType type{};
 
-		VkExtent3D mExtent;
+		VkExtent3D extent;
 
-		VkFormat mFormat{};
+		VkFormat format{};
 
-		VkImageUsageFlags mUsage{};
+		VkImageUsageFlags usage{};
 
-		VkSampleCountFlagBits mSampleCount{};
+		VkSampleCountFlagBits sampleCount{};
 
-		VkImageTiling mTiling{};
+		VkImageTiling tiling{};
 
-		VkImageSubresource mSubresource{};
+		VkImageSubresource subresource{};
 
-		UINT32 mArrayLayerCount{ 0 };
+		UINT32 arrayLayerCount{ 0 };
 
-		std::unordered_set<ImageView*> mViews;
-		UINT8* mMappedData{ nullptr };
-		bool mMapped{ false };
+		std::unordered_set<ImageView*> views;
+
+		UINT8* mappedData{ nullptr };
+
+		bool mapped{ false };
 	};
 }
 }

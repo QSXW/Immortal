@@ -1018,7 +1018,7 @@ for(uint32_t i = 0; i < allocCount; ++i)
 
         // You can make dummy call to vkGetBufferMemoryRequirements here to silence validation layer warning.
 
-        // Bind new buffer to new memory region. Data contained in it is already moved.
+        // Map new buffer to new memory region. Data contained in it is already moved.
         VmaAllocationInfo allocInfo;
         vmaGetAllocationInfo(allocator, allocations[i], &allocInfo);
         vmaBindBufferMemory(allocator, allocations[i], buffers[i]);
@@ -1096,7 +1096,7 @@ for(uint32_t i = 0; i < allocCount; ++i)
 
         // You can make dummy call to vkGetBufferMemoryRequirements here to silence validation layer warning.
 
-        // Bind new buffer to new memory region. Data contained in it is already moved.
+        // Map new buffer to new memory region. Data contained in it is already moved.
         VmaAllocationInfo allocInfo;
         vmaGetAllocationInfo(allocator, allocations[i], &allocInfo);
         vmaBindBufferMemory(allocator, allocations[i], buffers[i]);
@@ -19346,7 +19346,7 @@ VMA_CALL_PRE VkResult VMA_CALL_POST vmaCreateBuffer(
 
         if(res >= 0)
         {
-            // 3. Bind buffer with memory.
+            // 3. Map buffer with memory.
             if((pAllocationCreateInfo->flags & VMA_ALLOCATION_CREATE_DONT_BIND_BIT) == 0)
             {
                 res = allocator->BindBufferMemory(*pAllocation, 0, *pBuffer, VMA_NULL);
@@ -19487,7 +19487,7 @@ VMA_CALL_PRE VkResult VMA_CALL_POST vmaCreateImage(
 
         if(res >= 0)
         {
-            // 3. Bind image with memory.
+            // 3. Map image with memory.
             if((pAllocationCreateInfo->flags & VMA_ALLOCATION_CREATE_DONT_BIND_BIT) == 0)
             {
                 res = allocator->BindImageMemory(*pAllocation, 0, *pImage, VMA_NULL);

@@ -273,7 +273,7 @@ namespace Vulkan
 
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(physicalDeviceHandle, this->properties.SurfaceFormat.format, &formatProperties);
-        this->imageUsageFlags     = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
+        this->imageUsageFlags           = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
         this->properties.ImageUsage     = CompositeImageFlags(this->imageUsageFlags);
         this->properties.PreTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
         this->properties.CompositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
@@ -311,11 +311,11 @@ namespace Vulkan
 
         Check(vkCreateSwapchainKHR(device.Handle(), &createInfo, nullptr, &handle));
 
-        UINT32 imageAvailable{ 0U };
-        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &imageAvailable, nullptr));
+        UINT32 count{ 0U };
+        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &count, nullptr));
 
-        images.resize(imageAvailable);
-        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &imageAvailable, images.data()));
+        images.resize(count);
+        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &count, images.data()));
     }
 }
 }

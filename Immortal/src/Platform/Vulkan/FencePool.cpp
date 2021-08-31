@@ -18,46 +18,47 @@ namespace Vulkan
         Wait();
         Reset();
 
-        for (VkFence fence : fences)
+        for (VkFence fence : handles)
         {
             IfNotNullThen<VkFence>(vkDestroyFence, device.Handle(), fence, nullptr);
         }
-        fences.clear();
+        handles.clear();
     }
 
     VkResult FencePool::Wait(UINT32 timeout) const
     {
-        if (activeFenceCount < 1 || fences.empty())
+        if (activeCount < 1 || handles.empty())
         {
             return VK_SUCCESS;
         }
-        return vkWaitForFences(device.Handle(), activeFenceCount, fences.data(), true, timeout);
+        return vkWaitForFences(device.Handle(), activeCount, handles.data(), true, timeout);
     }
 
     VkResult FencePool::Reset()
     {
-        if (activeFenceCount < 1 || fences.empty())
+        if (activeCount < 1 || handles.empty())
         {
             return VK_SUCCESS;
         }
-        activeFenceCount = 0;
-        return vkResetFences(device.Handle(), activeFenceCount, fences.data());
+        activeCount = 0;
+        return vkResetFences(device.Handle(), activeCount, handles.data());
     }
+
     VkFence FencePool::RequestFence()
     {
-        if (activeFenceCount < fences.size())
+        if (activeCount < handles.size())
         {
-            return fences.at(activeFenceCount++);
+            return handles.at(activeCount++);
         }
 
         VkFence fence{ VK_NULL_HANDLE };
         VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
         Check(vkCreateFence(device.Handle(), &createInfo, nullptr, &fence));
 
-        fences.emplace_back(fence);
-        activeFenceCount++;
+        handles.emplace_back(fence);
+        activeCount++;
 
-        return fences.back();
+        return handles.back();
     }
 }
 }

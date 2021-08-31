@@ -53,41 +53,41 @@ elif defined(__linux__)
 
 inline namespace type
 {
-	using INT8   = char;
-	using UINT8  = unsigned char;
-	using INT16  = short;
-	using UINT16 = unsigned short;
-	using INT32  = int;
-	using UINT32 = unsigned int;
-	using INT64  = int64_t;
-	using UINT64 = uint64_t;
-	
-	template <class T1, class T2>
-	inline constexpr bool typeof()
-	{
-		return std::is_same_v<T1, T2>;
-	}
+    using INT8   = char;
+    using UINT8  = unsigned char;
+    using INT16  = short;
+    using UINT16 = unsigned short;
+    using INT32  = int;
+    using UINT32 = unsigned int;
+    using INT64  = int64_t;
+    using UINT64 = uint64_t;
+    
+    template <class T1, class T2>
+    inline constexpr bool typeof()
+    {
+        return std::is_same_v<T1, T2>;
+    }
 
-	template <class T1, class T2, class T3>
-	inline constexpr bool typeof()
-	{
-		if constexpr (std::is_same_v<T1, T2> || std::is_same_v<T1, T3>)
-		{
-			return true;
-		}
-		return false;
-	}
+    template <class T1, class T2, class T3>
+    inline constexpr bool typeof()
+    {
+        if constexpr (std::is_same_v<T1, T2> || std::is_same_v<T1, T3>)
+        {
+            return true;
+        }
+        return false;
+    }
 
-	template <class T1, class T2, class T3, class T4>
-	inline constexpr bool typeof()
-	{
-		if constexpr (std::is_same_v<T1, T2> ||
-			std::is_same_v<T1, T3> ||
-			std::is_same_v<T1, T4>)
-		{
-			return true;
-		}
-		return false;
-	}
+    template <class T1, class T2, class T3, class T4>
+    inline constexpr bool typeof()
+    {
+        if constexpr (std::is_same_v<T1, T2> ||
+            std::is_same_v<T1, T3> ||
+            std::is_same_v<T1, T4>)
+        {
+            return true;
+        }
+        return false;
+    }
 }
 }

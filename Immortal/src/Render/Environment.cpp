@@ -16,8 +16,8 @@ namespace Immortal {
 
 			IrradianceMap = TextureCube::Create(IrradianceMapSize, IrradianceMapSize, Texture::Description{ Texture::Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear }, 1);
 
-			irradianceShader->Bind();
-			skyboxTexture->Bind();
+			irradianceShader->Map();
+			skyboxTexture->Map();
 			IrradianceMap->BindImageTexture(true);
 			irradianceShader->DispatchCompute(IrradianceMap->Width() / 32, IrradianceMap->Height() / 32, 6);
 		}
@@ -29,7 +29,7 @@ namespace Immortal {
 			SpecularBRDFLookUpTable = Texture2D::Create(BRDFLookUpTableSize, BRDFLookUpTableSize,
 				Texture::Description{ Texture::Format::RG16F, Texture::Wrap::Clamp, Texture::Filter::Linear }, 1);
 
-			specularBRDFShader->Bind();
+			specularBRDFShader->Map();
 			SpecularBRDFLookUpTable->BindImageTexture(false);
 			specularBRDFShader->DispatchCompute(SpecularBRDFLookUpTable->Width() / 32, SpecularBRDFLookUpTable->Height() / 32, 1);
 		}

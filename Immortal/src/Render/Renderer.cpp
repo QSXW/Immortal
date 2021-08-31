@@ -88,7 +88,7 @@ namespace Immortal {
 
 	void Renderer::Submit(const Ref<Immortal::Shader>& shader, const Ref<VertexArray>& vertexArray, const Vector::mat4 & transform)
 	{
-		shader->Bind();
+		shader->Map();
 		shader->SetUniform("u_ViewProjection", sSceneData->ViewProjectionMatrix);
 		shader->SetUniform("u_Transform", transform);
 
@@ -97,11 +97,11 @@ namespace Immortal {
 
 	void Renderer::Submit(const Ref<Immortal::Shader> &shader, const Ref<Mesh> &mesh, const Vector::Matrix4 &transform)
 	{
-		shader->Bind();
+		shader->Map();
 		shader->SetUniform("uTransform", transform);
 		RenderCommand::DrawIndexed(mesh->VertexArrayObject());
 		// Don't forget to unbind shader even though nothing to be done. If not, the GL state change warning would occur.
-		shader->Unbind(); 
+		shader->UnMap(); 
 	}
 
 }

@@ -46,11 +46,11 @@ namespace Immortal {
 		Ref<Delegate<void()>> delegate;
 		NativeScriptComponent::Status Status;
 
-		void Bind(Entity e, ScriptableObject *script)
+		void Map(Entity e, ScriptableObject *script)
 		{
 			script->mEntity = e;
 			script->OnStart();
-			delegate->Bind<ScriptableObject, &ScriptableObject::OnUpdate>(script);
+			delegate->Map<ScriptableObject, &ScriptableObject::OnUpdate>(script);
 		}
 
 		NativeScriptComponent() : Component(Component::Script), Status(NativeScriptComponent::Status::NotLoaded)

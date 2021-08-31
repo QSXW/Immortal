@@ -7,15 +7,15 @@ namespace Immortal
 {
 namespace Vulkan
 {
-    const RenderTarget::CreateFunc RenderTarget::DefaultCreateFunc = [](Image &&swapchainImage) -> Unique<RenderTarget>
+    Unique<RenderTarget> RenderTarget::Create(Image &&image)
     {
-        auto &device = swapchainImage.Get<Device>();
+        auto &device = image.Get<Device>();
         VkFormat depthFormat = Vulkan::SuitableDepthFormat(device.Get<PhysicalDevice>().Handle());
 
-        Image depthImage{ device, swapchainImage.Extent(), depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY };
+        Image depthImage{ device, image.Extent(), depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY };
 
         std::vector<Image> images;
-        images.push_back(std::move(swapchainImage));
+        images.push_back(std::move(image));
         images.push_back(std::move(depthImage));
 
         return MakeUnique<RenderTarget>(std::move(images));

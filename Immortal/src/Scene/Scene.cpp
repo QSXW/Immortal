@@ -119,7 +119,7 @@ namespace Immortal {
 		}
 		{
 			mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
-			mFramebuffer->Bind();
+			mFramebuffer->Map();
 			RenderCommand::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
 			RenderCommand::Clear();
 #if 0
@@ -127,8 +127,8 @@ namespace Immortal {
 			glDepthMask(GL_FALSE);
 			auto &shader = Renderer::Shader<ShaderName::Skybox>();
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			shader->Bind();
-			mSkyboxTexture->Bind();
+			shader->Map();
+			mSkyboxTexture->Map();
 			RenderCommand::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
 			glDepthMask(GL_TRUE);
 #endif
@@ -178,24 +178,24 @@ namespace Immortal {
 				{
 					auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
 					auto &shader = Renderer::Shader<ShaderName::PBR>();
-					shader->Bind();
+					shader->Map();
 
 					shader->SetUniform("uMaterial.AlbedoColor", material.AlbedoColor);
 					shader->SetUniform("uMaterial.Metalness", material.Metalness);
 					shader->SetUniform("uMaterial.Roughness", material.Roughness);
 
-					material.AlbedoMap->Bind(0);
-					material.NormalMap->Bind(1);
-					material.MetalnessMap->Bind(2);
-					material.RoughnessMap->Bind(3);
+					material.AlbedoMap->Map(0);
+					material.NormalMap->Map(1);
+					material.MetalnessMap->Map(2);
+					material.RoughnessMap->Map(3);
 
-					mSkyboxTexture->Bind(4);
-					mEnvironment->IrradianceMap->Bind(5);
-					mEnvironment->SpecularBRDFLookUpTable->Bind(6);
+					mSkyboxTexture->Map(4);
+					mEnvironment->IrradianceMap->Map(5);
+					mEnvironment->SpecularBRDFLookUpTable->Map(6);
 					Renderer::Submit(shader, mesh.Mesh, transform.Transform());
 				}
 			}
-			mFramebuffer->Unbind();
+			mFramebuffer->UnMap();
 		}
 
 	}
@@ -203,18 +203,18 @@ namespace Immortal {
 	void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 	{
 		mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
-		mFramebuffer->Bind();
+		mFramebuffer->Map();
 		RenderCommand::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
 		RenderCommand::Clear();
 
 		// draw skybox
 		RenderCommand::DisableDepthTest();
 		auto &skyboxShader = Renderer::Shader<ShaderName::Skybox>();
-		skyboxShader->Bind();
-		mSkyboxTexture->Bind();
+		skyboxShader->Map();
+		mSkyboxTexture->Map();
 		RenderCommand::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
 		RenderCommand::EnableDepthTest();
-		skyboxShader->Unbind();
+		skyboxShader->UnMap();
 
 		{
 			Renderer2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
@@ -262,24 +262,24 @@ namespace Immortal {
 			{
 				auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
 				auto &shader = Renderer::Shader<ShaderName::PBR>();
-				shader->Bind();
+				shader->Map();
 
 				shader->SetUniform("uMaterial.AlbedoColor", material.AlbedoColor);
 				shader->SetUniform("uMaterial.Metalness", material.Metalness);
 				shader->SetUniform("uMaterial.Roughness", material.Roughness);
 
-				material.AlbedoMap->Bind(0);
-				material.NormalMap->Bind(1);
-				material.MetalnessMap->Bind(2);
-				material.RoughnessMap->Bind(3);
-				mSkyboxTexture->Bind(4);
-				mEnvironment->IrradianceMap->Bind(5);
-				mEnvironment->SpecularBRDFLookUpTable->Bind(6);
+				material.AlbedoMap->Map(0);
+				material.NormalMap->Map(1);
+				material.MetalnessMap->Map(2);
+				material.RoughnessMap->Map(3);
+				mSkyboxTexture->Map(4);
+				mEnvironment->IrradianceMap->Map(5);
+				mEnvironment->SpecularBRDFLookUpTable->Map(6);
 				Renderer::Submit(shader, mesh.Mesh, transform.Transform());
 			}
 		}
 
-		mFramebuffer->Unbind();
+		mFramebuffer->UnMap();
 	}
 
 	Entity Scene::CreateEntity(const std::string & name)
