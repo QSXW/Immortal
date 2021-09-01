@@ -24,7 +24,7 @@ namespace Vulkan
         handles.clear();
     }
 
-    VkSemaphore SemaphorePool::Request()
+    Semaphore SemaphorePool::Request()
     {
         if (activeCount < handles.size())
         {

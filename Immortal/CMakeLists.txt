@@ -61,8 +61,7 @@ set(INTERFACE_FILES
 
 set(IO_FILES
     src/io/FileSystem.cpp
-    src/io/FileSystem.h
-    )
+    src/io/FileSystem.h)
 
 set(PHYSICS_FILES
     src/Physics/Physics.cpp
@@ -208,6 +207,12 @@ set(SERIALIZER_FILES
     src/Serializer/SceneSerializer.cpp
     src/Serializer/SceneSerializer.h)
 
+set(SYNC_FILES
+    src/Sync/Semaphore.cpp
+    src/Sync/Semaphore.h
+    src/Sync/SemaphorePool.cpp
+    src/Sync/SemaphorePool.h)
+
 set(UTILS_FILES
     src/Utils/PlatformUtils.h)
 
@@ -228,6 +233,7 @@ source_group("Render\\" FILES ${RENDER_FILES})
 source_group("Scene\\" FILES ${SCENE_FILES})
 source_group("Script\\" FILES ${SCRIPT_FILES})
 source_group("Serializer\\" FILES ${SERIALIZER_FILES})
+source_group("Sync\\" FILES ${SYNC_FILES})
 source_group("Utils\\" FILES ${UTILS_FILES})
 
 set(PROJECT_FILES
@@ -248,6 +254,7 @@ set(PROJECT_FILES
     ${SCENE_FILES}
     ${SCRIPT_FILES}
     ${SERIALIZER_FILES}
+    ${SYNC_FILES}
     ${UTILS_FILES})
 
 source_group("\\" FILES ${PROJECT_FILES})

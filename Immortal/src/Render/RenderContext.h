@@ -22,8 +22,8 @@ namespace Immortal {
 		virtual void Init() = 0;
 		virtual void SwapBuffers() = 0;
 
-		virtual const char *GraphicsRenderer() const { return mGraphicsRenderer.c_str(); }
-		virtual const char *DriverVersion() const { return mDriverVersion.c_str(); }
+		virtual const char *GraphicsRenderer() const { return graphicsRenderer.c_str(); }
+		virtual const char *DriverVersion() const { return driverVersion.c_str(); }
 
 	public:
 		RenderContext(const RenderContext &) = delete;
@@ -32,9 +32,8 @@ namespace Immortal {
 		RenderContext &operator=(RenderContext &&) = delete;
 	
 	protected:
-		std::string mGraphicsRenderer{};
-		std::string mDriverVersion{};
+		std::string graphicsRenderer{};
+		std::string driverVersion{};
 	};
 
 }
-

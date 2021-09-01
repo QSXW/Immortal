@@ -49,9 +49,9 @@ namespace Immortal
 		inline void Clear() override;
 		float Time() override;
 
-		virtual const RenderContext &Context() const override
+		virtual const RenderContext *Context() const override
 		{
-			return *mContext;
+			return context.get();
 		}
 
 		virtual void ProcessEvents() override;
@@ -65,7 +65,7 @@ namespace Immortal
 
 	private:
 		GLFWwindow* mWindow;
-		Unique<RenderContext> mContext;
+		Unique<RenderContext> context;
 
 		struct WindowData
 		{

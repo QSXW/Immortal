@@ -22,14 +22,14 @@ namespace Immortal {
 		}
 		Instance = this;
 		mProps = props;
-		mWindow = Window::Create({ props.Name, props.Width, props.Height });
-		mWindow->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));
-		mWindow->SetVSync(false);
+		window = Window::Create({ props.Name, props.Width, props.Height });
+		window->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));
+		window->SetVSync(false);
 
-		Renderer::Init();
-		mGuiLayer = GuiLayer::Create();
-		PushOverlay(mGuiLayer);
-		mTimer.Start();
+		// Renderer::Init();
+		// mGuiLayer = GuiLayer::Create();
+		// PushOverlay(mGuiLayer);
+		// mTimer.Start();
 	}
 
 	Application::~Application()
@@ -53,7 +53,7 @@ namespace Immortal {
 	{
 		while (mRunning)
 		{
-			float time = mWindow->Time();
+			float time = window->Time();
 			mTime = time - mLastFrameTime;
 			mLastFrameTime = time;
 
@@ -71,7 +71,7 @@ namespace Immortal {
 				}
 				mGuiLayer->End();
 			}
-			mWindow->OnUpdate();
+			window->OnUpdate();
 		}
 	}
 

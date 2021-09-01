@@ -33,6 +33,9 @@
 #include "Render/Frame.h"
 #include "Render/Mesh.h"
 
+#include "Sync/Semaphore.h"
+#include "Sync/SemaphorePool.h"
+
 #include "Editor/EditorCamera.h"
 
 #include "Scene/Entity.h"

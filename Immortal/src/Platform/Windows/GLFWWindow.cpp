@@ -83,8 +83,8 @@ namespace Immortal
 		RenderContext::Description desc = {
 			mWindow
 		};
-		mContext = RenderContext::Create(desc);
-		mContext->Init();
+		context = RenderContext::Create(desc);
+		context->Init();
 
 		glfwSetWindowUserPointer(mWindow, &mData);
 		SetVSync(true);
@@ -185,7 +185,7 @@ namespace Immortal
 
 	void GLFWWindow::OnUpdate()
 	{
-		mContext->SwapBuffers();
+		context->SwapBuffers();
 		glfwPollEvents();
 	}
 

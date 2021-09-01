@@ -52,7 +52,7 @@ namespace Immortal
 
 		virtual float Time() = 0;
 
-		virtual const RenderContext &Context() const = 0;
+		virtual const RenderContext *Context() const { return nullptr; };
 
 		virtual void ProcessEvents() = 0;
 

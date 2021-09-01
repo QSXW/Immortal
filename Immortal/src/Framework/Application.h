@@ -48,19 +48,19 @@ namespace Immortal {
 			return Instance;
 		}
 
-		GuiLayer *GetGuiLayer() const NOEXCEPT
+		virtual GuiLayer *GetGuiLayer() const
 		{
 			return mGuiLayer;
 		}
 
-		Window& GetWindow() const NOEXCEPT
+		virtual Window& GetWindow() const
 		{
-			return *mWindow;
+			return *window;
 		}
 
-		void* GetNativeWindow() const NOEXCEPT
+		void* GetNativeWindow() const
 		{
-			return mWindow->GetNativeWindow();
+			return window->GetNativeWindow();
 		}
 
 		static bool IsKeyPressed(KeyCode code)
@@ -79,7 +79,7 @@ namespace Immortal {
 		bool OnWindowResize(WindowResizeEvent &e);
 	
 	private:
-		Scope<Window> mWindow;
+		Scope<Window> window;
 		bool mRunning = true;
 		bool mMinimized = false;
 		LayerStack mLayerStack;
