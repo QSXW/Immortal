@@ -115,6 +115,9 @@ namespace Vulkan
 			auto renderTarget = RenderTarget::Create(std::move(image));
 			frames.emplace_back(MakeUnique<RenderFrame>(*device, std::move(renderTarget)));
 		}
+
+		this->threadCount = threadCount;
+		this->status = true;
 	}
 
 	void RenderContext::SwapBuffers()

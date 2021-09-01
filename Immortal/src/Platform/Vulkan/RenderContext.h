@@ -12,98 +12,101 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class RenderContext : public Immortal::RenderContext
-	{
-	public:
-		using Description           = ::Immortal::RenderContext::Description;
-		using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
-		using PresentModePriorities = std::vector<VkPresentModeKHR>;
+    class RenderContext : public Immortal::RenderContext
+    {
+    public:
+        using Description = ::Immortal::RenderContext::Description;
+        using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
+        using PresentModePriorities = std::vector<VkPresentModeKHR>;
 
-	public:
-		RenderContext() = default;
-		RenderContext(Description &desc);
-		~RenderContext();
+    public:
+        RenderContext() = default;
+        RenderContext(Description &desc);
+        ~RenderContext();
 
-		virtual void Init() override;
-		virtual void SwapBuffers() override;
+        virtual void Init() override;
+        virtual void SwapBuffers() override;
 
-		void CreateSurface();
+        void CreateSurface();
 
-	public:
-		void AddDeviceExtension(const char *extension, bool optional = false)
-		{
-			DeviceExtensions[extension] = optional;
-		}
+    public:
+        void AddDeviceExtension(const char *extension, bool optional = false)
+        {
+            DeviceExtensions[extension] = optional;
+        }
 
-	public:
-		void Prepare(size_t threadCount = 1);
+    public:
+        void Prepare(size_t threadCount = 1);
 
-		template <class T>
-		inline constexpr void Set(const T &value)
-		{
-			if constexpr (std::is_same_v<T, SurfaceFormatPriority>)
-			{
-				SLASSERT(!value.empty() && "Priority cannot be empty");
-				surfaceFormatPriorities = value;
-			}
-			if constexpr (std::is_same_v<T, VkFormat>)
-			{
-				if (swapchain)
-				{
-					swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
-				}
-			}
-			if constexpr (std::is_same_v<T, PresentModePriorities>)
-			{
-				SLASSERT(!value.empty() && "Priority cannot be empty");
-				presentModePriorities = value;
-			}
-			if constexpr (std::is_same_v<T, VkPresentModeKHR>)
-			{
-				if (swapchain)
-				{
-					swapchain->Get<Swapchain::Properties>().PresentMode = value;
-				}
-			}
-		}
+        template <class T>
+        inline constexpr void Set(const T &value)
+        {
+            if constexpr (std::is_same_v<T, SurfaceFormatPriority>)
+            {
+                SLASSERT(!value.empty() && "Priority cannot be empty");
+                surfaceFormatPriorities = value;
+            }
+            if constexpr (std::is_same_v<T, VkFormat>)
+            {
+                if (swapchain)
+                {
+                    swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
+                }
+            }
+            if constexpr (std::is_same_v<T, PresentModePriorities>)
+            {
+                SLASSERT(!value.empty() && "Priority cannot be empty");
+                presentModePriorities = value;
+            }
+            if constexpr (std::is_same_v<T, VkPresentModeKHR>)
+            {
+                if (swapchain)
+                {
+                    swapchain->Get<Swapchain::Properties>().PresentMode = value;
+                }
+            }
+        }
 
-	private:
-		void *handle;
+    private:
+        void *handle;
 
-		Unique<Instance>  instance;
+        Unique<Instance>  instance;
 
-		Unique<Device>    device;
+        Unique<Device>    device;
 
-		Unique<Swapchain> swapchain;
+        Unique<Swapchain> swapchain;
 
-		VkSurfaceKHR   surface;
+        VkSurfaceKHR   surface;
 
-		VkExtent2D surfaceExtent;
+        VkExtent2D surfaceExtent;
 
-		const Queue *queue;
+        const Queue *queue;
 
-		Swapchain::Properties swapchainProperties;
+        Swapchain::Properties swapchainProperties;
 
-		std::vector<VkPresentModeKHR> presentModePriorities = {
-			VK_PRESENT_MODE_MAILBOX_KHR,
-			VK_PRESENT_MODE_FIFO_KHR,
-			VK_PRESENT_MODE_IMMEDIATE_KHR
-		};
+        std::vector<VkPresentModeKHR> presentModePriorities = {
+            VK_PRESENT_MODE_MAILBOX_KHR,
+            VK_PRESENT_MODE_FIFO_KHR,
+            VK_PRESENT_MODE_IMMEDIATE_KHR
+        };
 
-		std::vector<VkSurfaceFormatKHR> surfaceFormatPriorities = {
-			{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-			{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
-		};
+        std::vector<VkSurfaceFormatKHR> surfaceFormatPriorities = {
+            { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+            { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+            { VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+            { VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
+        };
 
-		std::vector<Unique<RenderFrame>> frames;
+        std::vector<Unique<RenderFrame>> frames;
 
-		size_t mThreadCount{ 1 };
-	public:
-		static VkResult Status;
-		static std::unordered_map<const char *, bool> InstanceExtensions;
-		static std::unordered_map<const char *, bool> DeviceExtensions;
-	};
+        size_t threadCount{ 1 };
+
+        bool status{ false };
+
+    public:
+        static VkResult Status;
+        static std::unordered_map<const char *, bool> InstanceExtensions;
+        static std::unordered_map<const char *, bool> DeviceExtensions;
+    };
 }
 }

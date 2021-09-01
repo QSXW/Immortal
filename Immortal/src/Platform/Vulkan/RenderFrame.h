@@ -6,6 +6,7 @@
 #include "FencePool.h"
 #include "SemaphorePool.h"
 #include "RenderTarget.h"
+#include "DescriptorPool.h"
 
 namespace Immortal
 {
