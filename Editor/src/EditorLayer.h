@@ -128,21 +128,21 @@ namespace Immortal {
             }
 
             // Options menu
-            if (ImGui::BeginPopup(UNICODE8("选项")))
+            if (ImGui::BeginPopup(U8("选项")))
             {
-                ImGui::Checkbox(UNICODE8("自动滚动"), &AutoScroll);
+                ImGui::Checkbox(U8("自动滚动"), &AutoScroll);
                 ImGui::EndPopup();
             }
 
             // Main window
-            if (ImGui::Button(UNICODE8("选项")))
-                ImGui::OpenPopup(UNICODE8("选项"));
+            if (ImGui::Button(U8("选项")))
+                ImGui::OpenPopup(U8("选项"));
             ImGui::SameLine();
-            bool clear = ImGui::Button(UNICODE8("清理"));
+            bool clear = ImGui::Button(U8("清理"));
             ImGui::SameLine();
-            bool copy = ImGui::Button(UNICODE8("复制"));
+            bool copy = ImGui::Button(U8("复制"));
             ImGui::SameLine();
-            Filter.Draw(UNICODE8("过滤"), -100.0f);
+            Filter.Draw(U8("过滤"), -100.0f);
 
             ImGui::Separator();
             ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);

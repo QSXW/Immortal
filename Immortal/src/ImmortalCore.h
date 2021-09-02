@@ -32,6 +32,8 @@
 
 namespace Immortal
 {
+    using namespace sl;
+
     template <class T>
     using Scope = std::unique_ptr<T>;
 

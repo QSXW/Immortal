@@ -15,17 +15,30 @@ namespace Vulkan
     class RenderContext : public Immortal::RenderContext
     {
     public:
-        using Description = ::Immortal::RenderContext::Description;
+        using Description           = ::Immortal::RenderContext::Description;
         using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
         using PresentModePriorities = std::vector<VkPresentModeKHR>;
 
     public:
         RenderContext() = default;
+
         RenderContext(Description &desc);
+
         ~RenderContext();
 
         virtual void Init() override;
+
         virtual void SwapBuffers() override;
+
+        virtual Device *GetDevice() override
+        {
+            return device.get();
+        }
+
+        virtual bool HasSwapchain()
+        {
+            return !!swapchain;
+        }
 
         void CreateSurface();
 
@@ -37,6 +50,15 @@ namespace Vulkan
 
     public:
         void Prepare(size_t threadCount = 1);
+
+        template <class T>
+        inline constexpr T &Get()
+        {
+            if constexpr (typeof<T, Vulkan::Swapchain>())
+            {
+                return *swapchain;
+            }
+        }
 
         template <class T>
         inline constexpr void Set(const T &value)

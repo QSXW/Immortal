@@ -17,7 +17,7 @@ namespace Vulkan
     {
         for (auto &h : handles)
         {
-            IfNotNullThen(vkDestroyDescriptorPool, device.Handle(), h, nullptr);
+            IfNotNullThen(vkDestroyDescriptorPool, device.Get<VkDevice>(), h, nullptr);
         }
     }
 }

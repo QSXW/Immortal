@@ -28,7 +28,9 @@ namespace Vulkan
 
 	public:
 		Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
+
 		Queue(const Queue &) = default;
+
 		Queue(Queue &&other);
 
 		~Queue();
@@ -43,17 +45,17 @@ namespace Vulkan
 			}
 		}
 
-		VkQueue &Handle()
+		const VkQueue &Handle() const
 		{
 			return handle;
 		}
 
-		VkQueueFamilyProperties Properties() const NOEXCEPT
+		VkQueueFamilyProperties Properties() const
 		{
 			return properties;
 		}
 
-		VkBool32 IsPresentSupported() const NOEXCEPT
+		VkBool32 IsPresentSupported() const
 		{
 			return presented;
 		}

@@ -242,7 +242,7 @@ namespace Vulkan
 		Vulkan::IfNotNullThen(vkDestroyDevice, handle);
 	}
 
-	bool Device::IsExtensionSupport(const char* extension) NOEXCEPT
+	bool Device::IsExtensionSupport(const char* extension)
 	{
 		return std::find_if(mDeviceExtensions.begin(), mDeviceExtensions.end(), [extension](auto& deviceExtension)
 			{
@@ -250,7 +250,7 @@ namespace Vulkan
 			}) != mDeviceExtensions.end();
 	}
 
-	bool Device::IsEnabled(const char* extension) const NOEXCEPT
+	bool Device::IsEnabled(const char* extension) const
 	{
 		return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const char* enabledExtension)
 			{
@@ -258,7 +258,7 @@ namespace Vulkan
 			}) != enabledExtensions.end();
 	}
 
-	void Device::CheckExtensionSupported() NOEXCEPT
+	void Device::CheckExtensionSupported()
 	{
 		bool hasPerformanceQuery = false;
 		bool hasHostQueryReset = false;
@@ -303,11 +303,11 @@ namespace Vulkan
 		}
 	}
 
-	const Queue& Device::SuitableGraphicsQueue()
+	const Queue &Device::SuitableGraphicsQueue()
 	{
-		for (UINT32 familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
+		for (UINT32 familyIndex = 0; familyIndex < queues.size(); familyIndex++)
 		{
-			Queue& firstQueue = queues[familyIndex][0];
+			Queue &firstQueue = queues[familyIndex][0];
 
 			UINT32 queueCount = firstQueue.Properties().queueCount;
 
@@ -320,8 +320,7 @@ namespace Vulkan
 		return FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
 	}
 
-
-	Queue& Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
+	Queue &Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
 	{
 		for (uint32_t familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
 		{

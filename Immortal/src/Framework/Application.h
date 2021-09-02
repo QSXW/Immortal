@@ -7,9 +7,10 @@
 #include "Event/ApplicationEvent.h"
 #include "Event/MouseEvent.h"
 #include "Event/KeyEvent.h"
-#include "Framework/Window.h"
-#include "Framework/LayerStack.h"
+#include "Window.h"
+#include "LayerStack.h"
 #include "ImGui/GuiLayer.h"
+#include "Render/RenderContext.h"
 
 #include "Framework/Input.h"
 
@@ -21,81 +22,109 @@
 
 namespace Immortal {
 
-	class IMMORTAL_API Application
-	{
-	public:
-		struct Props
-		{
-			std::string Name;
-			UINT32 Width;
-			UINT32 Height;
-		};
+    class IMMORTAL_API Application
+    {
+    public:
+        struct Description
+        {
+            std::string Name;
+            UINT32      Width;
+            UINT32      Height;
+        };
 
-	public:
-		Application(const Props &props = { "Immortal Engine", 1920, 1080 });
-		virtual ~Application();
+    public:
+        Application(const Description &desc = { "Immortal Engine", 1920, 1080 });
+        virtual ~Application();
 
-		virtual void Run();
-		virtual void Close();
+        virtual void Run();
+        virtual void Close();
 
-		void OnEvent(Event &e);
+        void OnEvent(Event &e);
 
-		virtual inline void PushLayer(Layer *layer);
-		virtual inline void PushOverlay(Layer *overlay);
+        virtual inline void PushLayer(Layer *layer);
+        virtual inline void PushOverlay(Layer *overlay);
 
-		static Application *App()
-		{
-			return Instance;
-		}
+        static Application *App()
+        {
+            return Instance;
+        }
 
-		virtual GuiLayer *GetGuiLayer() const
-		{
-			return mGuiLayer;
-		}
+        virtual GuiLayer *GetGuiLayer() const
+        {
+            return mGuiLayer;
+        }
 
-		virtual Window& GetWindow() const
-		{
-			return *window;
-		}
+        virtual Window& GetWindow() const
+        {
+            return *window;
+        }
 
-		void* GetNativeWindow() const
-		{
-			return window->GetNativeWindow();
-		}
+        void* GetNativeWindow() const
+        {
+            return window->GetNativeWindow();
+        }
 
-		static bool IsKeyPressed(KeyCode code)
-		{
-			return Instance->_M_input.InternalIsKeyPressed(code);
-		}
+        static bool IsKeyPressed(KeyCode code)
+        {
+            return Instance->_M_input.InternalIsKeyPressed(code);
+        }
 
-	public:
-		static UINT32 Width() { return Instance->mProps.Width; }
-		static UINT32 Height() { return Instance->mProps.Height; }
-		static const char *Name() { return Instance->mProps.Name.c_str(); }
-		static float DeltaTime() { return Instance->mTime.DeltaTime(); }
+        RenderContext *Context()
+        {
+            return context.get();
+        }
 
-	private:
-		bool OnWindowClosed(WindowCloseEvent& e);
-		bool OnWindowResize(WindowResizeEvent &e);
-	
-	private:
-		Scope<Window> window;
-		bool mRunning = true;
-		bool mMinimized = false;
-		LayerStack mLayerStack;
-		GuiLayer *mGuiLayer;
-		float mLastFrameTime{ 0.0f };
+    public:
+        static UINT32 Width()
+        { 
+            return Instance->desc.Width;
+        }
 
-		Props mProps;
+        static UINT32 Height()
+        {
+            return Instance->desc.Height;
+        }
 
-		Input _M_input;
-	public:
-		static Application *Instance;
-	private:
-		Timestep mTime;
-		Timer    mTimer;
-	};
+        static const char *Name()
+        { 
+            return Instance->desc.Name.c_str();
+        }
 
-	/* To be defined in Client */
-	Application* CreateApplication();
+        static float DeltaTime()
+        {
+            return Instance->mTime.DeltaTime();
+        }
+
+    private:
+        bool OnWindowClosed(WindowCloseEvent& e);
+        bool OnWindowResize(WindowResizeEvent &e);
+    
+    private:
+        Scope<Window> window;
+
+        bool mRunning = true;
+
+        bool mMinimized = false;
+
+        LayerStack mLayerStack;
+
+        GuiLayer *mGuiLayer;
+
+        float mLastFrameTime{ 0.0f };
+
+        Description desc;
+
+        Input _M_input;
+
+        Unique<RenderContext> context;
+
+    public:
+        static Application *Instance;
+    private:
+        Timestep mTime;
+        Timer    mTimer;
+    };
+
+    /* To be defined in Client */
+    Application* CreateApplication();
 }

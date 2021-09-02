@@ -19,7 +19,7 @@ namespace Vulkan
         Reset();
         for (auto &h : handles)
         {
-            IfNotNullThen(vkDestroySemaphore, device.Handle(), h, nullptr);
+            IfNotNullThen(vkDestroySemaphore, device.Get<VkDevice>(), h, nullptr);
         }
         handles.clear();
     }
@@ -34,7 +34,7 @@ namespace Vulkan
         VkSemaphore semaphore{ VK_NULL_HANDLE };
         VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-        Check(vkCreateSemaphore(device.Handle(), &createInfo, nullptr, &semaphore));
+        Check(vkCreateSemaphore(device.Get<VkDevice>(), &createInfo, nullptr, &semaphore));
 
         handles.push_back(semaphore);
         activeCount++;

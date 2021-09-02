@@ -14,7 +14,7 @@ namespace Vulkan
 		presented{ canPresent },
 		properties{ properties }
 	{
-		vkGetDeviceQueue(device.Handle(), familyIndex, index, &handle);
+		vkGetDeviceQueue(device.Get<VkDevice>(), familyIndex, index, &handle);
 	}
 
 	Queue::Queue(Queue &&other) :

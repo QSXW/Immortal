@@ -192,24 +192,24 @@ namespace Immortal {
 					LoadObject(mActiveScene);
 				}
 
-				if (ImGui::MenuItem(UNICODE8("新建场景")))
+				if (ImGui::MenuItem(U8("新建场景")))
 				{
 					NewScene();
 				}
 
-				if (ImGui::MenuItem(UNICODE8("保存场景")))
+				if (ImGui::MenuItem(U8("保存场景")))
 				{
 					SaveSceneAs();
 				}
 
-				if (ImGui::MenuItem(UNICODE8("加载场景")))
+				if (ImGui::MenuItem(U8("加载场景")))
 				{
 					LoadScene();
 				}
 
 				if (ImGui::MenuItem(IMMORTAL_CONSTANT_STRING_SAVE, "Ctrl+S")) { /* Do stuff */ }
 
-				if (ImGui::MenuItem(UNICODE8("保存为..."), "Ctrl+Alt+S")) { /* Do stuff */ }
+				if (ImGui::MenuItem(U8("保存为..."), "Ctrl+Alt+S")) { /* Do stuff */ }
 
 				if (ImGui::MenuItem(IMMORTAL_CONSTANT_STRING_EXIT, "Ctrl+W")) { Application::App()->Close(); }
 				if (ImGui::MenuItem(IMMORTAL_CONSTANT_STRING_CLOSE, "Ctrl+W")) { my_tool_active = false; }
@@ -256,17 +256,17 @@ namespace Immortal {
 			static int counter = 0;
 			ImGui::Checkbox(IMMORTAL_CONSTANT_STRING_DEMO_CONSOLE, &show_demo_window);
 			ImGui::Text(IMMORTAL_CONSTANT_STRING_RENDER_RATE, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::Text(UNICODE8("图形设备：%s"), Application::App()->GetWindow().Context().GraphicsRenderer());
-			ImGui::Text(UNICODE8("驱动版本：%s"), Application::App()->GetWindow().Context().DriverVersion());
-			ImGui::Text(UNICODE8("图形数量：%d"), Renderer2D::Stats().QuadCount);
+			ImGui::Text(U8("图形设备：%s"), Application::App()->GetWindow().Context().GraphicsRenderer());
+			ImGui::Text(U8("驱动版本：%s"), Application::App()->GetWindow().Context().DriverVersion());
+			ImGui::Text(U8("图形数量：%d"), Renderer2D::Stats().QuadCount);
 		}
 		ImGui::End();
 
-		ImGui::Begin(UNICODE8("调色板"));
+		ImGui::Begin(U8("调色板"));
 		{
 			ImGui::NextColumn();
 			ImGui::Columns(2);
-			ImGui::Text(UNICODE8("  红色"));
+			ImGui::Text(U8("  红色"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###RED", &mRGBA.r, -1, 1);
@@ -274,7 +274,7 @@ namespace Immortal {
 			ImGui::NextColumn();
 
 			ImGui::Columns(2);
-			ImGui::Text(UNICODE8("  绿色"));
+			ImGui::Text(U8("  绿色"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###GREEN", &mRGBA.g, -1, 1);
@@ -282,7 +282,7 @@ namespace Immortal {
 			ImGui::NextColumn();
 
 			ImGui::Columns(2);
-			ImGui::Text(UNICODE8("  蓝色"));
+			ImGui::Text(U8("  蓝色"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###BLUE", &mRGBA.b, -1, 1);
@@ -290,7 +290,7 @@ namespace Immortal {
 			ImGui::NextColumn();
 
 			ImGui::Columns(2);
-			ImGui::Text(UNICODE8("  透明度"));
+			ImGui::Text(U8("  透明度"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###ALPHA", &mRGBA.a, -1, 1);
@@ -298,7 +298,7 @@ namespace Immortal {
 			ImGui::NextColumn();
 
 			ImGui::Columns(2);
-			ImGui::Text(UNICODE8("  亮度"));
+			ImGui::Text(U8("  亮度"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###BRIGHTNESS", &mBrightness, -1, 1);
@@ -306,21 +306,21 @@ namespace Immortal {
 			ImGui::NextColumn();
 			ImGui::Columns(2);
 
-			ImGui::Text(UNICODE8("  色相"));
+			ImGui::Text(U8("  色相"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###HUE", &mHue, 0.0f, 6.0f);
 			ImGui::PopItemWidth();
 			ImGui::NextColumn();
 
-			ImGui::Text(UNICODE8("  饱和度"));
+			ImGui::Text(U8("  饱和度"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###SATURATION", &mSaturation, -1.0f, 1.0f);
 			ImGui::PopItemWidth();
 			ImGui::NextColumn();
 
-			ImGui::Text(UNICODE8("  明度"));
+			ImGui::Text(U8("  明度"));
 			ImGui::NextColumn();
 			ImGui::PushItemWidth(-1);
 			ImGui::SliderFloat("###LUMINANCE", &mLuminance, -1.0f, 1.0f);
@@ -470,7 +470,7 @@ namespace Immortal {
 			static bool logOpen;
 			log.Clear();
 			log.AddLog(Compiler::Log.c_str());
-			log.Draw(UNICODE8("调试日志"), &logOpen);
+			log.Draw(U8("调试日志"), &logOpen);
 		}
 
 		ImGui::End(); /* Dock place */
@@ -625,7 +625,7 @@ namespace Immortal {
 			
 			if (*extension & static_cast<UINT32>(FileDialogs::Type::FBX))
 			{
-				auto &e = mActiveScene->CreateEntity(UNICODE8("模型"));
+				auto &e = mActiveScene->CreateEntity(U8("模型"));
 				auto &c = e.AddComponent<MeshComponent>();
 				c.Mesh = CreateRef<Mesh>(res.value());
 				e.AddComponent<MaterialComponent>();

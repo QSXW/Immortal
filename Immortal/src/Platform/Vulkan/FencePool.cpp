@@ -20,7 +20,7 @@ namespace Vulkan
 
         for (VkFence fence : handles)
         {
-            IfNotNullThen<VkFence>(vkDestroyFence, device.Handle(), fence, nullptr);
+            IfNotNullThen<VkFence>(vkDestroyFence, device.Get<VkDevice>(), fence, nullptr);
         }
         handles.clear();
     }
@@ -31,7 +31,7 @@ namespace Vulkan
         {
             return VK_SUCCESS;
         }
-        return vkWaitForFences(device.Handle(), activeCount, handles.data(), true, timeout);
+        return vkWaitForFences(device.Get<VkDevice>(), activeCount, handles.data(), true, timeout);
     }
 
     VkResult FencePool::Reset()
@@ -41,7 +41,7 @@ namespace Vulkan
             return VK_SUCCESS;
         }
         activeCount = 0;
-        return vkResetFences(device.Handle(), activeCount, handles.data());
+        return vkResetFences(device.Get<VkDevice>(), activeCount, handles.data());
     }
 
     VkFence FencePool::RequestFence()
@@ -53,7 +53,7 @@ namespace Vulkan
 
         VkFence fence{ VK_NULL_HANDLE };
         VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-        Check(vkCreateFence(device.Handle(), &createInfo, nullptr, &fence));
+        Check(vkCreateFence(device.Get<VkDevice>(), &createInfo, nullptr, &fence));
 
         handles.emplace_back(fence);
         activeCount++;

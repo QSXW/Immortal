@@ -4,21 +4,17 @@
 
 #include "ImmortalCore.h"
 #include "Event/Event.h"
-#include "Render/RenderContext.h"
 
 namespace Immortal
 {
 	struct WindowProps
 	{
 		std::string Title;
-		int32_t Width;
-		int32_t Height;
+		UINT32      Width;
+		UINT32      Height;
 
-		WindowProps(
-			const std::string& title = "Immortal Engine",
-			uint32_t width = 1280,
-			uint32_t height = 720
-		) : Title(title), Width(width), Height(height)
+		WindowProps(const std::string& title = "Immortal Engine", UINT32 width = 1280, UINT32 height = 720) :
+			Title(title), Width(width), Height(height)
 		{
 
 		}
@@ -51,8 +47,6 @@ namespace Immortal
 		virtual void Clear() = 0;
 
 		virtual float Time() = 0;
-
-		virtual const RenderContext *Context() const { return nullptr; };
 
 		virtual void ProcessEvents() = 0;
 

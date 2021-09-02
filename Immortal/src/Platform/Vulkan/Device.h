@@ -2,6 +2,8 @@
 
 #include <map>
 
+#include "Framework/Device.h"
+
 #include "vkcommon.h"
 #include "ImmortalCore.h"
 
@@ -15,39 +17,36 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	/**
-		* @brief Once Vulkan is initialized, devices and queues are the primary objects used
-		* to interact with a Vulkan implementation.
-		*
-		* Vulkan Device, aka logical devices, represents an instance of that implementation with
-		* its own state and resources independent of other logical devices.
-		* Each device exposes a number of queue families each having one or more queues. All queues
-		* in a queue family support the same operations.
-		*/
-	class Device
+	class Device : public Immortal::Device
 	{
 	public:
-
-	public:
 		Device() = default;
+
 		Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions = {});
+
 		~Device();
 
 		UINT32 QueueFailyIndex(VkQueueFlagBits queueFlag);
 
-		void CheckExtensionSupported() NOEXCEPT;
+		void CheckExtensionSupported();
 
-		bool IsExtensionSupport(const char* extension) NOEXCEPT;
+		bool IsExtensionSupport(const char* extension);
 
-		bool IsEnabled(const char* extension) const NOEXCEPT;
+		bool IsEnabled(const char* extension) const;
 
 		Queue& FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
-		const Queue& SuitableGraphicsQueue();
-		//@inline
+
+		const Queue &SuitableGraphicsQueue();
+	
 	public:
-		VkDevice &Handle()
+		virtual void *Handle() override
 		{
 			return handle;
+		}
+
+		virtual void *SuitableQueue() override
+		{
+			return SuitableGraphicsQueue().Handle();
 		}
 
 		template <class T>

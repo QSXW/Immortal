@@ -30,7 +30,7 @@ namespace Immortal
 
 	void SceneHierarchyPanel::OnGuiRender()
 	{
-		ImGui::Begin(UNICODE8("世界树"));
+		ImGui::Begin(U8("世界树"));
 		{
 			mContext->Registry().each([&](auto id)
 			{
@@ -49,63 +49,63 @@ namespace Immortal
 
 		if (ImGui::BeginPopupContextWindow(0, 1, false))
 		{
-			if (ImGui::BeginMenu(UNICODE8("新建")))
+			if (ImGui::BeginMenu(U8("新建")))
 			{
-				if (ImGui::MenuItem(UNICODE8("空物体")))
+				if (ImGui::MenuItem(U8("空物体")))
 				{
-					mSelectedEntity = mContext->CreateEntity(UNICODE8("空物体"));
+					mSelectedEntity = mContext->CreateEntity(U8("空物体"));
 				}
-				if (ImGui::BeginMenu(UNICODE8("网格")))
+				if (ImGui::BeginMenu(U8("网格")))
 				{
-					if (ImGui::MenuItem(UNICODE8("无网格原型")))
+					if (ImGui::MenuItem(U8("无网格原型")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("空物体"));
+						auto &e = mContext->CreateEntity(U8("空物体"));
 						auto &c = e.AddComponent<MeshComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("立方体")))
+					if (ImGui::MenuItem(U8("立方体")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("立方体"));
+						auto &e = mContext->CreateEntity(U8("立方体"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Cube>();
 						e.AddComponent<MaterialComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("球体")))
+					if (ImGui::MenuItem(U8("球体")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("球体"));
+						auto &e = mContext->CreateEntity(U8("球体"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Sphere>();
 						e.AddComponent<MaterialComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("胶囊")))
+					if (ImGui::MenuItem(U8("胶囊")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("胶囊"));
+						auto &e = mContext->CreateEntity(U8("胶囊"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Capsule>();
 						e.AddComponent<MaterialComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("圆锥体")))
+					if (ImGui::MenuItem(U8("圆锥体")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("圆锥体"));
+						auto &e = mContext->CreateEntity(U8("圆锥体"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Cone>();
 						e.AddComponent<MaterialComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("圆柱体")))
+					if (ImGui::MenuItem(U8("圆柱体")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("圆柱体"));
+						auto &e = mContext->CreateEntity(U8("圆柱体"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Cylinder>();
 						e.AddComponent<MaterialComponent>();
 						mSelectedEntity = e;
 					}
-					if (ImGui::MenuItem(UNICODE8("平面")))
+					if (ImGui::MenuItem(U8("平面")))
 					{
-						auto &e = mContext->CreateEntity(UNICODE8("平面"));
+						auto &e = mContext->CreateEntity(U8("平面"));
 						auto &c = e.AddComponent<MeshComponent>();
 						c.Mesh = Mesh::Get<Mesh::Primitive::Plane>();
 						e.AddComponent<MaterialComponent>();
@@ -115,9 +115,9 @@ namespace Immortal
 					ImGui::EndMenu();
 				}
 
-				if (ImGui::MenuItem(UNICODE8("相机")))
+				if (ImGui::MenuItem(U8("相机")))
 				{
-					auto &e = mContext->CreateEntity(UNICODE8("相机"));
+					auto &e = mContext->CreateEntity(U8("相机"));
 					e.AddComponent<CameraComponent>();
 					mSelectedEntity = e;
 				}
@@ -128,7 +128,7 @@ namespace Immortal
 
 		ImGui::End();
 
-		ImGui::Begin(UNICODE8("属性"));
+		ImGui::Begin(U8("属性"));
 		if (mSelectedEntity)
 		{
 			DrawComponents(mSelectedEntity);
@@ -153,7 +153,7 @@ namespace Immortal
 		bool isDeleted = false;
 		if (ImGui::BeginPopupContextItem())
 		{
-			if (ImGui::MenuItem(UNICODE8("删除")))
+			if (ImGui::MenuItem(U8("删除")))
 			{
 				isDeleted = true;
 			}
@@ -288,12 +288,12 @@ namespace Immortal
 
 			if (ImGui::BeginPopup("ComponentSettings"))
 			{
-				if (ImGui::MenuItem(UNICODE8("重置")))
+				if (ImGui::MenuItem(U8("重置")))
 					resetValues = true;
 
 				if (canBeRemoved)
 				{
-					if (ImGui::MenuItem(UNICODE8("移除组件")))
+					if (ImGui::MenuItem(U8("移除组件")))
 						removeComponent = true;
 				}
 
@@ -324,7 +324,7 @@ namespace Immortal
 			auto &tag = e.GetComponent<TagComponent>().Tag;
 			static char buffer[256] = { 0 };
 			memcpy(buffer, tag.c_str(), tag.size() + 1);
-			if (ImGui::InputText(UNICODE8("标签"), buffer, sizeof(buffer)))
+			if (ImGui::InputText(U8("标签"), buffer, sizeof(buffer)))
 			{
 				tag = std::string(buffer);
 			}
@@ -337,9 +337,9 @@ namespace Immortal
 		ImGui::SameLine();
 		ImGui::TextDisabled("%llx", id);
 		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 textSize = ImGui::CalcTextSize(UNICODE8("添加组件"));
+		ImVec2 textSize = ImGui::CalcTextSize(U8("添加组件"));
 		ImGui::SameLine(contentRegionAvailable.x - (textSize.x + GImGui->Style.FramePadding.y));
-		if (ImGui::Button(UNICODE8("添加组件")))
+		if (ImGui::Button(U8("添加组件")))
 		{
 			ImGui::OpenPopup("AddComponentPanel");
 		}
@@ -348,7 +348,7 @@ namespace Immortal
 		{
 			if (!mSelectedEntity.HasComponent<CameraComponent>())
 			{
-				if (ImGui::Button(UNICODE8("相机")))
+				if (ImGui::Button(U8("相机")))
 				{
 					mSelectedEntity.AddComponent<CameraComponent>();
 					ImGui::CloseCurrentPopup();
@@ -356,7 +356,7 @@ namespace Immortal
 			}
 			if (!mSelectedEntity.HasComponent<MeshComponent>())
 			{
-				if (ImGui::Button(UNICODE8("网格")))
+				if (ImGui::Button(U8("网格")))
 				{
 					MeshComponent& component = mSelectedEntity.AddComponent<MeshComponent>();
 					ImGui::CloseCurrentPopup();
@@ -364,7 +364,7 @@ namespace Immortal
 			}
 			if (!mSelectedEntity.HasComponent<MaterialComponent>())
 			{
-				if (ImGui::Button(UNICODE8("材质")))
+				if (ImGui::Button(U8("材质")))
 				{
 					auto &c = mSelectedEntity.AddComponent<MaterialComponent>();
 					ImGui::CloseCurrentPopup();
@@ -372,7 +372,7 @@ namespace Immortal
 			}
 			if (!mSelectedEntity.HasComponent<NativeScriptComponent>())
 			{
-				if (ImGui::Button(UNICODE8("脚本")))
+				if (ImGui::Button(U8("脚本")))
 				{
 					mSelectedEntity.AddComponent<NativeScriptComponent>();
 					ImGui::CloseCurrentPopup();
@@ -380,7 +380,7 @@ namespace Immortal
 			}
 			if (!mSelectedEntity.HasComponent<SpriteRendererComponent>())
 			{
-				if (ImGui::Button(UNICODE8("精灵渲染器")))
+				if (ImGui::Button(U8("精灵渲染器")))
 				{
 					mSelectedEntity.AddComponent<SpriteRendererComponent>();
 					ImGui::CloseCurrentPopup();
@@ -389,29 +389,29 @@ namespace Immortal
 			ImGui::EndPopup();
 		}
 
-		DrawComponent<TransformComponent>(UNICODE8("变换"), e, [](TransformComponent& t)
+		DrawComponent<TransformComponent>(U8("变换"), e, [](TransformComponent& t)
 		{
-			DrawVec3Control(UNICODE8("位置"), t.Position, 0.005f);
+			DrawVec3Control(U8("位置"), t.Position, 0.005f);
 			Vector::Vector3 rotation = Vector::Degrees(t.Rotation);
-			DrawVec3Control(UNICODE8("旋转"), rotation, 1.0f);
+			DrawVec3Control(U8("旋转"), rotation, 1.0f);
 			t.Rotation = Vector::Radians(rotation);
-			DrawVec3Control(UNICODE8("缩放"), t.Scale, 0.02f);
+			DrawVec3Control(U8("缩放"), t.Scale, 0.02f);
 		}, false);
 
-		DrawComponent<CameraComponent>(UNICODE8("相机"), e, [](CameraComponent& c)
+		DrawComponent<CameraComponent>(U8("相机"), e, [](CameraComponent& c)
 			{
 				auto &camera = c.Camera;
 
-				ImGui::Checkbox(UNICODE8("主摄像机"), &c.Primary);
+				ImGui::Checkbox(U8("主摄像机"), &c.Primary);
 
 				static constexpr char *projectionTypeStrings[] = {
-					UNICODE8("透视投影"),
-					UNICODE8("正交投影")
+					U8("透视投影"),
+					U8("正交投影")
 				};
 
 				bool isChanged = false;
 				char *current = projectionTypeStrings[static_cast<int>(camera.Type())];
-				if (ImGui::BeginCombo(UNICODE8("投影"), current))
+				if (ImGui::BeginCombo(U8("投影"), current))
 				{
 					for (int i = 0; i < sizeof(projectionTypeStrings) / sizeof(projectionTypeStrings[0]); i++)
 					{
@@ -436,25 +436,25 @@ namespace Immortal
 				if (camera.Type() == Camera::ProjectionType::Perspective)
 				{
 					auto degrees = camera.PerspectiveVerticalFOV();
-					if (ImGui::DragFloat(UNICODE8("视野角度"), &degrees, 0.02f, 0.0f))
+					if (ImGui::DragFloat(U8("视野角度"), &degrees, 0.02f, 0.0f))
 					{
 						camera.SetPerspectiveVerticalFOV(degrees);
 					}
-					ImGui::DragFloat(UNICODE8("近端平面"), &camera.PerspectiveNearClip(), 0.02f);
-					ImGui::DragFloat(UNICODE8("远端平面"), &camera.PerspectiveFarClip(), 0.02f);
+					ImGui::DragFloat(U8("近端平面"), &camera.PerspectiveNearClip(), 0.02f);
+					ImGui::DragFloat(U8("远端平面"), &camera.PerspectiveFarClip(), 0.02f);
 				}
 				if (camera.Type() == Camera::ProjectionType::Orthographic)
 				{
-					ImGui::DragFloat(UNICODE8("尺寸"), &camera.OrthographicSize(), 0.02f);
-					ImGui::DragFloat(UNICODE8("近端平面"), &camera.OrthographicNearClip(), 0.02f);
-					ImGui::DragFloat(UNICODE8("远端平面"), &camera.OrthographicFarClip(), 0.02f);
+					ImGui::DragFloat(U8("尺寸"), &camera.OrthographicSize(), 0.02f);
+					ImGui::DragFloat(U8("近端平面"), &camera.OrthographicNearClip(), 0.02f);
+					ImGui::DragFloat(U8("远端平面"), &camera.OrthographicFarClip(), 0.02f);
 				}
 
 			}, true);
 
-		DrawComponent<SpriteRendererComponent>(UNICODE8("贴图"), e, [&](SpriteRendererComponent& s)
+		DrawComponent<SpriteRendererComponent>(U8("贴图"), e, [&](SpriteRendererComponent& s)
 			{
-				ImGui::ColorEdit4(UNICODE8("颜色"), &s.Color.r);
+				ImGui::ColorEdit4(U8("颜色"), &s.Color.r);
 				float aspect = (float)s.Texture->Width() / (float)s.Texture->Height();
 				if (ImGui::ImageButton((void *)(uint64_t)(uint32_t)s.Texture->RendererID(), { aspect * 128.0f, 128.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f }))
 				{
@@ -475,11 +475,11 @@ namespace Immortal
 				}
 			}, true);
 
-		DrawComponent<MeshComponent>(UNICODE8("网格"), e, [&](MeshComponent& c)
+		DrawComponent<MeshComponent>(U8("网格"), e, [&](MeshComponent& c)
 			{
 				UI::BeginPropertyGrid();
 				ImGui::SetColumnWidth(0, 100.0f);
-				ImGui::Text(UNICODE8("网格"));
+				ImGui::Text(U8("网格"));
 				ImGui::NextColumn();
 				ImGui::PushItemWidth(-1);
 				ImGui::InputText("##assetRef", (char*)c.Mesh->Path(), 256, ImGuiInputTextFlags_ReadOnly);
@@ -489,18 +489,18 @@ namespace Immortal
 				UI::EndPropertyGrid();
 			});
 
-		DrawComponent<NativeScriptComponent>(UNICODE8("脚本"), e, [&](NativeScriptComponent& c)
+		DrawComponent<NativeScriptComponent>(U8("脚本"), e, [&](NativeScriptComponent& c)
 			{
 				UI::BeginPropertyGrid();
 				ImGui::SetColumnWidth(0, 100.0f);
-				ImGui::Text(UNICODE8("脚本"));
+				ImGui::Text(U8("脚本"));
 				ImGui::NextColumn();
 				ImGui::PushItemWidth(-1);
 				ImGui::InputText("##assetRef", (char*)c.Module.c_str(), c.Module.size(), ImGuiInputTextFlags_ReadOnly);
 
 				ImGui::PopItemWidth();
 				ImGui::NextColumn();
-				if (ImGui::Button(UNICODE8("添加脚本")))
+				if (ImGui::Button(U8("添加脚本")))
 				{
 					auto &res = FileDialogs::OpenFile("CPP Scripts(*.cpp)\0 * .cpp\0");
 					if (res.has_value())
@@ -512,7 +512,7 @@ namespace Immortal
 				UI::EndPropertyGrid();
 			});
 
-		DrawComponent<MaterialComponent>(UNICODE8("材质"), e, [&](MaterialComponent &c)
+		DrawComponent<MaterialComponent>(U8("材质"), e, [&](MaterialComponent &c)
 			{
 				Texture::Description spec = { Texture::Format::RGB8, Texture::Wrap::Clamp, Texture::Filter::Linear };
 				if (mSelectedEntity.HasComponent<MeshComponent>())
@@ -523,7 +523,7 @@ namespace Immortal
 						// Textures ------------------------------------------------------------------------------
 						{
 							// Albedo
-							if (ImGui::CollapsingHeader(UNICODE8("反照率(Albedo)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
+							if (ImGui::CollapsingHeader(U8("反照率(Albedo)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 
@@ -560,7 +560,7 @@ namespace Immortal
 						}
 						{
 							// Normals
-							if (ImGui::CollapsingHeader(UNICODE8("法线(Normal)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
+							if (ImGui::CollapsingHeader(U8("法线(Normal)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useNormalMap = true;
@@ -593,7 +593,7 @@ namespace Immortal
 						}
 						{
 							// Metalness
-							if (ImGui::CollapsingHeader(UNICODE8("金属性(Metalness)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
+							if (ImGui::CollapsingHeader(U8("金属性(Metalness)"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useMetalnessMap = true;
@@ -626,7 +626,7 @@ namespace Immortal
 						}
 						{
 							// Roughness
-							if (ImGui::CollapsingHeader(UNICODE8("粗糙度(Roughness))"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
+							if (ImGui::CollapsingHeader(U8("粗糙度(Roughness))"), nullptr, ImGuiTreeNodeFlags_DefaultOpen))
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useRoughnessMap = true;

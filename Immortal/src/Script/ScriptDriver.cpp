@@ -159,7 +159,7 @@ namespace Immortal
 		}
 		command.append(Compiler::LinkOptions);
 
-		Compiler::Log.append(UNICODE8("ø™ º±‡“Î: \n"));
+		Compiler::Log.append(U8("ø™ º±‡“Î: \n"));
 		if ((pPipe = _popen(command.c_str(), "rt")) == NULL)
 		{
 			Compiler::Log.append("There is some problem in the pipeline between Immortal and MSCV.");
@@ -174,7 +174,7 @@ namespace Immortal
 		if (feof(pPipe))
 		{
 			Compiler::Status = _pclose(pPipe);
-			Compiler::Log.append(UNICODE8("cl.exe ∑µªÿ◊¥Ã¨: "));
+			Compiler::Log.append(U8("cl.exe ∑µªÿ◊¥Ã¨: "));
 			Compiler::Log.append(std::to_string(Compiler::Status));
 			Compiler::Log.append("\n");
 		}
@@ -188,14 +188,14 @@ namespace Immortal
 		case 0:
 			ret = Compiler::Flag::Succeed;
 			LOG::INFO(Compiler::Log);
-			Compiler::Log.append(UNICODE8("±‡“Î≥…π¶\n"));
+			Compiler::Log.append(U8("±‡“Î≥…π¶\n"));
 			break;
 		case 1:
 			ret = Compiler::Flag::NotFound;
 		case 2:
 			ret = Compiler::Flag::InvalidParameter;
 		default:
-			Compiler::Log.append(UNICODE8("±‡“Î ß∞‹\n"));
+			Compiler::Log.append(U8("±‡“Î ß∞‹\n"));
 			break;
 		}
 		return ret;

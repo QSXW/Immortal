@@ -284,7 +284,7 @@ namespace Vulkan
 
     Swapchain::~Swapchain()
     {
-        Vulkan::IfNotNullThen<VkSwapchainKHR>(vkDestroySwapchainKHR, device.Handle(), handle);
+        Vulkan::IfNotNullThen<VkSwapchainKHR>(vkDestroySwapchainKHR, device.Get<VkDevice>(), handle);
     }
 
     void Swapchain::Create()
@@ -309,13 +309,13 @@ namespace Vulkan
         createInfo.surface          = surface;
         createInfo.clipped          = VK_TRUE; // Get the best performance by enabling clipping.
 
-        Check(vkCreateSwapchainKHR(device.Handle(), &createInfo, nullptr, &handle));
+        Check(vkCreateSwapchainKHR(device.Get<VkDevice>(), &createInfo, nullptr, &handle));
 
         UINT32 count{ 0U };
-        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &count, nullptr));
+        Check(vkGetSwapchainImagesKHR(device.Get<VkDevice>(), handle, &count, nullptr));
 
         images.resize(count);
-        Check(vkGetSwapchainImagesKHR(device.Handle(), handle, &count, images.data()));
+        Check(vkGetSwapchainImagesKHR(device.Get<VkDevice>(), handle, &count, images.data()));
     }
 }
 }

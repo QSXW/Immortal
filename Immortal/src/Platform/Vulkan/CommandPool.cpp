@@ -47,7 +47,7 @@ namespace Helper
 		createInfo.queueFamilyIndex = queueFamilyIndex;
 		createInfo.flags            = flags;
 
-		Check:vkCreateCommandPool(device.Handle(), &createInfo, nullptr, &handle);
+		Check:vkCreateCommandPool(device.Get<VkDevice>(), &createInfo, nullptr, &handle);
 	}
 
 	CommandPool::CommandPool(CommandPool &&other) :
@@ -72,7 +72,7 @@ namespace Helper
 	{
 		primaryCommandBuffers.clear();
 		secondaryCommandBuffers.clear();
-		IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device.Handle(), handle, nullptr);
+		IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device.Get<VkDevice>(), handle, nullptr);
 	}
 
 	VkResult CommandPool::ResetCommandBuffers()

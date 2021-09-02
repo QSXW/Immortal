@@ -116,22 +116,22 @@ void OpenGLSample2D::OnGuiRender()
 
 		ImGui::Begin(IMMORTAL_CONSTANT_STRING_CONSOLE);
 		ImGui::Checkbox(IMMORTAL_CONSTANT_STRING_DEMO_CONSOLE, &show_demo_window);
-		//ImGui::ColorEdit4(UNICODE8("选择颜色"), Vector::value_ptr(mSquareColor) + 0);
+		//ImGui::ColorEdit4(U8("选择颜色"), Vector::value_ptr(mSquareColor) + 0);
 
 		ImGui::Columns(2);
-		ImGui::Text(UNICODE8("红色"));
+		ImGui::Text(U8("红色"));
 		ImGui::NextColumn();
 		ImGui::PushItemWidth(-1);
 		ImGui::SliderFloat("#########", &mSquareColor.r, -1, 1);
 		ImGui::PopItemWidth();
 		ImGui::NextColumn();
-		ImGui::SliderFloat(UNICODE8("绿色"), &mSquareColor.g, -1, 1);
-		ImGui::SliderFloat(UNICODE8("蓝色"), &mSquareColor.b, -1, 1);
-		ImGui::SliderFloat(UNICODE8("透明度"), &mSquareColor.a, -1, 1);
-		ImGui::SliderFloat(UNICODE8("亮度"), &mLuminance, -1, 1);
+		ImGui::SliderFloat(U8("绿色"), &mSquareColor.g, -1, 1);
+		ImGui::SliderFloat(U8("蓝色"), &mSquareColor.b, -1, 1);
+		ImGui::SliderFloat(U8("透明度"), &mSquareColor.a, -1, 1);
+		ImGui::SliderFloat(U8("亮度"), &mLuminance, -1, 1);
 		ImGui::Text(IMMORTAL_CONSTANT_STRING_RENDER_RATE, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Text(UNICODE8("图形设备：%s"), Immortal::Application::App()->GetWindow().Context().GraphicsRenderer());
-		ImGui::Text(UNICODE8("驱动版本：%s"), Immortal::Application::App()->GetWindow().Context().DriverVersion());
+		ImGui::Text(U8("图形设备：%s"), Immortal::Application::App()->GetWindow().Context().GraphicsRenderer());
+		ImGui::Text(U8("驱动版本：%s"), Immortal::Application::App()->GetWindow().Context().DriverVersion());
 
 		ImGui::End();
 	}

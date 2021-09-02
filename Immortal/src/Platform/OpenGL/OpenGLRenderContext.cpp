@@ -18,10 +18,11 @@ namespace Immortal {
         int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
         SLASSERT(status && "Failed to initialize Glad!");
 
-        graphicsRenderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
-        driverVersion = reinterpret_cast<const char *>(glGetString(GL_VERSION));
+        graphicsRenderer = rcast<const char *>(glGetString(GL_RENDERER));
+        driverVersion    = rcast<const char *>(glGetString(GL_VERSION));
+        vendor           = rcast<const char *>(glGetString(GL_VENDOR));
         LOG::INFO("Renderer: {0}", graphicsRenderer.c_str());
-        LOG::INFO("Vecdor: {0}", glGetString(GL_VENDOR));
+        LOG::INFO("Vecdor: {0}", vendor.c_str());
         LOG::INFO("Version: {0}", driverVersion.c_str());
 
         SLASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5) && "Immortal requires at least OpenGL version 4.5!");
@@ -31,5 +32,4 @@ namespace Immortal {
     {
         glfwSwapBuffers(handle);
     }
-
 }

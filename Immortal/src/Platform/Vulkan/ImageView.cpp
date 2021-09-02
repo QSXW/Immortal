@@ -27,7 +27,7 @@ namespace Vulkan {
         viewInfo.subresourceRange = subresourceRange;
         viewInfo.image            = image.Handle();
 
-        Vulkan::Check(vkCreateImageView(device.Handle(), &viewInfo, nullptr, &handle));
+        Vulkan::Check(vkCreateImageView(device.Get<VkDevice>(), &viewInfo, nullptr, &handle));
         this->image->Views().emplace(this);
     }
 
@@ -47,7 +47,7 @@ namespace Vulkan {
 
     ImageView::~ImageView()
     {
-        Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, device.Handle(), handle);
+        Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, device.Get<VkDevice>(), handle);
     }
 }
 }
