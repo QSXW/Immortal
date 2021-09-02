@@ -2,84 +2,99 @@
 #include "ImmortalCore.h"
 
 #include "Texture.h"
-
+#include "Image/ColorSpace.h"
 #include <opencv2/core/core.hpp> 
 
-namespace Immortal {
+namespace Immortal 
+{
+    class IMMORTAL_API Frame
+    {
+    public:
+        enum class Format : int
+        {
+            None = 0,
+            RGB,
+            RGBA,
+            RGBA16F,
+            RGBA32F,
+            RG32F,
+            SRGB,
+            DEPTH32F,
+            Depth24Stencil8,
+            Depth = Depth24Stencil8
+        };
 
-	class IMMORTAL_API Frame
-	{
-	public:
-		enum class Format : int
-		{
-			None = 0,
-			RGB,
-			RGBA,
-			RGBA16F,
-			RGBA32F,
-			RG32F,
+        static inline UINT32 map[] = {
+             0,
+             3,
+             4,
+             8,
+            16,
+             8,
+             3
+        };
 
-			SRGB,
+    public:
+        Frame() = default;
 
-			DEPTH32F,
-			Depth24Stencil8,
+        Frame(const std::string &path, int channels = 0, Texture::Format format = Texture::Format::None);
 
-			Depth = Depth24Stencil8
-		};
+        Frame(const std::string &path, bool flip);
 
-	public:
-		Frame() = default;
-		Frame(const std::string &path, int channels = 0, Texture::Format format = Texture::Format::None);
-		Frame(const std::string &path, bool flip);
-		virtual ~Frame();
+        Frame(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB);
 
-		virtual uint32_t Width() const { return mWidth; }
-		virtual uint32_t Height() const { return mHeight; }
-		virtual Texture::Description Type() const { return mDescription; }
-		virtual uint8_t *Data() const { return mData.get(); };
-		virtual uint64_t Hash() const { return 0xff; };
+        virtual ~Frame();
 
-	private:
-		void Frame::Read(const std::string &path, cv::Mat &outputMat);
+        virtual UINT32 Width() const
+        { 
+            return width;
+        }
 
-	private:
-		Texture::Description mDescription;
-		uint32_t mWidth;
-		uint32_t mHeight;
-		int mChannels;
-		Scope<uint8_t> mData;
+        virtual UINT32 Height() const
+        { 
+            return height;
+        }
 
-	public:
-		static Ref<Frame> Create(int format, uint32_t width, uint32_t height, const void *data = nullptr);
-		static Ref<Frame> Create(const std::string &filepath);
+        virtual Texture::Description Type() const
+        { 
+            return desc;
+        }
 
-		static inline uint32_t FormatBitsPerPixel(int format)
-		{
-			switch (format)
-			{
-				case (int)Frame::Format::RGB:
-				case (int)Frame::Format::SRGB:
-				{
-					return 3;
-				}
-				case (int)Frame::Format::RGBA:
-				{
-					return 4;
-				}
-				case (int)Frame::Format::RGBA16F:
-				{
-					return 2 * 4;
-				}
-				case (int)Frame::Format::RGBA32F:
-				{
-					return 4 * 4;
-				}
-				default:
-					SLASSERT(false && "The Input format was incorrect.");
-					return 0;
-			}
-		}
-	};
+        virtual UINT8 *Data() const
+        { 
+            return data.get();
+        };
 
+        virtual UINT32 Hash() const { return 0xff; };
+
+    private:
+        void Frame::Read(const std::string &path, cv::Mat &outputMat);
+
+    private:
+        ColorSpace           colorSpace;
+        Texture::Description desc;
+        UINT32               width{ 0 };
+        UINT32               height{ 0 };
+        size_t               spatial{ 0 };
+        size_t               size{ 0 };
+        int                  depth{ 1 };
+        Scope<uint8_t>       data{};
+
+    public:
+        static inline Ref<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB)
+        {
+            return std::make_shared<Frame>(width, height, depth, data, colorSpace);
+        }
+
+        static inline Ref<Frame> Create(const std::string &filepath)
+        {
+            return std::make_shared<Frame>(filepath);
+        }
+
+        static inline UINT32 FormatBitsPerPixel(int format)
+        {
+            SLASSERT(format > SL_ARRAY_LEN(map) && "Unsupport format.");
+            return map[format];
+        }
+    };
 }
-
