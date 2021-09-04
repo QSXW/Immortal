@@ -11,6 +11,9 @@ namespace Immortal
 
         virtual void *Handle() = 0;
 
-        virtual void *SuitableQueue() = 0;
+        virtual void *SuitableQueue()
+        { 
+            return nullptr; 
+        }
     };
 }
