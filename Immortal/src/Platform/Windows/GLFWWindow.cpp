@@ -73,13 +73,16 @@ namespace Immortal
         {
             glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         }
+        else
+        {
+            SetVSync(true);
+        }
 
         window = glfwCreateWindow((int)props.Width, (int)props.Height, description.Title.c_str(), nullptr, nullptr);
         ++GLFWWindowCount;
 
         glfwSetWindowUserPointer(window, &description);
-        SetVSync(true);
-
+        
         /* Set callbacks */
         glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
         {

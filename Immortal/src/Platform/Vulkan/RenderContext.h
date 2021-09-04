@@ -58,6 +58,10 @@ namespace Vulkan
             {
                 return *swapchain;
             }
+            if constexpr (typeof<T, Vulkan::Device>())
+            {
+                return *device;
+            }
         }
 
         template <class T>

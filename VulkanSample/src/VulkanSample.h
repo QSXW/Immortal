@@ -21,7 +21,7 @@ class VulkanSample : public Application
 public:
     VulkanSample() : Application({ U8("Vulkan Test"), 1920, 1080 })
     {
-        context = Context();
+        context = dcast<Vulkan::RenderContext *>(Context());
         auto device = context->GetDevice();
         VkSemaphoreCreateInfo createInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
@@ -41,17 +41,48 @@ public:
 
     void CreateSwapchainBuffers()
     {
-        auto renderContext = dcast<Vulkan::RenderContext *>(context);
-
-        if (renderContext->HasSwapchain())
+        auto &device = context->Get<Vulkan::Device>();
+        if (context->HasSwapchain())
         {
-            auto &swapchain = renderContext->Get<Vulkan::Swapchain>();
+            auto &swapchain = context->Get<Vulkan::Swapchain>();
             auto &images    = swapchain.Get<Vulkan::Swapchain::Images>();
+
+            for (auto &s : swapchainBuffers)
+            {
+                Vulkan::IfNotNullThen(vkDestroyImageView, device.Get<VkDevice>(), s.view);
+            }
+            swapchainBuffers.clear();
+            swapchainBuffers.resize(images.size());
+
+            for (auto i = 0; i < images.size(); i++)
+            {
+                VkImageViewCreateInfo colorAttachmentView{};
+                colorAttachmentView.sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                colorAttachmentView.pNext      = nullptr;
+                colorAttachmentView.format     = swapchain.Get<VkFormat>();
+                colorAttachmentView.components = {
+                    VK_COMPONENT_SWIZZLE_R,
+                    VK_COMPONENT_SWIZZLE_G,
+                    VK_COMPONENT_SWIZZLE_B,
+                    VK_COMPONENT_SWIZZLE_A
+                };
+                colorAttachmentView.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                colorAttachmentView.subresourceRange.baseMipLevel   = 0;
+                colorAttachmentView.subresourceRange.levelCount     = 1;
+                colorAttachmentView.subresourceRange.baseArrayLayer = 0;
+                colorAttachmentView.subresourceRange.layerCount     = 1;
+                colorAttachmentView.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+                colorAttachmentView.flags                           = 0;
+
+                swapchainBuffers[i].image = images[i];
+                colorAttachmentView.image = images[i];
+                Vulkan::Check(vkCreateImageView(device.Get<VkDevice>(), &colorAttachmentView, nullptr, &swapchainBuffers[i].view));
+            }
         }
     }
 
 private:
-    RenderContext *context{ nullptr };
+    Vulkan::RenderContext *context{ nullptr };
 
     struct
     {
@@ -62,6 +93,14 @@ private:
     VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
     VkQueue queue;
+
+    struct SwapchainBuffer
+    {
+        VkImage     image;
+        VkImageView view;
+    };
+
+    std::vector<SwapchainBuffer> swapchainBuffers{};
 };
 
 Immortal::Application* Immortal::CreateApplication()
