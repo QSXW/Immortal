@@ -1,11 +1,15 @@
 #pragma once
 
+#include "ImmortalCore.h"
+
 #ifdef _MSC_VER
 
-#	include <D3d12.h>
+#include <D3d12.h>
+#pragma comment(lib, "D3d12.dll")
 
-#   if defined( DEBUG ) | defined ( _DEBUG )
-#   include <D3d12SDKLayers.h>
-#   endif /* DEBUG */
+#if SLDEBUG
+#include <D3d12SDKLayers.h>
+#pragma comment(lib, "D3d12SDKLayers.dll")
+#endif
 
-#endif /* _MSC_VER */
+#endif

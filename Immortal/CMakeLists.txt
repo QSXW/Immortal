@@ -69,9 +69,41 @@ set(PHYSICS_FILES
     src/Physics/Physics.h)
 
 set(D3D12_FILES
-   src/Platform/D3D12/D3D12Common.h
-   src/Platform/D3D12/D3D12Framebuffer.cpp
-   src/Platform/D3D12/D3D12Framebuffer.h)
+    src/Platform/D3D12/CommandBuffer.cpp
+    src/Platform/D3D12/CommandBuffer.h
+    src/Platform/D3D12/CommandPool.cpp
+    src/Platform/D3D12/CommandPool.h
+    src/Platform/D3D12/D3D12Common.h
+    src/Platform/D3D12/DescriptorPool.cpp
+    src/Platform/D3D12/DescriptorPool.h
+    src/Platform/D3D12/Device.cpp
+    src/Platform/D3D12/Device.h
+    src/Platform/D3D12/FencePool.cpp
+    src/Platform/D3D12/FencePool.h
+    src/Platform/D3D12/Framebuffer.cpp
+    src/Platform/D3D12/Framebuffer.h
+    src/Platform/D3D12/Image.cpp
+    src/Platform/D3D12/Image.h
+    src/Platform/D3D12/ImageView.cpp
+    src/Platform/D3D12/ImageView.h
+    src/Platform/D3D12/Instance.cpp
+    src/Platform/D3D12/Instance.h
+    src/Platform/D3D12/PhysicalDevice.cpp
+    src/Platform/D3D12/PhysicalDevice.h
+    src/Platform/D3D12/Queue.cpp
+    src/Platform/D3D12/Queue.h
+    src/Platform/D3D12/RenderContext.cpp
+    src/Platform/D3D12/RenderContext.h
+    src/Platform/D3D12/Renderer.cpp
+    src/Platform/D3D12/Renderer.h
+    src/Platform/D3D12/RenderFrame.cpp
+    src/Platform/D3D12/RenderFrame.h
+    src/Platform/D3D12/RenderTarget.cpp
+    src/Platform/D3D12/RenderTarget.h
+    src/Platform/D3D12/SemaphorePool.cpp
+    src/Platform/D3D12/SemaphorePool.h
+    src/Platform/D3D12/Swapchain.cpp
+    src/Platform/D3D12/Swapchain.h)
 
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
