@@ -16,35 +16,35 @@
 
 struct FrameContext
 {
-	ID3D12CommandAllocator* CommandAllocator;
-	UINT64                  FenceValue;
+    ID3D12CommandAllocator* CommandAllocator;
+    UINT64                  FenceValue;
 };
 
 static int const                    NUM_FRAMES_IN_FLIGHT = 3;
 static FrameContext                 g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 static UINT                         g_frameIndex = 0;
 
-static int const                    NUM_BACK_BUFFERS = 3;
-static ID3D12Device*                g_pd3dDevice = NULL;
-static ID3D12DescriptorHeap*        g_pd3dRtvDescHeap = NULL;
-static ID3D12DescriptorHeap*        g_pd3dSrvDescHeap = NULL;
-static ID3D12CommandQueue*          g_pd3dCommandQueue = NULL;
-static ID3D12GraphicsCommandList*   g_pd3dCommandList = NULL;
-static ID3D12Fence*                 g_fence = NULL;
-static HANDLE                       g_fenceEvent = NULL;
-static UINT64                       g_fenceLastSignaledValue = 0;
-static IDXGISwapChain3*             g_pSwapChain = NULL;
-static HANDLE                       g_hSwapChainWaitableObject = NULL;
-static ID3D12Resource*              g_mainRenderTargetResource[NUM_BACK_BUFFERS] = {};
+static int const                    NUM_BACK_BUFFERS                               = 3;
+static ID3D12Device*                g_pd3dDevice                                   = nullptr;
+static ID3D12DescriptorHeap*        g_pd3dRtvDescHeap                              = nullptr;
+static ID3D12DescriptorHeap*        g_pd3dSrvDescHeap                              = nullptr;
+static ID3D12CommandQueue*          g_pd3dCommandQueue                             = nullptr;
+static ID3D12GraphicsCommandList*   g_pd3dCommandList                              = nullptr;
+static ID3D12Fence*                 g_fence                                        = nullptr;
+static HANDLE                       g_fenceEvent                                   = nullptr;
+static UINT64                       g_fenceLastSignaledValue                       = 0;
+static IDXGISwapChain3*             g_pSwapChain                                   = nullptr;
+static HANDLE                       g_hSwapChainWaitableObject                     = nullptr;
+static ID3D12Resource*              g_mainRenderTargetResource[NUM_BACK_BUFFERS]   = {};
 static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
 
 void CreateRenderTarget()
 {
     for (UINT i = 0; i < NUM_BACK_BUFFERS; i++)
     {
-        ID3D12Resource* pBackBuffer = NULL;
+        ID3D12Resource* pBackBuffer = nullptr;
         g_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer));
-        g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, g_mainRenderTargetDescriptor[i]);
+        g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, g_mainRenderTargetDescriptor[i]);
         g_mainRenderTargetResource[i] = pBackBuffer;
     }
 }
@@ -87,21 +87,21 @@ bool CreateDeviceD3D(HWND hWnd)
 
     // [DEBUG] Enable debug interface
 #ifdef DX12_ENABLE_DEBUG_LAYER
-    ID3D12Debug* pdx12Debug = NULL;
+    ID3D12Debug* pdx12Debug = nullptr;
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pdx12Debug))))
         pdx12Debug->EnableDebugLayer();
 #endif
 
     // Create device
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
-    if (D3D12CreateDevice(NULL, featureLevel, IID_PPV_ARGS(&g_pd3dDevice)) != S_OK)
+    if (D3D12CreateDevice(nullptr, featureLevel, IID_PPV_ARGS(&g_pd3dDevice)) != S_OK)
         return false;
 
     // [DEBUG] Setup debug interface to break on any warnings/errors
 #ifdef DX12_ENABLE_DEBUG_LAYER
-    if (pdx12Debug != NULL)
+    if (pdx12Debug != nullptr)
     {
-        ID3D12InfoQueue* pInfoQueue = NULL;
+        ID3D12InfoQueue* pInfoQueue = nullptr;
         g_pd3dDevice->QueryInterface(IID_PPV_ARGS(&pInfoQueue));
         pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
         pInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -151,23 +151,23 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
             return false;
 
-    if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
+    if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, nullptr, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
         g_pd3dCommandList->Close() != S_OK)
         return false;
 
     if (g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)) != S_OK)
         return false;
 
-    g_fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (g_fenceEvent == NULL)
+    g_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (g_fenceEvent == nullptr)
         return false;
 
     {
-        IDXGIFactory4* dxgiFactory = NULL;
-        IDXGISwapChain1* swapChain1 = NULL;
+        IDXGIFactory4* dxgiFactory = nullptr;
+        IDXGISwapChain1* swapChain1 = nullptr;
         if (CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory)) != S_OK)
             return false;
-        if (dxgiFactory->CreateSwapChainForHwnd(g_pd3dCommandQueue, hWnd, &sd, NULL, NULL, &swapChain1) != S_OK)
+        if (dxgiFactory->CreateSwapChainForHwnd(g_pd3dCommandQueue, hWnd, &sd, nullptr, nullptr, &swapChain1) != S_OK)
             return false;
         if (swapChain1->QueryInterface(IID_PPV_ARGS(&g_pSwapChain)) != S_OK)
             return false;
@@ -186,26 +186,26 @@ void CleanupRenderTarget()
     WaitForLastSubmittedFrame();
 
     for (UINT i = 0; i < NUM_BACK_BUFFERS; i++)
-        if (g_mainRenderTargetResource[i]) { g_mainRenderTargetResource[i]->Release(); g_mainRenderTargetResource[i] = NULL; }
+        if (g_mainRenderTargetResource[i]) { g_mainRenderTargetResource[i]->Release(); g_mainRenderTargetResource[i] = nullptr; }
 }
 
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
-    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
-    if (g_hSwapChainWaitableObject != NULL) { CloseHandle(g_hSwapChainWaitableObject); }
+    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
+    if (g_hSwapChainWaitableObject != nullptr) { CloseHandle(g_hSwapChainWaitableObject); }
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
-        if (g_frameContext[i].CommandAllocator) { g_frameContext[i].CommandAllocator->Release(); g_frameContext[i].CommandAllocator = NULL; }
-    if (g_pd3dCommandQueue) { g_pd3dCommandQueue->Release(); g_pd3dCommandQueue = NULL; }
-    if (g_pd3dCommandList) { g_pd3dCommandList->Release(); g_pd3dCommandList = NULL; }
-    if (g_pd3dRtvDescHeap) { g_pd3dRtvDescHeap->Release(); g_pd3dRtvDescHeap = NULL; }
-    if (g_pd3dSrvDescHeap) { g_pd3dSrvDescHeap->Release(); g_pd3dSrvDescHeap = NULL; }
-    if (g_fence) { g_fence->Release(); g_fence = NULL; }
-    if (g_fenceEvent) { CloseHandle(g_fenceEvent); g_fenceEvent = NULL; }
-    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = NULL; }
+        if (g_frameContext[i].CommandAllocator) { g_frameContext[i].CommandAllocator->Release(); g_frameContext[i].CommandAllocator = nullptr; }
+    if (g_pd3dCommandQueue) { g_pd3dCommandQueue->Release(); g_pd3dCommandQueue = nullptr; }
+    if (g_pd3dCommandList) { g_pd3dCommandList->Release(); g_pd3dCommandList = nullptr; }
+    if (g_pd3dRtvDescHeap) { g_pd3dRtvDescHeap->Release(); g_pd3dRtvDescHeap = nullptr; }
+    if (g_pd3dSrvDescHeap) { g_pd3dSrvDescHeap->Release(); g_pd3dSrvDescHeap = nullptr; }
+    if (g_fence) { g_fence->Release(); g_fence = nullptr; }
+    if (g_fenceEvent) { CloseHandle(g_fenceEvent); g_fenceEvent = nullptr; }
+    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
 
 #ifdef DX12_ENABLE_DEBUG_LAYER
-    IDXGIDebug1* pDebug = NULL;
+    IDXGIDebug1* pDebug = nullptr;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&pDebug))))
     {
         pDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
@@ -219,7 +219,7 @@ FrameContext* WaitForNextFrameResources()
     UINT nextFrameIndex = g_frameIndex + 1;
     g_frameIndex = nextFrameIndex;
 
-    HANDLE waitableObjects[] = { g_hSwapChainWaitableObject, NULL };
+    HANDLE waitableObjects[] = { g_hSwapChainWaitableObject, nullptr };
     DWORD numWaitableObjects = 1;
 
     FrameContext* frameCtx = &g_frameContext[nextFrameIndex % NUM_FRAMES_IN_FLIGHT];
@@ -244,14 +244,14 @@ void ResizeSwapChain(HWND hWnd, int width, int height)
     sd.Width = width;
     sd.Height = height;
 
-    IDXGIFactory4* dxgiFactory = NULL;
+    IDXGIFactory4* dxgiFactory = nullptr;
     g_pSwapChain->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
     g_pSwapChain->Release();
     CloseHandle(g_hSwapChainWaitableObject);
 
-    IDXGISwapChain1* swapChain1 = NULL;
-    dxgiFactory->CreateSwapChainForHwnd(g_pd3dCommandQueue, hWnd, &sd, NULL, NULL, &swapChain1);
+    IDXGISwapChain1* swapChain1 = nullptr;
+    dxgiFactory->CreateSwapChainForHwnd(g_pd3dCommandQueue, hWnd, &sd, nullptr, nullptr, &swapChain1);
     swapChain1->QueryInterface(IID_PPV_ARGS(&g_pSwapChain));
     swapChain1->Release();
     dxgiFactory->Release();
@@ -259,7 +259,7 @@ void ResizeSwapChain(HWND hWnd, int width, int height)
     g_pSwapChain->SetMaximumFrameLatency(NUM_BACK_BUFFERS);
 
     g_hSwapChainWaitableObject = g_pSwapChain->GetFrameLatencyWaitableObject();
-    assert(g_hSwapChainWaitableObject != NULL);
+    assert(g_hSwapChainWaitableObject != nullptr);
 }
 
 // Win32 message handler
@@ -269,7 +269,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case WM_SIZE:
-        if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
+        if (g_pd3dDevice != nullptr && wParam != SIZE_MINIMIZED)
         {
             WaitForLastSubmittedFrame();
             CleanupRenderTarget();
@@ -289,96 +289,97 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-namespace Immortal {
+namespace Immortal
+{
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
 
-	LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-	{
+    switch (msg)
+    {
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+            return 0;
+        break;
+    case WM_DESTROY:
+        ::PostQuitMessage(0);
+        return 0;
+    }
+    return ::DefWindowProc(hWnd, msg, wParam, lParam);
+}
 
-		switch (msg)
-		{
-		case WM_SYSCOMMAND:
-			if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
-				return 0;
-			break;
-		case WM_DESTROY:
-			::PostQuitMessage(0);
-			return 0;
-		}
-		return ::DefWindowProc(hWnd, msg, wParam, lParam);
-	}
+DirectWindow::DirectWindow(const Description &description)
+{
+    Init(description);
+}
 
-	DirectWindow::DirectWindow(const WindowProps & props)
-	{
-		this->Init(props);
-	}
+void DirectWindow::Init(const Description &description)
+{
+    desc = description;
 
-	void DirectWindow::Init(const WindowProps & props)
-	{
-		m_Data.Title = props.Title;
-		m_Data.Width = props.Width;
-		m_Data.Height = props.Height;
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    std::wstring title = converter.from_bytes(desc.Title);
+    wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, title.c_str(), nullptr };
+    ::RegisterClassEx(&wc);
 
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-		std::wstring title = converter.from_bytes(props.Title);
-		m_WindowClass = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, title.c_str(), NULL };
-		::RegisterClassEx(&m_WindowClass);
+    handle = ::CreateWindow(wc.lpszClassName,
+                            title.c_str(),
+                            WS_OVERLAPPEDWINDOW,
+                            100,
+                            100,
+                            desc.Width,
+                            desc.Height,
+                            nullptr,
+                            nullptr,
+                            wc.hInstance,
+                            nullptr);
 
-		m_hwnd = ::CreateWindow(m_WindowClass.lpszClassName, title.c_str(), WS_OVERLAPPEDWINDOW, 100, 100, m_Data.Width, m_Data.Height, NULL, NULL, m_WindowClass.hInstance, NULL);
+    SLASSERT(!CreateDeviceD3D(handle) && "Failed to initialize Direct Window!");
 
-        SLASSERT(!CreateDeviceD3D(m_hwnd) && "Failed to initialize Direct Window!");
+    ::ShowWindow(handle, SW_SHOWDEFAULT);
+    ::UpdateWindow(handle);
+}
 
-        ::ShowWindow(m_hwnd, SW_SHOWDEFAULT);
-        ::UpdateWindow(m_hwnd);
-	}
+DirectWindow::~DirectWindow()
+{
+    Shutdown();
+}
 
-	DirectWindow::~DirectWindow()
-	{
-        this->Shutdown();
-	}
+void DirectWindow::OnUpdate()
+{
+    ::UpdateWindow(handle);
 
-	void DirectWindow::OnUpdate()
-	{
-        ::UpdateWindow(m_hwnd);
-
-        // pool events
-        MSG msg;
-        while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+    // pool events
+    MSG msg;
+    while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
+    {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+        if (msg.message == WM_QUIT)
         {
-            ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
-            if (msg.message == WM_QUIT)
-            {
-                break;
-            }
+            break;
         }
-	}
-
-	void DirectWindow::SetVSync(bool enabled)
-	{
-
-	}
-
-    void DirectWindow::ProcessEvents()
-    {
     }
+}
 
-    inline void DirectWindow::Clear()
-	{
+void DirectWindow::SetVSync(bool enabled)
+{
 
-	}
+}
 
+void DirectWindow::ProcessEvents()
+{
 
+}
 
-	void DirectWindow::Shutdown()
-	{
-        CleanupDeviceD3D();
-        ::DestroyWindow(m_hwnd);
-        ::UnregisterClass(m_WindowClass.lpszClassName, m_WindowClass.hInstance);
-	}
+inline void DirectWindow::Clear()
+{
 
-    bool DirectWindow::IsVSync() const
-    {
-        return m_Data.Vsync;
-    }
+}
 
+void DirectWindow::Shutdown()
+{
+    CleanupDeviceD3D();
+    ::DestroyWindow(handle);
+    ::UnregisterClass(wc.lpszClassName, wc.hInstance);
+}
 }

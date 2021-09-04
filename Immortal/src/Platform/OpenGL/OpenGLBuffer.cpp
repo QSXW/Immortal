@@ -32,7 +32,7 @@ namespace Immortal {
 		glBindBuffer(GL_ARRAY_BUFFER, mRendererID);
 	}
 
-	void OpenGLVertexBuffer::UnMap() const
+	void OpenGLVertexBuffer::Unmap() const
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
@@ -63,7 +63,7 @@ namespace Immortal {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRendererID);
 	}
 
-	void OpenGLIndexBuffer::UnMap() const
+	void OpenGLIndexBuffer::Unmap() const
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
@@ -94,7 +94,7 @@ namespace Immortal {
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
-	void OpenGLUniformBuffer::UnMap() const
+	void OpenGLUniformBuffer::Unmap() const
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}

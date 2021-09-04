@@ -138,7 +138,7 @@ namespace Immortal {
 		glViewport(0, 0, mSpecification.Width, mSpecification.Height);
 	}
 
-	void OpenGLFramebuffer::UnMap()
+	void OpenGLFramebuffer::Unmap()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}

@@ -9,9 +9,8 @@
 
 namespace Immortal {
 
-		Ref<Framebuffer> Framebuffer::Create(const Framebuffer::Specification& spec)
-		{
-			return InstantiateGrphicsPrimitive<Framebuffer, OpenGLFramebuffer, Vulkan::Framebuffer, D3D12Framebuffer>(spec);
-		}
-
+Ref<Framebuffer> Framebuffer::Create(const Framebuffer::Specification& spec)
+{
+    return InstantiateGrphicsPrimitive<Framebuffer, OpenGLFramebuffer, Vulkan::Framebuffer, D3D12Framebuffer>(spec);
+}
 }

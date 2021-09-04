@@ -14,7 +14,7 @@ namespace Immortal
 		uint32_t RendererID() const override { return mRendererID; }
 
 		void Map() const override;
-		void UnMap() const override;
+		void Unmap() const override;
 
 		void SetLayout(const VertexLayout &layout) override
 		{
@@ -41,7 +41,7 @@ namespace Immortal
 
 		uint32_t RendererID() const override { return mRendererID; }
 		void Map() const override;
-		void UnMap() const override;
+		void Unmap() const override;
 
 		virtual uint32_t Count() const override
 		{
@@ -61,7 +61,7 @@ namespace Immortal
 
 		virtual void SetData(size_t size, const void *data) const override;
 		void Map() const;
-		void UnMap() const override;
+		void Unmap() const override;
 
 	private:
 		uint32_t mRendererID{};

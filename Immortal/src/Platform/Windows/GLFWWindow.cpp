@@ -16,9 +16,9 @@ namespace Immortal
         LOG::ERR("GLFW Error ({0}): {1}", error, description);
     }
 
-    GLFWWindow::GLFWWindow(const WindowProps& props)
+    GLFWWindow::GLFWWindow(const Description &description)
     {
-        Init(props);
+        Init(description);
     }
 
     GLFWWindow::~GLFWWindow()
@@ -51,17 +51,15 @@ namespace Immortal
 
     void GLFWWindow::SetTitle(const std::string &title)
     {
-        description.Title = title;
-        glfwSetWindowTitle(window, description.Title.c_str());
+        desc.Title = title;
+        glfwSetWindowTitle(window, desc.Title.c_str());
     }
 
-    void GLFWWindow::Init(const WindowProps& props)
+    void GLFWWindow::Init(const Description &description)
     {
-        description.Title  = props.Title;
-        description.Width  = props.Width;
-        description.Height = props.Height;
+        desc = description;
 
-        LOG::INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+        LOG::INFO("Creating window {0} ({1}, {2})", desc.Title, desc.Width, desc.Height);
 
         if (GLFWWindowCount == 0)
         {
@@ -78,10 +76,10 @@ namespace Immortal
             SetVSync(true);
         }
 
-        window = glfwCreateWindow((int)props.Width, (int)props.Height, description.Title.c_str(), nullptr, nullptr);
-        ++GLFWWindowCount;
+        window = glfwCreateWindow((int)desc.Width, (int)desc.Height, description.Title.c_str(), nullptr, nullptr);
+        GLFWWindowCount++;
 
-        glfwSetWindowUserPointer(window, &description);
+        glfwSetWindowUserPointer(window, &desc);
         
         /* Set callbacks */
         glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
@@ -195,12 +193,12 @@ namespace Immortal
             glfwSwapInterval(0);
         }
 
-        description.Vsync = enabled;
+        desc.Vsync = enabled;
     }
 
     bool GLFWWindow::IsVSync() const
     {
-        return description.Vsync;
+        return desc.Vsync;
     }
 
     void GLFWWindow::Clear()
@@ -213,5 +211,4 @@ namespace Immortal
     {
         return static_cast<float>(glfwGetTime());
     }
-
 }

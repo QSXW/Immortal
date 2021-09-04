@@ -9,7 +9,7 @@ namespace Immortal {
 
 	}
 
-	void D3D12Framebuffer::UnMap()
+	void D3D12Framebuffer::Unmap()
 	{
 
 	}

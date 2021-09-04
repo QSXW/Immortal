@@ -14,7 +14,7 @@ namespace Immortal
     class GLFWWindow : public Window
     {
     public:
-        GLFWWindow(const WindowProps& props);
+        GLFWWindow(const Description &description);
 
         virtual ~GLFWWindow();
 
@@ -22,21 +22,22 @@ namespace Immortal
 
         UINT32 Width() const override
         {
-            return description.Width;
+            return desc.Width;
         }
 
         UINT32 Height() const override
         {
-            return description.Height;
+            return desc.Height;
         }
 
         void SetEventCallback(const EventCallbackFunc& callback) override
         {
-            description.EventCallback = callback;
+            desc.EventCallback = callback;
         }
 
-        void SetVSync(bool enabled) override;
-        bool IsVSync() const override;
+        virtual void SetVSync(bool enabled) override;
+
+        virtual bool IsVSync() const override;
 
         virtual void* GetNativeWindow() const
         {
@@ -58,7 +59,7 @@ namespace Immortal
         virtual void SetTitle(const std::string &title) override;
 
     private:
-        virtual void Init(const WindowProps& props);
+        virtual void Init(const Description &descrition);
 
         virtual void Shutdown();
 
@@ -66,19 +67,9 @@ namespace Immortal
         GLFWwindow* window;
         Unique<RenderContext> context;
 
-        struct Description
-        {
-            std::string Title;
-
-            UINT32 Width;
-            UINT32 Height;
-            bool Vsync;
-
-            EventCallbackFunc EventCallback;
-        } description{};
+        Description desc{};
 
     public:
         static UINT8 GLFWWindowCount;
     };
 }
-

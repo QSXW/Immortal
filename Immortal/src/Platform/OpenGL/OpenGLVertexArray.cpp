@@ -44,7 +44,7 @@ namespace Immortal {
 		glBindVertexArray(mRendererID);
 	}
 
-	void OpenGLVertexArray::UnMap() const
+	void OpenGLVertexArray::Unmap() const
 	{
 		glBindVertexArray(0);
 	}
@@ -107,7 +107,7 @@ namespace Immortal {
 			}
 			attribIndex++;
 		}
-		vertexBuffer->UnMap();
+		vertexBuffer->Unmap();
 		mVertexBuffers.push_back(vertexBuffer);
 	}
 
@@ -116,7 +116,7 @@ namespace Immortal {
 		indexBuffer->Map();
 		glBindVertexArray(mRendererID);
 		glVertexArrayElementBuffer(mRendererID, indexBuffer->RendererID());
-		indexBuffer->UnMap();
+		indexBuffer->Unmap();
 		mIndexBuffer = indexBuffer;
 	}
 }

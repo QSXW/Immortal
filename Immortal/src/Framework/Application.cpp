@@ -8,116 +8,106 @@
 #include "Render/Renderer.h"
 #include "Input.h"
 
-namespace Immortal {
+namespace Immortal
+{
+Application *Application::instance{ nullptr };
 
-#define BIND_EVENT_FUNC(x) std::bind(&x, this, std::placeholders::_1)
+Application::Application(const Window::Description &descrition)
+{
+    !!instance ? throw Exception("Unable to create Two Application") : instance = this;
+    desc = descrition;
+    window  = Window::Create(desc);
+    context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
+    window->SetEventCallback(SLBIND(Application::OnEvent));
+    // window->SetVSync(false);
+    // Renderer::Init();
+    // mGuiLayer = GuiLayer::Create();
+    // PushOverlay(mGuiLayer);
+    // mTimer.Start();
+}
 
-    Application *Application::Instance = nullptr;
+Application::~Application()
+{
+    timer.Stop();
+}
 
-    Application::Application(const Description &desc)
-    {
-        if (Instance)
-        {
-            return;
-        }
-        else
-        {
-            Instance = this;
-        }
-        this->desc = desc;
-        window  = Window::Create({ desc.Name, desc.Width, desc.Height });
-        context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
-        window->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));
-        // window->SetVSync(false);
-        // Renderer::Init();
-        // mGuiLayer = GuiLayer::Create();
-        // PushOverlay(mGuiLayer);
-        // mTimer.Start();
-    }
+void Application::PushLayer(Layer *layer)
+{
+    layerStack.PushLayer(layer);
+    layer->OnAttach();
+}
 
-    Application::~Application()
-    {
-        mTimer.Stop();
-    }
-
-    void Application::PushLayer(Layer *layer)
-    {
-        mLayerStack.PushLayer(layer);
-        layer->OnAttach();
-    }
-
-    void Application::PushOverlay(Layer *overlay)
-    {
-        mLayerStack.PushOverlay(overlay);
-        overlay->OnAttach();
-    }
+void Application::PushOverlay(Layer *overlay)
+{
+    layerStack.PushOverlay(overlay);
+    overlay->OnAttach();
+}
     
-    void Application::Run()
+void Application::Run()
+{
+    while (running)
     {
-        while (mRunning)
-        {
-            float time = window->Time();
-            mTime = time - mLastFrameTime;
-            mLastFrameTime = time;
+        timer.Lap();
+        deltaTime = timer.elapsed();
 
-            if (!mMinimized)
+        for (Layer *layer : layerStack)
+        {
+            layer->OnUpdate();
+        }
+
+        if (!minimized)
+        {
+            // mGuiLayer->Begin();
+            for (Layer *layer : layerStack)
             {
-                for (Layer *layer : mLayerStack)
-                {
-                    layer->OnUpdate();
-                }
-
-                // mGuiLayer->Begin();
-                for (Layer *layer : mLayerStack)
-                {
-                    layer->OnGuiRender();
-                }
-                //mGuiLayer->End();
+                layer->OnGuiRender();
             }
-            window->OnUpdate();
+            //mGuiLayer->End();
         }
+        window->OnUpdate();
     }
+}
 
-    void Application::Close()
+void Application::Close()
+{
+    running = false;
+}
+
+void Application::OnEvent(Event &e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowCloseEvent>(SLBIND(Application::OnWindowClosed));
+    dispatcher.Dispatch<WindowResizeEvent>(SLBIND(Application::OnWindowResize));
+
+    for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
-        mRunning = false;
-    }
-
-    void Application::OnEvent(Event &e)
-    {
-        EventDispatcher dispatcher(e);
-        dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FUNC(Application::OnWindowClosed));
-        dispatcher.Dispatch<WindowResizeEvent>(BIND_EVENT_FUNC(Application::OnWindowResize));
-
-        for (auto it = mLayerStack.end(); it != mLayerStack.begin(); )
+        (*--it)->OnEvent(e);
+        /* If the event was handled. Just break from the dispatch loop. */
+        if (e.Handled)
         {
-            (*--it)->OnEvent(e);
-            /* If the event was handled. Just break from the dispatch loop. */
-            if (e.Handled)
-            {
-                break;
-            }
+            break;
         }
     }
+}
 
-    bool Application::OnWindowClosed(WindowCloseEvent& e)
+bool Application::OnWindowClosed(WindowCloseEvent& e)
+{
+    running = false;
+    return !running;
+}
+
+bool Application::OnWindowResize(WindowResizeEvent &e)
+{
+    if (e.Width() == 0 || e.Height() == 0)
     {
-        mRunning = false;
-        return true;
+        minimized = true;
     }
-
-    bool Application::OnWindowResize(WindowResizeEvent &e)
+    else
     {
-        if (e.Width() == 0 || e.Height() == 0)
-        {
-            mMinimized = true;
-        }
-        else
-        {
-            mMinimized = false;
-            Renderer::OnWindowResize(e.Width(), e.Height());
-        }
-
-        return mMinimized;
+        minimized = false;
+        Renderer::OnWindowResize(e.Width(), e.Height());
     }
+
+    return minimized;
+}
 }

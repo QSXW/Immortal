@@ -12,31 +12,37 @@ namespace Immortal
 	class IMMORTAL_API DirectWindow : public Window
 	{
 	public:
-		DirectWindow(const WindowProps& props);
+		DirectWindow(const Description &description);
+
 		virtual ~DirectWindow();
 
 		void OnUpdate() override;
 
-		uint32_t Width() const override
+		virtual UINT32 Width() const override
 		{
-			return m_Data.Width;
-		}
-		uint32_t Height() const override
-		{
-			return m_Data.Height;
+			return desc.Width;
 		}
 
-		void SetEventCallback(const EventCallbackFunc& callback) override
+		virtual UINT32 Height() const override
 		{
-			m_Data.EventCallback = callback;
+			return desc.Height;
 		}
 
-		void SetVSync(bool enabled) override;
-		inline bool IsVSync() const override;
+		virtual void SetEventCallback(const EventCallbackFunc& callback) override
+		{
+			desc.EventCallback = callback;
+		}
+
+		virtual void SetVSync(bool enabled) override;
+
+		virtual bool IsVSync() const override
+		{
+			return desc.Vsync;
+		}
 
 		virtual void* GetNativeWindow() const
 		{
-			return m_hwnd;
+			return handle;
 		}
 
 		virtual void ProcessEvents();
@@ -44,23 +50,16 @@ namespace Immortal
 		inline void Clear() override;
 
 	private:
-		virtual void Init(const WindowProps& props);
+		virtual void Init(const Description &description);
+
 		virtual void Shutdown();
 
 	private:
-		HWND m_hwnd;
-		WNDCLASSEX m_WindowClass;
-		Scope<RenderContext> m_Context;
+		HWND handle;
 
-		struct WindowData
-		{
-			std::string Title;
-			uint32_t Width, Height;
-			bool Vsync;
+		WNDCLASSEX wc;
 
-			EventCallbackFunc EventCallback;
-		} m_Data{ };
+		Description desc;
 	};
-
 }
 

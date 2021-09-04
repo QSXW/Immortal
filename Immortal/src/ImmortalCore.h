@@ -8,7 +8,7 @@
 #include "impch.h"
 #include <cstdint>
 #include <memory>
-
+#include <iostream>
 #include "sl.h"
 
 #define IMMORTAL_PLATFORM_SURFACE SLSURFACE
@@ -17,6 +17,7 @@
 #pragma warning( disable: 4996 )
 #pragma warning( disable: 4006 )
 #pragma warning( disable: 26812 )
+#pragma warning( disable: 26439 )
 
 #ifdef WINDOWS
     #if defined DLLEXPORT
@@ -32,45 +33,50 @@
 
 namespace Immortal
 {
-    using namespace sl;
+using namespace sl;
 
-    template <class T>
-    using Scope = std::unique_ptr<T>;
+template <class T>
+using Scope = std::unique_ptr<T>;
 
-    template <class T>
-    using Unique = Scope<T>;
+template <class T>
+using Unique = Scope<T>;
 
-    template <class T, class ... Args>
-    constexpr Scope<T> CreateScope(Args&& ... args)
-    {
-        return std::make_unique<T>(std::forward<Args>(args)...);
-    }
+template <class T, class ... Args>
+constexpr Scope<T> CreateScope(Args&& ... args)
+{
+    return std::make_unique<T>(std::forward<Args>(args)...);
+}
 
-    template <class T, class ... Args>
-    constexpr Unique<T> MakeUnique(Args&& ... args)
-    {
-        return std::make_unique<T>(std::forward<Args>(args)...);
-    }
+template <class T, class ... Args>
+constexpr Unique<T> MakeUnique(Args&& ... args)
+{
+    return std::make_unique<T>(std::forward<Args>(args)...);
+}
 
-    template <class T>
-    using Ref = std::shared_ptr<T>;
+template <class T>
+using Ref = std::shared_ptr<T>;
     
-    template <class T, class ... Args>
-    constexpr Ref<T> CreateRef(Args&& ... args)
-    {
-        return std::make_shared<T>(std::forward<Args>(args)...);
-    }
+template <class T, class ... Args>
+constexpr Ref<T> CreateRef(Args&& ... args)
+{
+    return std::make_shared<T>(std::forward<Args>(args)...);
+}
 
-    namespace Utils
-    {
-        extern "C" static void *SafeChunk;
+namespace Utils
+{
+    extern "C" static void *SafeChunk;
 
-        template <class T>
-        constexpr inline T NullValue()
-        {
-            return *(T*)SafeChunk;
-        }
+    template <class T>
+    constexpr inline T NullValue()
+    {
+        return *(T*)SafeChunk;
     }
+}
+
+class Exception : public std::exception
+{
+public: Exception(const char *message) noexcept : std::exception(message, 1) { }
+};
 }
 
 #include "Framework/Vector.h"

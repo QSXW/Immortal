@@ -12,7 +12,7 @@ namespace Immortal {
 		virtual ~VertexArray() = default;
 
 		virtual void Map() const = 0;
-		virtual void UnMap() const = 0;
+		virtual void Unmap() const = 0;
 
 		virtual void AddVertexBuffer(const Ref<VertexBuffer> &vertexBuffer) = 0;
 		virtual void SetIndexBuffer(const Ref<IndexBuffer> &indexBuffer) = 0;

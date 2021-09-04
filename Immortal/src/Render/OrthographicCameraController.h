@@ -12,42 +12,42 @@
 
 namespace Immortal {
 
-	class OrthographicCameraController
-	{
-	public:
-		OrthographicCameraController(float aspectRatio, bool rotation = false);
-		OrthographicCameraController(float width, float height, bool rotation = false);
-		void OnUpdate(Timestep ts);
-		void OnEvent(Event& e);
+class OrthographicCameraController
+{
+public:
+    OrthographicCameraController(float aspectRatio, bool rotation = false);
 
-		void Resize(float width, float height);
+    OrthographicCameraController(float width, float height, bool rotation = false);
 
-		OrthographicCamera& Camera() { return mCamera; }
-		const OrthographicCamera& Camera() const { return mCamera; }
+    void OnUpdate(float deltaTime);
 
-		float ZoomLevel() const { return mZoomLevel; }
-		void SetZoomLevel(float level = 1.0f) { mZoomLevel = level; }
-		float AspectRatio() const { return mAspectRatio; }
+    void OnEvent(Event& e);
 
-		void Reset(Vector::Vector3 &position = Vector::Vector3(0.0f), float rotation = 0.0f);
+    void Resize(float width, float height);
 
-	private:
-		bool OnMouseScrolled(MouseScrolledEvent &e);
-		bool OnWindowResized(WindowResizeEvent &e);
+    OrthographicCamera& Camera() { return mCamera; }
+    const OrthographicCamera& Camera() const { return mCamera; }
 
-	private:
-		float mAspectRatio;
-		float mZoomLevel = 1.0f;
-		OrthographicCamera mCamera;
+    float ZoomLevel() const { return mZoomLevel; }
+    void SetZoomLevel(float level = 1.0f) { mZoomLevel = level; }
+    float AspectRatio() const { return mAspectRatio; }
 
-		bool mRotation;
+    void Reset(Vector::Vector3 &position = Vector::Vector3(0.0f), float rotation = 0.0f);
 
-		Vector::Vector3 mCameraPosition{ 0.0f, 0.0f, 0.0f };
-		float mCameraRotation = 0.0f;
-		float mCameraTranslationSpeed = 5.0f;
-		float mCameraRotationSpeed = 180.0f;
-	};
+private:
+    bool OnMouseScrolled(MouseScrolledEvent &e);
+    bool OnWindowResized(WindowResizeEvent &e);
 
+private:
+    float mAspectRatio;
+    float mZoomLevel = 1.0f;
+    OrthographicCamera mCamera;
 
+    bool mRotation;
+
+    Vector::Vector3 mCameraPosition{ 0.0f, 0.0f, 0.0f };
+    float mCameraRotation = 0.0f;
+    float mCameraTranslationSpeed = 5.0f;
+    float mCameraRotationSpeed = 180.0f;
+};
 }
-

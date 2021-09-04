@@ -101,7 +101,7 @@ namespace Immortal {
 		shader->SetUniform("uTransform", transform);
 		RenderCommand::DrawIndexed(mesh->VertexArrayObject());
 		// Don't forget to unbind shader even though nothing to be done. If not, the GL state change warning would occur.
-		shader->UnMap(); 
+		shader->Unmap(); 
 	}
 
 }

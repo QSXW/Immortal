@@ -19,7 +19,7 @@ namespace Vulkan
     {
     }
 
-    void Framebuffer::UnMap()
+    void Framebuffer::Unmap()
     {
     }
 

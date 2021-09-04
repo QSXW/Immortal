@@ -7,55 +7,79 @@
 
 namespace Immortal
 {
-	struct WindowProps
-	{
-		std::string Title;
-		UINT32      Width;
-		UINT32      Height;
+class IMMORTAL_API Window
+{
+public:
+    using EventCallbackFunc = std::function<void(Event&)>;
 
-		WindowProps(const std::string& title = "Immortal Engine", UINT32 width = 1280, UINT32 height = 720) :
-			Title(title), Width(width), Height(height)
-		{
+    struct Description
+    {
+    public:
+        Description(const std::string &title = "Immortal Engine", UINT32 width = 1, UINT32 height = 1) :
+            Title{ title }, Width{ width }, Height{ height }, Vsync{ true }, EventCallback{ nullptr }
+        {
 
-		}
-	};
+        }
 
-	class IMMORTAL_API Window
-	{
-	public:
-		using EventCallbackFunc = std::function<void(Event&)>;
+        Description(Description &&other) :
+            Title{ other.Title }, Width{ other.Width }, Height{ other.Height }, Vsync{ other.Vsync }, EventCallback{ other.EventCallback }
+        {
 
-	public:
-		virtual ~Window() { }
+        }
 
-		virtual void OnUpdate() = 0;
+        Description(const Description &other) :
+            Title{ other.Title }, Width{ other.Width }, Height{ other.Height }, Vsync{ other.Vsync }, EventCallback{ other.EventCallback }
+        {
 
-		virtual UINT32 Width() const = 0;
+        }
 
-		virtual UINT32 Height() const = 0;
+        Description &operator =(const Description &other)
+        {
+            return Description(other);
+        }
 
-		virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
+    public:
+        EventCallbackFunc EventCallback;
 
-		virtual void SetVSync(bool enabled) = 0;
+        std::string Title;
 
-		virtual bool IsVSync() const = 0;
+        UINT32 Width;
 
-		virtual void* GetNativeWindow() const = 0;
+        UINT32 Height;
 
-		virtual void* PlatformNativeWindow() const = 0;
+        bool Vsync;
+    };
 
-		virtual void Clear() = 0;
+public:
+    virtual ~Window() { }
 
-		virtual float Time() = 0;
+    virtual void OnUpdate() = 0;
 
-		virtual void ProcessEvents() = 0;
+    virtual UINT32 Width() const = 0;
 
-		virtual float DpiFactor() const = 0;
+    virtual UINT32 Height() const = 0;
 
-		virtual void SetTitle(const std::string &title) = 0;
+    virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
 
-	public:
-		static Scope<Window> Create(const WindowProps& props = WindowProps());
-	};
+    virtual void SetVSync(bool enabled) = 0;
 
+    virtual bool IsVSync() const = 0;
+
+    virtual void* GetNativeWindow() const = 0;
+
+    virtual void* PlatformNativeWindow() const = 0;
+
+    virtual void Clear() = 0;
+
+    virtual float Time() = 0;
+
+    virtual void ProcessEvents() = 0;
+
+    virtual float DpiFactor() const = 0;
+
+    virtual void SetTitle(const std::string &title) = 0;
+
+public:
+    static Scope<Window> Create(const Description &description = Description{});
+};
 }

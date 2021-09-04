@@ -21,6 +21,7 @@ namespace sl
 #include <cassert>
 #define SLASSERT(...) assert(__VA_ARGS__)
 
+#define SLBIND(x) std::bind(&x, this, std::placeholders::_1)
 
 #define SLDEBUG defined( DEBUG) || defined( _DEBUG )
 
@@ -85,4 +86,6 @@ inline constexpr bool typeof()
     }
     return false;
 }
+
+
 }

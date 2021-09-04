@@ -14,7 +14,7 @@ namespace Immortal {
 
 		
 		virtual void Map() override;
-		virtual void UnMap() override;
+		virtual void Unmap() override;
 
 		virtual void Resize(uint32_t width, uint32_t height) override;
 		virtual void* ReadPixel(uint32_t attachmentIndex, int x, int y, Texture::Format format, int width = 1, int height = 1) override;

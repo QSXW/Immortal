@@ -19,7 +19,7 @@ namespace Vulkan
 
         virtual void Map() override;
 
-        virtual void UnMap() override;
+        virtual void Unmap() override;
 
         virtual void Resize(UINT32 width, UINT32 height) override;
 

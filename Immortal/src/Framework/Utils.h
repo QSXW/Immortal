@@ -1,112 +1,75 @@
 #pragma once
 
-namespace Immortal {
+namespace Immortal
+{
+namespace Utils
+{
+template <class T>
+inline constexpr bool IsOdd(const T &x)
+{
+    static_assert(std::is_integral<T, int>());
+    return 0x1 & x;
+}
 
-    namespace Type
-    {
-        template <class T, T v>
-        struct IntegralConstant
-        {
-            static constexpr T value = v;
-            using ValueType = T;
-            using type = IntegralConstant<T, v>;
-            constexpr operator ValueType() const noexcept { return value; }
-            constexpr ValueType operator()() const noexcept { return value; }
-        };
+template <class T>
+inline constexpr bool IsEven(const T &x)
+{
+    return !IsOdd(x);
+}
 
-        using TrueType = IntegralConstant<bool, true>;
-        using FalseType = IntegralConstant<bool, false>;
+template <class T>
+inline constexpr const T &Max(const T &x, const T &y)
+{
+    return x > y ? x : y;
+}
 
-        template <class, class>
-        struct IsSame : public FalseType { };
+template <class T>
+inline constexpr const T &Min(const T &x, const T &y)
+{
+    return x < y ? x : y;
+}
 
-        template <class T>
-        struct IsSame<T, T> : public TrueType { };
+template <class T, T min, T max>
+inline constexpr void Clamp(T &v)
+{
+    v = Min(Max(v, min), max);
+}
 
-        template <class T>
-        inline constexpr bool IsIntegral() noexcept
-        {
-            return IsSame<T, char>()
-                | IsSame<T, unsigned char>()
-                | IsSame<T, short>()
-                | IsSame<T, unsigned short>()
-                | IsSame<T, int>()
-                | IsSame<T, unsigned int>()
-                | IsSame<T, long long>()
-                | IsSame<T, unsigned long long>();
-        }
-    }
+template <class T>
+inline constexpr void Clamp(T &v, const T &min, const T &max)
+{
+    v = Min(Max(v, min), max);
+}
 
-    namespace Utils
-    {
-        template <class T>
-        constexpr inline bool IsOdd(const T &x) noexcept
-        {
-            static_assert(Type::IsIntegral<T>());
-            return 0x1 & x;
-        }
+template <int min, int max>
+inline constexpr void Clamp(int &v) 
+{
+    Clamp<int, min, max>(v);
+}
 
-        template <class T>
-        constexpr inline bool IsEven(const T &x) noexcept
-        {
-            return !IsOdd(x);
-        }
+template <class T, T m>
+inline constexpr T Mod(T &v)
+{
+    static_assert(Type::IsIntegral<T>());
+    return v & (m - 1);
+}
 
-        template <class T>
-        constexpr inline const T &Max(const T &x, const T &y) noexcept
-        {
-            return x > y ? x : y;
-        }
+template <int m>
+inline constexpr int Mod(int &v) 
+{
+    return Mod<int, m>(v);
+}
 
-        template <class T>
-        constexpr inline const T &Min(const T &x, const T &y) noexcept
-        {
-            return x < y ? x : y;
-        }
+template <class T, T v>
+inline constexpr T Power2() 
+{
+    return ((size_t)0x1) << v;
+}
 
-        template <class T, T min, T max>
-        constexpr inline void Clamp(T &v) noexcept
-        {
-            v = Min(Max(v, min), max);
-        }
-
-        template <class T>
-        constexpr inline void Clamp(T &v, const T &min, const T &max) noexcept
-        {
-            v = Min(Max(v, min), max);
-        }
-
-        template <int min, int max>
-        constexpr inline void Clamp(int &v) noexcept
-        {
-            Clamp<int, min, max>(v);
-        }
-
-        template <class T, T m>
-        constexpr inline T Mod(T &v) noexcept
-        {
-            static_assert(Type::IsIntegral<T>());
-            return v & (m - 1);
-        }
-
-        template <int m>
-        constexpr inline int Mod(int &v) noexcept
-        {
-            return Mod<int, m>(v);
-        }
-
-        template <class T, T v>
-        constexpr inline T Power2() noexcept
-        {
-            return ((size_t)0x1) << v;
-        }
-
-        template <class T>
-        constexpr inline T Power2(T &v) noexcept
-        {
-            return ((size_t)0x1) << v;
-        }
-    }
-
-
+template <class T>
+inline constexpr T Power2(T &v) 
+{
+    return ((size_t)0x1) << v;
+}
+}
 }

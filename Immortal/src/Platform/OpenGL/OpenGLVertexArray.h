@@ -12,7 +12,7 @@ namespace Immortal {
 		~OpenGLVertexArray();
 
 		__forceinline void Map() const;
-		__forceinline void UnMap() const;
+		__forceinline void Unmap() const;
 
 		void AddVertexBuffer(const Ref<VertexBuffer> &vertexBuffer) override;
 		void SetIndexBuffer(const Ref<IndexBuffer> &indexBuffer) override;

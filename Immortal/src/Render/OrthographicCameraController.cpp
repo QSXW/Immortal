@@ -17,36 +17,36 @@ namespace Immortal {
 	
 	}
 
-	void OrthographicCameraController::OnUpdate(Timestep ts)
+	void OrthographicCameraController::OnUpdate(float deltaTime)
 	{
 		if (Input::IsKeyPressed(KeyCode::A) /*|| Input::GetMouseX() < 50.0f*/)
 		{
-			mCameraPosition.x -= cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
-			mCameraPosition.y -= sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
+			mCameraPosition.x -= cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
+			mCameraPosition.y -= sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
 		}
 		else if (Input::IsKeyPressed(KeyCode::D) /*|| Input::GetMouseX() > Application::Get().GetWindow().Width() - 50.0f*/)
 		{
-			mCameraPosition.x += cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
-			mCameraPosition.y += sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
+			mCameraPosition.x += cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
+			mCameraPosition.y += sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
 		}
 
 		if (Input::IsKeyPressed(KeyCode::W) /*|| Input::GetMouseY() < 50.0f*/)
 		{
-			mCameraPosition.x += -sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
-			mCameraPosition.y += cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
+			mCameraPosition.x += -sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
+			mCameraPosition.y += cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
 		}
 		else if (Input::IsKeyPressed(KeyCode::S) /*|| Input::GetMouseY() > Application::Get().GetWindow().Height() - 50.0f*/)
 		{
-			mCameraPosition.x -= -sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
-			mCameraPosition.y -= cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * ts;
+			mCameraPosition.x -= -sin(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
+			mCameraPosition.y -= cos(Vector::Radians(mCameraRotation)) * mCameraTranslationSpeed * deltaTime;
 		}
 
 		if (mRotation)
 		{
 			if (Input::IsKeyPressed(KeyCode::Q))
-				mCameraRotation += mCameraRotationSpeed * ts;
+				mCameraRotation += mCameraRotationSpeed * deltaTime;
 			if (Input::IsKeyPressed(KeyCode::E))
-				mCameraRotation -= mCameraRotationSpeed * ts;
+				mCameraRotation -= mCameraRotationSpeed * deltaTime;
 
 			if (mCameraRotation > 180.0f)
 				mCameraRotation -= 360.0f;

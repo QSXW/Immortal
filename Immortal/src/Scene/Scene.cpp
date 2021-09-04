@@ -195,7 +195,7 @@ namespace Immortal {
 					Renderer::Submit(shader, mesh.Mesh, transform.Transform());
 				}
 			}
-			mFramebuffer->UnMap();
+			mFramebuffer->Unmap();
 		}
 
 	}
@@ -214,7 +214,7 @@ namespace Immortal {
 		mSkyboxTexture->Map();
 		RenderCommand::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
 		RenderCommand::EnableDepthTest();
-		skyboxShader->UnMap();
+		skyboxShader->Unmap();
 
 		{
 			Renderer2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
@@ -279,7 +279,7 @@ namespace Immortal {
 			}
 		}
 
-		mFramebuffer->UnMap();
+		mFramebuffer->Unmap();
 	}
 
 	Entity Scene::CreateEntity(const std::string & name)

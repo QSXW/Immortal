@@ -28,7 +28,7 @@ namespace Immortal {
 		virtual ~Pipeline() { }
 
 		virtual void Map()   const = 0;
-		virtual void UnMap() const = 0;
+		virtual void Unmap() const = 0;
 
 	private:
 		struct Description

@@ -20,111 +20,103 @@
 
 #include "Render/OrthographicCamera.h"
 
-namespace Immortal {
+namespace Immortal
+{
+class IMMORTAL_API Application
+{
+public:
+    Application(const Window::Description &desc = { "Immortal Engine", 1920, 1080 });
 
-    class IMMORTAL_API Application
+    virtual ~Application();
+
+    virtual void Run();
+
+    virtual void Close();
+
+    void OnEvent(Event &e);
+
+    virtual inline void PushLayer(Layer *layer);
+    virtual inline void PushOverlay(Layer *overlay);
+
+    static Application *App()
     {
-    public:
-        struct Description
-        {
-            std::string Name;
-            UINT32      Width;
-            UINT32      Height;
-        };
+        return instance;
+    }
 
-    public:
-        Application(const Description &desc = { "Immortal Engine", 1920, 1080 });
-        virtual ~Application();
+    virtual GuiLayer *GetGuiLayer() const
+    {
+        return guiLayer;
+    }
 
-        virtual void Run();
-        virtual void Close();
+    virtual Window& GetWindow() const
+    {
+        return *window;
+    }
 
-        void OnEvent(Event &e);
+    void* GetNativeWindow() const
+    {
+        return window->GetNativeWindow();
+    }
 
-        virtual inline void PushLayer(Layer *layer);
-        virtual inline void PushOverlay(Layer *overlay);
+    static bool IsKeyPressed(KeyCode code)
+    {
+        return instance->_M_input.InternalIsKeyPressed(code);
+    }
 
-        static Application *App()
-        {
-            return Instance;
-        }
+    RenderContext *Context()
+    {
+        return context.get();
+    }
 
-        virtual GuiLayer *GetGuiLayer() const
-        {
-            return mGuiLayer;
-        }
+public:
+    static UINT32 Width()
+    { 
+        return instance->desc.Width;
+    }
 
-        virtual Window& GetWindow() const
-        {
-            return *window;
-        }
+    static UINT32 Height()
+    {
+        return instance->desc.Height;
+    }
 
-        void* GetNativeWindow() const
-        {
-            return window->GetNativeWindow();
-        }
+    static const char *Name()
+    { 
+        return instance->desc.Title.c_str();
+    }
 
-        static bool IsKeyPressed(KeyCode code)
-        {
-            return Instance->_M_input.InternalIsKeyPressed(code);
-        }
+    static float DeltaTime()
+    {
+        return instance->deltaTime;
+    }
 
-        RenderContext *Context()
-        {
-            return context.get();
-        }
-
-    public:
-        static UINT32 Width()
-        { 
-            return Instance->desc.Width;
-        }
-
-        static UINT32 Height()
-        {
-            return Instance->desc.Height;
-        }
-
-        static const char *Name()
-        { 
-            return Instance->desc.Name.c_str();
-        }
-
-        static float DeltaTime()
-        {
-            return Instance->mTime.DeltaTime();
-        }
-
-    private:
-        bool OnWindowClosed(WindowCloseEvent& e);
-        bool OnWindowResize(WindowResizeEvent &e);
+private:
+    bool OnWindowClosed(WindowCloseEvent& e);
+    bool OnWindowResize(WindowResizeEvent &e);
     
-    private:
-        Scope<Window> window;
+private:
+    Scope<Window> window;
 
-        bool mRunning = true;
+    bool running = true;
 
-        bool mMinimized = false;
+    bool minimized = false;
 
-        LayerStack mLayerStack;
+    LayerStack layerStack;
 
-        GuiLayer *mGuiLayer;
+    GuiLayer *guiLayer;
 
-        float mLastFrameTime{ 0.0f };
+    float lastFrameTime{ 0.0f };
 
-        Description desc;
+    Window::Description desc;
 
-        Input _M_input;
+    Input _M_input;
 
-        Unique<RenderContext> context;
+    Unique<RenderContext> context;
 
-    public:
-        static Application *Instance;
-    private:
-        Timestep mTime;
-        Timer    mTimer;
-    };
+private:
+    Timer timer;
+    float deltaTime;
+    static Application *instance;
+};
 
-    /* To be defined in Client */
-    Application* CreateApplication();
+Application* CreateApplication();
 }

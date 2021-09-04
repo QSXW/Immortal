@@ -151,7 +151,7 @@ namespace Immortal {
 	void Renderer2D::EndScene()
 	{
 		Flush();
-		sData.TextureShader->UnMap();
+		sData.TextureShader->Unmap();
 	}
 
 	void Renderer2D::Flush()

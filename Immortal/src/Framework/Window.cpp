@@ -1,24 +1,21 @@
 #include "impch.h"
 #include "Window.h"
 
-#ifdef WIN32
-	#include "Platform/Windows/GLFWWindow.h"
-#endif
+#include "Platform/Windows/GLFWWindow.h"
 
 namespace Immortal
 {
-	Scope<Window> Window::Create(const WindowProps& props)
-	{
-	#ifdef WINDOWS
-		#ifndef IMMORTAL_WINDOWS_DIRECT
-			return CreateScope<GLFWWindow>(props);
-		#else
-			return CreateScope<DirectWindow>(props);
-		#endif
-	#else
-		SLASSERT(false && "Unknown platform!");
-		return nullptr;
-	#endif
-	}
-
+    Scope<Window> Window::Create(const Description &description)
+    {
+    #ifdef WINDOWS
+        #ifndef IMMORTAL_WINDOWS_DIRECT
+            return CreateScope<GLFWWindow>(description);
+        #else
+            return CreateScope<DirectWindow>(description);
+        #endif
+    #else
+        SLASSERT(false && "Unknown platform!");
+        return nullptr;
+    #endif
+    }
 }
