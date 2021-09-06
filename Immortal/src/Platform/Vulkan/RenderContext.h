@@ -54,13 +54,17 @@ public:
     template <class T>
     inline constexpr T &Get()
     {
-        if constexpr (typeof<T, Vulkan::Swapchain>())
+        if constexpr (typeof<T, Swapchain>())
         {
             return *swapchain;
         }
-        if constexpr (typeof<T, Vulkan::Device>())
+        if constexpr (typeof<T, Device>())
         {
             return *device;
+        }
+        if constexpr (typeof<T, RenderFrame>())
+        {
+            return frames;
         }
     }
 

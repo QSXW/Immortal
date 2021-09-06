@@ -32,6 +32,10 @@ public:
 
         queue = rcast<VkQueue>(device->SuitableQueue());
         CreateSwapchainBuffers();
+
+        commandPool.reset(new Vulkan::CommandPool{ device, device->FindQueueByFlags(Vulkan::Queue::Graphics | Vulkan::Queue::Compute, 0).Get<Vulkan::Queue::FamilyIndex>() });
+        drawCommadBuffer.reset();
+
     }
 
     ~VulkanSample()
@@ -101,6 +105,9 @@ private:
     };
 
     std::vector<SwapchainBuffer> swapchainBuffers{};
+
+    std::unique_ptr<Vulkan::CommandPool> commandPool;
+    std::unique_ptr<Vulkan::CommandBuffer> drawCommadBuffer;
 };
 
 Immortal::Application* Immortal::CreateApplication()

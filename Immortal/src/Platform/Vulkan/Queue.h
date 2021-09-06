@@ -12,7 +12,7 @@ namespace Vulkan
 	public:
 		using FamilyIndex = UINT32;
 	public:
-		enum class Type
+		enum Type
 		{
 			Graphics      = VK_QUEUE_GRAPHICS_BIT,
 			Compute       = VK_QUEUE_COMPUTE_BIT,

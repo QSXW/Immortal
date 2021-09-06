@@ -6,7 +6,7 @@ int main()
 {
     LOG::Init();
 
-    auto hmodule = LoadLibraryA("D3d12SDKLayers.dll");
+    auto hmodule = LoadLibrary(L"D3d12SDKLayers.dll");
 
     D3D12::RenderContext context{ nullptr };
 

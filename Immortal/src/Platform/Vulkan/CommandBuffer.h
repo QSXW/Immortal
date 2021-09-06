@@ -6,34 +6,50 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class CommandPool;
 
-	class CommandBuffer
-	{
-	public:
-		enum class ResetMode
-		{
-			ResetPool,
-			ResetIndividually,
-			AlwaysAllocated
-		};
+class CommandPool;
+class CommandBuffer
+{
+public:
+    enum class ResetMode
+    {
+        ResetPool,
+        ResetIndividually,
+        AlwaysAllocated
+    };
 
-		enum class State
-		{
-			Invalid,
-			Initial,
-			Recording,
-			Executable
-		};
+    enum class State
+    {
+        Invalid,
+        Initial,
+        Recording,
+        Executable
+    };
 
-		VkResult reset(ResetMode reset_mode);
+    enum class Level
+    {
+        None      = -1,
+        Primary   = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        Secondary = VK_COMMAND_BUFFER_LEVEL_SECONDARY,
+        Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
+    };
 
-	private:
-		CommandPool &commandPool;
+    VkResult reset(ResetMode reset_mode);
 
-		State state{ State::Initial };
+public:
+    CommandBuffer(CommandPool *cmdPool, Level level);
 
-		VkCommandBuffer handle{ VK_NULL_HANDLE };
-	};
+    ~CommandBuffer();
+
+private:
+    CommandPool *commandPool{ nullptr };
+
+    State state{ State::Initial };
+
+    VkCommandBuffer handle{ VK_NULL_HANDLE };
+
+    Level level{ Level::Primary };
+};
+
 }
 }

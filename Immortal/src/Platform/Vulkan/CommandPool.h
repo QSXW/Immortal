@@ -16,8 +16,11 @@ namespace Vulkan
 		using ThreadIndex      = size_t;
 		using RenderFrame      = void *;
 		using Handle           = VkCommandPool;
+
 	public:
-		CommandPool(Device                  &device,
+		CommandPool() = default;
+
+		CommandPool(Device                  *device,
 			        UINT32                   queueFamilyIndex,
 			        void                    *renderFrame = nullptr,
 			        size_t                   threadIndex = 0,
@@ -25,39 +28,41 @@ namespace Vulkan
 		
 		CommandPool(CommandPool &&other);
 
+		CommandPool &operator=(CommandPool &&other);
+
 		~CommandPool();
 
 		template <class T>
 		T &Get()
 		{
-			if constexpr (std::is_same_v<T, Handle>)
+			if constexpr (typeof<T, Handle>())
 			{
 				return handle;
 			}
-			if constexpr (std::is_same_v<T, Device>)
+			if constexpr (typeof<T, Device>())
 			{
-				return device;
+				return *device;
 			}
-			if constexpr (std::is_same_v<T, CommandBuffer::ResetMode>)
+			if constexpr (typeof<T, CommandBuffer::ResetMode>())
 			{
 				return resetMode;
 			}
-			if constexpr (std::is_same_v<T, QueueFamilyIndex>)
+			if constexpr (typeof<T, QueueFamilyIndex>())
 			{
 				return queueFamilyIndex;
 			}
-			if constexpr (std::is_same_v<T, ThreadIndex>)
+			if constexpr (typeof<T, ThreadIndex>())
 			{
 				return threadIndex;
 			}
-			if constexpr (std::is_same_v<T, RenderFrame>)
+			if constexpr (typeof<T, RenderFrame>())
 			{
 				return renderFrame;
 			}
 		}
 
 	private:
-		Device &device;
+		Device *device{ nullptr };
 		
 		VkCommandPool handle{ VK_NULL_HANDLE };
 

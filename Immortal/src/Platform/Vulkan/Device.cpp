@@ -177,7 +177,7 @@ namespace Vulkan
 		Check(vmaCreateAllocator(&allocatorInfo, &mMemoryAllocator));
 
 		// @required Command Pool
-		commandPool = MakeUnique<CommandPool>(*this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>());
+		commandPool = MakeUnique<CommandPool>(this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>());
 		// @required Fence Pool
 		fencePool = MakeUnique<FencePool>(*this);
 	}
