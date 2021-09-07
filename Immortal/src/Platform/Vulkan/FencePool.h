@@ -6,27 +6,35 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class Device;
+class Device;
 
-	class FencePool
+class FencePool
+{
+public:
+	using iterator = std::vector<VkFence>::iterator;
+
+public:
+	FencePool(Device *device);
+		
+	~FencePool();
+
+	VkResult Wait(UINT32 timeout = std::numeric_limits<UINT32>::max()) const;
+
+	VkResult Reset();
+
+	VkFence Request();
+
+	VkFence &operator[](size_t index)
 	{
-	public:
-		FencePool(Device &device);
+		return handles[index];
+	}
+
+private:
+	Device *device{ nullptr };
 		
-		~FencePool();
+	std::vector<VkFence> handles;
 
-		VkResult Wait(UINT32 timeout = std::numeric_limits<UINT32>::max()) const;
-
-		VkResult Reset();
-
-		VkFence RequestFence();
-
-	private:
-		Device &device;
-		
-		std::vector<VkFence> handles;
-
-		UINT32 activeCount{ 0 };
-	};
+	UINT32 activeCount{ 0 };
+};
 }
 }

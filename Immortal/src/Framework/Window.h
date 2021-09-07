@@ -35,7 +35,16 @@ public:
 
         Description &operator =(const Description &other)
         {
-            return Description(other);
+            if (this != &other)
+            {
+                Title         = std::move(other.Title);
+                Width         = other.Width; 
+                Height        = other.Height;
+                Vsync         = other.Vsync; 
+                EventCallback = other.EventCallback;
+            }
+            
+            return *this;
         }
 
     public:

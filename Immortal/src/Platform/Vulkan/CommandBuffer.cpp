@@ -10,14 +10,15 @@ namespace Immortal
 namespace Vulkan
 {
 
-CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
+CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count) :
     commandPool{ cmdPool },
     level{ level }
 {
     VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = cmdPool->Get<VkCommandPool>();
-    allocInfo.level       = ncast<VkCommandBufferLevel>(level);
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool        = cmdPool->Get<VkCommandPool>();
+    allocInfo.level              = ncast<VkCommandBufferLevel>(level);
+    allocInfo.commandBufferCount = count;
 
     Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Get<VkDevice>(), &allocInfo, &handle));
 }

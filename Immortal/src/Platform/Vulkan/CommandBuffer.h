@@ -37,7 +37,7 @@ public:
     VkResult reset(ResetMode reset_mode);
 
 public:
-    CommandBuffer(CommandPool *cmdPool, Level level);
+    CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count);
 
     ~CommandBuffer();
 

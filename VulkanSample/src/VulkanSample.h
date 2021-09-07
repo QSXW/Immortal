@@ -32,10 +32,31 @@ public:
 
         queue = rcast<VkQueue>(device->SuitableQueue());
         CreateSwapchainBuffers();
-
+        
+        auto frameSize = ncast<UINT32>(context->Get<Vulkan::RenderContext::Frames>().size());
+    
         commandPool.reset(new Vulkan::CommandPool{ device, device->FindQueueByFlags(Vulkan::Queue::Graphics | Vulkan::Queue::Compute, 0).Get<Vulkan::Queue::FamilyIndex>() });
-        drawCommadBuffer.reset();
+        drawCommadBuffer.reset(new Vulkan::CommandBuffer{ 
+            commandPool.get(),
+            Vulkan::CommandBuffer::Level::Primary,
+            frameSize
+        });
 
+        fences.reset(new Vulkan::FencePool{ device });
+        for (UINT32 i = 0; i < frameSize; i++)
+        {
+            fences->Request();
+        }
+
+        auto &extent = context->Get<Vulkan::Extent2D>();
+
+        depthStencil.reset(new Vulkan::Image{
+            device,
+            Vulkan::Extent3D{ extent.width, extent.height, 1 },
+            Vulkan::SuitableDepthFormat(device->Get<VkPhysicalDevice>()),
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY
+        });
     }
 
     ~VulkanSample()
@@ -108,6 +129,8 @@ private:
 
     std::unique_ptr<Vulkan::CommandPool> commandPool;
     std::unique_ptr<Vulkan::CommandBuffer> drawCommadBuffer;
+    std::unique_ptr<Vulkan::FencePool> fences;
+    std::unique_ptr<Vulkan::Image> depthStencil;
 };
 
 Immortal::Application* Immortal::CreateApplication()

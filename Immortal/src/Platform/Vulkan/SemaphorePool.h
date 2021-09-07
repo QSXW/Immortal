@@ -8,24 +8,26 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class Device;
-	class SemaphorePool : public Immortal::SemaphorePool
-	{
-	public:
-		SemaphorePool(Device &device);
-		
-		~SemaphorePool();
 
-		Semaphore Request() override;
+class Device;
+class SemaphorePool : public Immortal::SemaphorePool
+{
+public:
+    SemaphorePool(Device *device);
+        
+    ~SemaphorePool();
 
-		void Reset() override;
+    Semaphore Request() override;
 
-	private:
-		Device &device;
-		
-		std::vector<VkSemaphore> handles;
+    void Reset() override;
 
-		UINT32 activeCount{ 0 };
-	};
+private:
+    Device *device{ nullptr };
+        
+    std::vector<VkSemaphore> handles;
+
+    UINT32 activeCount{ 0 };
+};
+
 }
 }

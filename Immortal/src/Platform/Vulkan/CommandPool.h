@@ -7,83 +7,84 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class Device;
+class Device;
 
-	class CommandPool
-	{
-	public:
-		using QueueFamilyIndex = UINT32;
-		using ThreadIndex      = size_t;
-		using RenderFrame      = void *;
-		using Handle           = VkCommandPool;
+class CommandPool
+{
+public:
+    using QueueFamilyIndex = UINT32;
+    using ThreadIndex      = size_t;
+    using RenderFrame      = void *;
+    using Handle           = VkCommandPool;
 
-	public:
-		CommandPool() = default;
+public:
+    CommandPool() = default;
 
-		CommandPool(Device                  *device,
-			        UINT32                   queueFamilyIndex,
-			        void                    *renderFrame = nullptr,
-			        size_t                   threadIndex = 0,
-			        CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetPool);
-		
-		CommandPool(CommandPool &&other);
+    CommandPool(Device                  *device,
+                UINT32                   queueFamilyIndex,
+                void                    *renderFrame = nullptr,
+                size_t                   threadIndex = 0,
+                CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetPool);
+        
+    CommandPool(CommandPool &&other);
 
-		CommandPool &operator=(CommandPool &&other);
+    CommandPool &operator=(CommandPool &&other);
 
-		~CommandPool();
+    ~CommandPool();
 
-		template <class T>
-		T &Get()
-		{
-			if constexpr (typeof<T, Handle>())
-			{
-				return handle;
-			}
-			if constexpr (typeof<T, Device>())
-			{
-				return *device;
-			}
-			if constexpr (typeof<T, CommandBuffer::ResetMode>())
-			{
-				return resetMode;
-			}
-			if constexpr (typeof<T, QueueFamilyIndex>())
-			{
-				return queueFamilyIndex;
-			}
-			if constexpr (typeof<T, ThreadIndex>())
-			{
-				return threadIndex;
-			}
-			if constexpr (typeof<T, RenderFrame>())
-			{
-				return renderFrame;
-			}
-		}
+    template <class T>
+    T &Get()
+    {
+        if constexpr (typeof<T, Handle>())
+        {
+            return handle;
+        }
+        if constexpr (typeof<T, Device>())
+        {
+            return *device;
+        }
+        if constexpr (typeof<T, CommandBuffer::ResetMode>())
+        {
+            return resetMode;
+        }
+        if constexpr (typeof<T, QueueFamilyIndex>())
+        {
+            return queueFamilyIndex;
+        }
+        if constexpr (typeof<T, ThreadIndex>())
+        {
+            return threadIndex;
+        }
+        if constexpr (typeof<T, RenderFrame>())
+        {
+            return renderFrame;
+        }
+    }
 
-	private:
-		Device *device{ nullptr };
-		
-		VkCommandPool handle{ VK_NULL_HANDLE };
+private:
+    Device *device{ nullptr };
+        
+    VkCommandPool handle{ VK_NULL_HANDLE };
 
-		void *renderFrame{ nullptr };
+    void *renderFrame{ nullptr };
 
-		size_t threadIndex;
+    size_t threadIndex;
 
-		UINT32 queueFamilyIndex{ 0 };
+    UINT32 queueFamilyIndex{ 0 };
 
-		std::vector<Unique<CommandBuffer>> primaryCommandBuffers;
+    std::vector<Unique<CommandBuffer>> primaryCommandBuffers;
 
-		UINT32 activePrimaryCommandBufferCount{ 0 };
+    UINT32 activePrimaryCommandBufferCount{ 0 };
 
-		std::vector<Unique<CommandBuffer>> secondaryCommandBuffers;
+    std::vector<Unique<CommandBuffer>> secondaryCommandBuffers;
 
-		UINT32 activeSecondaryCommandBufferCount{ 0 };
+    UINT32 activeSecondaryCommandBufferCount{ 0 };
 
-		CommandBuffer::ResetMode resetMode{ CommandBuffer::ResetMode::ResetPool };
-	
-	private:
-		VkResult ResetCommandBuffers();
-	};
+    CommandBuffer::ResetMode resetMode{ CommandBuffer::ResetMode::ResetPool };
+    
+private:
+    VkResult ResetCommandBuffers();
+};
+
 }
 }

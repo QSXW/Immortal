@@ -8,44 +8,44 @@ namespace Immortal
 {
 namespace Vulkan
 {
-    SemaphorePool::SemaphorePool(Device &device) :
-        device{ device }
-    {
+SemaphorePool::SemaphorePool(Device *device) :
+    device{ device }
+{
 
+}
+
+SemaphorePool::~SemaphorePool()
+{
+    Reset();
+    for (auto &h : handles)
+    {
+        IfNotNullThen(vkDestroySemaphore, device->Get<VkDevice>(), h, nullptr);
+    }
+    handles.clear();
+}
+
+Semaphore SemaphorePool::Request()
+{
+    if (activeCount < handles.size())
+    {
+        return handles.at(activeCount++);
     }
 
-    SemaphorePool::~SemaphorePool()
-    {
-        Reset();
-        for (auto &h : handles)
-        {
-            IfNotNullThen(vkDestroySemaphore, device.Get<VkDevice>(), h, nullptr);
-        }
-        handles.clear();
-    }
+    VkSemaphore semaphore{ VK_NULL_HANDLE };
+    VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    Semaphore SemaphorePool::Request()
-    {
-        if (activeCount < handles.size())
-        {
-            return handles.at(activeCount++);
-        }
+    Check(vkCreateSemaphore(device->Get<VkDevice>(), &createInfo, nullptr, &semaphore));
 
-        VkSemaphore semaphore{ VK_NULL_HANDLE };
-        VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+    handles.push_back(semaphore);
+    activeCount++;
 
-        Check(vkCreateSemaphore(device.Get<VkDevice>(), &createInfo, nullptr, &semaphore));
+    return semaphore;
+}
 
-        handles.push_back(semaphore);
-        activeCount++;
-
-        return semaphore;
-    }
-
-    void SemaphorePool::Reset()
-    {
-        activeCount = 0;
-    }
+void SemaphorePool::Reset()
+{
+    activeCount = 0;
+}
 
 }
 }

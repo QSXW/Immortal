@@ -25,10 +25,10 @@ namespace Vulkan
         };
 
     public:
-        RenderFrame(Device &device, std::unique_ptr<RenderTarget> &&renderTarget, size_t threadCount = 1);
+        RenderFrame(Device *device, std::unique_ptr<RenderTarget> &&renderTarget, size_t threadCount = 1);
 
     private:
-        Device &device;
+        Device *device;
 
         Unique<RenderTarget> renderTarget{};
 

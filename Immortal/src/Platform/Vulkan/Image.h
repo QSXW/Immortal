@@ -5,111 +5,113 @@
 
 namespace Immortal
 {
-namespace Vulkan {
-	class ImageView;
-	class Image
-	{
-	public:
-		Image(Device&               device,
-			  VkImage               handle,
-			  const VkExtent3D     &extent,
-			  VkFormat              format,
-			  VkImageUsageFlags     imageUsage,
-			  VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
+namespace Vulkan
+{
 
-		Image(Device               &device,
-			  const VkExtent3D     &extent,
-			  VkFormat              format,
-			  VkImageUsageFlags     imageUsage,
-			  VmaMemoryUsage        memoryUsage,
-			  VkSampleCountFlagBits sampleCount       = VK_SAMPLE_COUNT_1_BIT,
-			  UINT32                mipLevels         = 1,
-			  UINT32                arrayLayers       = 1,
-			  VkImageTiling         tiling            = VK_IMAGE_TILING_OPTIMAL,
-			  VkImageCreateFlags    flags             = 0,
-			  UINT32                numQueueFamilies  = 0,
-			  const UINT32*         queueFamilies     = nullptr);
+class ImageView;
+class Image
+{
+public:
+    Image(Device               *device,
+          VkImage               handle,
+          const VkExtent3D     &extent,
+          VkFormat              format,
+          VkImageUsageFlags     imageUsage,
+          VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
 
-		Image(Image&& other) noexcept;
+    Image(Device               *device,
+          const VkExtent3D     &extent,
+          VkFormat              format,
+          VkImageUsageFlags     imageUsage,
+          VmaMemoryUsage        memoryUsage,
+          VkSampleCountFlagBits sampleCount       = VK_SAMPLE_COUNT_1_BIT,
+          UINT32                mipLevels         = 1,
+          UINT32                arrayLayers       = 1,
+          VkImageTiling         tiling            = VK_IMAGE_TILING_OPTIMAL,
+          VkImageCreateFlags    flags             = 0,
+          UINT32                numQueueFamilies  = 0,
+          const UINT32*         queueFamilies     = nullptr);
 
-	public:
-		VkImage &Handle()
-		{
-			return handle;
-		}
+    Image(Image &&other);
 
-		template <class T>
-		T& Get()
-		{
-			if constexpr (std::is_same_v<T, Device>)
-			{
-				return device;
-			}
-		}
+public:
+    VkImage &Handle()
+    {
+        return handle;
+    }
 
-		const VkExtent3D& Extent() const
-		{
-			return extent;
-		}
+    template <class T>
+    T& Get()
+    {
+        if constexpr (std::is_same_v<T, Device>)
+        {
+            return *device;
+        }
+    }
 
-		const VkImageType& Type() const
-		{
-			return type;
-		}
+    const VkExtent3D& Extent() const
+    {
+        return extent;
+    }
 
-		const VkFormat& Format() const
-		{
-			return format;
-		}
+    const VkImageType& Type() const
+    {
+        return type;
+    }
 
-		const VkSampleCountFlagBits& SampleCount() const
-		{
-			return sampleCount;
-		}
+    const VkFormat& Format() const
+    {
+        return format;
+    }
 
-		const VkImageUsageFlags& Usage() const
-		{
-			return usage;
-		}
+    const VkSampleCountFlagBits& SampleCount() const
+    {
+        return sampleCount;
+    }
 
-		const VkImageSubresource& Subresource() const
-		{
-			return subresource;
-		}
+    const VkImageUsageFlags& Usage() const
+    {
+        return usage;
+    }
 
-		std::unordered_set<ImageView*>& Views()
-		{
-			return views;
-		}
+    const VkImageSubresource& Subresource() const
+    {
+        return subresource;
+    }
 
-	private:
-		Device& device;
+    std::unordered_set<ImageView*>& Views()
+    {
+        return views;
+    }
 
-		VkImage handle{ VK_NULL_HANDLE };
+private:
+    Device *device;
 
-		VmaAllocation memory{ VK_NULL_HANDLE };
+    VkImage handle{ VK_NULL_HANDLE };
 
-		VkImageType type{};
+    VmaAllocation memory{ VK_NULL_HANDLE };
 
-		VkExtent3D extent;
+    VkImageType type{};
 
-		VkFormat format{};
+    VkExtent3D extent;
 
-		VkImageUsageFlags usage{};
+    VkFormat format{};
 
-		VkSampleCountFlagBits sampleCount{};
+    VkImageUsageFlags usage{};
 
-		VkImageTiling tiling{};
+    VkSampleCountFlagBits sampleCount{};
 
-		VkImageSubresource subresource{};
+    VkImageTiling tiling{};
 
-		UINT32 arrayLayerCount{ 0 };
+    VkImageSubresource subresource{};
 
-		std::unordered_set<ImageView*> views;
+    UINT32 arrayLayerCount{ 0 };
 
-		UINT8* mappedData{ nullptr };
+    std::unordered_set<ImageView*> views;
 
-		bool mapped{ false };
-	};
+    UINT8* mappedData{ nullptr };
+
+    bool mapped{ false };
+};
 }
 }

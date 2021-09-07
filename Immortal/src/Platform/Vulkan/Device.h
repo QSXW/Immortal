@@ -22,7 +22,7 @@ class Device : public Immortal::Device
 public:
     Device() = default;
 
-    Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions = {});
+    Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
 
     ~Device();
 
@@ -30,14 +30,14 @@ public:
 
     void CheckExtensionSupported();
 
-    bool IsExtensionSupport(const char* extension);
+    bool IsExtensionSupport(const char *extension);
 
-    bool IsEnabled(const char* extension) const;
+    bool IsEnabled(const char *extension) const;
 
-    Queue& FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
+    Queue &FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
 
     const Queue &SuitableGraphicsQueue();
-    
+
 public:
     virtual void *Handle() override
     {
@@ -50,30 +50,34 @@ public:
     }
 
     template <class T>
-    T& Get()
+    T &Get()
     {
-        if constexpr (std::is_same_v<T, VkDevice>)
+        if constexpr (typeof<T, VkDevice>())
         {
             return handle;
         }
-        if constexpr (std::is_same_v<T, PhysicalDevice>)
+        if constexpr (typeof<T, PhysicalDevice>())
         {
             return physicalDevice;
         }
-        if constexpr (std::is_same_v<T, Queue>)
+        if constexpr (typeof<T, Queue>())
         {
             return queues;
         }
+        if constexpr (typeof<T, VkPhysicalDevice>())
+        {
+            return physicalDevice.Handle();
+        }
     }
 
-    void WaitIdle()
+    void Wait()
     {
         vkDeviceWaitIdle(handle);
     }
 
     VmaAllocator MemoryAllocator() const
     {
-        return mMemoryAllocator;
+        return memoryAllocator;
     }
 
 private:
@@ -83,19 +87,21 @@ private:
 
     VkDevice handle{ VK_NULL_HANDLE };
 
-    std::vector<VkExtensionProperties> mDeviceExtensions;
+    std::vector<VkExtensionProperties> deviceExtensions;
 
-    std::vector<const char*> enabledExtensions{};
+    std::vector<const char *> enabledExtensions{};
 
-    VmaAllocator mMemoryAllocator{ VK_NULL_HANDLE };
+    VmaAllocator memoryAllocator{ VK_NULL_HANDLE };
 
     std::vector<std::vector<Queue>> queues;
+
     Unique<CommandPool> commandPool;
+
     Unique<FencePool> fencePool;
 
-    bool mHasGetMemoryRequirements = false;
-    bool mHasDedicatedAllocation = false;
-    bool mHasBufferDeviceAddressName = false;
+    bool hasGetMemoryRequirements{ false };
+    bool hasDedicatedAllocation{ false };
+    bool hasBufferDeviceAddressName{ false };
 };
 }
 }

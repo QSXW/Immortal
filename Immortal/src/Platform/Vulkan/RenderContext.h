@@ -18,6 +18,7 @@ public:
     using Description           = ::Immortal::RenderContext::Description;
     using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
     using PresentModePriorities = std::vector<VkPresentModeKHR>;
+    using Frames                = std::vector<Unique<RenderFrame>>;
 
 public:
     RenderContext() = default;
@@ -62,9 +63,13 @@ public:
         {
             return *device;
         }
-        if constexpr (typeof<T, RenderFrame>())
+        if constexpr (typeof<T, Frames>())
         {
             return frames;
+        }
+        if constexpr (typeof<T, Extent2D>())
+        {
+            return surfaceExtent;
         }
     }
 
@@ -127,7 +132,7 @@ private:
         { VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
     };
 
-    std::vector<Unique<RenderFrame>> frames;
+    Frames frames;
 
     size_t threadCount{ 1 };
 
