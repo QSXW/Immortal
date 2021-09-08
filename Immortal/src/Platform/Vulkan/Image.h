@@ -41,7 +41,7 @@ public:
     }
 
     template <class T>
-    T& Get()
+    T &Get()
     {
         if constexpr (std::is_same_v<T, Device>)
         {

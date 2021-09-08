@@ -71,6 +71,10 @@ public:
         {
             return surfaceExtent;
         }
+        if constexpr (typeof<T, VkFormat>())
+        {
+            return swapchain->Get<VkFormat>();
+        }
     }
 
     template <class T>
@@ -105,13 +109,13 @@ public:
 private:
     void *handle;
 
-    Unique<Instance>  instance;
+    Unique<Instance> instance;
 
-    Unique<Device>    device;
+    Unique<Device> device;
 
     Unique<Swapchain> swapchain;
 
-    VkSurfaceKHR   surface;
+    VkSurfaceKHR surface;
 
     VkExtent2D surfaceExtent;
 

@@ -46,7 +46,7 @@ RenderTarget::RenderTarget(std::vector<Image> &&images) :
             LOG::ERR("Image type is not 2D");
         }
 
-        views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
+        views.emplace_back(&image, VK_IMAGE_VIEW_TYPE_2D);
         attachments.emplace_back(Attachment{ image.Format(), image.SampleCount(), image.Usage() });
     }
 }

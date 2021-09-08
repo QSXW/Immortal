@@ -11,7 +11,7 @@ namespace Vulkan
     class ImageView
     {
     public:
-        ImageView(Image&          image,
+        ImageView(Image          *image,
                   VkImageViewType viewType,
                   VkFormat        format         = VK_FORMAT_UNDEFINED,
                   UINT32          baseMipLevel   = 0,
@@ -19,19 +19,20 @@ namespace Vulkan
                   UINT32          nMipLevels     = 0,
                   UINT32          nArrayLayers   = 0);
 
-        ImageView(ImageView&& other);
+        ImageView(ImageView &&other);
 
         ~ImageView();
+
     public:
-        void Set(Image* image)
+        void Set(Image *image)
         {
             this->image = image;
         }
 
     private:
-        Device &device;
+        Device *device{ nullptr };
 
-        Image* image{};
+        Image *image{ nullptr };
 
         VkImageView handle{ VK_NULL_HANDLE };
 

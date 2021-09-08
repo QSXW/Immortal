@@ -4,20 +4,20 @@
 namespace Immortal
 {
 namespace Vulkan {
-    ImageView::ImageView(Image &image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
-        device{ image.Get<Device>() },
-        image{ &image },
+    ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
+        device{ &(image->Get<Device>()) },
+        image{ image },
         format{ format }
     {
         if (format == VK_FORMAT_UNDEFINED)
         {
-            format = format = image.Format();
+            this->format = format = image->Format();
         }
 
         subresourceRange.baseMipLevel   = baseMipLevel;
         subresourceRange.baseArrayLayer = baseArrayLevel;
-        subresourceRange.levelCount     = nMipLevels == 0 ? image.Subresource().mipLevel : nMipLevels;
-        subresourceRange.layerCount     = nArrayLayers == 0 ? image.Subresource().arrayLayer : nArrayLayers;
+        subresourceRange.levelCount     = nMipLevels == 0 ? image->Subresource().mipLevel : nMipLevels;
+        subresourceRange.layerCount     = nArrayLayers == 0 ? image->Subresource().arrayLayer : nArrayLayers;
         subresourceRange.aspectMask     = Vulkan::IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
         VkImageViewCreateInfo viewInfo{};
@@ -25,9 +25,9 @@ namespace Vulkan {
         viewInfo.viewType         = viewType;
         viewInfo.format           = format;
         viewInfo.subresourceRange = subresourceRange;
-        viewInfo.image            = image.Handle();
+        viewInfo.image            = image->Handle();
 
-        Vulkan::Check(vkCreateImageView(device.Get<VkDevice>(), &viewInfo, nullptr, &handle));
+        Vulkan::Check(vkCreateImageView(device->Get<VkDevice>(), &viewInfo, nullptr, &handle));
         this->image->Views().emplace(this);
     }
 
@@ -47,7 +47,7 @@ namespace Vulkan {
 
     ImageView::~ImageView()
     {
-        Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, device.Get<VkDevice>(), handle);
+        Vulkan::IfNotNullThen<VkImageView>(vkDestroyImageView, device->Get<VkDevice>(), handle);
     }
 }
 }
