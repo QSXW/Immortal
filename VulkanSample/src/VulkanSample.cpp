@@ -1,5 +1,10 @@
 #include "VulkanSample.h"
-#include "Platform/Vulkan/vkcommon.h"
+#include "Platform/Vulkan/Common.h"
+
+VulkanLayer::VulkanLayer()
+{
+
+}
 
 void VulkanLayer::OnAttach()
 {

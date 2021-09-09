@@ -10,12 +10,13 @@
 #include <spdlog/fmt/ostr.h>
 #pragma warning(pop)
 
-namespace Immortal {
+namespace Immortal
+{
 
 class IMMORTAL_API LOG
 {
 public:
-    static void Init();
+    static void INIT();
 
     template <class... Args>
     static inline constexpr void WARN(Args&& ... args)
@@ -50,4 +51,5 @@ public:
 private:
     static Ref<spdlog::logger> logger;
 };
+
 }

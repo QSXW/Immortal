@@ -6,8 +6,6 @@
 
 namespace Immortal
 {
-#define DefineGetHandleFunc(Type) Type &Handle() NOEXCEPT { return handle; }
-
 namespace Vulkan
 {
 #define VK_LAYER_LUNARG_API_DUMP              "VK_LAYER_LUNARG_api_dump"

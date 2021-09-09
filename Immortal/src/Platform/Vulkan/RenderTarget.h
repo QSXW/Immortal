@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vkcommon.h"
+#include "Common.h"
 #include "Device.h"
 #include "Image.h"
 #include "ImageView.h"

@@ -1,13 +1,15 @@
 #pragma once
 #include <Immortal.h>
 #include "Framework/Main.h"
-#include "Platform/Vulkan/vkcommon.h"
+#include "Platform/Vulkan/Common.h"
 #include "Platform/Vulkan/RenderContext.h"
+#include "Platform/Vulkan/GuiLayer.h"
 
 using namespace Immortal;
 
 class VulkanLayer : public Layer
 {
+public:
     VulkanLayer();
     virtual ~VulkanLayer() = default;
 
@@ -48,13 +50,13 @@ public:
             fences->Request();
         }
 
-        auto &extent = context->Get<Vulkan::Extent2D>();
+        extent = Vulkan::Extent3D{ context->Get<Vulkan::Extent2D>().width, context->Get<Vulkan::Extent2D>().height, 1 };
 
         depthFormat = Vulkan::SuitableDepthFormat(device->Get<VkPhysicalDevice>());
 
         depthStencil.image.reset(new Vulkan::Image {
             device,
-            Vulkan::Extent3D{ extent.width, extent.height, 1 },
+            extent,
             depthFormat,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VMA_MEMORY_USAGE_GPU_ONLY
@@ -67,8 +69,9 @@ public:
 
         SetupRenderPass();
         CreatePipelineCache();
-        
-        int pause = 0;
+        SetupFramebuffer();
+
+        PushLayer(new Vulkan::GuiLayer());
     }
 
     ~VulkanSample()
@@ -198,6 +201,29 @@ public:
         Vulkan::Check(vkCreatePipelineCache(context->GetDevice()->Get<VkDevice>(), &createInfo, nullptr, &pipelineCache));
     }
 
+    void SetupFramebuffer()
+    {
+        std::array<VkImageView, 2> attachments;
+        attachments[1] = depthStencil.view->Get<VkImageView>();
+
+        VkFramebufferCreateInfo createInfo{};
+        createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        createInfo.pNext           = nullptr;
+        createInfo.renderPass      = renderPass;
+        createInfo.attachmentCount = 2;
+        createInfo.pAttachments    = attachments.data();
+        createInfo.width           = Application::Width();
+        createInfo.height          = Application::Height();
+        createInfo.layers          = 1;
+
+        framebuffers.resize(context->Get<Vulkan::RenderContext::Frames>().size());
+        for (int i = 0; i < framebuffers.size(); i++)
+        {
+            attachments[0] = swapchainBuffers[i].view;
+            Vulkan::Check(vkCreateFramebuffer(context->GetDevice()->Get<VkDevice>(), &createInfo, nullptr, &framebuffers[i]));
+        }
+    }
+
 private:
     Vulkan::RenderContext *context{ nullptr };
 
@@ -216,6 +242,8 @@ private:
         VkImage     image;
         VkImageView view;
     };
+
+    VkExtent3D extent{};
 
     std::vector<SwapchainBuffer> swapchainBuffers{};
 
@@ -236,6 +264,8 @@ private:
     VkRenderPass renderPass{ VK_NULL_HANDLE };
 
     VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+
+    std::vector<VkFramebuffer> framebuffers;
 };
 
 Immortal::Application* Immortal::CreateApplication()

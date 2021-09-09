@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vkcommon.h"
+#include "Common.h"
 #include "Device.h"
 #include "Image.h"
 
@@ -24,6 +24,15 @@ namespace Vulkan
         ~ImageView();
 
     public:
+        template <class T>
+        T &Get()
+        {
+            if constexpr (typeof<T, VkImageView>())
+            {
+                return handle;
+            }
+        }
+
         void Set(Image *image)
         {
             this->image = image;

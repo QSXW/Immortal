@@ -4,7 +4,7 @@
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
-#include "vkcommon.h"
+#include "Common.h"
 #include "PhysicalDevice.h"
 
 namespace Immortal

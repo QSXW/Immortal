@@ -22,6 +22,11 @@
 
 namespace Immortal
 {
+struct Configuration
+{
+    float FontSize{ 12.0f };
+};
+
 class IMMORTAL_API Application
 {
 public:
@@ -112,10 +117,13 @@ private:
 
     Unique<RenderContext> context;
 
-private:
     Timer timer;
+
     float deltaTime;
+
     static Application *instance;
+public:
+    Configuration configuration{};
 };
 
 Application* CreateApplication();

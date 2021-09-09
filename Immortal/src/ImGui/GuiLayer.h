@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 #include "Framework/Layer.h"
 
 #include "Event/KeyEvent.h"
@@ -7,30 +9,40 @@
 
 namespace Immortal
 {
-	class IMMORTAL_API GuiLayer : public Layer
-	{
-	public:
-		static GuiLayer* GuiLayer::Create() NOEXCEPT;
+class IMMORTAL_API GuiLayer : public Layer
+{
+public:
+    static GuiLayer *GuiLayer::Create();
 
-	public:
-		GuiLayer();
-		~GuiLayer();
+public:
+    GuiLayer();
+    ~GuiLayer();
 
-		void OnUpdate() { }
-		void OnAttach() override;
-		void OnDetach() override;
-		void OnEvent(Event &e) override;
-		void OnGuiRender() override;
+    void OnUpdate() { };
+    virtual void OnAttach() override;
+    virtual void OnEvent(Event &e) override;
+    virtual void OnGuiRender() override;
 
-		void Begin() override;
-		void End() override;
+    inline virtual void GuiLayer::OnDetach() override
+    {
+        ImGui::DestroyContext();
+    }
 
-		void BlockEvent(bool block) { mBlockEvents = block;  }
-		void SetThemeColors();
+    inline void GuiLayer::Begin()
+    {
+        ImGui::NewFrame();
+    }
 
-	private:
-		bool mBlockEvents = true;
-		float mTime = 0.0f;
-	};
+    inline void GuiLayer::End()
+    {
+        ImGui::Render();
+    }
 
+    void BlockEvent(bool block) { blockEvents = block;  }
+    void SetTheme();
+
+private:
+    bool blockEvents = true;
+    float time = 0.0f;
+};
 }

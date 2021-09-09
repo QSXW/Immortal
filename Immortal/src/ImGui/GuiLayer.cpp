@@ -2,151 +2,155 @@
 #include "GuiLayer.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include "ImGuizmo.h"
 
 #include "Framework/Application.h"
 #include "Render/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLGuiLayer.h"
-#include "Platform/Vulkan/VulkanGuiLayer.h"
+#include "Platform/OpenGL/GuiLayer.h"
+#include "Platform/Vulkan/GuiLayer.h"
 
 namespace Immortal
 {
-	GuiLayer* GuiLayer::Create() NOEXCEPT
-	{
-		switch (Renderer::API())
-		{
-			case RendererAPI::Type::OpenGL:
-				return dynamic_cast<GuiLayer*>(new OpenGLGuiLayer());
-			case RendererAPI::Type::VulKan:
-				return dynamic_cast<GuiLayer*>(new VulkanGuiLayer());
-			default:
-				SLASSERT(false && "RendererAPI::Target API is currently not supported! But it should be On schedule.");
-				return nullptr;
-		}
-	}
+GuiLayer *GuiLayer::Create()
+{
+    switch (Renderer::API())
+    {
+        case RendererAPI::Type::OpenGL:
+            return dcast<GuiLayer *>(new GuiLayer());
+        case RendererAPI::Type::VulKan:
+            return dcast<GuiLayer *>(new Vulkan::GuiLayer());
+        default:
+            return new GuiLayer();
+    }
+}
 
-	GuiLayer::GuiLayer()
-		: Layer("GuiLayer")
-	{
+GuiLayer::GuiLayer()
+    : Layer("GuiLayer")
+{
 
-	}
+}
 
-	GuiLayer::~GuiLayer()
-	{
+GuiLayer::~GuiLayer()
+{
 
-	}
+}
 
-	void GuiLayer::OnAttach()
-	{	
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGui::StyleColorsDark();
+void GuiLayer::OnAttach()
+{
+#if SLDEBUG
+    IMGUI_CHECKVERSION();
+#endif
+    ImGui::CreateContext();
+    
+    SetTheme();
 
-		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-		io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
-		io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    ImGuiIO& io = ImGui::GetIO();
 
-		io.Fonts->AddFontFromFileTTF(
-			"assets/Fonts/NotoSansCJKsc-Regular.otf",
-			18.0f,
-			NULL,
-			io.Fonts->GetGlyphRangesChineseFull()
-		);
+    io.DisplaySize = ImVec2{ ncast<float>(Application::Width()), ncast<float>(Application::Height()) };
 
-		io.FontDefault = io.Fonts->AddFontFromFileTTF(
-			"assets/Fonts/NotoSansCJKsc-DemiLight.otf",
-			18.0f,
-			NULL,
-			io.Fonts->GetGlyphRangesChineseFull()
-		);
-		ImGuiStyle& style = ImGui::GetStyle();
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-			style.WindowRounding = 0.0f;
-			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-		}
+    io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+    io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
 
-		this->SetThemeColors();
-	}	
-		
-	void GuiLayer::OnDetach()
-	{
-		ImGui::DestroyContext();
-		ImGuizmo::BeginFrame();
-	}
+    io.Fonts->AddFontFromFileTTF(
+        "assets/Fonts/NotoSansCJKsc-Regular.otf",
+        18.0f,
+        NULL,
+        io.Fonts->GetGlyphRangesChineseFull()
+    );
 
-	void GuiLayer::Begin()
-	{
-		ImGui::NewFrame();
-	}
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(
+        "assets/Fonts/NotoSansCJKsc-DemiLight.otf",
+        18.0f,
+        NULL,
+        io.Fonts->GetGlyphRangesChineseFull()
+    );
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+}	   
 
-	void GuiLayer::End()
-	{
-		ImGui::Render();
-	}
+void GuiLayer::SetTheme()
+{
+    ImGuiStyle *style = &ImGui::GetStyle();
+    ImVec4* colors = style->Colors;
 
-	void GuiLayer::SetThemeColors()
-	{
-		auto& colors = ImGui::GetStyle().Colors;
-		
-		// const ImVec4 thereColor = { 0.149, 0.149, 0.149, 1.0f };
-		const ImVec4 thereColor = { 0.18f, 0.18f, 0.18f, 1.0f };
-		colors[ImGuiCol_WindowBg] = thereColor;
+    style->WindowBorderSize                 = 0.0f;
+    colors[ImGuiCol_Text]                   = ImVec4(0.13f, 0.13f, 0.13f, 1.13f);
+    colors[ImGuiCol_TextDisabled]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+    colors[ImGuiCol_WindowBg]               = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+    colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_PopupBg]                = ImVec4(1.00f, 1.00f, 1.00f, 0.98f);
+    colors[ImGuiCol_Border]                 = ImVec4(0.00f, 0.00f, 0.00f, 0.30f);
+    colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg]                = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+    colors[ImGuiCol_FrameBgActive]          = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_TitleBg]                = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
+    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
+    colors[ImGuiCol_MenuBarBg]              = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+    colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.98f, 0.98f, 0.98f, 0.53f);
+    colors[ImGuiCol_ScrollbarGrab]          = ImVec4(0.69f, 0.69f, 0.69f, 0.80f);
+    colors[ImGuiCol_ScrollbarGrabHovered]   = ImVec4(0.49f, 0.49f, 0.49f, 0.80f);
+    colors[ImGuiCol_ScrollbarGrabActive]    = ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
+    colors[ImGuiCol_CheckMark]              = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_SliderGrab]             = ImVec4(0.26f, 0.59f, 0.98f, 0.78f);
+    colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.46f, 0.54f, 0.80f, 0.60f);
+    colors[ImGuiCol_Button]                 = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+    colors[ImGuiCol_ButtonHovered]          = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_ButtonActive]           = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
+    colors[ImGuiCol_Header]                 = ImVec4(0.26f, 0.59f, 0.98f, 0.31f);
+    colors[ImGuiCol_HeaderHovered]          = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+    colors[ImGuiCol_HeaderActive]           = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_Separator]              = ImVec4(0.39f, 0.39f, 0.39f, 0.62f);
+    colors[ImGuiCol_SeparatorHovered]       = ImVec4(0.14f, 0.44f, 0.80f, 0.78f);
+    colors[ImGuiCol_SeparatorActive]        = ImVec4(0.14f, 0.44f, 0.80f, 1.00f);
+    colors[ImGuiCol_ResizeGrip]             = ImVec4(0.35f, 0.35f, 0.35f, 0.17f);
+    colors[ImGuiCol_ResizeGripHovered]      = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_ResizeGripActive]       = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_Tab]                    = ImLerp(colors[ImGuiCol_Header],       colors[ImGuiCol_TitleBgActive], 0.90f);
+    colors[ImGuiCol_TabHovered]             = colors[ImGuiCol_HeaderHovered];
+    colors[ImGuiCol_TabActive]              = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+    colors[ImGuiCol_TabUnfocused]           = ImLerp(colors[ImGuiCol_Tab],          colors[ImGuiCol_TitleBg], 0.80f);
+    colors[ImGuiCol_TabUnfocusedActive]     = ImLerp(colors[ImGuiCol_TabActive],    colors[ImGuiCol_TitleBg], 0.40f);
+    colors[ImGuiCol_DockingEmptyBg]         = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+    colors[ImGuiCol_PlotLines]              = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+    colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+    colors[ImGuiCol_PlotHistogram]          = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    colors[ImGuiCol_PlotHistogramHovered]   = ImVec4(1.00f, 0.45f, 0.00f, 1.00f);
+    colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.78f, 0.87f, 0.98f, 1.00f);
+    colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.57f, 0.57f, 0.64f, 1.00f);   // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableBorderLight]       = ImVec4(0.68f, 0.68f, 0.74f, 1.00f);   // Prefer using Alpha=1.0 here
+    colors[ImGuiCol_TableRowBg]             = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_TableRowBgAlt]          = ImVec4(0.30f, 0.30f, 0.30f, 0.09f);
+    colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+    colors[ImGuiCol_DragDropTarget]         = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_NavHighlight]           = colors[ImGuiCol_HeaderHovered];
+    colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(0.70f, 0.70f, 0.70f, 0.70f);
+    colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.20f, 0.20f, 0.20f, 0.20f);
+    colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
+}
 
-		//// Headers
-		colors[ImGuiCol_Header] = ImVec4{ (float)(93.0 / 255.0), (float)(111.0 / 255), (float)(125.0 / 255.0), 1.0f };
-		colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_HeaderActive] = ImVec4{ (float)(93.0 / 255.0), (float)(111.0 / 255), (float)(125.0 / 255.0), 1.0f };
+void GuiLayer::OnEvent(Event &e)
+{
+    if (blockEvents)
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+        e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+    }
+}
 
-		//// Buttons
-		colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_ButtonActive] = ImVec4{ 0.3f, 0.3f, 0.3f, 1.0f };
+void GuiLayer::OnGuiRender()
+{
 
-		// Frame BG
-		colors[ImGuiCol_FrameBg] = { 0.25f, 0.25f, 0.25f, 1.0f };
-		colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-
-		//// Tabs
-		colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
-		colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
-		colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-
-		//// Title
-		colors[ImGuiCol_TitleBg] = thereColor;
-		colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.3f, 0.3f, 0.3f, 1.0f };
-		colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-
-		//// Checkbox
-		colors[ImGuiCol_CheckMark] = ImVec4{ 0.91f, 0.0196f, 0.15294118f, 1.0f };
-
-		// Slider
-		colors[ImGuiCol_SliderGrab] = ImVec4{ 0.3f, 0.3f, 0.3f, 1.0f };
-		colors[ImGuiCol_SliderGrabActive] = ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-		// Docking
-		colors[ImGuiCol_DockingPreview] = ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f };
-	}
-
-	void GuiLayer::OnEvent(Event &e)
-	{
-		if (mBlockEvents)
-		{
-			ImGuiIO &io = ImGui::GetIO();
-			e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-			e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
-		}
-	}
-
-	void GuiLayer::OnGuiRender()
-	{
-
-	}
+}
 
 }

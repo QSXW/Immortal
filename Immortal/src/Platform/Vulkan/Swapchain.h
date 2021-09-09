@@ -2,7 +2,7 @@
 
 #include "ImmortalCore.h"
 
-#include "vkcommon.h"
+#include "Common.h"
 #include "Device.h"
 
 namespace Immortal

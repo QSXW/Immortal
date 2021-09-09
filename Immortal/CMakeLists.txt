@@ -108,8 +108,8 @@ set(D3D12_FILES
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
    src/Platform/Vulkan/volk.h
-   src/Platform/Vulkan/vkcommon.cpp
-   src/Platform/Vulkan/vkcommon.h
+   src/Platform/Vulkan/Common.cpp
+   src/Platform/Vulkan/Common.h
    src/Platform/Vulkan/Device.cpp
    src/Platform/Vulkan/Device.h
    src/Platform/Vulkan/CommandBuffer.cpp
@@ -122,8 +122,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/FencePool.h
    src/Platform/Vulkan/Framebuffer.cpp
    src/Platform/Vulkan/Framebuffer.h
-   src/Platform/Vulkan/VulkanGuiLayer.cpp
-   src/Platform/Vulkan/VulkanGuiLayer.h
+   src/Platform/Vulkan/GuiLayer.cpp
+   src/Platform/Vulkan/GuiLayer.h
    src/Platform/Vulkan/Image.cpp
    src/Platform/Vulkan/Image.h
    src/Platform/Vulkan/ImageView.cpp
@@ -152,8 +152,8 @@ set(OPENGL_FILES
     src/Platform/OpenGL/OpenGLBuffer.h
     src/Platform/OpenGL/OpenGLFramebuffer.cpp
     src/Platform/OpenGL/OpenGLFramebuffer.h
-    src/Platform/OpenGL/OpenGLGuiLayer.cpp
-    src/Platform/OpenGL/OpenGLGuiLayer.h
+    src/Platform/OpenGL/GuiLayer.cpp
+    src/Platform/OpenGL/GuiLayer.h
     src/Platform/OpenGL/OpenGLRenderContext.cpp
     src/Platform/OpenGL/OpenGLRenderContext.h
     src/Platform/OpenGL/OpenGLRenderer.cpp

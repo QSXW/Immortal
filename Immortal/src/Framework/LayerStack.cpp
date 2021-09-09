@@ -3,6 +3,7 @@
 
 namespace Immortal
 {
+
 LayerStack::~LayerStack()
 {
     for (Layer *layer : layers)
@@ -42,4 +43,5 @@ void LayerStack::PopOverlay(Layer *overlay)
         layers.erase(it);
     }
 }
+
 }
