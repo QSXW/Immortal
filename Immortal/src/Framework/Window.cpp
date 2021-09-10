@@ -5,17 +5,17 @@
 
 namespace Immortal
 {
-    Scope<Window> Window::Create(const Description &description)
-    {
-    #ifdef WINDOWS
-        #ifndef IMMORTAL_WINDOWS_DIRECT
-            return CreateScope<GLFWWindow>(description);
-        #else
-            return CreateScope<DirectWindow>(description);
-        #endif
+Scope<Window> Window::Create(const Description &description)
+{
+#ifdef WINDOWS
+    #ifndef IMMORTAL_WINDOWS_DIRECT
+        return CreateScope<GLFWWindow>(description);
     #else
-        SLASSERT(false && "Unknown platform!");
-        return nullptr;
+        return CreateScope<DirectWindow>(description);
     #endif
-    }
+#else
+    SLASSERT(false && "Unknown platform!");
+    return nullptr;
+#endif
+}
 }

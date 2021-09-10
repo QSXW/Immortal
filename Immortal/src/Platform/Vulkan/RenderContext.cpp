@@ -33,6 +33,12 @@ static std::vector<const char *> ValidationLayers = {
 RenderContext::RenderContext(RenderContext::Description &desc)
     : handle(desc.WindowHandle)
 {
+    if (!glfwVulkanSupported())
+    {
+        LOG::ERR("Vulkan Not Supported!");
+        return;
+    }
+
     instance = MakeUnique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
     CreateSurface();
 
@@ -52,7 +58,7 @@ RenderContext::RenderContext(RenderContext::Description &desc)
     }
 
     device = MakeUnique<Device>(physicalDevice, surface, DeviceExtensions);
-
+    queue  = device->SuitableGraphicsQueuePtr();
     {
         surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
         if (surface != VK_NULL_HANDLE)

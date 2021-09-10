@@ -303,7 +303,7 @@ void Device::CheckExtensionSupported()
     }
 }
 
-const Queue &Device::SuitableGraphicsQueue()
+Queue &Device::SuitableGraphicsQueue()
 {
     for (UINT32 familyIndex = 0; familyIndex < queues.size(); familyIndex++)
     {

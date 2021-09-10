@@ -12,7 +12,7 @@ namespace Vulkan
 	public:
 		using FamilyIndex = UINT32;
 	public:
-		enum Type
+		enum Type : int
 		{
 			Graphics      = VK_QUEUE_GRAPHICS_BIT,
 			Compute       = VK_QUEUE_COMPUTE_BIT,
@@ -45,17 +45,17 @@ namespace Vulkan
 			}
 		}
 
-		const VkQueue &Handle() const
+		VkQueue &Handle()
 		{
 			return handle;
 		}
 
-		VkQueueFamilyProperties Properties() const
+		VkQueueFamilyProperties &Properties()
 		{
 			return properties;
 		}
 
-		VkBool32 IsPresentSupported() const
+		VkBool32 &IsPresentSupported()
 		{
 			return presented;
 		}

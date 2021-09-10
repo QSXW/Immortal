@@ -16,9 +16,10 @@ namespace Immortal
 namespace Vulkan
 {
 
-GuiLayer::GuiLayer()
+GuiLayer::GuiLayer(RenderContext *context) :
+    context{ context }
 {
-
+    SLASSERT(context && "Render Context could not be NULL.");
 }
 
 GuiLayer::~GuiLayer()
@@ -29,7 +30,19 @@ GuiLayer::~GuiLayer()
 void GuiLayer::OnAttach()
 {
     Super::OnAttach();
+
     Application *app = Application::App();
+    ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+
+    auto &queue = context->Get<Queue*>();
+
+    initInfo.Instance       = context->Get<VkInstance>();
+    initInfo.PhysicalDevice = context->Get<VkPhysicalDevice>();
+    initInfo.Device         = context->Get<VkDevice>();
+    initInfo.QueueFamily    = queue->Get<Queue::FamilyIndex>();
+    initInfo.Queue          = queue->Handle();
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
         VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , 1 }

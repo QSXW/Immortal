@@ -36,17 +36,18 @@ public:
 
     Queue &FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
 
-    const Queue &SuitableGraphicsQueue();
+    Queue &SuitableGraphicsQueue();
+
+    Queue *SuitableGraphicsQueuePtr()
+    {
+        auto &queue = SuitableGraphicsQueue();
+        return &queue;
+    }
 
 public:
     virtual void *Handle() override
     {
         return handle;
-    }
-
-    virtual void *SuitableQueue() override
-    {
-        return SuitableGraphicsQueue().Handle();
     }
 
     template <class T>

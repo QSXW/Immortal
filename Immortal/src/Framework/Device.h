@@ -2,18 +2,15 @@
 
 namespace Immortal
 {
-    class Device
-    {
-    public:
-        Device() { }
 
-        virtual ~Device() { }
+class Device
+{
+public:
+    Device() { }
 
-        virtual void *Handle() = 0;
+    virtual ~Device() { }
 
-        virtual void *SuitableQueue()
-        { 
-            return nullptr; 
-        }
-    };
+    virtual void *Handle() = 0;
+};
+
 }

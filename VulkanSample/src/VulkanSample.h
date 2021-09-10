@@ -32,7 +32,7 @@ public:
         Vulkan::Check(vkCreateSemaphore(deviceHandle, &createInfo, nullptr, &semaphores.acquiredImageReady));
         Vulkan::Check(vkCreateSemaphore(deviceHandle, &createInfo, nullptr, &semaphores.renderComplete));
 
-        queue = rcast<VkQueue>(device->SuitableQueue());
+        queue = rcast<VkQueue>(device->SuitableGraphicsQueue().Handle());
         CreateSwapchainBuffers();
         
         auto frameSize = ncast<UINT32>(context->Get<Vulkan::RenderContext::Frames>().size());
@@ -71,7 +71,7 @@ public:
         CreatePipelineCache();
         SetupFramebuffer();
 
-        PushLayer(new Vulkan::GuiLayer());
+        PushLayer(new Vulkan::GuiLayer(context));
     }
 
     ~VulkanSample()

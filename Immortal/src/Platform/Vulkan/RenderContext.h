@@ -55,6 +55,30 @@ public:
     template <class T>
     inline constexpr T &Get()
     {
+        if constexpr (typeof<T, VkInstance>())
+        {
+            return instance->Handle();
+        }
+        if constexpr (typeof<T, VkPhysicalDevice>())
+        {
+            return instance->SuitablePhysicalDevice().Handle();
+        }
+        if constexpr (typeof<T, VkDevice>())
+        {
+            return device->Get<VkDevice>();
+        }
+        if constexpr (typeof<T, VkQueue>())
+        {
+            return device->SuitableGraphicsQueue().Handle();
+        }
+        if constexpr (typeof<T, Queue>())
+        {
+            return *queue;
+        }
+        if constexpr (typeof<T, Queue*>())
+        {
+            return queue;
+        }
         if constexpr (typeof<T, Swapchain>())
         {
             return *swapchain;
@@ -115,13 +139,19 @@ private:
 
     Unique<Swapchain> swapchain;
 
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
-    VkExtent2D surfaceExtent;
+    VkExtent2D surfaceExtent{ 0, 0 };
 
-    const Queue *queue;
+    Queue *queue{ nullptr };
 
     Swapchain::Properties swapchainProperties;
+
+    Frames frames;
+
+    size_t threadCount{ 1 };
+
+    bool status{ false };
 
     std::vector<VkPresentModeKHR> presentModePriorities = {
         VK_PRESENT_MODE_MAILBOX_KHR,
@@ -130,17 +160,23 @@ private:
     };
 
     std::vector<VkSurfaceFormatKHR> surfaceFormatPriorities = {
-        { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-        { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-        { VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-        { VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR }
+        { 
+            VK_FORMAT_R8G8B8A8_UNORM,
+            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+        },
+        { 
+            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+        },
+        { 
+            VK_FORMAT_R8G8B8A8_SRGB,
+            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+        },
+        {
+            VK_FORMAT_B8G8R8A8_SRGB,
+            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+        }
     };
-
-    Frames frames;
-
-    size_t threadCount{ 1 };
-
-    bool status{ false };
 
 public:
     static VkResult Status;

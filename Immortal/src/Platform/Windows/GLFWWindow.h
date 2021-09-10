@@ -11,65 +11,64 @@
 
 namespace Immortal
 {
-    class GLFWWindow : public Window
+class GLFWWindow : public Window
+{
+public:
+    GLFWWindow(const Description &description);
+
+    virtual ~GLFWWindow();
+
+    void OnUpdate() override;
+
+    UINT32 Width() const override
     {
-    public:
-        GLFWWindow(const Description &description);
+        return desc.Width;
+    }
 
-        virtual ~GLFWWindow();
+    UINT32 Height() const override
+    {
+        return desc.Height;
+    }
 
-        void OnUpdate() override;
+    void SetEventCallback(const EventCallbackFunc& callback) override
+    {
+        desc.EventCallback = callback;
+    }
 
-        UINT32 Width() const override
-        {
-            return desc.Width;
-        }
+    virtual void SetVSync(bool enabled) override;
 
-        UINT32 Height() const override
-        {
-            return desc.Height;
-        }
+    virtual bool IsVSync() const override;
 
-        void SetEventCallback(const EventCallbackFunc& callback) override
-        {
-            desc.EventCallback = callback;
-        }
+    virtual void* GetNativeWindow() const
+    {
+        return  window;
+    }
 
-        virtual void SetVSync(bool enabled) override;
+    virtual void* PlatformNativeWindow() const
+    {
+        return glfwGetWin32Window(window);
+    }
 
-        virtual bool IsVSync() const override;
+    inline void Clear() override;
 
-        virtual void* GetNativeWindow() const
-        {
-            return  window;
-        }
+    float Time() override;
 
-        virtual void* PlatformNativeWindow() const
-        {
-            return glfwGetWin32Window(window);
-        }
+    virtual void ProcessEvents() override;
 
-        inline void Clear() override;
+    virtual float DpiFactor() const override;
+    virtual void SetTitle(const std::string &title) override;
 
-        float Time() override;
+private:
+    virtual void Init(const Description &descrition);
 
-        virtual void ProcessEvents() override;
+    virtual void Shutdown();
 
-        virtual float DpiFactor() const override;
-        virtual void SetTitle(const std::string &title) override;
+private:
+    GLFWwindow *window;
 
-    private:
-        virtual void Init(const Description &descrition);
+    Description desc{};
 
-        virtual void Shutdown();
-
-    private:
-        GLFWwindow* window;
-        Unique<RenderContext> context;
-
-        Description desc{};
-
-    public:
-        static UINT8 GLFWWindowCount;
-    };
+public:
+    static UINT8 GLFWWindowCount;
+};
 }

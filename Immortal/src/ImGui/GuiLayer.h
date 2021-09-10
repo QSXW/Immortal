@@ -12,7 +12,8 @@ namespace Immortal
 class IMMORTAL_API GuiLayer : public Layer
 {
 public:
-    static GuiLayer *GuiLayer::Create();
+    template <class... A>
+    static GuiLayer *Create(A &&... args);
 
 public:
     GuiLayer();

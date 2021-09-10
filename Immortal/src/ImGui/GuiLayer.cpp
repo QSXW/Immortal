@@ -13,14 +13,15 @@
 
 namespace Immortal
 {
-GuiLayer *GuiLayer::Create()
+template <class... A>
+GuiLayer *GuiLayer::Create(A &&... args)
 {
     switch (Renderer::API())
     {
         case RendererAPI::Type::OpenGL:
-            return dcast<GuiLayer *>(new GuiLayer());
+            return dcast<GuiLayer *>(new GuiLayer(std::forward<A>(args)...));
         case RendererAPI::Type::VulKan:
-            return dcast<GuiLayer *>(new Vulkan::GuiLayer());
+            return dcast<GuiLayer *>(new Vulkan::GuiLayer(std::forward<A>(args)...));
         default:
             return new GuiLayer();
     }
@@ -54,26 +55,13 @@ void GuiLayer::OnAttach()
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
-
-    io.Fonts->AddFontFromFileTTF(
-        "assets/Fonts/NotoSansCJKsc-Regular.otf",
-        18.0f,
-        NULL,
-        io.Fonts->GetGlyphRangesChineseFull()
-    );
-
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(
-        "assets/Fonts/NotoSansCJKsc-DemiLight.otf",
-        18.0f,
-        NULL,
-        io.Fonts->GetGlyphRangesChineseFull()
-    );
+    
     ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
+    }    
 }	   
 
 void GuiLayer::SetTheme()

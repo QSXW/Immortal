@@ -1,5 +1,7 @@
 #pragma once
+
 #include "ImGui/GuiLayer.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -12,7 +14,8 @@ public:
     using Super = Immortal::GuiLayer;
 
 public:
-    GuiLayer();
+    GuiLayer(RenderContext *context);
+
     ~GuiLayer();
 
     virtual void OnAttach() override;
@@ -22,6 +25,9 @@ public:
 
     virtual void Begin() override;
     virtual void End() override;
+
+private:
+    RenderContext *context{ nullptr };
 };
 
 }
