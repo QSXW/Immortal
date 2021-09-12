@@ -2,6 +2,8 @@
 
 #include "ImGui/GuiLayer.h"
 #include "RenderContext.h"
+#include "Common.h"
+#include "DescriptorPool.h"
 
 namespace Immortal
 {
@@ -14,7 +16,7 @@ public:
     using Super = Immortal::GuiLayer;
 
 public:
-    GuiLayer(RenderContext *context);
+    GuiLayer(RenderContext *context, VkRenderPass renderPass);
 
     ~GuiLayer();
 
@@ -28,6 +30,12 @@ public:
 
 private:
     RenderContext *context{ nullptr };
+
+    VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+
+    VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
+
+    VkRenderPass renderPass{ VK_NULL_HANDLE };
 };
 
 }

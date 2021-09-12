@@ -7,18 +7,18 @@ namespace Immortal
 {
 namespace Vulkan
 {
-    DescriptorPool::DescriptorPool(Device &device, const DescriptorSetLayout &layout, UINT32 poolSize) :
-        device{ device }
-    {
+DescriptorPool::DescriptorPool(Device &device, const DescriptorSetLayout &layout, UINT32 poolSize) :
+    device{ device }
+{
 
-    }
+}
 
-    DescriptorPool::~DescriptorPool()
+DescriptorPool::~DescriptorPool()
+{
+    for (auto &h : handles)
     {
-        for (auto &h : handles)
-        {
-            IfNotNullThen(vkDestroyDescriptorPool, device.Get<VkDevice>(), h, nullptr);
-        }
+        IfNotNullThen(vkDestroyDescriptorPool, device.Get<VkDevice>(), h, nullptr);
     }
+}
 }
 }

@@ -71,7 +71,7 @@ public:
         CreatePipelineCache();
         SetupFramebuffer();
 
-        PushLayer(new Vulkan::GuiLayer(context));
+        PushLayer(new Vulkan::GuiLayer(context, renderPass));
     }
 
     ~VulkanSample()
@@ -125,7 +125,7 @@ public:
     {
         std::array<VkAttachmentDescription, 2> attachments{};
 
-        auto &colorAttachment = attachments[0];
+        auto &colorAttachment          = attachments[0];
         colorAttachment.format         = context->Get<VkFormat>();
         colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -191,7 +191,7 @@ public:
         createInfo.dependencyCount = ncast<UINT32>(dependencies.size());
         createInfo.pDependencies   = dependencies.data();
 
-        Vulkan::Check(vkCreateRenderPass(context->GetDevice()->Get<VkDevice>(), &createInfo, nullptr, &renderPass));
+        Vulkan::Check(vkCreateRenderPass(context->Get<VkDevice>(), &createInfo, nullptr, &renderPass));
     }
 
     void CreatePipelineCache()

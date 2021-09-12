@@ -151,6 +151,8 @@ private:
 
     size_t threadCount{ 1 };
 
+    VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
+    
     bool status{ false };
 
     std::vector<VkPresentModeKHR> presentModePriorities = {
