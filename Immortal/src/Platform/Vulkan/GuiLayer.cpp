@@ -76,7 +76,6 @@ void GuiLayer::OnAttach()
     initInfo.ImageCount      = context->Get<RenderContext::Frames>().size();
     initInfo.CheckVkResultFn = &Check;
 
-    ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
     ImGui_ImplVulkan_Init(&initInfo, renderPass);
 }
 

@@ -124,6 +124,8 @@ Device::Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unorde
 
     Check(vkCreateDevice(physicalDevice.Handle(), &createInfo, nullptr, &handle));
 
+    volkLoadDeviceTable(&DeviceMap, handle);
+
     queues.resize(propsCount);
     for (UINT32 queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {

@@ -145,7 +145,9 @@ set(VULKAN_FILES
    src/Platform/Vulkan/SemaphorePool.cpp
    src/Platform/Vulkan/SemaphorePool.h
    src/Platform/Vulkan/Swapchain.cpp
-   src/Platform/Vulkan/Swapchain.h)
+   src/Platform/Vulkan/Swapchain.h
+   src/Platform/Vulkan/Sampler.cpp
+   src/Platform/Vulkan/Sampler.h)
 
 set(OPENGL_FILES
     src/Platform/OpenGL/OpenGLBuffer.cpp
