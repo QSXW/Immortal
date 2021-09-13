@@ -21,7 +21,7 @@ Application::Application(const Window::Description &descrition)
     window->SetEventCallback(SLBIND(Application::OnEvent));
     // window->SetVSync(false);
     // Renderer::Init();
-    // mGuiLayer = GuiLayer::Create();
+    // guiLayer = GuiLayer::Create();
     // PushOverlay(mGuiLayer);
     // mTimer.Start();
 }
@@ -57,12 +57,14 @@ void Application::Run()
 
         if (!minimized)
         {
-            // mGuiLayer->Begin();
+            // guiLayer->Begin();
             for (Layer *layer : layerStack)
             {
+                layer->Begin();
                 layer->OnGuiRender();
+                layer->End();
             }
-            //mGuiLayer->End();
+            // guiLayer->End();
         }
         window->OnUpdate();
     }

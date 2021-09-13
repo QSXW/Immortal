@@ -3,22 +3,20 @@
 #include "Render/RendererAPI.h"
 
 #include "Common.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
-namespace Vulkan {
-	class Renderer : public RendererAPI
-	{
-		virtual void Init() override;
+namespace Vulkan
+{
 
-	public:
-		static inline void Set(std::vector<VkSurfaceFormatKHR> &surfacePriorityList)
-		{
-			SurfacePriorityList = std::move(surfacePriorityList);
-		}
+class Renderer : public RendererAPI
+{
+public:
+    virtual void Init() override;
 
-	public:
-		static std::vector<VkSurfaceFormatKHR> SurfacePriorityList;
-	};
+public:
+    RenderContext *renderContext{ nullptr };
+};
 }
 }

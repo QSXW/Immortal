@@ -35,6 +35,11 @@ namespace Vulkan
 
 		~Queue();
 
+		VkResult Submit(VkSubmitInfo &submitInfo, VkFence fence)
+		{
+			return vkQueueSubmit(handle, 1, &submitInfo, fence);
+		}
+
 	public:
 		template <class T>
 		T &Get()

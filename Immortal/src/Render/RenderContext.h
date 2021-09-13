@@ -5,6 +5,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API RenderContext
 {
 public:
@@ -54,4 +55,5 @@ protected:
     std::string driverVersion{};
     std::string vendor{};
 };
+
 }

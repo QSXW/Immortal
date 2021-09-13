@@ -16,6 +16,14 @@ public:
     virtual void OnAttach() override;
     virtual void OnDetach() override;
     virtual void OnUpdate() override;
+
+public:
+    struct
+    {
+        bool showDemoWindow{ false };
+        bool showAnotherWindow{ false };
+        Vector4 clearColor{ 0.45f, 0.55f, 0.60f, 1.00f };
+    } Settings;
 };
 
 class VulkanSample : public Application
@@ -40,7 +48,7 @@ public:
         commandPool.reset(new Vulkan::CommandPool{ device, device->FindQueueByFlags(Vulkan::Queue::Graphics | Vulkan::Queue::Compute, 0).Get<Vulkan::Queue::FamilyIndex>() });
         drawCommadBuffer.reset(new Vulkan::CommandBuffer{ 
             commandPool.get(),
-            Vulkan::CommandBuffer::Level::Primary,
+            Vulkan::Level::Primary,
             frameSize
         });
 

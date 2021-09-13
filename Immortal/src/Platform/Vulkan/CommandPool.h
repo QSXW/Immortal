@@ -32,6 +32,8 @@ public:
 
     ~CommandPool();
 
+    CommandBuffer &RequestBuffer(Level level);
+
     template <class T>
     T &Get()
     {
@@ -74,11 +76,11 @@ private:
 
     std::vector<Unique<CommandBuffer>> primaryCommandBuffers;
 
-    UINT32 activePrimaryCommandBufferCount{ 0 };
+    UINT32 primaryActiveCount{ 0 };
 
     std::vector<Unique<CommandBuffer>> secondaryCommandBuffers;
 
-    UINT32 activeSecondaryCommandBufferCount{ 0 };
+    UINT32 secondaryActiveCount{ 0 };
 
     CommandBuffer::ResetMode resetMode{ CommandBuffer::ResetMode::ResetPool };
     

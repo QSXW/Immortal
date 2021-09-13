@@ -19,6 +19,9 @@
 namespace sl
 {
 #include <cassert>
+
+#define slptr *
+
 #define SLASSERT(...) assert(__VA_ARGS__)
 
 #define SLBIND(x) std::bind(&x, this, std::placeholders::_1)

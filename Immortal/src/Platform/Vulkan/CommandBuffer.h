@@ -26,20 +26,31 @@ public:
         Executable
     };
 
-    enum class Level
+    enum class Usage : int
     {
-        None      = -1,
-        Primary   = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        Secondary = VK_COMMAND_BUFFER_LEVEL_SECONDARY,
-        Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
+        
     };
 
     VkResult reset(ResetMode reset_mode);
 
 public:
-    CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count);
+    CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count = 1);
 
     ~CommandBuffer();
+
+    VkResult Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer = nullptr);
+
+    VkResult End();
+
+    VkCommandBuffer &Handle()
+    {
+        return handle;
+    }
+
+    bool Recoding()
+    {
+        return state == State::Recording;
+    }
 
 private:
     CommandPool *commandPool{ nullptr };

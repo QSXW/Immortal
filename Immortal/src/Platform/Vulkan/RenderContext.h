@@ -87,6 +87,10 @@ public:
         {
             return *device;
         }
+        if constexpr (typeof<T, Device slptr>())
+        {
+            return device.get();
+        }
         if constexpr (typeof<T, Frames>())
         {
             return frames;

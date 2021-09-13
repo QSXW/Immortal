@@ -55,17 +55,17 @@ CommandPool::CommandPool(CommandPool &&other) :
     handle{ other.handle },
     queueFamilyIndex{ other.queueFamilyIndex },
     primaryCommandBuffers{ std::move(other.primaryCommandBuffers) },
-    activePrimaryCommandBufferCount{ other.activePrimaryCommandBufferCount },
+    primaryActiveCount{ other.primaryActiveCount },
     secondaryCommandBuffers{ std::move(other.secondaryCommandBuffers) },
-    activeSecondaryCommandBufferCount{ other.activeSecondaryCommandBufferCount },
+    secondaryActiveCount{ other.secondaryActiveCount },
     renderFrame{ other.renderFrame },
     threadIndex{ other.threadIndex },
     resetMode{ other.resetMode }
 {
     other.handle                            = VK_NULL_HANDLE;
     other.queueFamilyIndex                  = 0;
-    other.activePrimaryCommandBufferCount   = 0;
-    other.activeSecondaryCommandBufferCount = 0;
+    other.primaryActiveCount   = 0;
+    other.secondaryActiveCount = 0;
 }
 
 CommandPool &CommandPool::operator=(CommandPool &&other)
@@ -76,17 +76,17 @@ CommandPool &CommandPool::operator=(CommandPool &&other)
         handle                            = other.handle;
         queueFamilyIndex                  = other.queueFamilyIndex;
         primaryCommandBuffers             = std::move(other.primaryCommandBuffers);
-        activePrimaryCommandBufferCount   = other.activePrimaryCommandBufferCount;
+        primaryActiveCount   = other.primaryActiveCount;
         secondaryCommandBuffers           = std::move(other.secondaryCommandBuffers);
-        activeSecondaryCommandBufferCount = other.activeSecondaryCommandBufferCount;
+        secondaryActiveCount = other.secondaryActiveCount;
         renderFrame                       = other.renderFrame;
         threadIndex                       = other.threadIndex;
         resetMode                         = other.resetMode;
 
         other.handle                            = VK_NULL_HANDLE;
         other.queueFamilyIndex                  = 0;
-        other.activePrimaryCommandBufferCount   = 0;
-        other.activeSecondaryCommandBufferCount = 0;
+        other.primaryActiveCount   = 0;
+        other.secondaryActiveCount = 0;
     }
     return *this;
 }
@@ -98,17 +98,43 @@ CommandPool::~CommandPool()
     IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device->Get<VkDevice>(), handle, nullptr);
 }
 
+CommandBuffer &CommandPool::RequestBuffer(Level level)
+{
+    if (level == Level::Primary)
+    {
+        if (primaryActiveCount < primaryCommandBuffers.size())
+        {
+            return *primaryCommandBuffers[primaryActiveCount++];
+        }
+        primaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
+        primaryActiveCount++;
+
+        return *primaryCommandBuffers.back();
+    }
+    else
+    {
+        if (secondaryActiveCount < secondaryCommandBuffers.size())
+        {
+            return *secondaryCommandBuffers[secondaryActiveCount++];
+        }
+        secondaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
+        secondaryActiveCount++;
+
+        return *secondaryCommandBuffers.back();
+    }
+}
+
 VkResult CommandPool::ResetCommandBuffers()
 {
     VkResult result = VK_SUCCESS;
 
-    result = Helper::ResetCommandBuffers(primaryCommandBuffers, activePrimaryCommandBufferCount, resetMode);
+    result = Helper::ResetCommandBuffers(primaryCommandBuffers, primaryActiveCount, resetMode);
     if (result != VK_SUCCESS)
     {
         return result;
     }
 
-    result = Helper::ResetCommandBuffers(secondaryCommandBuffers, activeSecondaryCommandBufferCount, resetMode);
+    result = Helper::ResetCommandBuffers(secondaryCommandBuffers, secondaryActiveCount, resetMode);
     if (result != VK_SUCCESS)
     {
         return result;

@@ -69,11 +69,15 @@ public:
         {
             return physicalDevice.Handle();
         }
+        if constexpr (typeof<T, CommandPool>())
+        {
+            return *commandPool;
+        }
     }
 
-    void Wait()
+    VkResult Wait()
     {
-        vkDeviceWaitIdle(handle);
+        return vkDeviceWaitIdle(handle);
     }
 
     VmaAllocator MemoryAllocator() const

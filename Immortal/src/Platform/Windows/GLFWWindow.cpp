@@ -84,44 +84,44 @@ void GLFWWindow::Init(const Description &description)
     /* Set callbacks */
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
     {
-        Description &desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
-        desc.Width = width;
-        desc.Height = height;
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        desc->Width = width;
+        desc->Height = height;
 
         WindowResizeEvent event(width, height);
-        desc.EventCallback(event);
+        desc->EventCallback(event);
     });
 
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window)
     {
-        Description &desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
         WindowCloseEvent event;
-        desc.EventCallback(event);
+        desc->EventCallback(event);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int modes)
     {
-        Description &desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
             
         switch (action)
         {
             case GLFW_PRESS:
             {
                 KeyPressedEvent event(key, 0);
-                desc.EventCallback(event);
+                desc->EventCallback(event);
                 break;
             }
             case GLFW_RELEASE:
             {
                 KeyReleasedEvent event(key);
-                desc.EventCallback(event);
+                desc->EventCallback(event);
                 break;
             }
                 
             case GLFW_REPEAT:
             {
                 KeyPressedEvent event(key, 1);
-                desc.EventCallback(event);
+                desc->EventCallback(event);
                 break;
             }
         }
@@ -129,20 +129,20 @@ void GLFWWindow::Init(const Description &description)
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int modes)
     {
-        Description &desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
 
         switch (action)
         {
             case GLFW_PRESS:
             {
                 MouseButtonPressedEvent event((MouseCode)button);
-                desc.EventCallback(event);
+                desc->EventCallback(event);
                 break;
             }
             case GLFW_RELEASE:
             {
                 MouseButtonReleasedEvent event((MouseCode)button);
-                desc.EventCallback(event);
+                desc->EventCallback(event);
                 break;
             }
         }
@@ -150,18 +150,18 @@ void GLFWWindow::Init(const Description &description)
 
     glfwSetScrollCallback(window, [](GLFWwindow *window, double xOffset, double yOffset)
     {
-        Description &desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
 
         MouseScrolledEvent event((float)xOffset, (float)yOffset);
-        desc.EventCallback(event);
+        desc->EventCallback(event);
     });
 
     glfwSetCursorPosCallback(window, [](GLFWwindow *window, double xPos, double yPos)
     {
-        Description& desc = sl::bcast<Description>(glfwGetWindowUserPointer(window));
+        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
 
         MouseMoveEvent event((float)xPos, (float)yPos);
-        desc.EventCallback(event);
+        desc->EventCallback(event);
     });
 }
 

@@ -10,6 +10,40 @@ namespace Vulkan
 {
 static struct VolkDeviceTable DeviceMap {};
 
+enum class Level : int
+{
+    None      = -1,
+    Primary   = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    Secondary = VK_COMMAND_BUFFER_LEVEL_SECONDARY,
+    Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
+};
+
+template <class T>
+inline constexpr bool operator==(T a, int b)
+{
+    if constexpr (typeof<T, Level>())
+    {
+        return ncast<int>(a) == b;
+    }
+    else
+    {
+        a == b;
+    }
+}
+
+template <class T>
+inline constexpr bool operator==(int a, T b)
+{
+    if constexpr (typeof<T, Level>())
+    {
+        return ncast<int>(b) == a;
+    }
+    else
+    {
+        a == b;
+    }
+}
+
 #define VK_LAYER_LUNARG_API_DUMP              "VK_LAYER_LUNARG_api_dump"
 #define VK_LAYER_LUNARG_DEVICE_SIMULATION     "VK_LAYER_LUNARG_device_simulation"
 #define VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER "VK_LAYER_LUNARG_assistant_layer"

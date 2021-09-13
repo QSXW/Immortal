@@ -5,21 +5,23 @@
 #include "Platform/OpenGL/OpenGLRenderContext.h"
 #include "Platform/Vulkan/RenderContext.h"
 
-namespace Immortal {
+namespace Immortal
+{
 
-	Unique<RenderContext> RenderContext::Create(Description &desc)
-	{
-		switch (Renderer::API())
-		{
-		case RendererAPI::Type::OpenGL:
-			return MakeUnique<OpenGLRenderContext>(desc);
+Unique<RenderContext> RenderContext::Create(Description &desc)
+{
+    switch (Renderer::API())
+    {
+    case RendererAPI::Type::OpenGL:
+        return MakeUnique<OpenGLRenderContext>(desc);
 
-		case RendererAPI::Type::VulKan:
-			return MakeUnique<Vulkan::RenderContext>(desc);
+    case RendererAPI::Type::VulKan:
+        return MakeUnique<Vulkan::RenderContext>(desc);
 
-		default:
-			LOG::ERR("Not support api");
-			return nullptr;
-		}
-	}
+    default:
+        LOG::ERR("Not support api");
+        return nullptr;
+    }
+}
+
 }

@@ -35,7 +35,7 @@ void GuiLayer::OnAttach()
     Application *app = Application::App();
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
 
-    auto &device = context->Get<VkDevice>();
+    auto &device = context->Get<Device>();
 
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -59,14 +59,14 @@ void GuiLayer::OnAttach()
     createInfo.poolSizeCount = size;
     createInfo.pPoolSizes    = poolSizes;
 
-    Check(vkCreateDescriptorPool(device, &createInfo, nullptr, &descriptorPool));
+    Check(vkCreateDescriptorPool(device.Get<VkDevice>(), &createInfo, nullptr, &descriptorPool));
 
     ImGui_ImplVulkan_InitInfo initInfo{};
     auto &queue = context->Get<Queue*>();
 
     initInfo.Instance        = context->Get<VkInstance>();
     initInfo.PhysicalDevice  = context->Get<VkPhysicalDevice>();
-    initInfo.Device          = device;
+    initInfo.Device          = device.Get<VkDevice>();
     initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
     initInfo.Queue           = queue->Handle();
     initInfo.PipelineCache   = pipelineCache;
@@ -76,7 +76,23 @@ void GuiLayer::OnAttach()
     initInfo.ImageCount      = context->Get<RenderContext::Frames>().size();
     initInfo.CheckVkResultFn = &Check;
 
-    ImGui_ImplVulkan_Init(&initInfo, renderPass);
+    ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
+    if (ImGui_ImplVulkan_Init(&initInfo, renderPass))
+    {
+        LOG::INFO("Initialized GUI with success");
+    }
+
+    auto &commandPool   = device.Get<CommandPool>();
+    auto &commandBuffer = commandPool.RequestBuffer(Level::Primary);
+
+    Check(commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.Handle());
+    Check(commandBuffer.End());
+
+    Check(queue->Submit(VkSubmitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO }, VK_NULL_HANDLE));
+
+    Check(device.Wait());
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
 void GuiLayer::OnDetach()
