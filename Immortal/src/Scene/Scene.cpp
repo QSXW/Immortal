@@ -120,8 +120,8 @@ namespace Immortal {
 		{
 			mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
 			mFramebuffer->Map();
-			RenderCommand::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
-			RenderCommand::Clear();
+			Render::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
+			Render::Clear();
 #if 0
 			// draw skybox
 			glDepthMask(GL_FALSE);
@@ -129,7 +129,7 @@ namespace Immortal {
 			// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			shader->Map();
 			mSkyboxTexture->Map();
-			RenderCommand::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
+			Render::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
 			glDepthMask(GL_TRUE);
 #endif
 			{
@@ -204,16 +204,16 @@ namespace Immortal {
 	{
 		mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
 		mFramebuffer->Map();
-		RenderCommand::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
-		RenderCommand::Clear();
+		Render::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0 });
+		Render::Clear();
 
 		// draw skybox
-		RenderCommand::DisableDepthTest();
+		Render::DisableDepthTest();
 		auto &skyboxShader = Renderer::Shader<ShaderName::Skybox>();
 		skyboxShader->Map();
 		mSkyboxTexture->Map();
-		RenderCommand::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
-		RenderCommand::EnableDepthTest();
+		Render::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
+		Render::EnableDepthTest();
 		skyboxShader->Unmap();
 
 		{

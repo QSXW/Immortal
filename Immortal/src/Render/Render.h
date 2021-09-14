@@ -8,47 +8,46 @@
 namespace Immortal
 {
 
-class RenderCommand
+class Render
 {
 public:
     static void Init()
     {
-        sRendererAPI->Init();
+        RendererAPI->Init();
     }
 
     static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
     {
-        sRendererAPI->SetViewport(x, y, width, height);
+        RendererAPI->SetViewport(x, y, width, height);
     }
 
-    static void SetClearColor(const Vector::Vector4 &color)
+    static void SetClearColor(const Vector4 &color)
     {
-        sRendererAPI->SetClearColor(color);
+        RendererAPI->SetClearColor(color);
     }
-        
+
     static void EnableDepthTest()
     {
-        sRendererAPI->EnableDepthTest();
+        RendererAPI->EnableDepthTest();
     }
 
     static void DisableDepthTest()
     {
-        sRendererAPI->DisableDepthTest();
+        RendererAPI->DisableDepthTest();
     }
 
     static void Clear()
     {
-        sRendererAPI->Clear();
+        RendererAPI->Clear();
     }
 
     static void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t count = 0)
     {
-        sRendererAPI->DrawIndexed(vertexArray, count);
+        RendererAPI->DrawIndexed(vertexArray, count);
     }
 
 private:
-    static Scope<RendererAPI> sRendererAPI;
+    static Scope<RendererAPI> RendererAPI;
 };
 
 }
-

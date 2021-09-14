@@ -26,10 +26,10 @@ namespace Immortal {
 		EventCategoryMouseButton	= BIT(4)
 	};
 
-#define EVENT_CLASS_TYPE(_Type) \
-	static EventType GetStaticType() { return EventType::##_Type; }\
+#define EVENT_CLASS_TYPE(T) \
+	static EventType GetStaticType() { return EventType::T; }\
 	virtual EventType Type() const override { return GetStaticType(); }\
-	virtual const char *Name() const override { return #_Type; }
+	virtual const char *Name() const override { return #T; }
 
 #define EVENT_CLASS_CATEGORY(category) \
 	virtual int GetCategoryFlags() const override { return category; }

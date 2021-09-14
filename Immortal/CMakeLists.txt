@@ -201,8 +201,8 @@ set(RENDER_FILES
     src/Render/OrthographicCameraController.h
     src/Render/Pipeline.cpp
     src/Render/Pipeline.h
-    src/Render/RenderCommand.cpp
-    src/Render/RenderCommand.h
+    src/Render/Render.cpp
+    src/Render/Render.h
     src/Render/RenderContext.cpp
     src/Render/RenderContext.h
     src/Render/Renderer.cpp

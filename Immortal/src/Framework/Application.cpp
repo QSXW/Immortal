@@ -15,7 +15,7 @@ Application *Application::instance{ nullptr };
 Application::Application(const Window::Description &descrition)
 {
     !!instance ? throw Exception("Unable to create Two Application") : instance = this;
-    desc = descrition;
+    desc    = descrition;
     window  = Window::Create(desc);
     context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
     window->SetEventCallback(SLBIND(Application::OnEvent));

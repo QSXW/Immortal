@@ -58,8 +58,8 @@ namespace Immortal
 
         /* Only Update when the viewport was focused. */
         {
-            RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
-            RenderCommand::Clear();
+            Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
+            Render::Clear();
             // Renderer2D::SetColor(mRGBA, mBrightness);
 
             mFramebuffer->ClearAttachment(1, -1);
@@ -74,11 +74,11 @@ namespace Immortal
                     mActiveScene->OnRenderEditor(mEditorCamera);
 
                     mFramebuffer->Map();
-                    RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
-                    RenderCommand::Clear();
+                    Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
+                    Render::Clear();
                     Renderer::Shader<ShaderName::Tonemap>()->Map();
                     glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
-                    RenderCommand::DrawIndexed(mActiveScene->mToneMap);
+                    Render::DrawIndexed(mActiveScene->mToneMap);
                     Renderer::Shader<ShaderName::Tonemap>()->Unmap();
                     mFramebuffer->Unmap();
                     break;
@@ -87,12 +87,12 @@ namespace Immortal
                 {
                     mActiveScene->OnRenderRuntime();
                     mFramebuffer->Map();
-                    RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
-                    RenderCommand::Clear();
+                    Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
+                    Render::Clear();
                     Renderer::Shader<ShaderName::Tonemap>()->Map();
                     glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
                     mActiveScene->mToneMap->Map();
-                    RenderCommand::DrawIndexed(mActiveScene->mToneMap);
+                    Render::DrawIndexed(mActiveScene->mToneMap);
                     Renderer::Shader<ShaderName::Tonemap>()->Unmap();
                     mFramebuffer->Unmap();
                     break;

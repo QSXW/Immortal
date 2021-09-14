@@ -7,6 +7,7 @@ message(编译环境：${CMAKE_CXX_COMPILER_ID})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(assimp_lib libassimp)
+    set(opencv_lib libopencv_core453)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(assimp_lib assimp-vc142-mt)
     set(opencv_lib opencv_world452)
@@ -45,7 +46,9 @@ target_compile_definitions(glm INTERFACE
     GLM_ENABLE_EXPERIMENTAL
 )
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_definitions(glm INTERFACE GLM_FORCE_CXX14)
+    message("Detect using a non MSVC Compiler => using --std=c++14 for glm")
+    # target_compile_options(glm INTERFACE -std=c++17)
+    target_compile_definitions(glm INTERFACE GLM_FORCE_CXX17)
 endif()
 
 # spdlog
@@ -128,7 +131,7 @@ target_include_directories(imgui PUBLIC ${IMGUI_DIR})
 set_property(TARGET imgui PROPERTY FOLDER "3rdparty")
 
 # opencv
-MESSAGE(使用的opencv库名称: ${opencv_lib})
+MESSAGE(使用的 opencv 库名称: ${opencv_lib})
 add_library(opencv INTERFACE)
 set(OEPNCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencv)
 set(OEPNCV_LIB_DIR ${OEPNCV_DIR}/bin/${CMAKE_BUILD_TYPE})
@@ -142,7 +145,7 @@ set(OPENCV_SHARED ${OEPNCV_LIB_DIR}/${opencv_lib}.dll PARENT_SCOPE)
 # mono
 add_library(mono INTERFACE)
 set(mono_lib mono-2.0-sgen)
-MESSAGE(使用的opencv库名称: ${mono_lib})
+MESSAGE(使用的 mono 库名称: ${mono_lib})
 set(MONO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mono)
 set(MONO_LIB_DIR ${MONO_DIR}/bin/${CMAKE_BUILD_TYPE})
 target_include_directories(mono INTERFACE ${MONO_DIR}/include)

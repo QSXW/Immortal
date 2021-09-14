@@ -23,8 +23,8 @@ void OpenGLSample2D::OnUpdate()
 {
 	mCameraController.OnUpdate(Immortal::Application::App()->DeltaTime());
 
-	Immortal::RenderCommand::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
-	Immortal::RenderCommand::Clear();
+	Immortal::Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
+	Immortal::Render::Clear();
 
 	Immortal::Renderer2D::BeginScene(mCameraController.Camera());
 
