@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef __IMMORTAL_VECTOR_H__
-#define __IMMORTAL_VECTOR_H__
-
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -152,8 +149,10 @@ namespace Detail = glm::detail;
 bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotation, Vector3& scale);
 }
 
-using Vector2 = Vector::Vector2;
-using Vector3 = Vector::Vector3;
-using Vector4 = Vector::Vector4;
+using Vector2    = Vector::Vector2;
+using Vector3    = Vector::Vector3;
+using Vector4    = Vector::Vector4;
+using Matrix4    = Vector::Matrix4;
+using Color      = Vector::Color;
+using Quaternion = Vector::Quaternion;
 }
-#endif /* __IMMORTAL_VECTOR_H__ */

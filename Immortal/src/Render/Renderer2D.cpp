@@ -1,7 +1,7 @@
 #include "impch.h"
 #include "Renderer2D.h"
 
-#include "Renderer.h"
+#include "Render.h"
 #include <array>
 
 namespace Immortal
@@ -34,8 +34,8 @@ struct CircleVertex
 struct Renderer2DData
 {
     static const uint32_t MaxQuads = 20000;
-    static const uint32_t MaxVertices = MaxQuads * 4; /* A quad need 4 vertices */
-    static const uint32_t MaxIndices = MaxQuads * 6; /* A quad need 6 indices */
+    static const uint32_t MaxVertices = MaxQuads * 4;
+    static const uint32_t MaxIndices = MaxQuads * 6;
     static const uint32_t MaxTextureSlots = 32;
 
     Ref<VertexArray> QuadVertexArray;
@@ -57,7 +57,7 @@ struct Renderer2DData
 
 static Renderer2DData sData;
 
-void Renderer2D::Init()
+void Renderer2D::INIT()
 {
     sData.QuadVertexArray = Immortal::VertexArray::Create();
 
@@ -105,7 +105,7 @@ void Renderer2D::Init()
         samplers[i] = i;
     }
 
-    sData.TextureShader = Renderer::Shader<ShaderName::Texture>();
+    sData.TextureShader = Render::Get<Shader, ShaderName::Texture>();
     sData.TextureShader->Map();
     sData.TextureShader->SetUniform("u_Textures", samplers, sData.MaxTextureSlots);
 

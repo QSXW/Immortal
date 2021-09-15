@@ -4,8 +4,7 @@
 #include "Event/ApplicationEvent.h"
 #include "Event/MouseEvent.h"
 #include "Event/KeyEvent.h"
-
-#include "Render/RendererAPI.h"
+#include "Render/Render.h"
 
 namespace Immortal
 {
@@ -67,7 +66,7 @@ void GLFWWindow::Init(const Description &description)
         SLASSERT(glfwInit() && "Could not initialize GLFW!");
     }
 
-    if (RendererAPI::API == RendererAPI::Type::VulKan)
+    if (Render::API == Render::Type::Vulkan)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
@@ -198,12 +197,6 @@ void GLFWWindow::SetVSync(bool enabled)
 bool GLFWWindow::IsVSync() const
 {
     return desc.Vsync;
-}
-
-void GLFWWindow::Clear()
-{
-    glClearColor(0.1098f, 0.1098f, 0.1098f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 float GLFWWindow::Time()

@@ -12,9 +12,10 @@ namespace Immortal
 {
 namespace Vulkan
 {
-class RenderContext : public Immortal::RenderContext
+class RenderContext : public SuperRenderContext
 {
 public:
+    using Super = SuperRenderContext;
     using Description           = ::Immortal::RenderContext::Description;
     using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
     using PresentModePriorities = std::vector<VkPresentModeKHR>;

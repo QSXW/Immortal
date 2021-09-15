@@ -21,9 +21,9 @@ public:
 public:
     RenderContext() { }
 
-    virtual void Init() { };
+    virtual void Init() { }
 
-    virtual void SwapBuffers() { };
+    virtual void SwapBuffers() { }
 
     virtual Device *GetDevice() { return nullptr; }
 
@@ -55,5 +55,7 @@ protected:
     std::string driverVersion{};
     std::string vendor{};
 };
+
+using SuperRenderContext = RenderContext;
 
 }

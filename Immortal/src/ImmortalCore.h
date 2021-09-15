@@ -31,6 +31,9 @@
     #error Only support Windows!
 #endif
 
+#include "Framework/Vector.h"
+#include "Framework/Log.h"
+
 namespace Immortal
 {
 using namespace sl;
@@ -92,8 +95,5 @@ message(what) { }
 #endif
 };
 }
-
-#include "Framework/Vector.h"
-#include "Framework/Log.h"
 
 #endif

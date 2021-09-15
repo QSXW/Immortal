@@ -158,8 +158,8 @@ set(OPENGL_FILES
     src/Platform/OpenGL/GuiLayer.h
     src/Platform/OpenGL/OpenGLRenderContext.cpp
     src/Platform/OpenGL/OpenGLRenderContext.h
-    src/Platform/OpenGL/OpenGLRenderer.cpp
-    src/Platform/OpenGL/OpenGLRenderer.h
+    src/Platform/OpenGL/Renderer.cpp
+    src/Platform/OpenGL/Renderer.h
     src/Platform/OpenGL/OpenGLShader.cpp
     src/Platform/OpenGL/OpenGLShader.h
     src/Platform/OpenGL/OpenGLTexture.cpp

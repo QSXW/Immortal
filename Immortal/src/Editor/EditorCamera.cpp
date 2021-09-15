@@ -83,10 +83,10 @@ namespace Immortal {
 	void EditorCamera::UpdateView()
 	{
 		mPosition = CalculatePosition();
-		Vector::Quaternion orientation = Orientation();
+		Quaternion orientation = Orientation();
 		mRotation = Vector::EulerAngles(orientation) * (180.0f / Vector::PI);
-		mView = Vector::Translate(mPosition) * Vector::ToMatrix4(orientation);
-		mView = Vector::Inverse(mView);
+		view = Vector::Translate(mPosition) * Vector::ToMatrix4(orientation);
+		view = Vector::Inverse(view);
 	}
 
 	bool EditorCamera::OnMouseScroll(MouseScrolledEvent & e)
@@ -135,10 +135,10 @@ namespace Immortal {
 	/* Max speed = 2.4f, this function build on magic. */
 	Vector::Vector2 EditorCamera::PanSpeed() const
 	{
-		float x = std::min(mViewportSize.x / 1000.0f, 2.4f);
+		float x = std::min(viewportSize.x / 1000.0f, 2.4f);
 		float xFactor = SolveSpeedFactorFromQuadraticFormula(x);
 
-		float y = std::min(mViewportSize.y / 1000.0f, 2.4f);
+		float y = std::min(viewportSize.y / 1000.0f, 2.4f);
 		float yFactor = SolveSpeedFactorFromQuadraticFormula(y);
 
 		return { xFactor, yFactor };
@@ -160,7 +160,7 @@ namespace Immortal {
 
 	void EditorCamera::SetViewportSize(const Vector::Vector2 &size)
 	{
-		mViewportSize = size;
-		SetProjection(Vector::PerspectiveFOV(FOV, mViewportSize.x, mViewportSize.y, (float)0.1, 1000));
+		viewportSize = size;
+		SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
 	}
 }

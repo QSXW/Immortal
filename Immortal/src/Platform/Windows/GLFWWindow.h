@@ -2,9 +2,10 @@
 
 #include "Framework/Window.h"
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
 #include "Render/RenderContext.h"
@@ -49,13 +50,12 @@ public:
         return glfwGetWin32Window(window);
     }
 
-    inline void Clear() override;
-
     float Time() override;
 
     virtual void ProcessEvents() override;
 
     virtual float DpiFactor() const override;
+
     virtual void SetTitle(const std::string &title) override;
 
 private:

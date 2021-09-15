@@ -5,7 +5,7 @@
 #include "Event/ApplicationEvent.h"
 #include "Log.h"
 
-#include "Render/Renderer.h"
+#include "Render/Render.h"
 #include "Input.h"
 
 namespace Immortal
@@ -18,12 +18,14 @@ Application::Application(const Window::Description &descrition)
     desc    = descrition;
     window  = Window::Create(desc);
     context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
+    Render::INIT(context.get());
     window->SetEventCallback(SLBIND(Application::OnEvent));
+    
     // window->SetVSync(false);
     // Renderer::Init();
     // guiLayer = GuiLayer::Create();
     // PushOverlay(mGuiLayer);
-    // mTimer.Start();
+    timer.Start();
 }
 
 Application::~Application()
@@ -107,7 +109,7 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     else
     {
         minimized = false;
-        Renderer::OnWindowResize(e.Width(), e.Height());
+        Render::OnWindowResize(e.Width(), e.Height());
     }
 
     return minimized;

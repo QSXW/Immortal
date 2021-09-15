@@ -3,55 +3,115 @@
 #include "ImmortalCore.h"
 #include "Render/Camera.h"
 
-namespace Immortal {
+namespace Immortal
+{
+class SceneCamera : public Camera
+{
+public:
+    SceneCamera();
 
-	class SceneCamera : public Camera
-	{
-	public:
-		SceneCamera();
-		virtual ~SceneCamera();
+    virtual ~SceneCamera();
 
-		void SetPerspective(float verticalFOV, float nearClip = 0.1f, float farClip = 10000.0f);
-		void SetOrthographic(float size, float nearClip = -1.0f, float farClip = 1.0f);
+    void SetPerspective(float verticalFOV, float nearClip = 0.1f, float farClip = 10000.0f);
 
-		void SetViewportSize(float width, float height);
-		void SetViewportSize(const Vector::Vector2 &size);
+    void SetOrthographic(float size, float nearClip = -1.0f, float farClip = 1.0f);
 
-		void SetPerspectiveVerticalFOV(float verticalFov) { mPerspectiveFOV = Vector::Radians(verticalFov); }
-		float PerspectiveVerticalFOV() const { return Vector::Degrees(mPerspectiveFOV); }
-		void SetPerspectiveNearClip(float nearClip) { mPerspectiveNear = nearClip; }
-		float &PerspectiveNearClip() { return mPerspectiveNear; }
-		void SetPerspectiveFarClip(float farClip) { mPerspectiveFar = farClip; }
-		float &PerspectiveFarClip() { return mPerspectiveFar; }
+    void SetViewportSize(float width, float height);
 
-		void SetOrthographicSize(float size) { mOrthographicSize = size; }
-		float OrthographicSize() const { return mOrthographicSize; }
-		float &OrthographicSize() { return mOrthographicSize; }
-		void SetOrthographicNearClip(float nearClip) { mOrthographicNear = nearClip; }
-		float &OrthographicNearClip() { return mOrthographicNear; }
-		void SetOrthographicFarClip(float farClip) { mOrthographicFar = farClip; }
-		float &OrthographicFarClip() { return mOrthographicFar; }
+    void SetViewportSize(const Vector::Vector2 &size)
+    {
+        SetViewportSize(size.x, size.y);
+    }
 
-		void SetProjectionType(ProjectionType type) { mType = type; }
-		ProjectionType Type() const { return mType; }
+    void SetPerspectiveVerticalFOV(float verticalFov)
+    { 
+        perspectiveFOV = Vector::Radians(verticalFov);
+    }
 
-		void SetTransform(const Vector::Matrix4 &transform)
-		{
-			mView = Vector::Inverse(transform);
-		}
+    float PerspectiveVerticalFOV() const
+    {
+        return Vector::Degrees(perspectiveFOV);
+    }
 
-	protected:
-		ProjectionType mType = ProjectionType::Perspective;
+    void SetPerspectiveNearClip(float nearClip)
+    {
+        perspectiveNear = nearClip;
+    }
 
-		float mPerspectiveFOV{ Vector::Radians(90.0f) };
-		float mPerspectiveNear{ 0.1f };
-		float mPerspectiveFar{ 1000.0f };
+    float &PerspectiveNearClip()
+    {
+        return perspectiveNear;
+    }
 
-		float mOrthographicSize{ 10.0f };
-		float mOrthographicNear{ -1.0f };
-		float mOrthographicFar{ 1.0f };
+    void SetPerspectiveFarClip(float farClip)
+    {
+        perspectiveFar = farClip;
+    }
 
-	};
+    float &PerspectiveFarClip()
+    {
+        return perspectiveFar;
+    }
 
+    void SetOrthographicSize(float size)
+    {
+        orthographicSize = size;
+    }
+
+    float OrthographicSize() const
+    { 
+        return orthographicSize;
+    }
+
+    float &OrthographicSize()
+    { 
+        return orthographicSize;
+    }
+
+    void SetOrthographicNearClip(float nearClip)
+    { 
+        orthographicNear = nearClip;
+    }
+
+    float &OrthographicNearClip()
+    {
+        return orthographicNear;
+    }
+
+    void SetOrthographicFarClip(float farClip)
+    {
+        orthographicFar = farClip;
+    }
+
+    float &OrthographicFarClip()
+    {
+        return orthographicFar;
+    }
+
+    void SetProjectionType(ProjectionType type)
+    {
+        this->type = type;
+    }
+
+    ProjectionType Type() const
+    { 
+        return type;
+    }
+
+    void SetTransform(const Vector::Matrix4 &transform)
+    {
+        view = Vector::Inverse(transform);
+    }
+
+protected:
+    ProjectionType type = ProjectionType::Perspective;
+
+    float perspectiveFOV{ Vector::Radians(90.0f) };
+    float perspectiveNear{ 0.1f };
+    float perspectiveFar{ 1000.0f };
+              
+    float orthographicSize{ 10.0f };
+    float orthographicNear{ -1.0f };
+    float orthographicFar{ 1.0f };
+};
 }
-

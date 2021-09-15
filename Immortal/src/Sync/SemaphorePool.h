@@ -1,22 +1,24 @@
 #pragma once
 
 #include "Semaphore.h"
-#include "Render/RendererAPI.h"
+#include "Render/Render.h"
 
 namespace Immortal
 {
-	class SemaphorePool
-	{
-	public:
-		SemaphorePool() { }
-		
-		~SemaphorePool() { }
 
-		virtual Semaphore Request() { return nullptr; }
+class SemaphorePool
+{
+public:
+    SemaphorePool() { }
+        
+    ~SemaphorePool() { }
 
-		virtual void Reset() { }
+    virtual Semaphore Request() { return nullptr; }
 
-		template <class ... Args>
-		static inline Ref<SemaphorePool> Create(Args&& ... args);
-	};
+    virtual void Reset() { }
+
+    template <class ... Args>
+    static inline Ref<SemaphorePool> Create(Args&& ... args);
+};
+
 }

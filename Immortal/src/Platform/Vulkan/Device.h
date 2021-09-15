@@ -1,12 +1,12 @@
 #pragma once
+#include "ImmortalCore.h"
 
 #include <map>
+#include <unordered_map>
 
 #include "Framework/Device.h"
 
 #include "Common.h"
-#include "ImmortalCore.h"
-
 #include "Instance.h"
 #include "PhysicalDevice.h"
 #include "Queue.h"
@@ -17,7 +17,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
-class Device : public Immortal::Device
+class Device : public SuperDevice
 {
 public:
     Device() = default;

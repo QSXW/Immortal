@@ -3,8 +3,6 @@
 #include <memory>
 #include <cstdio>
 
-#include "ImmortalCore.h"
-
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
@@ -13,7 +11,7 @@
 namespace Immortal
 {
 
-class IMMORTAL_API LOG
+class LOG
 {
 public:
     static void INIT();
@@ -49,7 +47,7 @@ public:
     }
 
 private:
-    static Ref<spdlog::logger> logger;
+    static std::shared_ptr<spdlog::logger> logger;
 };
 
 }

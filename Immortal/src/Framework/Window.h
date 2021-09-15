@@ -78,7 +78,7 @@ public:
 
     virtual void* PlatformNativeWindow() const = 0;
 
-    virtual void Clear() = 0;
+    virtual void Clear() {}
 
     virtual float Time() = 0;
 

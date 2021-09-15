@@ -10,10 +10,10 @@ namespace Immortal
 namespace Vulkan
 {
 
-class GuiLayer : virtual public Immortal::GuiLayer
+class GuiLayer : virtual public SuperGuiLayer
 {
 public:
-    using Super = Immortal::GuiLayer;
+    using Super = SuperGuiLayer;
 
 public:
     GuiLayer(RenderContext *context, VkRenderPass renderPass);

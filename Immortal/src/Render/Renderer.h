@@ -2,151 +2,32 @@
 
 #include "ImmortalCore.h"
 
-#include "Render.h"
-#include "Shader.h"
-#include "Mesh.h"
-#include "Texture.h"
-#include "OrthographicCamera.h"
-
-#define IMMORTAL_RENDER_API_OPENGL
-#define IMMORTAL_RENDER_API_D3D12
+#include "RenderContext.h"
+#include "VertexArray.h"
 
 namespace Immortal
 {
-struct RendererData
-{
-    Ref<Texture2D> BlackTexture;
-    Ref<Texture2D> TransparentTexture;
-    Ref<Texture2D> WhiteTexture;
-    Ref<ShaderMap> mShaderLibrary;
-    Ref<VertexArray> FullScreenVertexArray;
-};
 
 class IMMORTAL_API Renderer
 {
 public:
-    enum class ShaderName : INT32
-    {
-        Texture,
-        PBR,
-        Skybox,
-        Renderer2D,
-        Tonemap,
-        Test,
-        Last
-    };
+    virtual void INIT() { }
 
-    static std::vector<Ref<Immortal::Shader>> ShaderContainer;
+    virtual void SetViewport(UINT32 x, UINT32 y, UINT32 width, UINT32 height) { }
 
-    template <ShaderName INDEX>
-    static constexpr inline Ref<Immortal::Shader> Shader()
-    {
-        static_assert(INDEX < ShaderName::Last, "Shader Index out of bound.");
-        return ShaderContainer[static_cast<INT32>(INDEX)];
-    }
+    virtual void EnableDepthTest() { }
 
-    static inline Ref<Immortal::Shader> Shader(const ShaderName index)
-    {
-        size_t i = static_cast<size_t>(index);
-        SLASSERT(i < ShaderContainer.size() && "Shader Index out of bound.");
-        return ShaderContainer[i];
-    }
+    virtual void DisableDepthTest() { }
 
-public:
-    static void Init();
-    static void Shutdown();
+    virtual void SetClearColor(const Vector4 &color) { }
 
-    static void OnWindowResize(uint32_t width, uint32_t height);
+    virtual void Clear() { }
 
-    static void BeginScene(OrthographicCamera &camera);
-    static void EndScene();
+    virtual void DrawIndexed(const Ref<VertexArray> &vertexArray, UINT32 indexCount) { }
 
-    static void __forceinline EnableDepthTest()
-    {
-        Render::EnableDepthTest();
-    }
-
-    static void __forceinline DisableDepthTest()
-    {
-        Render::DisableDepthTest();
-    }
-
-    template <class F>
-    static void Submit(F Delegate)
-    {
-
-    }
-
-    static void WaitForPreviousFrame()
-    {
-
-    }
-
-    // Should not be render inmediately. Render before we start rendering
-    static void Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> &vertexArray, const Vector::mat4& transform = Vector::mat4(1.0f));
-
-    static void Submit(const Ref<Immortal::Shader> &shader, const Ref<Mesh> &mesh, const Vector::Matrix4 &transform = Vector::Matrix4(1.0f));
-
-    static RendererAPI::Type API()
-    {
-        return RendererAPI::GetAPI();
-    }
-
-    static Ref<ShaderMap> ShaderLibrary() NOEXCEPT
-    {
-        return Data->mShaderLibrary;
-    }
-
-    static Ref<Texture2D> WhiteTexture() NOEXCEPT
-    { 
-        return Data->WhiteTexture;
-    }
-
-    static Ref<Texture2D> BlackTexture() NOEXCEPT
-    {
-        return Data->BlackTexture;
-    }
-
-    static Ref<Texture2D> TransparentTexture() NOEXCEPT
-    {
-        return Data->TransparentTexture;
-    }
-
-    static Ref<VertexArray> FullScreenVertexArray() NOEXCEPT
-    {
-        return Data->FullScreenVertexArray;
-    }
-
-private:
-    struct SceneData
-    {
-        Vector::mat4 ViewProjectionMatrix;
-    };
-
-    static Scope<SceneData> sSceneData;
-
-    static const std::string ShaderProfiles[];
-    static RendererData *Data;
+    static std::unique_ptr<Renderer> Create(RenderContext *context);
 };
 
-using ShaderName = Renderer::ShaderName;
-
-template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
-inline constexpr Ref<SuperType> InstantiateGrphicsPrimitive(Args&& ... args)
-{
-    switch (Renderer::API())
-    {
-    case RendererAPI::Type::OpenGL:
-        return CreateRef<OPENGL>(std::forward<Args>(args)...);
-    case RendererAPI::Type::VulKan:
-        return CreateRef<VULKAN>(std::forward<Args>(args)...);
-    case RendererAPI::Type::D3D12:
-        return CreateRef<D3D12>(std::forward<Args>(args)...);
-    default:
-        SLASSERT(false && "RendererAPI::None is currently not supported!");
-        return nullptr;
-    }
-}
+using SuperRenderer = Renderer;
 
 }
-

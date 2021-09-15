@@ -6,7 +6,13 @@ namespace Immortal
 namespace Vulkan
 {
 
-void Renderer::Init()
+Renderer::Renderer(RenderContext::Super *c) : 
+    context{ dcast<RenderContext *>(c) }
+{
+
+}
+
+void Renderer::INIT()
 {
 
 }

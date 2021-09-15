@@ -5,25 +5,26 @@
 #include "Framework/Device.h"
 
 struct GLFWwindow;
-namespace Immortal {
+namespace Immortal
+{
 
-	class OpenGLRenderContext : public RenderContext
-	{
-	public:
-		OpenGLRenderContext(RenderContext::Description &desc);
+class OpenGLRenderContext : public SuperRenderContext
+{
+public:
+    OpenGLRenderContext(RenderContext::Description &desc);
 
-		void Init() override;
+    void Init() override;
 
-		void SwapBuffers() override;
+    void SwapBuffers() override;
 
-		Device *GetDevice() override
-		{
-			return nullptr;
-		}
+    Device *GetDevice() override
+    {
+        return nullptr;
+    }
 
-	private:
-		GLFWwindow* handle;
-	};
+private:
+    GLFWwindow* handle;
+};
 
 }
 

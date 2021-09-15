@@ -3,13 +3,14 @@
 
 #include "Platform/OpenGL/OpenGLVertexArray.h"
 
-#include "Renderer.h"
+#include "Render.h"
 
-namespace Immortal {
+namespace Immortal
+{
 
-	Ref<VertexArray> VertexArray::Create()
-	{
-		return InstantiateGrphicsPrimitive<VertexArray, OpenGLVertexArray, OpenGLVertexArray, OpenGLVertexArray>();
-	}
+Ref<VertexArray> VertexArray::Create()
+{
+    return InstantiateGrphicsPrimitive<VertexArray, OpenGLVertexArray, OpenGLVertexArray, OpenGLVertexArray>();
+}
 
 }

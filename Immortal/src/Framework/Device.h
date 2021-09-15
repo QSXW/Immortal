@@ -10,7 +10,9 @@ public:
 
     virtual ~Device() { }
 
-    virtual void *Handle() = 0;
+    virtual void *Handle() { return nullptr; }
 };
+
+using SuperDevice = Device;
 
 }

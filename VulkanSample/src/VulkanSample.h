@@ -4,6 +4,7 @@
 #include "Platform/Vulkan/Common.h"
 #include "Platform/Vulkan/RenderContext.h"
 #include "Platform/Vulkan/GuiLayer.h"
+#include "Render/Render.h"
 
 using namespace Immortal;
 
@@ -278,6 +279,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    RendererAPI::SetAPI(RendererAPI::Type::VulKan);
+    Render::Set(Render::Type::Vulkan);
     return new VulkanSample();
 }

@@ -6,7 +6,7 @@
 
 namespace Immortal
 {
-Ref<spdlog::logger> LOG::logger;
+std::shared_ptr<spdlog::logger> LOG::logger;
 
 void LOG::INIT()
 {

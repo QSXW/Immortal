@@ -4,39 +4,44 @@
 
 namespace Immortal
 {
+
 class Camera
 {
 public:
-    enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+    enum class ProjectionType
+    { 
+        Perspective = 0,
+        Orthographic = 1
+    };
 
 public:
     Camera() = default;
-    Camera(const Vector::Matrix4 &projection)
-        : mProjection(projection)
+    Camera(const Vector::Matrix4 &prj)
+        : projection{ prj }
     {
 
     }
 
     virtual ~Camera() = default;
 
-    const Vector::Matrix4 Projection() const
+    const Matrix4 Projection() const
     { 
-        return mProjection;
+        return projection;
     }
 
-    const Vector::Matrix4 &View() const
+    const Matrix4 &View() const
     { 
-        return mView;
+        return view;
     }
 
-    Vector::Matrix4 ViewProjection() const
+    Matrix4 ViewProjection() const
     { 
-        return mProjection * mView;
+        return projection * view;
     }
 
-    void SetProjection(const Vector::Matrix4 &projection)
+    void SetProjection(const Vector::Matrix4 &prj)
     { 
-        mProjection = projection;
+        projection = prj;
     }
 
     float Exposure() const
@@ -50,8 +55,9 @@ public:
     }
 
 protected:
-    Vector::Matrix4 mView{ 1.0f };
-    Vector::Matrix4 mProjection{ 1.0f };
+    Matrix4 view{ 1.0f };
+    Matrix4 projection{ 1.0f };
     float exposure{ 0.8f };
 };
+
 }

@@ -3,48 +3,46 @@
 
 namespace Immortal
 {
-	SceneCamera::SceneCamera()
-	{
 
-	}
+SceneCamera::SceneCamera()
+{
 
-	SceneCamera::~SceneCamera()
-	{
+}
 
-	}
-	void SceneCamera::SetPerspective(float verticalFOV, float nearClip, float farClip)
-	{
-		mType = ProjectionType::Perspective;
-		mPerspectiveFOV = Vector::Radians(verticalFOV);
-		mPerspectiveFar = nearClip;
-		mPerspectiveFar = farClip;
-	}
+SceneCamera::~SceneCamera()
+{
 
-	void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
-	{
-		mType = ProjectionType::Orthographic;
-		mOrthographicSize = size;
-		mOrthographicNear = nearClip;
-		mOrthographicFar = farClip;
-	}
+}
 
-	void SceneCamera::SetViewportSize(float width, float height)
-	{
-		if (mType == ProjectionType::Perspective)
-		{
-			mProjection = Vector::PerspectiveFOV(mPerspectiveFOV, (float)width, (float)height, mPerspectiveNear, mPerspectiveFar);
-		}
-		else if (mType == ProjectionType::Orthographic)
-		{
-			float aspect = (float)width / (float)height;
-			float w = mOrthographicSize * aspect;
-			float h = mOrthographicSize;
-			mProjection = Vector::Ortho(-w * 0.5f, w * 0.5f, -h * 0.5f, h * 0.5f, mOrthographicNear, mOrthographicFar);
-		}
-	}
+void SceneCamera::SetPerspective(float verticalFOV, float nearClip, float farClip)
+{
+    type = ProjectionType::Perspective;
+    perspectiveFOV = Vector::Radians(verticalFOV);
+    perspectiveFar = nearClip;
+    perspectiveFar = farClip;
+}
 
-	void inline SceneCamera::SetViewportSize(const Vector::Vector2 &size)
-	{
-		this->SetViewportSize(size.x, size.y);
-	}
+void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
+{
+    type = ProjectionType::Orthographic;
+    orthographicSize = size;
+    orthographicNear = nearClip;
+    orthographicFar = farClip;
+}
+
+void SceneCamera::SetViewportSize(float width, float height)
+{
+    if (type == ProjectionType::Perspective)
+    {
+        projection = Vector::PerspectiveFOV(perspectiveFOV, (float)width, (float)height, perspectiveNear, perspectiveFar);
+    }
+    else if (type == ProjectionType::Orthographic)
+    {
+        float aspect = (float)width / (float)height;
+        float w = orthographicSize * aspect;
+        float h = orthographicSize;
+        projection = Vector::Ortho(-w * 0.5f, w * 0.5f, -h * 0.5f, h * 0.5f, orthographicNear, orthographicFar);
+    }
+}
+
 }

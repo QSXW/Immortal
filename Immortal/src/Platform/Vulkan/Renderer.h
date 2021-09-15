@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/RendererAPI.h"
+#include "Render/Renderer.h"
 
 #include "Common.h"
 #include "RenderContext.h"
@@ -10,13 +10,19 @@ namespace Immortal
 namespace Vulkan
 {
 
-class Renderer : public RendererAPI
+class Renderer : public SuperRenderer
 {
 public:
-    virtual void Init() override;
+    using Super = SuperRenderer;
 
 public:
-    RenderContext *renderContext{ nullptr };
+    Renderer(RenderContext::Super *context);
+
+    virtual void INIT() override;
+
+public:
+    RenderContext *context{ nullptr };
 };
+
 }
 }

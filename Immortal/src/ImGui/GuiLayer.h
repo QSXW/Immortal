@@ -46,4 +46,6 @@ private:
     bool blockEvents = true;
     float time = 0.0f;
 };
+
+using SuperGuiLayer = GuiLayer;
 }
