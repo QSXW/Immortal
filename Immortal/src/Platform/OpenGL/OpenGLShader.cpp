@@ -179,43 +179,43 @@ void OpenGLShader::Unmap() const
     glUseProgram(0);
 }
 
-void OpenGLShader::SetUniform(const std::string &name, int value)
+void OpenGLShader::Set(const std::string &name, int value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1i(location, value);
 }
 
-void OpenGLShader::SetUniform(const std::string & name, int * values, uint32_t count)
+void OpenGLShader::Set(const std::string & name, int * values, uint32_t count)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1iv(location, count, values);
 }
 
-void OpenGLShader::SetUniform(const std::string & name, float value)
+void OpenGLShader::Set(const std::string & name, float value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1f(location, value);
 }
 
-void OpenGLShader::SetUniform(const std::string & name, const Vector::Vector2 & value)
+void OpenGLShader::Set(const std::string & name, const Vector::Vector2 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform2f(location, value.x, value.y);
 }
 
-void OpenGLShader::SetUniform(const std::string & name, const Vector::Vector3 & value)
+void OpenGLShader::Set(const std::string & name, const Vector::Vector3 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform3f(location, value.x, value.y, value.z);
 }
 
-void OpenGLShader::SetUniform(const std::string & name, const Vector::Vector4 & value)
+void OpenGLShader::Set(const std::string & name, const Vector::Vector4 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
-void OpenGLShader::SetUniform(const std::string &name, const Vector::mat4 & matrix)
+void OpenGLShader::Set(const std::string &name, const Vector::mat4 & matrix)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, &(matrix[0].x));

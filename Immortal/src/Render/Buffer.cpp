@@ -9,21 +9,21 @@ namespace Immortal
 {
 Ref<VertexBuffer> VertexBuffer::Create(const void * vertices, UINT32 size)
 {
-	return InstantiateGrphicsPrimitive<VertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer>(vertices, size);
+	return CreateSuper<VertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer>(vertices, size);
 }
 
 Ref<VertexBuffer> VertexBuffer::Create(UINT32 size)
 {
-	return InstantiateGrphicsPrimitive<VertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer>(size);
+	return CreateSuper<VertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer, OpenGLVertexBuffer>(size);
 }
 
 Ref<IndexBuffer> IndexBuffer::Create(const void * indices, UINT32 count)
 {
-	return InstantiateGrphicsPrimitive<IndexBuffer, OpenGLIndexBuffer, OpenGLIndexBuffer, OpenGLIndexBuffer>(indices, count);
+	return CreateSuper<IndexBuffer, OpenGLIndexBuffer, OpenGLIndexBuffer, OpenGLIndexBuffer>(indices, count);
 }
 
 Ref<UniformBuffer> UniformBuffer::Create(size_t size, int binding)
 {
-	return InstantiateGrphicsPrimitive<UniformBuffer, OpenGLUniformBuffer, OpenGLUniformBuffer, OpenGLUniformBuffer>(size, binding);
+	return CreateSuper<UniformBuffer, OpenGLUniformBuffer, OpenGLUniformBuffer, OpenGLUniformBuffer>(size, binding);
 }
 }

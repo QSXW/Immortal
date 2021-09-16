@@ -4,6 +4,8 @@
 #include "Render.h"
 #include "Platform/OpenGL/OpenGLRenderContext.h"
 #include "Platform/Vulkan/RenderContext.h"
+#include "Platform/OpenGL/OpenGLShader.h"
+#include "Platform/Vulkan/Shader.h"
 
 namespace Immortal
 {
@@ -22,6 +24,24 @@ Unique<RenderContext> RenderContext::Create(Description &desc)
         LOG::ERR("Not support api");
         return nullptr;
     }
+}
+
+Ref<Shader> RenderContext::CreateShader(const std::string &filename)
+{
+    if (Render::API == Render::Type::OpenGL)
+    {
+        return std::make_shared<OpenGLShader>(filename);
+    }
+    if (Render::API == Render::Type::Vulkan)
+    {
+        auto context = dcast<Vulkan::RenderContext*>(this);
+        return std::make_shared<Vulkan::Shader>(&(context->Get<Vulkan::Device>()), filename);
+    }
+    if (Render::API == Render::Type::D3D12)
+    {
+        return nullptr;
+    }
+    return nullptr;
 }
 
 }

@@ -147,7 +147,9 @@ set(VULKAN_FILES
    src/Platform/Vulkan/Swapchain.cpp
    src/Platform/Vulkan/Swapchain.h
    src/Platform/Vulkan/Sampler.cpp
-   src/Platform/Vulkan/Sampler.h)
+   src/Platform/Vulkan/Sampler.h
+   src/Platform/Vulkan/Shader.cpp
+   src/Platform/Vulkan/Shader.h)
 
 set(OPENGL_FILES
     src/Platform/OpenGL/OpenGLBuffer.cpp
@@ -216,7 +218,9 @@ set(RENDER_FILES
     src/Render/Texture.cpp
     src/Render/Texture.h
     src/Render/VertexArray.cpp
-    src/Render/VertexArray.h)
+    src/Render/VertexArray.h
+    src/Render/GLSLCompiler.cpp
+    src/Render/GLSLCompiler.h)
 
 set(SCENE_FILES
     src/Scene/Component.cpp

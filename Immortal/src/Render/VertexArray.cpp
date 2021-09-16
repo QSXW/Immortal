@@ -10,7 +10,7 @@ namespace Immortal
 
 Ref<VertexArray> VertexArray::Create()
 {
-    return InstantiateGrphicsPrimitive<VertexArray, OpenGLVertexArray, OpenGLVertexArray, OpenGLVertexArray>();
+    return CreateSuper<VertexArray, OpenGLVertexArray, OpenGLVertexArray, OpenGLVertexArray>();
 }
 
 }

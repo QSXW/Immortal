@@ -33,7 +33,7 @@ std::unique_ptr<Renderer> Renderer::Create(RenderContext *context)
     }
     if (Render::API == Render::Type::D3D12)
     {
-        
+        return nullptr;
     }
 }
 }

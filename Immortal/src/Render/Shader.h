@@ -8,6 +8,28 @@ namespace Immortal
 class IMMORTAL_API Shader
 {
 public:
+    enum class API
+    {
+        OpenGL,
+        Vulkan
+    };
+
+    enum class Stage
+    {
+        Vertex,
+        TesselationControl,
+        TesselationEvaluation,
+        Geometry,
+        Fragment,
+        Compute,
+        RayGen,
+        AnyHit,
+        ClosestHit,
+        Miss,
+        Intersection,
+        Callable
+    };
+
     enum class DataType
     {
         None = 0,
@@ -35,26 +57,28 @@ public:
 public:
     virtual ~Shader() = default;
 
-    virtual void Map() const = 0;
-    virtual void Unmap() const = 0;
-        
-    virtual const std::string &Name() const = 0;
-    virtual const uint32_t RendererID() const = 0;
+    virtual void Map() const { }
+    virtual void Unmap() const { }
 
-    virtual void SetUniform(const std::string& name, int value) = 0;
-    virtual void SetUniform(const std::string& name, int* values, uint32_t count) = 0;
-    virtual void SetUniform(const std::string& name, float value) = 0;
-    virtual void SetUniform(const std::string& name, const Vector::Vector2& value) = 0;
-    virtual void SetUniform(const std::string& name, const Vector::Vector3& value) = 0;
-    virtual void SetUniform(const std::string& name, const Vector::Vector4& value) = 0;
-    virtual void SetUniform(const std::string& name, const Vector::mat4& value) = 0;
+    virtual const std::string &Name() const { return "Un-Specified";  }
+    virtual const uint32_t RendererID() const { return -1;  }
 
-    virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ) = 0;
+    virtual void Set(const std::string& name, int value) { }
+    virtual void Set(const std::string& name, int* values, uint32_t count) { }
+    virtual void Set(const std::string& name, float value) { }
+    virtual void Set(const std::string& name, const Vector2 &value) { }
+    virtual void Set(const std::string& name, const Vector3 &value) { }
+    virtual void Set(const std::string& name, const Vector4 &value) { }
+    virtual void Set(const std::string& name, const Matrix4 &value) { }
 
-    static Ref<Shader> Create(const std::string &filepath);
-    static Ref<Shader> Create(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
+    virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ) { }
 
+    static Ref<Shader> Shader::Create(const std::string &filepath);
+
+    static Ref<Shader> Shader::Create(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
 };
+
+using SuperShader = Shader;
 
 using ShaderDataType = Shader::DataType;
 
@@ -76,7 +100,7 @@ public:
     bool Exists(const std::string &name) const;
 
 private:
-    std::unordered_map<std::string, Ref<Shader> > mShaders;
+    std::unordered_map<std::string, Ref<Shader> > shaders;
 };
 
 }

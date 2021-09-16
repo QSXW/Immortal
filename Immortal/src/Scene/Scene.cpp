@@ -180,9 +180,9 @@ void Scene::OnRenderRuntime()
                 auto &shader = Render::Get<Shader, ShaderName::PBR>();
                 shader->Map();
 
-                shader->SetUniform("uMaterial.AlbedoColor", material.AlbedoColor);
-                shader->SetUniform("uMaterial.Metalness", material.Metalness);
-                shader->SetUniform("uMaterial.Roughness", material.Roughness);
+                shader->Set("uMaterial.AlbedoColor", material.AlbedoColor);
+                shader->Set("uMaterial.Metalness", material.Metalness);
+                shader->Set("uMaterial.Roughness", material.Roughness);
 
                 material.AlbedoMap->Map(0);
                 material.NormalMap->Map(1);
@@ -263,9 +263,9 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
             auto &shader = Render::Get<Shader, ShaderName::PBR>();
             shader->Map();
 
-            shader->SetUniform("uMaterial.AlbedoColor", material.AlbedoColor);
-            shader->SetUniform("uMaterial.Metalness", material.Metalness);
-            shader->SetUniform("uMaterial.Roughness", material.Roughness);
+            shader->Set("uMaterial.AlbedoColor", material.AlbedoColor);
+            shader->Set("uMaterial.Metalness", material.Metalness);
+            shader->Set("uMaterial.Roughness", material.Roughness);
 
             material.AlbedoMap->Map(0);
             material.NormalMap->Map(1);

@@ -115,7 +115,7 @@ public:
         scene.viewProjectionMatrix = camera.ViewPorjectionMatrix();
     }
 
-    static void Render::EndScene()
+    static void Render::End()
     {
         
     }
@@ -147,7 +147,7 @@ public:
 using ShaderName = Render::ShaderName;
 
 template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
-inline constexpr Ref<SuperType> InstantiateGrphicsPrimitive(Args&& ... args)
+inline constexpr Ref<SuperType> CreateSuper(Args&& ... args)
 {
     switch (Render::API)
     {

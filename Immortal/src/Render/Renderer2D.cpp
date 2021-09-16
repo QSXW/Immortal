@@ -107,7 +107,7 @@ void Renderer2D::INIT()
 
     sData.TextureShader = Render::Get<Shader, ShaderName::Texture>();
     sData.TextureShader->Map();
-    sData.TextureShader->SetUniform("u_Textures", samplers, sData.MaxTextureSlots);
+    sData.TextureShader->Set("u_Textures", samplers, sData.MaxTextureSlots);
 
     // Set first texture slot = 0;
     sData.TextureSlots[0] = sData.WhiteTexture;
@@ -126,7 +126,7 @@ void Renderer2D::Shutdown()
 void Renderer2D::BeginScene(const Camera & camera)
 {
     sData.TextureShader->Map();
-    sData.TextureShader->SetUniform("u_ViewProjection", camera.ViewProjection());
+    sData.TextureShader->Set("u_ViewProjection", camera.ViewProjection());
 
     StartBatch();
 }
@@ -134,7 +134,7 @@ void Renderer2D::BeginScene(const Camera & camera)
 void Renderer2D::BeginScene(const Camera & camera, const Vector::mat4 & transform)
 {
     sData.TextureShader->Map();
-    sData.TextureShader->SetUniform("u_ViewProjection", camera.Projection() * Vector::Inverse(transform));
+    sData.TextureShader->Set("u_ViewProjection", camera.Projection() * Vector::Inverse(transform));
 
     StartBatch();
 }
@@ -142,7 +142,7 @@ void Renderer2D::BeginScene(const Camera & camera, const Vector::mat4 & transfor
 void Renderer2D::BeginScene(const OrthographicCamera camera)
 {
     sData.TextureShader->Map();
-    sData.TextureShader->SetUniform("u_ViewProjection", camera.ViewPorjectionMatrix());
+    sData.TextureShader->Set("u_ViewProjection", camera.ViewPorjectionMatrix());
 
     StartBatch();
 }
@@ -179,9 +179,9 @@ void Renderer2D::Flush()
 
 void Renderer2D::SetColor(const Vector::Vector4 &color, const float brightness, const Vector::Vector3 HSV)
 {
-    sData.TextureShader->SetUniform("u_RGBA", color);
-    sData.TextureShader->SetUniform("u_Luminance", brightness);
-    sData.TextureShader->SetUniform("u_HSV", HSV);
+    sData.TextureShader->Set("u_RGBA", color);
+    sData.TextureShader->Set("u_Luminance", brightness);
+    sData.TextureShader->Set("u_HSV", HSV);
 }
 
 void Renderer2D::DrawQuad(const Vector::Vector2 & position, const Vector::Vector2 & size, const Vector::Vector4 & color)

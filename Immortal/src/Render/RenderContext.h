@@ -6,6 +6,7 @@
 namespace Immortal
 {
 
+class Shader;
 class IMMORTAL_API RenderContext
 {
 public:
@@ -43,6 +44,8 @@ public:
     {
         return vendor.c_str();
     }
+
+    Ref<Shader> CreateShader(const std::string &filename);
 
 public:
     RenderContext(const RenderContext &) = delete;

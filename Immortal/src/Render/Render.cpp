@@ -14,13 +14,13 @@ Render::Scene Render::scene{};
 RenderData Render::data{};
 
 const std::string Render::ShaderProfiles[] = {
-    { "assets/shaders/Texture.glsl" },
-    { "assets/shaders/PBR.glsl" },
-    { "assets/shaders/skybox.glsl" },
-    { "assets/shaders/Renderer2D.glsl" },
-    { "assets/shaders/Tonemap.glsl"},
-    { "assets/shaders/test.glsl"},
-    { "assets/shaders/mypbr.glsl"}
+    { "assets/shaders/texture" },
+    { "assets/shaders/PBR" },
+    { "assets/shaders/skybox" },
+    { "assets/shaders/Renderer2D" },
+    { "assets/shaders/Tonemap"},
+    { "assets/shaders/test"},
+    { "assets/shaders/mypbr"}
 };
 
 void Render::INIT(RenderContext *context)
@@ -33,7 +33,7 @@ void Render::INIT(RenderContext *context)
 
         for (int i = 0; i < sizeof(ShaderProfiles) / sizeof(ShaderProfiles[0]); i++)
         {
-            ShaderContainer.emplace_back(Shader::Create(ShaderProfiles[i]));
+            ShaderContainer.emplace_back(context->CreateShader(ShaderProfiles[i]));
         }
 
         constexpr UINT32 white        = 0xffffffff;
@@ -71,8 +71,8 @@ void Render::INIT(RenderContext *context)
 void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> &vertexArray, const Matrix4 &transform)
 {
     shader->Map();
-    shader->SetUniform("u_ViewProjection", scene.viewProjectionMatrix);
-    shader->SetUniform("u_Transform", transform);
+    shader->Set("u_ViewProjection", scene.viewProjectionMatrix);
+    shader->Set("u_Transform", transform);
 
     handle->DrawIndexed(vertexArray, 1);
 }
@@ -80,7 +80,7 @@ void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> 
 void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<Mesh> &mesh, const Matrix4 &transform)
 {
     shader->Map();
-    shader->SetUniform("uTransform", transform);
+    shader->Set("uTransform", transform);
     handle->DrawIndexed(mesh->VertexArrayObject(), 1);
     shader->Unmap(); 
 }
