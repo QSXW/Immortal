@@ -152,3 +152,34 @@ target_include_directories(mono INTERFACE ${MONO_DIR}/include)
 target_link_directories(mono INTERFACE ${MONO_LIB_DIR})
 target_link_libraries(mono INTERFACE ${mono_lib})
 set(MONO_SHARED ${MONO_LIB_DIR}/${mono_lib}.dll PARENT_SCOPE)
+
+#glslang
+option(ENABLE_SPVREMAPPER OFF)
+option(ENABLE_GLSLANG_BINARIES ON)
+option(ENABLE_HLSL OFF)
+option(ENABLE_OPT OFF)
+option(BUILD_TESTING OFF)
+option(BUILD_EXTERNAL OFF)
+
+add_subdirectory(glslang)
+
+if (NOT TARGET glslang-default-resource-limits)
+    add_library(glslang-default-resource-limits
+                glslang/StandAlone/ResourceLimits.cpp)
+
+    set_property(TARGET glslang-default-resource-limits PROPERTY FOLDER "3rdparty")
+    
+    target_include_directories(glslang-default-resource-limits
+                                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang/StandAlone)
+endif()
+
+if(NOT MSVC)
+    target_compile_options(glslang PRIVATE "-Wno-logical-op-parentheses" "-Wno-unused-parameter")
+
+    target_compile_options(SPIRV PRIVATE "-Wno-logical-op-parentheses" "-Wno-unused-parameter")
+endif()
+
+set_property(TARGET glslang PROPERTY FOLDER "3rdparty")
+set_property(TARGET OGLCompiler PROPERTY FOLDER "3rdparty")
+set_property(TARGET OSDependent PROPERTY FOLDER "3rdparty")
+set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")

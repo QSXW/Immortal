@@ -5,3 +5,6 @@
 	path = 3rdparty/spdlog
 	url = git@github.com:gabime/spdlog.git
 	branch = v1.x
+[submodule "3rdparty/glslang"]
+	path = 3rdparty/glslang
+	url = https://github.com/KhronosGroup/glslang.git

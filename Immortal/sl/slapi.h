@@ -89,6 +89,4 @@ inline constexpr bool typeof()
     }
     return false;
 }
-
-
 }

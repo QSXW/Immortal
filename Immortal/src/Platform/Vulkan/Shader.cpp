@@ -26,7 +26,7 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 
     if (!GLSLCompiler::Src2Spirv(Shader::API::Vulkan, stage, src, "main", spirv, error))
     {
-        LOG::ERR("Failed to compiler Shader => {0}", error.c_str());
+        LOG::FATAL("Failed to compiler Shader => {0}\n", error.c_str());
         return VK_NULL_HANDLE;
     }
 

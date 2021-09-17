@@ -11,7 +11,8 @@ public:
     enum class API
     {
         OpenGL,
-        Vulkan
+        Vulkan,
+        D3D12
     };
 
     enum class Stage

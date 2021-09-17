@@ -31,4 +31,5 @@ inline constexpr T ccast(O o)
 {
     return const_cast<T>(o);
 }
+
 }

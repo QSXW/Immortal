@@ -321,4 +321,6 @@ target_link_libraries(${PROJECT_NAME}
     vulkan
     spdlog::spdlog
     imgui
-    opencv)
+    opencv
+    glslang
+    glslang-default-resource-limits)
