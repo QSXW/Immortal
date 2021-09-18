@@ -16,12 +16,14 @@ public:
     using Super = SuperShader;
 
 public:
-    Shader(Device *device, const std::string &filename);
+    Shader(Device *device, const std::string &filename, Shader::Type type = Shader::Type::Graphics);
 
     VkShaderModule Load(const std::string &filename, Shader::Stage stage);
 
 private:
     Device *device{ nullptr };
+
+    std::vector <VkShaderModule> modules;
 };
 
 }

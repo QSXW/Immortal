@@ -45,7 +45,7 @@ public:
     }
 
 public:
-    virtual void *Handle() override
+    VkDevice Handle()
     {
         return handle;
     }

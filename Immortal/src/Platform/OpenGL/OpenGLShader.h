@@ -41,6 +41,6 @@ private:
 private:
     uint32_t handle;
     std::string mName;
-    Shader::Type mType = Shader::Type::Fragment;
+    Shader::Type mType = Shader::Type::Graphics;
 };
 }

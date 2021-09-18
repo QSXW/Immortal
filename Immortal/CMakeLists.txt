@@ -323,4 +323,5 @@ target_link_libraries(${PROJECT_NAME}
     imgui
     opencv
     glslang
-    glslang-default-resource-limits)
+    glslang-default-resource-limits
+    SPIRV)

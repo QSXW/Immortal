@@ -49,9 +49,7 @@ public:
 
     enum class Type
     {
-        Vertex,
-        Fragment,
-        Pixel = Fragment,
+        Graphics,
         Compute
     };
 

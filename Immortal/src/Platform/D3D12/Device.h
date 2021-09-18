@@ -16,7 +16,7 @@ public:
 public:
     Device();
 
-    virtual void *Handle() override
+    ID3D12Device *Handle()
     {
         return handle.Get();
     }

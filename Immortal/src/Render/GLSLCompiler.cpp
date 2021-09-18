@@ -24,7 +24,7 @@ static inline EShLanguage SelectLanguage(Shader::Stage stage)
     return EShLangVertex;
 }
 
-bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, const std::vector<UINT8> &src, const char *entryPoint, const std::vector<UINT8> spriv, std::string &error)
+bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, const std::vector<UINT8> &src, const char *entryPoint, std::vector<uint32_t> &spriv, std::string &error)
 {
     auto version = ncast<glslang::EShTargetLanguageVersion>(0);
     glslang::InitializeProcess();
@@ -75,6 +75,20 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, const std::ve
         error += std::string(program.getInfoLog()) + "\n" + std::string(program.getInfoDebugLog());
     }
    
+    
+    glslang::TIntermediate *intermediate = program.getIntermediate(language);
+    if (!intermediate)
+    {
+        error += "Failed to get shared intermediate code.\n";
+        return false;
+    }  
+
+    spv::SpvBuildLogger logger{};
+    glslang::GlslangToSpv(*intermediate, spriv, &logger);
+    error += logger.getAllMessages() + "\n";
+
+    glslang::FinalizeProcess();
+
     return true;
 }
 
