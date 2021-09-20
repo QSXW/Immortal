@@ -5,50 +5,53 @@ namespace Immortal
 {
 namespace Vulkan
 {
-    Framebuffer::Framebuffer(const Framebuffer::Specification &spec)
-    {
 
-    }
+Framebuffer::Framebuffer(const Framebuffer::Description &spec)
+{
 
-    Framebuffer::~Framebuffer()
-    {
+}
 
-    }
+Framebuffer::~Framebuffer()
+{
 
-    void Framebuffer::Map()
-    {
-    }
+}
 
-    void Framebuffer::Unmap()
-    {
-    }
+void Framebuffer::Map()
+{
 
-    void Framebuffer::Resize(UINT32 width, UINT32 height)
-    {
-    }
+}
 
-    void *Framebuffer::ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width, int height)
-    {
-        return nullptr;
-    }
+void Framebuffer::Unmap()
+{
+}
 
-    void Framebuffer::ClearAttachment(UINT32 attachmentIndex, int value)
-    {
-    }
+void Framebuffer::Resize(UINT32 width, UINT32 height)
+{
+}
 
-    UINT32 Framebuffer::ColorAttachmentRendererID(UINT32 index) const
-    {
-        return UINT32();
-    }
+void *Framebuffer::ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width, int height)
+{
+    return nullptr;
+}
 
-    UINT32 Framebuffer::DepthAttachmentRendererID(UINT32 index) const
-    {
-        return UINT32();
-    }
+void Framebuffer::ClearAttachment(UINT32 attachmentIndex, int value)
+{
+}
 
-    const Framebuffer::Super::Specification &Framebuffer::GetSpecification() const
-    {
-        return Framebuffer::Super::Specification();
-    }
+UINT32 Framebuffer::ColorAttachmentRendererID(UINT32 index) const
+{
+    return UINT32();
+}
+
+UINT32 Framebuffer::DepthAttachmentRendererID(UINT32 index) const
+{
+    return UINT32();
+}
+
+const SuperFramebuffer::Description &Framebuffer::Desc() const
+{
+    return Super::Desc();
+}
+
 }
 }

@@ -14,7 +14,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-GuiLayer::GuiLayer()
+GuiLayer::GuiLayer(RenderContext::Super *context)
 {
 
 }

@@ -25,7 +25,7 @@ public:
 
     virtual void DrawIndexed(const Ref<VertexArray> &vertexArray, UINT32 indexCount) { }
 
-    virtual void SubmitFrame() { }
+    virtual void SwapBuffers() { }
 
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 };

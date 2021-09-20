@@ -2,7 +2,7 @@
 #include "RenderContext.h"
 
 #include "Render.h"
-#include "Platform/OpenGL/OpenGLRenderContext.h"
+#include "Platform/OpenGL/RenderContext.h"
 #include "Platform/Vulkan/RenderContext.h"
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "Platform/Vulkan/Shader.h"
@@ -15,7 +15,7 @@ Unique<RenderContext> RenderContext::Create(Description &desc)
     switch (Render::API)
     {
     case Render::Type::OpenGL:
-        return std::make_unique<OpenGLRenderContext>(desc);
+        return std::make_unique<OpenGL::RenderContext>(desc);
 
     case Render::Type::Vulkan:
         return std::make_unique<Vulkan::RenderContext>(desc);

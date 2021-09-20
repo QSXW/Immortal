@@ -13,12 +13,12 @@ public:
         
     ~SemaphorePool() { }
 
-    virtual Semaphore Request() { return nullptr; }
-
     virtual void Reset() { }
 
     template <class ... Args>
     static inline Ref<SemaphorePool> Create(Args&& ... args);
 };
+
+using SuperSemaphorePool = SemaphorePool;
 
 }

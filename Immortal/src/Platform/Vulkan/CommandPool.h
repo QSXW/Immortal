@@ -13,8 +13,6 @@ class CommandPool
 {
 public:
     using QueueFamilyIndex = UINT32;
-    using ThreadIndex      = size_t;
-    using RenderFrame      = void *;
     using Handle           = VkCommandPool;
 
 public:
@@ -61,6 +59,11 @@ public:
         {
             return renderFrame;
         }
+    }
+
+    size_t size()
+    {
+        return primaryCommandBuffers.size();
     }
 
 private:

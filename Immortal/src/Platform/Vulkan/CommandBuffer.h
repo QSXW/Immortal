@@ -52,6 +52,16 @@ public:
         return state == State::Recording;
     }
 
+    size_t Size()
+    {
+        return 1;
+    }
+
+    VkCommandBuffer *Data()
+    {
+        return &handle;
+    }
+
 private:
     CommandPool *commandPool{ nullptr };
 

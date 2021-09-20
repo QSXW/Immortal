@@ -10,14 +10,14 @@ namespace Vulkan
 {
 
 class Device;
-class SemaphorePool : public Immortal::SemaphorePool
+class SemaphorePool : public SuperSemaphorePool
 {
 public:
     SemaphorePool(Device *device);
         
     ~SemaphorePool();
 
-    Semaphore Request() override;
+    VkSemaphore Request();
 
     void Reset() override;
 

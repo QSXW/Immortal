@@ -5,7 +5,8 @@ namespace Immortal
 {
 namespace D3D12
 {
-Framebuffer::Framebuffer(const Framebuffer::Specification &spec)
+
+Framebuffer::Framebuffer(const Framebuffer::Description &descrition)
 {
 
 }
@@ -50,9 +51,10 @@ UINT32 Framebuffer::DepthAttachmentRendererID(UINT32 index) const
     return UINT32();
 }
 
-const Framebuffer::Super::Specification &Framebuffer::GetSpecification() const
+const SuperFramebuffer::Description &Framebuffer::Desc() const
 {
-    return Framebuffer::Super::Specification();
+    return SuperFramebuffer::Description();
 }
+
 }
 }

@@ -1,26 +1,33 @@
 #pragma once
 #include "ImGui/GuiLayer.h"
 
+#include "RenderContext.h"
+
 namespace Immortal
 {
 namespace OpenGL
 {
 
-class GuiLayer : virtual public Immortal::GuiLayer
+class GuiLayer : virtual public SuperGuiLayer
 {
 public:
-    using Super = Immortal::GuiLayer;
+    using Super = SuperGuiLayer;
 
 public:
-    GuiLayer();
+    GuiLayer(RenderContext::Super *context);
+
     ~GuiLayer();
 
     virtual void OnAttach() override;
+
     virtual void OnDetach() override;
+
     virtual void OnEvent(Event &e) override;
+
     virtual void OnGuiRender() override;
 
     virtual void Begin() override;
+
     virtual void End() override;
 };
 }

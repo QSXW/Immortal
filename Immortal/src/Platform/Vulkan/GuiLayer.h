@@ -16,7 +16,7 @@ public:
     using Super = SuperGuiLayer;
 
 public:
-    GuiLayer(RenderContext *context, VkRenderPass renderPass);
+    GuiLayer(RenderContext::Super *context);
 
     ~GuiLayer();
 
@@ -31,11 +31,15 @@ public:
 private:
     RenderContext *context{ nullptr };
 
+    Device *device{ nullptr };
+
     VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
 
     VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
 
     VkRenderPass renderPass{ VK_NULL_HANDLE };
+
+    CommandBuffer *commandBuffer{ nullptr };
 };
 
 }

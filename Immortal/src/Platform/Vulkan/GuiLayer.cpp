@@ -16,10 +16,11 @@ namespace Immortal
 namespace Vulkan
 {
 
-GuiLayer::GuiLayer(RenderContext *context, VkRenderPass renderPass) :
-    context{ context },
-    renderPass{ renderPass }
+GuiLayer::GuiLayer(RenderContext::Super *context) :
+    context{ dcast<RenderContext *>(context) }
 {
+    device     = &this->context->Get<Device>();
+    renderPass =  this->context->Get<RenderPass>().Handle();
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -34,8 +35,6 @@ void GuiLayer::OnAttach()
 
     Application *app = Application::App();
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
-
-    auto &device = context->Get<Device>();
 
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -59,14 +58,14 @@ void GuiLayer::OnAttach()
     createInfo.poolSizeCount = size;
     createInfo.pPoolSizes    = poolSizes;
 
-    Check(vkCreateDescriptorPool(device.Get<VkDevice>(), &createInfo, nullptr, &descriptorPool));
+    Check(vkCreateDescriptorPool(device->Handle(), &createInfo, nullptr, &descriptorPool));
 
     ImGui_ImplVulkan_InitInfo initInfo{};
     auto &queue = context->Get<Queue*>();
 
     initInfo.Instance        = context->Get<VkInstance>();
     initInfo.PhysicalDevice  = context->Get<VkPhysicalDevice>();
-    initInfo.Device          = device.Get<VkDevice>();
+    initInfo.Device          = device->Handle();
     initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
     initInfo.Queue           = queue->Handle();
     initInfo.PipelineCache   = pipelineCache;
@@ -82,8 +81,7 @@ void GuiLayer::OnAttach()
         LOG::INFO("Initialized GUI with success");
     }
 
-    auto &commandPool   = device.Get<CommandPool>();
-    auto commandBuffer = commandPool.RequestBuffer(Level::Primary);
+    commandBuffer = context->Get<CommandBuffer *>();
 
     Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->Handle());
@@ -91,7 +89,7 @@ void GuiLayer::OnAttach()
 
     Check(queue->Submit(VkSubmitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO }, VK_NULL_HANDLE));
 
-    Check(device.Wait());
+    Check(device->Wait());
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -127,6 +125,29 @@ void GuiLayer::End()
     ImGuiIO &io = ImGui::GetIO();
     Application *app = Application::App();
     io.DisplaySize = ImVec2((float)app->Width(), (float)app->Height());
+
+    ImDrawData* primaryDrawData = ImGui::GetDrawData();
+
+    VkClearValue ClearValue;
+    ClearValue.color.float32[0] = 0.18f;
+    ClearValue.color.float32[1] = 0.18f;
+    ClearValue.color.float32[2] = 0.18f;
+    ClearValue.color.float32[3] = 1.00f;
+
+    VkRenderPassBeginInfo info = {};
+    info.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    info.renderPass               = renderPass;
+    info.framebuffer              = VK_NULL_HANDLE;
+    info.renderArea.extent.width  = io.DisplaySize.x;
+    info.renderArea.extent.height = io.DisplaySize.y;
+    info.clearValueCount          = 1;
+    info.pClearValues             = &ClearValue;
+
+    vkCmdBeginRenderPass(commandBuffer->Handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+
+    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle());
+
+    vkCmdEndRenderPass(commandBuffer->Handle());
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {

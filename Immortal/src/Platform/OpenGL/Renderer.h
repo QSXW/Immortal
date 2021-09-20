@@ -3,7 +3,7 @@
 #include "ImmortalCore.h"
 #include "Render/Renderer.h"
 
-#include "Render/RenderContext.h"
+#include "RenderContext.h"
 #include "Render/VertexArray.h"
 #include <glad/glad.h>
 
@@ -33,6 +33,8 @@ public:
     virtual void DisableDepthTest() override;
 
     virtual void DrawIndexed(const Ref<VertexArray> &vertexArray, uint32_t indexCount = 0) override;
+
+    virtual void SwapBuffers() override;
 
 private:
     RenderContext *context{ nullptr };

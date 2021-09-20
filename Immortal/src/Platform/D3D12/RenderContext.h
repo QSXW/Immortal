@@ -8,10 +8,10 @@ namespace Immortal
 {
 namespace D3D12
 {
-class RenderContext : public Immortal::RenderContext
+class RenderContext : public SuperRenderContext
 {
 public:
-    using Super = Immortal::RenderContext;
+    using Super = SuperRenderContext;
 
 public:
     RenderContext(const void *handle);
@@ -21,7 +21,8 @@ public:
     void Initialize();
 
 private:
-    Unique<Device> device;
+    std::unique_ptr<Device> device;
 };
 
-}}
+}
+}

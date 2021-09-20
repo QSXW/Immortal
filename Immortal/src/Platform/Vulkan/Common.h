@@ -10,6 +10,14 @@ namespace Vulkan
 {
 static struct VolkDeviceTable DeviceMap {};
 
+struct Semaphores
+{
+    VkSemaphore acquiredImageReady;
+    VkSemaphore renderComplete;
+};
+
+using ThreadIndex = UINT32;
+
 enum class Level : int
 {
     None      = -1,

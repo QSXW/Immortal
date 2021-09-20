@@ -7,6 +7,7 @@
 #include "Swapchain.h"
 #include "RenderTarget.h"
 #include "RenderFrame.h"
+#include "RenderPass.h"
 
 namespace Immortal
 {
@@ -15,8 +16,8 @@ namespace Vulkan
 class RenderContext : public SuperRenderContext
 {
 public:
-    using Super = SuperRenderContext;
-    using Description           = ::Immortal::RenderContext::Description;
+    using Super                 = SuperRenderContext;
+    using Description           = SuperRenderContext::Description;
     using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
     using PresentModePriorities = std::vector<VkPresentModeKHR>;
     using Frames                = std::vector<Unique<RenderFrame>>;
@@ -24,11 +25,9 @@ public:
 public:
     RenderContext() = default;
 
-    RenderContext(Description &desc);
+    RenderContext(const Description &desc);
 
     ~RenderContext();
-
-    virtual void Init() override;
 
     virtual void SwapBuffers() override;
 
@@ -104,45 +103,65 @@ public:
         {
             return swapchain->Get<VkFormat>();
         }
+        if constexpr (typeof<T, Semaphores>())
+        {
+            return semaphores;
+        }
+        if constexpr (typeof<T, RenderPass>())
+        {
+            return *renderPass;
+        }
+        if constexpr (typeof<T, CommandBuffer*>())
+        {
+            return commandBuffer;
+        }
     }
 
     template <class T>
     inline constexpr void Set(const T &value)
     {
-        if constexpr (std::is_same_v<T, SurfaceFormatPriority>)
+        if constexpr (typeof<T, SurfaceFormatPriority>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             surfaceFormatPriorities = value;
         }
-        if constexpr (std::is_same_v<T, VkFormat>)
+        if constexpr (typeof<T, VkFormat>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
             }
         }
-        if constexpr (std::is_same_v<T, PresentModePriorities>)
+        if constexpr (typeof<T, PresentModePriorities>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             presentModePriorities = value;
         }
-        if constexpr (std::is_same_v<T, VkPresentModeKHR>)
+        if constexpr (typeof<T, VkPresentModeKHR>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().PresentMode = value;
             }
         }
+        if constexpr (typeof<T, CommandBuffer*>())
+        {
+            commandBuffer = value;
+        }
     }
 
 private:
     void *handle;
 
-    Unique<Instance> instance;
+    std::unique_ptr<Instance> instance;
 
-    Unique<Device> device;
+    std::unique_ptr<Device> device;
 
-    Unique<Swapchain> swapchain;
+    std::unique_ptr<RenderPass> renderPass;
+
+    std::unique_ptr<Swapchain> swapchain;
+
+    CommandBuffer *commandBuffer{ nullptr };
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
@@ -151,6 +170,8 @@ private:
     Queue *queue{ nullptr };
 
     Swapchain::Properties swapchainProperties;
+
+    VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
 
     Frames frames;
 
@@ -184,6 +205,12 @@ private:
             VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
         }
     };
+
+    Semaphores semaphores;
+
+    std::unique_ptr<SemaphorePool> semaphorePool;
+
+    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
 public:
     static VkResult Status;

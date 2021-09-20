@@ -182,15 +182,6 @@ void GLFWWindow::OnUpdate()
 
 void GLFWWindow::SetVSync(bool enabled)
 {
-    if (enabled)
-    {
-        glfwSwapInterval(1);
-    }
-    else
-    {
-        glfwSwapInterval(0);
-    }
-
     desc.Vsync = enabled;
 }
 
@@ -201,6 +192,6 @@ bool GLFWWindow::IsVSync() const
 
 float GLFWWindow::Time()
 {
-    return static_cast<float>(glfwGetTime());
+    return ncast<float>(glfwGetTime());
 }
 }

@@ -102,6 +102,11 @@ public:
         surfaceFormatPriorities = surfaceFormatPriorities;
     }
 
+    VkResult AcquireNextImage(UINT32 &imageIndex, VkSemaphore imageAcquiredSemaphore, VkFence fence)
+    {
+        return vkAcquireNextImageKHR(device.Handle(), handle, std::numeric_limits<uint64_t>::max(), imageAcquiredSemaphore, fence, &imageIndex);
+    }
+
 private:
     Device &device;
 

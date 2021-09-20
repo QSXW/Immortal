@@ -10,21 +10,26 @@
 
 #include "Platform/OpenGL/GuiLayer.h"
 #include "Platform/Vulkan/GuiLayer.h"
+#include "Platform/D3D12/GuiLayer.h"
 
 namespace Immortal
 {
-template <class... A>
-GuiLayer *GuiLayer::Create(A &&... args)
+
+GuiLayer *GuiLayer::Create(RenderContext *context)
 {
-    switch (Renderer::API())
+    if (Render::API == Render::Type::OpenGL)
     {
-        case RendererAPI::Type::OpenGL:
-            return dcast<GuiLayer *>(new GuiLayer(std::forward<A>(args)...));
-        case RendererAPI::Type::VulKan:
-            return dcast<GuiLayer *>(new Vulkan::GuiLayer(std::forward<A>(args)...));
-        default:
-            return new GuiLayer();
+        return dcast<GuiLayer*>(new OpenGL::GuiLayer(context));     
     }
+    if (Render::API == Render::Type::Vulkan)
+    {
+        return dcast<GuiLayer *>(new Vulkan::GuiLayer(context));
+    }
+    if (Render::API == Render::Type::D3D12)
+    {
+        return dcast<GuiLayer *>(new D3D12::GuiLayer(context));
+    }
+    return new GuiLayer();
 }
 
 GuiLayer::GuiLayer()

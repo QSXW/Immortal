@@ -17,12 +17,10 @@ public:
     };
 
 public:
-    static Unique<RenderContext> Create(Description &desc);
+    static std::unique_ptr<RenderContext> Create(Description &desc);
 
 public:
     RenderContext() { }
-
-    virtual void Init() { }
 
     virtual void SwapBuffers() { }
 

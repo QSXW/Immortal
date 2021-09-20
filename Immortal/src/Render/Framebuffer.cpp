@@ -3,16 +3,16 @@
 
 #include "Render/Render.h"
 
-#include "Platform/OpenGL/OpenGLFramebuffer.h"
+#include "Platform/OpenGL/Framebuffer.h"
 #include "Platform/Vulkan/Framebuffer.h"
 #include "Platform/D3D12/Framebuffer.h"
 
 namespace Immortal
 {
 
-Ref<Framebuffer> Framebuffer::Create(const Framebuffer::Specification& spec)
+Ref<Framebuffer> Framebuffer::Create(const Framebuffer::Description &desc)
 {
-    return CreateSuper<Framebuffer, OpenGLFramebuffer, Vulkan::Framebuffer, D3D12::Framebuffer>(spec);
+    return CreateSuper<Framebuffer, OpenGL::Framebuffer, Vulkan::Framebuffer, D3D12::Framebuffer>(desc);
 }
 
 }

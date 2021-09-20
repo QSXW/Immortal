@@ -24,7 +24,7 @@ SemaphorePool::~SemaphorePool()
     handles.clear();
 }
 
-Semaphore SemaphorePool::Request()
+VkSemaphore SemaphorePool::Request()
 {
     if (activeCount < handles.size())
     {

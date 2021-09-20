@@ -103,7 +103,9 @@ set(D3D12_FILES
     src/Platform/D3D12/SemaphorePool.cpp
     src/Platform/D3D12/SemaphorePool.h
     src/Platform/D3D12/Swapchain.cpp
-    src/Platform/D3D12/Swapchain.h)
+    src/Platform/D3D12/Swapchain.h
+    src/Platform/D3D12/GuiLayer.cpp
+    src/Platform/D3D12/GuiLayer.h)
 
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
@@ -149,17 +151,19 @@ set(VULKAN_FILES
    src/Platform/Vulkan/Sampler.cpp
    src/Platform/Vulkan/Sampler.h
    src/Platform/Vulkan/Shader.cpp
-   src/Platform/Vulkan/Shader.h)
+   src/Platform/Vulkan/Shader.h
+   src/Platform/Vulkan/RenderPass.cpp
+   src/Platform/Vulkan/RenderPass.h)
 
 set(OPENGL_FILES
     src/Platform/OpenGL/OpenGLBuffer.cpp
     src/Platform/OpenGL/OpenGLBuffer.h
-    src/Platform/OpenGL/OpenGLFramebuffer.cpp
-    src/Platform/OpenGL/OpenGLFramebuffer.h
+    src/Platform/OpenGL/Framebuffer.cpp
+    src/Platform/OpenGL/Framebuffer.h
     src/Platform/OpenGL/GuiLayer.cpp
     src/Platform/OpenGL/GuiLayer.h
-    src/Platform/OpenGL/OpenGLRenderContext.cpp
-    src/Platform/OpenGL/OpenGLRenderContext.h
+    src/Platform/OpenGL/RenderContext.cpp
+    src/Platform/OpenGL/RenderContext.h
     src/Platform/OpenGL/Renderer.cpp
     src/Platform/OpenGL/Renderer.h
     src/Platform/OpenGL/OpenGLShader.cpp

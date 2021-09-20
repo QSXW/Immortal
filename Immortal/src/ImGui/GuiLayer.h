@@ -9,19 +9,24 @@
 
 namespace Immortal
 {
+
+class RenderContext;
 class IMMORTAL_API GuiLayer : public Layer
 {
 public:
-    template <class... A>
-    static GuiLayer *Create(A &&... args);
+    static GuiLayer *Create(RenderContext *context);
 
 public:
     GuiLayer();
+
     ~GuiLayer();
 
     void OnUpdate() { };
+
     virtual void OnAttach() override;
+
     virtual void OnEvent(Event &e) override;
+
     virtual void OnGuiRender() override;
 
     inline virtual void GuiLayer::OnDetach() override

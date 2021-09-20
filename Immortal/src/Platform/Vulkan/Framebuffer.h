@@ -8,33 +8,34 @@ namespace Immortal
 {
 namespace Vulkan
 {
-    class Framebuffer : public Immortal::Framebuffer
-    {
-    public:
-        using Super = Immortal::Framebuffer;
+class Framebuffer : public SuperFramebuffer
+{
+public:
+    using Super = SuperFramebuffer;
 
-    public:
-        Framebuffer(const Super::Specification &spec);
-        ~Framebuffer();
+public:
+    Framebuffer(const Super::Description &spec);
 
-        virtual void Map() override;
+    ~Framebuffer();
 
-        virtual void Unmap() override;
+    virtual void Map() override;
 
-        virtual void Resize(UINT32 width, UINT32 height) override;
+    virtual void Unmap() override;
 
-        virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width, int height) override;
+    virtual void Resize(UINT32 width, UINT32 height) override;
 
-        virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
+    virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width, int height) override;
 
-        virtual UINT32 ColorAttachmentRendererID(UINT32 index) const override;
+    virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
-        virtual UINT32 DepthAttachmentRendererID(UINT32 index) const override;
+    virtual UINT32 ColorAttachmentRendererID(UINT32 index) const override;
 
-        virtual const Super::Specification &GetSpecification() const override;
+    virtual UINT32 DepthAttachmentRendererID(UINT32 index) const override;
 
-    private:
-        VkFramebuffer handle{ VK_NULL_HANDLE };
-    };
+    virtual const Super::Description &Desc() const override;
+
+private:
+    VkFramebuffer handle{ VK_NULL_HANDLE };
+};
 }
 }

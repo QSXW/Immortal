@@ -1,8 +1,10 @@
 #include "impch.h"
 #include "RenderContext.h"
 
-#include "Framework/Application.h"
+#include <array>
 #include <GLFW/glfw3.h>
+
+#include "Framework/Application.h"
 #include "Renderer.h"
 #include "Image.h"
 #include "RenderFrame.h"
@@ -30,7 +32,7 @@ static std::vector<const char *> ValidationLayers = {
     VK_LAYER_LUNARG_SCREENSHOT*/
 };
 
-RenderContext::RenderContext(RenderContext::Description &desc)
+RenderContext::RenderContext(const RenderContext::Description &desc)
     : handle(desc.WindowHandle)
 {
     if (!glfwVulkanSupported())
@@ -39,13 +41,15 @@ RenderContext::RenderContext(RenderContext::Description &desc)
         return;
     }
 
-    instance = MakeUnique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
+    instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
     CreateSurface();
 
     auto &physicalDevice = instance->SuitablePhysicalDevice();
     physicalDevice.HighPriorityGraphicsQueue            = true;
     physicalDevice.RequestedFeatures.samplerAnisotropy  = VK_TRUE;
     physicalDevice.RequestedFeatures.robustBufferAccess = VK_TRUE;
+
+    depthFormat = SuitableDepthFormat(physicalDevice.Handle());
 
     if (physicalDevice.Features.textureCompressionASTC_LDR)
     {
@@ -57,8 +61,11 @@ RenderContext::RenderContext(RenderContext::Description &desc)
         AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
 
-    device = MakeUnique<Device>(physicalDevice, surface, DeviceExtensions);
+    device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
+
+    renderPass = std::make_unique<RenderPass>(device.get(), depthFormat);
+
     {
         surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
         if (surface != VK_NULL_HANDLE)
@@ -67,11 +74,11 @@ RenderContext::RenderContext(RenderContext::Description &desc)
             Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, &surfaceProperties));
             if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
             {
-                swapchain = MakeUnique<Swapchain>(*device, surface, surfaceExtent);
+                swapchain = std::make_unique<Swapchain>(*device, surface, surfaceExtent);
             }
             else
             {
-                swapchain = MakeUnique<Swapchain>(*device, surface);
+                swapchain = std::make_unique<Swapchain>(*device, surface);
             }
         }
 
@@ -87,11 +94,6 @@ RenderContext::~RenderContext()
     LOG::INFO("Application Closed => deconstruct RenderContex.");
     vkDestroySurfaceKHR(instance->Handle(), surface, nullptr);
     instance.release();
-}
-
-void RenderContext::Init()
-{
-
 }
 
 void RenderContext::CreateSurface()
@@ -120,30 +122,21 @@ void RenderContext::Prepare(size_t threadCount)
     {
         Image image{ device.get(), handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
         auto renderTarget = RenderTarget::Create(std::move(image));
-        frames.emplace_back(MakeUnique<RenderFrame>(device.get(), std::move(renderTarget)));
+        frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
     }
 
     this->threadCount = threadCount;
+
+    semaphorePool.reset(new SemaphorePool{ &this->Get<Device>() });
+    semaphores.acquiredImageReady = rcast<VkSemaphore>(semaphorePool->Request());
+    semaphores.renderComplete     = rcast<VkSemaphore>(semaphorePool->Request());
     this->status = true;
 }
 
 void RenderContext::SwapBuffers()
 {
-    uint32_t commandbuffer = 0;
-    VkPresentInfoKHR presentInfo {};
-	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext            = nullptr;
-	presentInfo.swapchainCount   = 1;
-	presentInfo.pSwapchains      = &swapchain->Handle();
-	presentInfo.pImageIndices    = &commandbuffer;
-
-    auto result = device->SuitableGraphicsQueue().Present(presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        LOG::WARN("Swap chain is no longer compatible with the surface and needs to be recreated");
-        return;
-    }
-    Check(result);
+   
 }
+
 }
 }

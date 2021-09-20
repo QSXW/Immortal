@@ -15,16 +15,19 @@ Application *Application::instance{ nullptr };
 Application::Application(const Window::Description &descrition)
 {
     !!instance ? throw Exception("Unable to create Two Application") : instance = this;
-    desc    = descrition;
+
+    desc = descrition;
+
     window  = Window::Create(desc);
+    window->SetEventCallback(SLBIND(Application::OnEvent));
+    window->SetVSync(false);
+
     context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
     Render::INIT(context.get());
-    window->SetEventCallback(SLBIND(Application::OnEvent));
-    
-    // window->SetVSync(false);
-    // Renderer::Init();
-    // guiLayer = GuiLayer::Create();
-    // PushOverlay(mGuiLayer);
+
+    guiLayer = GuiLayer::Create(context.get());
+    PushOverlay(guiLayer);
+
     timer.Start();
 }
 
@@ -59,17 +62,15 @@ void Application::Run()
 
         if (!minimized)
         {
-            // guiLayer->Begin();
+            guiLayer->Begin();
             for (Layer *layer : layerStack)
             {
-                layer->Begin();
                 layer->OnGuiRender();
-                layer->End();
             }
-            // guiLayer->End();
+            guiLayer->End();
         }
         window->OnUpdate();
-        context->SwapBuffers();
+        Render::SwapBuffers();
     }
 }
 
