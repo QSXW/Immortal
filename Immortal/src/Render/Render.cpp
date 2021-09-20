@@ -29,7 +29,7 @@ void Render::INIT(RenderContext *context)
     handle->INIT();
 
     {
-        data.ShaderLibrary = CreateRef<ShaderMap>();
+        /*data.ShaderLibrary = CreateRef<ShaderMap>();
 
         for (int i = 0; i < sizeof(ShaderProfiles) / sizeof(ShaderProfiles[0]); i++)
         {
@@ -63,9 +63,9 @@ void Render::INIT(RenderContext *context)
         auto fullScreenIndexBuffer  = IndexBuffer::Create(fullScreenIndices, sizeof(fullScreenIndices));
         data.FullScreenVertexArray = VertexArray::Create();
         data.FullScreenVertexArray->AddVertexBuffer(fullScreenVertexBuffer);
-        data.FullScreenVertexArray->SetIndexBuffer(fullScreenIndexBuffer);
+        data.FullScreenVertexArray->SetIndexBuffer(fullScreenIndexBuffer);*/
     }
-    Renderer2D::INIT();
+    // Renderer2D::INIT();
 }
 
 void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> &vertexArray, const Matrix4 &transform)

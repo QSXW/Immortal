@@ -69,6 +69,7 @@ void Application::Run()
             // guiLayer->End();
         }
         window->OnUpdate();
+        context->SwapBuffers();
     }
 }
 

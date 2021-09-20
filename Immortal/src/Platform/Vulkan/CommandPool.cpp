@@ -24,7 +24,7 @@ static inline VkResult ResetCommandBuffers(std::vector<Unique<CommandBuffer>> &c
 }
 }
 
-CommandPool::CommandPool(Device *device, UINT32 queueFamilyIndex, void *renderFrame, size_t threadIndex, CommandBuffer::ResetMode resetMode) :
+CommandPool::CommandPool(Device *device, UINT32 queueFamilyIndex, RenderFrame *renderFrame, size_t threadIndex, CommandBuffer::ResetMode resetMode) :
     device{ device },
     renderFrame{ renderFrame },
     threadIndex{ threadIndex },
@@ -98,29 +98,29 @@ CommandPool::~CommandPool()
     IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device->Get<VkDevice>(), handle, nullptr);
 }
 
-CommandBuffer &CommandPool::RequestBuffer(Level level)
+CommandBuffer *CommandPool::RequestBuffer(Level level)
 {
     if (level == Level::Primary)
     {
         if (primaryActiveCount < primaryCommandBuffers.size())
         {
-            return *primaryCommandBuffers[primaryActiveCount++];
+            return primaryCommandBuffers[primaryActiveCount++].get();
         }
         primaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
         primaryActiveCount++;
 
-        return *primaryCommandBuffers.back();
+        return primaryCommandBuffers.back().get();
     }
     else
     {
         if (secondaryActiveCount < secondaryCommandBuffers.size())
         {
-            return *secondaryCommandBuffers[secondaryActiveCount++];
+            return secondaryCommandBuffers[secondaryActiveCount++].get();
         }
         secondaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
         secondaryActiveCount++;
 
-        return *secondaryCommandBuffers.back();
+        return secondaryCommandBuffers.back().get();
     }
 }
 

@@ -6,82 +6,95 @@ namespace Immortal
 {
 namespace Vulkan
 {
-	class Device;
-	class Queue
-	{
-	public:
-		using FamilyIndex = UINT32;
-	public:
-		enum Type : int
-		{
-			Graphics      = VK_QUEUE_GRAPHICS_BIT,
-			Compute       = VK_QUEUE_COMPUTE_BIT,
-			Transfer      = VK_QUEUE_TRANSFER_BIT,
-			SparseBinding = VK_QUEUE_SPARSE_BINDING_BIT,
-			Protected     = VK_QUEUE_PROTECTED_BIT,
+class Device;
+class Queue
+{
+public:
+    using FamilyIndex = UINT32;
+public:
+    enum Type : int
+    {
+        Graphics      = VK_QUEUE_GRAPHICS_BIT,
+        Compute       = VK_QUEUE_COMPUTE_BIT,
+        Transfer      = VK_QUEUE_TRANSFER_BIT,
+        SparseBinding = VK_QUEUE_SPARSE_BINDING_BIT,
+        Protected     = VK_QUEUE_PROTECTED_BIT,
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-			VideoDeCode   = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
-			VideoEncode   = VK_QUEUE_VIDEO_ENCODE_BIT_KHR,
+        VideoDeCode   = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
+        VideoEncode   = VK_QUEUE_VIDEO_ENCODE_BIT_KHR,
 #endif
-			None
-		};
+        None
+    };
 
-	public:
-		Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
+public:
+    Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
 
-		Queue(const Queue &) = default;
+    Queue(const Queue &) = default;
 
-		Queue(Queue &&other);
+    Queue(Queue &&other);
 
-		~Queue();
+    ~Queue();
 
-		VkResult Submit(VkSubmitInfo &submitInfo, VkFence fence)
-		{
-			return vkQueueSubmit(handle, 1, &submitInfo, fence);
-		}
+    VkResult Submit(VkSubmitInfo &submitInfo, VkFence fence)
+    {
+        return vkQueueSubmit(handle, 1, &submitInfo, fence);
+    }
 
-	public:
-		template <class T>
-		T &Get()
-		{
-			if constexpr (std::is_same_v<T, FamilyIndex>)
-			{
-				return familyIndex;
-			}
-		}
+    void Wait()
+    {
+        vkQueueWaitIdle(handle);
+    }
 
-		VkQueue &Handle()
-		{
-			return handle;
-		}
+    template <class T>
+    T &Get()
+    {
+        if constexpr (std::is_same_v<T, FamilyIndex>)
+        {
+            return familyIndex;
+        }
+    }
 
-		VkQueueFamilyProperties &Properties()
-		{
-			return properties;
-		}
+    VkQueue &Handle()
+    {
+        return handle;
+    }
 
-		VkBool32 &IsPresentSupported()
-		{
-			return presented;
-		}
+    VkQueueFamilyProperties &Properties()
+    {
+        return properties;
+    }
 
-	private:
-		Device &device;
+    VkBool32 &IsPresentSupported()
+    {
+        return presented;
+    }
 
-		VkQueue handle{ VK_NULL_HANDLE };
+    VkResult Present(VkPresentInfoKHR &presentInfo)
+    {
+        if (!presented)
+        {
+            return VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
+        }
 
-		UINT32 familyIndex{ 0 };
+        return vkQueuePresentKHR(handle, &presentInfo);
+    }
 
-		UINT32 index{ 0 };
+private:
+    Device &device;
 
-		VkBool32 presented{ VK_FALSE };
+    VkQueue handle{ VK_NULL_HANDLE };
 
-		VkQueueFamilyProperties properties{};
+    UINT32 familyIndex{ 0 };
 
-	private:
-		//Queue &operator=(const Queue &) = delete;
-		Queue &operator=(Queue &&) = delete;
-	};
+    UINT32 index{ 0 };
+
+    VkBool32 presented{ VK_FALSE };
+
+    VkQueueFamilyProperties properties{};
+
+private:
+    //Queue &operator=(const Queue &) = delete;
+    Queue &operator=(Queue &&) = delete;
+};
 }
 }
-

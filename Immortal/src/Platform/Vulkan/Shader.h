@@ -5,6 +5,8 @@
 
 #include "Device.h"
 
+#include <array>
+
 namespace Immortal
 {
 namespace Vulkan
@@ -23,7 +25,9 @@ public:
 private:
     Device *device{ nullptr };
 
-    std::vector <VkShaderModule> modules;
+    std::vector<VkShaderModule> modules;
+
+    std::array<VkPipelineShaderStageCreateInfo, 2> stages;
 };
 
 }

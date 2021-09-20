@@ -129,6 +129,11 @@ public:
 
     static void Submit(const Ref<Shader> &shader, const Ref<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
 
+    static void SubmitFrame()
+    {
+        handle->SubmitFrame();
+    }
+
 private:
     static std::unique_ptr<Renderer> handle;
 

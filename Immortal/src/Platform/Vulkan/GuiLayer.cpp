@@ -83,11 +83,11 @@ void GuiLayer::OnAttach()
     }
 
     auto &commandPool   = device.Get<CommandPool>();
-    auto &commandBuffer = commandPool.RequestBuffer(Level::Primary);
+    auto commandBuffer = commandPool.RequestBuffer(Level::Primary);
 
-    Check(commandBuffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.Handle());
-    Check(commandBuffer.End());
+    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->Handle());
+    Check(commandBuffer->End());
 
     Check(queue->Submit(VkSubmitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO }, VK_NULL_HANDLE));
 
@@ -104,6 +104,7 @@ void GuiLayer::OnDetach()
 
 void GuiLayer::OnEvent(Event &e)
 {
+
 
 }
 

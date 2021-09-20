@@ -20,6 +20,11 @@ public:
 
     virtual void INIT() override;
 
+    virtual void SubmitFrame() override
+    {
+        context->SwapBuffers();
+    }
+
 public:
     RenderContext *context{ nullptr };
 };

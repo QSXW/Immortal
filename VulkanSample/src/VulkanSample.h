@@ -47,17 +47,13 @@ public:
         auto frameSize = ncast<UINT32>(context->Get<Vulkan::RenderContext::Frames>().size());
     
         commandPool.reset(new Vulkan::CommandPool{ device, device->FindQueueByFlags(Vulkan::Queue::Graphics | Vulkan::Queue::Compute, 0).Get<Vulkan::Queue::FamilyIndex>() });
-        drawCommadBuffer.reset(new Vulkan::CommandBuffer{ 
-            commandPool.get(),
-            Vulkan::Level::Primary,
-            frameSize
-        });
+        drawCommadBuffer = commandPool->RequestBuffer(Vulkan::Level::Primary);
 
-        fences.reset(new Vulkan::FencePool{ device });
-        for (UINT32 i = 0; i < frameSize; i++)
-        {
-            fences->Request();
-        }
+        // fences.reset(new Vulkan::FencePool{ device });
+        // for (UINT32 i = 0; i < frameSize; i++)
+        // {
+        //     fences->Request();
+        // }
 
         extent = Vulkan::Extent3D{ context->Get<Vulkan::Extent2D>().width, context->Get<Vulkan::Extent2D>().height, 1 };
 
@@ -258,9 +254,9 @@ private:
 
     std::unique_ptr<Vulkan::CommandPool> commandPool;
     
-    std::unique_ptr<Vulkan::CommandBuffer> drawCommadBuffer;
+    Vulkan::CommandBuffer *drawCommadBuffer;
     
-    std::unique_ptr<Vulkan::FencePool> fences;
+    // std::unique_ptr<Vulkan::FencePool> fences;
     
     struct
     {

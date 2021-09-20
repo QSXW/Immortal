@@ -8,7 +8,7 @@ namespace Immortal
 namespace Vulkan
 {
 class Device;
-
+class RenderFrame;
 class CommandPool
 {
 public:
@@ -22,7 +22,7 @@ public:
 
     CommandPool(Device                  *device,
                 UINT32                   queueFamilyIndex,
-                void                    *renderFrame = nullptr,
+                RenderFrame             *renderFrame = nullptr,
                 size_t                   threadIndex = 0,
                 CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetPool);
         
@@ -32,7 +32,7 @@ public:
 
     ~CommandPool();
 
-    CommandBuffer &RequestBuffer(Level level);
+    CommandBuffer *RequestBuffer(Level level);
 
     template <class T>
     T &Get()
@@ -68,7 +68,7 @@ private:
         
     VkCommandPool handle{ VK_NULL_HANDLE };
 
-    void *renderFrame{ nullptr };
+    RenderFrame *renderFrame{ nullptr };
 
     size_t threadIndex;
 

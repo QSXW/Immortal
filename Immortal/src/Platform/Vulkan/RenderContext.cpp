@@ -84,6 +84,7 @@ RenderContext::RenderContext(RenderContext::Description &desc)
 
 RenderContext::~RenderContext()
 {
+    LOG::INFO("Application Closed => deconstruct RenderContex.");
     vkDestroySurfaceKHR(instance->Handle(), surface, nullptr);
     instance.release();
 }
@@ -128,7 +129,21 @@ void RenderContext::Prepare(size_t threadCount)
 
 void RenderContext::SwapBuffers()
 {
+    uint32_t commandbuffer = 0;
+    VkPresentInfoKHR presentInfo {};
+	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.pNext            = nullptr;
+	presentInfo.swapchainCount   = 1;
+	presentInfo.pSwapchains      = &swapchain->Handle();
+	presentInfo.pImageIndices    = &commandbuffer;
 
+    auto result = device->SuitableGraphicsQueue().Present(presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        LOG::WARN("Swap chain is no longer compatible with the surface and needs to be recreated");
+        return;
+    }
+    Check(result);
 }
 }
 }

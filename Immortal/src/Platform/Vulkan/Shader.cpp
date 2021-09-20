@@ -28,13 +28,14 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
 
         modules.push_back(vert);
         modules.push_back(frag);
-        auto vertShaderStage = CreateStage(vert, VK_SHADER_STAGE_VERTEX_BIT);
-        auto fragShaderStage = CreateStage(frag, VK_SHADER_STAGE_FRAGMENT_BIT);
+        stages[0] = CreateStage(vert, VK_SHADER_STAGE_VERTEX_BIT);
+        stages[1] = CreateStage(frag, VK_SHADER_STAGE_FRAGMENT_BIT);
     }
     else
     {
         VkShaderModule comp = Load(filename + ".comp", Shader::Stage::Compute);
         modules.push_back(comp);
+        stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
     
 }
