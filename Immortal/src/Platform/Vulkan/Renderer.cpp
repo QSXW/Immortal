@@ -19,6 +19,8 @@ Renderer::Renderer(RenderContext::Super *c) :
 
 void Renderer::INIT()
 {
+    VkPipelineStageFlags pipelineStage{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
     semaphores.acquiredImageReady = semaphorePool->Request();
     semaphores.renderComplete     = semaphorePool->Request();
 
@@ -27,6 +29,7 @@ void Renderer::INIT()
     submitInfo.pWaitSemaphores      = &semaphores.acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = &semaphores.renderComplete;
+    submitInfo.pWaitDstStageMask    = &pipelineStage;
 
     queue = device->SuitableGraphicsQueuePtr();
 
@@ -39,7 +42,7 @@ void Renderer::RenderFrame()
 {
     if (swapchain)
     {
-        swapchain->AcquireNextImage(frameIndex, semaphores.acquiredImageReady, VK_NULL_HANDLE);
+        swapchain->AcquireNextImage(&frameIndex, semaphores.acquiredImageReady, VK_NULL_HANDLE);
     }
 }
 
@@ -48,11 +51,14 @@ void Renderer::SubmitFrame()
     VkResult error{ VK_SUCCESS };
 
     VkPresentInfoKHR presentInfo{};
-	presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext            = nullptr;
-	presentInfo.swapchainCount   = 1;
-	presentInfo.pSwapchains      = &swapchain->Handle();
-	presentInfo.pImageIndices    = &frameIndex;
+	presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.pNext              = nullptr;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores    = &semaphores.renderComplete;
+	presentInfo.swapchainCount     = 1;
+	presentInfo.pSwapchains        = &swapchain->Handle();
+	presentInfo.pImageIndices      = &frameIndex;
+    presentInfo.pResults           = nullptr;
 
     if (semaphores.renderComplete != VK_NULL_HANDLE)
     {
@@ -73,8 +79,6 @@ void Renderer::SwapBuffers()
 {
     RenderFrame();
 
-    auto &commandPool = device->Get<CommandPool>();
-
     submitInfo.commandBufferCount = commandBuffer->Size();
     submitInfo.pCommandBuffers    = commandBuffer->Data();
 
@@ -82,29 +86,6 @@ void Renderer::SwapBuffers()
 
     SubmitFrame();
 }
-
-//void SetupFramebuffer()
-//{
-//    std::array<VkImageView, 2> attachments;
-//    attachments[1] = depthStencil.view->Get<VkImageView>();
-//
-//    VkFramebufferCreateInfo createInfo{};
-//    createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-//    createInfo.pNext           = nullptr;
-//    createInfo.renderPass      = renderPass;
-//    createInfo.attachmentCount = 2;
-//    createInfo.pAttachments    = attachments.data();
-//    createInfo.width           = Application::Width();
-//    createInfo.height          = Application::Height();
-//    createInfo.layers          = 1;
-//
-//    framebuffers.resize(context->Get<Vulkan::RenderContext::Frames>().size());
-//    for (int i = 0; i < framebuffers.size(); i++)
-//    {
-//        attachments[0] = swapchainBuffers[i].view;
-//        Vulkan::Check(vkCreateFramebuffer(context->GetDevice()->Get<VkDevice>(), &createInfo, nullptr, &framebuffers[i]));
-//    }
-//}
 
 }
 }

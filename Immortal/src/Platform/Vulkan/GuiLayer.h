@@ -37,7 +37,7 @@ private:
 
     VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
 
-    VkRenderPass renderPass{ VK_NULL_HANDLE };
+    RenderPass *renderPass{ nullptr };
 
     CommandBuffer *commandBuffer{ nullptr };
 };

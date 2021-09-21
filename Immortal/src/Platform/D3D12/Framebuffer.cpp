@@ -6,6 +6,11 @@ namespace Immortal
 namespace D3D12
 {
 
+Framebuffer::Framebuffer()
+{
+
+}
+
 Framebuffer::Framebuffer(const Framebuffer::Description &descrition)
 {
 

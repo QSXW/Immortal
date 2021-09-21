@@ -46,6 +46,11 @@ public:
 public:
     RenderTarget(std::vector<Image> &&images);
 
+    std::vector<ImageView> &Views()
+    {
+        return views;
+    }
+
 private:
     Device &device;
 

@@ -8,6 +8,7 @@
 #include "Renderer.h"
 #include "Image.h"
 #include "RenderFrame.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -64,7 +65,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
     device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
 
-    renderPass = std::make_unique<RenderPass>(device.get(), depthFormat);
+    renderPass  = std::make_unique<RenderPass>(device.get(), depthFormat);
 
     {
         surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
@@ -82,10 +83,10 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
             }
         }
 
-        this->Set<VkFormat>(surfaceFormatPriorities[0].format);
-        this->Set<VkPresentModeKHR>(presentModePriorities[0]);
+        Set<VkFormat>(surfaceFormatPriorities[0].format);
+        Set<VkPresentModeKHR>(presentModePriorities[0]);
         
-        this->Prepare();
+        Prepare();
     }
 }
 
@@ -117,11 +118,14 @@ void RenderContext::Prepare(size_t threadCount)
 
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
+    
+    std::vector<ImageView> views;
 
     for (auto &handle : swapchain->Get<Swapchain::Images>())
     {
         Image image{ device.get(), handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
         auto renderTarget = RenderTarget::Create(std::move(image));
+        framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
         frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
     }
 

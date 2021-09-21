@@ -8,6 +8,7 @@
 #include "RenderTarget.h"
 #include "RenderFrame.h"
 #include "RenderPass.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -150,6 +151,11 @@ public:
         }
     }
 
+    Framebuffer *CurrentFramebuffer()
+    {
+        return framebuffers[0].get();
+    }
+
 private:
     void *handle;
 
@@ -158,6 +164,8 @@ private:
     std::unique_ptr<Device> device;
 
     std::unique_ptr<RenderPass> renderPass;
+
+    std::vector<std::unique_ptr<Framebuffer>> framebuffers;
 
     std::unique_ptr<Swapchain> swapchain;
 

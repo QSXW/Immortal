@@ -1,15 +1,53 @@
 #include "impch.h"
 #include "Framebuffer.h"
 
+#include <array>
+#include <vector>
+
+#include "RenderContext.h"
+#include "Device.h"
+#include "RenderPass.h"
+
 namespace Immortal
 {
 namespace Vulkan
 {
-
-Framebuffer::Framebuffer(const Framebuffer::Description &spec)
+Framebuffer::Framebuffer()
 {
 
 }
+
+Framebuffer::Framebuffer(const Framebuffer::Description &description) :
+    Super{ description },
+    context{ rcast<RenderContext*>(desc.context) },
+    device{ &context->Get<Device>() }
+{
+
+}
+
+Framebuffer::Framebuffer(Device *device, RenderPass *renderPass, std::vector<ImageView> &views, VkExtent2D &extent) :
+    device{ device },
+    renderPass{ renderPass }
+{
+    std::vector<VkImageView> attachments;
+
+    for (auto &view : views)
+    {
+        attachments.emplace_back(view.Handle());
+    }
+
+    VkFramebufferCreateInfo createInfo{};
+    createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    createInfo.attachmentCount = ncast<uint32_t>(attachments.size());
+    createInfo.pAttachments    = attachments.data();
+    createInfo.renderPass      = renderPass->Handle();
+    createInfo.width           = extent.width;
+    createInfo.height          = extent.height;
+    createInfo.layers          = 1;
+
+    Check(vkCreateFramebuffer(device->Handle(), &createInfo, nullptr, &handle));
+}
+
 
 Framebuffer::~Framebuffer()
 {
@@ -51,6 +89,11 @@ UINT32 Framebuffer::DepthAttachmentRendererID(UINT32 index) const
 const SuperFramebuffer::Description &Framebuffer::Desc() const
 {
     return Super::Desc();
+}
+
+void Framebuffer::INIT()
+{
+
 }
 
 }

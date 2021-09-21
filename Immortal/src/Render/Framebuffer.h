@@ -56,9 +56,19 @@ public:
         UINT32 Samples = 1;
         UINT32 Layers{ 0 };
         bool SwapChainTarget = false;
+
+        void *context{ nullptr };
     };
 
 public:
+    Framebuffer();
+
+    Framebuffer(const Description &description) : 
+        desc{ description }
+    {
+    
+    }
+
     virtual ~Framebuffer() = default;
 
     virtual void Map() { }
@@ -91,7 +101,7 @@ public:
 
     static Ref<Framebuffer> Create(const Description &desc);
 
-private:
+protected:
     Description desc{};
 };
 

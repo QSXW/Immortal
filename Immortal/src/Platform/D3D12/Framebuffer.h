@@ -15,6 +15,8 @@ public:
     using Super = SuperFramebuffer;
 
 public:
+    Framebuffer::Framebuffer();
+
     Framebuffer(const Super::Description &descrition);
 
     ~Framebuffer();

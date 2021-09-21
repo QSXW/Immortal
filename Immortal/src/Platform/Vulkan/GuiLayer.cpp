@@ -20,7 +20,7 @@ GuiLayer::GuiLayer(RenderContext::Super *context) :
     context{ dcast<RenderContext *>(context) }
 {
     device     = &this->context->Get<Device>();
-    renderPass =  this->context->Get<RenderPass>().Handle();
+    renderPass = &this->context->Get<RenderPass>();
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -76,7 +76,7 @@ void GuiLayer::OnAttach()
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
-    if (ImGui_ImplVulkan_Init(&initInfo, renderPass))
+    if (ImGui_ImplVulkan_Init(&initInfo, renderPass->Handle()))
     {
         LOG::INFO("Initialized GUI with success");
     }
@@ -122,13 +122,14 @@ void GuiLayer::End()
 {
     Super::End();
 
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO     &io  = ImGui::GetIO();
     Application *app = Application::App();
-    io.DisplaySize = ImVec2((float)app->Width(), (float)app->Height());
+
+    io.DisplaySize = ImVec2{ ncast<float>(app->Width()), ncast<float>(app->Height()) };
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue ClearValue;
+    VkClearValue ClearValue{};
     ClearValue.color.float32[0] = 0.18f;
     ClearValue.color.float32[1] = 0.18f;
     ClearValue.color.float32[2] = 0.18f;
@@ -136,8 +137,8 @@ void GuiLayer::End()
 
     VkRenderPassBeginInfo info = {};
     info.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    info.renderPass               = renderPass;
-    info.framebuffer              = VK_NULL_HANDLE;
+    info.renderPass               = renderPass->Handle();
+    info.framebuffer              = context->CurrentFramebuffer()->Handle();
     info.renderArea.extent.width  = io.DisplaySize.x;
     info.renderArea.extent.height = io.DisplaySize.y;
     info.clearValueCount          = 1;

@@ -24,7 +24,11 @@ public:
 
     ~ImageView();
 
-public:
+    VkImageView &Handle()
+    {
+        return handle;
+    }
+
     template <class T>
     T &Get()
     {

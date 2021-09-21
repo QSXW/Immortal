@@ -4,19 +4,38 @@
 
 #include "Common.h"
 
+#include "Image.h"
+#include "ImageView.h"
+
 namespace Immortal
 {
 namespace Vulkan
 {
+
+class RenderContext;
+class Device;
+class RenderPass;
+
 class Framebuffer : public SuperFramebuffer
 {
 public:
     using Super = SuperFramebuffer;
 
 public:
+    Framebuffer();
+
     Framebuffer(const Super::Description &spec);
 
+    Framebuffer(Device *device, RenderPass *renderPass, std::vector<ImageView> &views, VkExtent2D &extent);
+
     ~Framebuffer();
+
+    void INIT();
+
+    VkFramebuffer &Handle()
+    {
+        return handle;
+    }
 
     virtual void Map() override;
 
@@ -36,6 +55,18 @@ public:
 
 private:
     VkFramebuffer handle{ VK_NULL_HANDLE };
+
+    RenderContext *context{ nullptr };
+
+    Device *device{ nullptr };
+
+    RenderPass *renderPass{ nullptr };
+
+    struct
+    {
+        std::unique_ptr<Image> image;
+        std::unique_ptr<ImageView> view;
+    } depthStencil;
 };
 }
 }
