@@ -16,23 +16,25 @@ CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count) :
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool        = cmdPool->Get<VkCommandPool>();
+    allocInfo.commandPool        = cmdPool->Handle();
     allocInfo.level              = ncast<VkCommandBufferLevel>(level);
     allocInfo.commandBufferCount = count;
 
-    Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Get<VkDevice>(), &allocInfo, &handle));
+    handles.resize(count);
+    Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Handle(), &allocInfo, handles.data()));
 }
 
 CommandBuffer::~CommandBuffer()
 {
-    if (handle != VK_NULL_HANDLE)
+    if (!handles.empty())
     {
-        vkFreeCommandBuffers(commandPool->Get<Device>().Get<VkDevice>(), commandPool->Get<VkCommandPool>(), 1, &handle);
+       vkFreeCommandBuffers(commandPool->Get<Device>().Handle(), commandPool->Handle(), handles.size(), handles.data());
     }
 }
 
-VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer)
+VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, size_t index, CommandBuffer *primaryCommandBuffer)
 {
+    currentIndex = index;
     if (level == Level::Secondary)
     {
         SLASSERT(primaryCommandBuffer && "A primary command buffer pointer must be provided when calling begin from a second one");
@@ -60,7 +62,7 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *pr
     beginInfo.flags = flags;
     beginInfo.pInheritanceInfo = &inheritanceInfo;
 
-    return vkBeginCommandBuffer(handle, &beginInfo);
+    return vkBeginCommandBuffer(handles[index], &beginInfo);
 }
 
 VkResult CommandBuffer::End()
@@ -70,7 +72,7 @@ VkResult CommandBuffer::End()
         LOG::ERR("Command buffer is not already recording, call begin");
         return VK_NOT_READY;
     }
-    vkEndCommandBuffer(handle);
+    vkEndCommandBuffer(handles[currentIndex]);
     state = State::Executable;
 
     return VK_SUCCESS;
@@ -85,7 +87,7 @@ VkResult CommandBuffer::reset(ResetMode resetMode)
     state = State::Initial;
     if (resetMode == ResetMode::ResetIndividually)
     {
-        result = vkResetCommandBuffer(handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        result = vkResetCommandBuffer(handles[currentIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     }
 
     return result;

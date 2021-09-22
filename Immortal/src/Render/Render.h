@@ -125,6 +125,11 @@ public:
         return &data;
     }
 
+    static uint32_t CurrentPresentedFrameIndex()
+    {
+        return handle->Index();
+    }
+
     static void Submit(const Ref<Shader> &shader, const Ref<VertexArray> &vertexArray, const Matrix4& transform = Matrix4{ 1.0f });
 
     static void Submit(const Ref<Shader> &shader, const Ref<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
@@ -132,6 +137,11 @@ public:
     static void SwapBuffers()
     {
         handle->SwapBuffers();
+    }
+
+    static void RenderFrame()
+    {
+        handle->RenderFrame();
     }
 
 private:

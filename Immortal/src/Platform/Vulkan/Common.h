@@ -17,6 +17,7 @@ struct Semaphores
 };
 
 using ThreadIndex = UINT32;
+using FrameIndex  = UINT32;
 
 enum class Level : int
 {
@@ -189,7 +190,8 @@ inline void Check(VkResult status)
     if (status)
     {
         LOG::ERR("Detected Vulkan error: {0}", msg);
-        abort();
+        system("pause");
+        // abort();
     }
 }
 #else

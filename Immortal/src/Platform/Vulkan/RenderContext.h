@@ -70,7 +70,7 @@ public:
         }
         if constexpr (typeof<T, VkQueue>())
         {
-            return device->SuitableGraphicsQueue().Handle();
+            return queue->Handle();
         }
         if constexpr (typeof<T, Queue>())
         {
@@ -151,9 +151,14 @@ public:
         }
     }
 
-    Framebuffer *CurrentFramebuffer()
+    Framebuffer *GetFramebuffer(size_t index)
     {
-        return framebuffers[0].get();
+        return framebuffers[index].get();
+    }
+
+    size_t FrameSize()
+    {
+        return framebuffers.size();
     }
 
 private:
@@ -187,6 +192,12 @@ private:
 
     VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
     
+    Semaphores semaphores;
+
+    std::unique_ptr<SemaphorePool> semaphorePool;
+
+    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
     bool status{ false };
 
     std::vector<VkPresentModeKHR> presentModePriorities = {
@@ -213,12 +224,6 @@ private:
             VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
         }
     };
-
-    Semaphores semaphores;
-
-    std::unique_ptr<SemaphorePool> semaphorePool;
-
-    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
 public:
     static VkResult Status;

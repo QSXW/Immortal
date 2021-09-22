@@ -60,25 +60,29 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (std::is_same_v<T, Properties>)
+        if constexpr (typeof<T, Properties>())
         {
             return properties;
         }
-        if constexpr (std::is_same_v<T, VkExtent2D>)
+        if constexpr (typeof<T, VkExtent2D>())
         {
             return properties.Extent;
         }
-        if constexpr (std::is_same_v<T, Images>)
+        if constexpr (typeof<T, Images>())
         {
             return images;
         }
-        if constexpr (std::is_same_v <T, VkFormat>)
+        if constexpr (typeof <T, VkFormat>())
         {
             return properties.SurfaceFormat.format;
         }
-        if constexpr (std::is_same_v<T, VkImageUsageFlags>)
+        if constexpr (typeof<T, VkImageUsageFlags>())
         {
             return properties.ImageUsage;
+        }
+        if constexpr (typeof<T, FrameIndex>())
+        {
+            return frameIndex;
         }
     }
 
@@ -102,9 +106,9 @@ public:
         surfaceFormatPriorities = surfaceFormatPriorities;
     }
 
-    VkResult AcquireNextImage(UINT32 *imageIndex, VkSemaphore imageAcquiredSemaphore, VkFence fence)
+    VkResult AcquireNextImage(UINT32 *index, VkSemaphore semaphore, VkFence fence)
     {
-        return vkAcquireNextImageKHR(device.Handle(), handle, std::numeric_limits<uint64_t>::max(), imageAcquiredSemaphore, fence, imageIndex);
+        return vkAcquireNextImageKHR(device.Handle(), handle, std::numeric_limits<uint64_t>::max(), semaphore, fence, index);
     }
 
 private:
@@ -114,6 +118,8 @@ private:
 
     VkSwapchainKHR handle{ VK_NULL_HANDLE };
 
+    FrameIndex frameIndex{ 0 };
+    
     std::vector<VkImage> images;
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats{};

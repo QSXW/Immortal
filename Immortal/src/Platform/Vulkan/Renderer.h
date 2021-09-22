@@ -24,7 +24,12 @@ public:
 
     void SubmitFrame();
 
-    void RenderFrame();
+    virtual void RenderFrame() override;
+
+    virtual uint32_t Index() override
+    {
+        return frameIndex;
+    }
 
 public:
     RenderContext *context{ nullptr };

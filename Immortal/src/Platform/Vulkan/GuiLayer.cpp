@@ -6,6 +6,7 @@
 #include <imgui_internal.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
+#include <Render/Render.h>
 
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
@@ -81,13 +82,19 @@ void GuiLayer::OnAttach()
         LOG::INFO("Initialized GUI with success");
     }
 
+    frameIndex = Render::CurrentPresentedFrameIndex();
+
     commandBuffer = context->Get<CommandBuffer *>();
-
-    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->Handle());
-    Check(commandBuffer->End());
+    
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer->Handle(frameIndex);
 
-    Check(queue->Submit(VkSubmitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO }, VK_NULL_HANDLE));
+    Check(commandBuffer->End());
+    Check(queue->Submit(submitInfo, VK_NULL_HANDLE));
 
     Check(device->Wait());
     ImGui_ImplVulkan_DestroyFontUploadObjects();
@@ -130,26 +137,34 @@ void GuiLayer::End()
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
     VkClearValue ClearValue{};
-    ClearValue.color.float32[0] = 0.18f;
-    ClearValue.color.float32[1] = 0.18f;
-    ClearValue.color.float32[2] = 0.18f;
-    ClearValue.color.float32[3] = 1.00f;
+    ClearValue.color.float32[0] = 0.45f;
+    ClearValue.color.float32[1] = 0.55f;
+    ClearValue.color.float32[2] = 0.60f;
+    ClearValue.color.float32[3] = 1.0f;
+
+    frameIndex = Render::CurrentPresentedFrameIndex();
 
     VkRenderPassBeginInfo info = {};
     info.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     info.renderPass               = renderPass->Handle();
-    info.framebuffer              = context->CurrentFramebuffer()->Handle();
+    info.framebuffer              = context->GetFramebuffer(frameIndex)->Handle();
     info.renderArea.extent.width  = io.DisplaySize.x;
     info.renderArea.extent.height = io.DisplaySize.y;
     info.clearValueCount          = 1;
     info.pClearValues             = &ClearValue;
 
-    vkCmdBeginRenderPass(commandBuffer->Handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+    {
+        // auto &commandPool = device->Get<CommandPool>();
+        //vkResetCommandPool(device->Handle(), commandPool.Handle(), 0);
+        // Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
+        vkCmdBeginRenderPass(commandBuffer->Handle(frameIndex), &info, VK_SUBPASS_CONTENTS_INLINE);
 
-    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle());
+        ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle(frameIndex));
 
-    vkCmdEndRenderPass(commandBuffer->Handle());
-
+        vkCmdEndRenderPass(commandBuffer->Handle(frameIndex));
+        // Check(commandBuffer->End());
+    }
+    
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         ImGui::UpdatePlatformWindows();

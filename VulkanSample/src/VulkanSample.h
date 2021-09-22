@@ -33,44 +33,8 @@ class VulkanSample : public Application
 public:
     VulkanSample() : Application({ U8("Vulkan Test"), 1920, 1080 })
     {
-        context = dcast<Vulkan::RenderContext *>(Context());
-        auto device = context->GetDevice();
 
-        VkDevice deviceHandle = rcast<VkDevice>(device->Handle());
-
-        queue = rcast<VkQueue>(device->SuitableGraphicsQueue().Handle());
-        CreateSwapchainBuffers();
-        
-        auto frameSize = ncast<UINT32>(context->Get<Vulkan::RenderContext::Frames>().size());
-    
-        commandPool.reset(new Vulkan::CommandPool{ device, device->FindQueueByFlags(Vulkan::Queue::Graphics | Vulkan::Queue::Compute, 0).Get<Vulkan::Queue::FamilyIndex>() });
-        drawCommadBuffer = commandPool->RequestBuffer(Vulkan::Level::Primary);
-
-        // fences.reset(new Vulkan::FencePool{ device });
-        // for (UINT32 i = 0; i < frameSize; i++)
-        // {
-        //     fences->Request();
-        // }
-
-        extent = Vulkan::Extent3D{ context->Get<Vulkan::Extent2D>().width, context->Get<Vulkan::Extent2D>().height, 1 };
-
-        depthFormat = Vulkan::SuitableDepthFormat(device->Get<VkPhysicalDevice>());
-
-        depthStencil.image.reset(new Vulkan::Image {
-            device,
-            extent,
-            depthFormat,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_GPU_ONLY
-        });
-
-        depthStencil.view.reset(new Vulkan::ImageView {
-            depthStencil.image.get(),
-            VK_IMAGE_VIEW_TYPE_2D
-        });
-
-        CreatePipelineCache();
-
+   
         PushLayer(new VulkanLayer());
     }
 

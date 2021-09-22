@@ -25,8 +25,8 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 };
 
 static std::vector<const char *> ValidationLayers = {
-    /*VK_LAYER_LUNARG_API_DUMP,
-    VK_LAYER_LUNARG_DEVICE_SIMULATION,
+    // VK_LAYER_LUNARG_API_DUMP,
+    /*VK_LAYER_LUNARG_DEVICE_SIMULATION,
     VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
     VK_LAYER_KHRONOS_VALIDATION,
     VK_LAYER_LUNARG_MONITOR,

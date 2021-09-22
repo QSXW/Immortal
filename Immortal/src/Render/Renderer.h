@@ -27,6 +27,10 @@ public:
 
     virtual void SwapBuffers() { }
 
+    virtual void RenderFrame() { }
+
+    virtual uint32_t Index() { return 0; }
+
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 };
 

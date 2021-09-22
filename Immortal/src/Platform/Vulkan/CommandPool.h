@@ -13,7 +13,6 @@ class CommandPool
 {
 public:
     using QueueFamilyIndex = UINT32;
-    using Handle           = VkCommandPool;
 
 public:
     CommandPool() = default;
@@ -30,15 +29,16 @@ public:
 
     ~CommandPool();
 
-    CommandBuffer *RequestBuffer(Level level);
+    CommandBuffer *RequestBuffer(Level level, int size = 1);
+
+    VkCommandPool &Handle()
+    {
+        return handle;
+    }
 
     template <class T>
     T &Get()
     {
-        if constexpr (typeof<T, Handle>())
-        {
-            return handle;
-        }
         if constexpr (typeof<T, Device>())
         {
             return *device;

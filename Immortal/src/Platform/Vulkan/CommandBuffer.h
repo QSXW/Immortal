@@ -38,13 +38,13 @@ public:
 
     ~CommandBuffer();
 
-    VkResult Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer = nullptr);
+    VkResult Begin(VkCommandBufferUsageFlags flags, size_t index = 0, CommandBuffer *primaryCommandBuffer = nullptr);
 
     VkResult End();
 
-    VkCommandBuffer &Handle()
+    VkCommandBuffer &Handle(int index = 0)
     {
-        return handle;
+        return handles[index];
     }
 
     bool Recoding()
@@ -59,7 +59,7 @@ public:
 
     VkCommandBuffer *Data()
     {
-        return &handle;
+        return handles.data();
     }
 
 private:
@@ -67,9 +67,11 @@ private:
 
     State state{ State::Initial };
 
-    VkCommandBuffer handle{ VK_NULL_HANDLE };
+    std::vector<VkCommandBuffer> handles{ VK_NULL_HANDLE };
 
     Level level{ Level::Primary };
+
+    size_t currentIndex{ 0 };
 };
 
 }

@@ -19,22 +19,20 @@ Renderer::Renderer(RenderContext::Super *c) :
 
 void Renderer::INIT()
 {
-    VkPipelineStageFlags pipelineStage{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-
     semaphores.acquiredImageReady = semaphorePool->Request();
     semaphores.renderComplete     = semaphorePool->Request();
 
-    submitInfo.pWaitDstStageMask    = &submitPipelineStages;
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &semaphores.acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = &semaphores.renderComplete;
-    submitInfo.pWaitDstStageMask    = &pipelineStage;
+    submitInfo.pWaitDstStageMask    = &submitPipelineStages;
 
-    queue = device->SuitableGraphicsQueuePtr();
+    queue = context->Get<Queue*>();
 
     auto &commandPool = device->Get<CommandPool>();
-    commandBuffer = commandPool.RequestBuffer(Level::Primary);
+    commandBuffer = commandPool.RequestBuffer(Level::Primary, context->FrameSize());
+
     context->Set<CommandBuffer*>(commandBuffer);
 }
 
@@ -43,6 +41,7 @@ void Renderer::RenderFrame()
     if (swapchain)
     {
         swapchain->AcquireNextImage(&frameIndex, semaphores.acquiredImageReady, VK_NULL_HANDLE);
+        frameIndex = (frameIndex + 1) % commandBuffer->Size();
     }
 }
 
@@ -60,12 +59,6 @@ void Renderer::SubmitFrame()
 	presentInfo.pImageIndices      = &frameIndex;
     presentInfo.pResults           = nullptr;
 
-    if (semaphores.renderComplete != VK_NULL_HANDLE)
-    {
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores    = &semaphores.renderComplete;
-    }
-
     error = queue->Present(presentInfo);
     if (error == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -77,12 +70,11 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    RenderFrame();
+    VkCommandBuffer *commandBuffers = commandBuffer->Data();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffers[frameIndex];
 
-    submitInfo.commandBufferCount = commandBuffer->Size();
-    submitInfo.pCommandBuffers    = commandBuffer->Data();
-
-    vkQueueSubmit(queue->Handle(), 1, &submitInfo, VK_NULL_HANDLE);
+    queue->Submit(submitInfo, VK_NULL_HANDLE);
 
     SubmitFrame();
 }

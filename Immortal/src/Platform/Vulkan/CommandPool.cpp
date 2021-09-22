@@ -98,7 +98,7 @@ CommandPool::~CommandPool()
     IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device->Get<VkDevice>(), handle, nullptr);
 }
 
-CommandBuffer *CommandPool::RequestBuffer(Level level)
+CommandBuffer *CommandPool::RequestBuffer(Level level, int size)
 {
     if (level == Level::Primary)
     {
@@ -106,7 +106,7 @@ CommandBuffer *CommandPool::RequestBuffer(Level level)
         {
             return primaryCommandBuffers[primaryActiveCount++].get();
         }
-        primaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
+        primaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, size));
         primaryActiveCount++;
 
         return primaryCommandBuffers.back().get();
@@ -117,7 +117,7 @@ CommandBuffer *CommandPool::RequestBuffer(Level level)
         {
             return secondaryCommandBuffers[secondaryActiveCount++].get();
         }
-        secondaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, 1));
+        secondaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level, size));
         secondaryActiveCount++;
 
         return secondaryCommandBuffers.back().get();

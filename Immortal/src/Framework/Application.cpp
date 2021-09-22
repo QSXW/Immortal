@@ -52,6 +52,7 @@ void Application::Run()
 {
     while (running)
     {
+        Render::RenderFrame();
         timer.Lap();
         deltaTime = timer.elapsed();
 
@@ -69,8 +70,8 @@ void Application::Run()
             }
             guiLayer->End();
         }
-        window->OnUpdate();
         Render::SwapBuffers();
+        window->OnUpdate();
     }
 }
 
