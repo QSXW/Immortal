@@ -40,8 +40,8 @@ void Renderer::RenderFrame()
 {
     if (swapchain)
     {
-        swapchain->AcquireNextImage(&frameIndex, semaphores.acquiredImageReady, VK_NULL_HANDLE);
-        frameIndex = (frameIndex + 1) % commandBuffer->Size();
+        swapchain->AcquireNextImage(&currentBuffer, semaphores.acquiredImageReady, VK_NULL_HANDLE);
+        currentBuffer = (currentBuffer + 1) % commandBuffer->Size();
     }
 }
 
@@ -56,7 +56,7 @@ void Renderer::SubmitFrame()
     presentInfo.pWaitSemaphores    = &semaphores.renderComplete;
 	presentInfo.swapchainCount     = 1;
 	presentInfo.pSwapchains        = &swapchain->Handle();
-	presentInfo.pImageIndices      = &frameIndex;
+	presentInfo.pImageIndices      = &currentBuffer;
     presentInfo.pResults           = nullptr;
 
     error = queue->Present(presentInfo);
@@ -72,7 +72,7 @@ void Renderer::SwapBuffers()
 {
     VkCommandBuffer *commandBuffers = commandBuffer->Data();
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffers[frameIndex];
+    submitInfo.pCommandBuffers    = &commandBuffers[currentBuffer];
 
     queue->Submit(submitInfo, VK_NULL_HANDLE);
 

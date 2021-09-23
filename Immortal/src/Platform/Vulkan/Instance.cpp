@@ -127,11 +127,11 @@ Instance::Instance(const char                                   *applicationName
             enabledExtensions.emplace_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
         }
 
-        if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+        /*if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
         {
             VkEnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
             enabledExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        }
+        }*/
     }
     if (headless && !headlessExtension)
     {
@@ -207,9 +207,9 @@ Instance::Instance(const char                                   *applicationName
     instanceInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pNext                   = nullptr;
     instanceInfo.pApplicationInfo        = &appInfo;
-    instanceInfo.enabledExtensionCount   = static_cast<UINT32>(enabledExtensions.size());
+    instanceInfo.enabledExtensionCount   = U32(enabledExtensions.size());
     instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
-    instanceInfo.enabledLayerCount       = static_cast<UINT32>(requiredValidationLayers.size());
+    instanceInfo.enabledLayerCount       = U32(requiredValidationLayers.size());
     instanceInfo.ppEnabledLayerNames     = requiredValidationLayers.data();
 
 #if     SLDEBUG

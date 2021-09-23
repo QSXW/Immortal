@@ -51,8 +51,7 @@ void Application::PushOverlay(Layer *overlay)
 void Application::Run()
 {
     while (running)
-    {
-        Render::RenderFrame();
+    { 
         timer.Lap();
         deltaTime = timer.elapsed();
 
@@ -70,6 +69,7 @@ void Application::Run()
             }
             guiLayer->End();
         }
+        Render::RenderFrame();
         Render::SwapBuffers();
         window->OnUpdate();
     }

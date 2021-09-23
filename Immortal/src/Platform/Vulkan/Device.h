@@ -44,6 +44,11 @@ public:
         return &queue;
     }
 
+    VkFormat DepthFormat(bool depthOnly = false)
+    {
+        return physicalDevice.DepthFormat(depthOnly);
+    }
+
 public:
     VkDevice Handle()
     {

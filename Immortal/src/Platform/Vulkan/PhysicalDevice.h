@@ -72,6 +72,11 @@ public:
         }
     }
 
+    VkFormat DepthFormat(bool depthOnly = false)
+    {
+        return SuitableDepthFormat(handle, depthOnly);
+    }
+
     VkBool32 IsPresentSupported(VkSurfaceKHR surface, UINT32 queueFamilyIndex)
     {
         VkBool32 presentSupported{ VK_FALSE };

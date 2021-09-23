@@ -11,7 +11,7 @@ class Device;
 class RenderPass
 {
 public:
-    RenderPass(Device *device, VkFormat depthFormat);
+    RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat);
 
     VkRenderPass &Handle()
     {

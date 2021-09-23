@@ -25,12 +25,14 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 };
 
 static std::vector<const char *> ValidationLayers = {
+    // "VK_LAYER_RENDERDOC_Capture",
+    // "VK_LAYER_RENDERDOC_Capture",
     // VK_LAYER_LUNARG_API_DUMP,
-    /*VK_LAYER_LUNARG_DEVICE_SIMULATION,
-    VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
-    VK_LAYER_KHRONOS_VALIDATION,
-    VK_LAYER_LUNARG_MONITOR,
-    VK_LAYER_LUNARG_SCREENSHOT*/
+    // VK_LAYER_LUNARG_DEVICE_SIMULATION,
+    // VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
+    // VK_LAYER_KHRONOS_VALIDATION,
+    // VK_LAYER_LUNARG_MONITOR,
+    // VK_LAYER_LUNARG_SCREENSHOT
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc)
@@ -64,8 +66,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
 
     device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
-
-    renderPass  = std::make_unique<RenderPass>(device.get(), depthFormat);
 
     {
         surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
@@ -116,6 +116,8 @@ void RenderContext::Prepare(size_t threadCount)
     swapchain->Set(surfaceFormatPriorities);
     swapchain->Create();
 
+    renderPass  = std::make_unique<RenderPass>(device.get(), swapchain->Get<VkFormat>(), depthFormat);
+
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
     
@@ -134,6 +136,7 @@ void RenderContext::Prepare(size_t threadCount)
     semaphorePool.reset(new SemaphorePool{ &this->Get<Device>() });
     semaphores.acquiredImageReady = rcast<VkSemaphore>(semaphorePool->Request());
     semaphores.renderComplete     = rcast<VkSemaphore>(semaphorePool->Request());
+
     this->status = true;
 }
 

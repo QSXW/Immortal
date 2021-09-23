@@ -28,7 +28,7 @@ public:
 
     virtual uint32_t Index() override
     {
-        return frameIndex;
+        return currentBuffer;
     }
 
 public:
@@ -48,7 +48,7 @@ public:
 
     Queue *queue{ nullptr };
 
-    UINT32 frameIndex{ 0 };
+    UINT32 currentBuffer{ 0 };
 
     std::unique_ptr<SemaphorePool> semaphorePool;
 

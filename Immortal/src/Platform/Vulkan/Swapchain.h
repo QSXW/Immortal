@@ -26,22 +26,22 @@ public:
     };
 
 public:
-    Swapchain(Device                                &device,
-                VkSurfaceKHR                         surface,
-                const VkExtent2D                    &extent = {},
-                const UINT32                         imageCount       = 3,
-                const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-                const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
-                const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
+    Swapchain(Device                              &device,
+              VkSurfaceKHR                         surface,
+              const VkExtent2D                    &extent = {},
+              const UINT32                         imageCount       = 3,
+              const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+              const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
+              const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
 
-    Swapchain(Swapchain                             &oldSwapchain,
-                Device                              &device,
-                VkSurfaceKHR                         surface,
-                const VkExtent2D                    &extent = {},
-                const uint32_t                       imageCount       = 3,
-                const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-                const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
-                const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
+    Swapchain(Swapchain                           &oldSwapchain,
+              Device                              &device,
+              VkSurfaceKHR                         surface,
+              const VkExtent2D                    &extent = {},
+              const uint32_t                       imageCount       = 3,
+              const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+              const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
+              const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
 
     ~Swapchain();
 
@@ -60,6 +60,10 @@ public:
     template <class T>
     T &Get()
     {
+        if constexpr (typeof<T, VkImageUsageFlags>())
+        {
+            return properties.ImageUsage;
+        }
         if constexpr (typeof<T, Properties>())
         {
             return properties;
@@ -68,17 +72,13 @@ public:
         {
             return properties.Extent;
         }
-        if constexpr (typeof<T, Images>())
-        {
-            return images;
-        }
         if constexpr (typeof <T, VkFormat>())
         {
             return properties.SurfaceFormat.format;
         }
-        if constexpr (typeof<T, VkImageUsageFlags>())
+        if constexpr (typeof<T, Images>())
         {
-            return properties.ImageUsage;
+            return images;
         }
         if constexpr (typeof<T, FrameIndex>())
         {

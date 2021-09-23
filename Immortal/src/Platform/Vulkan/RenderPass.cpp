@@ -9,14 +9,14 @@ namespace Immortal
 {
 namespace Vulkan
 {
-RenderPass::RenderPass(Device *device, VkFormat depthFormat) :
+RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat) :
     device{ device },
     depthFormat{ depthFormat }
 {
     std::array<VkAttachmentDescription, 2> attachments{};
 
     auto &colorAttachment          = attachments[0];
-    colorAttachment.format         = depthFormat;
+    colorAttachment.format         = colorFormat;
     colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -74,14 +74,15 @@ RenderPass::RenderPass(Device *device, VkFormat depthFormat) :
 
     VkRenderPassCreateInfo createInfo{};
     createInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    createInfo.attachmentCount = ncast<UINT32>(attachments.size());
+    createInfo.attachmentCount = U32(attachments.size());
     createInfo.pAttachments    = attachments.data();
     createInfo.subpassCount    = 1;
     createInfo.pSubpasses      = &subpassDescription;
-    createInfo.dependencyCount = ncast<UINT32>(dependencies.size());
+    createInfo.dependencyCount = U32(dependencies.size());
     createInfo.pDependencies   = dependencies.data();
 
     Check(vkCreateRenderPass(device->Handle(), &createInfo, nullptr, &handle));
+    LOG::INFO("Create a Render Pass => {0}", (void *)handle);
 }
 }
 }

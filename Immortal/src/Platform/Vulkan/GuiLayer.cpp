@@ -22,6 +22,7 @@ GuiLayer::GuiLayer(RenderContext::Super *context) :
 {
     device     = &this->context->Get<Device>();
     renderPass = &this->context->Get<RenderPass>();
+    // renderPass = std::make_unique<RenderPass>(device, device->DepthFormat());
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -109,7 +110,6 @@ void GuiLayer::OnDetach()
 
 void GuiLayer::OnEvent(Event &e)
 {
-
 
 }
 
