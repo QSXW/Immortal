@@ -40,7 +40,11 @@ public:
 
     Swapchain *swapchain{ nullptr };
 
-    Semaphores semaphores;
+    std::vector<Semaphores> semaphores;
+
+    uint32_t semaphoresIndex{ 0 };
+
+    VkFence fence{ VK_NULL_HANDLE };
 
     VkRenderPass renderPass{ VK_NULL_HANDLE };
 

@@ -191,10 +191,6 @@ private:
     size_t threadCount{ 1 };
 
     VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
-    
-    Semaphores semaphores;
-
-    std::unique_ptr<SemaphorePool> semaphorePool;
 
     VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 

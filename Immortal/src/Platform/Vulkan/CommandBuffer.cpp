@@ -34,7 +34,6 @@ CommandBuffer::~CommandBuffer()
 
 VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, size_t index, CommandBuffer *primaryCommandBuffer)
 {
-    currentIndex = index;
     if (level == Level::Secondary)
     {
         SLASSERT(primaryCommandBuffer && "A primary command buffer pointer must be provided when calling begin from a second one");
@@ -65,14 +64,14 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, size_t index, Com
     return vkBeginCommandBuffer(handles[index], &beginInfo);
 }
 
-VkResult CommandBuffer::End()
+VkResult CommandBuffer::End(size_t index)
 {
     if (!Recoding())
     {
         LOG::ERR("Command buffer is not already recording, call begin");
         return VK_NOT_READY;
     }
-    vkEndCommandBuffer(handles[currentIndex]);
+    vkEndCommandBuffer(handles[index]);
     state = State::Executable;
 
     return VK_SUCCESS;
@@ -87,7 +86,7 @@ VkResult CommandBuffer::reset(ResetMode resetMode)
     state = State::Initial;
     if (resetMode == ResetMode::ResetIndividually)
     {
-        result = vkResetCommandBuffer(handles[currentIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        result = vkResetCommandBuffer(handles[0], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     }
 
     return result;

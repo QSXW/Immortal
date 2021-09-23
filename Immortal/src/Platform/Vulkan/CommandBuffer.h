@@ -40,7 +40,7 @@ public:
 
     VkResult Begin(VkCommandBufferUsageFlags flags, size_t index = 0, CommandBuffer *primaryCommandBuffer = nullptr);
 
-    VkResult End();
+    VkResult End(size_t index = 0);
 
     VkCommandBuffer &Handle(int index = 0)
     {
@@ -54,7 +54,7 @@ public:
 
     size_t Size()
     {
-        return 1;
+        return handles.size();
     }
 
     VkCommandBuffer *Data()
@@ -70,8 +70,6 @@ private:
     std::vector<VkCommandBuffer> handles{ VK_NULL_HANDLE };
 
     Level level{ Level::Primary };
-
-    size_t currentIndex{ 0 };
 };
 
 }

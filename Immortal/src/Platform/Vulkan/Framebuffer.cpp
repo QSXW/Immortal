@@ -38,7 +38,7 @@ Framebuffer::Framebuffer(Device *device, RenderPass *renderPass, std::vector<Ima
 
     VkFramebufferCreateInfo createInfo{};
     createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.attachmentCount = ncast<uint32_t>(attachments.size());
+    createInfo.attachmentCount = U32(attachments.size());
     createInfo.pAttachments    = attachments.data();
     createInfo.renderPass      = renderPass->Handle();
     createInfo.width           = extent.width;

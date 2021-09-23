@@ -19,19 +19,20 @@ Renderer::Renderer(RenderContext::Super *c) :
 
 void Renderer::INIT()
 {
-    semaphores.acquiredImageReady = semaphorePool->Request();
-    semaphores.renderComplete     = semaphorePool->Request();
+    auto frameSize = context->FrameSize();
+    semaphores.resize(frameSize);
+    for (int i = 0; i < frameSize; i++)
+    {
+        semaphores[i].acquiredImageReady = semaphorePool->Request();
+        semaphores[i].renderComplete     = semaphorePool->Request();
+    }
 
-    submitInfo.waitSemaphoreCount   = 1;
-    submitInfo.pWaitSemaphores      = &semaphores.acquiredImageReady;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = &semaphores.renderComplete;
-    submitInfo.pWaitDstStageMask    = &submitPipelineStages;
+    fence = device->RequestFence();
 
     queue = context->Get<Queue*>();
 
     auto &commandPool = device->Get<CommandPool>();
-    commandBuffer = commandPool.RequestBuffer(Level::Primary, context->FrameSize());
+    commandBuffer = commandPool.RequestBuffer(Level::Primary, frameSize);
 
     context->Set<CommandBuffer*>(commandBuffer);
 }
@@ -40,8 +41,13 @@ void Renderer::RenderFrame()
 {
     if (swapchain)
     {
-        swapchain->AcquireNextImage(&currentBuffer, semaphores.acquiredImageReady, VK_NULL_HANDLE);
+        auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[semaphoresIndex].acquiredImageReady, VK_NULL_HANDLE);
+        if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
+		{
+			// resize(width, height);
+		}
         currentBuffer = (currentBuffer + 1) % commandBuffer->Size();
+        semaphoresIndex = (semaphoresIndex + 1) % commandBuffer->Size();
     }
 }
 
@@ -53,7 +59,7 @@ void Renderer::SubmitFrame()
 	presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext              = nullptr;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = &semaphores.renderComplete;
+    presentInfo.pWaitSemaphores    = &semaphores[semaphoresIndex].renderComplete;
 	presentInfo.swapchainCount     = 1;
 	presentInfo.pSwapchains        = &swapchain->Handle();
 	presentInfo.pImageIndices      = &currentBuffer;
@@ -71,8 +77,14 @@ void Renderer::SubmitFrame()
 void Renderer::SwapBuffers()
 {
     VkCommandBuffer *commandBuffers = commandBuffer->Data();
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffers[currentBuffer];
+
+    submitInfo.waitSemaphoreCount   = 1;
+    submitInfo.pWaitSemaphores      = &semaphores[semaphoresIndex].acquiredImageReady;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores    = &semaphores[semaphoresIndex].renderComplete;
+    submitInfo.pWaitDstStageMask    = &submitPipelineStages;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = &commandBuffers[currentBuffer];
 
     queue->Submit(submitInfo, VK_NULL_HANDLE);
 

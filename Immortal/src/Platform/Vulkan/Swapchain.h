@@ -119,7 +119,7 @@ private:
     VkSwapchainKHR handle{ VK_NULL_HANDLE };
 
     FrameIndex frameIndex{ 0 };
-    
+
     std::vector<VkImage> images;
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats{};

@@ -38,13 +38,12 @@ static std::vector<const char *> ValidationLayers = {
 RenderContext::RenderContext(const RenderContext::Description &desc)
     : handle(desc.WindowHandle)
 {
-    if (!glfwVulkanSupported())
+    instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
+    if (!instance)
     {
         LOG::ERR("Vulkan Not Supported!");
         return;
     }
-
-    instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
     CreateSurface();
 
     auto &physicalDevice = instance->SuitablePhysicalDevice();
@@ -67,27 +66,26 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
     device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
 
+    surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
+    if (surface != VK_NULL_HANDLE)
     {
-        surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
-        if (surface != VK_NULL_HANDLE)
-        {
-            VkSurfaceCapabilitiesKHR surfaceProperties;
-            Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, &surfaceProperties));
-            if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
-            {
-                swapchain = std::make_unique<Swapchain>(*device, surface, surfaceExtent);
-            }
-            else
-            {
-                swapchain = std::make_unique<Swapchain>(*device, surface);
-            }
-        }
+        VkSurfaceCapabilitiesKHR surfaceProperties{};
+        Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, &surfaceProperties));
 
-        Set<VkFormat>(surfaceFormatPriorities[0].format);
-        Set<VkPresentModeKHR>(presentModePriorities[0]);
-        
-        Prepare();
+        if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
+        {
+            swapchain = std::make_unique<Swapchain>(*device, surface, surfaceExtent);
+        }
+        else
+        {
+            swapchain = std::make_unique<Swapchain>(*device, surface);
+        }
     }
+
+    Set<VkFormat>(surfaceFormatPriorities[0].format);
+    Set<VkPresentModeKHR>(presentModePriorities[0]);
+ 
+    Prepare();
 }
 
 RenderContext::~RenderContext()
@@ -132,10 +130,6 @@ void RenderContext::Prepare(size_t threadCount)
     }
 
     this->threadCount = threadCount;
-
-    semaphorePool.reset(new SemaphorePool{ &this->Get<Device>() });
-    semaphores.acquiredImageReady = rcast<VkSemaphore>(semaphorePool->Request());
-    semaphores.renderComplete     = rcast<VkSemaphore>(semaphorePool->Request());
 
     this->status = true;
 }

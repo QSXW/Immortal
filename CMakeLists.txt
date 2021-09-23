@@ -4,7 +4,7 @@ set ( CMAKE_VERBOSE_MAKEFILE on  )
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
-project(ImmortalEngine)
+project("Immortal Engine")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

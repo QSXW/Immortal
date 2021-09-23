@@ -22,7 +22,6 @@ GuiLayer::GuiLayer(RenderContext::Super *context) :
 {
     device     = &this->context->Get<Device>();
     renderPass = &this->context->Get<RenderPass>();
-    // renderPass = std::make_unique<RenderPass>(device, device->DepthFormat());
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -86,15 +85,15 @@ void GuiLayer::OnAttach()
     frameIndex = Render::CurrentPresentedFrameIndex();
 
     commandBuffer = context->Get<CommandBuffer *>();
-    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
+    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->Handle());
-    
+    Check(commandBuffer->End());
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer->Handle(frameIndex);
+    submitInfo.pCommandBuffers    = &commandBuffer->Handle();
 
-    Check(commandBuffer->End());
     Check(queue->Submit(submitInfo, VK_NULL_HANDLE));
 
     Check(device->Wait());
@@ -136,34 +135,27 @@ void GuiLayer::End()
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue ClearValue{};
-    ClearValue.color.float32[0] = 0.45f;
-    ClearValue.color.float32[1] = 0.55f;
-    ClearValue.color.float32[2] = 0.60f;
-    ClearValue.color.float32[3] = 1.0f;
+    VkClearValue ClearValue = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
-    VkRenderPassBeginInfo info = {};
-    info.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    info.renderPass               = renderPass->Handle();
-    info.framebuffer              = context->GetFramebuffer(frameIndex)->Handle();
-    info.renderArea.extent.width  = io.DisplaySize.x;
-    info.renderArea.extent.height = io.DisplaySize.y;
-    info.clearValueCount          = 1;
-    info.pClearValues             = &ClearValue;
+    VkRenderPassBeginInfo beginInfo = {};
+    beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    beginInfo.renderPass               = renderPass->Handle();
+    beginInfo.framebuffer              = context->GetFramebuffer(frameIndex)->Handle();
+    beginInfo.renderArea.extent.width  = io.DisplaySize.x;
+    beginInfo.renderArea.extent.height = io.DisplaySize.y;
+    beginInfo.clearValueCount          = 1;
+    beginInfo.pClearValues             = &ClearValue;
+    beginInfo.renderArea.offset        = { 0, 0 };
 
-    {
-        // auto &commandPool = device->Get<CommandPool>();
-        //vkResetCommandPool(device->Handle(), commandPool.Handle(), 0);
-        // Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
-        vkCmdBeginRenderPass(commandBuffer->Handle(frameIndex), &info, VK_SUBPASS_CONTENTS_INLINE);
+    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
+    vkCmdBeginRenderPass(commandBuffer->Handle(frameIndex), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle(frameIndex));
+    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle(frameIndex));
 
-        vkCmdEndRenderPass(commandBuffer->Handle(frameIndex));
-        // Check(commandBuffer->End());
-    }
+    vkCmdEndRenderPass(commandBuffer->Handle(frameIndex));
+    Check(commandBuffer->End(frameIndex));
     
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {

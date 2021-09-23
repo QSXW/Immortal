@@ -94,10 +94,16 @@ public:
         return instance->deltaTime;
     }
 
+    static void SetTitle(const std::string &title)
+    {
+        instance->window->SetTitle(title);
+    }
+
 private:
     bool OnWindowClosed(WindowCloseEvent& e);
+
     bool OnWindowResize(WindowResizeEvent &e);
-    
+
 private:
     Scope<Window> window;
 

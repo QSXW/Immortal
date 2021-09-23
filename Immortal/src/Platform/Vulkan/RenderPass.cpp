@@ -24,7 +24,7 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        
+
     auto &depthAttachment          = attachments[1];
     depthAttachment.format         = depthFormat;
     depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
@@ -82,7 +82,6 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     createInfo.pDependencies   = dependencies.data();
 
     Check(vkCreateRenderPass(device->Handle(), &createInfo, nullptr, &handle));
-    LOG::INFO("Create a Render Pass => {0}", (void *)handle);
 }
 }
 }

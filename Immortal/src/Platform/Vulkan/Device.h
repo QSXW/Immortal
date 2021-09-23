@@ -49,6 +49,11 @@ public:
         return physicalDevice.DepthFormat(depthOnly);
     }
 
+    VkFence RequestFence()
+    {
+        return fencePool->Request();
+    }
+
 public:
     VkDevice Handle()
     {
