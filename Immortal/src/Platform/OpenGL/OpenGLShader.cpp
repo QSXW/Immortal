@@ -34,7 +34,7 @@ OpenGLShader::OpenGLShader(const std::string &filepath)
         
     if (shaderSources.find(GL_COMPUTE_SHADER) != shaderSources.end())
     {
-        mType = Shader::Type::Compute;
+        type = Shader::Type::Compute;
     }
 
     Compile(shaderSources);
@@ -44,11 +44,11 @@ OpenGLShader::OpenGLShader(const std::string &filepath)
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
     auto lastDot = filepath.rfind('.');
     auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
-    mName = filepath.substr(lastSlash, count);
+    name = filepath.substr(lastSlash, count);
 }
 
 OpenGLShader::OpenGLShader(const std::string &name, const std::string & vertexSrc, const std::string & fragmentSrc)
-    : mName(name)
+    : name(name)
 {
     std::unordered_map<GLenum, std::string> sources;
     sources[GL_VERTEX_SHADER] = vertexSrc;
@@ -215,14 +215,16 @@ void OpenGLShader::Set(const std::string & name, const Vector::Vector4 & value)
     glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
-void OpenGLShader::Set(const std::string &name, const Vector::mat4 & matrix)
+void OpenGLShader::Set(const std::string &name, const Matrix4 & matrix)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, &(matrix[0].x));
 }
+
 void OpenGLShader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
 {
-    SLASSERT(mType == Shader::Type::Compute && "The shader type is not compute.");
+    SLASSERT(type == Shader::Type::Compute && "The shader type is not compute.");
     glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
 }
+
 }

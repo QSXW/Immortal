@@ -26,6 +26,7 @@ public:
     virtual void OnGuiRender() override;
 
     virtual void Begin() override;
+
     virtual void End() override;
 
 private:
@@ -39,7 +40,7 @@ private:
 
     RenderPass *renderPass{ nullptr };
 
-    CommandBuffer *commandBuffer{ nullptr };
+    CommandBuffers commandBuffer{ nullptr };
     
     uint32_t frameIndex{ 0 };
 };

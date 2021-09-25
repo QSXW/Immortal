@@ -34,17 +34,17 @@ public:
     VkResult reset(ResetMode reset_mode);
 
 public:
-    CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count = 1);
+    CommandBuffer(CommandPool *cmdPool, Level level);
 
     ~CommandBuffer();
 
-    VkResult Begin(VkCommandBufferUsageFlags flags, size_t index = 0, CommandBuffer *primaryCommandBuffer = nullptr);
+    VkResult Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer = nullptr);
 
-    VkResult End(size_t index = 0);
+    VkResult End();
 
-    VkCommandBuffer &Handle(int index = 0)
+    VkCommandBuffer &Handle()
     {
-        return handles[index];
+        return handle;
     }
 
     bool Recoding()
@@ -52,22 +52,12 @@ public:
         return state == State::Recording;
     }
 
-    size_t Size()
-    {
-        return handles.size();
-    }
-
-    VkCommandBuffer *Data()
-    {
-        return handles.data();
-    }
-
 private:
     CommandPool *commandPool{ nullptr };
 
     State state{ State::Initial };
 
-    std::vector<VkCommandBuffer> handles{ VK_NULL_HANDLE };
+    VkCommandBuffer handle{ VK_NULL_HANDLE };
 
     Level level{ Level::Primary };
 };

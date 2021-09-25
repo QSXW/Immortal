@@ -8,6 +8,8 @@
 #include "Render/Render.h"
 #include "Input.h"
 
+#include "ThreadManager.h"
+
 namespace Immortal
 {
 Application *Application::instance{ nullptr };
@@ -29,6 +31,8 @@ Application::Application(const Window::Description &descrition)
     PushOverlay(guiLayer);
 
     timer.Start();
+
+    ThreadManager::INIT();
 }
 
 Application::~Application()
@@ -60,18 +64,17 @@ void Application::Run()
             layer->OnUpdate();
         }
 
-        if (!minimized)
+        guiLayer->Begin();
+        for (Layer *layer : layerStack)
         {
-            guiLayer->Begin();
-            for (Layer *layer : layerStack)
-            {
-                layer->OnGuiRender();
-            }
-            guiLayer->End();
+            layer->OnGuiRender();
         }
+        guiLayer->End();
+
+        window->SetTitle(desc.Title);
+        window->OnUpdate();
         Render::RenderFrame();
         Render::SwapBuffers();
-        window->OnUpdate();
     }
 }
 

@@ -31,7 +31,9 @@ set(FRAMEWORK_FILES
     src/Framework/Vector.h
     src/Framework/Window.cpp
     src/Framework/Window.h
-    src/Framework/Device.h)
+    src/Framework/Device.h
+    src/Framework/ThreadManager.cpp
+    src/Framework/ThreadManager.h)
 
 set(EDITOR_FILES
     src/Editor/EditorCamera.cpp

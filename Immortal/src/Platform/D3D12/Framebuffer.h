@@ -31,9 +31,9 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
-    virtual UINT32 ColorAttachmentRendererID(UINT32 index) const override;
+    virtual UINT32 ColorAttachmentHandle(UINT32 index) const override;
 
-    virtual UINT32 DepthAttachmentRendererID(UINT32 index) const override;
+    virtual UINT32 DepthAttachmentHandle(UINT32 index) const override;
 
     virtual const Super::Description &Desc() const override;
 

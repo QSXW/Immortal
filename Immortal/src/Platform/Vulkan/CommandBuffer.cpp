@@ -10,7 +10,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count) :
+CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
     commandPool{ cmdPool },
     level{ level }
 {
@@ -18,21 +18,19 @@ CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level, UINT32 count) :
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool        = cmdPool->Handle();
     allocInfo.level              = ncast<VkCommandBufferLevel>(level);
-    allocInfo.commandBufferCount = count;
-
-    handles.resize(count);
-    Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Handle(), &allocInfo, handles.data()));
+    allocInfo.commandBufferCount = 1;
+    Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Handle(), &allocInfo, &handle));
 }
 
 CommandBuffer::~CommandBuffer()
 {
-    if (!handles.empty())
+    if (handle != VK_NULL_HANDLE)
     {
-       vkFreeCommandBuffers(commandPool->Get<Device>().Handle(), commandPool->Handle(), handles.size(), handles.data());
+       vkFreeCommandBuffers(commandPool->Get<Device>().Handle(), commandPool->Handle(), 1, &handle);
     }
 }
 
-VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, size_t index, CommandBuffer *primaryCommandBuffer)
+VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer)
 {
     if (level == Level::Secondary)
     {
@@ -61,17 +59,17 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, size_t index, Com
     beginInfo.flags = flags;
     beginInfo.pInheritanceInfo = &inheritanceInfo;
 
-    return vkBeginCommandBuffer(handles[index], &beginInfo);
+    return vkBeginCommandBuffer(handle, &beginInfo);
 }
 
-VkResult CommandBuffer::End(size_t index)
+VkResult CommandBuffer::End()
 {
     if (!Recoding())
     {
         LOG::ERR("Command buffer is not already recording, call begin");
         return VK_NOT_READY;
     }
-    vkEndCommandBuffer(handles[index]);
+    vkEndCommandBuffer(handle);
     state = State::Executable;
 
     return VK_SUCCESS;
@@ -86,7 +84,7 @@ VkResult CommandBuffer::reset(ResetMode resetMode)
     state = State::Initial;
     if (resetMode == ResetMode::ResetIndividually)
     {
-        result = vkResetCommandBuffer(handles[0], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+        result = vkResetCommandBuffer(handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
     }
 
     return result;

@@ -29,7 +29,7 @@ public:
 
     ~CommandPool();
 
-    CommandBuffer *RequestBuffer(Level level, int size = 1);
+    CommandBuffer *RequestBuffer(Level level);
 
     VkCommandPool &Handle()
     {

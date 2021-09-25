@@ -113,7 +113,7 @@ public:
     virtual uint32_t Height() const = 0;
     virtual float Ratio() const = 0;
 
-    virtual uint32_t RendererID() const = 0;
+    virtual uint32_t Handle() const = 0;
     virtual uint32_t MipLevelCount() const = 0;
 
     virtual void SetData(void *data, uint32_t size) = 0;

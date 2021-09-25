@@ -28,9 +28,9 @@ public:
 
     virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
 
-    virtual uint32_t ColorAttachmentRendererID(uint32_t index = 0) const override;
+    virtual uint32_t ColorAttachmentHandle(uint32_t index = 0) const override;
 
-    virtual uint32_t DepthAttachmentRendererID(uint32_t index = 0) const override;
+    virtual uint32_t DepthAttachmentHandle(uint32_t index = 0) const override;
 
     virtual const Framebuffer::Description &Desc() const override
     {

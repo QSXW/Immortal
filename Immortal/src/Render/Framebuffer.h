@@ -84,12 +84,12 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) { }
 
-    virtual UINT32 ColorAttachmentRendererID(UINT32 index = 0) const
+    virtual UINT32 ColorAttachmentHandle(UINT32 index = 0) const
     {
         return 0;
     }
 
-    virtual UINT32 DepthAttachmentRendererID(UINT32 index = 0) const
+    virtual UINT32 DepthAttachmentHandle(UINT32 index = 0) const
     {
         return 0;
     }

@@ -96,7 +96,7 @@ public:
 
     static void SetTitle(const std::string &title)
     {
-        instance->window->SetTitle(title);
+        instance->desc.Title = title;
     }
 
 private:
@@ -128,6 +128,11 @@ private:
     float deltaTime;
 
     static Application *instance;
+
+    bool rendering = false;
+
+    bool polling = false;
+
 public:
     Configuration configuration{};
 };

@@ -456,7 +456,7 @@ namespace Immortal
 			{
 				ImGui::ColorEdit4(U8("ÑÕÉ«"), &s.Color.r);
 				float aspect = (float)s.Texture->Width() / (float)s.Texture->Height();
-				if (ImGui::ImageButton((void *)(uint64_t)(uint32_t)s.Texture->RendererID(), { aspect * 128.0f, 128.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f }))
+				if (ImGui::ImageButton((void *)(uint64_t)(uint32_t)s.Texture->Handle(), { aspect * 128.0f, 128.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f }))
 				{
 					std::optional<std::string> filename = FileDialogs::OpenFile(FileDialogs::ImageFilter);
 					if (filename.has_value())
@@ -529,7 +529,7 @@ namespace Immortal
 
 								auto& albedoColor = c.AlbedoColor;
 								bool useAlbedoMap = true;
-								ImGui::Image((void*)(UINT64)c.AlbedoMap->RendererID(), ImVec2(64, 64));
+								ImGui::Image((void*)(UINT64)c.AlbedoMap->Handle(), ImVec2(64, 64));
 
 								ImGui::PopStyleVar();
 								if (ImGui::IsItemHovered())
@@ -538,7 +538,7 @@ namespace Immortal
 									ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 									ImGui::TextUnformatted(c.AlbedoMap->Path());
 									ImGui::PopTextWrapPos();
-									ImGui::Image((void*)(UINT64)c.AlbedoMap->RendererID(), ImVec2(384, 384));
+									ImGui::Image((void*)(UINT64)c.AlbedoMap->Handle(), ImVec2(384, 384));
 									ImGui::EndTooltip();
 
 									if (ImGui::IsItemClicked())
@@ -564,7 +564,7 @@ namespace Immortal
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useNormalMap = true;
-								ImGui::Image((void*)(UINT64)c.NormalMap->RendererID(), ImVec2(64, 64));
+								ImGui::Image((void*)(UINT64)c.NormalMap->Handle(), ImVec2(64, 64));
 
 								ImGui::PopStyleVar();
 								if (ImGui::IsItemHovered())
@@ -573,7 +573,7 @@ namespace Immortal
 									ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 									ImGui::TextUnformatted(c.NormalMap->Path());
 									ImGui::PopTextWrapPos();
-									ImGui::Image((void*)(UINT64)c.NormalMap->RendererID(), ImVec2(384, 384));
+									ImGui::Image((void*)(UINT64)c.NormalMap->Handle(), ImVec2(384, 384));
 									ImGui::EndTooltip();
 
 									if (ImGui::IsItemClicked())
@@ -597,7 +597,7 @@ namespace Immortal
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useMetalnessMap = true;
-								ImGui::Image((void*)(UINT64)c.MetalnessMap->RendererID(), ImVec2(64, 64));
+								ImGui::Image((void*)(UINT64)c.MetalnessMap->Handle(), ImVec2(64, 64));
 
 								ImGui::PopStyleVar();
 								if (ImGui::IsItemHovered())
@@ -606,7 +606,7 @@ namespace Immortal
 									ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 									ImGui::TextUnformatted(c.MetalnessMap->Path());
 									ImGui::PopTextWrapPos();
-									ImGui::Image((void*)(UINT64)c.MetalnessMap->RendererID(), ImVec2(384, 384));
+									ImGui::Image((void*)(UINT64)c.MetalnessMap->Handle(), ImVec2(384, 384));
 									ImGui::EndTooltip();
 
 									if (ImGui::IsItemClicked())
@@ -630,7 +630,7 @@ namespace Immortal
 							{
 								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
 								bool useRoughnessMap = true;
-								ImGui::Image((void*)(UINT64)c.RoughnessMap->RendererID(), ImVec2(64, 64));
+								ImGui::Image((void*)(UINT64)c.RoughnessMap->Handle(), ImVec2(64, 64));
 
 								ImGui::PopStyleVar();
 								if (ImGui::IsItemHovered())
@@ -639,7 +639,7 @@ namespace Immortal
 									ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 									ImGui::TextUnformatted(c.RoughnessMap->Path());
 									ImGui::PopTextWrapPos();
-									ImGui::Image((void*)(UINT64)c.RoughnessMap->RendererID(), ImVec2(384, 384));
+									ImGui::Image((void*)(UINT64)c.RoughnessMap->Handle(), ImVec2(384, 384));
 									ImGui::EndTooltip();
 
 									if (ImGui::IsItemClicked())

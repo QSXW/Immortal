@@ -112,9 +112,9 @@ public:
         {
             return *renderPass;
         }
-        if constexpr (typeof<T, CommandBuffer*>())
+        if constexpr (typeof<T, CommandBuffers>())
         {
-            return commandBuffer;
+            return commandBuffers;
         }
     }
 
@@ -145,9 +145,9 @@ public:
                 swapchain->Get<Swapchain::Properties>().PresentMode = value;
             }
         }
-        if constexpr (typeof<T, CommandBuffer*>())
+        if constexpr (typeof<T, CommandBuffers>())
         {
-            commandBuffer = value;
+            commandBuffers = value;
         }
     }
 
@@ -174,7 +174,7 @@ private:
 
     std::unique_ptr<Swapchain> swapchain;
 
-    CommandBuffer *commandBuffer{ nullptr };
+    std::vector<CommandBuffer*> commandBuffers;
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 

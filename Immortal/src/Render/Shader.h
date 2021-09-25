@@ -59,8 +59,15 @@ public:
     virtual void Map() const { }
     virtual void Unmap() const { }
 
-    virtual const std::string &Name() const { return "Un-Specified";  }
-    virtual const uint32_t RendererID() const { return -1;  }
+    virtual const char *Name() const
+    {
+        return "Un-Specified";
+    }
+
+    virtual const uint32_t Handle() const
+    {
+        return -1;
+    }
 
     virtual void Set(const std::string& name, int value) { }
     virtual void Set(const std::string& name, int* values, uint32_t count) { }

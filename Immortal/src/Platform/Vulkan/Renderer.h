@@ -36,15 +36,13 @@ public:
 
     Device *device{ nullptr };
 
-    CommandBuffer *commandBuffer;
+    std::vector<CommandBuffer*> commandBuffers;
 
     Swapchain *swapchain{ nullptr };
 
     std::vector<Semaphores> semaphores;
-
-    uint32_t semaphoresIndex{ 0 };
-
-    VkFence fence{ VK_NULL_HANDLE };
+    
+    std::vector<VkFence> fences;
 
     VkRenderPass renderPass{ VK_NULL_HANDLE };
 
@@ -52,7 +50,7 @@ public:
 
     Queue *queue{ nullptr };
 
-    UINT32 currentBuffer{ 0 };
+    uint32_t currentBuffer{ 0 };
 
     std::unique_ptr<SemaphorePool> semaphorePool;
 

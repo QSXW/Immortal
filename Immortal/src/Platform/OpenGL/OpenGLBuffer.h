@@ -11,7 +11,7 @@ namespace Immortal
 		OpenGLVertexBuffer(const void *vertices, uint32_t size);
 		~OpenGLVertexBuffer() override;
 
-		uint32_t RendererID() const override { return mRendererID; }
+		uint32_t Handle() const override { return mHandle; }
 
 		void Map() const override;
 		void Unmap() const override;
@@ -29,7 +29,7 @@ namespace Immortal
 		void SetData(const void *data, uint32_t size) override;
 
 	private:
-		uint32_t mRendererID{};
+		uint32_t mHandle{};
 		VertexLayout mLayout;
 	};
 
@@ -39,7 +39,7 @@ namespace Immortal
 		OpenGLIndexBuffer(const void *indices, uint32_t count);
 		~OpenGLIndexBuffer();
 
-		uint32_t RendererID() const override { return mRendererID; }
+		uint32_t Handle() const override { return mHandle; }
 		void Map() const override;
 		void Unmap() const override;
 
@@ -49,7 +49,7 @@ namespace Immortal
 		}
 	
 	private:
-		uint32_t mRendererID{};
+		uint32_t mHandle{};
 		uint32_t mCount;
 	};
 
@@ -64,7 +64,7 @@ namespace Immortal
 		void Unmap() const override;
 
 	private:
-		uint32_t mRendererID{};
+		uint32_t mHandle{};
 	};
 
 }

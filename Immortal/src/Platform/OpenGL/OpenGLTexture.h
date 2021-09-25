@@ -125,7 +125,7 @@ namespace Immortal {
 			return mHeight;
 		}
 
-		virtual uint32_t RendererID() const override
+		virtual uint32_t Handle() const override
 		{ 
 			return mTexture; 
 		}
@@ -179,7 +179,7 @@ namespace Immortal {
 
 		virtual const char *Path() const override { return mFilePath.c_str(); }
 
-		uint32_t RendererID() const { return mTexture; }
+		uint32_t Handle() const { return mTexture; }
 
 		virtual bool operator==(const Texture& other) const override
 		{

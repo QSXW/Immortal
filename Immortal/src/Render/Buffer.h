@@ -108,7 +108,7 @@ class IMMORTAL_API VertexBuffer
 public:
     virtual ~VertexBuffer() = default;
 
-    virtual uint32_t RendererID() const = 0;
+    virtual uint32_t Handle() const = 0;
 
     virtual void Map() const  = 0;
     virtual void Unmap() const = 0;
@@ -127,7 +127,7 @@ class IMMORTAL_API IndexBuffer
 public:
     virtual ~IndexBuffer() = default;
 
-    virtual uint32_t RendererID() const = 0;
+    virtual uint32_t Handle() const = 0;
 
     virtual void Map() const = 0;
     virtual void Unmap() const = 0;

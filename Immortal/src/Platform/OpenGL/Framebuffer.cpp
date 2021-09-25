@@ -181,13 +181,13 @@ void Framebuffer::ClearAttachment(uint32_t index, int value)
     glClearTexImage(mColorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
 }
 
-uint32_t Framebuffer::ColorAttachmentRendererID(uint32_t index) const
+uint32_t Framebuffer::ColorAttachmentHandle(uint32_t index) const
 {
-    SLASSERT(index < mColorAttachments.size() && "Framebuffer::ColorAttachmentRendererID: index out of bound");
+    SLASSERT(index < mColorAttachments.size() && "Framebuffer::ColorAttachmentHandle: index out of bound");
     return mColorAttachments[index];
 }
 
-uint32_t Framebuffer::DepthAttachmentRendererID(uint32_t index) const
+uint32_t Framebuffer::DepthAttachmentHandle(uint32_t index) const
 {
     return mDepthAttachment;
 }

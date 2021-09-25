@@ -27,27 +27,34 @@ void Renderer::INIT()
         semaphores[i].renderComplete     = semaphorePool->Request();
     }
 
-    fence = device->RequestFence();
-
     queue = context->Get<Queue*>();
 
     auto &commandPool = device->Get<CommandPool>();
-    commandBuffer = commandPool.RequestBuffer(Level::Primary, frameSize);
+    commandBuffers.resize(frameSize);
+    for (auto &buf : commandBuffers)
+    {
+        buf = commandPool.RequestBuffer(Level::Primary);
+    }
+    fences.resize(frameSize);
+    for (auto &fence : fences)
+    {
+        fence = device->RequestFence();
+    }
 
-    context->Set<CommandBuffer*>(commandBuffer);
+    context->Set(commandBuffers);
 }
 
 void Renderer::RenderFrame()
 {
     if (swapchain)
     {
-        auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[semaphoresIndex].acquiredImageReady, VK_NULL_HANDLE);
+        LOG::INFO("Transmit Semaphore => {0} to GPU", (void *)semaphores[currentBuffer].acquiredImageReady);
+        auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[currentBuffer].acquiredImageReady, VK_NULL_HANDLE);
         if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
 		{
 			// resize(width, height);
 		}
-        currentBuffer = (currentBuffer + 1) % commandBuffer->Size();
-        semaphoresIndex = (semaphoresIndex + 1) % commandBuffer->Size();
+        currentBuffer = (currentBuffer + 1) % commandBuffers.size();
     }
 }
 
@@ -59,7 +66,7 @@ void Renderer::SubmitFrame()
 	presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext              = nullptr;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = &semaphores[semaphoresIndex].renderComplete;
+    presentInfo.pWaitSemaphores    = &semaphores[currentBuffer].renderComplete;
 	presentInfo.swapchainCount     = 1;
 	presentInfo.pSwapchains        = &swapchain->Handle();
 	presentInfo.pImageIndices      = &currentBuffer;
@@ -76,15 +83,14 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    VkCommandBuffer *commandBuffers = commandBuffer->Data();
-
+    LOG::INFO("Waiting for Semaphore => {0} to GPU", (void *)semaphores[currentBuffer].acquiredImageReady);
     submitInfo.waitSemaphoreCount   = 1;
-    submitInfo.pWaitSemaphores      = &semaphores[semaphoresIndex].acquiredImageReady;
+    submitInfo.pWaitSemaphores      = &semaphores[currentBuffer].acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = &semaphores[semaphoresIndex].renderComplete;
+    submitInfo.pSignalSemaphores    = &semaphores[currentBuffer].renderComplete;
     submitInfo.pWaitDstStageMask    = &submitPipelineStages;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &commandBuffers[currentBuffer];
+    submitInfo.pCommandBuffers      = &commandBuffers[currentBuffer]->Handle();
 
     queue->Submit(submitInfo, VK_NULL_HANDLE);
 

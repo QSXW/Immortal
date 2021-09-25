@@ -231,10 +231,10 @@ OpenGLTextureCube::OpenGLTextureCube(const std::string & path)
 
         equirectangleToCubeShader.Map();
         envEquirect.Map(1);
-        glBindImageTexture(0, envCubeUnfiltered.RendererID(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        glBindImageTexture(0, envCubeUnfiltered.Handle(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
         glDispatchCompute(envCubeUnfiltered.Width() / 32, envCubeUnfiltered.Height() / 32, 6);
     }
-    glGenerateTextureMipmap(envCubeUnfiltered.RendererID());
+    glGenerateTextureMipmap(envCubeUnfiltered.Handle());
 
     // Compute pre-filtered specular environment map.
     {
@@ -242,8 +242,8 @@ OpenGLTextureCube::OpenGLTextureCube(const std::string & path)
         this->Create(cubemapSize, cubemapSize, Texture::Description{ Texture::Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear });
 
         // Copy unfiltered texture to the current
-        glCopyImageSubData(envCubeUnfiltered.RendererID(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                            this->RendererID(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+        glCopyImageSubData(envCubeUnfiltered.Handle(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+                            this->Handle(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
                             this->Width(), this->Height(), 6);
 
         spmapShader.Map();
@@ -254,8 +254,8 @@ OpenGLTextureCube::OpenGLTextureCube(const std::string & path)
         for (int level = 1, size = cubemapSize / 2; level <= mLevel; level++, size /= 2)
         {
             const GLuint numGroups = std::max(1, size / 32);
-            glBindImageTexture(0, this->RendererID(), level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-            glProgramUniform1f(spmapShader.RendererID(), 0, level * deltaRoughness);
+            glBindImageTexture(0, this->Handle(), level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+            glProgramUniform1f(spmapShader.Handle(), 0, level * deltaRoughness);
             glDispatchCompute(numGroups, numGroups, 6);
         }
     }

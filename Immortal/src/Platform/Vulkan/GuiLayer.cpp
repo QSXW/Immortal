@@ -84,15 +84,15 @@ void GuiLayer::OnAttach()
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
-    commandBuffer = context->Get<CommandBuffer *>();
-    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->Handle());
-    Check(commandBuffer->End());
+    commandBuffer = context->Get<CommandBuffers>();
+    Check(commandBuffer[frameIndex]->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer[frameIndex]->Handle());
+    Check(commandBuffer[frameIndex]->End());
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer->Handle();
+    submitInfo.pCommandBuffers    = &commandBuffer[frameIndex]->Handle();
 
     Check(queue->Submit(submitInfo, VK_NULL_HANDLE));
 
@@ -149,13 +149,13 @@ void GuiLayer::End()
     beginInfo.pClearValues             = &ClearValue;
     beginInfo.renderArea.offset        = { 0, 0 };
 
-    Check(commandBuffer->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, frameIndex));
-    vkCmdBeginRenderPass(commandBuffer->Handle(frameIndex), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    Check(commandBuffer[frameIndex]->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    vkCmdBeginRenderPass(commandBuffer[frameIndex]->Handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->Handle(frameIndex));
+    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer[frameIndex]->Handle());
 
-    vkCmdEndRenderPass(commandBuffer->Handle(frameIndex));
-    Check(commandBuffer->End(frameIndex));
+    vkCmdEndRenderPass(commandBuffer[frameIndex]->Handle());
+    Check(commandBuffer[frameIndex]->End());
     
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {

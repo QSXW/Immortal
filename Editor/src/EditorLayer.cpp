@@ -19,7 +19,7 @@ namespace Immortal
     {
         //mTexture = Texture2D::Create(DEBUG_IMAGE_PATH(test17.jpg));
 
-        Framebuffer::Specification spec;
+        Framebuffer::Description spec;
 
         spec.Attachments = {
             { Texture::Format::RGBA32F },
@@ -48,8 +48,8 @@ namespace Immortal
 
     void EditorLayer::OnUpdate()
     {
-        if (Framebuffer::Specification spec = mFramebuffer->GetSpecification();
-            mViewportSize.x != spec.Width || mViewportSize.y != spec.Height)
+        if (Framebuffer::Description desc = mFramebuffer->Desc();
+            mViewportSize.x != desc.Width || mViewportSize.y != desc.Height)
         {
             mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
             mActiveScene->SetViewportSize(mViewportSize);
@@ -76,10 +76,10 @@ namespace Immortal
                     mFramebuffer->Map();
                     Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
                     Render::Clear();
-                    Renderer::Shader<ShaderName::Tonemap>()->Map();
-                    glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
-                    Render::DrawIndexed(mActiveScene->mToneMap);
-                    Renderer::Shader<ShaderName::Tonemap>()->Unmap();
+                    Render::Get<Shader, ShaderName::Tonemap>()->Map();
+                    glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentHandle());
+                    Render::DrawIndexed(mActiveScene->mToneMap, 1);
+                    Render::Get<Shader, ShaderName::Tonemap>()->Unmap();
                     mFramebuffer->Unmap();
                     break;
                 }
@@ -89,11 +89,11 @@ namespace Immortal
                     mFramebuffer->Map();
                     Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
                     Render::Clear();
-                    Renderer::Shader<ShaderName::Tonemap>()->Map();
-                    glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentRendererID());
+                    Render::Get<Shader, ShaderName::Tonemap>()->Map();
+                    glBindTextureUnit(0, mActiveScene->mFramebuffer->ColorAttachmentHandle());
                     mActiveScene->mToneMap->Map();
-                    Render::DrawIndexed(mActiveScene->mToneMap);
-                    Renderer::Shader<ShaderName::Tonemap>()->Unmap();
+                    Render::DrawIndexed(mActiveScene->mToneMap, 1);
+                    Render::Get<Shader, ShaderName::Tonemap>()->Unmap();
                     mFramebuffer->Unmap();
                     break;
                 }
@@ -110,7 +110,7 @@ namespace Immortal
         /*
         ImGui::Begin("Test");
         {
-            ImGui::Image((void *)(size_t)mActiveScene->mFramebuffer->ColorAttachmentRendererID(), ImVec2{ 1280, 720 }, ImVec2{ 0.0f, 1.0f }, ImVec2{ 1.0f, 0.0f });
+            ImGui::Image((void *)(size_t)mActiveScene->mFramebuffer->ColorAttachmentHandle(), ImVec2{ 1280, 720 }, ImVec2{ 0.0f, 1.0f }, ImVec2{ 1.0f, 0.0f });
         }
         ImGui::End();
         */
@@ -342,7 +342,7 @@ namespace Immortal
             auto [x, y] = ImGui::GetContentRegionAvail();
             mViewportSize = { x, y };
 
-            uint32_t textureID = (mFramebuffer->ColorAttachmentRendererID());
+            uint32_t textureID = (mFramebuffer->ColorAttachmentHandle());
             ImGui::Image((void *)(size_t)textureID, ImVec2{ x, y }, ImVec2{ 0.0f, 1.0f }, ImVec2{ 1.0f, 0.0f });
             
             auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
@@ -432,7 +432,7 @@ namespace Immortal
             float size = ImGui::GetWindowHeight() - 4.0F;
             ImGui::SameLine((ImGui::GetWindowContentRegionMax().x / 2.0f) - (1.5f * (ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x)) - (size / 2.0f));
             Ref<Texture2D> buttonTex = mState == SceneState::Play ? mStopButtonTexture : mPlayButtonTexture;
-            if (ImGui::ImageButton((void*)(UINT32)buttonTex->RendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+            if (ImGui::ImageButton((void*)(UINT32)buttonTex->Handle(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
             {
                 if (mState == SceneState::Edit)
                 {
@@ -446,7 +446,7 @@ namespace Immortal
 
             ImGui::SameLine();
 
-            if (ImGui::ImageButton((void*)(UINT32)mPauseButtonTexture->RendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+            if (ImGui::ImageButton((void*)(UINT32)mPauseButtonTexture->Handle(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
             {
                 if (mState == SceneState::Play)
                 {

@@ -16,6 +16,9 @@ struct Semaphores
     VkSemaphore renderComplete;
 };
 
+class CommandBuffer;
+using CommandBuffers = std::vector<CommandBuffer *>;
+
 using ThreadIndex = UINT32;
 using FrameIndex  = UINT32;
 
