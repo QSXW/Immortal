@@ -193,8 +193,7 @@ inline void Check(VkResult status)
     if (status)
     {
         LOG::ERR("Detected Vulkan error: {0}", msg);
-        system("pause");
-        // abort();
+        abort();
     }
 }
 #else
@@ -207,8 +206,8 @@ static inline bool Equals(const char *str1, const char *str2)
 }
 
 VkFormat SuitableDepthFormat(VkPhysicalDevice             physicalDevice,
-                                bool                         depthOnly             = false,
-                                const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });
+                             bool                         depthOnly             = false,
+                             const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });
 
 static inline bool IsDepthOnlyFormat(VkFormat format)
 {

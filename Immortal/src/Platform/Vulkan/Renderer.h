@@ -42,6 +42,10 @@ public:
 
     std::vector<Semaphores> semaphores;
     
+    uint32_t sync{ 0 };
+
+    uint32_t frameSize{ 0 };
+
     std::vector<VkFence> fences;
 
     VkRenderPass renderPass{ VK_NULL_HANDLE };

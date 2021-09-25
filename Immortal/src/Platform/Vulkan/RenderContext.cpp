@@ -26,7 +26,6 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 
 static std::vector<const char *> ValidationLayers = {
     // "VK_LAYER_RENDERDOC_Capture",
-    // "VK_LAYER_RENDERDOC_Capture",
     // VK_LAYER_LUNARG_API_DUMP,
     // VK_LAYER_LUNARG_DEVICE_SIMULATION,
     // VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
@@ -81,10 +80,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
             swapchain = std::make_unique<Swapchain>(*device, surface);
         }
     }
-
-    Set<VkFormat>(surfaceFormatPriorities[0].format);
-    Set<VkPresentModeKHR>(presentModePriorities[0]);
- 
     Prepare();
 }
 
@@ -110,8 +105,6 @@ void RenderContext::Prepare(size_t threadCount)
 {
     device->Wait();
 
-    swapchain->Set(presentModePriorities);
-    swapchain->Set(surfaceFormatPriorities);
     swapchain->Create();
 
     renderPass  = std::make_unique<RenderPass>(device.get(), swapchain->Get<VkFormat>(), depthFormat);

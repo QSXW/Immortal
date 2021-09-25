@@ -37,6 +37,9 @@ void GuiLayer::OnAttach()
     Application *app = Application::App();
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
 
+    auto &swapchain = context->Get<Swapchain>();
+    auto format = swapchain.Get<VkFormat>();
+
     VkDescriptorPoolSize poolSizes[] = {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -72,7 +75,7 @@ void GuiLayer::OnAttach()
     initInfo.PipelineCache   = pipelineCache;
     initInfo.DescriptorPool  = descriptorPool;
     initInfo.Allocator       = nullptr;
-    initInfo.MinImageCount   = 2;
+    initInfo.MinImageCount   = 3;
     initInfo.ImageCount      = context->Get<RenderContext::Frames>().size();
     initInfo.CheckVkResultFn = &Check;
 
@@ -135,7 +138,7 @@ void GuiLayer::End()
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue ClearValue = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+    VkClearValue ClearValue = {{{ 1.0f, 0.0f, 0.0f, 0.0f }}};
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 

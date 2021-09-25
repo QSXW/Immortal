@@ -56,6 +56,7 @@ void Application::Run()
 {
     while (running)
     { 
+        Render::RenderFrame();
         timer.Lap();
         deltaTime = timer.elapsed();
 
@@ -73,7 +74,7 @@ void Application::Run()
 
         window->SetTitle(desc.Title);
         window->OnUpdate();
-        Render::RenderFrame();
+        
         Render::SwapBuffers();
     }
 }
@@ -92,7 +93,6 @@ void Application::OnEvent(Event &e)
     for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
         (*--it)->OnEvent(e);
-        /* If the event was handled. Just break from the dispatch loop. */
         if (e.Handled)
         {
             break;

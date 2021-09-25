@@ -115,8 +115,6 @@ private:
 
     GuiLayer *guiLayer;
 
-    float lastFrameTime{ 0.0f };
-
     Window::Description desc;
 
     Input _M_input;
