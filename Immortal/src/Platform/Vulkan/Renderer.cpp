@@ -48,13 +48,37 @@ void Renderer::RenderFrame()
 {
     if (swapchain)
     {
-        LOG::INFO("Transmit Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
+        // LOG::INFO("Transmit Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
         auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
         if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
 		{
-			// resize(width, height);
+			Resize();
+		}
+		else
+		{
+			Check(error);
 		}
     }
+}
+
+void Renderer::Resize()
+{
+    swapchain = context->UpdateSurface();
+
+    device->Wait();
+    
+    auto &commandPool = device->Get<CommandPool>();
+    commandPool.DestoryAll();
+    
+    frameSize = context->FrameSize();
+    commandBuffers.resize(frameSize);
+    for (auto &buf : commandBuffers)
+    {
+        buf = commandPool.RequestBuffer(Level::Primary);
+    }
+    context->Set(commandBuffers);
+
+    device->Wait();
 }
 
 void Renderer::SubmitFrame()
@@ -72,9 +96,9 @@ void Renderer::SubmitFrame()
     presentInfo.pResults           = nullptr;
 
     error = queue->Present(presentInfo);
-    if (error == VK_ERROR_OUT_OF_DATE_KHR)
+    if (error == VK_ERROR_OUT_OF_DATE_KHR || error == VK_SUBOPTIMAL_KHR)
     {
-        LOG::WARN("Swap chain is no longer compatible with the surface and needs to be recreated");
+        Resize();
         return;
     }
     Check(error);
@@ -82,7 +106,7 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    LOG::INFO("Waiting for Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
+    // LOG::INFO("Waiting for Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &semaphores[sync].acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;

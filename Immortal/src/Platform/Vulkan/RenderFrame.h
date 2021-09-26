@@ -27,10 +27,15 @@ public:
 public:
     RenderFrame(Device *device, std::unique_ptr<RenderTarget> &&renderTarget, size_t threadCount = 1);
 
+    void Set(std::unique_ptr<RenderTarget> &&value)
+    {
+        renderTarget = std::move(value);
+    }
+
 private:
     Device *device;
 
-    Unique<RenderTarget> renderTarget;
+    std::unique_ptr<RenderTarget> renderTarget;
 
     std::map<UINT32, std::vector<Unique<CommandPool>>> commandPools;
 

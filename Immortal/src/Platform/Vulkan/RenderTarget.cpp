@@ -7,18 +7,26 @@ namespace Immortal
 {
 namespace Vulkan
 {
-Unique<RenderTarget> RenderTarget::Create(Image &&image)
+
+std::unique_ptr<RenderTarget> RenderTarget::Create(Image &&image)
 {
-    auto &device = image.Get<Device>();
-    VkFormat depthFormat = Vulkan::SuitableDepthFormat(device.Get<PhysicalDevice>().Handle());
-
-    Image depthImage{ &device, image.Extent(), depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY };
-
     std::vector<Image> images;
+
+    auto &device = image.Get<Device>();
+
+    VkFormat depthFormat = SuitableDepthFormat(device.Get<PhysicalDevice>().Handle());
+
+    Image depthImage{
+        &device,
+        image.Extent(),
+        depthFormat,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+    };
+    
     images.push_back(std::move(image));
     images.push_back(std::move(depthImage));
 
-    return MakeUnique<RenderTarget>(std::move(images));
+    return std::make_unique<RenderTarget>(std::move(images));
 };
 
 RenderTarget::RenderTarget(std::vector<Image> &&images) :

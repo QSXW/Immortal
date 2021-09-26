@@ -211,26 +211,34 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
     }
 }
 
+Swapchain::Swapchain(Swapchain &oldSwapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform) :
+    Swapchain{ oldSwapchain, oldSwapchain.device, oldSwapchain.surface, extent, oldSwapchain.properties.ImageCount, transform, oldSwapchain.properties.PresentMode, oldSwapchain.imageUsageFlags }
+{
+    presentModePriorities = oldSwapchain.presentModePriorities;
+    surfaceFormatPriorities = oldSwapchain.surfaceFormatPriorities;
+    Create();
+}
+
 Swapchain::Swapchain(Device                               &device,
-                        VkSurfaceKHR                         surface,
-                        const VkExtent2D &extent,
-                        const UINT32                         imageCount,
-                        const VkSurfaceTransformFlagBitsKHR  transform,
-                        const VkPresentModeKHR               presentMode,
-                        const std::set<VkImageUsageFlagBits> &imageUsageFlags) :
+                     VkSurfaceKHR                         surface,
+                     const VkExtent2D &extent,
+                     const UINT32                         imageCount,
+                     const VkSurfaceTransformFlagBitsKHR  transform,
+                     const VkPresentModeKHR               presentMode,
+                     const std::set<VkImageUsageFlagBits> &imageUsageFlags) :
     Swapchain{ *this, device, surface, extent, imageCount, transform, presentMode, imageUsageFlags }
 {
 
 }
 
 Swapchain::Swapchain(Swapchain &oldSwapchain,
-                        Device                              &device,
-                        VkSurfaceKHR                         surface,
-                        const VkExtent2D                    &extent,
-                        const uint32_t                       imageCount,
-                        const VkSurfaceTransformFlagBitsKHR  transform,
-                        const VkPresentModeKHR               presentMode,
-                        const std::set<VkImageUsageFlagBits> &imageUsageFlags) :
+                     Device                              &device,
+                     VkSurfaceKHR                         surface,
+                     const VkExtent2D                    &extent,
+                     const uint32_t                       imageCount,
+                     const VkSurfaceTransformFlagBitsKHR  transform,
+                     const VkPresentModeKHR               presentMode,
+                     const std::set<VkImageUsageFlagBits> &imageUsageFlags) :
     device{ device },
     surface{ surface }
 {

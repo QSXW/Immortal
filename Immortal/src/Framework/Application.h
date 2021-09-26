@@ -130,7 +130,6 @@ private:
     bool rendering = false;
 
     bool polling = false;
-
 public:
     Configuration configuration{};
 };

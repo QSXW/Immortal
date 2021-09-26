@@ -56,6 +56,7 @@ void Application::Run()
 {
     while (running)
     { 
+        LOG::INFO("Width, Height => {0}, {1}", Width(), Height());
         Render::RenderFrame();
         timer.Lap();
         deltaTime = timer.elapsed();
@@ -108,6 +109,8 @@ bool Application::OnWindowClosed(WindowCloseEvent& e)
 
 bool Application::OnWindowResize(WindowResizeEvent &e)
 {
+    desc.Width  = e.Width();
+    desc.Height = e.Height();
     if (e.Width() == 0 || e.Height() == 0)
     {
         minimized = true;

@@ -17,6 +17,8 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
+class Swapchain;
 class Device : public SuperDevice
 {
 public:
@@ -93,6 +95,11 @@ public:
     VmaAllocator MemoryAllocator() const
     {
         return memoryAllocator;
+    }
+
+    VkResult GetSurfaceCapabilities(Surface &surface, VkSurfaceCapabilitiesKHR *properties)
+    {
+        return vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, properties);
     }
 
 private:

@@ -31,6 +31,15 @@ public:
 
     CommandBuffer *RequestBuffer(Level level);
 
+    void DestoryAll()
+    {
+        primaryCommandBuffers.clear();
+        primaryActiveCount   = 0;
+
+        secondaryCommandBuffers.clear();
+        secondaryActiveCount = 0;
+    }
+
     VkCommandPool &Handle()
     {
         return handle;

@@ -40,7 +40,7 @@ private:
 
     RenderPass *renderPass{ nullptr };
 
-    CommandBuffers commandBuffer{ nullptr };
+    CommandBuffers *commandBuffer{ nullptr };
     
     uint32_t frameIndex{ 0 };
 };

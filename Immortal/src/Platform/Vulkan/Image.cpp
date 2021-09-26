@@ -40,17 +40,17 @@ inline VkImageType ImageType(VkExtent3D extent)
         result = VK_IMAGE_TYPE_3D;
         break;
     default:
-        LOG::ERR("No image type found.");
+        result = VK_IMAGE_TYPE_2D;
         break;
     }
 
-        return result;
+    return result;
 }
 
 Image::Image(Device *device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
     device{ device },
     handle{ handle },
-    type{ Vulkan::ImageType(extent) },
+    type{ ImageType(extent) },
     extent{ extent },
     format{ format },
     sampleCount{ sampleCount },
@@ -101,7 +101,7 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
         memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
 
-    Vulkan::Check(vmaCreateImage(device->MemoryAllocator(), &createInfo, &memoryInfo, &handle, &memory, nullptr));
+    Check(vmaCreateImage(device->MemoryAllocator(), &createInfo, &memoryInfo, &handle, &memory, nullptr));
 }
 
 Image::Image(Image &&other) :

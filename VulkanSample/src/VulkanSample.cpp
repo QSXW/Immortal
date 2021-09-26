@@ -25,7 +25,7 @@ void VulkanLayer::OnGuiRender()
         static float f = 0.0f;
         static int counter = 0;
 
-        ImGui::Begin("Hello, world!");
+        ImGui::Begin("Debug Tools");
 
         ImGui::Text("This is some useful text.");
         ImGui::Checkbox("Demo Window", &Settings.showDemoWindow);

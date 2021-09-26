@@ -87,15 +87,15 @@ void GuiLayer::OnAttach()
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
-    commandBuffer = context->Get<CommandBuffers>();
-    Check(commandBuffer[frameIndex]->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer[frameIndex]->Handle());
-    Check(commandBuffer[frameIndex]->End());
+    commandBuffer = &context->Get<CommandBuffers>();
+    Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->at(frameIndex)->Handle());
+    Check(commandBuffer->at(frameIndex)->End());
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer[frameIndex]->Handle();
+    submitInfo.pCommandBuffers    = &commandBuffer->at(frameIndex)->Handle();
 
     Check(queue->Submit(submitInfo, VK_NULL_HANDLE));
 
@@ -112,7 +112,12 @@ void GuiLayer::OnDetach()
 
 void GuiLayer::OnEvent(Event &e)
 {
-
+    if (e.Type() == EventType::WindowResize)
+    {
+        auto resize = dcast<WindowResizeEvent *>(&e);
+        ImGuiIO     &io  = ImGui::GetIO();
+        io.DisplaySize = ImVec2{ (float)resize->Width(), (float)resize->Height() };
+    }
 }
 
 void GuiLayer::OnGuiRender()
@@ -132,15 +137,18 @@ void GuiLayer::End()
     Super::End();
 
     ImGuiIO     &io  = ImGui::GetIO();
-    Application *app = Application::App();
 
-    io.DisplaySize = ImVec2{ ncast<float>(app->Width()), ncast<float>(app->Height()) };
+    auto &[width, height] = context->Get<Extent2D>();
+
+    io.DisplaySize = ImVec2{ (float)width, (float)height };
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue ClearValue = {{{ 1.0f, 0.0f, 0.0f, 0.0f }}};
+    VkClearValue ClearValue = {{{ .40f, 0.45f, 0.60f, 0.0f }}};
 
     frameIndex = Render::CurrentPresentedFrameIndex();
+
+    commandBuffer = &context->Get<CommandBuffers>();
 
     VkRenderPassBeginInfo beginInfo = {};
     beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -152,13 +160,13 @@ void GuiLayer::End()
     beginInfo.pClearValues             = &ClearValue;
     beginInfo.renderArea.offset        = { 0, 0 };
 
-    Check(commandBuffer[frameIndex]->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    vkCmdBeginRenderPass(commandBuffer[frameIndex]->Handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+    vkCmdBeginRenderPass(commandBuffer->at(frameIndex)->Handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer[frameIndex]->Handle());
+    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->at(frameIndex)->Handle());
 
-    vkCmdEndRenderPass(commandBuffer[frameIndex]->Handle());
-    Check(commandBuffer[frameIndex]->End());
+    vkCmdEndRenderPass(commandBuffer->at(frameIndex)->Handle());
+    Check(commandBuffer->at(frameIndex)->End());
     
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {

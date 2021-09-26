@@ -9,6 +9,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 class Swapchain
 {
 public:
@@ -26,6 +27,8 @@ public:
     };
 
 public:
+    Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
+
     Swapchain(Device                              &device,
               VkSurfaceKHR                         surface,
               const VkExtent2D                    &extent = {},
@@ -83,6 +86,10 @@ public:
         if constexpr (typeof<T, FrameIndex>())
         {
             return frameIndex;
+        }
+        if constexpr (typeof<T, Surface>())
+        {
+            return surface;
         }
     }
 
@@ -144,5 +151,6 @@ private:
 
     std::set<VkImageUsageFlagBits> imageUsageFlags;
 };
+
 }
 }

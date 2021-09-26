@@ -32,23 +32,22 @@ public:
     {
         for (int i = 0; i < num; i++)
         {
-            threads.emplace_back([=] {
-                while (true)
+            threads.emplace_back([=] {  while (true) {
+                Task task;
                 {
-                    Task task;
+                    std::unique_lock<std::mutex> lock{ mutex };
+                    condition.wait(lock, [=] { return stopping || !tasks.empty(); });
+                    if (stopping)
                     {
-                        std::unique_lock<std::mutex> lock{ mutex };
-                        condition.wait(lock, [=] { return stopping || !tasks.empty(); });
-                        if (stopping)
-                        {
-                            break;
-                        }
-                        task = std::move(tasks.front());
-                        tasks.pop();
+                        LOG::INFO("Stopping Thread -> \tid => {0}\thandle => {1}",
+                                  threads[i].get_id(), threads[i].native_handle());
+                        break;
                     }
-                    task();
+                    task = std::move(tasks.front());
+                    tasks.pop();
                 }
-            });
+                task();
+            }});
             LOG::INFO("\tid => {0}\thandle => {1}", threads[i].get_id(), threads[i].native_handle());
         }
     }
@@ -57,7 +56,7 @@ public:
     {
         {
             std::unique_lock<std::mutex> lock{ mutex };
-            stopping = false;
+            stopping = true;
         }
         condition.notify_all();
 

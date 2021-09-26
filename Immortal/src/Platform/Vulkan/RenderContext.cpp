@@ -127,9 +127,79 @@ void RenderContext::Prepare(size_t threadCount)
     this->status = true;
 }
 
+Swapchain *RenderContext::UpdateSurface()
+{
+    if (!swapchain)
+    {
+        goto end;
+    }
+
+    VkSurfaceCapabilitiesKHR properties;
+    Check(device->GetSurfaceCapabilities(swapchain->Get<Surface>(), &properties));
+    
+    if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.height <= 0 && properties.currentExtent.width <= 0))
+	{
+        goto end;
+	}
+    if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
+    {
+        device->Wait();
+        surfaceExtent = properties.currentExtent;
+
+        LOG::INFO("Destory swapchain => {0}", (void *)swapchain->Handle());
+        UpdateSwapchain(surfaceExtent, regisry.preTransform);
+        LOG::INFO("Create  swapchain => {0}", (void *)swapchain->Handle());
+    }
+
+end:
+    return swapchain.get();
+}
+
+void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
+{
+    framebuffers.clear();
+
+    if (transform == VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform == VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
+    {
+        swapchain = std::make_unique<Swapchain>(*swapchain, VkExtent2D{ extent.height, extent.width }, transform);
+    }
+    else
+    {
+        swapchain = std::make_unique<Swapchain>(*swapchain, extent, transform);;
+    }
+    regisry.preTransform = transform;
+
+    auto frame = frames.begin();
+    for (auto &handle : swapchain->Get<Swapchain::Images>())
+    {
+        Image image{
+            device.get(),
+            handle,
+            VkExtent3D{ extent.width, extent.height, 1 },
+            swapchain->Get<VkFormat>(),
+            swapchain->Get<VkImageUsageFlags>()
+        };
+
+        auto renderTarget = RenderTarget::Create(std::move(image));
+        
+        framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
+
+        if (frame != frames.end())
+        {
+            (*frame)->Set(std::move(renderTarget));
+        }
+        else
+        {
+            frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget), threadCount));
+        }
+        
+        frame++;
+    }
+}
+
 void RenderContext::SwapBuffers()
 {
-   
+    
 }
 
 }

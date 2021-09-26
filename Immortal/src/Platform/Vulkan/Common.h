@@ -21,6 +21,7 @@ using CommandBuffers = std::vector<CommandBuffer *>;
 
 using ThreadIndex = UINT32;
 using FrameIndex  = UINT32;
+using Surface     = VkSurfaceKHR;
 
 enum class Level : int
 {

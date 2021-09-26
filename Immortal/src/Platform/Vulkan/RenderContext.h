@@ -161,6 +161,10 @@ public:
         return framebuffers.size();
     }
 
+    Swapchain *UpdateSurface();
+
+    void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
+
 private:
     void *handle;
 
@@ -220,6 +224,11 @@ private:
             VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
         }
     };
+
+    struct
+    {
+        VkSurfaceTransformFlagBitsKHR preTransform{ VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR };
+    } regisry;
 
 public:
     static VkResult Status;

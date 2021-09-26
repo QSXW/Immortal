@@ -31,6 +31,8 @@ public:
         return currentBuffer;
     }
 
+    void Resize();
+
 public:
     RenderContext *context{ nullptr };
 
