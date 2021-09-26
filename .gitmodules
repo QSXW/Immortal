@@ -1,6 +1,7 @@
 [submodule "3rdparty/assimp"]
 	path = 3rdparty/assimp
 	url = https://github.com/assimp/assimp.git
+	ignore = dirty
 [submodule "3rdparty/spdlog"]
 	path = 3rdparty/spdlog
 	url = git@github.com:gabime/spdlog.git
@@ -15,3 +16,5 @@
 	path = 3rdparty/imgui
 	url = https://github.com/QSXW/imgui.git
 	branch = docking
+[submodule "<path>"]
+	ignore = untracked
