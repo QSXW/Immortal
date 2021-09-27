@@ -24,15 +24,28 @@ namespace Immortal
 namespace D3D12
 {
 
+template <void(*F), class ... A>
+void IfNotNullThen(A&& ... args)
+{
+    F(std::forward<A>(args)...);
+}
+
 static inline void Check(HRESULT result, const char *message = "")
 {
     if (FAILED(result))
     {
-        LOG::ERR("{0}", message);
+        LOG::ERR("Status Code => {0}", result);
+        if (!message || !message[0])
+        {
+            LOG::ERR("{0}", "Unknow Exception");
+        }
+        else
+        {
+            LOG::ERR("{0}", message);
+        }
         throw Exception(message);
     }
 }
-
 
 static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **ppAdapter)
 {

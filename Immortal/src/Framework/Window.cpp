@@ -5,17 +5,15 @@
 
 namespace Immortal
 {
-Scope<Window> Window::Create(const Description &description)
+
+std::unique_ptr<Window> Window::Create(const Description &description)
 {
 #ifdef WINDOWS
-    #ifndef IMMORTAL_WINDOWS_DIRECT
-        return CreateScope<GLFWWindow>(description);
-    #else
-        return CreateScope<DirectWindow>(description);
-    #endif
+        return std::make_unique<GLFWWindow>(description);
 #else
     SLASSERT(false && "Unknown platform!");
     return nullptr;
 #endif
 }
+
 }

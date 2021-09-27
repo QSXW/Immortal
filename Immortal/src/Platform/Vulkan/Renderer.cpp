@@ -29,19 +29,14 @@ void Renderer::INIT()
 
     queue = context->Get<Queue*>();
 
-    auto &commandPool = device->Get<CommandPool>();
-    commandBuffers.resize(frameSize);
-    for (auto &buf : commandBuffers)
-    {
-        buf = commandPool.RequestBuffer(Level::Primary);
-    }
+    commandBuffers = context->Get<CommandBuffers>();
+    frameSize = commandBuffers.size();
+
     fences.resize(frameSize);
     for (auto &fence : fences)
     {
         fence = device->RequestFence();
     }
-
-    context->Set(commandBuffers);
 }
 
 void Renderer::RenderFrame()

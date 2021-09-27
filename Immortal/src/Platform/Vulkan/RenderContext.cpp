@@ -124,6 +124,13 @@ void RenderContext::Prepare(size_t threadCount)
 
     this->threadCount = threadCount;
 
+    auto &commandPool = device->Get<CommandPool>();
+    commandBuffers.resize(frames.size());
+    for (auto &buf : commandBuffers)
+    {
+        buf = commandPool.RequestBuffer(Level::Primary);
+    }
+
     this->status = true;
 }
 

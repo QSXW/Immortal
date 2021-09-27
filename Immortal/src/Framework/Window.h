@@ -37,11 +37,25 @@ public:
         {
             if (this != &other)
             {
-                Title         = std::move(other.Title);
+                Title         = other.Title;
                 Width         = other.Width; 
                 Height        = other.Height;
                 Vsync         = other.Vsync; 
                 EventCallback = other.EventCallback;
+            }
+            
+            return *this;
+        }
+
+        Description &operator =(Description &&other)
+        {
+            if (this != &other)
+            {
+                Title         = std::move(std::move(other.Title));
+                Width         = std::move(other.Width); 
+                Height        = std::move(other.Height);
+                Vsync         = std::move(other.Vsync); 
+                EventCallback = std::move(other.EventCallback);
             }
             
             return *this;
@@ -62,17 +76,11 @@ public:
 public:
     virtual ~Window() { }
 
-    virtual void OnUpdate() = 0;
-
     virtual UINT32 Width() const = 0;
 
     virtual UINT32 Height() const = 0;
 
     virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
-
-    virtual void SetVSync(bool enabled) = 0;
-
-    virtual bool IsVSync() const = 0;
 
     virtual void* GetNativeWindow() const = 0;
 
@@ -89,6 +97,6 @@ public:
     virtual void SetTitle(const std::string &title) = 0;
 
 public:
-    static Scope<Window> Create(const Description &description = Description{});
+    static std::unique_ptr<Window> Create(const Description &description = Description{});
 };
 }

@@ -4,13 +4,14 @@
 #include "Render.h"
 #include "Platform/OpenGL/RenderContext.h"
 #include "Platform/Vulkan/RenderContext.h"
+#include "Platform/D3D12/RenderContext.h"
 #include "Platform/OpenGL/OpenGLShader.h"
 #include "Platform/Vulkan/Shader.h"
 
 namespace Immortal
 {
 
-Unique<RenderContext> RenderContext::Create(Description &desc)
+std::unique_ptr<RenderContext> RenderContext::Create(Description &desc)
 {
     switch (Render::API)
     {
@@ -19,6 +20,9 @@ Unique<RenderContext> RenderContext::Create(Description &desc)
 
     case Render::Type::Vulkan:
         return std::make_unique<Vulkan::RenderContext>(desc);
+
+    case Render::Type::D3D12:
+        return std::make_unique<D3D12::RenderContext>(desc);
 
     default:
         LOG::ERR("Not support api");

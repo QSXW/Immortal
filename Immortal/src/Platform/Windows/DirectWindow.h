@@ -9,57 +9,50 @@
 
 namespace Immortal
 {
-	class IMMORTAL_API DirectWindow : public Window
-	{
-	public:
-		DirectWindow(const Description &description);
 
-		virtual ~DirectWindow();
+class IMMORTAL_API DirectWindow : public Window
+{
+public:
+    DirectWindow(const Description &description);
 
-		void OnUpdate() override;
+    virtual ~DirectWindow();
 
-		virtual UINT32 Width() const override
-		{
-			return desc.Width;
-		}
+    virtual UINT32 Width() const override
+    {
+        return desc.Width;
+    }
 
-		virtual UINT32 Height() const override
-		{
-			return desc.Height;
-		}
+    virtual UINT32 Height() const override
+    {
+        return desc.Height;
+    }
 
-		virtual void SetEventCallback(const EventCallbackFunc& callback) override
-		{
-			desc.EventCallback = callback;
-		}
+    virtual void SetEventCallback(const EventCallbackFunc& callback) override
+    {
+        desc.EventCallback = callback;
+    }
 
-		virtual void SetVSync(bool enabled) override;
+    virtual void* GetNativeWindow() const
+    {
+        return handle;
+    }
 
-		virtual bool IsVSync() const override
-		{
-			return desc.Vsync;
-		}
+    virtual void ProcessEvents();
 
-		virtual void* GetNativeWindow() const
-		{
-			return handle;
-		}
+    inline void Clear() override;
 
-		virtual void ProcessEvents();
+private:
+    virtual void INIT(const Description &description);
 
-		inline void Clear() override;
+    virtual void Shutdown();
 
-	private:
-		virtual void Init(const Description &description);
+private:
+    HWND handle;
 
-		virtual void Shutdown();
+    WNDCLASSEX wc;
 
-	private:
-		HWND handle;
+    Description desc;
+};
 
-		WNDCLASSEX wc;
-
-		Description desc;
-	};
 }
 

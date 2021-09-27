@@ -90,6 +90,11 @@ inline constexpr bool typeof()
     return false;
 }
 
+template <class T>
+inline constexpr void *CleanObject(T *ptr, int value = 0, size_t size = sizeof(T))
+{
+    return memset(ptr, value, size);
+}
 
 static uint32_t CyclicRedundancyCheck32(const uint8_t *message, uint32_t length)
 {

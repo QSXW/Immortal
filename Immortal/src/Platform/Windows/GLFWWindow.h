@@ -19,8 +19,6 @@ public:
 
     virtual ~GLFWWindow();
 
-    void OnUpdate() override;
-
     UINT32 Width() const override
     {
         return desc.Width;
@@ -36,13 +34,9 @@ public:
         desc.EventCallback = callback;
     }
 
-    virtual void SetVSync(bool enabled) override;
-
-    virtual bool IsVSync() const override;
-
-    virtual void* GetNativeWindow() const
+    virtual void *GetNativeWindow() const
     {
-        return  window;
+        return window;
     }
 
     virtual void* PlatformNativeWindow() const
@@ -52,14 +46,17 @@ public:
 
     float Time() override;
 
-    virtual void ProcessEvents() override;
+    virtual void ProcessEvents() override
+    {
+        glfwPollEvents();
+    }
 
     virtual float DpiFactor() const override;
 
     virtual void SetTitle(const std::string &title) override;
 
 private:
-    virtual void Init(const Description &descrition);
+    virtual void INIT(const Description &descrition);
 
     virtual void Shutdown();
 

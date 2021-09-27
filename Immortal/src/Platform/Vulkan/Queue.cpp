@@ -2,6 +2,7 @@
 #include "Queue.h"
 
 #include "Device.h"
+#include "..\D3D12\Queue.h"
 
 namespace Immortal
 {
@@ -34,3 +35,4 @@ namespace Vulkan
 
 }
 }
+

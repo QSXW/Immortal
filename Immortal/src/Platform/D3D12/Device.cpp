@@ -6,10 +6,8 @@ namespace Immortal
 namespace D3D12
 {
 
-Device::Device()
+Device::Device(ComPtr<IDXGIFactory4> factory)
 {
-    Check(CreateDXGIFactory1(IID_PPV_ARGS(&factory)), "Failed to create DXGI Factory");
-
     if (UseWarpDevice)
     {
         ComPtr<IDXGIAdapter> warpAdapter;

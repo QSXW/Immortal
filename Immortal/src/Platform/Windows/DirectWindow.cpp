@@ -309,10 +309,10 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 DirectWindow::DirectWindow(const Description &description)
 {
-    Init(description);
+    INIT(description);
 }
 
-void DirectWindow::Init(const Description &description)
+void DirectWindow::INIT(const Description &description)
 {
     desc = description;
 
@@ -342,28 +342,6 @@ void DirectWindow::Init(const Description &description)
 DirectWindow::~DirectWindow()
 {
     Shutdown();
-}
-
-void DirectWindow::OnUpdate()
-{
-    ::UpdateWindow(handle);
-
-    // pool events
-    MSG msg;
-    while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
-    {
-        ::TranslateMessage(&msg);
-        ::DispatchMessage(&msg);
-        if (msg.message == WM_QUIT)
-        {
-            break;
-        }
-    }
-}
-
-void DirectWindow::SetVSync(bool enabled)
-{
-
 }
 
 void DirectWindow::ProcessEvents()

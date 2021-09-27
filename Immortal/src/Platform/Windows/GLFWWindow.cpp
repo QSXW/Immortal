@@ -8,6 +8,7 @@
 
 namespace Immortal
 {
+
 UINT8 GLFWWindow::GLFWWindowCount = 0;
 
 static void GLFWErrorCallback(int error, const char *description)
@@ -17,17 +18,12 @@ static void GLFWErrorCallback(int error, const char *description)
 
 GLFWWindow::GLFWWindow(const Description &description)
 {
-    Init(description);
+    INIT(description);
 }
 
 GLFWWindow::~GLFWWindow()
 {
     Shutdown();
-}
-
-void GLFWWindow::ProcessEvents()
-{
-    glfwPollEvents();
 }
 
 /// @brief It calculates the dpi factor using the density from GLFW physical size
@@ -54,7 +50,7 @@ void GLFWWindow::SetTitle(const std::string &title)
     glfwSetWindowTitle(window, desc.Title.c_str());
 }
 
-void GLFWWindow::Init(const Description &description)
+void GLFWWindow::INIT(const Description &description)
 {
     desc = description;
 
@@ -66,13 +62,9 @@ void GLFWWindow::Init(const Description &description)
         SLASSERT(glfwInit() && "Could not initialize GLFW!");
     }
 
-    if (Render::API == Render::Type::Vulkan)
+    if (Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
-    else
-    {
-        SetVSync(true);
     }
 
     window = glfwCreateWindow((int)desc.Width, (int)desc.Height, description.Title.c_str(), nullptr, nullptr);
@@ -175,23 +167,9 @@ void GLFWWindow::Shutdown()
     }
 }
 
-void GLFWWindow::OnUpdate()
-{
-    glfwPollEvents();
-}
-
-void GLFWWindow::SetVSync(bool enabled)
-{
-    desc.Vsync = enabled;
-}
-
-bool GLFWWindow::IsVSync() const
-{
-    return desc.Vsync;
-}
-
 float GLFWWindow::Time()
 {
     return ncast<float>(glfwGetTime());
 }
+
 }

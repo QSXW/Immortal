@@ -40,8 +40,9 @@ public:
 
     void OnEvent(Event &e);
 
-    virtual inline void PushLayer(Layer *layer);
-    virtual inline void PushOverlay(Layer *overlay);
+    virtual void PushLayer(Layer *layer);
+
+    virtual void PushOverlay(Layer *overlay);
 
     static Application *App()
     {
@@ -53,12 +54,12 @@ public:
         return guiLayer;
     }
 
-    virtual Window& GetWindow() const
+    virtual Window &GetWindow() const
     {
         return *window;
     }
 
-    void* GetNativeWindow() const
+    void *GetNativeWindow() const
     {
         return window->GetNativeWindow();
     }
@@ -105,11 +106,14 @@ private:
     bool OnWindowResize(WindowResizeEvent &e);
 
 private:
-    Scope<Window> window;
+    std::unique_ptr<Window> window;
 
-    bool running = true;
+    void *handle{ nullptr };
 
-    bool minimized = false;
+    struct {
+        bool running   = true;
+        bool minimized = false;
+    } runtime;
 
     LayerStack layerStack;
 
@@ -127,9 +131,6 @@ private:
 
     static Application *instance;
 
-    bool rendering = false;
-
-    bool polling = false;
 public:
     Configuration configuration{};
 };

@@ -17,22 +17,28 @@ Application *Application::instance{ nullptr };
 Application::Application(const Window::Description &descrition)
 {
     !!instance ? throw Exception("Unable to create Two Application") : instance = this;
+    
+    Async::INIT();
 
     desc = descrition;
 
     window  = Window::Create(desc);
     window->SetEventCallback(SLBIND(Application::OnEvent));
-    window->SetVSync(false);
 
     context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
-    Render::INIT(context.get());
 
-    guiLayer = GuiLayer::Create(context.get());
+    Async::Execute([&](){
+        Render::INIT(context.get());
+    });
+    
+    Async::Execute([&](){
+        guiLayer = GuiLayer::Create(context.get());
+        timer.Start();
+    });
+
+    Async::Join();
+
     PushOverlay(guiLayer);
-
-    timer.Start();
-
-    ThreadManager::INIT();
 }
 
 Application::~Application()
@@ -54,9 +60,8 @@ void Application::PushOverlay(Layer *overlay)
     
 void Application::Run()
 {
-    while (running)
+    while (runtime.running)
     { 
-        LOG::INFO("Width, Height => {0}, {1}", Width(), Height());
         Render::RenderFrame();
         timer.Lap();
         deltaTime = timer.elapsed();
@@ -73,16 +78,16 @@ void Application::Run()
         }
         guiLayer->End();
 
-        window->SetTitle(desc.Title);
-        window->OnUpdate();
-        
         Render::SwapBuffers();
+
+        window->SetTitle(desc.Title);
+        window->ProcessEvents();
     }
 }
 
 void Application::Close()
 {
-    running = false;
+    runtime.running = false;
 }
 
 void Application::OnEvent(Event &e)
@@ -103,8 +108,8 @@ void Application::OnEvent(Event &e)
 
 bool Application::OnWindowClosed(WindowCloseEvent& e)
 {
-    running = false;
-    return !running;
+    runtime.running = false;
+    return !runtime.running;
 }
 
 bool Application::OnWindowResize(WindowResizeEvent &e)
@@ -113,14 +118,14 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     desc.Height = e.Height();
     if (e.Width() == 0 || e.Height() == 0)
     {
-        minimized = true;
+        runtime.minimized = true;
     }
     else
     {
-        minimized = false;
+        runtime.minimized = false;
         Render::OnWindowResize(e.Width(), e.Height());
     }
 
-    return minimized;
+    return runtime.minimized;
 }
 }

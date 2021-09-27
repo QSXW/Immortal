@@ -43,7 +43,7 @@ public:
         return handle;
     }
 
-    virtual const const char *Name() const override
+    virtual const char *Name() const override
     { 
         return name.c_str();
     }
