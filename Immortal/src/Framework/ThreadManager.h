@@ -29,14 +29,15 @@ using Task = std::function<void()>;
 class ThreadPool
 {
 public:
-    explicit ThreadPool(int num)
+    explicit ThreadPool(int num) :
+        semaphores{ false }
     {
-        semaphores.reset(new Thread::Semaphore[num]);
         for (int i = 0; i < num; i++)
         {
-            semaphores.get()[i] = true;
+            semaphores[i] = true;
             threads.emplace_back([=] {  while (true) {
-                static Thread::Semaphore *semaphore = semaphores.get() + i;
+                static Thread::Semaphore *semaphore = semaphores + i;
+                *semaphores = true;
                 Task task;
                 {
                     std::unique_lock<std::mutex> lock{ mutex };
@@ -47,9 +48,9 @@ public:
                                   threads[i].get_id(), threads[i].native_handle());
                         break;
                     }
+                    *semaphore = false;
                     task = std::move(tasks.front());
                     tasks.pop();
-                    *semaphore = false;
                 }
                 task();
                 *semaphore = true;
@@ -87,37 +88,12 @@ public:
         return wrapper->get_future();
     }
 
-    void Join()
-    {
-        while (!tasks.empty()) {}
-
-        struct DebugInfo
-        {
-            bool data[16];
-        } *debugInfo;
-
-        debugInfo = (DebugInfo *)semaphores.get();
-
-        bool tasking{ true };
-
-        while (tasking)
-        {
-            tasking = false;
-            for (int i = 0; i < threads.size(); i++)
-            {
-                if (!semaphores.get()[i])
-                {
-                    tasking = true;
-                    break;
-                }
-            }
-        }
-    }
+    void Join();
 
 private:
     std::vector<std::thread> threads;
 
-    std::unique_ptr<Thread::Semaphore> semaphores;
+    Thread::Semaphore semaphores[256];
 
     std::condition_variable condition;
 

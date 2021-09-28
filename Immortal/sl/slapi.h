@@ -7,6 +7,10 @@
 #	define SL_ALIGNED_STRUCT(x) struct __declspec(align(x))
 #	define SL_ALIGNED_CLASS(x) class __declspec(align(x)))
 #   define SL_ASSEMBLY __asm
+
+#   define sl_disable_optimizations optimize("", off)
+#   define sl_enable_optimizations  optimize("", on)
+
 #pragma warning(disable: 4996)
 
 #elif defined( __GNUC__ )

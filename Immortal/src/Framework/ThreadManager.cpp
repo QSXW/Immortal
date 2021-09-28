@@ -15,4 +15,29 @@ void Async::INIT()
     threadPool.reset(new ThreadPool{ count });
 }
 
+#pragma sl_disable_optimizations
+void ThreadPool::Join()
+{
+    bool tasking{ true };
+    while (!tasks.empty()) { }
+
+    while (1)
+    {
+        tasking = false;
+        for (int i = 0; i < threads.size(); i++)
+        {
+            if (!semaphores[i])
+            {
+                tasking = true;
+                break;
+            }
+        }
+        if (!tasking)
+        {
+            break;
+        }
+    }
+}
+#pragma sl_enable_optimizations
+
 }

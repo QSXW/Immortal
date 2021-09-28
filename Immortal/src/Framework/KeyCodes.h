@@ -15,10 +15,10 @@ enum class MouseCode : uint16_t
     Button6 = 6,
     Button7 = 7,
 
-    Left = Button0,
-    Right = Button1,
+    Left   = Button0,
+    Right  = Button1,
     Middle = Button2,
-    Last = Button7
+    Last   = Button7
 };
 
 enum class KeyCode : uint16_t
