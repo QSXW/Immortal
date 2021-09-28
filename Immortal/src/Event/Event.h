@@ -56,7 +56,7 @@ class EventDispatcher
 {
 public:
     EventDispatcher(Event &event)
-        : mEvent(event)
+        : e(event)
     {
 
     }
@@ -64,16 +64,16 @@ public:
     template <class T, class F>
     bool Dispatch(const F& func)
     {
-        if (mEvent.Type() == T::GetStaticType())
+        if (e.Type() == T::GetStaticType())
         {
-            mEvent.Handled |= func(static_cast<T&>(mEvent));
+            e.Handled |= func(static_cast<T&>(e));
             return true;
         }
         return false;
     }
 
 private:
-    Event& mEvent;
+    Event &e;
 };
 
 inline std::ostream& operator<<(std::ostream &os, const Event &e)

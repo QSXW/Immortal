@@ -25,7 +25,11 @@ Application::Application(const Window::Description &descrition)
     window  = Window::Create(desc);
     window->SetEventCallback(SLBIND(Application::OnEvent));
 
-    context = RenderContext::Create(RenderContext::Description{ window->GetNativeWindow() });
+    context = RenderContext::Create(RenderContext::Description{
+                window->PlatformNativeWindow(),
+                desc.Width,
+                desc.Height
+                });
 
     Async::Execute([&](){
         Render::INIT(context.get());
@@ -76,6 +80,7 @@ void Application::Run()
         {
             layer->OnGuiRender();
         }
+        Async::Join();
         guiLayer->End();
 
         Render::SwapBuffers();

@@ -6,14 +6,55 @@
 namespace Immortal
 {
 
+class Swapchain
+{
+public:
+enum class PresentMode
+{
+    DoubleBuffer = 2,
+    TripleBuffer = 3
+};
+};
+
+enum class Format
+{
+    R8G8B8A8_UNORM = 0,
+    R8G8B8A8_SRGB  = 1,
+};
+
 class Shader;
 class IMMORTAL_API RenderContext
 {
 public:
     struct Description
     {
-        void *WindowHandle;
-        const char *ApplicationName;
+        Description() { }
+
+        Description(void *handle, UINT32 width, UINT32 height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
+            WindowHandle{ handle },
+            Width{ width },
+            Height{ height },
+            FrameCount{ ncast<int>(mode) }
+        {
+            
+        }
+
+        UINT32 Width{ 0 };
+
+        UINT32 Height{ 0 };
+
+        int FrameCount{ 3 };
+
+        void *WindowHandle{ nullptr };
+
+        Format format{ Format::R8G8B8A8_SRGB };
+
+        const char *ApplicationName{ "" };
+
+        void Set(Swapchain::PresentMode mode)
+        {
+            FrameCount = ncast<int>(mode);
+        }
     };
 
 public:

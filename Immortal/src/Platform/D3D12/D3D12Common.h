@@ -15,7 +15,7 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "D3d12.lib")
 
 #if SLDEBUG
-#define D3DCOMPILE_DEBUG 1
+#define D3DCOMPILE_DEBUG  1
 #include <D3d12SDKLayers.h>
 #endif
 
@@ -69,6 +69,7 @@ static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **p
         pAdapter->Release();
     }
 }
+
 }
 }
 

@@ -28,7 +28,9 @@ public:
 private:
     Super::Description desc{};
 
-    HMODULE hmodule{ nullptr };
+    HWND hWnd{ nullptr };
+
+    HMODULE hModule{ nullptr };
 
     ComPtr<IDXGIFactory4> factory{ nullptr };
 

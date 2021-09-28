@@ -10,10 +10,10 @@ namespace Immortal
 namespace D3D12
 {
 
-class Device : public Immortal::Device
+class Device : SuperDevice
 {
 public:
-    using Super = Immortal::Device;
+    using Super = SuperDevice;
 
 public:
     Device(ComPtr<IDXGIFactory4> factory);

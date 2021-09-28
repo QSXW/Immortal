@@ -9,11 +9,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#define LOG_VEC2(v) LOG::INFO("{0} {1}", v.x, v.y)
-#define LOG_VEC3(v) LOG::INFO("{0} {1} {2}", v.x, v.y, v.z)
-#define LOG_VEC4(v) LOG::INFO("\n{0} {1} {2} {3}", v.x, v.y, v.z, v.w)
-#define LOG_MAT4(v) LOG::INFO("\n{0} {1} {2} {3}\n{4} {5} {6} {7} \n{8} {9} {10} {11}\n{11} {12} {13} {14}\n", v[0].x, v[0].y, v[0].z, v[0].w, v[1].x, v[1].y, v[1].z, v[1].w, v[2].x, v[2].y, v[2].z, v[2].w, v[3].x, v[3].y, v[3].z, v[3].w)
-
+#include <iostream>
 
 namespace Immortal
 {
@@ -155,4 +151,33 @@ using Vector4    = Vector::Vector4;
 using Matrix4    = Vector::Matrix4;
 using Color      = Vector::Color;
 using Quaternion = Vector::Quaternion;
+
+static inline std::ostream &operator <<(std::ostream &os, Vector2 &v)
+{
+    printf("%g, %g", v.x, v.y);
+    return os;
+}
+
+static inline std::ostream &operator <<(std::ostream &os, Vector3 &v)
+{
+    printf("%g, %g, %g", v.x, v.y, v.z);
+    return os;
+}
+
+static inline std::ostream &operator <<(std::ostream &os, Vector4 &v)
+{
+    printf("%g, %g, %g, %g", v.x, v.y, v.z, v.w);
+    return os;
+}
+
+static inline std::ostream &operator <<(std::ostream &os, Matrix4 &m)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        std::cout << *(Vector4 *)(&m) << std::endl;
+    }
+
+    return os;
+}
+
 }

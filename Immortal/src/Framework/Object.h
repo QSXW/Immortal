@@ -4,6 +4,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Object
 {
 public:
@@ -46,4 +47,5 @@ public:
 private:
     mutable volatile ValueType _M_refcount = 0;
 };
+
 }

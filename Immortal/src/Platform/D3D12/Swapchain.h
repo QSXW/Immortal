@@ -10,21 +10,32 @@ namespace D3D12
 class Swapchain
 {
 public:
-    using Description = DXGI_SWAP_CHAIN_DESC;
+    using Description = DXGI_SWAP_CHAIN_DESC1;
 
 public:
-    Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, Description &desc)
+    Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc)
     {
-        Check(factory->CreateSwapChain(queue.Get(), &desc, &handle));
+        Check(factory->CreateSwapChainForHwnd(
+            queue.Get(),
+            hWnd,
+            &desc,
+            nullptr,
+            nullptr,
+            &handle
+            ));
+
+        Check(handle.As(&handle3));
     }
 
-    ComPtr<IDXGISwapChain> Handle()
+    ComPtr<IDXGISwapChain1> Handle()
     {
         return handle;
     }
 
 private:
-    ComPtr<IDXGISwapChain> handle{ nullptr };
+    ComPtr<IDXGISwapChain1> handle{ nullptr };
+
+    ComPtr<IDXGISwapChain3> handle3{ nullptr };
 };
 
 }
