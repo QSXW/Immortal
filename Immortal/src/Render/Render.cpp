@@ -13,6 +13,19 @@ Render::Scene Render::scene{};
 
 RenderData Render::data{};
 
+static const char *Sringify(Render::Type type)
+{
+    switch (type)
+    {
+#define CASE(x) case Render::Type::x: return #x;
+        CASE(None);
+        CASE(Vulkan);
+        CASE(D3D12);
+#undef CASE
+    default: return "Unknown";
+    }
+}
+
 const std::string Render::ShaderProfiles[] = {
     { "assets/shaders/texture" },
     { "assets/shaders/PBR" },
@@ -25,6 +38,7 @@ const std::string Render::ShaderProfiles[] = {
 
 void Render::INIT(RenderContext *context)
 {
+    LOG::INFO("Initialize Renderer with API => {0}", Sringify(Render::API));
     handle = Renderer::Create(context);
     handle->INIT();
 

@@ -5,7 +5,7 @@ namespace Immortal
 {
 namespace D3D12
 {
-static inline DXGI_FORMAT Normalize(Format format)
+static inline DXGI_FORMAT NORMALIZE(Format format)
 {
     static DXGI_FORMAT map[] = {
         DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -53,28 +53,70 @@ void RenderContext::INIT()
     device = std::make_unique<Device>(factory);
 
     {
-        Queue::Description desc{};
-        desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        desc.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        Queue::Description queueDesc{};
+        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+        queueDesc.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-        queue = device->CreateQueue(desc);
+        queue = device->CreateQueue(queueDesc);
     }
 
     {
-        Swapchain::Description desc{};
-        CleanObject(&desc);
-        desc.BufferCount       = this->desc.FrameCount;
-        desc.Width             = this->desc.Width;
-        desc.Height            = this->desc.Height;
-        desc.Format            = Normalize(this->desc.format);
-        desc.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        desc.SampleDesc.Count  = 1;
+        Swapchain::Description swapchainDesc{};
+        CleanObject(&swapchainDesc);
+        swapchainDesc.BufferCount       = desc.FrameCount;
+        swapchainDesc.Width             = desc.Width;
+        swapchainDesc.Height            = desc.Height;
+        swapchainDesc.Format            = NORMALIZE(desc.format);
+        swapchainDesc.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapchainDesc.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        swapchainDesc.SampleDesc.Count  = 1;
 
-        swapchain = std::make_unique<Swapchain>(factory, queue->Handle(), hWnd, desc);
+        swapchain = std::make_unique<Swapchain>(factory, queue->Handle(), hWnd, swapchainDesc);
     }
 
     Check(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
+
+    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+
+    {
+        DescriptorPool::Description renderTargetViewDesc{
+            DescriptorPool::Type::RenderTargetView,
+            desc.FrameCount,
+            DescriptorPool::Flag::None
+            };
+
+        renderTargetViewDescriptorHeap = std::make_unique<DescriptorPool>(
+            device->Handle(),
+            renderTargetViewDesc
+            );
+
+        DescriptorPool::Description shaderResourceViewDesc{
+            DescriptorPool::Type::ShaderResourceView,
+            1,
+            DescriptorPool::Flag::ShaderVisible
+            };
+
+        shaderResourceViewDescriptorHeap = std::make_unique<DescriptorPool>(
+            device->Handle(),
+            shaderResourceViewDesc
+            );
+
+        renderTargetViewDescriptorSize = device->DescriptorHandleIncrementSize(
+            renderTargetViewDesc.Type
+            );
+    }
+
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE renderTargetViewDescriptor {
+            renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
+            };
+
+        for (UINT i = 0; i < desc.FrameCount; i++)
+        {
+            swapchain->AccessBackBuffer(i, renderTargets[i]);
+            device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
+        }
+    }
 
 }
 

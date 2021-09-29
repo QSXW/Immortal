@@ -34,11 +34,6 @@ void VulkanLayer::OnGuiRender()
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
         ImGui::ColorEdit3("clear color", (float*)&Settings.clearColor); 
 
-        if (ImGui::Button("Button"))
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
         static char buf[255] = { 0 };
         sprintf(buf, "Vulkan Sample (Graphics API: Vulkan) %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         std::string &title = std::string(buf);

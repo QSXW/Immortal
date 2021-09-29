@@ -30,15 +30,13 @@ Application::Application(const Window::Description &descrition)
                 desc.Width,
                 desc.Height
                 });
-
-    Async::Execute([&](){
-        Render::INIT(context.get());
-    });
     
     Async::Execute([&](){
         guiLayer = GuiLayer::Create(context.get());
         timer.Start();
     });
+
+    Render::INIT(context.get());
 
     Async::Join();
 

@@ -27,6 +27,16 @@ public:
         Check(handle.As(&handle3));
     }
 
+    UINT AcquireCurrentBackBufferIndex()
+    {
+        return handle3->GetCurrentBackBufferIndex();
+    }
+
+    void AccessBackBuffer(UINT index, ComPtr<ID3D12Resource> &renderTarget)
+    {
+        Check(handle3->GetBuffer(index, IID_PPV_ARGS(&renderTarget)));
+    }
+
     ComPtr<IDXGISwapChain1> Handle()
     {
         return handle;
