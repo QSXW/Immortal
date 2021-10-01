@@ -6,8 +6,6 @@ namespace Immortal
 namespace D3D12
 {
 
-class DescriptorPool;
-
 class DescriptorPool
 {
 public:
@@ -46,19 +44,47 @@ public:
         return handle->GetCPUDescriptorHandleForHeapStart();
     }
 
+    D3D12_GPU_DESCRIPTOR_HANDLE GPUDescriptorHandleForHeapStart()
+    {
+        return handle->GetGPUDescriptorHandleForHeapStart();
+    }
+
+    template <class T>
+    T Get()
+    {
+        if constexpr (typeof<T, D3D12_CPU_DESCRIPTOR_HANDLE>())
+        {
+            return handle->GetCPUDescriptorHandleForHeapStart();
+        }
+        if constexpr (typeof<T, D3D12_GPU_DESCRIPTOR_HANDLE>())
+        {
+            return handle->GetGPUDescriptorHandleForHeapStart();
+        }
+    }
+
 public:
     DescriptorPool(const ComPtr<ID3D12Device> device, Description &desc)
     {
         Check(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&handle)));
     }
 
-    auto &Handle()
+    ~DescriptorPool()
+    {
+        IfNotNullThenRelease(handle);
+    }
+
+    ID3D12DescriptorHeap *Handle()
     {
         return handle;
     }
 
+    ID3D12DescriptorHeap **AddressOf()
+    {
+        return &handle;
+    }
+
 private:
-    ComPtr<ID3D12DescriptorHeap> handle{ nullptr };
+    ID3D12DescriptorHeap *handle{ nullptr };
 };
 
 }

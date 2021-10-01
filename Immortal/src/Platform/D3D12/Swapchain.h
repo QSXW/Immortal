@@ -10,7 +10,10 @@ namespace D3D12
 class Swapchain
 {
 public:
-    using Description = DXGI_SWAP_CHAIN_DESC1;
+    struct Description : public DXGI_SWAP_CHAIN_DESC1
+    {
+        
+    };
 
 public:
     Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc)
@@ -25,6 +28,8 @@ public:
             ));
 
         Check(handle.As(&handle3));
+
+        writableObject = handle3->GetFrameLatencyWaitableObject();
     }
 
     UINT AcquireCurrentBackBufferIndex()
@@ -32,9 +37,14 @@ public:
         return handle3->GetCurrentBackBufferIndex();
     }
 
-    void AccessBackBuffer(UINT index, ComPtr<ID3D12Resource> &renderTarget)
+    void AccessBackBuffer(UINT index, ID3D12Resource **pRenderTarget)
     {
-        Check(handle3->GetBuffer(index, IID_PPV_ARGS(&renderTarget)));
+        Check(handle3->GetBuffer(index, IID_PPV_ARGS(pRenderTarget)));
+    }
+
+    void SetMaximumFrameLatency(UINT maxLatency)
+    {
+        Check(handle3->SetMaximumFrameLatency(maxLatency));
     }
 
     ComPtr<IDXGISwapChain1> Handle()
@@ -46,6 +56,8 @@ private:
     ComPtr<IDXGISwapChain1> handle{ nullptr };
 
     ComPtr<IDXGISwapChain3> handle3{ nullptr };
+
+    HANDLE writableObject{ nullptr };
 };
 
 }

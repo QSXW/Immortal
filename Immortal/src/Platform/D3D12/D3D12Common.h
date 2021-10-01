@@ -30,6 +30,15 @@ void IfNotNullThen(A&& ... args)
     F(std::forward<A>(args)...);
 }
 
+template <class T>
+void IfNotNullThenRelease(T ptr)
+{
+    if (!ptr)
+    {
+        ptr->Release();
+    }
+}
+
 static inline void Check(HRESULT result, const char *message = "")
 {
     if (FAILED(result))

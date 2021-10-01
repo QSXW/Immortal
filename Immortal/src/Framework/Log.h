@@ -50,4 +50,27 @@ private:
     static std::shared_ptr<spdlog::logger> logger;
 };
 
+
+struct ErrorHandle
+{
+public:
+    void Upload(const std::string &s)
+    {
+        buffer.append(s);
+    }
+
+    const std::string &Retrieve() const
+    {
+        return buffer;
+    }
+
+    const char *Raw()
+    {
+        return buffer.c_str();
+    }
+
+private:
+    std::string buffer;
+};
+
 }

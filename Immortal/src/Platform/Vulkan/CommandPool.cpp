@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Device.h"
 #include "CommandPool.h"
+#include "..\D3D12\CommandPool.h"
 
 namespace Immortal
 {

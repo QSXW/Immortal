@@ -1,6 +1,7 @@
 #pragma once
 
 #include "D3D12Common.h"
+#include "CommandPool.h"
 
 namespace Immortal
 {
@@ -18,42 +19,34 @@ public:
         DisableGPUTimeout = D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT
     };
 
-    enum class Type
-    {
-        Direct       = D3D12_COMMAND_LIST_TYPE_DIRECT,
-        Bundle       = D3D12_COMMAND_LIST_TYPE_BUNDLE,
-        Compute      = D3D12_COMMAND_LIST_TYPE_COMPUTE,
-        Copy         = D3D12_COMMAND_LIST_TYPE_COPY,
-        VideoDecode  = D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE,
-        VideoProcess = D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS,
-        VideoEncode  = D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE
-    };
-
 public:
     Queue(ComPtr<ID3D12Device> device, const Description &desc)
     {
         Check(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&handle)));
     }
 
-    ComPtr<ID3D12CommandQueue> Handle()
+    ~Queue()
+    {
+        IfNotNullThenRelease(handle);
+    }
+
+    ID3D12CommandQueue *Handle()
     {
         return handle;
     }
 
+    void ExecuteCommandLists(CommandList *commadList, UINT num = 1)
+    {
+        auto ppCommandList = commadList->AddressOf();
+        handle->ExecuteCommandLists(
+            num,
+            (ID3D12CommandList **)ppCommandList
+            );
+    }
+
 private:
-    ComPtr<ID3D12CommandQueue> handle{ nullptr };
+    ID3D12CommandQueue *handle{ nullptr };
 };
 
-inline auto Cast(Queue::Flag flag)
-{
-    return ncast<D3D12_COMMAND_QUEUE_FLAGS>(flag);
-}
-
-inline auto Cast(Queue::Type type)
-{
-    return ncast<D3D12_COMMAND_LIST_TYPE>(type);
-}
-
 }
 }
-

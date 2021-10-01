@@ -71,6 +71,8 @@ set(PHYSICS_FILES
     src/Physics/Physics.h)
 
 set(D3D12_FILES
+    src/Platform/D3D12/Barrier.h
+    src/Platform/D3D12/CommandAllocator.h
     src/Platform/D3D12/CommandBuffer.cpp
     src/Platform/D3D12/CommandBuffer.h
     src/Platform/D3D12/CommandPool.cpp

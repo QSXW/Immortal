@@ -7,15 +7,6 @@ namespace Immortal
 {
 namespace D3D12
 {
-static inline DXGI_FORMAT NORMALIZE(Format format)
-{
-    static DXGI_FORMAT map[] = {
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R16G16B16A16_FLOAT
-    };
-
-    return map[ncast<int>(format)];
-}
 
 RenderContext::RenderContext(Description &descrition) :
     desc{ descrition }
@@ -72,8 +63,10 @@ void RenderContext::INIT()
         swapchainDesc.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapchainDesc.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapchainDesc.SampleDesc.Count  = 1;
+        swapchainDesc.Flags             = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         swapchain = std::make_unique<Swapchain>(factory, queue->Handle(), hWnd, swapchainDesc);
+        swapchain->SetMaximumFrameLatency(desc.FrameCount);
     }
 
     Check(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
@@ -115,13 +108,32 @@ void RenderContext::INIT()
 
         for (UINT i = 0; i < desc.FrameCount; i++)
         {
-            swapchain->AccessBackBuffer(i, renderTargets[i]);
+            swapchain->AccessBackBuffer(i, &renderTargets[i]);
             device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
             renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
         }
     }
 
-    device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator);
+    for (UINT i = 0; i < desc.FrameCount; i++)
+    {
+        commandAllocator[i] = std::make_unique<CommandAllocator>(device.get(), CommandList::Type::Direct);
+    }
+ 
+    commandList = std::make_unique<CommandList>(
+        device.get(),
+        CommandList::Type::Direct,
+        commandAllocator[0].get()
+        );
+
+    commandList->Close();
+
+    device->CreateFence(&fence);
+
+    fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (fenceEvent)
+    {
+        error.Upload("Unable to intialize Fence Event");
+    }
 }
 
 }

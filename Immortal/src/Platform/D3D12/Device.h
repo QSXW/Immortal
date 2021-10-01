@@ -36,14 +36,41 @@ public:
             );
     }
 
-    void CreateRenderTargetView(ComPtr<ID3D12Resource> &renderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, Descriptor &descriptor)
+    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, Descriptor &descriptor)
     {
-        handle->CreateRenderTargetView(renderTarget.Get(), pDesc, descriptor);
+        handle->CreateRenderTargetView(
+            pRenderTarget,
+            pDesc,
+            descriptor
+            );
     }
 
-    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> &allocator)
+    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator)
     {
-        Check(handle->CreateCommandAllocator(type, IID_PPV_ARGS(&allocator)));
+        Check(handle->CreateCommandAllocator(
+            type,
+            IID_PPV_ARGS(ppAllocator)
+            ));
+    }
+
+    void CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0)
+    {
+        Check(handle->CreateCommandList(
+            nodeMask,
+            type,
+            pAllocator,
+            pipeleState,
+            IID_PPV_ARGS(ppCommandList)
+            ));
+    }
+
+    void CreateFence(ID3D12Fence **pfence, UINT64 initialValue = 0, D3D12_FENCE_FLAGS flag = D3D12_FENCE_FLAG_NONE)
+    {
+        handle->CreateFence(
+            initialValue,
+            flag,
+            IID_PPV_ARGS(pfence)
+            );
     }
 
 private:

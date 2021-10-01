@@ -136,7 +136,7 @@ void GuiLayer::End()
 {
     Super::End();
 
-    ImGuiIO     &io  = ImGui::GetIO();
+    ImGuiIO &io  = ImGui::GetIO();
 
     auto &[width, height] = context->Get<Extent2D>();
 
