@@ -4,6 +4,7 @@
 #include "D3D12Common.h"
 
 #include "Queue.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -35,9 +36,14 @@ public:
             );
     }
 
-    void CreateRenderTargetView(ComPtr<ID3D12Resource> renderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)
+    void CreateRenderTargetView(ComPtr<ID3D12Resource> &renderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, Descriptor &descriptor)
     {
         handle->CreateRenderTargetView(renderTarget.Get(), pDesc, descriptor);
+    }
+
+    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ComPtr<ID3D12CommandAllocator> &allocator)
+    {
+        Check(handle->CreateCommandAllocator(type, IID_PPV_ARGS(&allocator)));
     }
 
 private:

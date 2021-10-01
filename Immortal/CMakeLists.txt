@@ -78,6 +78,8 @@ set(D3D12_FILES
     src/Platform/D3D12/D3D12Common.h
     src/Platform/D3D12/DescriptorPool.cpp
     src/Platform/D3D12/DescriptorPool.h
+    src/Platform/D3D12/Descriptor.cpp
+    src/Platform/D3D12/Descriptor.h
     src/Platform/D3D12/Device.cpp
     src/Platform/D3D12/Device.h
     src/Platform/D3D12/FencePool.cpp

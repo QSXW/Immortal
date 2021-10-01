@@ -55,12 +55,14 @@ private:
     std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
 
     std::unique_ptr<DescriptorPool> shaderResourceViewDescriptorHeap;
-
+    
     UINT frameIndex{ 0 };
 
     UINT renderTargetViewDescriptorSize{ 0 };
 
     ComPtr<ID3D12Resource> renderTargets[MAX_FRAME_COUNT]{ nullptr };
+
+    ComPtr<ID3D12CommandAllocator>commandAllocator;
 };
 
 }

@@ -1,6 +1,8 @@
 #include "impch.h"
 #include "RenderContext.h"
 
+#include "Descriptor.h"
+
 namespace Immortal
 {
 namespace D3D12
@@ -107,7 +109,7 @@ void RenderContext::INIT()
     }
 
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE renderTargetViewDescriptor {
+        Descriptor renderTargetViewDescriptor {
             renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
             };
 
@@ -115,9 +117,11 @@ void RenderContext::INIT()
         {
             swapchain->AccessBackBuffer(i, renderTargets[i]);
             device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
+            renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
         }
     }
 
+    device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator);
 }
 
 }
