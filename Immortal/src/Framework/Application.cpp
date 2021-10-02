@@ -21,16 +21,16 @@ Application::Application(const Window::Description &descrition)
     Async::INIT();
 
     desc = descrition;
-
+    
     window  = Window::Create(desc);
     window->SetEventCallback(SLBIND(Application::OnEvent));
 
     context = RenderContext::Create(RenderContext::Description{
-                window->PlatformNativeWindow(),
-                desc.Width,
-                desc.Height
-                });
-    
+        window.get(),
+        desc.Width,
+        desc.Height
+        });
+
     Async::Execute([&](){
         guiLayer = GuiLayer::Create(context.get());
         timer.Start();
@@ -39,6 +39,8 @@ Application::Application(const Window::Description &descrition)
     Render::INIT(context.get());
 
     Async::Join();
+
+    window->Show();
 
     PushOverlay(guiLayer);
 }
@@ -99,6 +101,7 @@ void Application::OnEvent(Event &e)
     dispatcher.Dispatch<WindowCloseEvent>(SLBIND(Application::OnWindowClosed));
     dispatcher.Dispatch<WindowResizeEvent>(SLBIND(Application::OnWindowResize));
 
+    LOG::INFO("{0}", e.Stringify());
     for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
         (*--it)->OnEvent(e);

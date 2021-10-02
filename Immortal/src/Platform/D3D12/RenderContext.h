@@ -51,7 +51,7 @@ public:
         }
         if constexpr (typeof<T, HWND>())
         {
-            return rcast<HWND>(desc.WindowHandle);
+            return hWnd;
         }
         if constexpr (typeof<T, ID3D12Device*>())
         {
@@ -73,6 +73,10 @@ public:
         {
             return commandAllocator[0].get();
         }
+        if constexpr (typeof<T, Window*>())
+        {
+            return desc.WindowHandle;
+        }
     }
 
     UINT FrameSize()
@@ -90,7 +94,7 @@ public:
         return renderTargets[backBufferIndex];
     }
 
-    Descriptor &&RenderTargetDescriptor(INT backBufferIndex)
+    Descriptor RenderTargetDescriptor(INT backBufferIndex)
     {
         return Descriptor{
                  renderTargetViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>(),
@@ -106,6 +110,10 @@ public:
             ncast<float>(desc.Height)
         };
     }
+
+    void CleanUpRenderTarget();
+
+    void CreateRenderTarget();
 
 private:
     Super::Description desc{};
@@ -140,8 +148,14 @@ private:
 
     HANDLE fenceEvent{ nullptr };
 
+    UINT64 fenceValue{ 1 };
+
 public:
     ErrorHandle error;
+
+    void WaitForGPU();
+
+    UINT WaitForPreviousFrame();
 };
 
 }

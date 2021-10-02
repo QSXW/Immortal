@@ -47,6 +47,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::Vulkan);
+    Render::Set(Render::Type::D3D12);
     return new VulkanSample();
 }

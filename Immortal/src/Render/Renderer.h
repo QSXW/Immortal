@@ -13,7 +13,7 @@ class IMMORTAL_API Renderer
 public:
     virtual void INIT() { }
 
-    virtual void SetViewport(UINT32 x, UINT32 y, UINT32 width, UINT32 height) { }
+    virtual void OnResize(UINT32 x, UINT32 y, UINT32 width, UINT32 height) { }
 
     virtual void EnableDepthTest() { }
 

@@ -52,6 +52,22 @@ public:
         return handle;
     }
 
+    void Present(UINT syncInterval, UINT flags)
+    {
+        handle3->Present(syncInterval, flags);
+    }
+
+    void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
+    {
+        Check(handle3->ResizeBuffers(
+            bufferCount,
+            width,
+            height,
+            newFormat,
+            flags
+            ));
+    }
+
 private:
     ComPtr<IDXGISwapChain1> handle{ nullptr };
 

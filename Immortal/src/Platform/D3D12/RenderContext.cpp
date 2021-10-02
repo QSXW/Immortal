@@ -26,9 +26,10 @@ RenderContext::~RenderContext()
 
 void RenderContext::INIT()
 {
-    hWnd = rcast<HWND>(this->desc.WindowHandle);
+    hWnd = rcast<HWND>(desc.WindowHandle->PlatformNativeWindow());
 
     uint32_t dxgiFactoryFlags = 0;
+
 #if SLDEBUG
     hModule = LoadLibrary(L"D3d12Core.dll");
     ComPtr<ID3D12Debug> debugController;
@@ -69,9 +70,7 @@ void RenderContext::INIT()
         swapchain->SetMaximumFrameLatency(desc.FrameCount);
     }
 
-    Check(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
-
-    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    // Check(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
 
     {
         DescriptorPool::Description renderTargetViewDesc{
@@ -101,18 +100,7 @@ void RenderContext::INIT()
             );
     }
 
-    {
-        Descriptor renderTargetViewDescriptor {
-            renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
-            };
-
-        for (UINT i = 0; i < desc.FrameCount; i++)
-        {
-            swapchain->AccessBackBuffer(i, &renderTargets[i]);
-            device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
-            renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
-        }
-    }
+    CreateRenderTarget();
 
     for (UINT i = 0; i < desc.FrameCount; i++)
     {
@@ -134,6 +122,62 @@ void RenderContext::INIT()
     {
         error.Upload("Unable to intialize Fence Event");
     }
+
+    WaitForPreviousFrame();
+}
+
+void RenderContext::CreateRenderTarget()
+{
+    Descriptor renderTargetViewDescriptor {
+        renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
+        };
+
+    for (UINT i = 0; i < desc.FrameCount; i++)
+    {
+        swapchain->AccessBackBuffer(i, &renderTargets[i]);
+        device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
+        renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
+    }
+}
+
+void RenderContext::CleanUpRenderTarget()
+{
+    WaitForGPU();
+    for (UINT i = 0; i < desc.FrameCount; i++)
+    {
+        if (renderTargets[i])
+        {
+            renderTargets[i]->Release();
+            renderTargets[i] = nullptr;
+        }
+    }
+}
+
+void RenderContext::WaitForGPU()
+{
+    UINT64 signalFence = fenceValue;
+	fenceValue++;
+
+	queue->Signal(fence.Get(), signalFence);
+	fence->SetEventOnCompletion(signalFence, fenceEvent);
+	WaitForSingleObject(fenceEvent, INFINITE);
+}
+
+UINT RenderContext::WaitForPreviousFrame()
+{
+    UINT64 signalFence = fenceValue;
+    queue->Signal(fence.Get(), fenceValue);
+    fenceValue++;
+
+    if (fence->GetCompletedValue() < signalFence)
+    {
+        Check(fence->SetEventOnCompletion(signalFence, fenceEvent));
+        WaitForSingleObject(fenceEvent, INFINITE);
+    }
+
+    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+
+    return frameIndex;
 }
 
 }

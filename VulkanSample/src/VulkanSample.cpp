@@ -34,9 +34,11 @@ void VulkanLayer::OnGuiRender()
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
         ImGui::ColorEdit3("clear color", (float*)&Settings.clearColor); 
 
+        static const char *api = Render::Api();
         static char buf[255] = { 0 };
-        sprintf(buf, "Vulkan Sample (Graphics API: Vulkan) %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        std::string &title = std::string(buf);
+        sprintf(buf, "%s Sample (Graphics API: %s) %.3f ms/frame (%.1f FPS)", 
+            api, api, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        std::string title{ buf };
         Application::SetTitle(title);
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);

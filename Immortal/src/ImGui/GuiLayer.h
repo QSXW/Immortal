@@ -45,6 +45,7 @@ public:
     }
 
     void BlockEvent(bool block) { blockEvents = block;  }
+
     void SetTheme();
 
 private:

@@ -35,7 +35,7 @@ static std::vector<const char *> ValidationLayers = {
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc)
-    : handle(desc.WindowHandle)
+    : handle{ desc.WindowHandle->GetNativeWindow() }
 {
     instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
     if (!instance)

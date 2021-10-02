@@ -54,8 +54,6 @@ void GuiLayer::OnAttach()
 
     ImGuiIO& io = ImGui::GetIO();
 
-    // io.DisplaySize = ImVec2{ ncast<float>(Application::Width()), ncast<float>(Application::Height()) };
-
     io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;

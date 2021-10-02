@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImGui/GuiLayer.h"
-
 #include "RenderContext.h"
 
 namespace Immortal
@@ -23,7 +22,8 @@ public:
 
     virtual void OnDetach() override { }
 
-    virtual void OnEvent(Event &e) override { }
+    virtual void OnEvent(Event &e) override;
+
     virtual void OnGuiRender() override;
 
     virtual void Begin() override;

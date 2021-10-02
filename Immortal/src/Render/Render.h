@@ -33,6 +33,14 @@ public:
         D3D12
     };
 
+    static inline const char Stringify[4][8]
+    {
+        { "None"   },
+        { "Vulkan" },
+        { "OpenGL" },
+        { "D3D12"  }
+    };
+
     enum class ShaderName : INT32
     {
         Texture,
@@ -81,7 +89,7 @@ public:
 
     static void OnWindowResize(UINT32 width, UINT32 height)
     {
-        handle->SetViewport(0, 0, width, height);
+        handle->OnResize(0, 0, width, height);
     }
 
     static void EnableDepthTest()
@@ -142,6 +150,11 @@ public:
     static void RenderFrame()
     {
         handle->RenderFrame();
+    }
+
+    static const char *Api()
+    {
+        return Stringify[ncast<int>(API)];
     }
 
 private:

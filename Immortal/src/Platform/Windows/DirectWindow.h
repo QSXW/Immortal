@@ -29,17 +29,24 @@ public:
 
     virtual void SetEventCallback(const EventCallbackFunc& callback) override
     {
-        desc.EventCallback = callback;
+        EventDispatcher = callback;
     }
 
-    virtual void* GetNativeWindow() const
+    virtual void *GetNativeWindow() const override
     {
         return handle;
     }
 
+    virtual void *PlatformNativeWindow() const override 
+    {
+        return handle;
+    }
+
+    virtual void Show() override;
+
     virtual void ProcessEvents();
 
-    inline void Clear() override;
+    virtual void SetTitle(const std::string &title) override;
 
 private:
     virtual void INIT(const Description &description);
@@ -52,6 +59,9 @@ private:
     WNDCLASSEX wc;
 
     Description desc;
+
+public:
+    static Window::EventCallbackFunc EventDispatcher;
 };
 
 }

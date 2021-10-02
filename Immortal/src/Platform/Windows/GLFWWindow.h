@@ -39,7 +39,7 @@ public:
         return window;
     }
 
-    virtual void* PlatformNativeWindow() const
+    virtual void *PlatformNativeWindow() const
     {
         return glfwGetWin32Window(window);
     }

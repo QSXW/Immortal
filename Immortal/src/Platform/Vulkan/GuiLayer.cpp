@@ -112,6 +112,7 @@ void GuiLayer::OnDetach()
 
 void GuiLayer::OnEvent(Event &e)
 {
+    Super::OnEvent(e);
     if (e.Type() == EventType::WindowResize)
     {
         auto resize = dcast<WindowResizeEvent *>(&e);

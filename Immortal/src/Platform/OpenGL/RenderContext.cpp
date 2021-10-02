@@ -9,7 +9,7 @@ namespace Immortal
 namespace OpenGL
 {
 RenderContext::RenderContext(RenderContext::Description &desc)
-    : handle(static_cast<GLFWwindow *>(desc.WindowHandle))
+    : handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
 {
     SLASSERT(handle && "Window Handle is null!");
     INIT();

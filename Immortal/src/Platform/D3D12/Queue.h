@@ -44,6 +44,11 @@ public:
             );
     }
 
+    void Signal(ID3D12Fence *fence, UINT64 value)
+    {
+        Check(handle->Signal(fence, value));
+    }
+
 private:
     ID3D12CommandQueue *handle{ nullptr };
 };

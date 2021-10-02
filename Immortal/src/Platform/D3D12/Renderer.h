@@ -20,9 +20,7 @@ public:
 
     virtual void INIT() override;
 
-    virtual void SwapBuffers() override { }
-
-    void SubmitFrame() { }
+    virtual void SwapBuffers() override;
 
     virtual void RenderFrame() override { }
 
@@ -31,7 +29,20 @@ public:
         return currentBuffer;
     }
 
-    void Resize();
+    virtual void OnResize(UINT x, UINT y, UINT width, UINT height) override
+    {
+       context->CleanUpRenderTarget();
+
+       swapchain->ResizeBuffers(
+            width,
+            height,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT
+        );
+
+       context->CreateRenderTarget();
+       currentBuffer = swapchain->AcquireCurrentBackBufferIndex();
+    }
 
 public:
     RenderContext *context{ nullptr };

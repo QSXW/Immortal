@@ -4,10 +4,15 @@
 #ifndef _UNICODE
 #define _UNICODE
 #endif
-#include "backends/imgui_impl_win32.cpp"
-#include "backends/imgui_impl_dx12.cpp"
+#include <backends/imgui_impl_win32.h>
+#include <backends/imgui_impl_dx12.cpp>
+#include <backends/imgui_impl_glfw.h>
 
+#include <GLFW/glfw3.h>
+
+#include "Render/Render.h"
 #include "Barrier.h"
+#include "Event/ApplicationEvent.h"
 
 namespace Immortal
 {
@@ -26,6 +31,12 @@ GuiLayer::GuiLayer(SuperRenderContext *superContext) :
 void GuiLayer::OnAttach()
 {
     Super::OnAttach();
+
+    auto window    = context->Get<Window *>();
+
+    auto &io       = ImGui::GetIO();
+    Vector2 extent = context->Extent();
+    io.DisplaySize = ImVec2{ extent.x, extent.y };
 
     srvDescriptorHeap = context->ShaderResourceViewDescritorHeap();
 
@@ -48,6 +59,17 @@ void GuiLayer::Begin()
     Super::Begin();
 }
 
+void GuiLayer::OnEvent(Event &e)
+{
+    if (e.Type() == EventType::WindowResize)
+    {
+        auto resize = dcast<WindowResizeEvent *>(&e);
+        ImGuiIO   &io  = ImGui::GetIO();
+        io.DisplaySize = ImVec2{ (float)resize->Width(), (float)resize->Height() };
+    }
+    Super::OnEvent(e);
+}
+
 void GuiLayer::OnGuiRender()
 {
 
@@ -56,18 +78,12 @@ void GuiLayer::OnGuiRender()
 void GuiLayer::End()
 {
     Super::End();
-    
-    auto &io = ImGui::GetIO();
 
-    Vector2 extent = context->Extent();
-
-    io.DisplaySize = ImVec2{ extent.x, extent.y };
-
-    UINT backBufferIdx = swapchain->AcquireCurrentBackBufferIndex();
+    UINT backBufferIdx = Render::CurrentPresentedFrameIndex();
 
     ID3D12Resource *renderTarget = context->RenderTarget(backBufferIdx);
 
-    Barrier barrier = {};
+    Barrier barrier{};
     barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier.Transition.pResource   = renderTarget;
@@ -95,6 +111,7 @@ void GuiLayer::End()
 
     queue->ExecuteCommandLists(commandList);
 
+    auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         ImGui::UpdatePlatformWindows();

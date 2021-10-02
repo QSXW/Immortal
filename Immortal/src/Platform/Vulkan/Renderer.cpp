@@ -1,6 +1,7 @@
 #include "impch.h"
 #include "Renderer.h"
 #include <array>
+#include "..\D3D12\Renderer.h"
 
 namespace Immortal
 {

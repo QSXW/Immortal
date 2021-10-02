@@ -82,19 +82,21 @@ public:
 
     virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
 
-    virtual void* GetNativeWindow() const = 0;
+    virtual void *GetNativeWindow() const = 0;
 
-    virtual void* PlatformNativeWindow() const = 0;
+    virtual void *PlatformNativeWindow() const = 0;
 
     virtual void Clear() {}
 
-    virtual float Time() = 0;
+    virtual float Time() { return .0f; }
 
     virtual void ProcessEvents() = 0;
 
-    virtual float DpiFactor() const = 0;
+    virtual float DpiFactor() const { return .0f;  }
 
-    virtual void SetTitle(const std::string &title) = 0;
+    virtual void SetTitle(const std::string &title) { }
+
+    virtual void Show() { }
 
 public:
     static std::unique_ptr<Window> Create(const Description &description = Description{});

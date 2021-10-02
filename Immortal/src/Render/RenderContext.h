@@ -2,6 +2,7 @@
 
 #include "ImmortalCore.h"
 #include "Framework/Device.h"
+#include "Framework/Window.h"
 
 namespace Immortal
 {
@@ -30,7 +31,7 @@ public:
     {
         Description() { }
 
-        Description(void *handle, UINT32 width, UINT32 height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
+        Description(Window *handle, UINT32 width, UINT32 height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
             WindowHandle{ handle },
             Width{ width },
             Height{ height },
@@ -45,9 +46,9 @@ public:
 
         int FrameCount{ 3 };
 
-        void *WindowHandle{ nullptr };
+        Window *WindowHandle{ nullptr };
 
-        Format format{ Format::R8G8B8A8_SRGB };
+        Format format{ Format::R8G8B8A8_UNORM };
 
         const char *ApplicationName{ "" };
 
