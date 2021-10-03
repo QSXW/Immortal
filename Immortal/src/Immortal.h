@@ -18,6 +18,7 @@
 #include "Framework/Input.h"
 
 #include "Utils/PlatformUtils.h"
+#include "Utils/json.h"
 
 #include "Image/Colorspace.h"
 

@@ -4,67 +4,80 @@
 
 namespace Immortal
 {
-	class OpenGLVertexBuffer : public VertexBuffer
-	{
-	public:
-		OpenGLVertexBuffer(uint32_t size);
-		OpenGLVertexBuffer(const void *vertices, uint32_t size);
-		~OpenGLVertexBuffer() override;
+class OpenGLVertexBuffer : public VertexBuffer
+{
+public:
+    OpenGLVertexBuffer(uint32_t size);
+    OpenGLVertexBuffer(const void *vertices, uint32_t size);
+    ~OpenGLVertexBuffer() override;
 
-		uint32_t Handle() const override { return mHandle; }
+    uint32_t Handle() const override
+    { 
+        return handle;
+    }
 
-		void Map() const override;
-		void Unmap() const override;
+    void Map() const override;
+    void Unmap() const override;
 
-		void SetLayout(const VertexLayout &layout) override
-		{
-			mLayout = layout;
-		}
+    void SetLayout(const VertexLayout &other) override
+    {
+        layout = other;
+    }
 
-		const VertexLayout &Layout() const override
-		{ 
-			return mLayout;
-		}
+    const VertexLayout &Layout() const override
+    { 
+        return layout;
+    }
 
-		void SetData(const void *data, uint32_t size) override;
+    void SetData(const void *data, uint32_t size) override;
 
-	private:
-		uint32_t mHandle{};
-		VertexLayout mLayout;
-	};
+private:
+    uint32_t handle{};
 
-	class OpenGLIndexBuffer : public IndexBuffer
-	{
-	public:
-		OpenGLIndexBuffer(const void *indices, uint32_t count);
-		~OpenGLIndexBuffer();
+    VertexLayout layout;
+};
 
-		uint32_t Handle() const override { return mHandle; }
-		void Map() const override;
-		void Unmap() const override;
+class OpenGLIndexBuffer : public IndexBuffer
+{
+public:
+    OpenGLIndexBuffer(const void *indices, uint32_t count);
+    ~OpenGLIndexBuffer();
 
-		virtual uint32_t Count() const override
-		{
-			return mCount;
-		}
-	
-	private:
-		uint32_t mHandle{};
-		uint32_t mCount;
-	};
+    uint32_t Handle() const override 
+    { 
+        return handle;
+    }
 
-	class OpenGLUniformBuffer : public UniformBuffer
-	{
-	public:
-		OpenGLUniformBuffer(size_t size, int binding);
-		~OpenGLUniformBuffer();
+    void Map() const override;
 
-		virtual void SetData(size_t size, const void *data) const override;
-		void Map() const;
-		void Unmap() const override;
+    void Unmap() const override;
 
-	private:
-		uint32_t mHandle{};
-	};
+    virtual uint32_t Count() const override
+    {
+        return count;
+    }
+    
+private:
+    uint32_t handle{};
+
+    uint32_t count;
+};
+
+class OpenGLUniformBuffer : public UniformBuffer
+{
+public:
+    OpenGLUniformBuffer(size_t size, int binding);
+
+    ~OpenGLUniformBuffer();
+
+    virtual void SetData(size_t size, const void *data) const override;
+
+    void Map() const;
+
+    void Unmap() const override;
+
+private:
+    uint32_t handle{};
+};
 
 }

@@ -8,6 +8,26 @@
 
 using namespace Immortal;
 
+static std::map<std::string, std::string> languageTable;
+
+struct LanguageSettings
+{
+    LanguageSettings(const std::string &path)
+    {
+        Profiler p{ "Initializing language settings" };
+        auto json = JSON::Parse(path);
+
+        auto &map = json["settings"]["map"];
+
+        for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
+        {
+            auto &item = it->items();            
+            languageTable[it.key()] = it.value().get<std::string>();
+            int pause = 0;
+        }
+    }
+};
+
 class VulkanLayer : public Layer
 {
 public:
@@ -22,11 +42,13 @@ public:
 public:
     struct
     {
-        bool showDemoWindow{ false };
-        bool showAnotherWindow{ false };
+        bool showDemoWindow{ true };
         Vector4 clearColor{ 0.45f, 0.55f, 0.60f, 1.00f };
     } Settings;
+
+    LanguageSettings languageSettings{ "Assets/json/default_language.json" };
 };
+
 
 class VulkanSample : public Application
 {
@@ -47,6 +69,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::D3D12);
+    Render::Set(Render::Type::Vulkan);
     return new VulkanSample();
 }

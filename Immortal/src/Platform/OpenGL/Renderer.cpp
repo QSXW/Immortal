@@ -44,6 +44,8 @@ void Renderer::INIT()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
 #endif
 
+    glEnable(GL_FRAMEBUFFER_SRGB);
+
     glEnable(GL_DEPTH_TEST);
     //glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -91,6 +93,7 @@ void Renderer::Clear()
 void Renderer::SwapBuffers()
 {
     glfwSwapBuffers(context->Handle());
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void Renderer::DrawIndexed(const Ref<VertexArray> &vertexArray, uint32_t indexCount)

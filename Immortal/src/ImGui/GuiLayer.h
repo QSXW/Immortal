@@ -50,7 +50,10 @@ public:
 
 private:
     bool blockEvents = true;
+    
     float time = 0.0f;
+
+    ImFont *demilight;
 };
 
 using SuperGuiLayer = GuiLayer;

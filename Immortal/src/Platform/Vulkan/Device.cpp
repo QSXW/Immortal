@@ -338,7 +338,7 @@ Queue &Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
     }
 
     LOG::ERR("Queue not found");
-    return Utils::NullValue<Queue>();
+    return queues[0][0];
 }
 
 }

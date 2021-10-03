@@ -8,6 +8,8 @@
 #include <spdlog/fmt/ostr.h>
 #pragma warning(pop)
 
+#include <time.h>
+
 namespace Immortal
 {
 
@@ -50,6 +52,27 @@ private:
     static std::shared_ptr<spdlog::logger> logger;
 };
 
+struct Profiler
+{
+
+Profiler(const char *msg = "") :
+    start{ clock() },
+    end{ 0 }
+{
+    LOG::INFO("-> {0}", msg);
+}
+
+~Profiler()
+{
+    end = clock();
+    double duration = ((double)end - (double)start) / CLOCKS_PER_SEC;
+    LOG::INFO("<- {0} (s)", duration);
+}
+
+time_t start;
+time_t end;
+
+};
 
 struct ErrorHandle
 {

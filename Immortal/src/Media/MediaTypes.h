@@ -23,3 +23,11 @@ enum class Format
     YUV420P,
     YUV422P
 };
+
+class RF
+{
+
+unsigned char *buf;
+};
+
+}

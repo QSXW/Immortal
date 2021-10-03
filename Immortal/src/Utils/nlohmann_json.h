@@ -28,7 +28,6 @@ SOFTWARE.
 */
 
 #pragma once
-#include "impch.h"
 
 #ifndef INCLUDE_NLOHMANN_JSON_HPP_
 #define INCLUDE_NLOHMANN_JSON_HPP_

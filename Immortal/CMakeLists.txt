@@ -252,7 +252,6 @@ set(SCRIPT_FILES
     src/Script/ScriptDriver.h)
 
 set(SERIALIZER_FILES
-    src/Serializer/json.h
     src/Serializer/SceneSerializer.cpp
     src/Serializer/SceneSerializer.h)
 
@@ -263,6 +262,8 @@ set(SYNC_FILES
     src/Sync/SemaphorePool.h)
 
 set(UTILS_FILES
+    src/Utils/nlohmann_json.h
+    src/Utils/json.h
     src/Utils/PlatformUtils.h)
 
 source_group("\\" FILES ${CORE_FILES})

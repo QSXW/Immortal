@@ -9,7 +9,8 @@ std::unique_ptr<ThreadPool> Async::threadPool{ nullptr };
 void Async::INIT()
 {
     int count = std::thread::hardware_concurrency();
-
+    
+    Profiler p;
     LOG::INFO("Creating {0} Thread(s)", count);
 
     threadPool.reset(new ThreadPool{ count });

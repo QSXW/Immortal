@@ -64,7 +64,15 @@ void GuiLayer::OnAttach()
     {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }    
+    }
+
+    Profiler p{ "Loading DemiLight File" };
+    demilight = io.Fonts->AddFontFromFileTTF(
+        "Assets/fonts/NotoSansCJKsc-DemiLight.otf",
+        18,
+        nullptr,
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+        );
 }
 
 void GuiLayer::SetTheme()

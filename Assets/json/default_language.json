@@ -1,0 +1,9 @@
+{
+    "version": "0.0.1",
+    "settings": {
+        "map": {
+            "menu": "菜单",
+            "start": "开始"
+        }
+    }
+}
