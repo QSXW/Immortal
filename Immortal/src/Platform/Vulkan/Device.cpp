@@ -12,7 +12,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Device::Device(PhysicalDevice& physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
+Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
     : physicalDevice(physicalDevice),
         surface(surface)
 {

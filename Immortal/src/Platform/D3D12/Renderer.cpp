@@ -22,7 +22,6 @@ void Renderer::INIT()
 void Renderer::SwapBuffers()
 {
     swapchain->Present(1, 0);
-    
     currentBuffer = context->WaitForPreviousFrame();
 }
 

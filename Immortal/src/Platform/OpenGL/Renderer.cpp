@@ -44,7 +44,7 @@ void Renderer::INIT()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
 #endif
 
-    glEnable(GL_FRAMEBUFFER_SRGB);
+    // glEnable(GL_FRAMEBUFFER_SRGB);
 
     glEnable(GL_DEPTH_TEST);
     //glEnable(GL_CULL_FACE);

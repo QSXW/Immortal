@@ -48,12 +48,26 @@ public:
 
     void SetTheme();
 
+    ImFont *DemiLight()
+    {
+        return fonts.demilight;
+    }
+
+    ImFont *Bold()
+    {
+        return fonts.bold;
+    }
+
 private:
     bool blockEvents = true;
     
     float time = 0.0f;
 
-    ImFont *demilight;
+    struct
+    {
+        ImFont *demilight;
+        ImFont *bold;
+    } fonts;
 };
 
 using SuperGuiLayer = GuiLayer;

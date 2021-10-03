@@ -33,6 +33,11 @@ public:
 
     void Resize();
 
+    virtual const char *GraphicsRenderer()
+    {
+        return context->GraphicsRenderer();
+    }
+
 public:
     RenderContext *context{ nullptr };
 

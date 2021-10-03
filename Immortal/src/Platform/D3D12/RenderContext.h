@@ -20,6 +20,7 @@ static inline DXGI_FORMAT NORMALIZE(Format format)
 {
     static DXGI_FORMAT map[] = {
         DXGI_FORMAT_R8G8B8A8_UNORM,
+        DXGI_FORMAT_R10G10B10A2_UNORM,
         DXGI_FORMAT_R16G16B16A16_FLOAT
     };
 
@@ -115,6 +116,12 @@ public:
 
     void CreateRenderTarget();
 
+    void CheckDisplayHDRSupport();
+
+    void EnsureSwapChainColorSpace(Swapchain::BitDepth bitDepth, bool enableST2084);
+
+    void SetHDRMetaData(float MaxOutputNits = 1000.0f, float MinOutputNits = 0.001f, float MaxCLL = 2000.0f, float MaxFALL = 500.0f);
+
 private:
     Super::Description desc{};
 
@@ -122,13 +129,15 @@ private:
 
     HMODULE hModule{ nullptr };
 
-    ComPtr<IDXGIFactory4> factory{ nullptr };
+    ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
 
     std::unique_ptr<Device> device;
 
     std::unique_ptr<Queue> queue;
 
     std::unique_ptr<Swapchain> swapchain;
+
+    HANDLE swapchainWritableObject{ nullptr };
 
     std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
 
@@ -148,7 +157,32 @@ private:
 
     HANDLE fenceEvent{ nullptr };
 
-    UINT64 fenceValue{ 1 };
+    UINT64 fenceValues[MAX_FRAME_COUNT]{ 0 };
+
+    struct
+    {
+        UINT hdrMetaDataPoolIdx{ 0 };
+
+        bool hdrSupport{ false };
+
+        bool enableST2084{ false };
+
+        float referenceWhiteNits{ 80.0f };  
+
+        UINT rootConstants[RootConstantsCount];
+
+        Swapchain::BitDepth bitDepth{ Swapchain::BitDepth::_8 };
+
+        DXGI_COLOR_SPACE_TYPE currentColorSpace{ DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 };
+    } color;
+
+    struct
+    {
+        int left{ 0 };
+        int top{ 0 };
+        int right{ 0 };
+        int bottom{ 0 };
+    } windowBounds;
 
 public:
     ErrorHandle error;
@@ -156,6 +190,10 @@ public:
     void WaitForGPU();
 
     UINT WaitForPreviousFrame();
+
+    void WaitForNextFrameResources();
+
+    UINT UpdateSwapchain(UINT width, UINT height);
 };
 
 }

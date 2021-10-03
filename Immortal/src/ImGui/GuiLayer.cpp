@@ -67,8 +67,15 @@ void GuiLayer::OnAttach()
     }
 
     Profiler p{ "Loading DemiLight File" };
-    demilight = io.Fonts->AddFontFromFileTTF(
-        "Assets/fonts/NotoSansCJKsc-DemiLight.otf",
+    fonts.demilight = io.Fonts->AddFontFromFileTTF(
+        "Assets/fonts/NotoSansCJKsc-Light.otf",
+        18,
+        nullptr,
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+        );
+
+    fonts.bold = io.Fonts->AddFontFromFileTTF(
+        "Assets/fonts/NotoSansCJKsc-Bold.otf",
         18,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()

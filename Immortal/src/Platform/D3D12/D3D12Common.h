@@ -10,6 +10,7 @@ using Microsoft::WRL::ComPtr;
 #include <D3d12.h>
 #include <dxgi.h>
 #include <dxgi1_4.h>
+#include <dxgi1_6.h>
 
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "D3d12.lib")
@@ -38,6 +39,40 @@ void IfNotNullThenRelease(T ptr)
         ptr->Release();
     }
 }
+
+enum RootConstants
+{
+    ReferenceWhiteNits = 0,
+    DisplayCurve,
+    RootConstantsCount
+};
+
+enum DisplayCurve
+{
+    sRGB = 0,
+    ST2084,
+    None
+};
+
+static const float HDRMetaDataPool[4][4] = {
+    // MaxOutputNits, MinOutputNits,  MaxCLL, MaxFALL
+    {        1000.0f,        0.001f, 2000.0f,  500.0f },
+    {         500.0f,        0.001f, 2000.0f,  500.0f },
+    {         500.0f,        0.100f,  500.0f,  100.0f },
+    {        2000.0f,        1.000f, 2000.0f, 1000.0f }
+};
+
+struct DisplayChromaticities
+{
+    float RedX;
+    float RedY;
+    float GreenX;
+    float GreenY;
+    float BlueX;
+    float BlueY;
+    float WhiteX;
+    float WhiteY;
+};
 
 static inline void Check(HRESULT result, const char *message = "")
 {

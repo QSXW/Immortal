@@ -83,7 +83,7 @@ void VulkanLayer::OnGuiRender()
     {
         if (ImGui::BeginMenu(languageTable["menu"].c_str()))
         {
-            if (ImGui::MenuItem(IMMORTAL_CONSTANT_STRING_OPEN, "Ctrl+O"))
+            if (ImGui::MenuItem(languageTable["open"].c_str(), "Ctrl+O"))
             {
 
             }
@@ -201,9 +201,11 @@ void VulkanLayer::OnGuiRender()
         ImGui::ColorEdit3("clear color", (float*)&Settings.clearColor); 
 
         static const char *api = Render::Api();
+        static const char *videoCard = Render::GraphicsRenderer();
+
         static char buf[255] = { 0 };
-        sprintf(buf, "Immortal Editor (Graphics API: %s) %.3f ms/frame (%.1f FPS)", 
-            api, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        sprintf(buf, "Immortal Editor (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)", 
+            api, videoCard, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         std::string title{ buf };
         Application::SetTitle(title);
 

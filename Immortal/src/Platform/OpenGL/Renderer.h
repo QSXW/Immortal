@@ -36,6 +36,11 @@ public:
 
     virtual void SwapBuffers() override;
 
+    virtual const char *GraphicsRenderer() override
+    {
+        return context->GraphicsRenderer();
+    }
+
 private:
     RenderContext *context{ nullptr };
 };

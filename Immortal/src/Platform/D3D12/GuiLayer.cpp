@@ -94,7 +94,6 @@ void GuiLayer::End()
     commandList->Reset(commandAllocator);
     commandList->ResourceBarrier(&barrier);
 
-    // Render Dear ImGui graphics
     Descriptor rtvDescritor = std::move(context->RenderTargetDescriptor(backBufferIdx));
 
     commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));

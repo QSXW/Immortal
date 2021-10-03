@@ -73,8 +73,12 @@ public:
             );
     }
 
+    DXGI_ADAPTER_DESC AdaptorDesc();
+
 private:
     ComPtr<ID3D12Device> handle{ nullptr };
+
+    IDXGIFactory4 *dxgiFactory{ nullptr };
 
     static inline bool UseWarpDevice{ true };
 };

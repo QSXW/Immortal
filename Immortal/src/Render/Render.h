@@ -157,6 +157,11 @@ public:
         return Stringify[ncast<int>(API)];
     }
 
+    static const char *GraphicsRenderer()
+    {
+        return handle->GraphicsRenderer();
+    }
+
 private:
     static std::unique_ptr<Renderer> handle;
 

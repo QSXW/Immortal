@@ -29,19 +29,14 @@ public:
         return currentBuffer;
     }
 
+    virtual const char *GraphicsRenderer() override
+    {
+        return context->GraphicsRenderer();
+    }
+
     virtual void OnResize(UINT x, UINT y, UINT width, UINT height) override
     {
-       context->CleanUpRenderTarget();
-
-       swapchain->ResizeBuffers(
-            width,
-            height,
-            DXGI_FORMAT_UNKNOWN,
-            DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT
-        );
-
-       context->CreateRenderTarget();
-       currentBuffer = swapchain->AcquireCurrentBackBufferIndex();
+        currentBuffer = context->UpdateSwapchain(width, height);
     }
 
 public:

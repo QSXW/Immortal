@@ -93,6 +93,22 @@ public:
     RenderContext &operator=(const RenderContext &) = delete;
     RenderContext &operator=(RenderContext &&) = delete;
     
+    void UpdateMeta(const char *physicalDevice, const char *version, const char *vendor)
+    {
+        if (physicalDevice)
+        {
+            this->graphicsRenderer = physicalDevice;
+        }
+        if (version)
+        {
+            this->driverVersion = version;
+        }
+        if (vendor)
+        {
+            this->vendor = vendor;
+        }
+    }
+
 protected:
     std::string graphicsRenderer{};
     std::string driverVersion{};

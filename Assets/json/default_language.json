@@ -3,7 +3,8 @@
     "settings": {
         "map": {
             "menu": "菜单",
-            "start": "开始"
+            "start": "开始",
+            "open": "打开"
         }
     }
 }

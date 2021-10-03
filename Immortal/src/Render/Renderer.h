@@ -32,6 +32,11 @@ public:
     virtual uint32_t Index() { return 0; }
 
     static std::unique_ptr<Renderer> Create(RenderContext *context);
+
+    virtual const char *GraphicsRenderer()
+    {
+        return "None";
+    };
 };
 
 using SuperRenderer = Renderer;
