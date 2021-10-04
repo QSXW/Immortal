@@ -53,7 +53,7 @@ public:
 class VulkanSample : public Application
 {
 public:
-    VulkanSample() : Application({ U8("Vulkan Sample (Graphics API: Vulkan)"), 1920, 1080 })
+    VulkanSample() : Application({ U8("Immortal Editor"), 1920, 1080 })
     {
         PushLayer(new VulkanLayer());
     }
@@ -69,6 +69,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::Vulkan);
+    Render::Set(Render::Type::D3D12);
     return new VulkanSample();
 }

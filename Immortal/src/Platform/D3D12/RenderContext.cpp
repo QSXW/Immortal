@@ -86,12 +86,12 @@ void RenderContext::INIT()
         color.enableST2084 = color.hdrSupport;
 
         EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
-        SetHDRMetaData(
+        /* SetHDRMetaData(
             HDRMetaDataPool[color.hdrMetaDataPoolIdx][0],
             HDRMetaDataPool[color.hdrMetaDataPoolIdx][1],
             HDRMetaDataPool[color.hdrMetaDataPoolIdx][2],
             HDRMetaDataPool[color.hdrMetaDataPoolIdx][3]
-        );
+        ); */
     }
 
     {
@@ -124,39 +124,17 @@ void RenderContext::INIT()
 
     CreateRenderTarget();
 
-    for (UINT i = 0; i < desc.FrameCount; i++)
-    {
-        commandAllocator[i] = std::make_unique<CommandAllocator>(device.get(), CommandList::Type::Direct);
-    }
- 
+    commandAllocator = queue->RequestCommandAllocator();
+
     commandList = std::make_unique<CommandList>(
         device.get(),
         CommandList::Type::Direct,
-        commandAllocator[0].get()
+        commandAllocator
         );
 
     commandList->Close();
 
-    {
-        // Create synchronization objects 
-        device->CreateFence(&fence, fenceValues[frameIndex], D3D12_FENCE_FLAG_NONE);
-        fenceValues[frameIndex]++;
-
-        fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (!fenceEvent)
-        {
-            Check(HRESULT_FROM_WIN32(GetLastError()));
-        }
-
-        WaitForGPU();
-    }
-    fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (fenceEvent)
-    {
-        error.Upload("Unable to intialize Fence Event");
-    }
-
-    WaitForPreviousFrame();
+    queue->WaitForGpu();
 }
 
 void RenderContext::CreateRenderTarget()
@@ -170,6 +148,7 @@ void RenderContext::CreateRenderTarget()
         swapchain->AccessBackBuffer(i, &renderTargets[i]);
         device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
         renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
+        renderTargets[i]->SetName((std::wstring(L"Render Target{") + std::to_wstring(i) + std::wstring(L"}")).c_str());
     }
 }
 
@@ -337,6 +316,7 @@ void RenderContext::WaitForGPU()
 
     // Wait until the fence has been processed.
     fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent);
+    WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
 
      // Increment the fence value for the current frame.
     fenceValues[frameIndex]++;
@@ -344,29 +324,33 @@ void RenderContext::WaitForGPU()
 
 UINT RenderContext::WaitForPreviousFrame()
 {
-    UINT64 currentFenceValue = fenceValues[frameIndex];
+    // Schedule a Signal command in the queue.
+    const UINT64 currentFenceValue = fenceValues[frameIndex];
     queue->Signal(fence.Get(), currentFenceValue);
+
+    // Update the frame index.
+    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
     // If the next frame is not ready to be rendered yet, wait until it is ready.
     if (fence->GetCompletedValue() < fenceValues[frameIndex])
     {
-        Check(fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent));
+        fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent);
         WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
     }
-    fenceValues[frameIndex] = currentFenceValue + 1;
 
-    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    // Set the fence value for the next frame.
+    fenceValues[frameIndex] = currentFenceValue + 1;
 
     return frameIndex;
 }
 
-UINT RenderContext::UpdateSwapchain(UINT width, UINT height)
+void RenderContext::UpdateSwapchain(UINT width, UINT height)
 {
     if (!swapchain)
     {
-        return frameIndex;
+        return;
     }
-    WaitForGPU();
+    queue->WaitForGpu();
     CleanUpRenderTarget();
 
     for (UINT i = 0; i < desc.FrameCount; i++)
@@ -376,7 +360,6 @@ UINT RenderContext::UpdateSwapchain(UINT width, UINT height)
 
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
     swapchain->Desc(&swapchainDesc);
-
     swapchain->ResizeBuffers(
         width,
         height,
@@ -387,13 +370,11 @@ UINT RenderContext::UpdateSwapchain(UINT width, UINT height)
     EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
 
     CreateRenderTarget();
-
-    return swapchain->AcquireCurrentBackBufferIndex();
 }
 
 void RenderContext::WaitForNextFrameResources()
 {
-    frameIndex++;
+    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
     HANDLE waitableObjects[] = {
         swapchainWritableObject,

@@ -6,6 +6,7 @@ namespace Immortal
 {
 class Timer
 {
+
 public:
     using Seconds      = std::ratio<1>;
     using Milliseconds = std::ratio<1, 1000>;
@@ -92,4 +93,5 @@ private:
     Clock::time_point lap;
     Clock::time_point previousTick;
 };
+
 }

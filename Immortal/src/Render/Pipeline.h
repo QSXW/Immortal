@@ -5,47 +5,50 @@
 #include "Buffer.h"
 #include "Shader.h"
 
-namespace Immortal {
+namespace Immortal
+{
 
-	class IMMORTAL_API Pipeline
-	{
-	public:
-		enum class DrawType
-		{
-			None = 0,
-			Static,
-			Stream,
-			Dynamic
-		};
+class IMMORTAL_API Pipeline
+{
+public:
+    enum class DrawType
+    {
+        None = 0,
+        Static,
+        Stream,
+        Dynamic
+    };
 
-		enum class PrimitiveType
-		{
-			Line,
-			Triangles
-		};
+    enum class PrimitiveType
+    {
+        Line,
+        Triangles
+    };
 
-	public:
-		virtual ~Pipeline() { }
+public:
+    Pipeline() { }
 
-		virtual void Map()   const = 0;
-		virtual void Unmap() const = 0;
+    virtual ~Pipeline() { }
 
-	private:
-		struct Description
-		{
-			VertexLayout Layout{};
-			DrawType Type{ DrawType::Static };
-			Ref<Immortal::Shader> Shader{};
+    virtual void Map()   const = 0;
+    virtual void Unmap() const = 0;
 
-			struct DepthStencilState
-			{
-				bool DepthEnable = false;
-				bool StencilEnable = false;
-			};
-			UINT32 SampleMask = UINT_MAX;
-			PrimitiveType PrimitiveType = PrimitiveType::Triangles;
-		} mDescription;
-	};
+private:
+    struct Description
+    {
+        VertexLayout Layout{};
+        DrawType Type{ DrawType::Static };
+        Ref<Immortal::Shader> Shader{};
+
+        struct DepthStencilState
+        {
+            bool DepthEnable = false;
+            bool StencilEnable = false;
+        };
+        UINT32 SampleMask = UINT_MAX;
+        PrimitiveType PrimitiveType = PrimitiveType::Triangles;
+    } mDescription;
+};
 
 }
 

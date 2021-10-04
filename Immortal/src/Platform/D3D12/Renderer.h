@@ -5,6 +5,8 @@
 #include "D3D12Common.h"
 #include "RenderContext.h"
 
+#include <mutex>
+
 namespace Immortal
 {
 namespace D3D12
@@ -22,11 +24,14 @@ public:
 
     virtual void SwapBuffers() override;
 
-    virtual void RenderFrame() override { }
+    virtual void RenderFrame() override
+    { 
+        frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    }
 
     virtual uint32_t Index() override
     {
-        return currentBuffer;
+        return frameIndex;
     }
 
     virtual const char *GraphicsRenderer() override
@@ -36,7 +41,7 @@ public:
 
     virtual void OnResize(UINT x, UINT y, UINT width, UINT height) override
     {
-        currentBuffer = context->UpdateSwapchain(width, height);
+        context->UpdateSwapchain(width, height);
     }
 
 public:
@@ -44,7 +49,11 @@ public:
 
     Swapchain *swapchain{ nullptr };
 
-    UINT currentBuffer{ 0 };
+    Queue *queue{ nullptr };
+
+    CommandList *commandList{ nullptr };
+
+    UINT frameIndex{ 0 };
 };
 
 }

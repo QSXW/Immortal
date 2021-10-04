@@ -23,6 +23,8 @@ public:
         Count
     };
 
+    static inline constexpr UINT64 SWAP_CHAIN_BUFFER_COUNT = 3;
+
 public:
     Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc)
     {

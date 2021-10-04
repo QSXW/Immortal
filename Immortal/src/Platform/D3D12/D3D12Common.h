@@ -78,10 +78,10 @@ static inline void Check(HRESULT result, const char *message = "")
 {
     if (FAILED(result))
     {
-        LOG::ERR("Status Code => {0}", result);
+        LOG::ERR("Status Code => {0}", GetLastError());
         if (!message || !message[0])
         {
-            LOG::ERR("{0}", "Unknow Exception");
+            LOG::ERR("{0}", "This is a DirectX 12 Execption. Check Output for more details...");
         }
         else
         {

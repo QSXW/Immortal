@@ -28,14 +28,14 @@ public:
     };
 
 public:
-    CommandList(Device *device, Type type, CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
+    CommandList(Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
     ~CommandList()
     {
         IfNotNullThenRelease(handle);
     }
 
-    void Reset(CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState = nullptr);
+    void Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState = nullptr);
 
     void ResourceBarrier(Barrier *barrier, UINT num = 1)
     {

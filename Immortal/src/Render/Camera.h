@@ -56,7 +56,9 @@ public:
 
 protected:
     Matrix4 view{ 1.0f };
+
     Matrix4 projection{ 1.0f };
+
     float exposure{ 0.8f };
 };
 

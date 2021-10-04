@@ -114,7 +114,6 @@ void Renderer::SwapBuffers()
     queue->Submit(submitInfo, VK_NULL_HANDLE);
 
     SubmitFrame();
-    // sync = (sync + 1) % frameSize;
 }
 
 }

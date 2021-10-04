@@ -70,13 +70,17 @@ public:
         {
             return commandList.get();
         }
-        if constexpr (typeof<T, CommandAllocator *>())
+        if constexpr (typeof<T, ID3D12CommandAllocator *>())
         {
-            return commandAllocator[0].get();
+            return commandAllocator;
         }
         if constexpr (typeof<T, Window*>())
         {
             return desc.WindowHandle;
+        }
+        if constexpr (typeof<T, ID3D12Fence *>())
+        {
+            return fence.Get();
         }
     }
 
@@ -151,7 +155,7 @@ private:
 
     ID3D12Resource *renderTargets[MAX_FRAME_COUNT]{ nullptr };
 
-    std::array<std::unique_ptr<CommandAllocator>, MAX_FRAME_COUNT> commandAllocator;
+    ID3D12CommandAllocator *commandAllocator;
 
     ComPtr<ID3D12Fence> fence;
 
@@ -193,7 +197,7 @@ public:
 
     void WaitForNextFrameResources();
 
-    UINT UpdateSwapchain(UINT width, UINT height);
+    void UpdateSwapchain(UINT width, UINT height);
 };
 
 }

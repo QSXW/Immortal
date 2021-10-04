@@ -65,8 +65,8 @@ private:
 
     struct
     {
-        ImFont *demilight;
-        ImFont *bold;
+        ImFont *demilight{ nullptr };
+        ImFont *bold{ nullptr };
     } fonts;
 };
 

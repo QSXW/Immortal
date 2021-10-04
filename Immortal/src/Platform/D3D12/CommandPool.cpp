@@ -1,29 +1,31 @@
 #include "CommandPool.h"
 
 #include "CommandAllocator.h"
+#include "Device.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-CommandList::CommandList(Device *device, Type type, CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState)
+CommandList::CommandList(Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState)
 {
     device->CreateCommandList(
         ncast<D3D12_COMMAND_LIST_TYPE>(type),
-        pAllocator->Handle(),
+        pAllocator,
         pInitialState,
         &handle
     );
 }
 
-void CommandList::Reset(CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState)
+void CommandList::Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState)
 {
     Check(handle->Reset(
-        pAllocator->Handle(),
-        pInitalState)
-        );
+        pAllocator,
+        pInitalState
+        ));
 }
+
 
 }
 }

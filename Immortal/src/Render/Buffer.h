@@ -6,6 +6,7 @@
 
 namespace Immortal
 {
+
 static UINT32 ShaderDataTypeSize(Shader::DataType type)
 {
     switch (type)

@@ -75,10 +75,7 @@ void DirectWindow::ProcessEvents()
 
 void DirectWindow::SetTitle(const std::string &title)
 {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    std::wstring wtitle = converter.from_bytes(title);
-
-    SetWindowTextW(handle, wtitle.c_str());
+    SetWindowTextA(handle, title.c_str());
 }
 
 void DirectWindow::INIT(const Description &description)

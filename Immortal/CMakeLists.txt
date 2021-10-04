@@ -221,8 +221,6 @@ set(RENDER_FILES
     src/Render/Renderer.h
     src/Render/Renderer2D.cpp
     src/Render/Renderer2D.h
-    src/Render/RendererAPI.cpp
-    src/Render/RendererAPI.h
     src/Render/Shader.cpp
     src/Render/Shader.h
     src/Render/Texture.cpp

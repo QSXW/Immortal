@@ -36,7 +36,7 @@ private:
 
     DescriptorPool *srvDescriptorHeap{ nullptr };
 
-    CommandAllocator *commandAllocator{ nullptr };
+    ID3D12CommandAllocator *commandAllocator{ nullptr };
 
     CommandList *commandList{ nullptr };
 

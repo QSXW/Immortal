@@ -24,7 +24,7 @@ GuiLayer::GuiLayer(SuperRenderContext *superContext) :
 {
     swapchain        = context->Get<Swapchain *>();
     commandList      = context->Get<CommandList *>();
-    commandAllocator = context->Get<CommandAllocator *>();
+    commandAllocator = context->Get<ID3D12CommandAllocator *>();
     queue            = context->Get<Queue *>();
 }
 
@@ -80,18 +80,18 @@ void GuiLayer::End()
     Super::End();
 
     UINT backBufferIdx = Render::CurrentPresentedFrameIndex();
-
-    ID3D12Resource *renderTarget = context->RenderTarget(backBufferIdx);
+    
+    commandAllocator->Reset();
+    commandList->Reset(commandAllocator);
 
     Barrier barrier{};
     barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource   = renderTarget;
+    barrier.Transition.pResource   = context->RenderTarget(backBufferIdx);
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-    commandList->Reset(commandAllocator);
     commandList->ResourceBarrier(&barrier);
 
     Descriptor rtvDescritor = std::move(context->RenderTargetDescriptor(backBufferIdx));
@@ -106,9 +106,6 @@ void GuiLayer::End()
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
 
     commandList->ResourceBarrier(&barrier);
-    commandList->Close();
-
-    queue->ExecuteCommandLists(commandList);
 
     auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
