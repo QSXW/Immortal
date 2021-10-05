@@ -56,6 +56,9 @@ public:
     VulkanSample() : Application({ U8("Immortal Editor"), 1920, 1080 })
     {
         PushLayer(new VulkanLayer());
+
+        // shader = Render::CreateShader("./Assets/shaders/glsl/texture");
+        shader = Render::CreateShader("./Assets/shaders/hlsl/texture");
     }
 
     ~VulkanSample()
@@ -64,7 +67,7 @@ public:
     }
 
 private:
-    
+    std::shared_ptr<Shader> shader;
 };
 
 Immortal::Application* Immortal::CreateApplication()

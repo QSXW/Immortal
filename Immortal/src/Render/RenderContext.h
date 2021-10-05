@@ -3,6 +3,7 @@
 #include "ImmortalCore.h"
 #include "Framework/Device.h"
 #include "Framework/Window.h"
+#include "Render/Shader.h"
 
 namespace Immortal
 {
@@ -85,7 +86,7 @@ public:
         return vendor.c_str();
     }
 
-    std::shared_ptr<Shader> CreateShader(const std::string &filename);
+    std::shared_ptr<Shader> CreateShader(const std::string &filename, Shader::Type type);
 
 public:
     RenderContext(const RenderContext &) = delete;

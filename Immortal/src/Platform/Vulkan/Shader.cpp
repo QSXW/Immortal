@@ -37,7 +37,6 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
         modules.push_back(comp);
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
-    
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)

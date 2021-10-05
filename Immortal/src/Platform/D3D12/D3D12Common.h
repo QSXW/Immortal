@@ -16,7 +16,6 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "D3d12.lib")
 
 #if SLDEBUG
-#define D3DCOMPILE_DEBUG  1
 #include <D3d12SDKLayers.h>
 #endif
 
@@ -34,7 +33,7 @@ void IfNotNullThen(A&& ... args)
 template <class T>
 void IfNotNullThenRelease(T ptr)
 {
-    if (!ptr)
+    if (ptr)
     {
         ptr->Release();
     }

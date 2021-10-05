@@ -33,6 +33,11 @@ public:
 
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 
+    virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type)
+    {
+        return nullptr;
+    }
+
     virtual const char *GraphicsRenderer()
     {
         return "None";

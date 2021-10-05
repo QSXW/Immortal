@@ -38,6 +38,11 @@ public:
         return context->GraphicsRenderer();
     }
 
+     virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type)
+     {
+         return context->CreateShader(filepath, type);
+     }
+
 public:
     RenderContext *context{ nullptr };
 

@@ -1,5 +1,5 @@
 #include "impch.h"
-#include "OpenGLShader.h"
+#include "Shader.h"
 
 #include <fstream>
 #include <array>
@@ -8,6 +8,9 @@
 
 namespace Immortal
 {
+namespace OpenGL
+{
+
 static GLenum ShaderTypeFromString(const std::string &type)
 {
     if (type == "vertex")
@@ -27,7 +30,7 @@ static GLenum ShaderTypeFromString(const std::string &type)
     return 0;
 }
 
-OpenGLShader::OpenGLShader(const std::string &filepath)
+Shader::Shader(const std::string &filepath)
 {
     auto source = ReadFile(filepath);
     auto shaderSources = Preprocess(source);
@@ -47,7 +50,7 @@ OpenGLShader::OpenGLShader(const std::string &filepath)
     name = filepath.substr(lastSlash, count);
 }
 
-OpenGLShader::OpenGLShader(const std::string &name, const std::string & vertexSrc, const std::string & fragmentSrc)
+Shader::Shader(const std::string &name, const std::string & vertexSrc, const std::string & fragmentSrc)
     : name(name)
 {
     std::unordered_map<GLenum, std::string> sources;
@@ -56,12 +59,12 @@ OpenGLShader::OpenGLShader(const std::string &name, const std::string & vertexSr
     Compile(sources);
 }
 
-OpenGLShader::~OpenGLShader()
+Shader::~Shader()
 {
     glDeleteProgram(handle);
 }
 
-void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& source)
+void Shader::Compile(const std::unordered_map<GLenum, std::string>& source)
 {
     std::array<GLenum, 2> shaderIDs{};
 
@@ -100,7 +103,7 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& source
     }	
 }
 
-uint32_t OpenGLShader::CompileShader(int type, const char *src)
+uint32_t Shader::CompileShader(int type, const char *src)
 {
     uint32_t shader = glCreateShader(type);
 
@@ -125,7 +128,7 @@ uint32_t OpenGLShader::CompileShader(int type, const char *src)
     return shader;
 }
 
-std::string OpenGLShader::ReadFile(const std::string & filepath)
+std::string Shader::ReadFile(const std::string & filepath)
 {
     std::string result;
     std::ifstream in(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
@@ -145,7 +148,7 @@ std::string OpenGLShader::ReadFile(const std::string & filepath)
     return {};
 }
 
-std::unordered_map<GLenum, std::string> OpenGLShader::Preprocess(const std::string & source)
+std::unordered_map<GLenum, std::string> Shader::Preprocess(const std::string & source)
 {
     std::unordered_map<GLenum, std::string> shaderSources;
 
@@ -170,62 +173,63 @@ std::unordered_map<GLenum, std::string> OpenGLShader::Preprocess(const std::stri
     return shaderSources;
 }
 
-void OpenGLShader::Map() const
+void Shader::Map() const
 {
     glUseProgram(handle);
 }
 
-void OpenGLShader::Unmap() const
+void Shader::Unmap() const
 {
     glUseProgram(0);
 }
 
-void OpenGLShader::Set(const std::string &name, int value)
+void Shader::Set(const std::string &name, int value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1i(location, value);
 }
 
-void OpenGLShader::Set(const std::string & name, int * values, uint32_t count)
+void Shader::Set(const std::string & name, int * values, uint32_t count)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1iv(location, count, values);
 }
 
-void OpenGLShader::Set(const std::string & name, float value)
+void Shader::Set(const std::string & name, float value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform1f(location, value);
 }
 
-void OpenGLShader::Set(const std::string & name, const Vector::Vector2 & value)
+void Shader::Set(const std::string & name, const Vector::Vector2 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform2f(location, value.x, value.y);
 }
 
-void OpenGLShader::Set(const std::string & name, const Vector::Vector3 & value)
+void Shader::Set(const std::string & name, const Vector::Vector3 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform3f(location, value.x, value.y, value.z);
 }
 
-void OpenGLShader::Set(const std::string & name, const Vector::Vector4 & value)
+void Shader::Set(const std::string & name, const Vector::Vector4 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform4f(location, value.x, value.y, value.z, value.w);
 }
 
-void OpenGLShader::Set(const std::string &name, const Matrix4 & matrix)
+void Shader::Set(const std::string &name, const Matrix4 & matrix)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, &(matrix[0].x));
 }
 
-void OpenGLShader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
+void Shader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
 {
     SLASSERT(type == Shader::Type::Compute && "The shader type is not compute.");
     glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
 }
 
+}
 }

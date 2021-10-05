@@ -162,6 +162,11 @@ public:
         return handle->GraphicsRenderer();
     }
 
+    static std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
+    {
+        return handle->CreateShader(filepath, type);
+    }
+
 private:
     static std::unique_ptr<Renderer> handle;
 

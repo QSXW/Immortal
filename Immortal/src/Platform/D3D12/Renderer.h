@@ -4,7 +4,7 @@
 
 #include "D3D12Common.h"
 #include "RenderContext.h"
-
+#include "Shader.h"
 #include <mutex>
 
 namespace Immortal
@@ -53,6 +53,11 @@ public:
         {
             fenceValues[i] = queue->FenceValue();
         }
+    }
+
+    virtual std::shared_ptr<SuperShader> CreateShader(const std::string &filepath, Shader::Type type) override
+    {
+        return std::make_shared<Shader>(filepath, type);
     }
 
 public:

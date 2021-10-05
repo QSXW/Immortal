@@ -110,6 +110,8 @@ set(D3D12_FILES
     src/Platform/D3D12/SemaphorePool.h
     src/Platform/D3D12/Swapchain.cpp
     src/Platform/D3D12/Swapchain.h
+    src/Platform/D3D12/Shader.cpp
+    src/Platform/D3D12/Shader.h
     src/Platform/D3D12/GuiLayer.cpp
     src/Platform/D3D12/GuiLayer.h)
 
