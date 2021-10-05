@@ -51,7 +51,7 @@ private:
 
     std::vector<const char*> enabledExtensions{};
 
-    std::vector<Unique<PhysicalDevice>> physicalDevices{};
+    std::vector<std::unique_ptr<PhysicalDevice>> physicalDevices{};
 
 #if defined ( _DEBUG ) || defined ( VKB_VALIDATION_LAYERS )
     VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };

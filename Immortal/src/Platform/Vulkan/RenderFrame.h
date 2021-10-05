@@ -37,7 +37,7 @@ private:
 
     std::unique_ptr<RenderTarget> renderTarget;
 
-    std::map<UINT32, std::vector<Unique<CommandPool>>> commandPools;
+    std::map<UINT32, std::vector<std::unique_ptr<CommandPool>>> commandPools;
 
     FencePool fencePool;
 

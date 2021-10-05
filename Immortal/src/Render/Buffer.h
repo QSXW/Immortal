@@ -119,8 +119,8 @@ public:
 
     virtual void SetData(const void *data, uint32_t size) = 0;
 
-    static Ref<VertexBuffer> Create(uint32_t size);
-    static Ref<VertexBuffer> Create(const void *vertices, uint32_t size);
+    static std::shared_ptr<VertexBuffer> Create(uint32_t size);
+    static std::shared_ptr<VertexBuffer> Create(const void *vertices, uint32_t size);
 };
 
 class IMMORTAL_API IndexBuffer
@@ -135,7 +135,7 @@ public:
 
     virtual uint32_t Count() const = 0;
 
-    static Ref<IndexBuffer> Create(const void *indices, uint32_t count);
+    static std::shared_ptr<IndexBuffer> Create(const void *indices, uint32_t count);
 };
 
 class IMMORTAL_API UniformBuffer
@@ -147,6 +147,6 @@ public:
 
     virtual void Unmap() const = 0;
 
-    static Ref<UniformBuffer> Create(size_t size, int biding = 0);
+    static std::shared_ptr<UniformBuffer> Create(size_t size, int biding = 0);
 };
 }

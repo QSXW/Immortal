@@ -99,7 +99,7 @@ public:
         return desc;
     }
 
-    static Ref<Framebuffer> Create(const Description &desc);
+    static std::shared_ptr<Framebuffer> Create(const Description &desc);
 
 protected:
     Description desc{};

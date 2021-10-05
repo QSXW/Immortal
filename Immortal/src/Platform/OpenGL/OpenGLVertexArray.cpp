@@ -48,36 +48,8 @@ namespace Immortal {
 	{
 		glBindVertexArray(0);
 	}
-	/*
-	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
-	{
-		SLASSERT(vertexBuffer->Layout().Elements().size(), "Vertex Buffer has no layout!");
-		glBindVertexArray(mHandle);
 
-		vertexBuffer->Map();
-
-		uint32_t index = 0;
-		const auto &layout = vertexBuffer->Layout();
-		for (const auto& element : layout)
-		{
-			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index,
-				element.GetComponentCount(),
-				ShaderDataTypeToOpenGLBaseType(element.Type),
-				element.Normalized,
-				layout.Stride(),
-				reinterpret_cast<const void*>(element.Offset));
-			index++;
-		}
-
-		mVertexBuffers.push_back(vertexBuffer);
-	}*/
-
-
-	// @Fixed a bug occurred above function:
-	//  Float type vertex data should use glVertexAttribPointer,
-	//  and Int type should use glVertexAttribIPointer
-	void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
+	void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
 	{
 		vertexBuffer->Map();
 		glBindVertexArray(mHandle);
@@ -111,7 +83,7 @@ namespace Immortal {
 		mVertexBuffers.push_back(vertexBuffer);
 	}
 
-	void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
+	void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer)
 	{
 		indexBuffer->Map();
 		glBindVertexArray(mHandle);

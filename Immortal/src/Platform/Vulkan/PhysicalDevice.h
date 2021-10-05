@@ -41,7 +41,7 @@ public:
         vkGetPhysicalDeviceFeatures2KHR(handle, &physicalDeviceFeatures);
 
         // Insert the extension feature into the extension feature map so its ownership is held
-        ExtensionFeatures.insert({ type, CreateRef<T>(extension) });
+        ExtensionFeatures.insert({ type, std::make_shared<T>(extension) });
 
         // Pull out the dereferenced void pointer, we can assume its type based on the template
         auto *pExtension = static_cast<T *>(ExtensionFeatures.find(type)->second.get());
@@ -103,7 +103,7 @@ public:
 
     void *LastRequestedExtensionFeature{ nullptr };
 
-    std::map<VkStructureType, Ref<void>> ExtensionFeatures;
+    std::map<VkStructureType, std::shared_ptr<void>> ExtensionFeatures;
 
     bool HighPriorityGraphicsQueue{};
 };

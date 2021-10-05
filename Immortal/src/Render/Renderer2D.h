@@ -26,16 +26,16 @@ public:
 
     static void DrawQuad(const Vector::Vector2& position, const Vector::Vector2& size, const Vector::Vector4& color);
     static void DrawQuad(const Vector::Vector3& position, const Vector::Vector2& size, const Vector::Vector4& color);
-    static void DrawQuad(const Vector::Vector2& position, const Vector::Vector2& size, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
-    static void DrawQuad(const Vector::Vector3& position, const Vector::Vector2& size, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawQuad(const Vector::Vector2& position, const Vector::Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawQuad(const Vector::Vector3& position, const Vector::Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
 
     static void DrawQuad(const Vector::mat4& transform, const Vector::Vector4& color, int entityID = -1);
-    static void DrawQuad(const Vector::mat4& transform, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f), int entityID = -1);
+    static void DrawQuad(const Vector::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f), int entityID = -1);
 
     static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const Vector::Vector4& color);
     static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const Vector::Vector4& color);
-    static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
-    static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
 
     static void Renderer2D::DrawSprite(const Vector::Matrix4& transform, SpriteRendererComponent& src, int entityID);
 

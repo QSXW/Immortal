@@ -86,11 +86,11 @@ private:
 
     UINT32 queueFamilyIndex{ 0 };
 
-    std::vector<Unique<CommandBuffer>> primaryCommandBuffers;
+    std::vector<std::unique_ptr<CommandBuffer>> primaryCommandBuffers;
 
     UINT32 primaryActiveCount{ 0 };
 
-    std::vector<Unique<CommandBuffer>> secondaryCommandBuffers;
+    std::vector<std::unique_ptr<CommandBuffer>> secondaryCommandBuffers;
 
     UINT32 secondaryActiveCount{ 0 };
 

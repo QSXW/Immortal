@@ -16,7 +16,7 @@ public:
     virtual void Reset() { }
 
     template <class ... Args>
-    static inline Ref<SemaphorePool> Create(Args&& ... args);
+    static inline std::shared_ptr<SemaphorePool> Create(Args&& ... args);
 };
 
 using SuperSemaphorePool = SemaphorePool;

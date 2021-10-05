@@ -32,17 +32,17 @@ public:
         Torus
     };
 
-    static std::vector<Ref<Mesh>> Primitives;
+    static std::vector<std::shared_ptr<Mesh>> Primitives;
 
     template <Primitive I>
-    static inline constexpr Ref<Mesh> Get()
+    static inline constexpr std::shared_ptr<Mesh> Get()
     {
         return Primitives[static_cast<UINT32>(I)];
     }
 
     static void LoadPrimitives();
 
-    static Ref<Mesh> Mesh::CreateSphere(float radius);
+    static std::shared_ptr<Mesh> Mesh::CreateSphere(float radius);
 
 private:
     VertexLayout mLayout{
@@ -115,7 +115,7 @@ public:
     Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies);
     ~Mesh() { }
 
-    Ref<VertexArray> VertexArrayObject() { return mVertexArray; }
+    std::shared_ptr<VertexArray> VertexArrayObject() { return mVertexArray; }
 
     const char *Path() const noexcept
     {
@@ -123,18 +123,21 @@ public:
     }
 
 private:
-    Scope<Assimp::Importer> mImporter{ nullptr };
+    std::unique_ptr<Assimp::Importer> mImporter{ nullptr };
 
     std::string mPath;
 
-    Ref<Shader> mShader;
+    std::shared_ptr<Shader> mShader;
 
     std::vector<Vertex> mVertices;
+
     std::vector<Face> mFaces;
 
-    Ref<VertexBuffer> mVertexBuffer;
-    Ref<IndexBuffer>  mIndexBuffer;
-    Ref<VertexArray>  mVertexArray;
+    std::shared_ptr<VertexBuffer> mVertexBuffer;
+
+    std::shared_ptr<IndexBuffer>  mIndexBuffer;
+
+    std::shared_ptr<VertexArray>  mVertexArray;
 
     float mAnimationTime    = 0.0f;
     float mWorldTime        = 0.0f;

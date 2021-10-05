@@ -5,7 +5,7 @@
 
 namespace Immortal {
 
-	Environment::Environment(Ref<TextureCube> &skyboxTexture)
+	Environment::Environment(std::shared_ptr<TextureCube> &skyboxTexture)
 	{
 		constexpr uint32_t IrradianceMapSize = 32;
 		constexpr uint32_t BRDFLookUpTableSize = 256;

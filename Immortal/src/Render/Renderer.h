@@ -23,7 +23,7 @@ public:
 
     virtual void Clear() { }
 
-    virtual void DrawIndexed(const Ref<VertexArray> &vertexArray, UINT32 indexCount) { }
+    virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray, UINT32 indexCount) { }
 
     virtual void SwapBuffers() { }
 

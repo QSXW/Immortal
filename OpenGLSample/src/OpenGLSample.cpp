@@ -21,8 +21,8 @@ public:
             0, 1, 2
         };
 
-        Immortal::Ref<Immortal::VertexBuffer> mVertexBuffer = Immortal::VertexBuffer::Create(vertices, sizeof(vertices));
-        Immortal::Ref<Immortal::IndexBuffer> mIndexBuffer = Immortal::IndexBuffer::Create(indices, 3);
+        std::shared_ptr<Immortal::VertexBuffer> mVertexBuffer = Immortal::VertexBuffer::Create(vertices, sizeof(vertices));
+        std::shared_ptr<Immortal::IndexBuffer> mIndexBuffer = Immortal::IndexBuffer::Create(indices, 3);
 
         {
             Immortal::VertexLayout layout = {
@@ -48,7 +48,7 @@ public:
             ptr[i] = ptr[i] * ratio;
         }
 
-        Immortal::Ref<Immortal::VertexBuffer> squareVB = Immortal::VertexBuffer::Create(sqrv, sizeof(sqrv));
+        std::shared_ptr<Immortal::VertexBuffer> squareVB = Immortal::VertexBuffer::Create(sqrv, sizeof(sqrv));
         {
             Immortal::VertexLayout layout = {
                 { Immortal::ShaderDataType::Float3, "a_Position" },
@@ -63,7 +63,7 @@ public:
             0, 1, 2, 2, 3, 0
         };
 
-        Immortal::Ref<Immortal::IndexBuffer> squareIndexBuffer = Immortal::IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t));
+        std::shared_ptr<Immortal::IndexBuffer> squareIndexBuffer = Immortal::IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t));
         mSquareVertexArray->SetIndexBuffer(squareIndexBuffer);
 
         shaderLib.Load("assets/shaders/Texture.glsl");
@@ -115,7 +115,7 @@ public:
                             ptr[i] = ptr[i] * ratio;
                         }
 
-                        Immortal::Ref<Immortal::VertexBuffer> squareVB = Immortal::VertexBuffer::Create(sqrv, sizeof(sqrv));
+                        std::shared_ptr<Immortal::VertexBuffer> squareVB = Immortal::VertexBuffer::Create(sqrv, sizeof(sqrv));
                         {
                             Immortal::VertexLayout layout = {
                                 { Immortal::ShaderDataType::Float3, "a_Position" },
@@ -130,7 +130,7 @@ public:
                             0, 1, 2, 2, 3, 0
                         };
 
-                        Immortal::Ref<Immortal::IndexBuffer> squareIndexBuffer = Immortal::IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t));
+                        std::shared_ptr<Immortal::IndexBuffer> squareIndexBuffer = Immortal::IndexBuffer::Create(indices2, sizeof(indices2) / sizeof(uint32_t));
                         mSquareVertexArray->SetIndexBuffer(squareIndexBuffer);
                         mCamera.SetZoomLevel(1.1f);
                         mCamera.Resize((float)Immortal::Application::App()->GetWindow().Width(), (float)Immortal::Application::App()->GetWindow().Height());
@@ -212,8 +212,8 @@ public:
     }
 
 private:
-    Immortal::Ref<Immortal::VertexArray> mVertexArray;
-    Immortal::Ref<Immortal::VertexArray> mSquareVertexArray;
+    std::shared_ptr<Immortal::VertexArray> mVertexArray;
+    std::shared_ptr<Immortal::VertexArray> mSquareVertexArray;
 
     uint32_t indices;
 
@@ -224,7 +224,7 @@ private:
     Immortal::Vector::Vector4 mSquareColor{ 0.0f, 0.0f, 0.0f, 0.0f };
     float mLuminance = 0.0f;
 
-    Immortal::Ref<Immortal::Texture2D> mTexture;
+    std::shared_ptr<Immortal::Texture2D> mTexture;
 
     float squareVertices[5 * 4] = {
         /* x, y, z */

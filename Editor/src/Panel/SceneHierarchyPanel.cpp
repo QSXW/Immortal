@@ -11,7 +11,7 @@ namespace Immortal
 		SetContext(nullptr);
 	}
 
-	SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene>& scene)
+	SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& scene)
 	{
 		Mesh::LoadPrimitives();
 		SetContext(scene);
@@ -22,7 +22,7 @@ namespace Immortal
 
 	}
 
-	void SceneHierarchyPanel::SetContext(const Ref<Scene>& scene)
+	void SceneHierarchyPanel::SetContext(const std::shared_ptr<Scene>& scene)
 	{
 		mContext = scene;
 		mSelectedEntity = {};
@@ -517,7 +517,7 @@ namespace Immortal
 				Texture::Description spec = { Texture::Format::RGB8, Texture::Wrap::Clamp, Texture::Filter::Linear };
 				if (mSelectedEntity.HasComponent<MeshComponent>())
 				{
-					Ref<Mesh> mesh = mSelectedEntity.GetComponent<MeshComponent>().Mesh;
+					std::shared_ptr<Mesh> mesh = mSelectedEntity.GetComponent<MeshComponent>().Mesh;
 
 						// ImGui::Text("Shader: %s", "Physically-Based Renderering");
 						// Textures ------------------------------------------------------------------------------

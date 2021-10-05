@@ -8,7 +8,7 @@
 namespace Immortal
 {
 
-Ref<VertexArray> VertexArray::Create()
+std::shared_ptr<VertexArray> VertexArray::Create()
 {
     return CreateSuper<VertexArray, OpenGLVertexArray, OpenGLVertexArray, OpenGLVertexArray>();
 }

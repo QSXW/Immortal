@@ -38,7 +38,7 @@ private:
     {
         VertexLayout Layout{};
         DrawType Type{ DrawType::Static };
-        Ref<Immortal::Shader> Shader{};
+        std::shared_ptr<Immortal::Shader> Shader{};
 
         struct DepthStencilState
         {

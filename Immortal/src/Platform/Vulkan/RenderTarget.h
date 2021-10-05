@@ -41,7 +41,7 @@ struct CompareExtent2D
 class RenderTarget
 {
 public:
-    static Unique<RenderTarget> Create(Image &&image);
+    static std::unique_ptr<RenderTarget> Create(Image &&image);
 
 public:
     RenderTarget(std::vector<Image> &&images);

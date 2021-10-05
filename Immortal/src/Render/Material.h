@@ -39,15 +39,15 @@ namespace Immortal {
 		virtual void Set(const std::string &name, const Vector::Matrix3& value) = 0;
 		virtual void Set(const std::string &name, const Vector::Matrix4& value) = 0;
 
-		virtual void Set(const std::string& name, const Ref<Texture2D>& texture)   = 0;
-		virtual void Set(const std::string& name, const Ref<TextureCube>& texture) = 0;
+		virtual void Set(const std::string& name, const std::shared_ptr<Texture2D>& texture)   = 0;
+		virtual void Set(const std::string& name, const std::shared_ptr<TextureCube>& texture) = 0;
 
-		virtual Ref<Texture2D> texture(const std::string &name) = 0;
-		virtual Ref<TextureCube> textureCube(const std::string &name) = 0;
+		virtual std::shared_ptr<Texture2D> texture(const std::string &name) = 0;
+		virtual std::shared_ptr<TextureCube> textureCube(const std::string &name) = 0;
 
 		virtual UINT32 Flags() const = 0;
 
-		virtual Ref<Shader> shader() = 0;
+		virtual std::shared_ptr<Shader> shader() = 0;
 		virtual const std::string &Name() const = 0;
 	};
 

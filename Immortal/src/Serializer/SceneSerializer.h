@@ -10,7 +10,7 @@ namespace Immortal
 class IMMORTAL_API SceneSerializer
 {
 public:
-    SceneSerializer(const Ref<Scene> &scene);
+    SceneSerializer(const std::shared_ptr<Scene> &scene);
     ~SceneSerializer() = default;
         
     void Serialize(const std::string &filepath);
@@ -20,7 +20,7 @@ public:
     bool DeserializeRuntime(const std::string& filepath);
 
 private:
-    Ref<Scene> mScene;
+    std::shared_ptr<Scene> mScene;
 };
 
 }

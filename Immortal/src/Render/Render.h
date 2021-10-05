@@ -15,11 +15,11 @@ namespace Immortal
 
 struct RenderData
 {
-    Ref<ShaderMap>   ShaderLibrary;
-    Ref<Texture2D>   BlackTexture;
-    Ref<Texture2D>   TransparentTexture;
-    Ref<Texture2D>   WhiteTexture;
-    Ref<VertexArray> FullScreenVertexArray;
+    std::shared_ptr<ShaderMap>   ShaderLibrary;
+    std::shared_ptr<Texture2D>   BlackTexture;
+    std::shared_ptr<Texture2D>   TransparentTexture;
+    std::shared_ptr<Texture2D>   WhiteTexture;
+    std::shared_ptr<VertexArray> FullScreenVertexArray;
 };
 
 class Render
@@ -52,12 +52,12 @@ public:
         Last
     };
 
-    static std::vector<Ref<Immortal::Shader>> ShaderContainer;
+    static std::vector<std::shared_ptr<Immortal::Shader>> ShaderContainer;
 
     static const std::string Render::ShaderProfiles[];
 
     template <class T, ShaderName U>
-    static constexpr inline Ref<Shader> Get()
+    static constexpr inline std::shared_ptr<Shader> Get()
     {
         static_assert(typeof<T, Shader>() && "No suitable Type for getter");
         if constexpr (typeof<T, Shader>())
@@ -68,7 +68,7 @@ public:
     }
 
     template <class T>
-    static inline Ref<Shader> Get(const ShaderName index)
+    static inline std::shared_ptr<Shader> Get(const ShaderName index)
     {
         if constexpr (typeof<T, Shader>())
         {
@@ -113,7 +113,7 @@ public:
         handle->Clear();
     }
 
-    static void DrawIndexed(Ref<VertexArray> &vao, UINT32 indexCount)
+    static void DrawIndexed(std::shared_ptr<VertexArray> &vao, UINT32 indexCount)
     {
         handle->DrawIndexed(vao, indexCount);
     }
@@ -138,9 +138,9 @@ public:
         return handle->Index();
     }
 
-    static void Submit(const Ref<Shader> &shader, const Ref<VertexArray> &vertexArray, const Matrix4& transform = Matrix4{ 1.0f });
+    static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4& transform = Matrix4{ 1.0f });
 
-    static void Submit(const Ref<Shader> &shader, const Ref<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
+    static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
 
     static void SwapBuffers()
     {
@@ -180,19 +180,19 @@ public:
 using ShaderName = Render::ShaderName;
 
 template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
-inline constexpr Ref<SuperType> CreateSuper(Args&& ... args)
+inline constexpr std::shared_ptr<SuperType> CreateSuper(Args&& ... args)
 {
     if (Render::API == Render::Type::OpenGL)
     {
-        return CreateRef<OPENGL>(std::forward<Args>(args)...);
+        return std::make_shared<OPENGL>(std::forward<Args>(args)...);
     }  
     if (Render::API == Render::Type::Vulkan)
     {
-        return CreateRef<VULKAN>(std::forward<Args>(args)...);
+        return std::make_shared<VULKAN>(std::forward<Args>(args)...);
     }
     if (Render::API == Render::Type::D3D12)
     {
-        return CreateRef<D3D12>(std::forward<Args>(args)...);
+        return std::make_shared<D3D12>(std::forward<Args>(args)...);
     }
 
     SLASSERT(false && "Render API is currently not supported! or Forgot to set the Graphics API!");

@@ -123,7 +123,7 @@ private:
 
     Input _M_input;
 
-    Unique<RenderContext> context;
+    std::unique_ptr<RenderContext> context;
 
     Timer timer;
 

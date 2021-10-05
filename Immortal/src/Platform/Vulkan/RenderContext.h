@@ -21,7 +21,7 @@ public:
     using Description           = SuperRenderContext::Description;
     using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
     using PresentModePriorities = std::vector<VkPresentModeKHR>;
-    using Frames                = std::vector<Unique<RenderFrame>>;
+    using Frames                = std::vector<std::unique_ptr<RenderFrame>>;
 
 public:
     RenderContext() = default;

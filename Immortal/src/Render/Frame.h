@@ -71,22 +71,28 @@ private:
     void Frame::Read(const std::string &path, cv::Mat &outputMat);
 
 private:
-    ColorSpace           colorSpace;
+    ColorSpace colorSpace;
+
     Texture::Description desc;
-    UINT32               width{ 0 };
-    UINT32               height{ 0 };
-    size_t               spatial{ 0 };
-    size_t               size{ 0 };
-    int                  depth{ 1 };
-    Scope<uint8_t>       data{};
+
+    UINT32  width{ 0 };
+
+    UINT32 height{ 0 };
+
+    size_t spatial{ 0 };
+    size_t size{ 0 };
+
+    int depth{ 1 };
+
+    std::unique_ptr<uint8_t>  data{};
 
 public:
-    static inline Ref<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB)
+    static inline std::shared_ptr<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB)
     {
         return std::make_shared<Frame>(width, height, depth, data, colorSpace);
     }
 
-    static inline Ref<Frame> Create(const std::string &filepath)
+    static inline std::shared_ptr<Frame> Create(const std::string &filepath)
     {
         return std::make_shared<Frame>(filepath);
     }

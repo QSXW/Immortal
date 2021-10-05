@@ -32,7 +32,7 @@ public:
 
     virtual void DisableDepthTest() override;
 
-    virtual void DrawIndexed(const Ref<VertexArray> &vertexArray, uint32_t indexCount = 0) override;
+    virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray, uint32_t indexCount = 0) override;
 
     virtual void SwapBuffers() override;
 

@@ -89,19 +89,19 @@ namespace Immortal {
 
 		Vector::Vector2 mViewportSize{ 0.0f, 0.0f };
 
-		Ref<TextureCube> mSkyboxTexture;
+		std::shared_ptr<TextureCube> mSkyboxTexture;
 
-		Ref<Environment> mEnvironment;
-		Ref<Mesh> mSkyBox;
+		std::shared_ptr<Environment> mEnvironment;
+		std::shared_ptr<Mesh> mSkyBox;
 		LightEnvironment mLightEnvironment;
 
-		Ref<UniformBuffer> mTransformUniformBuffer;
-		Ref<UniformBuffer> mShadingUniformBuffer;
+		std::shared_ptr<UniformBuffer> mTransformUniformBuffer;
+		std::shared_ptr<UniformBuffer> mShadingUniformBuffer;
 
-		Ref<VertexArray> mVertexArray;
+		std::shared_ptr<VertexArray> mVertexArray;
 
-		Ref<VertexArray> mToneMap;
-		Ref<Framebuffer> mFramebuffer;
+		std::shared_ptr<VertexArray> mToneMap;
+		std::shared_ptr<Framebuffer> mFramebuffer;
 
 		friend class Entity;
 		friend class SceneHierarchyPanel;

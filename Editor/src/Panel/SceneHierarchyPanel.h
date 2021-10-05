@@ -8,10 +8,10 @@ namespace Immortal {
 	{
 	public:
 		SceneHierarchyPanel();
-		SceneHierarchyPanel(const Ref<Scene> &scene);
+		SceneHierarchyPanel(const std::shared_ptr<Scene> &scene);
 		~SceneHierarchyPanel();
 
-		void SetContext(const Ref<Scene> &scene);
+		void SetContext(const std::shared_ptr<Scene> &scene);
 
 		void OnGuiRender();
 
@@ -22,7 +22,7 @@ namespace Immortal {
 		void DrawEntityNode(Entity &e);
 		void DrawComponents(Entity &e);
 	private:
-		Ref<Scene> mContext;
+		std::shared_ptr<Scene> mContext;
 		Entity mSelectedEntity;
 	};
 

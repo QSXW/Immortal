@@ -51,9 +51,9 @@ Scene::Scene(const std::string & debugName, bool isEditorScene)
         mLightEnvironment.lights[2].Enabled = true;
 
 
-        mSkyBox = CreateRef<Mesh>("assets/meshes/skybox.obj");
+        mSkyBox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
         mSkyboxTexture = TextureCube::Create("assets/textures/environment.hdr");
-        mEnvironment = CreateRef<Environment>(mSkyboxTexture);
+        mEnvironment = std::make_shared<Environment>(mSkyboxTexture);
 
         mTransformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
         mShadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);

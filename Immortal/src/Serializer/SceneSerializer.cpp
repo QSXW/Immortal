@@ -8,7 +8,7 @@ namespace Immortal
 {
 
 
-SceneSerializer::SceneSerializer(const Ref<Scene> &scene)
+SceneSerializer::SceneSerializer(const std::shared_ptr<Scene> &scene)
 	: mScene(scene)
 {
 

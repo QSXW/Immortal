@@ -31,7 +31,7 @@ namespace Immortal {
 		bool NewScene();
 		bool LoadScene();
 		bool SaveSceneAs();
-		bool LoadObject(const Ref<Scene> &scene);
+		bool LoadObject(const std::shared_ptr<Scene> &scene);
 
 	private:
 		enum class SceneState
@@ -46,10 +46,10 @@ namespace Immortal {
 	private:
 		Immortal::OrthographicCameraController mCameraController;
 
-		Ref<VertexArray> mSquareVA;
-		Ref<Shader> mFlatColorShader;
-		Ref<Framebuffer> mFramebuffer;
-		Ref<Texture2D> mTexture;
+		std::shared_ptr<VertexArray> mSquareVA;
+		std::shared_ptr<Shader> mFlatColorShader;
+		std::shared_ptr<Framebuffer> mFramebuffer;
+		std::shared_ptr<Texture2D> mTexture;
 
 		float mBrightness{ 0 };
 		float mLuminance{ 0 };
@@ -64,7 +64,7 @@ namespace Immortal {
 		bool mViewportFocused{ false };
 		bool mViewportHovered{ false };
 
-		Ref<Scene> mActiveScene;
+		std::shared_ptr<Scene> mActiveScene;
 		std::vector<Entity> mImageLayer;
 
 		Entity mCameraObject;
@@ -73,9 +73,9 @@ namespace Immortal {
 
 		SceneHierarchyPanel mSceneHierarchyPanel;
 
-		Ref<Texture2D> mPlayButtonTexture;
-		Ref<Texture2D> mPauseButtonTexture;
-		Ref<Texture2D> mStopButtonTexture;
+		std::shared_ptr<Texture2D> mPlayButtonTexture;
+		std::shared_ptr<Texture2D> mPauseButtonTexture;
+		std::shared_ptr<Texture2D> mStopButtonTexture;
 
 		int mGuizmoType = ImGuizmo::OPERATION::INVALID;
 

@@ -85,7 +85,7 @@ public:
         return vendor.c_str();
     }
 
-    Ref<Shader> CreateShader(const std::string &filename);
+    std::shared_ptr<Shader> CreateShader(const std::string &filename);
 
 public:
     RenderContext(const RenderContext &) = delete;

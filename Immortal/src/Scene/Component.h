@@ -74,19 +74,19 @@ struct TransformComponent : public Component
 
 struct MeshComponent : public Component
 {
-    Ref<Immortal::Mesh> Mesh;
+    std::shared_ptr<Immortal::Mesh> Mesh;
 
     MeshComponent() : Component(Component::Mesh) { }
-    MeshComponent(Ref<Immortal::Mesh> mesh) : Mesh(mesh), Component(Component::Mesh) { }
-    operator Ref<Immortal::Mesh>() { return Mesh; }
+    MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) : Mesh(mesh), Component(Component::Mesh) { }
+    operator std::shared_ptr<Immortal::Mesh>() { return Mesh; }
 };
 
 struct MaterialComponent : public Component
 {
-    Ref<Immortal::Texture2D> AlbedoMap;
-    Ref<Immortal::Texture2D> NormalMap;
-    Ref<Immortal::Texture2D> MetalnessMap;
-    Ref<Immortal::Texture2D> RoughnessMap;
+    std::shared_ptr<Immortal::Texture2D> AlbedoMap;
+    std::shared_ptr<Immortal::Texture2D> NormalMap;
+    std::shared_ptr<Immortal::Texture2D> MetalnessMap;
+    std::shared_ptr<Immortal::Texture2D> RoughnessMap;
 
     Vector::Vector3  AlbedoColor;
     float            Metalness;
@@ -115,7 +115,7 @@ struct SceneComponent : public Component
 struct SpriteRendererComponent : public Component
 {
     Vector::Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
-    Ref<Texture2D> Texture;
+    std::shared_ptr<Texture2D> Texture;
     float TilingFactor = 1.0f;
 
     SpriteRendererComponent() : Component(Component::SpriteRenderer)
@@ -124,8 +124,8 @@ struct SpriteRendererComponent : public Component
         Texture = Texture2D::Create(1, 1);
         Texture->SetData((void*)(&white), 4);
     }
-    SpriteRendererComponent(Ref<Texture2D> texture) : Texture(texture), Component(Component::SpriteRenderer) { }
-    SpriteRendererComponent(Ref<Texture2D> texture, const Vector::Vector4 color) : Texture(texture), Color(color), Component(Component::SpriteRenderer) { }
+    SpriteRendererComponent(std::shared_ptr<Texture2D> texture) : Texture(texture), Component(Component::SpriteRenderer) { }
+    SpriteRendererComponent(std::shared_ptr<Texture2D> texture, const Vector::Vector4 color) : Texture(texture), Color(color), Component(Component::SpriteRenderer) { }
     SpriteRendererComponent(const SpriteRendererComponent& other) = default;
 };
 

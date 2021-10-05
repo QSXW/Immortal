@@ -7,7 +7,7 @@ namespace Immortal
 
 std::unique_ptr<Renderer> Render::handle;
 
-std::vector<Ref<Shader>> Render::ShaderContainer{};
+std::vector<std::shared_ptr<Shader>> Render::ShaderContainer{};
 
 Render::Scene Render::scene{};
 
@@ -82,7 +82,7 @@ void Render::INIT(RenderContext *context)
     // Renderer2D::INIT();
 }
 
-void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> &vertexArray, const Matrix4 &transform)
+void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4 &transform)
 {
     shader->Map();
     shader->Set("u_ViewProjection", scene.viewProjectionMatrix);
@@ -91,7 +91,7 @@ void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<VertexArray> 
     handle->DrawIndexed(vertexArray, 1);
 }
 
-void Render::Submit(const Ref<Immortal::Shader> &shader, const Ref<Mesh> &mesh, const Matrix4 &transform)
+void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)
 {
     shader->Map();
     shader->Set("uTransform", transform);

@@ -11,7 +11,7 @@ namespace Vulkan
 {
 namespace Helper
 {
-static inline VkResult ResetCommandBuffers(std::vector<Unique<CommandBuffer>> &commandBuffers, UINT32 &activeCount, CommandBuffer::ResetMode &resetMode)
+static inline VkResult ResetCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> &commandBuffers, UINT32 &activeCount, CommandBuffer::ResetMode &resetMode)
 {
     VkResult result = VK_SUCCESS;
 

@@ -117,9 +117,9 @@ private:
 
     std::vector<std::vector<Queue>> queues;
 
-    Unique<CommandPool> commandPool;
+    std::unique_ptr<CommandPool> commandPool;
 
-    Unique<FencePool> fencePool;
+    std::unique_ptr<FencePool> fencePool;
 
     bool hasGetMemoryRequirements{ false };
     bool hasDedicatedAllocation{ false };

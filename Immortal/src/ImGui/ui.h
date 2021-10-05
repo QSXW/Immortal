@@ -403,49 +403,9 @@ static bool PropertyDropdown(const char* label, const std::vector<std::string>& 
 }
 
 template<typename T>
-static bool PropertyAssetReference(const char* label, Ref<T>& object, UINT64 supportedType)
+static bool PropertyAssetReference(const char* label, std::shared_ptr<T>& object, UINT64 supportedType)
 {
     bool modified = false;
-
-    /*ImGui::Text(label);
-    ImGui::NextColumn();
-    ImGui::PushItemWidth(-1);
-
-    if (object)
-    {
-        if (object->Type != AssetType::Missing)
-        {
-            char* assetName = ((Ref<Asset>&)object)->FileName.data();
-            ImGui::InputText("##assetRef", assetName, 256, ImGuiInputTextFlags_ReadOnly);
-        }
-        else
-        {
-            ImGui::InputText("##assetRef", "Missing", 256, ImGuiInputTextFlags_ReadOnly);
-        }
-    }
-    else
-    {
-        ImGui::InputText("##assetRef", (char*)"Null", 256, ImGuiInputTextFlags_ReadOnly);
-    }
-
-    if (ImGui::BeginDragDropTarget())
-    {
-        auto data = ImGui::AcceptDragDropPayload("asset_payload");
-
-        if (data)
-        {
-            AssetHandle assetHandle = *(AssetHandle*)data->Data;
-            Ref<Asset> asset = AssetManager::GetAsset<Asset>(assetHandle);
-            if (asset->Type == supportedType)
-            {
-                object = asset.As<T>();
-                modified = true;
-            }
-        }
-    }
-
-    ImGui::PopItemWidth();
-    ImGui::NextColumn();*/
     return modified;
 }
 

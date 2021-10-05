@@ -38,33 +38,6 @@ namespace Immortal
 {
 using namespace sl;
 
-template <class T>
-using Scope = std::unique_ptr<T>;
-
-template <class T>
-using Unique = Scope<T>;
-
-template <class T, class ... Args>
-constexpr Scope<T> CreateScope(Args&& ... args)
-{
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
-template <class T, class ... Args>
-constexpr Unique<T> MakeUnique(Args&& ... args)
-{
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
-template <class T>
-using Ref = std::shared_ptr<T>;
-    
-template <class T, class ... Args>
-constexpr Ref<T> CreateRef(Args&& ... args)
-{
-    return std::make_shared<T>(std::forward<Args>(args)...);
-}
-
 namespace Utils
 {
 

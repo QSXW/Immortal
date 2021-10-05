@@ -38,16 +38,16 @@ struct Renderer2DData
     static const uint32_t MaxIndices = MaxQuads * 6;
     static const uint32_t MaxTextureSlots = 32;
 
-    Ref<VertexArray> QuadVertexArray;
-    Ref<VertexBuffer> QuadVertexBuffer;
-    Ref<Shader> TextureShader;
-    Ref<Texture2D> WhiteTexture;
+    std::shared_ptr<VertexArray> QuadVertexArray;
+    std::shared_ptr<VertexBuffer> QuadVertexBuffer;
+    std::shared_ptr<Shader> TextureShader;
+    std::shared_ptr<Texture2D> WhiteTexture;
 
     uint32_t QuadIndexCount = 0;
     QuadVertex* QuadVertexBufferBase = nullptr;
     QuadVertex* QuadVertexBufferPtr = nullptr;
 
-    std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
+    std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> TextureSlots;
     uint32_t TextureSlotIndex = 1; // 0 = white texture
 
     Vector::Vector4 QuadVertexPositions[4];
@@ -90,7 +90,7 @@ void Renderer2D::INIT()
         offset += 4;
     }
 
-    Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, sData.MaxIndices);
+    std::shared_ptr<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, sData.MaxIndices);
     sData.QuadVertexArray->SetIndexBuffer(quadIndexBuffer);
     delete[] quadIndices;
 
@@ -196,12 +196,12 @@ void Renderer2D::DrawQuad(const Vector::Vector3 & position, const Vector::Vector
     DrawQuad(transform, color);
 }
 
-void Renderer2D::DrawQuad(const Vector::Vector2 & position, const Vector::Vector2 & size, const Ref<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
+void Renderer2D::DrawQuad(const Vector::Vector2 & position, const Vector::Vector2 & size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
 {
     DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
 }
 
-void Renderer2D::DrawQuad(const Vector::Vector3 & position, const Vector::Vector2 & size, const Ref<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
+void Renderer2D::DrawQuad(const Vector::Vector3 & position, const Vector::Vector2 & size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
 {
     Vector::mat4 transform = Vector::Translate(position) * Vector::Scale({ size.x, size.y, 1.0f });
     DrawQuad(transform, texture, tilingFactor, tintColor);
@@ -238,7 +238,7 @@ void Renderer2D::DrawQuad(const Vector::mat4 & transform, const Vector::Vector4 
     sData.Stats.QuadCount++;
 }
 
-void Renderer2D::DrawQuad(const Vector::mat4 & transform, const Ref<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor, int entityID)
+void Renderer2D::DrawQuad(const Vector::mat4 & transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor, int entityID)
 {
     constexpr size_t quadVertexCount = 4;
     constexpr Vector::Vector2 textureCoords[] = {
@@ -304,12 +304,12 @@ void Renderer2D::DrawRotatedQuad(const Vector::Vector3 & position, const Vector:
     DrawQuad(transform, color);
 }
 
-void Renderer2D::DrawRotatedQuad(const Vector::Vector2 & position, const Vector::Vector2 & size, float rotation, const Ref<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
+void Renderer2D::DrawRotatedQuad(const Vector::Vector2 & position, const Vector::Vector2 & size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
 {
     DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
 }
 
-void Renderer2D::DrawRotatedQuad(const Vector::Vector3 & position, const Vector::Vector2 & size, float rotation, const Ref<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
+void Renderer2D::DrawRotatedQuad(const Vector::Vector3 & position, const Vector::Vector2 & size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const Vector::Vector4 & tintColor)
 {
     Vector::mat4 transform = Vector::Translate(position) * Vector::Rotate(rotation, { 0.0f, 0.0f, 1.0f }) * Vector::Scale({ size.x, size.y, 1.0f });
     DrawQuad(transform, texture, tilingFactor, tintColor);

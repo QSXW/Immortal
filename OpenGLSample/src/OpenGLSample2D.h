@@ -19,9 +19,9 @@ public:
 private:
 	Immortal::OrthographicCameraController mCameraController;
 
-	Immortal::Ref<Immortal::VertexArray> mSquareVA;
-	Immortal::Ref<Immortal::Shader> mFlatColorShader;
-	Immortal::Ref<Immortal::Texture2D> mTexture;
+	std::shared_ptr<Immortal::VertexArray> mSquareVA;
+	std::shared_ptr<Immortal::Shader> mFlatColorShader;
+	std::shared_ptr<Immortal::Texture2D> mTexture;
 
 	float mLuminance{ 0 };
 	Immortal::Vector::Vector4 mSquareColor { 0.0f, 0.0f, 0.0f, 0.0f };

@@ -30,7 +30,7 @@ std::unique_ptr<RenderContext> RenderContext::Create(Description &desc)
     }
 }
 
-Ref<Shader> RenderContext::CreateShader(const std::string &filename)
+std::shared_ptr<Shader> RenderContext::CreateShader(const std::string &filename)
 {
     if (Render::API == Render::Type::OpenGL)
     {

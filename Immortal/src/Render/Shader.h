@@ -79,9 +79,9 @@ public:
 
     virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ) { }
 
-    static Ref<Shader> Shader::Create(const std::string &filepath);
+    static std::shared_ptr<Shader> Shader::Create(const std::string &filepath);
 
-    static Ref<Shader> Shader::Create(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
+    static std::shared_ptr<Shader> Shader::Create(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
 };
 
 using SuperShader = Shader;
@@ -91,14 +91,14 @@ using ShaderDataType = Shader::DataType;
 class IMMORTAL_API ShaderMap
 {
 public:
-    void Add(const std::string &name, const Ref<Shader> &shader);
-    void Add(const Ref<Shader> &shader);
+    void Add(const std::string &name, const std::shared_ptr<Shader> &shader);
+    void Add(const std::shared_ptr<Shader> &shader);
         
-    Ref<Shader> Load(const std::string &filepath);
-    Ref<Shader> Load(const std::string &name, const std::string &filepath);
+    std::shared_ptr<Shader> Load(const std::string &filepath);
+    std::shared_ptr<Shader> Load(const std::string &name, const std::string &filepath);
         
-    Ref<Shader> Get(const std::string &name);
-    Ref<Shader> At(const std::string &name)
+    std::shared_ptr<Shader> Get(const std::string &name);
+    std::shared_ptr<Shader> At(const std::string &name)
     {
         return this->Get(name);
     }
@@ -106,7 +106,7 @@ public:
     bool Exists(const std::string &name) const;
 
 private:
-    std::unordered_map<std::string, Ref<Shader> > shaders;
+    std::unordered_map<std::string, std::shared_ptr<Shader> > shaders;
 };
 
 }

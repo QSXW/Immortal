@@ -144,20 +144,20 @@ class IMMORTAL_API Texture2D : public Texture
 {
 public:
 
-    static Ref<Texture2D> Create(uint32_t width, uint32_t height);
-    static Ref<Texture2D> Create(const std::string &filepath);
-    static Ref<Texture2D> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
-    static Ref<Texture2D> Create(const std::string &path, Texture::Wrap wrap, Texture::Filter filter);
+    static std::shared_ptr<Texture2D> Create(uint32_t width, uint32_t height);
+    static std::shared_ptr<Texture2D> Create(const std::string &filepath);
+    static std::shared_ptr<Texture2D> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
+    static std::shared_ptr<Texture2D> Create(const std::string &path, Texture::Wrap wrap, Texture::Filter filter);
 
-    static Ref<Texture2D> Create(UINT32 width, UINT32 height, const void *data, Texture::Description &spec);
-    static Ref<Texture2D> Create(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
+    static std::shared_ptr<Texture2D> Create(UINT32 width, UINT32 height, const void *data, Texture::Description &spec);
+    static std::shared_ptr<Texture2D> Create(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
 };
 
 class IMMORTAL_API TextureCube : public Texture
 {
 public:
-    static Ref<TextureCube> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
-    static Ref<TextureCube> Create(const std::string &filepath);
+    static std::shared_ptr<TextureCube> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
+    static std::shared_ptr<TextureCube> Create(const std::string &filepath);
 };
 
 }

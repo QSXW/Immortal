@@ -5,12 +5,12 @@
 
 namespace Immortal
 {
-    template <class ... Args>
-	static inline Ref<SemaphorePool> SemaphorePool::Create(Args&& ... args)
+template <class ... Args>
+static inline std::shared_ptr<SemaphorePool> SemaphorePool::Create(Args&& ... args)
+{
+	if (type == RendererAPI::Type::VulKan)
 	{
-		if (type == RendererAPI::Type::VulKan)
-		{
-			return CreateRef<Vulkan::SemaphorePool>(std::forward<Args>(args)...);
-		}
+		return std::make_shared<Vulkan::SemaphorePool>(std::forward<Args>(args)...);
 	}
+}
 }

@@ -82,7 +82,7 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& source
         GLint maxLength = 0;
         glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &isLinked);
 
-        Scope<GLchar> infoLog = CreateScope<GLchar>(maxLength);
+        std::unique_ptr<GLchar> infoLog = std::make_unique<GLchar>(maxLength);
         glGetProgramInfoLog(handle, maxLength, &maxLength, infoLog.get());
 
         for (int i = 0; i < source.size(); i++)
@@ -114,10 +114,11 @@ uint32_t OpenGLShader::CompileShader(int type, const char *src)
         GLint maxLength = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
 
-        Scope<GLchar> infoLog = CreateScope<GLchar>(maxLength);
-        glGetShaderInfoLog(shader, maxLength, &maxLength, infoLog.get());
+        std::vector<GLchar> error;
+        error.resize(maxLength);
+        glGetShaderInfoLog(shader, maxLength, &maxLength, error.data());
         glDeleteShader(shader);
-        LOG::ERR("{0}", infoLog.get());
+        LOG::ERR("{0}", error.data());
         SLASSERT(isCompiled && "Shader compilation failure!");
     }
 

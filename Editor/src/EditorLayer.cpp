@@ -31,7 +31,7 @@ namespace Immortal
         spec.Height = 1080;
         mFramebuffer = Framebuffer::Create(spec);
 
-        mActiveScene = CreateRef<Scene>("Active Scene");
+        mActiveScene = std::make_shared<Scene>("Active Scene");
         mEditorCamera = EditorCamera(Vector::PerspectiveFOV(Vector::Radians(45.0f), mViewportSize.x, mViewportSize.y, 0.1f, 1000.0f));
 
         mPlayButtonTexture = Texture2D::Create("assets/Icon/Play.png");
@@ -431,7 +431,7 @@ namespace Immortal
         {
             float size = ImGui::GetWindowHeight() - 4.0F;
             ImGui::SameLine((ImGui::GetWindowContentRegionMax().x / 2.0f) - (1.5f * (ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x)) - (size / 2.0f));
-            Ref<Texture2D> buttonTex = mState == SceneState::Play ? mStopButtonTexture : mPlayButtonTexture;
+            std::shared_ptr<Texture2D> buttonTex = mState == SceneState::Play ? mStopButtonTexture : mPlayButtonTexture;
             if (ImGui::ImageButton((void*)(UINT32)buttonTex->Handle(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
             {
                 if (mState == SceneState::Edit)
@@ -614,7 +614,7 @@ namespace Immortal
         return true;
     }
 
-    bool EditorLayer::LoadObject(const Ref<Scene>& scene)
+    bool EditorLayer::LoadObject(const std::shared_ptr<Scene>& scene)
     {
         auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
         if (res.has_value())
@@ -626,7 +626,7 @@ namespace Immortal
             {
                 auto &e = mActiveScene->CreateEntity(U8("模型"));
                 auto &c = e.AddComponent<MeshComponent>();
-                c.Mesh = CreateRef<Mesh>(res.value());
+                c.Mesh = std::make_shared<Mesh>(res.value());
                 e.AddComponent<MaterialComponent>();
                 mSceneHierarchyPanel.SelectedEntity() = e;
             }
@@ -700,7 +700,7 @@ namespace Immortal
 
     bool EditorLayer::NewScene()
     {
-        mActiveScene = CreateRef<Scene>("Untitled");
+        mActiveScene = std::make_shared<Scene>("Untitled");
         mActiveScene->SetViewportSize(mViewportSize);
         mSceneHierarchyPanel.SetContext(mActiveScene);
         return true;
@@ -712,7 +712,7 @@ namespace Immortal
         auto res = FileDialogs::OpenFile("Immortal Scene (*.immortal)\0*.immortal\0");
         if (res.has_value())
         {
-            mActiveScene = CreateRef<Scene>(res.value());
+            mActiveScene = std::make_shared<Scene>(res.value());
             mActiveScene->SetViewportSize(mViewportSize);
             mSceneHierarchyPanel.SetContext(mActiveScene);
 
