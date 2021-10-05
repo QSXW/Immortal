@@ -70,7 +70,7 @@ public:
         {
             return commandList.get();
         }
-        if constexpr (typeof<T, ID3D12CommandAllocator *>())
+        if constexpr (typeof<T, ID3D12CommandAllocator **>())
         {
             return commandAllocator;
         }
@@ -155,13 +155,15 @@ private:
 
     ID3D12Resource *renderTargets[MAX_FRAME_COUNT]{ nullptr };
 
-    ID3D12CommandAllocator *commandAllocator;
+    ID3D12CommandAllocator *commandAllocator[MAX_FRAME_COUNT];
 
-    ComPtr<ID3D12Fence> fence;
+    ID3D12Fence *fence;
 
     HANDLE fenceEvent{ nullptr };
 
     UINT64 fenceValues[MAX_FRAME_COUNT]{ 0 };
+
+    UINT64 fenceLastSignaledValue{ 0 };
 
     struct
     {

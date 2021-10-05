@@ -66,7 +66,7 @@ void Application::Run()
 {
     while (runtime.running)
     { 
-        Render::RenderFrame();
+        Render::PrepareFrame();
         timer.Lap();
         deltaTime = timer.elapsed();
 

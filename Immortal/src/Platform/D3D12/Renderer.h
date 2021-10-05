@@ -24,9 +24,13 @@ public:
 
     virtual void SwapBuffers() override;
 
-    virtual void RenderFrame() override
+    virtual void PrepareFrame() override
     { 
         frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+        
+        commandAllocators[frameIndex]->Reset();
+
+        commandList->Reset(commandAllocators[frameIndex]);
     }
 
     virtual uint32_t Index() override
@@ -42,6 +46,13 @@ public:
     virtual void OnResize(UINT x, UINT y, UINT width, UINT height) override
     {
         context->UpdateSwapchain(width, height);
+
+        frameIndex = Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1;
+
+        for (int i = 0; i < Swapchain::SWAP_CHAIN_BUFFER_COUNT; i++)
+        {
+            fenceValues[i] = queue->FenceValue();
+        }
     }
 
 public:
@@ -53,7 +64,11 @@ public:
 
     CommandList *commandList{ nullptr };
 
-    UINT frameIndex{ 0 };
+    UINT frameIndex{ Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1 };
+
+    UINT64 fenceValues[Swapchain::SWAP_CHAIN_BUFFER_COUNT]{ 0 };
+
+    ID3D12CommandAllocator **commandAllocators;
 };
 
 }

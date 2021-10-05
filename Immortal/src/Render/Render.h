@@ -147,9 +147,9 @@ public:
         handle->SwapBuffers();
     }
 
-    static void RenderFrame()
+    static void PrepareFrame()
     {
-        handle->RenderFrame();
+        handle->PrepareFrame();
     }
 
     static const char *Api()
@@ -182,18 +182,21 @@ using ShaderName = Render::ShaderName;
 template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
 inline constexpr Ref<SuperType> CreateSuper(Args&& ... args)
 {
-    switch (Render::API)
+    if (Render::API == Render::Type::OpenGL)
     {
-    case Render::Type::OpenGL:
         return CreateRef<OPENGL>(std::forward<Args>(args)...);
-    case Render::Type::Vulkan:
+    }  
+    if (Render::API == Render::Type::Vulkan)
+    {
         return CreateRef<VULKAN>(std::forward<Args>(args)...);
-    case Render::Type::D3D12:
-        return CreateRef<D3D12>(std::forward<Args>(args)...);
-    default:
-        SLASSERT(false && "Render::None is currently not supported!");
-        return nullptr;
     }
+    if (Render::API == Render::Type::D3D12)
+    {
+        return CreateRef<D3D12>(std::forward<Args>(args)...);
+    }
+
+    SLASSERT(false && "Render API is currently not supported! or Forgot to set the Graphics API!");
+    return nullptr;
 }
 
 }

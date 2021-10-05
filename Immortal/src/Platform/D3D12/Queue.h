@@ -29,7 +29,7 @@ public:
     Queue(ComPtr<ID3D12Device> device, const Description &desc) :
         desc{ desc },
         nextFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },
-        lastCompletedFenceValue{ ncast<UINT64>(desc.Type) << 56 },
+        lastCompletedFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },
         commandAllocatorPool{ device.Get(), desc.Type }
     {
         Check(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&handle)));
@@ -37,7 +37,7 @@ public:
 
         device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
         fence->SetName(L"Command Queue::Fence");
-        fence->Signal(lastCompletedFenceValue);
+        fence->Signal((uint64_t)desc.Type << 56);
 
         fenceEventHandle = CreateEvent(nullptr, false, false, nullptr);
         SLASSERT(fenceEventHandle != nullptr);
@@ -73,7 +73,9 @@ public:
     {
         if (fenceValue > lastCompletedFenceValue)
         {
-            lastCompletedFenceValue = std::max(lastCompletedFenceValue, fence->GetCompletedValue());
+            auto completedValue = fence->GetCompletedValue();
+            LOG::INFO("CompletedValue => {0}", completedValue);
+            lastCompletedFenceValue = std::max(lastCompletedFenceValue, completedValue);
         }
 
         return fenceValue <= lastCompletedFenceValue;
@@ -83,6 +85,16 @@ public:
     {
         handle->Signal(fence, nextFenceValue);
         return nextFenceValue++;
+    }
+
+    UINT64 LastCompletedFenceValue()
+    {
+        return lastCompletedFenceValue;
+    }
+
+    UINT64 FenceValue()
+    {
+        return nextFenceValue - 1;
     }
 
     void WaitForGpu()
@@ -97,14 +109,12 @@ public:
 
     void WaitForFence(UINT64 fenceValue)
     {
-        if (IsFenceCompleted(fenceValue))
+        if (fence->GetCompletedValue() < fenceValue)
         {
-            return;
+            fence->SetEventOnCompletion(fenceValue, fenceEventHandle);
+            WaitForSingleObject(fenceEventHandle, INFINITE);
+            lastCompletedFenceValue = fenceValue;
         }
-
-        fence->SetEventOnCompletion(fenceValue, fenceEventHandle);
-        WaitForSingleObject(fenceEventHandle, INFINITE);
-        lastCompletedFenceValue = fenceValue;
     }
 
     ID3D12CommandAllocator *RequestCommandAllocator()

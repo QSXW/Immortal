@@ -63,9 +63,9 @@ public:
     }
 
 public:
-    DescriptorPool(const ComPtr<ID3D12Device> device, Description &desc)
+    DescriptorPool(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc)
     {
-        Check(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&handle)));
+        Check(device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&handle)));
     }
 
     ~DescriptorPool()

@@ -40,7 +40,7 @@ void Renderer::INIT()
     }
 }
 
-void Renderer::RenderFrame()
+void Renderer::PrepareFrame()
 {
     if (swapchain)
     {

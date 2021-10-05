@@ -24,7 +24,7 @@ public:
 
     void SubmitFrame();
 
-    virtual void RenderFrame() override;
+    virtual void PrepareFrame() override;
 
     virtual uint32_t Index() override
     {

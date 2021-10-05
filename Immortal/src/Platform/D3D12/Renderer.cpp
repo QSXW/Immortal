@@ -15,6 +15,8 @@ Renderer::Renderer(RenderContext::Super *superContext)
 
     commandList = context->Get<CommandList *>();
 
+    commandAllocators = context->Get<ID3D12CommandAllocator **>();
+
     INIT();
 }
 
@@ -25,11 +27,12 @@ void Renderer::INIT()
 
 void Renderer::SwapBuffers()
 {
-    auto fenceValue = queue->ExecuteCommandLists(commandList);
+    commandList->Close();
+    queue->Handle()->ExecuteCommandLists(1, (ID3D12CommandList **)commandList->AddressOf());
 
     swapchain->Present(1, 0);
 
-    queue->WaitForFence(fenceValue);
+    frameIndex = context->WaitForPreviousFrame();
 }
 
 }

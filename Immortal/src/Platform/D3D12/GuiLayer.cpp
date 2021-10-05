@@ -24,7 +24,6 @@ GuiLayer::GuiLayer(SuperRenderContext *superContext) :
 {
     swapchain        = context->Get<Swapchain *>();
     commandList      = context->Get<CommandList *>();
-    commandAllocator = context->Get<ID3D12CommandAllocator *>();
     queue            = context->Get<Queue *>();
 }
 
@@ -80,9 +79,6 @@ void GuiLayer::End()
     Super::End();
 
     UINT backBufferIdx = Render::CurrentPresentedFrameIndex();
-    
-    commandAllocator->Reset();
-    commandList->Reset(commandAllocator);
 
     Barrier barrier{};
     barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

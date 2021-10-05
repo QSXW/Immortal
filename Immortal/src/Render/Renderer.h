@@ -27,7 +27,7 @@ public:
 
     virtual void SwapBuffers() { }
 
-    virtual void RenderFrame() { }
+    virtual void PrepareFrame() { }
 
     virtual uint32_t Index() { return 0; }
 

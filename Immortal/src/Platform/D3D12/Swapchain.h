@@ -28,38 +28,37 @@ public:
 public:
     Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc)
     {
+        ComPtr<IDXGISwapChain1> swapchain1;
         Check(factory->CreateSwapChainForHwnd(
             queue.Get(),
             hWnd,
             &desc,
             nullptr,
             nullptr,
-            &handle
+            &swapchain1
             ));
 
-        Check(handle.As(&handle4));
-
-        writableObject = handle4->GetFrameLatencyWaitableObject();
+        Check(swapchain1.As(&handle));
     }
 
     UINT AcquireCurrentBackBufferIndex()
     {
-        return handle4->GetCurrentBackBufferIndex();
+        return handle->GetCurrentBackBufferIndex();
     }
 
     void AccessBackBuffer(UINT index, ID3D12Resource **pRenderTarget)
     {
-        Check(handle4->GetBuffer(index, IID_PPV_ARGS(pRenderTarget)));
+        Check(handle->GetBuffer(index, IID_PPV_ARGS(pRenderTarget)));
     }
 
     void SetMaximumFrameLatency(UINT maxLatency)
     {
-        Check(handle4->SetMaximumFrameLatency(maxLatency));
+        Check(handle->SetMaximumFrameLatency(maxLatency));
     }
 
     HANDLE FrameLatencyWaitableObject()
     {
-        return handle4->GetFrameLatencyWaitableObject();
+        return handle->GetFrameLatencyWaitableObject();
     }
 
     ComPtr<IDXGISwapChain1> Handle()
@@ -69,12 +68,12 @@ public:
 
     void Present(UINT syncInterval, UINT flags)
     {
-        handle4->Present(syncInterval, flags);
+        handle->Present(syncInterval, flags);
     }
 
     void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
     {
-        Check(handle4->ResizeBuffers(
+        Check(handle->ResizeBuffers(
             bufferCount,
             width,
             height,
@@ -85,30 +84,26 @@ public:
 
     bool CheckColorSpaceSupport(DXGI_COLOR_SPACE_TYPE colorSpace, UINT *pSupport)
     {
-        return SUCCEEDED(handle4->CheckColorSpaceSupport(colorSpace, pSupport));
+        return SUCCEEDED(handle->CheckColorSpaceSupport(colorSpace, pSupport));
     }
 
     void Set(DXGI_COLOR_SPACE_TYPE colorSpace)
     {
-        Check(handle4->SetColorSpace1(colorSpace));
+        Check(handle->SetColorSpace1(colorSpace));
     }
 
     void Set(DXGI_HDR_METADATA_TYPE type, UINT size, void *pMetaData)
     {
-        Check(handle4->SetHDRMetaData(type, size, pMetaData));
+        Check(handle->SetHDRMetaData(type, size, pMetaData));
     }
 
     void Desc(DXGI_SWAP_CHAIN_DESC1 *desc)
     {
-        handle4->GetDesc1(desc);
+        handle->GetDesc1(desc);
     }
 
 private:
-    ComPtr<IDXGISwapChain1> handle{ nullptr };
-
-    ComPtr<IDXGISwapChain4> handle4{ nullptr };
-
-    HANDLE writableObject{ nullptr };
+    ComPtr<IDXGISwapChain4> handle{ nullptr };
 };
 
 }

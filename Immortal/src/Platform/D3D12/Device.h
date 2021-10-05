@@ -21,7 +21,7 @@ public:
 
     ID3D12Device *Handle()
     {
-        return handle.Get();
+        return handle;
     }
 
     std::unique_ptr<Queue> CreateQueue(Queue::Description &desc)
@@ -76,11 +76,11 @@ public:
     DXGI_ADAPTER_DESC AdaptorDesc();
 
 private:
-    ComPtr<ID3D12Device> handle{ nullptr };
+    ID3D12Device *handle{ nullptr };
 
     IDXGIFactory4 *dxgiFactory{ nullptr };
 
-    static inline bool UseWarpDevice{ true };
+    static inline bool UseWarpDevice{ false };
 };
 
 }
