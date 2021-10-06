@@ -1,7 +1,7 @@
 #include "impch.h"
 #include "Framebuffer.h"
 
-#include "OpenGLTexture.h"
+#include "Texture.h"
 
 #include <glad/glad.h>
 
@@ -9,6 +9,7 @@ namespace Immortal
 {
 namespace OpenGL
 {
+
 Framebuffer::Framebuffer(const Framebuffer::Super::Description &descrition) :
     handle{ 0 },
     mDepthAttachment{ 0 },
@@ -61,7 +62,7 @@ void Framebuffer::AttachColorTexture(uint32_t id, int samples, Texture::DataType
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, type.Wrap);
     }
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, OpenGLTexture::TextureTarget(multisampled), id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, TextureTarget(multisampled), id, 0);
 }
 
 void Framebuffer::AttachDepthTexture(uint32_t id, int samples, Texture::DataType type, uint32_t attachmentType, uint32_t width, uint32_t height)
@@ -82,7 +83,7 @@ void Framebuffer::AttachDepthTexture(uint32_t id, int samples, Texture::DataType
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, type.Wrap);
     }
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, OpenGLTexture::TextureTarget(multisampled), id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, TextureTarget(multisampled), id, 0);
 }
 
 void Framebuffer::Update()
@@ -102,21 +103,21 @@ void Framebuffer::Update()
     if (mColorAttachmentSpecifications.size())
     {
         mColorAttachments.resize(mColorAttachmentSpecifications.size());
-        OpenGLTexture::CreateTexture(multisample, mColorAttachments.data(), (uint32_t)mColorAttachments.size());
+        CreateTexture(multisample, mColorAttachments.data(), (uint32_t)mColorAttachments.size());
 
         for (size_t i = 0; i < mColorAttachments.size(); i++)
         {
-            OpenGLTexture::BindTexture(multisample, mColorAttachments[i]);
-            Texture::DataType type = OpenGLTexture::NativeTypeToOpenGl(mColorAttachmentSpecifications[i].Format, mColorAttachmentSpecifications[i].Wrap, mColorAttachmentSpecifications[i].Filter);
+            BindTexture(multisample, mColorAttachments[i]);
+            Texture::DataType type = NativeTypeToOpenGl(mColorAttachmentSpecifications[i].Format, mColorAttachmentSpecifications[i].Wrap, mColorAttachmentSpecifications[i].Filter);
             AttachColorTexture(mColorAttachments[i], desc.Samples, type, desc.Width, desc.Height, (int)i);
         }
     }
 
     if (mDepthAttachmentSpecification.Format != Texture::Format::None)
     {
-        OpenGLTexture::CreateTexture(multisample, &mDepthAttachment, 1);
-        OpenGLTexture::BindTexture(multisample, mDepthAttachment);
-        Texture::DataType type = OpenGLTexture::NativeTypeToOpenGl(mDepthAttachmentSpecification.Format, mDepthAttachmentSpecification.Wrap, mDepthAttachmentSpecification.Filter);
+        CreateTexture(multisample, &mDepthAttachment, 1);
+        BindTexture(multisample, mDepthAttachment);
+        Texture::DataType type = NativeTypeToOpenGl(mDepthAttachmentSpecification.Format, mDepthAttachmentSpecification.Wrap, mDepthAttachmentSpecification.Filter);
         AttachDepthTexture(mDepthAttachment, desc.Samples, type, GL_DEPTH_STENCIL_ATTACHMENT, desc.Width, desc.Height);
     }
 
@@ -177,7 +178,7 @@ void Framebuffer::ClearAttachment(uint32_t index, int value)
 {
     SLASSERT(index < mColorAttachments.size() && "Framebuffer::ClearAttachment: index out of bound");
 
-    auto type = OpenGLTexture::NativeTypeToOpenGl(mColorAttachmentSpecifications[index].Format);
+    auto type = NativeTypeToOpenGl(mColorAttachmentSpecifications[index].Format);
     glClearTexImage(mColorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
 }
 

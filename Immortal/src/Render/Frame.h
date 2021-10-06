@@ -80,11 +80,12 @@ private:
     UINT32 height{ 0 };
 
     size_t spatial{ 0 };
+
     size_t size{ 0 };
 
     int depth{ 1 };
 
-    std::unique_ptr<uint8_t>  data{};
+    std::unique_ptr<uint8_t>  data{ nullptr };
 
 public:
     static inline std::shared_ptr<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB)

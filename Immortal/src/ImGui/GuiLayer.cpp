@@ -87,6 +87,7 @@ void GuiLayer::SetTheme()
     ImGuiStyle *style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
 
+    style->WindowMinSize.x                  = 370.0f;
     style->WindowBorderSize                 = 0.0f;
     colors[ImGuiCol_Text]                   = ImVec4(0.13f, 0.13f, 0.13f, 1.13f);
     colors[ImGuiCol_TextDisabled]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);

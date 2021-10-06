@@ -112,6 +112,8 @@ set(D3D12_FILES
     src/Platform/D3D12/Swapchain.h
     src/Platform/D3D12/Shader.cpp
     src/Platform/D3D12/Shader.h
+    src/Platform/D3D12/Texture.cpp
+    src/Platform/D3D12/Texture.h
     src/Platform/D3D12/GuiLayer.cpp
     src/Platform/D3D12/GuiLayer.h)
 
@@ -174,10 +176,10 @@ set(OPENGL_FILES
     src/Platform/OpenGL/RenderContext.h
     src/Platform/OpenGL/Renderer.cpp
     src/Platform/OpenGL/Renderer.h
-    src/Platform/OpenGL/OpenGLShader.cpp
-    src/Platform/OpenGL/OpenGLShader.h
-    src/Platform/OpenGL/OpenGLTexture.cpp
-    src/Platform/OpenGL/OpenGLTexture.h
+    src/Platform/OpenGL/Shader.cpp
+    src/Platform/OpenGL/Shader.h
+    src/Platform/OpenGL/Texture.cpp
+    src/Platform/OpenGL/Texture.h
     src/Platform/OpenGL/OpenGLVertexArray.cpp
     src/Platform/OpenGL/OpenGLVertexArray.h)
 

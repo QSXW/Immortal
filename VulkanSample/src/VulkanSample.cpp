@@ -8,12 +8,12 @@ VulkanLayer::VulkanLayer()
 
 void VulkanLayer::OnAttach()
 {
-    
+    primary = Texture2D::Create("null.jpg");
 }
 
 void VulkanLayer::OnDetach()
 {
-
+    
 }
 
 void VulkanLayer::OnGuiRender()
@@ -70,7 +70,6 @@ void VulkanLayer::OnGuiRender()
     ImGuiStyle &style = ImGui::GetStyle();
 
     float minWindowSize = style.WindowMinSize.x;
-    style.WindowMinSize.x = 370.0f;
 
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
@@ -81,9 +80,9 @@ void VulkanLayer::OnGuiRender()
 
     if (ImGui::BeginMenuBar())
     {
-        if (ImGui::BeginMenu(languageTable["menu"].c_str()))
+        if (ImGui::BeginMenu(lt["menu"].c_str()))
         {
-            if (ImGui::MenuItem(languageTable["open"].c_str(), "Ctrl+O"))
+            if (ImGui::MenuItem(lt["open"].c_str(), "Ctrl+O"))
             {
 
             }
@@ -187,6 +186,22 @@ void VulkanLayer::OnGuiRender()
 
     if (Settings.showDemoWindow)
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
+
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+        ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoTitleBar);
+
+        auto [x, y] = ImGui::GetContentRegionAvail();
+
+        ImGui::Image(
+            (ImTextureID)(uint64_t)(primary->Handle()),
+            { x, y }
+            // { ncast<float>(primary->Width()), ncast<float>(primary->Height()) }
+            );
+
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
 
     {
         static float f = 0.0f;

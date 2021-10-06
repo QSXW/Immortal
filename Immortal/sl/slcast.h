@@ -32,4 +32,10 @@ inline constexpr T ccast(O o)
     return const_cast<T>(o);
 }
 
+template <class T, class O>
+inline constexpr T ecast(O o)
+{
+    return reinterpret_cast<T>((void *)o);
+}
+
 }

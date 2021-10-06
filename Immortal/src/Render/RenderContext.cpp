@@ -5,7 +5,7 @@
 #include "Platform/OpenGL/RenderContext.h"
 #include "Platform/Vulkan/RenderContext.h"
 #include "Platform/D3D12/RenderContext.h"
-#include "Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/Shader.h"
 #include "Platform/Vulkan/Shader.h"
 
 namespace Immortal
@@ -34,7 +34,7 @@ std::shared_ptr<Shader> RenderContext::CreateShader(const std::string &filename,
 {
     if (Render::API == Render::Type::OpenGL)
     {
-        return std::make_shared<OpenGLShader>(filename);
+        return std::make_shared<OpenGL::Shader>(filename);
     }
     if (Render::API == Render::Type::Vulkan)
     {

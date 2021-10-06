@@ -8,7 +8,7 @@
 
 using namespace Immortal;
 
-static std::map<std::string, std::string> languageTable;
+static std::map<std::string, std::string> lt;
 
 struct LanguageSettings
 {
@@ -22,7 +22,7 @@ struct LanguageSettings
         for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
         {
             auto &item = it->items();            
-            languageTable[it.key()] = it.value().get<std::string>();
+            lt[it.key()] = it.value().get<std::string>();
             int pause = 0;
         }
     }
@@ -47,6 +47,8 @@ public:
     } Settings;
 
     LanguageSettings languageSettings{ "Assets/json/default_language.json" };
+
+    std::shared_ptr<Texture2D> primary;
 };
 
 
@@ -72,6 +74,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::D3D12);
+    Render::Set(Render::Type::OpenGL);
     return new VulkanSample();
 }

@@ -3,20 +3,21 @@
 #include "Shader.h"
 #include "Render.h"
 
-#include "Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/Shader.h"
 #include "Platform/Vulkan/Shader.h"
+#include "Platform/D3D12/Shader.h"
 
 namespace Immortal
 {
 
 std::shared_ptr<Shader> Shader::Create(const std::string &filepath)
 {
-    return CreateSuper<Shader, OpenGLShader, OpenGLShader, OpenGLShader>(filepath);
+    return CreateSuper<Shader, OpenGL::Shader, OpenGL::Shader, OpenGL::Shader>(filepath);
 }
 
 std::shared_ptr<Shader> Shader::Create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
 {
-    return CreateSuper<Shader, OpenGLShader, OpenGLShader, OpenGLShader>(name, vertexSrc, fragmentSrc);
+    return CreateSuper<Shader, OpenGL::Shader, OpenGL::Shader, OpenGL::Shader>(name, vertexSrc, fragmentSrc);
 }
 
 void ShaderMap::Add(const std::string &name, const std::shared_ptr<Shader> &shader)
