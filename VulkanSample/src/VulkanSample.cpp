@@ -8,7 +8,7 @@ VulkanLayer::VulkanLayer()
 
 void VulkanLayer::OnAttach()
 {
-    primary = Texture2D::Create("null.jpg");
+    primary = Render::CreateTexture("null.jpg");
 }
 
 void VulkanLayer::OnDetach()
@@ -194,7 +194,7 @@ void VulkanLayer::OnGuiRender()
         auto [x, y] = ImGui::GetContentRegionAvail();
 
         ImGui::Image(
-            (ImTextureID)(uint64_t)(primary->Handle()),
+            (ImTextureID)(primary->Handle()),
             { x, y }
             // { ncast<float>(primary->Width()), ncast<float>(primary->Height()) }
             );

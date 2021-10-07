@@ -5,6 +5,8 @@
 #include "D3D12Common.h"
 #include "RenderContext.h"
 #include "Shader.h"
+#include "Texture.h"
+
 #include <mutex>
 
 namespace Immortal
@@ -58,6 +60,12 @@ public:
     virtual std::shared_ptr<SuperShader> CreateShader(const std::string &filepath, Shader::Type type) override
     {
         return std::make_shared<Shader>(filepath, type);
+    }
+
+    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    {
+        SLASSERT(context != nullptr && "Render Context isn't initialized yet");
+        return std::make_shared<Texture>(context, filepath);
     }
 
 public:

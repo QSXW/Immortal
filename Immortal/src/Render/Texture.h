@@ -4,6 +4,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Texture
 {
 public:
@@ -124,7 +125,7 @@ public:
         return 0;
     }
 
-    virtual uint32_t Handle() const
+    virtual uint64_t Handle() const
     {
         return 0;
     }
@@ -165,6 +166,7 @@ public:
 };
 
 using Image = Texture;
+using SuperTexture = Texture;
 
 class IMMORTAL_API Texture2D : public Texture
 {

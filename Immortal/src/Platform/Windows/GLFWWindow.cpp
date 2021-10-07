@@ -5,6 +5,7 @@
 #include "Event/MouseEvent.h"
 #include "Event/KeyEvent.h"
 #include "Render/Render.h"
+#include "Render/Frame.h"
 
 namespace Immortal
 {
@@ -48,6 +49,18 @@ void GLFWWindow::SetTitle(const std::string &title)
 {
     desc.Title = title;
     glfwSetWindowTitle(window, desc.Title.c_str());
+}
+
+void GLFWWindow::SetIcon(const std::string &filepath)
+{
+    Frame frame{ filepath, false };
+
+    GLFWimage image{};
+    image.height = ncast<int>(frame.Height());
+    image.width  = ncast<int>(frame.Width());
+    image.pixels = rcast<unsigned char *>(frame.Data());
+
+    glfwSetWindowIcon(window, 1, &image);
 }
 
 void GLFWWindow::INIT(const Description &description)

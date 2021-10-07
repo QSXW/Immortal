@@ -23,6 +23,7 @@ Application::Application(const Window::Description &descrition)
     desc = descrition;
     
     window  = Window::Create(desc);
+    window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(SLBIND(Application::OnEvent));
 
     context = RenderContext::Create(RenderContext::Description{

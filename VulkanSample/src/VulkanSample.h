@@ -48,7 +48,7 @@ public:
 
     LanguageSettings languageSettings{ "Assets/json/default_language.json" };
 
-    std::shared_ptr<Texture2D> primary;
+    std::shared_ptr<Texture> primary;
 };
 
 
@@ -74,6 +74,6 @@ private:
 
 Immortal::Application* Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::OpenGL);
+    Render::Set(Render::Type::D3D12);
     return new VulkanSample();
 }

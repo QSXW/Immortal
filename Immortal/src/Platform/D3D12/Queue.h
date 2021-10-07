@@ -11,6 +11,12 @@ namespace Immortal
 namespace D3D12
 {
 
+struct UploadContext
+{
+    std::unique_ptr<CommandList> Cmdlist{nullptr};
+    ID3D12CommandAllocator *Allocator{ nullptr };
+};
+
 class Queue
 {
 public:
@@ -41,6 +47,15 @@ public:
 
         fenceEventHandle = CreateEvent(nullptr, false, false, nullptr);
         SLASSERT(fenceEventHandle != nullptr);
+
+        uploadContext.Allocator = RequestCommandAllocator();
+        uploadContext.Cmdlist   = std::make_unique<CommandList>(
+            device.Get(),
+            CommandList::Type::Direct,
+            uploadContext.Allocator
+            );
+        uploadContext.Cmdlist->Close();
+        Discard(fence->GetCompletedValue(), uploadContext.Allocator);
     }
 
     ~Queue()
@@ -124,6 +139,28 @@ public:
         return commandAllocatorPool.RequestAllocator(completedFence);
     }
 
+    void Discard(UINT64 fenceValue, ID3D12CommandAllocator *commandAllocator)
+    {
+        commandAllocatorPool.DiscardAllocator(fenceValue, commandAllocator);
+    }
+
+    CommandList *BeginUpload()
+    {
+        uploadContext.Allocator = RequestCommandAllocator();
+        uploadContext.Cmdlist->Reset(uploadContext.Allocator);
+
+        return uploadContext.Cmdlist.get();
+    }
+
+    void EndUpload()
+    {
+        Discard(
+            ExecuteCommandLists(uploadContext.Cmdlist.get()),
+            uploadContext.Allocator
+            );
+        WaitForGpu();
+    }
+
 private:
     ID3D12CommandQueue *handle{ nullptr };
 
@@ -138,6 +175,8 @@ private:
     Description desc{};
 
     CommandAllocatorPool commandAllocatorPool;
+
+    UploadContext uploadContext;
 };
 
 }

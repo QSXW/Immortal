@@ -55,6 +55,8 @@ public:
 
     virtual void SetTitle(const std::string &title) override;
 
+    virtual void SetIcon(const std::string &filepath) override;
+
 private:
     virtual void INIT(const Description &descrition);
 

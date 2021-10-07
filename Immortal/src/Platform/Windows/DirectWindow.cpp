@@ -15,6 +15,8 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+#include "Render/Frame.h"
+
 namespace Immortal
 {
 
@@ -78,6 +80,11 @@ void DirectWindow::SetTitle(const std::string &title)
     SetWindowTextA(handle, title.c_str());
 }
 
+void DirectWindow::SetIcon(const std::string &filepath)
+{
+
+}
+
 void DirectWindow::INIT(const Description &description)
 {
     desc = description;
@@ -101,6 +108,7 @@ void DirectWindow::INIT(const Description &description)
         title.c_str(),
         nullptr
     };
+
     ::RegisterClassEx(&wc);
 
     handle = ::CreateWindow(

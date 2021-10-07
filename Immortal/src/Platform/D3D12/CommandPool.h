@@ -30,6 +30,8 @@ public:
 public:
     CommandList(Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
+    CommandList::CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
+
     ~CommandList()
     {
         IfNotNullThenRelease(handle);
@@ -89,6 +91,11 @@ public:
             num,
             descriptroHeap->AddressOf()
             );
+    }
+
+    void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION *pDst, UINT dstX, UINT dstY, UINT dstZ, const D3D12_TEXTURE_COPY_LOCATION *pSrc,  const D3D12_BOX *pSrcBox)
+    {
+        handle->CopyTextureRegion(pDst, dstX, dstY, dstZ, pSrc, pSrcBox);
     }
 
 private:

@@ -4,6 +4,7 @@
 
 #include "RenderContext.h"
 #include "VertexArray.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -42,6 +43,11 @@ public:
     {
         return "None";
     };
+
+    virtual std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
+    {
+        return nullptr;
+    }
 };
 
 using SuperRenderer = Renderer;

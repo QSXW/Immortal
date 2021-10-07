@@ -7,6 +7,8 @@
 #include "Render/VertexArray.h"
 #include <glad/glad.h>
 
+#include "Texture.h"
+
 namespace Immortal
 {
 namespace OpenGL
@@ -39,6 +41,11 @@ public:
     virtual const char *GraphicsRenderer() override
     {
         return context->GraphicsRenderer();
+    }
+
+    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    {
+        return std::make_shared<Texture2D>(filepath);
     }
 
 private:

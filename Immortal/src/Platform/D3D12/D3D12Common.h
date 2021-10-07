@@ -7,6 +7,7 @@
 #include <wrl/client.h>
 using Microsoft::WRL::ComPtr;
 
+#include <initguid.h>
 #include <D3d12.h>
 #include <dxgi.h>
 #include <dxgi1_4.h>

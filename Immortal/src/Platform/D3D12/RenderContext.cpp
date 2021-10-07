@@ -63,7 +63,7 @@ void RenderContext::INIT()
 
     {
         Swapchain::Description swapchainDesc{};
-        CleanObject(&swapchainDesc);
+        CleanUpObject(&swapchainDesc);
         swapchainDesc.BufferCount       = desc.FrameCount;
         swapchainDesc.Width             = desc.Width;
         swapchainDesc.Height            = desc.Height;
@@ -113,7 +113,7 @@ void RenderContext::INIT()
 
         DescriptorPool::Description shaderResourceViewDesc{
             DescriptorPool::Type::ShaderResourceView,
-            1,
+            2,
             DescriptorPool::Flag::ShaderVisible
         };
 

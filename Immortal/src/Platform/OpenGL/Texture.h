@@ -130,9 +130,9 @@ public:
         return height;
     }
 
-    virtual uint32_t Handle() const override
+    virtual uint64_t Handle() const override
     { 
-        return handle; 
+        return ncast<uint64_t>(handle); 
     }
 
     virtual void SetData(void* data, uint32_t size) override;
@@ -208,7 +208,7 @@ public:
         return filepath.c_str();
     }
 
-    uint32_t Handle() const
+    virtual uint64_t Handle() const override
     { 
         return handle;
     }

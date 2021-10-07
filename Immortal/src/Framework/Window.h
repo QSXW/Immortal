@@ -98,6 +98,8 @@ public:
 
     virtual void Show() { }
 
+    virtual void SetIcon(const std::string &filepath) { }
+
 public:
     static std::unique_ptr<Window> Create(const Description &description = Description{});
 };

@@ -95,7 +95,7 @@ inline constexpr bool typeof()
 }
 
 template <class T>
-inline constexpr void *CleanObject(T *ptr, int value = 0, size_t size = sizeof(T))
+inline constexpr void *CleanUpObject(T *ptr, int value = 0, size_t size = sizeof(T))
 {
     return memset(ptr, value, size);
 }

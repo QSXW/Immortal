@@ -167,6 +167,11 @@ public:
         return handle->CreateShader(filepath, type);
     }
 
+    static std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
+    {
+        return handle->CreateTexture(filepath);
+    }
+
 private:
     static std::unique_ptr<Renderer> handle;
 
