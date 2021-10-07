@@ -329,7 +329,7 @@ target_link_libraries(${PROJECT_NAME}
     glm
     glad
     glfw
-    mono
+    # mono
     assimp
     vulkan
     spdlog::spdlog

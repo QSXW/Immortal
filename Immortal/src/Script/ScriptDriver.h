@@ -5,20 +5,13 @@
 #include "Framework/Object.h"
 #include "Scene/ScriptableObject.h"
 
-extern "C"
-{
-    typedef struct _MonoObject MonoObject;
-    typedef struct _MonoClassField MonoClassField;
-    typedef struct _MonoDomain MonoDomain;
-}
-
 namespace Immortal
 {
 class ScriptDriver : public Object
 {
 public:
     static std::string AssemblyPath;
-    static MonoDomain *Domain;
+    static void *Domain;
 
 public:
     static void On(const std::string &assemblyPath);
