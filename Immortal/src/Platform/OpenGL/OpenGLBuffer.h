@@ -4,6 +4,7 @@
 
 namespace Immortal
 {
+
 class OpenGLVertexBuffer : public VertexBuffer
 {
 public:

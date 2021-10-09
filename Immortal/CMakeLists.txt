@@ -162,6 +162,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/Sampler.h
    src/Platform/Vulkan/Shader.cpp
    src/Platform/Vulkan/Shader.h
+   src/Platform/Vulkan/Texture.cpp
+   src/Platform/Vulkan/Texture.h
    src/Platform/Vulkan/RenderPass.cpp
    src/Platform/Vulkan/RenderPass.h)
 

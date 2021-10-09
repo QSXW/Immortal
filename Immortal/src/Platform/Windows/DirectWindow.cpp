@@ -13,6 +13,8 @@
 #endif
 #include <backends/imgui_impl_win32.cpp>
 
+#include "Framework/Utils.h"
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #include "Render/Frame.h"
@@ -92,7 +94,7 @@ void DirectWindow::INIT(const Description &description)
     EventDispatcher = desc.EventCallback;
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    std::wstring title = converter.from_bytes(desc.Title);
+    std::wstring title = Utils::s2ws(desc.Title);
 
     wc = { 
         sizeof(WNDCLASSEX),

@@ -31,24 +31,28 @@ public:
     virtual ~Pipeline() { }
 
     virtual void Map()   const = 0;
+
     virtual void Unmap() const = 0;
 
 private:
     struct Description
     {
         VertexLayout Layout{};
+
         DrawType Type{ DrawType::Static };
-        std::shared_ptr<Immortal::Shader> Shader{};
+
+        std::shared_ptr<Shader> Shader{};
 
         struct DepthStencilState
         {
             bool DepthEnable = false;
             bool StencilEnable = false;
         };
+
         UINT32 SampleMask = UINT_MAX;
+
         PrimitiveType PrimitiveType = PrimitiveType::Triangles;
-    } mDescription;
+    } description;
 };
 
 }
-

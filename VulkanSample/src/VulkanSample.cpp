@@ -8,7 +8,7 @@ VulkanLayer::VulkanLayer()
 
 void VulkanLayer::OnAttach()
 {
-    primary = Render::CreateTexture("null.jpg");
+    primary = Render::CreateTexture("C:/SDK/Assets/jpeg/wallhaven-9m9rwd.jpg");
 }
 
 void VulkanLayer::OnDetach()

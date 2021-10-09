@@ -1,6 +1,5 @@
 /3rdparty/vulkan*
 /3rdparty/opencv*
-/3rdparty/mono*
 
 # cmake
 /build*
