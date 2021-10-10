@@ -20,8 +20,8 @@ namespace Vulkan
 GuiLayer::GuiLayer(RenderContext::Super *context) :
     context{ dcast<RenderContext *>(context) }
 {
-    device     = &this->context->Get<Device>();
-    renderPass = &this->context->Get<RenderPass>();
+    device     = this->context->Get<Device *>();
+    renderPass = this->context->Get<RenderPass *>();
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -37,7 +37,7 @@ void GuiLayer::OnAttach()
     Application *app = Application::App();
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
 
-    auto &swapchain = context->Get<Swapchain>();
+    auto &swapchain = context->Get<Swapchain &>();
     auto format = swapchain.Get<VkFormat>();
 
     VkDescriptorPoolSize poolSizes[] = {
@@ -65,7 +65,7 @@ void GuiLayer::OnAttach()
     Check(vkCreateDescriptorPool(device->Handle(), &createInfo, nullptr, &descriptorPool));
 
     ImGui_ImplVulkan_InitInfo initInfo{};
-    auto &queue = context->Get<Queue*>();
+    auto queue = context->Get<Queue*>();
 
     initInfo.Instance        = context->Get<VkInstance>();
     initInfo.PhysicalDevice  = context->Get<VkPhysicalDevice>();
@@ -76,7 +76,7 @@ void GuiLayer::OnAttach()
     initInfo.DescriptorPool  = descriptorPool;
     initInfo.Allocator       = nullptr;
     initInfo.MinImageCount   = 3;
-    initInfo.ImageCount      = context->Get<RenderContext::Frames>().size();
+    initInfo.ImageCount      = context->Get<RenderContext::Frames&>().size();
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
@@ -87,7 +87,7 @@ void GuiLayer::OnAttach()
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
-    commandBuffer = &context->Get<CommandBuffers>();
+    commandBuffer = context->Get<CommandBuffers *>();
     Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->at(frameIndex)->Handle());
     Check(commandBuffer->at(frameIndex)->End());
@@ -149,7 +149,7 @@ void GuiLayer::End()
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
-    commandBuffer = &context->Get<CommandBuffers>();
+    commandBuffer = context->Get<CommandBuffers *>();
 
     VkRenderPassBeginInfo beginInfo = {};
     beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

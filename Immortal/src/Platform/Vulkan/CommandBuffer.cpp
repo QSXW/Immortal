@@ -19,14 +19,14 @@ CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
     allocInfo.commandPool        = cmdPool->Handle();
     allocInfo.level              = ncast<VkCommandBufferLevel>(level);
     allocInfo.commandBufferCount = 1;
-    Check(vkAllocateCommandBuffers(cmdPool->Get<Device>().Handle(), &allocInfo, &handle));
+    Check(vkAllocateCommandBuffers(cmdPool->Get<Device *>()->Handle(), &allocInfo, &handle));
 }
 
 CommandBuffer::~CommandBuffer()
 {
     if (handle != VK_NULL_HANDLE)
     {
-       vkFreeCommandBuffers(commandPool->Get<Device>().Handle(), commandPool->Handle(), 1, &handle);
+       vkFreeCommandBuffers(commandPool->Get<Device *>()->Handle(), commandPool->Handle(), 1, &handle);
     }
 }
 

@@ -12,12 +12,12 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(Image &&image)
 {
     std::vector<Image> images;
 
-    auto &device = image.Get<Device>();
+    auto device = image.Get<Device *>();
 
-    VkFormat depthFormat = SuitableDepthFormat(device.Get<PhysicalDevice>().Handle());
+    VkFormat depthFormat = SuitableDepthFormat(device->Get<PhysicalDevice>().Handle());
 
     Image depthImage{
-        &device,
+        device,
         image.Extent(),
         depthFormat,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY
@@ -30,7 +30,7 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(Image &&image)
 };
 
 RenderTarget::RenderTarget(std::vector<Image> &&images) :
-    device{ images.back().Get<Device>() },
+    device{ images.back().Get<Device *>() },
     images{ std::move(images) }
 {
     SLASSERT(!this->images.empty() && "Should specify at least 1 image");

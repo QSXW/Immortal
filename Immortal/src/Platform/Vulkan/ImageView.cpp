@@ -8,7 +8,7 @@ namespace Vulkan
 {
 
 ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
-    device{ &(image->Get<Device>()) },
+    device{ image->Get<Device *>() },
     image{ image },
     format{ format }
 {

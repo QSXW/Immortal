@@ -21,7 +21,7 @@ Framebuffer::Framebuffer()
 Framebuffer::Framebuffer(const Framebuffer::Description &description) :
     Super{ description },
     context{ rcast<RenderContext*>(desc.context) },
-    device{ &context->Get<Device>() }
+    device{ context->Get<Device *>() }
 {
 
 }

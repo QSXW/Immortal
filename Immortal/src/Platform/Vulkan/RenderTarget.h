@@ -52,7 +52,7 @@ public:
     }
 
 private:
-    Device &device;
+    Device *device{ nullptr };
 
     VkExtent2D extent{};
 

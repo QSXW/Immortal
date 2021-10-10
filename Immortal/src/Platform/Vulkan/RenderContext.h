@@ -54,7 +54,7 @@ public:
     void Prepare(size_t threadCount = 1);
 
     template <class T>
-    inline constexpr T &Get()
+    inline constexpr T Get()
     {
         if constexpr (typeof<T, VkInstance>())
         {
@@ -80,19 +80,23 @@ public:
         {
             return queue;
         }
-        if constexpr (typeof<T, Swapchain>())
+        if constexpr (typeof<T, Swapchain &>())
         {
             return *swapchain;
         }
-        if constexpr (typeof<T, Device>())
+        if constexpr (typeof<T, Swapchain *>())
+        {
+            return swapchain.get();
+        }
+        if constexpr (typeof<T, Device&>())
         {
             return *device;
         }
-        if constexpr (typeof<T, Device slptr>())
+        if constexpr (typeof<T, Device*>())
         {
             return device.get();
         }
-        if constexpr (typeof<T, Frames>())
+        if constexpr (typeof<T, Frames&>())
         {
             return frames;
         }
@@ -108,13 +112,13 @@ public:
         {
             return semaphores;
         }
-        if constexpr (typeof<T, RenderPass>())
+        if constexpr (typeof<T, RenderPass *>())
         {
-            return *renderPass;
+            return renderPass.get();
         }
-        if constexpr (typeof<T, CommandBuffers>())
+        if constexpr (typeof<T, CommandBuffers *>())
         {
-            return commandBuffers;
+            return &commandBuffers;
         }
     }
 

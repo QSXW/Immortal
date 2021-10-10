@@ -29,7 +29,7 @@ public:
             3,
             4,
             8,
-        16,
+           16,
             8,
             3
     };
@@ -66,6 +66,11 @@ public:
     };
 
     virtual UINT32 Hash() const { return 0xff; };
+
+    virtual size_t Size() const
+    {
+        return size;
+    }
 
 private:
     void Frame::Read(const std::string &path, cv::Mat &outputMat);

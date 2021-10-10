@@ -48,9 +48,9 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (typeof<T, Device>())
+        if constexpr (typeof<T, Device *>())
         {
-            return *device;
+            return device;
         }
         if constexpr (typeof<T, CommandBuffer::ResetMode>())
         {

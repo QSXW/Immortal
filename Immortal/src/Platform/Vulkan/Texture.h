@@ -22,6 +22,8 @@ public:
     ~Texture();
 
 private:
+    Device *device{ nullptr };
+
     uint32_t width{ 0 };
 
     uint32_t height{ 0 };
@@ -34,7 +36,7 @@ private:
 
     Sampler sampler;
 
-    VkImageLayout layout;
+    VkImageLayout layout{ VK_IMAGE_LAYOUT_UNDEFINED };
 };
 
 }

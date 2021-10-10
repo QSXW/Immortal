@@ -54,7 +54,7 @@ public:
 
     Device *device{ nullptr };
 
-    std::vector<CommandBuffer*> commandBuffers;
+    std::vector<CommandBuffer*> *commandBuffers{ nullptr };
 
     Swapchain *swapchain{ nullptr };
 
