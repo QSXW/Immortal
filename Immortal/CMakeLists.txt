@@ -168,8 +168,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/RenderPass.h)
 
 set(OPENGL_FILES
-    src/Platform/OpenGL/OpenGLBuffer.cpp
-    src/Platform/OpenGL/OpenGLBuffer.h
+    src/Platform/OpenGL/Buffer.cpp
+    src/Platform/OpenGL/Buffer.h
     src/Platform/OpenGL/Framebuffer.cpp
     src/Platform/OpenGL/Framebuffer.h
     src/Platform/OpenGL/GuiLayer.cpp
@@ -182,8 +182,8 @@ set(OPENGL_FILES
     src/Platform/OpenGL/Shader.h
     src/Platform/OpenGL/Texture.cpp
     src/Platform/OpenGL/Texture.h
-    src/Platform/OpenGL/OpenGLVertexArray.cpp
-    src/Platform/OpenGL/OpenGLVertexArray.h)
+    src/Platform/OpenGL/VertexArray.cpp
+    src/Platform/OpenGL/VertexArray.h)
 
 set(WINDOWS_FILES
     src/Platform/Windows/DirectWindow.cpp

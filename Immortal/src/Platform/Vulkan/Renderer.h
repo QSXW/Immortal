@@ -4,6 +4,7 @@
 
 #include "Common.h"
 #include "RenderContext.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -38,10 +39,15 @@ public:
         return context->GraphicsRenderer();
     }
 
-     virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type)
-     {
-         return context->CreateShader(filepath, type);
-     }
+    virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type) override
+    {
+        return context->CreateShader(filepath, type);
+    }
+
+    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    {
+        return std::make_shared<Texture>(context, filepath);
+    }
 
 public:
     RenderContext *context{ nullptr };

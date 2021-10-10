@@ -5,34 +5,43 @@
 
 namespace Immortal
 {
+namespace OpenGL
+{
 
-class OpenGLVertexArray : public VertexArray
+class VertexArray : public SuperVertexArray
 {
 public:
-    OpenGLVertexArray();
-    ~OpenGLVertexArray();
+    VertexArray();
+
+    ~VertexArray();
 
     void Map() const;
+
     void Unmap() const;
 
     void AddVertexBuffer(const std::shared_ptr<VertexBuffer> &vertexBuffer) override;
-    void SetIndexBuffer(const std::shared_ptr<IndexBuffer> &indexBuffer) override;
+
+    void SetIndexBuffer(const std::shared_ptr<SuperIndexBuffer> &indexBuffer) override;
 
     const std::vector<std::shared_ptr<VertexBuffer> > &GetVertexBuffers() const override
     {
-        return mVertexBuffers;
+        return buffers;
     }
 
     const std::shared_ptr<IndexBuffer> &GetIndexBuffer() const override
     {
-        return mIndexBuffer;
+        return indexBuffer;
     }
 
 private:
-    uint32_t mHandle;
-    uint32_t mVertexBufferIndex = 0;
-    std::vector<std::shared_ptr<VertexBuffer> > mVertexBuffers;
-    std::shared_ptr<IndexBuffer> mIndexBuffer;
+    uint32_t handle;
+
+    uint32_t index = 0;
+
+    std::vector<std::shared_ptr<VertexBuffer> > buffers;
+
+    std::shared_ptr<IndexBuffer> indexBuffer;
 };
 
+}
 }

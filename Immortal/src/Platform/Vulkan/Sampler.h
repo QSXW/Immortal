@@ -11,6 +11,8 @@ namespace Vulkan
 class Sampler
 {
 public:
+    Sampler() = default;
+
     Sampler(Device *device, const VkSamplerCreateInfo &info);
 
     ~Sampler();

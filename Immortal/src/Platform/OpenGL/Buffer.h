@@ -4,13 +4,17 @@
 
 namespace Immortal
 {
+namespace OpenGL
+{
 
-class OpenGLVertexBuffer : public VertexBuffer
+class VertexBuffer : public SuperVertexBuffer
 {
 public:
-    OpenGLVertexBuffer(uint32_t size);
-    OpenGLVertexBuffer(const void *vertices, uint32_t size);
-    ~OpenGLVertexBuffer() override;
+    VertexBuffer(uint32_t size);
+
+    VertexBuffer(const void *vertices, uint32_t size);
+
+    ~VertexBuffer() override;
 
     uint32_t Handle() const override
     { 
@@ -38,11 +42,11 @@ private:
     VertexLayout layout;
 };
 
-class OpenGLIndexBuffer : public IndexBuffer
+class IndexBuffer : public SuperIndexBuffer
 {
 public:
-    OpenGLIndexBuffer(const void *indices, uint32_t count);
-    ~OpenGLIndexBuffer();
+    IndexBuffer(const void *indices, uint32_t count);
+    ~IndexBuffer();
 
     uint32_t Handle() const override 
     { 
@@ -64,12 +68,12 @@ private:
     uint32_t count;
 };
 
-class OpenGLUniformBuffer : public UniformBuffer
+class UniformBuffer : public SuperUniformBuffer
 {
 public:
-    OpenGLUniformBuffer(size_t size, int binding);
+    UniformBuffer(size_t size, int binding);
 
-    ~OpenGLUniformBuffer();
+    ~UniformBuffer();
 
     virtual void SetData(size_t size, const void *data) const override;
 
@@ -81,4 +85,5 @@ private:
     uint32_t handle{};
 };
 
+}
 }

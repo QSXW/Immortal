@@ -123,6 +123,8 @@ public:
     static std::shared_ptr<VertexBuffer> Create(const void *vertices, uint32_t size);
 };
 
+using SuperVertexBuffer = VertexBuffer;
+
 class IMMORTAL_API IndexBuffer
 {
 public:
@@ -138,6 +140,8 @@ public:
     static std::shared_ptr<IndexBuffer> Create(const void *indices, uint32_t count);
 };
 
+using SuperIndexBuffer = IndexBuffer;
+
 class IMMORTAL_API UniformBuffer
 {
 public:
@@ -149,4 +153,7 @@ public:
 
     static std::shared_ptr<UniformBuffer> Create(size_t size, int biding = 0);
 };
+
+using SuperUniformBuffer = UniformBuffer;
+
 }

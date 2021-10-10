@@ -24,5 +24,6 @@ public:
     static std::shared_ptr<VertexArray> Create();
 };
 
+using SuperVertexArray = VertexArray;
 }
 

@@ -85,7 +85,7 @@ public:
     }
 
 private:
-    Device *device;
+    Device *device{ nullptr };
 
     VkImage handle{ VK_NULL_HANDLE };
 

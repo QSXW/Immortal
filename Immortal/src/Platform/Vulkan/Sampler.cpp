@@ -4,6 +4,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     device{ device }
 {
@@ -14,5 +15,6 @@ Sampler::~Sampler()
 {
     IfNotNullThen(vkDestroySampler, device->Get<VkDevice>(), handle);
 }
+
 }
 }
