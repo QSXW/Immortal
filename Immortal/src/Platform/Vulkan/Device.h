@@ -56,6 +56,53 @@ public:
         return fencePool->Request();
     }
 
+    VkResult CreateBuffer(const VkBufferCreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer)
+    {
+        return vkCreateBuffer(handle, pCreateInfo, pAllocator, pBuffer);
+    }
+
+    void GetRequirements(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements)
+    {
+        vkGetBufferMemoryRequirements(handle, buffer, pMemoryRequirements);
+    }
+
+    void GetRequirements(VkImage image, VkMemoryRequirements *pMemoryRequirements)
+    {
+        vkGetImageMemoryRequirements(handle, image, pMemoryRequirements);
+    }
+
+    uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
+
+    VkResult AllocateMemory(const VkMemoryAllocateInfo *pAllocateInfo, VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory)
+    {
+        return vkAllocateMemory(handle, pAllocateInfo, pAllocator, pMemory);
+    }
+
+    VkResult BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset)
+    {
+        return vkBindBufferMemory(handle, buffer, memory, memoryOffset);
+    }
+
+    VkResult BindImageMemory(VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset)
+    {
+        return vkBindImageMemory(handle, image, memory, memoryOffset);
+    }
+
+    VkResult MapMemory(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void **ppData)
+    {
+        return vkMapMemory(handle, memory, offset, size, flags, ppData);
+    }
+
+    void UnmapMemory(VkDeviceMemory memory)
+    {
+        vkUnmapMemory(handle, memory);
+    }
+
+    VkResult CreateImage(const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkImage *pImage)
+    {
+        return vkCreateImage(handle, pCreateInfo, pAllocator, pImage);
+    }
+
 public:
     VkDevice Handle()
     {
@@ -100,6 +147,16 @@ public:
     VkResult GetSurfaceCapabilities(Surface &surface, VkSurfaceCapabilitiesKHR *properties)
     {
         return vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, properties);
+    }
+
+    CommandBuffer *Request(Level level)
+    {
+        return commandPool->RequestBuffer(level);
+    }
+
+    void Discard(CommandBuffer *commandBuffer)
+    {
+        commandPool->DiscardBuffer(commandBuffer);
     }
 
 private:

@@ -31,6 +31,8 @@ public:
 
     CommandBuffer *RequestBuffer(Level level);
 
+    void DiscardBuffer(CommandBuffer *commandBuffer);
+
     void DestoryAll()
     {
         primaryCommandBuffers.clear();

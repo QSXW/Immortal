@@ -21,6 +21,20 @@ public:
 
     ~Texture();
 
+    void ConvertType(VkImageCreateInfo &dst, Description &src)
+    {
+        switch (src.Format)
+        {
+        case SuperTexture::Format::RGBA8:
+            dst.format = VK_FORMAT_R8G8B8A8_UNORM;
+            break;
+
+        default:
+            dst.format = VK_FORMAT_R8G8B8A8_UNORM;
+            break;
+        }
+    }
+
 private:
     Device *device{ nullptr };
 
@@ -37,6 +51,8 @@ private:
     Sampler sampler;
 
     VkImageLayout layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+
+    VkDeviceMemory deviceMemory;
 };
 
 }

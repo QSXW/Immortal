@@ -341,5 +341,34 @@ Queue &Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
     return queues[0][0];
 }
 
+uint32_t Device::GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound)
+{
+    for (uint32_t i = 0; i < physicalDevice.MemoryProperties.memoryTypeCount; i++)
+    {
+        if (bits & 1)
+        {
+            if ((physicalDevice.MemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                if (memoryTypeFound)
+                {
+                    *memoryTypeFound = true;
+                }
+                return i;
+            }
+        }
+        bits >>= 1;
+    }
+
+    if (memoryTypeFound)
+    {
+        *memoryTypeFound = false;
+        return 0;
+    }
+    else
+    {
+        SLASSERT(nullptr && "Could not find a matching memory type");
+    }
+}
+
 }
 }
