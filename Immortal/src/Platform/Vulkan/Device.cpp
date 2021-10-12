@@ -182,6 +182,22 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     commandPool.reset(new CommandPool{ this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>() });
 
     fencePool.reset(new FencePool{ this });
+
+    std::vector<VkDescriptorPoolSize> poolSize{
+        { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000 }
+    };
+
+    descriptorPool = std::make_unique<DescriptorPool>(this, poolSize);
 }
 
 UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
@@ -367,6 +383,7 @@ uint32_t Device::GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, 
     else
     {
         SLASSERT(nullptr && "Could not find a matching memory type");
+        return -1;
     }
 }
 

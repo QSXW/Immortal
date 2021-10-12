@@ -15,6 +15,10 @@ public:
 
     Sampler(Device *device, const VkSamplerCreateInfo &info);
 
+    Sampler::Sampler(Sampler &&other);
+
+    Sampler &operator =(Sampler &&other);
+
     ~Sampler();
 
     VkSampler &Handle()

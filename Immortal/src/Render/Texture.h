@@ -105,6 +105,8 @@ public:
         Texture::Wrap   Wrap{ Texture::Wrap::Clamp };
         Texture::Filter Filter{ Texture::Filter::Nearest };
         Texture::Type   Type{ Texture::Type::Texture2D };
+
+        bool Anisotropic{ true };
     };
 
 public:

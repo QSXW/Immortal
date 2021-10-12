@@ -46,19 +46,30 @@ VkResult FencePool::Reset()
 
 VkFence FencePool::Request()
 {
-    if (activeCount < handles.size())
+    VkFence fence{ VK_NULL_HANDLE };
+    if (!pending.empty())
     {
-        return handles.at(activeCount++);
+        fence = pending.front();
+        pending.pop();
+    }
+    else 
+    {
+        VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+        Check(vkCreateFence(device->Get<VkDevice>(), &createInfo, nullptr, &fence));
+
+        handles.emplace_back(fence);
+        activeCount++;
     }
 
-    VkFence fence{ VK_NULL_HANDLE };
-    VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-    Check(vkCreateFence(device->Get<VkDevice>(), &createInfo, nullptr, &fence));
-
-    handles.emplace_back(fence);
-    activeCount++;
-
-    return handles.back();
+    return fence;
 }
+
+void FencePool::Discard(VkFence *pFence)
+{
+    pending.push(*pFence);
+    activeCount--;
+    *pFence = nullptr;
+}
+
 }
 }

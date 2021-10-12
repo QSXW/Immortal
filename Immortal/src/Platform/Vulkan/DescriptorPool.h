@@ -15,16 +15,20 @@ public:
     static constexpr UINT32 MaxSetsPerPool = 0x10;
 
 public:
-    DescriptorPool(Device &device, const DescriptorSetLayout &layout, UINT32 poolSize = MaxSetsPerPool);
+    DescriptorPool(Device *device, const DescriptorSetLayout &layout, UINT32 poolSize = MaxSetsPerPool);
+
+    DescriptorPool(Device *device, const std::vector<VkDescriptorPoolSize> &poolSize);
 
     ~DescriptorPool();
 
+    VkResult Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet);
+
 private:
-    Device &device;
+    Device *device{ nullptr };
         
     std::vector<VkDescriptorPoolSize> poolSize;
 
-    std::vector<VkDescriptorPool> handles;
+   VkDescriptorPool handle{ VK_NULL_HANDLE };
 
     std::vector<UINT32> setsCount;
 

@@ -12,6 +12,7 @@
 #include "Queue.h"
 #include "CommandPool.h"
 #include "FencePool.h"
+#include "DescriptorPool.h"
 
 namespace Immortal
 {
@@ -56,9 +57,24 @@ public:
         return fencePool->Request();
     }
 
-    VkResult CreateBuffer(const VkBufferCreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer)
+    VkResult Create(const VkBufferCreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer)
     {
         return vkCreateBuffer(handle, pCreateInfo, pAllocator, pBuffer);
+    }
+
+    void Destory(VkBuffer buffer, const VkAllocationCallbacks* pAllocator = nullptr)
+    {
+		vkDestroyBuffer(handle, buffer, pAllocator);
+    }
+
+    VkResult CreatePipelineLayout(const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout)
+    {
+        return vkCreatePipelineLayout(handle, pCreateInfo, pAllocator, pPipelineLayout);
+    }
+
+    VkResult CreateSampler()
+    {
+
     }
 
     void GetRequirements(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements)
@@ -76,6 +92,26 @@ public:
     VkResult AllocateMemory(const VkMemoryAllocateInfo *pAllocateInfo, VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory)
     {
         return vkAllocateMemory(handle, pAllocateInfo, pAllocator, pMemory);
+    }
+
+    void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator = nullptr)
+    {
+        vkFreeMemory(handle, memory, pAllocator);
+    }
+
+    VkResult CreateDescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout)
+    {
+        return vkCreateDescriptorSetLayout(handle, pCreateInfo, pAllocator, pSetLayout);
+    }
+
+    VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
+    {
+        return descriptorPool->Allocate(pDescriptorSetLayout, pDescriptorSets);
+    }
+
+    void UpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet *pDescriptorCopies)
+    {
+        vkUpdateDescriptorSets(handle, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
     }
 
     VkResult BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset)
@@ -139,6 +175,11 @@ public:
         return vkDeviceWaitIdle(handle);
     }
 
+    VkResult Wait(uint32_t fenceCount, VkFence *pFences, VkBool32 waitAll = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max())
+    {
+        return vkWaitForFences(handle, fenceCount, pFences, waitAll, timeout);
+    }
+
     VmaAllocator MemoryAllocator() const
     {
         return memoryAllocator;
@@ -152,6 +193,33 @@ public:
     CommandBuffer *Request(Level level)
     {
         return commandPool->RequestBuffer(level);
+    }
+
+    CommandBuffer *BeginUpload()
+    {
+        auto *copyCmd = commandPool->RequestBuffer(Level::Primary);
+        copyCmd->Begin();
+        return copyCmd;
+    }
+
+    void EndUpload(CommandBuffer *copyCmd)
+    {
+        copyCmd->End();
+
+        auto &queue = FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
+
+        VkSubmitInfo submitInfo{};
+		submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers    = &copyCmd->Handle();
+
+        auto fence = fencePool->Request();
+
+        queue.Submit(submitInfo, fence);
+        Check(this->Wait(1, &fence, VK_TRUE, FencePool::Timeout));
+
+        fencePool->Discard(&fence);
+        commandPool->DiscardBuffer(copyCmd);
     }
 
     void Discard(CommandBuffer *commandBuffer)
@@ -177,6 +245,8 @@ private:
     std::unique_ptr<CommandPool> commandPool;
 
     std::unique_ptr<FencePool> fencePool;
+
+    std::unique_ptr<DescriptorPool> descriptorPool;
 
     bool hasGetMemoryRequirements{ false };
     bool hasDedicatedAllocation{ false };
