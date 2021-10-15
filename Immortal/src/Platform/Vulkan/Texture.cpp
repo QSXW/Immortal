@@ -144,7 +144,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
 Texture::~Texture()
 {
-
+    device->FreeMemory(deviceMemory);
 }
 
 void Texture::INITDescriptor()

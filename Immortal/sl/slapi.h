@@ -100,23 +100,4 @@ inline constexpr void *CleanUpObject(T *ptr, int value = 0, size_t size = sizeof
     return memset(ptr, value, size);
 }
 
-static uint32_t CyclicRedundancyCheck32(const uint8_t *message, uint32_t length)
-{
-    static constexpr uint32_t CRC32_GENERATOR_POLYNOMIAL = 0x04C11DB7;
-    uint32_t CRC = (uint32_t)~0;
-
-    for (int i = 0; i < length; i++)
-    {
-        CRC ^= (((uint32_t)message[i]) << 24);
-        for (int j = 0; j < 8; j++)
-        {
-            uint32_t MSB = CRC >> 31;
-            CRC <<= 1;
-            CRC ^= (0 - MSB) & CRC32_GENERATOR_POLYNOMIAL;
-        }
-    }
-    
-    return CRC;
-}
-
 }

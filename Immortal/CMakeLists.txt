@@ -315,19 +315,17 @@ source_group("\\" FILES ${PROJECT_FILES})
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_FILES})
 
-target_sources(${PROJECT_NAME}
-    PRIVATE
-        ${PROJECT_FILES}
-    )
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/impch.h>)
 
 add_subdirectory(sl)
-
+add_subdirectory(Media)
 target_link_libraries(${PROJECT_NAME}
     slapi
+    slMedia
     glm
     glad
     glfw
