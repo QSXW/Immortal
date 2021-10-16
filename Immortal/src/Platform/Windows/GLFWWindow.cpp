@@ -89,7 +89,7 @@ void GLFWWindow::INIT(const Description &description)
     /* Set callbacks */
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
         desc->Width = width;
         desc->Height = height;
 
@@ -99,14 +99,14 @@ void GLFWWindow::INIT(const Description &description)
 
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
         WindowCloseEvent event;
         desc->EventCallback(event);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int modes)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
             
         switch (action)
         {
@@ -134,7 +134,7 @@ void GLFWWindow::INIT(const Description &description)
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int modes)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
 
         switch (action)
         {
@@ -155,7 +155,7 @@ void GLFWWindow::INIT(const Description &description)
 
     glfwSetScrollCallback(window, [](GLFWwindow *window, double xOffset, double yOffset)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
 
         MouseScrolledEvent event((float)xOffset, (float)yOffset);
         desc->EventCallback(event);
@@ -163,7 +163,7 @@ void GLFWWindow::INIT(const Description &description)
 
     glfwSetCursorPosCallback(window, [](GLFWwindow *window, double xPos, double yPos)
     {
-        Description *desc = sl::bcast<Description *>(glfwGetWindowUserPointer(window));
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
 
         MouseMoveEvent event((float)xPos, (float)yPos);
         desc->EventCallback(event);

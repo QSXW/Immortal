@@ -22,9 +22,8 @@
 
 namespace sl
 {
-#include <cassert>
 
-#define slptr *
+#include <cassert>
 
 #define SLASSERT(...) assert(__VA_ARGS__)
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef __SLINTRINSIC_H__
+#define __SLINTRINSIC_H__
+
 #include <immintrin.h>
 #include <iostream>
 
@@ -7,8 +10,8 @@
 #include "slcast.h"
 
 #ifndef __GNUC__
-namespace sl
-{
+
+#define SL_DONT_USE_DIV [[deprecated("avoid to use, try convert to a multiply before broadcast")]]
 
 using m32 = uint32_t;
 using m64 = uint64_t;
@@ -45,7 +48,7 @@ inline constexpr T load(const void *m)
 template <class T, class U>
 inline constexpr T set(const U n)
 {
-    if constexpr (typeof<U, INT64>())
+    if constexpr (typeof<U, m64>())
     {
         if constexpr (typeof<T, __m128, __m128i, __m128d>())
         {
@@ -57,7 +60,7 @@ inline constexpr T set(const U n)
         }
         if constexpr (typeof<T, __m512, __m512i, __m512d>())
         {
-            return bcast<T>(_mm256_set1_epi64x(n));
+            return bcast<T>(_mm512_set1_epi64x(n));
         }
     }
     if constexpr (typeof<U, double>())
@@ -75,7 +78,7 @@ inline constexpr T set(const U n)
             return bcast<T>(_mm512_set1_pd(n));
         }
     }
-    if constexpr (typeof<U, INT32>())
+    if constexpr (typeof<U, m32>())
     {
         if constexpr (typeof<T, __m128, __m128i, __m128d>())
         {
@@ -87,7 +90,7 @@ inline constexpr T set(const U n)
         }
         if constexpr (typeof<T, __m512, __m512i, __m512d>())
         {
-            return bcast<T>(_mm256_set1_epi32(n));
+            return bcast<T>(_mm512_set1_epi32(n));
         }
     }
     if constexpr (typeof<U, float>())
@@ -98,14 +101,14 @@ inline constexpr T set(const U n)
         }
         if constexpr (typeof<T, __m256, __m256i, __m256d>())
         {
-            return bcast<T>(_mm_set1_ps(n));
+            return bcast<T>(_mm256_set1_ps(n));
         }
         if constexpr (typeof<T, __m512, __m512i, __m512d>())
         {
-            return bcast<T>(_mm_set1_ps(n));
+            return bcast<T>(_mm512_set1_ps(n));
         }
     }
-    if constexpr (typeof<T, INT16>())
+    if constexpr (typeof<T, unsigned short>())
     {
         if constexpr (typeof<T, __m128, __m128i, __m128d>())
         {
@@ -117,10 +120,10 @@ inline constexpr T set(const U n)
         }
         if constexpr (typeof<T, __m512, __m512i, __m512d>())
         {
-            return bcast<T>(_mm256_set1_epi16(n));
+            return bcast<T>(_mm512_set1_epi16(n));
         }
     }
-    if constexpr (typeof<T, INT8>())
+    if constexpr (typeof<T, unsigned char>())
     {
         if constexpr (typeof<T, __m128, __m128i, __m128d>())
         {
@@ -189,36 +192,6 @@ inline constexpr T storeu(P dst, T src)
     }
 }
 
-inline __m256i add(__m256i u, __m256i v)
-{
-    return _mm256_add_epi32(u, v);
-}
-
-inline __m256 add(__m256 u, __m256 v)
-{
-    return _mm256_add_ps(u, v);
-}
-
-inline __m256d add(__m256d u, __m256d v)
-{
-    return _mm256_add_pd(u, v);
-}
-
-inline __m256i mul(__m256i u, __m256i v)
-{
-    return _mm256_mullo_epi32(u, v);
-}
-
-inline __m256 mul(__m256 u, __m256 v)
-{
-    return _mm256_mul_ps(u, v);
-}
-
-inline __m256d mul(__m256d u, __m256d v)
-{
-    return _mm256_mul_pd(u, v);
-}
-
 template <class T, size_t index, class U>
 inline constexpr T &Value(U u)
 {
@@ -279,146 +252,203 @@ inline constexpr T movehdup(T h)
     return T();
 }
 
-template <class T>
-inline constexpr T add(T a, T b)
-{
-if constexpr (typeof<T, __m128>())
+inline m128 operator+(m128 a, m128 b)
 {
     return _mm_add_ps(a, b);
 }
-if constexpr (typeof<T, __m128i>())
+
+inline m128i operator+(m128i a, m128i b)
 {
     return _mm_add_epi32(a, b);
 }
-if constexpr (typeof<T, __m128d>())
+
+inline m128d operator+(m128d a, m128d b)
 {
     return _mm_add_pd(a, b);
 }
-if constexpr (typeof<T, __m256>())
+
+inline m256 operator+(m256 a, m256 b)
 {
     return _mm256_add_ps(a, b);
 }
-if constexpr (typeof<T, __m256i>())
+
+inline m256i operator+(m256i a, m256i b)
 {
     return _mm256_add_epi32(a, b);
 }
-if constexpr (typeof<T, __m256d>())
+
+inline m256d operator+(m256d a, m256d b)
 {
     return _mm256_add_pd(a, b);
 }
-if constexpr (typeof<T, __m512>())
+
+inline m512 operator+(m512 a, m512 b)
 {
     return _mm512_add_ps(a, b);
 }
-if constexpr (typeof<T, __m512i>())
+
+inline m512i operator+(m512i a, m512i b)
 {
     return _mm512_add_epi32(a, b);
 }
-if constexpr (typeof<T, __m512d>())
+
+inline m512d operator+(m512d a, m512d b)
 {
     return _mm512_add_pd(a, b);
 }
-return a + b;
-}
 
-template <class T>
-inline constexpr T sub(T a, T b)
-{
-if constexpr (typeof<T, __m128>)
+inline m128 operator-(m128 a, m128 b)
 {
     return _mm_sub_ps(a, b);
 }
-if constexpr (typeof<T, __m128i>)
+
+inline m128i operator-(m128i a, m128i b)
 {
     return _mm_sub_epi32(a, b);
 }
-if constexpr (typeof<T, __m128d>)
+
+inline m128d operator-(m128d a, m128d b)
 {
     return _mm_sub_pd(a, b);
 }
-if constexpr (typeof<T, __m256>)
+
+inline m256 operator-(m256 a, m256 b)
 {
     return _mm256_sub_ps(a, b);
 }
-if constexpr (typeof<T, __m256i>)
+
+inline m256i operator-(m256i a, m256i b)
 {
     return _mm256_sub_epi32(a, b);
 }
-if constexpr (typeof<T, __m256d>)
+
+inline m256d operator-(m256d a, m256d b)
 {
     return _mm256_sub_pd(a, b);
 }
-if constexpr (typeof<T, __m512>)
+
+inline m512 operator-(m512 a, m512 b)
 {
     return _mm512_sub_ps(a, b);
 }
-if constexpr (typeof<T, __m512i>)
+
+inline m512i operator-(m512i a, m512i b)
 {
     return _mm512_sub_epi32(a, b);
 }
-if constexpr (typeof<T, __m512d>)
+
+inline m512d operator-(m512d a, m512d b)
 {
     return _mm512_sub_pd(a, b);
 }
-return a - b;
-}
 
-template <class T>
-inline constexpr T mul(T a, T b)
-{
-if constexpr (typeof<T, __m128>())
+inline m128 operator*(m128 a, m128 b)
 {
     return _mm_mul_ps(a, b);
 }
-if constexpr (typeof<T, __m128i>())
+
+inline m128i operator*(m128i a, m128i b)
 {
-    return _mm_mullo_epi32(a, b);
+    return _mm_mul_epi32(a, b);
 }
-if constexpr (typeof<T, __m128d>())
+
+inline m128d operator*(m128d a, m128d b)
 {
     return _mm_mul_pd(a, b);
 }
-if constexpr (typeof<T, __m256>())
+
+inline m256 operator*(m256 a, m256 b)
 {
     return _mm256_mul_ps(a, b);
 }
-if constexpr (typeof<T, __m256i>())
+
+inline m256i operator*(m256i a, m256i b)
 {
-    return _mm256_mullo_epi32(a, b);
+    return _mm256_mul_epi32(a, b);
 }
-if constexpr (typeof<T, __m256d>())
+
+inline m256d operator*(m256d a, m256d b)
 {
     return _mm256_mul_pd(a, b);
 }
-if constexpr (typeof<T, __m512>())
+
+inline m512 operator*(m512 a, m512 b)
 {
     return _mm512_mul_ps(a, b);
 }
-if constexpr (typeof<T, __m512i>())
+
+inline m512i operator*(m512i a, m512i b)
 {
-    return _mm512_mullo_epi32(a, b);
+    return _mm512_mul_epi32(a, b);
 }
-if constexpr (typeof<T, __m512d>())
+
+inline m512d operator*(m512d a, m512d b)
 {
     return _mm512_mul_pd(a, b);
 }
-return a * b;
+
+inline SL_DONT_USE_DIV m128 operator/(m128 a, m128 b)
+{
+    return _mm_div_ps(a, b);
 }
+
+
+inline SL_DONT_USE_DIV m128i operator/(m128i a, m128i b)
+{
+    return _mm_div_epi32(a, b);
+}
+
+inline SL_DONT_USE_DIV m128d operator/(m128d a, m128d b)
+{
+    return _mm_div_pd(a, b);
+}
+
+inline SL_DONT_USE_DIV m256 operator/(m256 a, m256 b)
+{
+    return _mm256_div_ps(a, b);
+}
+
+
+inline SL_DONT_USE_DIV m256i operator/(m256i a, m256i b)
+{
+    return _mm256_div_epi32(a, b);
+}
+
+inline SL_DONT_USE_DIV m256d operator/(m256d a, m256d b)
+{
+    return _mm256_div_pd(a, b);
+}
+
+inline SL_DONT_USE_DIV m512 operator/(m512 a, m512 b)
+{
+    return _mm512_div_ps(a, b);
+}
+
+inline SL_DONT_USE_DIV m512i operator/(m512i a, m512i b)
+{
+    return _mm512_div_epi32(a, b);
+}
+
+inline SL_DONT_USE_DIV m512d operator/(m512d a, m512d b)
+{
+    return _mm512_div_pd(a, b);
 }
 
 static inline std::ostream& operator<<(std::ostream& o, __m256i v)
 {
-printf("%4d%4d%4d%4d%4d%4d%4d%4d",
-    sl::Value<int, 0>(v),
-    sl::Value<int, 1>(v),
-    sl::Value<int, 2>(v),
-    sl::Value<int, 3>(v),
-    sl::Value<int, 4>(v),
-    sl::Value<int, 5>(v),
-    sl::Value<int, 6>(v),
-    sl::Value<int, 7>(v)
-);
+    printf("%4d%4d%4d%4d%4d%4d%4d%4d",
+        Value<int, 0>(v),
+        Value<int, 1>(v),
+        Value<int, 2>(v),
+        Value<int, 3>(v),
+        Value<int, 4>(v),
+        Value<int, 5>(v),
+        Value<int, 6>(v),
+        Value<int, 7>(v)
+        );
 
-return o;
+    return o;
 }
-#endif
+
+#endif /* __GNUC__ */
+#endif /* __SLINTRINSIC_H__ */

@@ -1,7 +1,5 @@
 #pragma once
 
-namespace sl
-{
 template <class T, class O>
 inline constexpr T rcast(O o)
 {
@@ -36,6 +34,4 @@ template <class T, class O>
 inline constexpr T ecast(O o)
 {
     return reinterpret_cast<T>((void *)o);
-}
-
 }
