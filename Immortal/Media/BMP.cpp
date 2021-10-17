@@ -42,4 +42,49 @@ Error BMPDecoder::Read(const std::string &filename)
     return Error::SUCCEED;
 }
 
+Error BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
+{
+    Stream stream{ filepath, Stream::Mode::Write };
+
+    if (!stream.Writable())
+    {
+        return Error::UNABLE_TO_OEPN_FILE;
+    }
+
+    auto padding  = w & 3;
+    auto linesize = (w + padding) * 3;
+    auto dataSize = linesize * h;
+
+    identifer       = 0x4d42;
+    offset          = 54;
+    fileSize        = dataSize + offset;
+    informationSize = 0x28;
+    width           = w;
+    height          = h;
+    planes          = 0x1;
+    bitsPerPixel    = 0x18;
+    imageSize       = dataSize;
+
+    stream.Write(&identifer, offset);
+
+    if (depth == 1)
+    {
+        for (int y = 0; y < height; y++, data += w + padding)
+        {
+            stream.Write(data, width, 3);
+            stream.Skip(padding);
+        }
+    }
+    else
+    {
+        for (int y = 0; y < height; y++, data += linesize)
+        {
+            stream.Write(data, linesize, 1);
+            stream.Skip(padding);
+        }
+    }
+
+    return Error::SUCCEED;
+}
+
 }

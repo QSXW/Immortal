@@ -40,6 +40,8 @@ public:
 
     Error Read(const std::string &filename);
 
+    Error Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
+
 private:
     #pragma pack(push, 1)
     uint16_t identifer;
@@ -58,6 +60,7 @@ private:
     int32_t  verticalResolution;
     uint32_t coloursNum;
     uint32_t importantColours;
+    uint16_t empty;
     #pragma pack(pop)
 
     int depth{ 3 };
