@@ -408,8 +408,7 @@ inline SL_DONT_USE_DIV m256 operator/(m256 a, m256 b)
     return _mm256_div_ps(a, b);
 }
 
-
-inline SL_DONT_USE_DIV m256i operator/(m256i a, m256i b)
+inline  m256i operator/ SL_DONT_USE_DIV (m256i a, m256i b)
 {
     return _mm256_div_epi32(a, b);
 }

@@ -13,36 +13,12 @@ namespace Immortal
 
 Frame::Frame(const std::string & path, int channels, Texture::Format format)
 {
-    cv::Mat src;
-    Read(path, src);
-
-    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
-    data.reset(new uint8_t[pixelSize]);
-    memcpy(data.get(), src.data, pixelSize);
-        
-    src.release();
+    ReadByOpenCV(path);
 }
 
 Frame::Frame(const std::string & path, bool flip)
 {
-    cv::Mat src;
-    cv::Mat dst;
-    Read(path, src);
-    if (flip)
-    {
-        cv::flip(src, dst, 0);
-        src.release();
-    }
-    else
-    {
-        dst = src;
-    }
-
-    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
-    data.reset(new uint8_t[pixelSize]);
-    memcpy(data.get(), dst.data, pixelSize);
-
-    dst.release();
+    ReadByOpenCV(path, flip);
 }
 
 Frame::Frame(UINT32 width, UINT32 height, int depth, const void *data, ColorSpace colorSpace) :
@@ -110,6 +86,40 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
 
     spatial = (UINT64)width * (UINT64)height;
     size    =  spatial * (UINT64)depth;
+}
+
+void Frame::ReadByOpenCV(const std::string &path)
+{
+    cv::Mat src;
+    Read(path, src);
+
+    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
+    data.reset(new uint8_t[pixelSize]);
+    memcpy(data.get(), src.data, pixelSize);
+        
+    src.release();
+}
+
+void Frame::ReadByOpenCV(const std::string &path, bool flip)
+{
+    cv::Mat src;
+    cv::Mat dst;
+    Read(path, src);
+    if (flip)
+    {
+        cv::flip(src, dst, 0);
+        src.release();
+    }
+    else
+    {
+        dst = src;
+    }
+
+    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
+    data.reset(new uint8_t[pixelSize]);
+    memcpy(data.get(), dst.data, pixelSize);
+
+    dst.release();
 }
 
 Frame::~Frame()

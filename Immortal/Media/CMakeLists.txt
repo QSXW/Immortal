@@ -10,8 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SRC_FILES 
     Types.h
     RF.h
+    BMP.cpp
+    BMP.h
     Checksum.cpp
     Checksum.h
+    Decoder.h
+    Stream.h
+    StillPicture.h
     )
 
 source_group("\\" FILES ${SRC_FILES})

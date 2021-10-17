@@ -5,6 +5,8 @@
 #include "Image/ColorSpace.h"
 #include <opencv2/core/core.hpp> 
 
+#include "StillPicture.h"
+
 namespace Immortal 
 {
 class IMMORTAL_API Frame
@@ -51,7 +53,7 @@ public:
     }
 
     virtual UINT32 Height() const
-    { 
+    {
         return height;
     }
 
@@ -73,7 +75,11 @@ public:
     }
 
 private:
-    void Frame::Read(const std::string &path, cv::Mat &outputMat);
+    void ReadByOpenCV(const std::string &path);
+
+    void ReadByOpenCV(const std::string &path, bool flip);
+
+    void Read(const std::string &path, cv::Mat &outputMat);
 
 private:
     ColorSpace colorSpace;
