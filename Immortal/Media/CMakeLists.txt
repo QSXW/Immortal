@@ -12,6 +12,8 @@ set(SRC_FILES
     RF.h
     BMP.cpp
     BMP.h
+    ColorSpace.cpp
+    ColorSpace.h
     Checksum.cpp
     Checksum.h
     Decoder.h

@@ -16,7 +16,7 @@ public:
         None = 0X2E000000U,
         FBX  = 0X2E666278U,
         JPEG = 0X2E6A7067U,
-        PNG  = 0X2E706E67U
+        PNG  = 0X2E706E67U,
     };
 
 public:

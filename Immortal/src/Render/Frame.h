@@ -79,6 +79,8 @@ private:
 
     void ReadByOpenCV(const std::string &path, bool flip);
 
+    void ReadByInternal(const std::string &path);
+
     void Read(const std::string &path, cv::Mat &outputMat);
 
 private:

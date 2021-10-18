@@ -13,10 +13,15 @@ namespace Immortal
 
 Frame::Frame(const std::string & path, int channels, Texture::Format format)
 {
+    if (!strcmp(path.c_str() + path.size() - 4, ".bmp"))
+    {
+        ReadByInternal(path);
+        return;
+    }
     ReadByOpenCV(path);
 }
 
-Frame::Frame(const std::string & path, bool flip)
+Frame::Frame(const std::string &path, bool flip)
 {
     ReadByOpenCV(path, flip);
 }
@@ -120,6 +125,20 @@ void Frame::ReadByOpenCV(const std::string &path, bool flip)
     memcpy(data.get(), dst.data, pixelSize);
 
     dst.release();
+}
+
+void Frame::ReadByInternal(const std::string &path)
+{
+    Media::BMPDecoder decoder{};
+    decoder.Read(path);
+
+    width       = decoder.Width();
+    height      = decoder.Height();
+    spatial     = (UINT64)width * (UINT64)height;
+    size        =  spatial * (UINT64)depth;
+    desc.Format = Texture::Format::RGBA8;
+
+    decoder.Swap(data);
 }
 
 Frame::~Frame()

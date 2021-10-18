@@ -6,7 +6,7 @@
 namespace Media
 {
 
-Error BMPDecoder::Read(const std::string &filename)
+Error BMPDecoder::Read(const std::string &filename, bool alpha)
 {
     Stream stream{ filename.c_str(), Stream::Mode::Read };
 
@@ -21,7 +21,11 @@ Error BMPDecoder::Read(const std::string &filename)
         return Error::UNSUPPORT_FORMAT;
     }
 
-    data.reset(new uint8_t [width * height * 3]);
+    if (alpha = true)
+    {
+        depth = 4;
+    }
+    data.reset(new uint8_t [width * height * depth]);
 
     if (!data)
     {
@@ -32,11 +36,32 @@ Error BMPDecoder::Read(const std::string &filename)
     auto *ptr     = data.get();
     auto padding  = width & 3;
     auto linesize = width * depth;
-
-    for (int y = 0; y < height; y++, ptr += linesize)
+    
+    if (alpha)
     {
-        stream.Read(ptr, linesize);
-        stream.Skip(padding);
+        for (int y = 0; y < height; y++, ptr += linesize)
+        {
+            stream.Read(ptr, linesize);
+            stream.Skip(padding);
+        }
+    }
+    else
+    {
+        std::unique_ptr<uint8_t> buffer{ new uint8_t[linesize] };
+        for (int y = 0; y < height; y++, ptr += linesize)
+        {
+            stream.Read(buffer.get(), linesize);
+            stream.Skip(padding);
+
+            auto src = buffer.get();
+            for (int x = 0; x < width; x++, ptr += 4, src += 3)
+            {
+                ptr[0] = src[0];
+                ptr[1] = src[1];
+                ptr[2] = src[2];
+                ptr[3] = ~0;
+            }
+        }
     }
 
     return Error::SUCCEED;

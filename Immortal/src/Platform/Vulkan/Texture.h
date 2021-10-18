@@ -25,8 +25,13 @@ public:
     {
         switch (src.Format)
         {
-        case SuperTexture::Format::RGBA8:
+        case SuperTexture::Format::RGBA:
+        case SuperTexture::Format::RGBA8:    
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;
+            break;
+
+        case SuperTexture::Format::RGB8:
+            dst.format = VK_FORMAT_R8G8B8_UNORM;
             break;
 
         default:

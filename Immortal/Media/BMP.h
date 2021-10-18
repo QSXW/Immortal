@@ -33,14 +33,29 @@ public:
         return data.get();
     }
 
+    void Swap(std::unique_ptr<uint8_t> &right)
+    {
+        data.swap(right);
+    }
+
     size_t HeaderSize()
     {
         return reinterpret_cast<uint8_t *>(&importantColours) - reinterpret_cast<uint8_t *>(&identifer);
     }
 
-    Error Read(const std::string &filename);
+    Error Read(const std::string &filename, bool alpha = true);
 
     Error Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
+
+    virtual uint32_t Width() override
+    {
+        return width;
+    }
+
+    virtual uint32_t Height() override
+    {
+        return height;
+    }
 
 private:
     #pragma pack(push, 1)
