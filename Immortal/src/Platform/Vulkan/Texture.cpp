@@ -20,6 +20,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
     VkDeviceMemory stagingMemory{ VK_NULL_HANDLE };
 
     VkBufferCreateInfo createInfo{};
+    createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     createInfo.pNext       = nullptr;
     createInfo.size        = frame.Size();
     createInfo.usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -61,6 +62,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
     VkImageCreateInfo imageCreateInfo{};
     ConvertType(imageCreateInfo, frame.Type());
+    imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.imageType     = VK_IMAGE_TYPE_2D;
     imageCreateInfo.mipLevels     = mipLevels;
     imageCreateInfo.arrayLayers   = 1;

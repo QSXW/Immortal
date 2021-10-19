@@ -30,10 +30,6 @@ public:
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;
             break;
 
-        case SuperTexture::Format::RGB8:
-            dst.format = VK_FORMAT_R8G8B8_UNORM;
-            break;
-
         default:
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;
             break;
@@ -101,7 +97,7 @@ private:
 
     uint32_t height{ 0 };
 
-    uint32_t mipLevels{ 0 };
+    uint32_t mipLevels{ 1 };
 
     std::unique_ptr<Image> image;
 
