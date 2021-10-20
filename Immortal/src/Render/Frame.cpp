@@ -132,11 +132,12 @@ void Frame::ReadByInternal(const std::string &path)
     Media::BMPDecoder decoder{};
     decoder.Read(path);
 
+    depth       = 4;
     width       = decoder.Width();
     height      = decoder.Height();
     spatial     = (UINT64)width * (UINT64)height;
     size        =  spatial * (UINT64)depth;
-    desc.Format = Texture::Format::RGBA8;
+    desc.Format = Texture::Format::BGRA8;
 
     decoder.Swap(data);
 }

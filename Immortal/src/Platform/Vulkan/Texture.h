@@ -29,6 +29,10 @@ public:
         case SuperTexture::Format::RGBA8:    
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;
             break;
+            
+        case SuperTexture::Format::BGRA8:
+            dst.format = VK_FORMAT_B8G8R8A8_UNORM;
+            break;
 
         default:
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;

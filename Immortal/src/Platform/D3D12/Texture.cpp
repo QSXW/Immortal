@@ -26,7 +26,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     };
     gpuDescriptorHandle.Offset(descriptorIndex, descriptorIncrementSize);
 
-    Frame frame{ filepath, flip };
+    Frame frame{ filepath };
 
     D3D12_HEAP_PROPERTIES props{};
     CleanUpObject(&props);

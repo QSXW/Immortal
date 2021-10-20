@@ -52,6 +52,7 @@ public:
         RGBA32F,
         RG32F,
         RG16F,
+        BGRA8,
         SRGB,
         RGB16F,
         RGB32F,

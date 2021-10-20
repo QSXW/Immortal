@@ -32,13 +32,14 @@ Error BMPDecoder::Read(const std::string &filename, bool alpha)
     auto padding  = width & 3;
     auto linesize = width * 3;
     
-    data.reset(new uint8_t [(linesize + /* alpha */width) * height]);
+    auto size = (linesize + /* alpha */width) * height;
+    data.reset(new uint8_t [size]);
     if (!data)
     {
         return Error::OUT_OF_MEMORY;
     }
 
-    uint8_t *ptr = data.get();
+    uint8_t *ptr = data.get() + size - linesize - width;
     if (alpha)
     {
         std::vector<uint8_t> buffer{};
@@ -48,21 +49,20 @@ Error BMPDecoder::Read(const std::string &filename, bool alpha)
             uint8_t *src = buffer.data();
             stream.Read(src, linesize);
             stream.Skip(padding);
-
-            std::cout << stream.Pos() << std::endl;
-
-            for (int x = 0; x < width; x++, ptr += 4, src += 3)
+            uint8_t *dst = ptr;
+            for (int x = 0; x < width; x++, dst += 4, src += 3)
             {
-                ptr[0] = src[0];
-                ptr[1] = src[1];
-                ptr[2] = src[2];
-                ptr[3] = ~0;
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst[2] = src[2];
+                dst[3] = ~0;
             }
+            ptr = ptr - linesize - width;
         }
     }
     else
     {
-        for (int y = 0; y < height; y++, ptr += linesize)
+        for (int y = 0; y < height; y++, ptr -= linesize)
         {
             stream.Read(ptr, linesize);
             stream.Skip(padding);
