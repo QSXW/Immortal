@@ -51,7 +51,7 @@ public:
 
     virtual GuiLayer *GetGuiLayer() const
     {
-        return guiLayer;
+        return gui;
     }
 
     virtual Window &GetWindow() const
@@ -117,7 +117,7 @@ private:
 
     LayerStack layerStack;
 
-    GuiLayer *guiLayer;
+    GuiLayer *gui;
 
     Window::Description desc;
 

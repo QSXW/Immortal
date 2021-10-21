@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
+#include <new>
 
 #if defined( _MSC_VER )
 #   define SL_ALIGNED(x) __declspec(align(x))
@@ -23,7 +25,17 @@
 namespace sl
 {
 
-#include <cassert>
+template <class T, size_t align>
+inline T *aligned_malloc(size_t size)
+{
+	auto ptr = ::_aligned_malloc(size * sizeof(T), align);
+	return ptr ? static_cast<T *>(ptr) : throw std::bad_alloc{};
+}
+
+inline void aligned_free(void* ptr)
+{
+	_aligned_free(ptr);
+}
 
 #define SLASSERT(...) assert(__VA_ARGS__)
 

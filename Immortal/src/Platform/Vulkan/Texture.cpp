@@ -146,6 +146,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
 Texture::~Texture()
 {
+    device->Wait();
     device->FreeMemory(deviceMemory);
 }
 

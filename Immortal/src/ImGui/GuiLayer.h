@@ -58,6 +58,8 @@ public:
         return fonts.bold;
     }
 
+    void UpdateTheme();
+
 private:
     bool blockEvents = true;
     

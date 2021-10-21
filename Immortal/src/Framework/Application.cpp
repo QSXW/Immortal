@@ -33,7 +33,7 @@ Application::Application(const Window::Description &descrition)
         });
 
     Async::Execute([&](){
-        guiLayer = GuiLayer::Create(context.get());
+        gui = GuiLayer::Create(context.get());
         timer.Start();
     });
 
@@ -43,7 +43,7 @@ Application::Application(const Window::Description &descrition)
 
     window->Show();
 
-    PushOverlay(guiLayer);
+    PushOverlay(gui);
 }
 
 Application::~Application()
@@ -76,13 +76,12 @@ void Application::Run()
             layer->OnUpdate();
         }
 
-        guiLayer->Begin();
+        gui->Begin();
         for (Layer *layer : layerStack)
         {
             layer->OnGuiRender();
         }
-        Async::Join();
-        guiLayer->End();
+        gui->End();
 
         Render::SwapBuffers();
 

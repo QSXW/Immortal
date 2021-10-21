@@ -89,7 +89,7 @@ void GuiLayer::SetTheme()
 
     style->WindowMinSize.x                  = 370.0f;
     style->WindowBorderSize                 = 0.0f;
-    colors[ImGuiCol_Text]                   = ImVec4(0.13f, 0.13f, 0.13f, 1.13f);
+    colors[ImGuiCol_Text]                   = ImVec4(0.02f, 0.02f, 0.02f, 1.13f);
     colors[ImGuiCol_TextDisabled]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
     colors[ImGuiCol_WindowBg]               = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
     colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
@@ -102,7 +102,7 @@ void GuiLayer::SetTheme()
     colors[ImGuiCol_TitleBg]                = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
     colors[ImGuiCol_TitleBgActive]          = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
-    colors[ImGuiCol_MenuBarBg]              = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+    colors[ImGuiCol_MenuBarBg]              = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.98f, 0.98f, 0.98f, 0.53f);
     colors[ImGuiCol_ScrollbarGrab]          = ImVec4(0.69f, 0.69f, 0.69f, 0.80f);
     colors[ImGuiCol_ScrollbarGrabHovered]   = ImVec4(0.49f, 0.49f, 0.49f, 0.80f);
@@ -153,6 +153,73 @@ void GuiLayer::OnEvent(Event &e)
         e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
         e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
     }
+}
+
+void GuiLayer::UpdateTheme()
+{
+    ImGuiStyle *style = &ImGui::GetStyle();
+    ImVec4* colors = style->Colors;
+
+    ImGui::Begin("Theme Editor");
+
+#define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
+    XX(Text);                 
+    XX(TextDisabled);          
+    XX(WindowBg);              
+    XX(ChildBg);               
+    XX(PopupBg);               
+    XX(Border);                
+    XX(BorderShadow);          
+    XX(FrameBg);               
+    XX(FrameBgHovered);        
+    XX(FrameBgActive);         
+    XX(TitleBg);               
+    XX(TitleBgActive);         
+    XX(TitleBgCollapsed);      
+    XX(MenuBarBg);             
+    XX(ScrollbarBg);           
+    XX(ScrollbarGrab);         
+    XX(ScrollbarGrabHovered);  
+    XX(ScrollbarGrabActive);   
+    XX(CheckMark);             
+    XX(SliderGrab);            
+    XX(SliderGrabActive);      
+    XX(Button);                
+    XX(ButtonHovered);         
+    XX(ButtonActive);          
+    XX(Header);                
+    XX(HeaderHovered);         
+    XX(HeaderActive);          
+    XX(Separator);             
+    XX(SeparatorHovered);      
+    XX(SeparatorActive);       
+    XX(ResizeGrip);            
+    XX(ResizeGripHovered);     
+    XX(ResizeGripActive);      
+    XX(Tab);                   
+    XX(TabHovered);            
+    XX(TabActive);             
+    XX(TabUnfocused);          
+    XX(TabUnfocusedActive);    
+    XX(DockingEmptyBg);        
+    XX(PlotLines);             
+    XX(PlotLinesHovered);      
+    XX(PlotHistogram);         
+    XX(PlotHistogramHovered);  
+    XX(TableHeaderBg);         
+    XX(TableBorderStrong);     
+    XX(TableBorderLight);      
+    XX(TableRowBg);            
+    XX(TableRowBgAlt);         
+    XX(TextSelectedBg);        
+    XX(DragDropTarget);        
+    XX(NavHighlight);          
+    XX(NavWindowingHighlight); 
+    XX(NavWindowingDimBg);     
+    XX(ModalWindowDimBg);      
+#undef XX
+
+    ImGui::End();
 }
 
 void GuiLayer::OnGuiRender()

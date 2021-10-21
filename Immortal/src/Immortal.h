@@ -33,6 +33,11 @@
 #include "Render/Renderer2D.h"
 #include "Render/Frame.h"
 #include "Render/Mesh.h"
+#include "Render/Render.h"
+
+#include "Platform/Vulkan/Common.h"
+#include "Platform/Vulkan/RenderContext.h"
+#include "Platform/Vulkan/GuiLayer.h"
 
 #include "Sync/Semaphore.h"
 #include "Sync/SemaphorePool.h"
@@ -47,3 +52,6 @@
 #include "Serializer/SceneSerializer.h"
 
 #include "String/ChineseString.h"
+
+#include "Widget/Widget.h"
+#include "Widget/Viewport.h"
