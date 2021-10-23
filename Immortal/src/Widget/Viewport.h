@@ -23,9 +23,9 @@ public:
     void OnUpdate(std::shared_ptr<T> &target)
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-        ImGui::Begin("Viewport", NULL, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin(Super::text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
 
-        auto [x, y] = ImGui::GetContentRegionAvail();
+        auto &[x, y] = ImGui::GetContentRegionAvail();
 
         ImGui::Image(
             (ImTextureID)(target->Handle()),

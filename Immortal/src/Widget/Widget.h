@@ -20,7 +20,7 @@ public:
 
     }
 
-private:
+public:
     std::string text;
 };
 

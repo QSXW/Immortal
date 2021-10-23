@@ -75,7 +75,6 @@ void Application::Run()
         {
             layer->OnUpdate();
         }
-
         gui->Begin();
         for (Layer *layer : layerStack)
         {
