@@ -73,19 +73,14 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
     imageCreateInfo.extent        = { width, height, 1 };
     imageCreateInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     
-    VkImage imageHandle{ VK_NULL_HANDLE };
-    Check(device->CreateImage(&imageCreateInfo, nullptr, &imageHandle));
-    device->GetRequirements(imageHandle, &memoryRequirements);
+    Check(device->CreateImage(&imageCreateInfo, nullptr, &image));
+    device->GetRequirements(image, &memoryRequirements);
 
     allocateInfo.allocationSize = memoryRequirements.size;
 	allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Check(device->AllocateMemory(&allocateInfo, nullptr, &deviceMemory));
-    Check(device->BindImageMemory(imageHandle, deviceMemory, 0));
-
-    image = std::make_unique<Image>(device, imageHandle, imageCreateInfo.extent, imageCreateInfo.format, imageCreateInfo.usage);
-
-    auto copyCmd = device->BeginUpload();
+    Check(device->BindImageMemory(image, deviceMemory, 0));
 
     VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -95,58 +90,62 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
 	// Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
     VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.image            = image->Handle();
+	imageMemoryBarrier.image            = image;
 	imageMemoryBarrier.subresourceRange = subresourceRange;
 	imageMemoryBarrier.srcAccessMask    = 0;
 	imageMemoryBarrier.dstAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
 	imageMemoryBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageMemoryBarrier.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-    copyCmd->PipelineBarrier(
-		VK_PIPELINE_STAGE_HOST_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &imageMemoryBarrier
+    device->Upload([&](auto copyCmd) -> void {
+        copyCmd->PipelineBarrier(
+            VK_PIPELINE_STAGE_HOST_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier
         );
 
-    copyCmd->CopyBufferToImage(
-		stagingBuffer,
-		image->Handle(),
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		static_cast<uint32_t>(bufferCopyRegions.size()),
-		bufferCopyRegions.data()
+        copyCmd->CopyBufferToImage(
+            stagingBuffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            static_cast<uint32_t>(bufferCopyRegions.size()),
+            bufferCopyRegions.data()
         );
 
-    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	imageMemoryBarrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	imageMemoryBarrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    copyCmd->PipelineBarrier(
-	    VK_PIPELINE_STAGE_TRANSFER_BIT,
-	    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-	    0,
-	    0, nullptr,
-	    0, nullptr,
-	    1, &imageMemoryBarrier
+        copyCmd->PipelineBarrier(
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier
         );
+        });
+
     layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    device->EndUpload(copyCmd);
-
     device->Destory(stagingBuffer);
     device->FreeMemory(stagingMemory);
 
     INITSampler(frame.Type());
-    INITImageView();
+    INITImageView(imageCreateInfo.format);
     INITDescriptor();
 }
 
 Texture::~Texture()
 {
-    device->Wait();
+    device->Destory(descriptorSetLayout);
+    device->Destory(pipelineLayout);
+    view.reset();
+    device->Destory(image);
+    device->FreeDescriptorSet(&descriptorSet);
     device->FreeMemory(deviceMemory);
 }
 

@@ -28,18 +28,18 @@ using m128d = __m128d;
 using m256d = __m256d;
 using m512d = __m512d;
 
-template <class T>
-inline constexpr T load(const void *m)
+template <class T, class U>
+inline constexpr T load(const U *m)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, m128, m128i, m128d>>)
     {
         return bcast<T>();
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, m256, m256i, m256d>>)
     {
         return bcast<T>(_mm256_load_ps(rcast<const float*>(m)));
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, m512, m512i, m512d>>)
     {
         return bcast<T>(_mm512_load_ps(rcast<const float*>(m)));
     }
@@ -48,92 +48,92 @@ inline constexpr T load(const void *m)
 template <class T, class U>
 inline constexpr T set(const U n)
 {
-    if constexpr (typeof<U, m64>())
+    if constexpr (sl::is_same<U, m64>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_epi64x(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_epi64x(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm512_set1_epi64x(n));
         }
     }
-    if constexpr (typeof<U, double>())
+    if constexpr (sl::is_same<U, double>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_pd(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_pd(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm512_set1_pd(n));
         }
     }
-    if constexpr (typeof<U, m32>())
+    if constexpr (sl::is_same<U, m32>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_epi32(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_epi32(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm512_set1_epi32(n));
         }
     }
-    if constexpr (typeof<U, float>())
+    if constexpr (sl::is_same<U, float>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_ps(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_ps(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm512_set1_ps(n));
         }
     }
-    if constexpr (typeof<T, unsigned short>())
+    if constexpr (sl::is_same<T, unsigned short>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_epi16(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_epi16(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm512_set1_epi16(n));
         }
     }
-    if constexpr (typeof<T, unsigned char>())
+    if constexpr (sl::is_same<T, unsigned char>())
     {
-        if constexpr (typeof<T, __m128, __m128i, __m128d>())
+        if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
         {
             return bcast<T>(_mm_set1_epi8(n));
         }
-        if constexpr (typeof<T, __m256, __m256i, __m256d>())
+        if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
         {
             return bcast<T>(_mm256_set1_epi8(n));
         }
-        if constexpr (typeof<T, __m512, __m512i, __m512d>())
+        if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
         {
             return bcast<T>(_mm256_set1_epi8(n));
         }
@@ -144,15 +144,15 @@ inline constexpr T set(const U n)
 template <class T>
 inline constexpr T loadu(const void* m)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         return bcast<T>(_mm_loadu_epi64(m));
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
     {
         return bcast<T>(_mm256_loadu_epi64(m));
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
     {
         return bcast<T>(_mm512_loadu_epi64(m));
     }
@@ -161,15 +161,15 @@ inline constexpr T loadu(const void* m)
 template <class T, class P>
 inline constexpr void store(P dst, T src)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         _mm_store_ps(rcast<float *>(dst), bcast<__m256>(src));
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
     {
         _mm256_store_ps(rcast<float*>(dst), bcast<__m256>(src));
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
     {
         _mm512_store_ps(rcast<float*>(dst), bcast<__m512>(src));
     }
@@ -178,15 +178,15 @@ inline constexpr void store(P dst, T src)
 template <class T, class P>
 inline constexpr T storeu(P dst, T src)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         _mm_storeu_epi64(dst, src);
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
     {
         _mm256_storeu_epi64(dst, src);
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
     {
         _mm512_storeu_epi64(dst, src);
     }
@@ -201,15 +201,15 @@ inline constexpr T &Value(U u)
 template <class T, class P, class U>
 inline constexpr T gather32(P ptr, U vindex, const int scale)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         return _mm_i32gather_epi32(ptr, vindex, scale);
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
     {
         return _mm256_i32gather_epi32(ptr, vindex, scale);
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
     {
         return _mm512_i32gather_epi32(ptr, vindex, scale);
     }
@@ -218,15 +218,15 @@ inline constexpr T gather32(P ptr, U vindex, const int scale)
 template <class T, class P, class U>
 inline constexpr T gather64(P ptr, U vindex, const int scale)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         return _mm_i64gather_epi64(ptr, vindex, scale);
     }
-    if constexpr (typeof<T, __m256, __m256i, __m256d>())
+    if constexpr (sl::is_same<T, __m256, __m256i, __m256d>())
     {
         return _mm256_i64gather_epi64(ptr, vindex, scale);
     }
-    if constexpr (typeof<T, __m512, __m512i, __m512d>())
+    if constexpr (sl::is_same<T, __m512, __m512i, __m512d>())
     {
         return _mm512_i64gather_epi64(ptr, vindex, scale);
     }
@@ -235,7 +235,7 @@ inline constexpr T gather64(P ptr, U vindex, const int scale)
 template <class T>
 inline constexpr T movehl(T h, T l)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         return _mm_movehl_ps(bcast<__m128>(h), bcast<__m128>(l));
     }
@@ -245,7 +245,7 @@ inline constexpr T movehl(T h, T l)
 template <class T>
 inline constexpr T movehdup(T h)
 {
-    if constexpr (typeof<T, __m128, __m128i, __m128d>())
+    if constexpr (sl::is_same<T, __m128, __m128i, __m128d>())
     {
         return _mm_movehdup_ps(bcast<__m128>(h));
     }

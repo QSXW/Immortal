@@ -58,5 +58,40 @@ RenderTarget::RenderTarget(std::vector<Image> &&images) :
         attachments.emplace_back(Attachment{ image.Format(), image.SampleCount(), image.Usage() });
     }
 }
+
+RenderTarget::RenderTarget(RenderTarget &&other) :
+    device{ other.device },
+    extent{ other.extent },
+    attachments{ std::move(other.attachments) },
+    images{ std::move(other.images) },
+    views{ std::move(other.views) },
+    inputAttachments{ std::move(other.inputAttachments) },
+    outputAttachments{ std::move(other.outputAttachments) }
+{
+    other.device = nullptr;
+}
+
+RenderTarget::~RenderTarget()
+{
+    images.clear();
+    views.clear();
+}
+
+RenderTarget &RenderTarget::operator=(RenderTarget &&other)
+{
+    LOG::WARN(&other == this && "You are trying to self-assigments, which is not acceptable.");
+    device            = other.device;
+    extent            = other.extent;
+    attachments       = std::move(other.attachments);
+    images            = std::move(other.images);
+    views             = std::move(other.views);
+    inputAttachments  = std::move(other.inputAttachments);
+    outputAttachments = std::move(other.outputAttachments);
+    
+    other.device      = nullptr;
+
+    return *this;
+}
+
 }
 }

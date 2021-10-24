@@ -54,7 +54,7 @@ void GuiLayer::OnAttach()
         { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
     };
 
-    constexpr int size = SL_ARRAY_LEN(poolSizes);
+    constexpr int size = SLLEN(poolSizes);
     VkDescriptorPoolCreateInfo createInfo{};
     createInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     createInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;

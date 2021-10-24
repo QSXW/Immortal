@@ -77,6 +77,11 @@ public:
          
     virtual void Resize(UINT32 width, UINT32 height) { }
 
+    virtual void Resize(Vector2 size)
+    {
+        Resize(size.x, size.y);
+    }
+
     virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width = 1, int height = 1)
     {
         return nullptr;

@@ -32,40 +32,41 @@ struct ShadingUniformBuffer
     Vector4 eyePosition;
 };
 
-Scene::Scene(const std::string & debugName, bool isEditorScene)
+Scene::Scene(const std::string &debugName, bool isEditorScene) :
+    debugName{ debugName }
 {
-        mEntity = mRegistry.create();
-        mRegistry.emplace<TransformComponent>(mEntity);
-        auto &transform = mRegistry.get<TransformComponent>(mEntity);
+    entity = registry.create();
+    registry.emplace<TransformComponent>(entity);
+    auto &transform = registry.get<TransformComponent>(entity);
 
-        mLightEnvironment.lights[0].Direction = Vector::Normalize(Vector::Vector3{ -1.0f,  0.0f, 0.0f });
-        mLightEnvironment.lights[1].Direction = Vector::Normalize(Vector::Vector3{ 1.0f,  0.0f, 0.0f });
-        mLightEnvironment.lights[2].Direction = Vector::Normalize(Vector::Vector3{ 0.0f, -1.0f, 0.0f });
+    lightEnvironment.lights[0].Direction = Vector::Normalize(Vector::Vector3{ -1.0f,  0.0f, 0.0f });
+    lightEnvironment.lights[1].Direction = Vector::Normalize(Vector::Vector3{ 1.0f,  0.0f, 0.0f });
+    lightEnvironment.lights[2].Direction = Vector::Normalize(Vector::Vector3{ 0.0f, -1.0f, 0.0f });
 
-        mLightEnvironment.lights[0].Radiance = Vector::Vector3{ 1.0f };;
-        mLightEnvironment.lights[1].Radiance = Vector::Vector3{ 1.0f };;
-        mLightEnvironment.lights[2].Radiance = Vector::Vector3{ 1.0f };;
+    lightEnvironment.lights[0].Radiance = Vector3{ 1.0f };;
+    lightEnvironment.lights[1].Radiance = Vector3{ 1.0f };;
+    lightEnvironment.lights[2].Radiance = Vector3{ 1.0f };;
 
-        mLightEnvironment.lights[0].Enabled = true;
-        mLightEnvironment.lights[1].Enabled = true;
-        mLightEnvironment.lights[2].Enabled = true;
+    lightEnvironment.lights[0].Enabled = true;
+    lightEnvironment.lights[1].Enabled = true;
+    lightEnvironment.lights[2].Enabled = true;
 
 
-        mSkyBox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
-        mSkyboxTexture = TextureCube::Create("assets/textures/environment.hdr");
-        mEnvironment = std::make_shared<Environment>(mSkyboxTexture);
+    skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
+    skyboxTexture = TextureCube::Create("assets/textures/environment.hdr");
+    environment = std::make_shared<Environment>(skyboxTexture);
 
-        mTransformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
-        mShadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);
+    transformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
+    shadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);
 
-        mFramebuffer = Framebuffer::Create({ (uint32_t)1280, (uint32_t)720, { { Texture::Format::RGBA32F }, { Texture::Format::Depth } } });
+    framebuffer = Framebuffer::Create({ (uint32_t)1280, (uint32_t)720, { { Texture::Format::RGBA32F }, { Texture::Format::Depth } } });
          
-        mToneMap = Render::Data()->FullScreenVertexArray;
+    toneMap = Render::Data()->FullScreenVertexArray;
 }
 
 Scene::~Scene()
 {
-    mRegistry.clear();
+    registry.clear();
 }
 
 void Scene::OnUpdate()
@@ -82,7 +83,7 @@ void Scene::OnRenderRuntime()
 {
     // Update Script
     {
-        mRegistry.view<NativeScriptComponent>().each([=](auto e, NativeScriptComponent &script)
+        registry.view<NativeScriptComponent>().each([=](auto e, NativeScriptComponent &script)
             {
                 if (script.Status == NativeScriptComponent::Status::Ready)
                 {
@@ -94,7 +95,7 @@ void Scene::OnRenderRuntime()
     SceneCamera *primaryCamera = nullptr;
     Vector::mat4 cameraTransform;
     {
-        auto view = mRegistry.view<TransformComponent, CameraComponent>();
+        auto view = registry.view<TransformComponent, CameraComponent>();
         for (auto &e : view)
         {
             auto [transform, camera] = view.get<TransformComponent, CameraComponent>(e);
@@ -110,17 +111,17 @@ void Scene::OnRenderRuntime()
     // Only renderer when we have a primary Camera
     if (!primaryCamera)
     {
-        primaryCamera = dynamic_cast<SceneCamera*>(&mObserverCamera);
-        primaryCamera->SetViewportSize(mViewportSize.x, mViewportSize.y);
-        mObserverCamera.OnUpdate(Application::DeltaTime());
+        primaryCamera = dynamic_cast<SceneCamera*>(&observerCamera);
+        primaryCamera->SetViewportSize(viewportSize);
+        observerCamera.OnUpdate(Application::DeltaTime());
     }
     else
     {
         primaryCamera->SetTransform(cameraTransform);
     }
     {
-        mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
-        mFramebuffer->Map();
+        framebuffer->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
+        framebuffer->Map();
         Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
 #if 0
         // draw skybox
@@ -128,13 +129,13 @@ void Scene::OnRenderRuntime()
         auto &shader = Renderer::Shader<ShaderName::Skybox>();
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         shader->Map();
-        mSkyboxTexture->Map();
+        skyboxTexture->Map();
         Render::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
         glDepthMask(GL_TRUE);
 #endif
         {
             Renderer2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
-            auto group = mRegistry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+            auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
             for (auto e : group)
             {
                 auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
@@ -150,7 +151,7 @@ void Scene::OnRenderRuntime()
             transformUniforms.viewProjectionMatrix = primaryCamera->ViewProjection();
             transformUniforms.skyProjectionMatrix = primaryCamera->Projection() * Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
             transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
-            mTransformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
+            transformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
         }
 
         // Update shading uniform buffer.
@@ -159,7 +160,7 @@ void Scene::OnRenderRuntime()
             shadingUniforms.eyePosition = primaryCamera->View()[3];
             for (int i = 0; i < 3; ++i)
             {
-                const Light& light = mLightEnvironment.lights[i];
+                const Light& light = lightEnvironment.lights[i];
                 shadingUniforms.lights[i].direction = Vector::Vector4{ light.Direction, 0.0f };
                 if (light.Enabled)
                 {
@@ -169,11 +170,11 @@ void Scene::OnRenderRuntime()
                     shadingUniforms.lights[i].radiance = Vector::Vector4{};
                 }
             }
-            mShadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
+            shadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
         }
 
         {
-            auto view = mRegistry.view<TransformComponent, MeshComponent, MaterialComponent>();
+            auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
             for (auto e : view)
             {
                 auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
@@ -189,35 +190,35 @@ void Scene::OnRenderRuntime()
                 material.MetalnessMap->Map(2);
                 material.RoughnessMap->Map(3);
 
-                mSkyboxTexture->Map(4);
-                mEnvironment->IrradianceMap->Map(5);
-                mEnvironment->SpecularBRDFLookUpTable->Map(6);
+                skyboxTexture->Map(4);
+                environment->IrradianceMap->Map(5);
+                environment->SpecularBRDFLookUpTable->Map(6);
                 Render::Submit(shader, mesh.Mesh, transform.Transform());
             }
         }
-        mFramebuffer->Unmap();
+        framebuffer->Unmap();
     }
 
 }
 
 void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 {
-    mFramebuffer->Resize(static_cast<uint32_t>(mViewportSize.x), static_cast<uint32_t>(mViewportSize.y));
-    mFramebuffer->Map();
+    framebuffer->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
+    framebuffer->Map();
     Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
 
     // draw skybox
     Render::DisableDepthTest();
     auto &skyboxShader = Render::Get<Shader, ShaderName::Skybox>();
     skyboxShader->Map();
-    mSkyboxTexture->Map();
-    Render::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
+    skyboxTexture->Map();
+    Render::DrawIndexed(skybox->VertexArrayObject(), 0);
     Render::EnableDepthTest();
     skyboxShader->Unmap();
 
     {
         Renderer2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
-        auto group = mRegistry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+        auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto e : group)
         {
             auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
@@ -233,7 +234,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
         transformUniforms.viewProjectionMatrix = editorCamera.ViewProjection();
         transformUniforms.skyProjectionMatrix = editorCamera.Projection() * Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
         transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
-        mTransformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
+        transformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
     }
 
     // Update shading uniform buffer.
@@ -242,7 +243,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
         shadingUniforms.eyePosition = editorCamera.View()[3];
         for (int i = 0; i < 3; ++i)
         {
-            const Light& light = mLightEnvironment.lights[i];
+            const Light& light = lightEnvironment.lights[i];
             shadingUniforms.lights[i].direction = Vector::Vector4{ light.Direction, 0.0f };
             if (light.Enabled)
             {
@@ -252,11 +253,11 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
                 shadingUniforms.lights[i].radiance = Vector::Vector4{};
             }
         }
-        mShadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
+        shadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
     }
 
     {
-        auto view = mRegistry.view<TransformComponent, MeshComponent, MaterialComponent>();
+        auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
         for (auto e : view)
         {
             auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
@@ -271,23 +272,23 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
             material.NormalMap->Map(1);
             material.MetalnessMap->Map(2);
             material.RoughnessMap->Map(3);
-            mSkyboxTexture->Map(4);
-            mEnvironment->IrradianceMap->Map(5);
-            mEnvironment->SpecularBRDFLookUpTable->Map(6);
+            skyboxTexture->Map(4);
+            environment->IrradianceMap->Map(5);
+            environment->SpecularBRDFLookUpTable->Map(6);
             Render::Submit(shader, mesh.Mesh, transform.Transform());
         }
     }
 
-    mFramebuffer->Unmap();
+    framebuffer->Unmap();
 }
 
 Entity Scene::CreateEntity(const std::string & name)
 {
-    auto e = Entity{ mRegistry.create(), this };
+    auto e = Entity{ registry.create(), this };
 
     e.AddComponent<TransformComponent>();
     auto &idComponent = e.AddComponent<IDComponent>();
-    mEntityMap[idComponent.uid] = e;
+    entityMap[idComponent.uid] = e;
     e.AddComponent<TagComponent>(name);
 
     return e;
@@ -295,17 +296,17 @@ Entity Scene::CreateEntity(const std::string & name)
 
 void Scene::DestroyEntity(Entity & e)
 {
-    mRegistry.destroy(e);
+    registry.destroy(e);
 }
 
 void Scene::SetViewportSize(const Vector::Vector2 &size)
 {
-    mViewportSize = size;
+    viewportSize = size;
 }
 
 Entity Scene::PrimaryCameraEntity()
 {
-    auto view = mRegistry.view<CameraComponent>();
+    auto view = registry.view<CameraComponent>();
     for (auto e : view)
     {
         const auto &camera = view.get<CameraComponent>(e);

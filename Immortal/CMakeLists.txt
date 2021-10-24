@@ -47,8 +47,7 @@ set(EVENT_FILES
     src/Event/MouseEvent.h)
 
 set(IMAGE_FILES
-   src/Image/ColorSpace.h
-   src/Image/ColorSpace.cpp)
+)
 
 set(GUI_FILES
     src/ImGui/GuiLayer.cpp

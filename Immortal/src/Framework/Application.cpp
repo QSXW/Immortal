@@ -100,7 +100,6 @@ void Application::OnEvent(Event &e)
     dispatcher.Dispatch<WindowCloseEvent>(SLBIND(Application::OnWindowClosed));
     dispatcher.Dispatch<WindowResizeEvent>(SLBIND(Application::OnWindowResize));
 
-    LOG::INFO("{0}", e.Stringify());
     for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
         (*--it)->OnEvent(e);

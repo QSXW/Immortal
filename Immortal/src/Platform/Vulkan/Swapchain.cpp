@@ -111,7 +111,7 @@ inline std::set<VkImageUsageFlagBits> SelectImageUsage(const std::set<VkImageUsa
             VK_IMAGE_USAGE_TRANSFER_DST_BIT
         };
 
-        for (size_t i = 0; i < SL_ARRAY_LEN(imageUsageFlags); i++)
+        for (size_t i = 0; i < SLLEN(imageUsageFlags); i++)
         {
             if ((imageUsageFlags[i] & support) && ValidateFormatFeature(imageUsageFlags[i], supportedFeatures))
             {
@@ -122,7 +122,7 @@ inline std::set<VkImageUsageFlagBits> SelectImageUsage(const std::set<VkImageUsa
     }
 
     SLASSERT(!validated.empty() && "No compatible image usage found.");
-#if     SLDEBUG
+#if SLDEBUG
     LOG::INFO("(Swapchain) Image usage flags:");
     for (auto &flag : validated)
     {
@@ -169,7 +169,7 @@ inline VkCompositeAlphaFlagBitsKHR SelectCompositeAlpha(VkCompositeAlphaFlagBits
         VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
     };
 
-    for (size_t i = 0; i < SL_ARRAY_LEN(compositeAlphaFlags); i++)
+    for (size_t i = 0; i < SLLEN(compositeAlphaFlags); i++)
     {
         if (compositeAlphaFlags[i] & support)
         {

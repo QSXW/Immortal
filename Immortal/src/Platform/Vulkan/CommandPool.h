@@ -50,23 +50,23 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (typeof<T, Device *>())
+        if constexpr (is_same<T, Device *>())
         {
             return device;
         }
-        if constexpr (typeof<T, CommandBuffer::ResetMode>())
+        if constexpr (is_same<T, CommandBuffer::ResetMode>())
         {
             return resetMode;
         }
-        if constexpr (typeof<T, QueueFamilyIndex>())
+        if constexpr (is_same<T, QueueFamilyIndex>())
         {
             return queueFamilyIndex;
         }
-        if constexpr (typeof<T, ThreadIndex>())
+        if constexpr (is_same<T, ThreadIndex>())
         {
             return threadIndex;
         }
-        if constexpr (typeof<T, RenderFrame>())
+        if constexpr (is_same<T, RenderFrame>())
         {
             return renderFrame;
         }
@@ -97,7 +97,9 @@ private:
     UINT32 secondaryActiveCount{ 0 };
 
     CommandBuffer::ResetMode resetMode{ CommandBuffer::ResetMode::ResetPool };
-    
+
+    CommandBuffer *activeCommandBuffer{ nullptr };
+
 private:
     VkResult ResetCommandBuffers();
 };

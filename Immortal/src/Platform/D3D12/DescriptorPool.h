@@ -52,11 +52,11 @@ public:
     template <class T>
     T Get()
     {
-        if constexpr (typeof<T, D3D12_CPU_DESCRIPTOR_HANDLE>())
+        if constexpr (is_same<T, D3D12_CPU_DESCRIPTOR_HANDLE>())
         {
             return handle->GetCPUDescriptorHandleForHeapStart();
         }
-        if constexpr (typeof<T, D3D12_GPU_DESCRIPTOR_HANDLE>())
+        if constexpr (is_same<T, D3D12_GPU_DESCRIPTOR_HANDLE>())
         {
             return handle->GetGPUDescriptorHandleForHeapStart();
         }

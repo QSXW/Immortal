@@ -12,107 +12,125 @@
 #include "Render/Mesh.h"
 #include "Render/Framebuffer.h"
 
-namespace Immortal {
+namespace Immortal
+{
 
-	struct Light
-	{
-		Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-		Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+struct Light
+{
+    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
 
-		bool Enabled = false;
-	};
+    bool Enabled = false;
+};
 
-	struct PointLight
-	{
-		Vector::Vector3 Position{ 0.0f, 0.0f, 0.0f };
-		Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
-	};
+struct PointLight
+{
+    Vector::Vector3 Position{ 0.0f, 0.0f, 0.0f };
+    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+};
 
-	struct DirectionalLight
-	{
-		Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-		Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
-	};
+struct DirectionalLight
+{
+    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+};
 
-	// This type of light needs the most time to calculate
-	struct SpotLight
-	{
-		Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-		float Falloff{ 1.0 };
-		float Theta; // the radian angle of the spotlight's inner cone
-		float Phi;   // the angle for the outer cone of light.
-	};
+// This type of light needs the most time to calculate
+struct SpotLight
+{
+    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    float Falloff{ 1.0 };
+    float Theta; // the radian angle of the spotlight's inner cone
+    float Phi;   // the angle for the outer cone of light.
+};
 
-	struct LightEnvironment
-	{
-		static constexpr int LightNumbers = 3;
-		float pitch = 0.0f;
-		float yaw   = 0.0f;
-		Light lights[LightNumbers];
-	};
+struct LightEnvironment
+{
+    static constexpr int LightNumbers = 3;
+    float pitch = 0.0f;
+    float yaw   = 0.0f;
+    Light lights[LightNumbers];
+};
 
-	class Entity;
-	class IMMORTAL_API Scene
-	{
-	public:
-		Scene(const std::string &debugName="Untitled", bool isEditorScene = false);
-		~Scene();
+class Entity;
+class IMMORTAL_API Scene
+{
+public:
+    Scene(const std::string &debugName="Untitled", bool isEditorScene = false);
 
-		void OnUpdate();
-		void OnEvent();
+    ~Scene();
 
-		void OnRenderRuntime();
-		void OnRenderEditor(const EditorCamera &editorCamera);
+    void OnUpdate();
 
-		auto& Registry() { return mRegistry; }
+    void OnEvent();
 
-		Entity CreateEntity(const std::string &name = "");
-		void DestroyEntity(Entity &e);
+    void OnRenderRuntime();
 
-		void SetViewportSize(const Vector::Vector2 &size);
+    void OnRenderEditor(const EditorCamera &editorCamera);
 
-		Entity PrimaryCameraEntity();
+    Entity CreateEntity(const std::string &name = "");
 
-	public:
-		const char *Name() const { return mDebugName.c_str(); }
+    void DestroyEntity(Entity &e);
 
-	public:
-		using EntityMap = std::unordered_map<uint64_t, Entity>;
+    void SetViewportSize(const Vector::Vector2 &size);
 
-	private:
-		std::string mDebugName;
-		entt::entity mEntity;
-		entt::registry mRegistry; // Entity Context: a container that contains our enties
+    Entity PrimaryCameraEntity();
 
-		EntityMap mEntityMap;
-		std::vector<Entity *> mMeshEntities;
+    auto& Registry()
+    {
+        return registry;
+    }
 
-		Vector::Vector2 mViewportSize{ 0.0f, 0.0f };
+    const char *Name() const
+    { 
+        return debugName.c_str();
+    }
 
-		std::shared_ptr<TextureCube> mSkyboxTexture;
+    const ObserverCamera &Observer() const
+    { 
+        return observerCamera;
+    }
 
-		std::shared_ptr<Environment> mEnvironment;
-		std::shared_ptr<Mesh> mSkyBox;
-		LightEnvironment mLightEnvironment;
+public:
+    using EntityMap = std::unordered_map<uint64_t, Entity>;
 
-		std::shared_ptr<UniformBuffer> mTransformUniformBuffer;
-		std::shared_ptr<UniformBuffer> mShadingUniformBuffer;
+private:
+    std::string debugName;
 
-		std::shared_ptr<VertexArray> mVertexArray;
+    entt::entity entity;
 
-		std::shared_ptr<VertexArray> mToneMap;
-		std::shared_ptr<Framebuffer> mFramebuffer;
+    entt::registry registry; // Entity Context: a container that contains our enties
 
-		friend class Entity;
-		friend class SceneHierarchyPanel;
-		friend class EditorLayer;
+    EntityMap entityMap;
 
-	/* Camera Related */
-	private:
-		ObserverCamera mObserverCamera;
-	public:
-		const ObserverCamera &Observer() const NOEXCEPT { return mObserverCamera; }
-	};
+    std::vector<Entity *> meshEntities;
 
+    Vector2 viewportSize{ 0.0f, 0.0f };
+
+    std::shared_ptr<TextureCube> skyboxTexture;
+
+    std::shared_ptr<Environment> environment;
+
+    std::shared_ptr<Mesh> skybox;
+
+    LightEnvironment lightEnvironment;
+
+    std::shared_ptr<UniformBuffer> transformUniformBuffer;
+
+    std::shared_ptr<UniformBuffer> shadingUniformBuffer;
+
+    std::shared_ptr<VertexArray> vertexArray;
+
+    std::shared_ptr<VertexArray> toneMap;
+
+    std::shared_ptr<Framebuffer> framebuffer;
+
+    friend class Entity;
+    friend class SceneHierarchyPanel;
+    friend class EditorLayer;
+
+private:
+    ObserverCamera observerCamera;
+};
 
 }

@@ -56,67 +56,67 @@ public:
     template <class T>
     inline constexpr T Get()
     {
-        if constexpr (typeof<T, VkInstance>())
+        if constexpr (is_same<T, VkInstance>())
         {
             return instance->Handle();
         }
-        if constexpr (typeof<T, VkPhysicalDevice>())
+        if constexpr (is_same<T, VkPhysicalDevice>())
         {
             return instance->SuitablePhysicalDevice().Handle();
         }
-        if constexpr (typeof<T, VkDevice>())
+        if constexpr (is_same<T, VkDevice>())
         {
             return device->Get<VkDevice>();
         }
-        if constexpr (typeof<T, VkQueue>())
+        if constexpr (is_same<T, VkQueue>())
         {
             return queue->Handle();
         }
-        if constexpr (typeof<T, Queue>())
+        if constexpr (is_same<T, Queue>())
         {
             return *queue;
         }
-        if constexpr (typeof<T, Queue*>())
+        if constexpr (is_same<T, Queue*>())
         {
             return queue;
         }
-        if constexpr (typeof<T, Swapchain &>())
+        if constexpr (is_same<T, Swapchain &>())
         {
             return *swapchain;
         }
-        if constexpr (typeof<T, Swapchain *>())
+        if constexpr (is_same<T, Swapchain *>())
         {
             return swapchain.get();
         }
-        if constexpr (typeof<T, Device&>())
+        if constexpr (is_same<T, Device&>())
         {
             return *device;
         }
-        if constexpr (typeof<T, Device*>())
+        if constexpr (is_same<T, Device*>())
         {
             return device.get();
         }
-        if constexpr (typeof<T, Frames&>())
+        if constexpr (is_same<T, Frames&>())
         {
             return frames;
         }
-        if constexpr (typeof<T, Extent2D>())
+        if constexpr (is_same<T, Extent2D>())
         {
             return surfaceExtent;
         }
-        if constexpr (typeof<T, VkFormat>())
+        if constexpr (is_same<T, VkFormat>())
         {
             return swapchain->Get<VkFormat>();
         }
-        if constexpr (typeof<T, Semaphores>())
+        if constexpr (is_same<T, Semaphores>())
         {
             return semaphores;
         }
-        if constexpr (typeof<T, RenderPass *>())
+        if constexpr (is_same<T, RenderPass *>())
         {
             return renderPass.get();
         }
-        if constexpr (typeof<T, CommandBuffers *>())
+        if constexpr (is_same<T, CommandBuffers *>())
         {
             return &commandBuffers;
         }
@@ -125,31 +125,31 @@ public:
     template <class T>
     inline constexpr void Set(const T &value)
     {
-        if constexpr (typeof<T, SurfaceFormatPriority>())
+        if constexpr (is_same<T, SurfaceFormatPriority>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             surfaceFormatPriorities = value;
         }
-        if constexpr (typeof<T, VkFormat>())
+        if constexpr (is_same<T, VkFormat>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
             }
         }
-        if constexpr (typeof<T, PresentModePriorities>())
+        if constexpr (is_same<T, PresentModePriorities>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             presentModePriorities = value;
         }
-        if constexpr (typeof<T, VkPresentModeKHR>())
+        if constexpr (is_same<T, VkPresentModeKHR>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().PresentMode = value;
             }
         }
-        if constexpr (typeof<T, CommandBuffers>())
+        if constexpr (is_same<T, CommandBuffers>())
         {
             commandBuffers = value;
         }

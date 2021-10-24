@@ -46,6 +46,12 @@ public:
 public:
     RenderTarget(std::vector<Image> &&images);
 
+    RenderTarget(RenderTarget &&other);
+
+    ~RenderTarget();
+
+    RenderTarget &operator=(RenderTarget &&other);
+
     std::vector<ImageView> &Views()
     {
         return views;

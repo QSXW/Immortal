@@ -118,12 +118,17 @@ void RenderContext::Prepare(size_t threadCount)
 
     for (auto &handle : swapchain->Get<Swapchain::Images>())
     {
-        Image image{ device.get(), handle, extent, swapchain->Get<VkFormat>(), swapchain->Get<VkImageUsageFlags>() };
+        Image image{ 
+            device.get(),
+            handle,
+            extent,
+            swapchain->Get<VkFormat>(),
+            swapchain->Get<VkImageUsageFlags>()
+            };
         auto renderTarget = RenderTarget::Create(std::move(image));
         framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
         frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
     }
-
     this->threadCount = threadCount;
 
     auto &commandPool = device->Get<CommandPool>();
@@ -189,13 +194,14 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
             swapchain->Get<VkImageUsageFlags>()
         };
 
+        LOG::INFO("Create Render Target{0}", (void*)image.Handle());
         auto renderTarget = RenderTarget::Create(std::move(image));
         
         framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
 
         if (frame != frames.end())
         {
-            (*frame)->Set(std::move(renderTarget));
+            (*frame)->Set(renderTarget);
         }
         else
         {

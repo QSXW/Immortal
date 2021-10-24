@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 inline VkImageType ImageType(VkExtent3D extent)
 {
     VkImageType result{};
@@ -49,26 +50,20 @@ inline VkImageType ImageType(VkExtent3D extent)
 
 Image::Image(Device *device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
     device{ device },
-    handle{ handle },
-    type{ ImageType(extent) },
-    extent{ extent },
-    format{ format },
-    sampleCount{ sampleCount },
-    usage{ imageUsage }
+    handle{ handle }
 {
     subresource.mipLevel   = 1;
     subresource.arrayLayer = 1;
+    
+    info.imageType = ImageType(extent);
+    info.extent    = extent;
+    info.format    = format;
+    info.samples   = sampleCount;
+    info.usage     = imageUsage;
 }
 
 Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage, VkSampleCountFlagBits sampleCount, UINT32 mipLevels, UINT32 arrayLayers, VkImageTiling tiling, VkImageCreateFlags flags, UINT32 numQueueFamilies, const UINT32* queueFamilies) :
-    device{ device },
-    type{ Vulkan::ImageType(extent) },
-    extent{ extent },
-    format{ format },
-    sampleCount{ sampleCount },
-    usage{ imageUsage },
-    arrayLayerCount{ arrayLayers },
-    tiling{ tiling }
+    device{ device }
 {
     SLASSERT(mipLevels > 0 && "Image should have at least one level");
     SLASSERT(arrayLayers > 0 && "Image should have at least one level");
@@ -76,22 +71,21 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
     subresource.mipLevel    = mipLevels;
     subresource.arrayLayer = arrayLayers;
 
-    VkImageCreateInfo createInfo{};
-    createInfo.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    createInfo.imageType   = type;
-    createInfo.format      = format;
-    createInfo.extent      = extent;
-    createInfo.mipLevels   = mipLevels;
-    createInfo.arrayLayers = arrayLayers;
-    createInfo.samples     = sampleCount;
-    createInfo.tiling      = tiling;
-    createInfo.usage       = imageUsage;
+    info.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.imageType   = Vulkan::ImageType(extent);
+    info.format      = format;
+    info.extent      = extent;
+    info.mipLevels   = mipLevels;
+    info.arrayLayers = arrayLayers;
+    info.samples     = sampleCount;
+    info.tiling      = tiling;
+    info.usage       = imageUsage;
 
     if (numQueueFamilies != 0)
     {
-        createInfo.sharingMode           = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = numQueueFamilies;
-        createInfo.pQueueFamilyIndices   = queueFamilies;
+        info.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+        info.queueFamilyIndexCount = numQueueFamilies;
+        info.pQueueFamilyIndices   = queueFamilies;
     }
 
     VmaAllocationCreateInfo memoryInfo{};
@@ -101,23 +95,32 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
         memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
 
-    Check(vmaCreateImage(device->MemoryAllocator(), &createInfo, &memoryInfo, &handle, &memory, nullptr));
+    Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
+}
+
+Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage)
+{
+    CopyProps(&this->info, &createInfo);
+    VmaAllocationCreateInfo memoryInfo{};
+    memoryInfo.usage = memoryUsage;
+
+    if (info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
+    {
+        memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    }
+    Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
 }
 
 Image::Image(Image &&other) :
     device{ other.device },
     handle{ other.handle },
     memory{ other.memory },
-    type{ other.type },
-    extent{ other.extent },
-    format{ other.format },
-    sampleCount{ other.sampleCount },
-    usage{ other.usage },
-    tiling{ other.tiling },
     subresource{ other.subresource },
     mappedData{ other.mappedData },
     mapped{ other.mapped }
 {
+    CopyProps(&this->info, &other.info);
+
     other.handle     = VK_NULL_HANDLE;
     other.memory     = VK_NULL_HANDLE;
     other.mappedData = nullptr;
@@ -128,5 +131,35 @@ Image::Image(Image &&other) :
         v->Set(this);
     }
 }
+
+Image::~Image()
+{
+    LOG::INFO("Destroy Image => {0}, memory => {1}", (void *)handle, (void *)memory);
+    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
+    {
+        vmaDestroyImage(device->MemoryAllocator(), handle, memory);
+        return;
+    }
+}
+
+Image &Image::operator=(Image &&other)
+{
+    SLASSERT(&other != this && "You are trying to self-assignments, which is not acceptable.");
+
+    device          = other.device;
+    handle          = other.handle;
+    memory          = other.memory;
+    views           = std::move(other.views);
+    mappedData      = other.mappedData;
+    mapped          = other.mapped;
+    CopyProps(&this->info, &other.info);
+
+    other.device = nullptr;
+    other.handle = VK_NULL_HANDLE;
+    other.memory = VK_NULL_HANDLE;
+
+    return *this;
+}
+
 }
 }

@@ -27,9 +27,10 @@ public:
 public:
     RenderFrame(Device *device, std::unique_ptr<RenderTarget> &&renderTarget, size_t threadCount = 1);
 
-    void Set(std::unique_ptr<RenderTarget> &&value)
+    void Set(std::unique_ptr<RenderTarget> &value)
     {
-        renderTarget = std::move(value);
+        renderTarget.reset();
+        renderTarget.swap(value);
     }
 
 private:

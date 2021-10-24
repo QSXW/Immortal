@@ -62,17 +62,17 @@ void Renderer::Resize()
     swapchain = context->UpdateSurface();
 
     device->Wait();
-    
-    auto &commandPool = device->Get<CommandPool>();
-    commandPool.DestoryAll();
-    
     frameSize = context->FrameSize();
-    commandBuffers->resize(frameSize);
-    for (auto &buf : *commandBuffers)
-    {
-        buf = commandPool.RequestBuffer(Level::Primary);
-    }
-    context->Set(*commandBuffers);
+
+    //auto &commandPool = device->Get<CommandPool>();
+    //commandPool.DestoryAll();
+
+    //commandBuffers->resize(frameSize);
+    //for (auto &buf : *commandBuffers)
+    //{
+    //    buf = commandPool.RequestBuffer(Level::Primary);
+    //}
+    //context->Set(*commandBuffers);
 
     device->Wait();
 }

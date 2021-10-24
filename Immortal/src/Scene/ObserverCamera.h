@@ -19,10 +19,10 @@ namespace Immortal
 		{
 
 		}
-		void OnUpdate(float deltaTime) NOEXCEPT;
+		void OnUpdate(float deltaTime);
 
 	private:
-		void Update(float deltaTime) NOEXCEPT;
+		void Update(float deltaTime);
 		bool UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axisRight, float deltaTime);
 	private:
 		ObserverCamera::Type mType = ObserverCamera::Type::FirstPerson;
@@ -65,8 +65,8 @@ namespace Immortal
 		} mTouchPos;
 
 	private:
-		bool Moving() const NOEXCEPT;
-		void UpdateViewMatrix() NOEXCEPT;
+		bool Moving() const;
+		void UpdateViewMatrix();
 	};
 }
 

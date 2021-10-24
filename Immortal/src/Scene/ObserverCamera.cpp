@@ -6,7 +6,7 @@
 
 namespace Immortal
 {
-void ObserverCamera::UpdateViewMatrix() NOEXCEPT
+void ObserverCamera::UpdateViewMatrix()
 {
     Vector::Matrix4 rotationMatrix    = Vector::Rotate(mRotation);
     Vector::Matrix4 translationMatrix = Vector::Translate(mPosition);
@@ -23,7 +23,7 @@ void ObserverCamera::UpdateViewMatrix() NOEXCEPT
     mUpdated = true;
 }
 
-void ObserverCamera::OnUpdate(float deltaTime) NOEXCEPT
+void ObserverCamera::OnUpdate(float deltaTime)
 {
     if (Input::IsKeyPressed(KeyCode::A))
     {
@@ -87,7 +87,7 @@ void ObserverCamera::OnUpdate(float deltaTime) NOEXCEPT
     mKeys.Down  = false;
 }
 
-void ObserverCamera::Update(float deltaTime) NOEXCEPT
+void ObserverCamera::Update(float deltaTime)
 {
     mUpdated = false;
     if (mType == Type::FirstPerson)
@@ -185,8 +185,9 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
     return changed;
 }
 
-inline bool ObserverCamera::Moving() const NOEXCEPT
+inline bool ObserverCamera::Moving() const
 {
     return mKeys.Left || mKeys.Right || mKeys.Up || mKeys.Down;
 }
+
 }

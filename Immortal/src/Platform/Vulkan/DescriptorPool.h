@@ -23,6 +23,8 @@ public:
 
     VkResult Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet);
 
+    void Free(VkDescriptorSet *pDescriptorSet, uint32_t size = 1);
+
 private:
     Device *device{ nullptr };
         

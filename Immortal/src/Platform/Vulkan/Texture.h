@@ -82,9 +82,18 @@ public:
         sampler = Sampler{ device, createInfo };
     }
 
-    void INITImageView()
+    void INITImageView(VkFormat format)
     {
-        view = std::make_unique<ImageView>(image.get(), VK_IMAGE_VIEW_TYPE_2D);
+        view = std::make_unique<ImageView>(
+            device,
+            image,
+            VK_IMAGE_VIEW_TYPE_2D,
+            format,
+            0,
+            0,
+            mipLevels,
+            1
+            );
     }
 
     void INITDescriptor();
@@ -103,7 +112,7 @@ private:
 
     uint32_t mipLevels{ 1 };
 
-    std::unique_ptr<Image> image;
+    VkImage image{ VK_NULL_HANDLE };
 
     std::unique_ptr<ImageView> view;
 

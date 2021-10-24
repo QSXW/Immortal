@@ -26,11 +26,10 @@ Frame::Frame(const std::string &path, bool flip)
     ReadByOpenCV(path, flip);
 }
 
-Frame::Frame(UINT32 width, UINT32 height, int depth, const void *data, ColorSpace colorSpace) :
+Frame::Frame(UINT32 width, UINT32 height, int depth, const void *data) :
     width{ width },
     height{ height },
-    depth{ depth },
-    colorSpace{ colorSpace }
+    depth{ depth }
 {
 
 }

@@ -2,7 +2,6 @@
 #include "ImmortalCore.h"
 
 #include "Texture.h"
-#include "Image/ColorSpace.h"
 #include <opencv2/core/core.hpp> 
 
 #include "StillPicture.h"
@@ -43,7 +42,7 @@ public:
 
     Frame(const std::string &path, bool flip);
 
-    Frame(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB);
+    Frame(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr);
 
     virtual ~Frame();
 
@@ -84,8 +83,6 @@ private:
     void Read(const std::string &path, cv::Mat &outputMat);
 
 private:
-    ColorSpace colorSpace;
-
     Texture::Description desc;
 
     UINT32  width{ 0 };
@@ -101,9 +98,9 @@ private:
     std::unique_ptr<uint8_t>  data{ nullptr };
 
 public:
-    static inline std::shared_ptr<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr, ColorSpace colorSpace = ColorSpace::RGB)
+    static inline std::shared_ptr<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr)
     {
-        return std::make_shared<Frame>(width, height, depth, data, colorSpace);
+        return std::make_shared<Frame>(width, height, depth, data);
     }
 
     static inline std::shared_ptr<Frame> Create(const std::string &filepath)
@@ -113,7 +110,7 @@ public:
 
     static inline UINT32 FormatBitsPerPixel(int format)
     {
-        SLASSERT(format > SL_ARRAY_LEN(map) && "Unsupport format.");
+        SLASSERT(format > SLLEN(map) && "Unsupport format.");
         return map[format];
     }
 };

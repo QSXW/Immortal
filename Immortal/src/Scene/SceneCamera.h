@@ -5,6 +5,7 @@
 
 namespace Immortal
 {
+
 class SceneCamera : public Camera
 {
 public:
@@ -18,7 +19,7 @@ public:
 
     void SetViewportSize(float width, float height);
 
-    void SetViewportSize(const Vector::Vector2 &size)
+    void SetViewportSize(const Vector2 &size)
     {
         SetViewportSize(size.x, size.y);
     }

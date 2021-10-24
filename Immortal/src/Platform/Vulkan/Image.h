@@ -32,7 +32,15 @@ public:
           UINT32                numQueueFamilies  = 0,
           const UINT32*         queueFamilies     = nullptr);
 
+    Image(Device            *device, 
+          VkImageCreateInfo &createInfo,
+          VmaMemoryUsage     memoryUsage);
+
     Image(Image &&other);
+
+    ~Image();
+
+    Image &operator=(Image &&other);
 
 public:
     VkImage &Handle()
@@ -41,45 +49,45 @@ public:
     }
 
     template <class T>
-    T &Get()
+    T Get()
     {
-        if constexpr (std::is_same_v<T, Device*>)
+        if constexpr (std::is_same_v<T, Device *>)
         {
             return device;
         }
     }
 
-    const VkExtent3D& Extent() const
+    const VkExtent3D &Extent() const
     {
-        return extent;
+        return info.extent;
     }
 
-    const VkImageType& Type() const
+    const VkImageType &Type() const
     {
-        return type;
+        return info.imageType;
     }
 
     const VkFormat& Format() const
     {
-        return format;
+        return info.format;
     }
 
     const VkSampleCountFlagBits& SampleCount() const
     {
-        return sampleCount;
+        return info.samples;
     }
 
     const VkImageUsageFlags& Usage() const
     {
-        return usage;
+        return info.usage;
     }
 
-    const VkImageSubresource& Subresource() const
+    const VkImageSubresource &Subresource() const
     {
         return subresource;
     }
 
-    std::unordered_set<ImageView*>& Views()
+    std::unordered_set<ImageView *> &Views()
     {
         return views;
     }
@@ -91,21 +99,9 @@ private:
 
     VmaAllocation memory{ VK_NULL_HANDLE };
 
-    VkImageType type{};
+    VkImageCreateInfo info{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 
-    VkExtent3D extent;
-
-    VkFormat format{};
-
-    VkImageUsageFlags usage{};
-
-    VkSampleCountFlagBits sampleCount{};
-
-    VkImageTiling tiling{};
-
-    VkImageSubresource subresource{};
-
-    UINT32 arrayLayerCount{ 0 };
+    VkImageSubresource subresource;
 
     std::unordered_set<ImageView*> views;
 
@@ -114,4 +110,5 @@ private:
     bool mapped{ false };
 };
 }
+
 }

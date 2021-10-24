@@ -9,7 +9,7 @@ namespace Vulkan
 
 ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
     device{ image->Get<Device *>() },
-    image{ image },
+    refImage{ image },
     format{ format }
 {
     if (format == VK_FORMAT_UNDEFINED)
@@ -17,31 +17,33 @@ ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UI
         this->format = format = image->Format();
     }
 
-    subresourceRange.baseMipLevel   = baseMipLevel;
-    subresourceRange.baseArrayLayer = baseArrayLevel;
-    subresourceRange.levelCount     = nMipLevels == 0 ? image->Subresource().mipLevel : nMipLevels;
-    subresourceRange.layerCount     = nArrayLayers == 0 ? image->Subresource().arrayLayer : nArrayLayers;
-    subresourceRange.aspectMask     = IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+    INIT(
+        image->Handle(),
+        viewType,
+        baseMipLevel,
+        baseArrayLevel,
+        nMipLevels == 0 ? image->Subresource().mipLevel : nMipLevels,
+        nArrayLayers == 0 ? image->Subresource().arrayLayer : nArrayLayers
+        );
 
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.viewType         = viewType;
-    viewInfo.format           = format;
-    viewInfo.subresourceRange = subresourceRange;
-    viewInfo.image            = image->Handle();
+    refImage->Views().emplace(this);
+}
 
-    Vulkan::Check(vkCreateImageView(device->Get<VkDevice>(), &viewInfo, nullptr, &handle));
-    this->image->Views().emplace(this);
+ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
+    device{ device },
+    format{ format }
+{
+    INIT(image, viewType, baseMipLevel, baseArrayLevel, nMipLevels, nArrayLayers);
 }
 
 ImageView::ImageView(ImageView&& other) :
     device{ other.device },
-    image{ other.image },
+    refImage{ other.refImage },
     handle{ other.handle },
     format{ other.format },
     subresourceRange{ other.subresourceRange }
 {
-    auto &views = image->Views();
+    auto &views = refImage->Views();
     views.erase(&other);
     views.emplace(this);
 
@@ -50,7 +52,7 @@ ImageView::ImageView(ImageView&& other) :
 
 ImageView::~ImageView()
 {
-    IfNotNullThen<VkImageView>(vkDestroyImageView, device->Get<VkDevice>(), handle);
+    device->Destory(handle);
 }
 
 }

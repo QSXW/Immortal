@@ -84,8 +84,8 @@ CommandPool &CommandPool::operator=(CommandPool &&other)
         threadIndex                       = other.threadIndex;
         resetMode                         = other.resetMode;
 
-        other.handle                            = VK_NULL_HANDLE;
-        other.queueFamilyIndex                  = 0;
+        other.handle               = VK_NULL_HANDLE;
+        other.queueFamilyIndex     = 0;
         other.primaryActiveCount   = 0;
         other.secondaryActiveCount = 0;
     }
@@ -110,7 +110,8 @@ CommandBuffer *CommandPool::RequestBuffer(Level level)
         primaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level));
         primaryActiveCount++;
 
-        return primaryCommandBuffers.back().get();
+        activeCommandBuffer = primaryCommandBuffers.back().get();
+        return activeCommandBuffer;
     }
     else
     {
@@ -121,12 +122,14 @@ CommandBuffer *CommandPool::RequestBuffer(Level level)
         secondaryCommandBuffers.emplace_back(std::make_unique<CommandBuffer>(this, level));
         secondaryActiveCount++;
 
-        return secondaryCommandBuffers.back().get();
+        activeCommandBuffer = secondaryCommandBuffers.back().get();
+        return activeCommandBuffer;
     }
 }
 
 void CommandPool::DiscardBuffer(CommandBuffer *commandBuffer)
 {
+    SLASSERT(activeCommandBuffer == commandBuffer && "Just requested a command buffer but discard a different one");
     commandBuffer->reset(resetMode);
     primaryActiveCount--;
 }

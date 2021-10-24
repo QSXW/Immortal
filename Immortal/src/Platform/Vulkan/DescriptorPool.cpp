@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 DescriptorPool::DescriptorPool(Device *device, const DescriptorSetLayout &layout, UINT32 poolSize) :
     device{ device }
 {
@@ -39,6 +40,11 @@ VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLay
     createInfo.pSetLayouts        = pDescriptorSetLayout;
 
     return vkAllocateDescriptorSets(device->Handle(), &createInfo, pDescriptorSet);
+}
+
+void DescriptorPool::Free(VkDescriptorSet *pDescriptorSet, uint32_t size)
+{
+    vkFreeDescriptorSets(device->Handle(), handle, size, pDescriptorSet);
 }
 
 }

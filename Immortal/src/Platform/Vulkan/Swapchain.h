@@ -63,31 +63,31 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (typeof<T, VkImageUsageFlags>())
+        if constexpr (is_same<T, VkImageUsageFlags>())
         {
             return properties.ImageUsage;
         }
-        if constexpr (typeof<T, Properties>())
+        if constexpr (is_same<T, Properties>())
         {
             return properties;
         }
-        if constexpr (typeof<T, VkExtent2D>())
+        if constexpr (is_same<T, VkExtent2D>())
         {
             return properties.Extent;
         }
-        if constexpr (typeof <T, VkFormat>())
+        if constexpr (is_same <T, VkFormat>())
         {
             return properties.SurfaceFormat.format;
         }
-        if constexpr (typeof<T, Images>())
+        if constexpr (is_same<T, Images>())
         {
             return images;
         }
-        if constexpr (typeof<T, FrameIndex>())
+        if constexpr (is_same<T, FrameIndex>())
         {
             return frameIndex;
         }
-        if constexpr (typeof<T, Surface>())
+        if constexpr (is_same<T, Surface>())
         {
             return surface;
         }

@@ -54,20 +54,16 @@ elif defined(__linux__)
 #   define APPLE
 #endif
 
-#ifndef NOEXCEPT
-#define NOEXCEPT noexcept
-#endif
-
-#ifndef NODISCARD
-#define NODISCARD [[nodiscard]]
-#endif
-
-#define BIT(x) (1 << (x))
-
+/*
+ * @brief: Helper Macro
+ */
 #define U8(str) u8##str
+#define BIT(x) (1 << (x))
+#define SLLEN(a) sizeof(a) / sizeof((a)[0])
 
-#define SL_ARRAY_LEN(a) sizeof(a) / sizeof((a)[0])
-
+/*
+ * @brief: Type Definitions
+ */
 using INT8   = char;
 using UINT8  = unsigned char;
 using INT16  = short;
@@ -77,14 +73,17 @@ using UINT32 = unsigned int;
 using INT64  = int64_t;
 using UINT64 = uint64_t;
 
+/*
+ * @brief: Helper Template
+ */
 template <class T1, class T2>
-inline constexpr bool typeof()
+inline constexpr bool is_same()
 {
     return std::is_same_v<T1, T2>;
 }
 
 template <class T1, class T2, class T3>
-inline constexpr bool typeof()
+inline constexpr bool is_same()
 {
     if constexpr (std::is_same_v<T1, T2> || std::is_same_v<T1, T3>)
     {
@@ -94,7 +93,7 @@ inline constexpr bool typeof()
 }
 
 template <class T1, class T2, class T3, class T4>
-inline constexpr bool typeof()
+inline constexpr bool is_same()
 {
     if constexpr (std::is_same_v<T1, T2> ||
         std::is_same_v<T1, T3> ||
@@ -109,6 +108,12 @@ template <class T>
 inline constexpr void *CleanUpObject(T *ptr, int value = 0, size_t size = sizeof(T))
 {
     return memset(ptr, value, size);
+}
+
+template <class T>
+inline constexpr void CopyProps(T *dst, T *src)
+{
+    memcpy(dst, src, sizeof(T));
 }
 
 }

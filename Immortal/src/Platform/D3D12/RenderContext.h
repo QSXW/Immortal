@@ -46,39 +46,39 @@ public:
     template <class T>
     T Get()
     {
-        if constexpr (typeof<T, Swapchain*>())
+        if constexpr (is_same<T, Swapchain*>())
         {
             return swapchain.get();
         }
-        if constexpr (typeof<T, HWND>())
+        if constexpr (is_same<T, HWND>())
         {
             return hWnd;
         }
-        if constexpr (typeof<T, ID3D12Device*>())
+        if constexpr (is_same<T, ID3D12Device*>())
         {
             return device->Handle();
         }
-        if constexpr (typeof<T, DXGI_FORMAT>())
+        if constexpr (is_same<T, DXGI_FORMAT>())
         {
             return NORMALIZE(desc.format);
         }
-        if constexpr (typeof<T, Queue *>())
+        if constexpr (is_same<T, Queue *>())
         {
             return queue.get();
         }
-        if constexpr (typeof<T, CommandList *>())
+        if constexpr (is_same<T, CommandList *>())
         {
             return commandList.get();
         }
-        if constexpr (typeof<T, ID3D12CommandAllocator **>())
+        if constexpr (is_same<T, ID3D12CommandAllocator **>())
         {
             return commandAllocator;
         }
-        if constexpr (typeof<T, Window*>())
+        if constexpr (is_same<T, Window*>())
         {
             return desc.WindowHandle;
         }
-        if constexpr (typeof<T, ID3D12Fence *>())
+        if constexpr (is_same<T, ID3D12Fence *>())
         {
             return fence.Get();
         }

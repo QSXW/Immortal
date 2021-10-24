@@ -32,7 +32,10 @@ public:
         return currentBuffer;
     }
 
-    void Resize();
+    virtual void OnResize(UINT32 x, UINT32 y, UINT32 width, UINT32 height) override
+    {
+        Resize();
+    }
 
     virtual const char *GraphicsRenderer()
     {
@@ -49,7 +52,10 @@ public:
         return std::make_shared<Texture>(context, filepath);
     }
 
-public:
+private:
+    void Resize();
+
+private:
     RenderContext *context{ nullptr };
 
     Device *device{ nullptr };

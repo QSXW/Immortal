@@ -40,9 +40,9 @@ public:
     }
 
 public:
-    void __IncreaseRefCount() const NOEXCEPT { _M_refcount++; }
-    void __DecreaseRefCount() const NOEXCEPT { _M_refcount--; }
-    constexpr ValueType RefCount() const NOEXCEPT { return _M_refcount; }
+    void __IncreaseRefCount() const { _M_refcount++; }
+    void __DecreaseRefCount() const { _M_refcount--; }
+    constexpr ValueType RefCount() const { return _M_refcount; }
 
 private:
     mutable volatile ValueType _M_refcount = 0;

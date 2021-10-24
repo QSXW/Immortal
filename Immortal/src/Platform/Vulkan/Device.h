@@ -23,6 +23,9 @@ class Swapchain;
 class Device : public SuperDevice
 {
 public:
+    using UploadProcess = void (*)(CommandBuffer *);
+
+public:
     Device() = default;
 
     Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
@@ -62,10 +65,17 @@ public:
         return vkCreateBuffer(handle, pCreateInfo, pAllocator, pBuffer);
     }
 
-    void Destory(VkBuffer buffer, const VkAllocationCallbacks* pAllocator = nullptr)
-    {
-		vkDestroyBuffer(handle, buffer, pAllocator);
+#define DEFINE_DESTORY_VK_OBJECT(T) \
+    void Destory(Vk##T object, const VkAllocationCallbacks* pAllocator = nullptr) \
+    { \
+        IfNotNullThen(vkDestroy##T, handle, object, pAllocator); \
     }
+
+    DEFINE_DESTORY_VK_OBJECT(Image)
+    DEFINE_DESTORY_VK_OBJECT(ImageView)
+    DEFINE_DESTORY_VK_OBJECT(Buffer)
+    DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
 
     VkResult CreatePipelineLayout(const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout)
     {
@@ -109,6 +119,11 @@ public:
         return descriptorPool->Allocate(pDescriptorSetLayout, pDescriptorSets);
     }
 
+    void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1)
+    {
+        descriptorPool->Free(pDescriptorSets, 1);
+    }
+
     void UpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet *pDescriptorCopies)
     {
         vkUpdateDescriptorSets(handle, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
@@ -148,23 +163,23 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (typeof<T, VkDevice>())
+        if constexpr (is_same<T, VkDevice>())
         {
             return handle;
         }
-        if constexpr (typeof<T, PhysicalDevice>())
+        if constexpr (is_same<T, PhysicalDevice>())
         {
             return physicalDevice;
         }
-        if constexpr (typeof<T, Queue>())
+        if constexpr (is_same<T, Queue>())
         {
             return queues;
         }
-        if constexpr (typeof<T, VkPhysicalDevice>())
+        if constexpr (is_same<T, VkPhysicalDevice>())
         {
             return physicalDevice.Handle();
         }
-        if constexpr (typeof<T, CommandPool>())
+        if constexpr (is_same<T, CommandPool>())
         {
             return *commandPool;
         }
@@ -220,6 +235,14 @@ public:
 
         fencePool->Discard(&fence);
         commandPool->DiscardBuffer(copyCmd);
+    }
+
+    template <class T>
+    void Upload(T &&process)
+    {
+        auto *copyCmd = BeginUpload();
+        process(copyCmd);
+        EndUpload(copyCmd);
     }
 
     void Discard(CommandBuffer *commandBuffer)
