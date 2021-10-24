@@ -112,21 +112,21 @@ private:
 
     uint32_t mipLevels{ 1 };
 
-    VkImage image{ VK_NULL_HANDLE };
+    Sampler sampler;
 
     std::unique_ptr<ImageView> view;
 
-    Sampler sampler;
+    VkImage image{ VK_NULL_HANDLE };
 
     VkImageLayout layout{ VK_IMAGE_LAYOUT_UNDEFINED };
 
-    VkDeviceMemory deviceMemory;
+    VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
 
-    VkDescriptorSet descriptorSet;
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
-    VkDescriptorSetLayout descriptorSetLayout;
+    VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
 
-    VkPipelineLayout pipelineLayout;
+    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
 };
 
 }

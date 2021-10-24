@@ -39,6 +39,11 @@ public:
         return handle;
     }
 
+    operator VkImageView&()
+    {
+        return handle;
+    }
+
     template <class T>
     T Get()
     {

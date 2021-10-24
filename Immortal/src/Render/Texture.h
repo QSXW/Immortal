@@ -13,7 +13,7 @@ public:
     {
         T levels = 1;
         while ((width | height) >> levels) {
-            ++levels;
+            levels++;
         }
         return levels;
     }

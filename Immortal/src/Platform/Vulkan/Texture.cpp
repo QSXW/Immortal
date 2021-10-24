@@ -1,6 +1,7 @@
 #include "Texture.h"
 
 #include "Render/Frame.h"
+// #include <backends/imgui_impl_vulkan.h>
 
 namespace Immortal
 {
@@ -44,7 +45,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
     device->UnmapMemory(stagingMemory);
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
-	uint32_t offset = 0;
+    uint32_t offset = 0;
 
     for (int i = 0; i < mipLevels; i++)
     {
@@ -77,25 +78,25 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
     device->GetRequirements(image, &memoryRequirements);
 
     allocateInfo.allocationSize = memoryRequirements.size;
-	allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Check(device->AllocateMemory(&allocateInfo, nullptr, &deviceMemory));
     Check(device->BindImageMemory(image, deviceMemory, 0));
 
     VkImageSubresourceRange subresourceRange{};
-	subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-	subresourceRange.baseMipLevel = 0;
-	subresourceRange.levelCount   = mipLevels;
-	subresourceRange.layerCount   = 1;
+    subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount   = mipLevels;
+    subresourceRange.layerCount   = 1;
 
-	// Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
+    // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
     VkImageMemoryBarrier imageMemoryBarrier{};
-	imageMemoryBarrier.image            = image;
-	imageMemoryBarrier.subresourceRange = subresourceRange;
-	imageMemoryBarrier.srcAccessMask    = 0;
-	imageMemoryBarrier.dstAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
-	imageMemoryBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageMemoryBarrier.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageMemoryBarrier.image            = image;
+    imageMemoryBarrier.subresourceRange = subresourceRange;
+    imageMemoryBarrier.srcAccessMask    = 0;
+    imageMemoryBarrier.dstAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageMemoryBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageMemoryBarrier.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
     device->Upload([&](auto copyCmd) -> void {
         copyCmd->PipelineBarrier(
@@ -152,41 +153,41 @@ Texture::~Texture()
 void Texture::INITDescriptor()
 {
     std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings = {
-		// Binding 0 : Vertex shader uniform buffer
-		VkDescriptorSetLayoutBinding{
-			0,
-			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			VK_SHADER_STAGE_VERTEX_BIT,
-			1,
-			nullptr
-		},
-		// Binding 1 : Fragment shader image sampler
-		VkDescriptorSetLayoutBinding{
-			1,
-			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			VK_SHADER_STAGE_VERTEX_BIT,
-			1,
-			nullptr
-		}
-	};
+    	// Binding 0 : Vertex shader uniform buffer
+    	VkDescriptorSetLayoutBinding{
+    		0,
+    		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    		VK_SHADER_STAGE_VERTEX_BIT,
+    		1,
+    		nullptr
+    	},
+    	// Binding 1 : Fragment shader image sampler
+    	VkDescriptorSetLayoutBinding{
+    		1,
+    		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    		VK_SHADER_STAGE_VERTEX_BIT,
+    		1,
+    		nullptr
+    	}
+    };
 
-	VkDescriptorSetLayoutCreateInfo descriptorLayoutCreateInfo{};
+    VkDescriptorSetLayoutCreateInfo descriptorLayoutCreateInfo{};
     descriptorLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descriptorLayoutCreateInfo.bindingCount = setLayoutBindings.size();
-	descriptorLayoutCreateInfo.pBindings    = setLayoutBindings.data();
-	Check(device->CreateDescriptorSetLayout(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
+    descriptorLayoutCreateInfo.bindingCount = setLayoutBindings.size();
+    descriptorLayoutCreateInfo.pBindings    = setLayoutBindings.data();
+    Check(device->CreateDescriptorSetLayout(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
 
-	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
     pipelineLayoutCreateInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.pSetLayouts    = &descriptorSetLayout;
-	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	Check(device->CreatePipelineLayout(&pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+    pipelineLayoutCreateInfo.pSetLayouts    = &descriptorSetLayout;
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    Check(device->CreatePipelineLayout(&pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
 
-	VkDescriptorImageInfo textureDescriptor{};
-	textureDescriptor.imageView   = view->Handle();
-	textureDescriptor.sampler     = sampler.Handle();
-	textureDescriptor.imageLayout = layout;
+    VkDescriptorImageInfo textureDescriptor{};
+    textureDescriptor.imageView   = view->Handle();
+    textureDescriptor.sampler     = sampler.Handle();
+    textureDescriptor.imageLayout = layout;
 
     VkWriteDescriptorSet writeDesc{};
     writeDesc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -196,6 +197,7 @@ void Texture::INITDescriptor()
     writeDesc.pImageInfo      = &textureDescriptor;
 
     device->UpdateDescriptorSets(1, &writeDesc, 0, nullptr);
+    // descriptorSet = rcast<VkDescriptorSet>(ImGui_ImplVulkan_AddTexture(sampler, *view, layout));
 }
 }
 }

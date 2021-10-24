@@ -60,20 +60,6 @@ void Renderer::PrepareFrame()
 void Renderer::Resize()
 {
     swapchain = context->UpdateSurface();
-
-    device->Wait();
-    frameSize = context->FrameSize();
-
-    //auto &commandPool = device->Get<CommandPool>();
-    //commandPool.DestoryAll();
-
-    //commandBuffers->resize(frameSize);
-    //for (auto &buf : *commandBuffers)
-    //{
-    //    buf = commandPool.RequestBuffer(Level::Primary);
-    //}
-    //context->Set(*commandBuffers);
-
     device->Wait();
 }
 

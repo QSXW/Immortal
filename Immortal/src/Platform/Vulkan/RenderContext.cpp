@@ -160,9 +160,9 @@ Swapchain *RenderContext::UpdateSurface()
         device->Wait();
         surfaceExtent = properties.currentExtent;
 
-        LOG::INFO("Destory swapchain => {0}", (void *)swapchain->Handle());
+        // LOG::INFO("Destory swapchain => {0}", (void *)swapchain->Handle());
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
-        LOG::INFO("Create  swapchain => {0}", (void *)swapchain->Handle());
+        // LOG::INFO("Create  swapchain => {0}", (void *)swapchain->Handle());
     }
 
 end:
@@ -194,7 +194,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
             swapchain->Get<VkImageUsageFlags>()
         };
 
-        LOG::INFO("Create Render Target{0}", (void*)image.Handle());
+        // LOG::INFO("Create Render Target{0}", (void*)image.Handle());
         auto renderTarget = RenderTarget::Create(std::move(image));
         
         framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));

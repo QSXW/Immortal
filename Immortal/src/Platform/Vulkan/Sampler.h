@@ -26,6 +26,11 @@ public:
         return handle;
     }
 
+    operator VkSampler&()
+    {
+        return handle;
+    }
+
 private:
     Device *device{ nullptr };
 

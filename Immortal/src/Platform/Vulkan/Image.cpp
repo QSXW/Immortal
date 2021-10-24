@@ -134,7 +134,6 @@ Image::Image(Image &&other) :
 
 Image::~Image()
 {
-    LOG::INFO("Destroy Image => {0}, memory => {1}", (void *)handle, (void *)memory);
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
     {
         vmaDestroyImage(device->MemoryAllocator(), handle, memory);
