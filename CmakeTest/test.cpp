@@ -23,16 +23,8 @@
 
 #include <Platform/Vulkan/Common.h>
 
-#include <mono/jit/jit.h>
-#include <mono/metadata/assembly.h>
-#include <mono/metadata/debug-helpers.h>
-#include <mono/metadata/attrdefs.h>
-
 int main()
 {
-    
-    auto domain = mono_jit_init("Immortal");
-
     glm::vec4 v;
     std::shared_ptr<spdlog::logger> log;
 
