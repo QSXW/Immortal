@@ -14,11 +14,6 @@ enum class Type
     HEVC
 };
 
-enum class ColorSpace
-{
-    
-};
-
 enum class Format
 {
     Unknown,

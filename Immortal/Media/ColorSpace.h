@@ -7,11 +7,22 @@ namespace Media
 namespace ColorSpace
 {
 
-static int32_t YUV2RGBCoefficients[][4] = {
-    { 117489, 138438, 13975, 34925 }, /* ITU-R Rec. 709 (1990) */
+enum class CoefficientType : size_t
+{
+    REC601 = 0,
+    REC709
+};
+
+static float Coefficients[][4] = {
+    {  0.299,  0.587, 0.114, 0 }, /* ITU-R Rec. 601 */
+    { 0.2125, 0.7157, 0.721, 0 }, /* ITU-R Rec. 709 (1990) */
 };
 
 void yuv2rgb(const uint8_t *src, size_t size, uint8_t *dst);
+
+void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size);
+
+void RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size);
 
 };
 }

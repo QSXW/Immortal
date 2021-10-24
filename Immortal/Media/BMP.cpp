@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "Stream.h"
+#include "ColorSpace.h"
 
 namespace Media
 {
