@@ -33,7 +33,7 @@ public:
 
         // Get the extension feature
         VkPhysicalDeviceFeatures2KHR physicalDeviceFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR };
-        T                            extension{ type };
+        T extension{ type };
         physicalDeviceFeatures.pNext = &extension;
 
         auto vkGetPhysicalDeviceFeatures2KHR = (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance.Handle(), "vkGetPhysicalDeviceFeatures2KHR");
@@ -59,6 +59,11 @@ public:
 
 public:
     VkPhysicalDevice &Handle()
+    {
+        return handle;
+    }
+
+    operator VkPhysicalDevice&()
     {
         return handle;
     }
