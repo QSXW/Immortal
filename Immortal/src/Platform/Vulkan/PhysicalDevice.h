@@ -48,11 +48,11 @@ public:
 
         // If an extension feature has already been requested, we shift the linked list down by one
         // Making this current extension the new base pointer
-        if (LastRequestedExtensionFeature)
+        if (lastRequestedExtensionFeature)
         {
-            pExtension->pNext = LastRequestedExtensionFeature;
+            pExtension->pNext = lastRequestedExtensionFeature;
         }
-        LastRequestedExtensionFeature = pExtension;
+        lastRequestedExtensionFeature = pExtension;
 
         return *pExtension;
     }
@@ -106,7 +106,7 @@ public:
     // The features that will be requested to be enabled in the logical device
     VkPhysicalDeviceFeatures RequestedFeatures{};
 
-    void *LastRequestedExtensionFeature{ nullptr };
+    void *lastRequestedExtensionFeature{ nullptr };
 
     std::map<VkStructureType, std::shared_ptr<void>> ExtensionFeatures;
 

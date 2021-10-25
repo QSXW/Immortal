@@ -155,7 +155,12 @@ public:
     }
 
 public:
-    VkDevice Handle()
+    VkDevice &Handle()
+    {
+        return handle;
+    }
+
+    operator VkDevice&()
     {
         return handle;
     }
@@ -272,7 +277,9 @@ private:
     std::unique_ptr<DescriptorPool> descriptorPool;
 
     bool hasGetMemoryRequirements{ false };
+
     bool hasDedicatedAllocation{ false };
+
     bool hasBufferDeviceAddressName{ false };
 };
 }
