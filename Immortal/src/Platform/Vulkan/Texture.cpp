@@ -33,6 +33,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
     device->GetRequirements(stagingBuffer, &memoryRequirements);
 
     VkMemoryAllocateInfo allocateInfo{};
+    allocateInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.allocationSize  = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     Check(device->AllocateMemory(&allocateInfo, nullptr, &stagingMemory));
@@ -91,6 +92,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
     // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
     VkImageMemoryBarrier imageMemoryBarrier{};
+    imageMemoryBarrier.sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageMemoryBarrier.image            = image;
     imageMemoryBarrier.subresourceRange = subresourceRange;
     imageMemoryBarrier.srcAccessMask    = 0;
@@ -146,7 +148,6 @@ Texture::~Texture()
     device->Destory(pipelineLayout);
     view.reset();
     device->Destory(image);
-    device->FreeDescriptorSet(&descriptorSet);
     device->FreeMemory(deviceMemory);
 }
 
@@ -156,7 +157,7 @@ void Texture::INITDescriptor()
     	// Binding 0 : Vertex shader uniform buffer
     	VkDescriptorSetLayoutBinding{
     		0,
-    		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
     		VK_SHADER_STAGE_VERTEX_BIT,
     		1,
     		nullptr
@@ -164,7 +165,7 @@ void Texture::INITDescriptor()
     	// Binding 1 : Fragment shader image sampler
     	VkDescriptorSetLayoutBinding{
     		1,
-    		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
     		VK_SHADER_STAGE_VERTEX_BIT,
     		1,
     		nullptr
