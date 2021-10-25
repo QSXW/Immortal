@@ -24,18 +24,14 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     for (UINT32 index = 0; index < propsCount; index++)
     {
-        const VkQueueFamilyProperties& prop = physicalDevice.QueueFamilyProperties[index];
-        if (physicalDevice.HighPriorityGraphicsQueue)
+        const VkQueueFamilyProperties &prop = physicalDevice.QueueFamilyProperties[index];
+        if (physicalDevice.HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
         {
-            UINT32 graphicsQueueFamily = QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT);
-            if (graphicsQueueFamily == index)
+            queueProps[index].reserve(prop.queueCount);
+            queueProps[index].push_back(1.0f);
+            for (UINT32 i = 1; i < prop.queueCount; i++)
             {
-                queueProps[index].reserve(prop.queueCount);
-                queueProps[index].push_back(1.0f);
-                for (UINT32 i = 1; i < prop.queueCount; i++)
-                {
-                    queueProps[index].push_back(0.5f);
-                }
+                queueProps[index].push_back(0.5f);
             }
         }
         else
@@ -122,7 +118,7 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
     createInfo.pEnabledFeatures        = &physicalDevice.RequestedFeatures;
 
-    Check(vkCreateDevice(physicalDevice.Handle(), &createInfo, nullptr, &handle));
+    Check(vkCreateDevice(physicalDevice, &createInfo, nullptr, &handle));
 
     volkLoadDeviceTable(&DeviceMap, handle);
 
