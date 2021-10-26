@@ -7,6 +7,26 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 
+namespace ImGui
+{
+
+static inline bool MenuItem(const std::string &label, const char *shortcut = NULL, bool selected = false, bool enabled = true)
+{
+    return MenuItem(label.c_str(), shortcut, selected, enabled);
+}
+
+static inline bool BeginMenu(const std::string &label, bool enabled = true)
+{
+    return BeginMenu(label.c_str(), enabled);
+}
+
+static inline bool Begin(const std::string &name, bool *p_open = NULL, ImGuiWindowFlags flags = 0)
+{
+    return Begin(name.c_str(), p_open, flags);
+}
+
+}
+
 namespace Immortal
 {
 
