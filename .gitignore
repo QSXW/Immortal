@@ -7,7 +7,7 @@
 
 # Visual Studio Misc
 /.vscode*
-/.vs*
+*.vs
 *.sln
 *.vcxproj
 *.idb
