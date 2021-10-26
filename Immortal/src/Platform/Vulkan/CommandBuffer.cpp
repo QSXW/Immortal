@@ -55,10 +55,9 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *pr
     inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
 
     VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = flags;
+    beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags            = flags;
     beginInfo.pInheritanceInfo = nullptr;
-
     return vkBeginCommandBuffer(handle, &beginInfo);
 }
 

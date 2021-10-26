@@ -21,7 +21,7 @@ public:
                 UINT32                   queueFamilyIndex,
                 RenderFrame             *renderFrame = nullptr,
                 size_t                   threadIndex = 0,
-                CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetPool);
+                CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetIndividually);
         
     CommandPool(CommandPool &&other);
 

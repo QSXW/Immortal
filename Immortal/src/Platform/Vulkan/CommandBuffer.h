@@ -38,7 +38,7 @@ public:
 
     ~CommandBuffer();
 
-    VkResult Begin(VkCommandBufferUsageFlags flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, CommandBuffer *primaryCommandBuffer = nullptr);
+    VkResult Begin(VkCommandBufferUsageFlags flags =  VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, CommandBuffer *primaryCommandBuffer = nullptr);
 
     VkResult End();
 

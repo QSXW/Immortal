@@ -54,6 +54,7 @@ void Renderer::PrepareFrame()
         {
             Check(error);
         }
+        commandBuffers->at(currentBuffer)->reset(CommandBuffer::ResetMode::ResetIndividually);
     }
 }
 
