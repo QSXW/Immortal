@@ -48,11 +48,11 @@ public:
 
         // If an extension feature has already been requested, we shift the linked list down by one
         // Making this current extension the new base pointer
-        if (lastRequestedExtensionFeature)
+        if (LastRequestedExtensionFeature)
         {
-            pExtension->pNext = lastRequestedExtensionFeature;
+            pExtension->pNext = LastRequestedExtensionFeature;
         }
-        lastRequestedExtensionFeature = pExtension;
+        LastRequestedExtensionFeature = pExtension;
 
         return *pExtension;
     }
@@ -103,12 +103,12 @@ public:
 
     std::vector<VkQueueFamilyProperties> QueueFamilyProperties{};
 
+    std::map<VkStructureType, std::shared_ptr<void>> ExtensionFeatures;
+
     // The features that will be requested to be enabled in the logical device
     VkPhysicalDeviceFeatures RequestedFeatures{};
 
-    void *lastRequestedExtensionFeature{ nullptr };
-
-    std::map<VkStructureType, std::shared_ptr<void>> ExtensionFeatures;
+    void *LastRequestedExtensionFeature{ nullptr };
 
     bool HighPriorityGraphicsQueue{};
 };

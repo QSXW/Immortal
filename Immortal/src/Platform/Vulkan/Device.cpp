@@ -44,29 +44,45 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
         queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
     }
 
-    // Check extensions to enable Vma dedicated Allocation
+    std::vector<VkExtensionProperties> deviceExtensions;
     UINT32 deviceExtensionCount;
     Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, nullptr));
 
     deviceExtensions.resize(deviceExtensionCount);
     Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, deviceExtensions.data()));
 
+    for (auto &e : deviceExtensions)
+    {
+        availableExtensions.insert(e.extensionName);
+    }
+
 #if SLDEBUG
     if (!deviceExtensions.empty())
     {
         LOG::INFO("Device supports the following extensions: ");
-        for (auto& ext : deviceExtensions)
+        for (auto &ext : deviceExtensions)
         {
             LOG::INFO("  \t{0}", ext.extensionName);
         }
     }
 #endif
+    bool hasGetMemoryRequirements2 = IsExtensionSupport("VK_KHR_get_memory_requirements2");
+    bool hasDedicatedAllocation    = IsExtensionSupport("VK_KHR_dedicated_allocation");
+    if (hasGetMemoryRequirements2 && hasDedicatedAllocation)
+    {
+        enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
+        enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
 
-    // @required
-    CheckExtensionSupported();
+        LOG::INFO("Dedicated Allocation enabled");
+    }
 
-    // @required
-    // Check that extensions are supported before creating the device
+    if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
+    {
+        auto &perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+        auto &host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
+        LOG::INFO("Performance query enabled");
+    }
+
     std::vector<const char*> unsupportedExtensions{};
     for (auto& ext : requestedExtensions)
     {
@@ -160,12 +176,12 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     allocatorInfo.device         = handle;
     allocatorInfo.instance       = physicalDevice.Get<Instance>().Handle();
 
-    if (hasBufferDeviceAddressName)
+    if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     }
 
-    if (hasGetMemoryRequirements && hasDedicatedAllocation)
+    if (hasGetMemoryRequirements2 && hasDedicatedAllocation)
     {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
         vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
@@ -252,69 +268,8 @@ Device::~Device()
         vmaDestroyAllocator(memoryAllocator);
     };
 
-    Vulkan::IfNotNullThen<VmaAllocator, DestroyVmaAllocator>(memoryAllocator);
-    Vulkan::IfNotNullThen(vkDestroyDevice, handle);
-}
-
-bool Device::IsExtensionSupport(const char* extension)
-{
-    return std::find_if(deviceExtensions.begin(), deviceExtensions.end(), [extension](auto& deviceExtension)
-        {
-            return Vulkan::Equals(deviceExtension.extensionName, extension);
-        }) != deviceExtensions.end();
-}
-
-bool Device::IsEnabled(const char* extension) const
-{
-    return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const char* enabledExtension)
-        {
-            return Vulkan::Equals(extension, enabledExtension);
-        }) != enabledExtensions.end();
-}
-
-void Device::CheckExtensionSupported()
-{
-    bool hasPerformanceQuery = false;
-    bool hasHostQueryReset = false;
-
-    for (auto& e : deviceExtensions)
-    {
-        if (Equals(e.extensionName, "VK_KHR_get_memory_requirements2"))
-        {
-            hasGetMemoryRequirements = true;
-        }
-        if (Equals(e.extensionName, "VK_KHR_dedicated_allocation"))
-        {
-            hasDedicatedAllocation = true;
-        }
-        if (Equals(e.extensionName, "VK_KHR_performance_query"))
-        {
-            hasPerformanceQuery = true;
-        }
-        if (Equals(e.extensionName, "VK_EXT_host_query_reset"))
-        {
-            hasHostQueryReset = true;
-        }
-        if (Equals(e.extensionName, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
-        {
-            hasBufferDeviceAddressName = true;
-        }
-    }
-
-    if (hasGetMemoryRequirements && hasDedicatedAllocation)
-    {
-        enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
-        enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
-
-        LOG::INFO("Dedicated Allocation enabled");
-    }
-
-    if (hasPerformanceQuery && hasHostQueryReset)
-    {
-        auto &perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
-        auto &host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
-        LOG::INFO("Performance query enabled");
-    }
+    IfNotNullThen<VmaAllocator, DestroyVmaAllocator>(memoryAllocator);
+    IfNotNullThen(vkDestroyDevice, handle);
 }
 
 Queue &Device::SuitableGraphicsQueue()

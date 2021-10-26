@@ -34,16 +34,11 @@ public:
 
     UINT32 QueueFailyIndex(VkQueueFlagBits queueFlag);
 
-    void CheckExtensionSupported();
-
-    bool IsExtensionSupport(const char *extension);
-
-    bool IsEnabled(const char *extension) const;
-
     Queue &FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
 
     Queue &SuitableGraphicsQueue();
 
+public:
     Queue *SuitableGraphicsQueuePtr()
     {
         auto &queue = SuitableGraphicsQueue();
@@ -55,6 +50,20 @@ public:
         return physicalDevice.DepthFormat(depthOnly);
     }
 
+    bool Device::IsEnabled(const std::string &extension) const
+    {
+        return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const std::string &enabledExtension)
+        {
+            return Vulkan::Equals(extension.c_str(), enabledExtension.c_str());
+        }) != enabledExtensions.end();
+    }
+
+    bool Device::IsExtensionSupport(const std::string &extension) const
+    {
+        return availableExtensions.find(extension) != availableExtensions.end();
+    }
+
+public:
     VkFence RequestFence()
     {
         return fencePool->Request();
@@ -262,9 +271,9 @@ private:
 
     VkDevice handle{ VK_NULL_HANDLE };
 
-    std::vector<VkExtensionProperties> deviceExtensions;
+    std::unordered_set<std::string> availableExtensions;
 
-    std::vector<const char *> enabledExtensions{};
+    std::vector<const char *> enabledExtensions;
 
     VmaAllocator memoryAllocator{ VK_NULL_HANDLE };
 
@@ -275,12 +284,6 @@ private:
     std::unique_ptr<FencePool> fencePool;
 
     std::unique_ptr<DescriptorPool> descriptorPool;
-
-    bool hasGetMemoryRequirements{ false };
-
-    bool hasDedicatedAllocation{ false };
-
-    bool hasBufferDeviceAddressName{ false };
 };
 }
 }
