@@ -38,8 +38,10 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
 {
     cv::Mat dst;
     cv::Mat	src = cv::imread(path, cv::IMREAD_UNCHANGED);
-    SLASSERT(src.data && "Failed to load image!");
-
+    if (!src.data)
+    {
+        LOG::ERR("Failed to load image -> {{0}}", path);
+    }
     if (src.data)
     {
         depth = src.channels();

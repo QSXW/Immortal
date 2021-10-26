@@ -21,7 +21,8 @@ void LOG::INIT()
     logSinks[0]->set_pattern("%n: [%^%l%$][%T]: %v");
     logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-    logger = std::make_shared<spdlog::async_logger>("Immortal", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+    // logger = std::make_shared<spdlog::async_logger>("Immortal", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+    logger = std::make_shared<spdlog::logger>("Immortal", logSinks.begin(), logSinks.end());
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
 }
