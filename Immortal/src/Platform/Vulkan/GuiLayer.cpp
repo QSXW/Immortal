@@ -145,7 +145,10 @@ void GuiLayer::End()
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue ClearValue = {{{ .40f, 0.45f, 0.60f, 0.0f }}};
+    VkClearValue clearValue[] = {
+        {{ .40f, 0.45f, 0.60f, 0.0f }},
+        {{  .0f,  .0f,    .0f, 0.0f }}
+    };
 
     frameIndex = Render::CurrentPresentedFrameIndex();
 
@@ -157,8 +160,8 @@ void GuiLayer::End()
     beginInfo.framebuffer              = context->GetFramebuffer(frameIndex)->Handle();
     beginInfo.renderArea.extent.width  = io.DisplaySize.x;
     beginInfo.renderArea.extent.height = io.DisplaySize.y;
-    beginInfo.clearValueCount          = 1;
-    beginInfo.pClearValues             = &ClearValue;
+    beginInfo.clearValueCount          = 2;
+    beginInfo.pClearValues             = clearValue;
     beginInfo.renderArea.offset        = { 0, 0 };
 
     Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
