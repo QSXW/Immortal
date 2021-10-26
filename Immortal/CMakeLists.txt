@@ -270,6 +270,7 @@ set(UTILS_FILES
     src/Utils/PlatformUtils.h)
 
 set(WIDGET_FILES
+    src/Widget/MenuBar.h
     src/Widget/Widget.h
     src/Widget/Viewport.h)
 
