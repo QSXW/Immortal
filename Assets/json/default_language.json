@@ -4,8 +4,17 @@
         "map": {
             "menu": "菜单",
             "start": "开始",
+            "edit": "编辑",
             "open": "打开",
-            "Debug Tools": "调试工具"
+            "save": "保存",
+            "save_as": "保存为",
+            "exit": "退出",
+            "new_scene": "新建场景",
+            "view": "视图",
+            "graphics": "图形",
+            "help": "帮助",
+            "close": "关闭",
+            "debug_tools": "调试工具"
         }
     }
 }
