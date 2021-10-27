@@ -1,10 +1,6 @@
 #pragma once
 #include <Immortal.h>
 #include "Framework/Main.h"
-#include "Platform/Vulkan/Common.h"
-#include "Platform/Vulkan/RenderContext.h"
-#include "Platform/Vulkan/GuiLayer.h"
-#include "Render/Render.h"
 
 using namespace Immortal;
 
@@ -39,6 +35,8 @@ public:
     virtual void OnUpdate() override;
     virtual void OnGuiRender() override;
 
+    bool LoadObject();
+
 public:
     struct
     {
@@ -49,6 +47,10 @@ public:
     LanguageSettings languageSettings{ "Assets/json/default_language.json" };
 
     std::shared_ptr<Texture> primary;
+
+    Widget::Viewport viewport{ "Viewport" };
+
+    Widget::MenuBar menuBar;
 };
 
 
@@ -58,9 +60,6 @@ public:
     VulkanSample() : Application({ U8("Immortal Editor"), 1920, 1080 })
     {
         PushLayer(new VulkanLayer());
-
-        // shader = Render::CreateShader("./Assets/shaders/glsl/texture");
-        shader = Render::CreateShader("./Assets/shaders/hlsl/texture");
     }
 
     ~VulkanSample()
@@ -72,8 +71,8 @@ private:
     std::shared_ptr<Shader> shader;
 };
 
-Immortal::Application* Immortal::CreateApplication()
+Immortal::Application *Immortal::CreateApplication()
 {
-    Render::Set(Render::Type::D3D12);
+    Render::Set(Render::Type::Vulkan);
     return new VulkanSample();
 }
