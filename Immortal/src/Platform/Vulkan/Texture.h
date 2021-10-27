@@ -103,6 +103,32 @@ public:
         return rcast<uint64_t>(descriptorSet);
     }
 
+    virtual void Map(uint32_t slot = 0) override
+    {
+        if (binding)
+        {
+            return;
+        }
+
+        VkDescriptorImageInfo textureDescriptor{};
+        textureDescriptor.imageView   = *view;
+        textureDescriptor.sampler     = sampler;
+        textureDescriptor.imageLayout = layout;
+
+        VkWriteDescriptorSet writeDesc{};
+        writeDesc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDesc.pNext           = nullptr;
+        writeDesc.dstBinding      = slot;
+        writeDesc.dstSet          = descriptorSet;
+        writeDesc.descriptorCount = 1;
+        writeDesc.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDesc.pImageInfo      = &textureDescriptor;
+
+        device->UpdateDescriptorSets(1, &writeDesc, 0, nullptr);
+
+        binding = true;
+    }
+
 private:
     Device *device{ nullptr };
 
@@ -127,6 +153,8 @@ private:
     VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
 
     VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
+
+    bool binding{ false };
 };
 
 }

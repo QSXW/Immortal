@@ -153,52 +153,18 @@ Texture::~Texture()
 
 void Texture::INITDescriptor()
 {
-    std::array<VkDescriptorSetLayoutBinding, 2> setLayoutBindings = {
-    	// Binding 0 : Vertex shader uniform buffer
-    	VkDescriptorSetLayoutBinding{
-    		0,
-    		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-    		VK_SHADER_STAGE_VERTEX_BIT,
-    		1,
-    		nullptr
-    	},
-    	// Binding 1 : Fragment shader image sampler
-    	VkDescriptorSetLayoutBinding{
-    		1,
-    		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-    		VK_SHADER_STAGE_VERTEX_BIT,
-    		1,
-    		nullptr
-    	}
-    };
+    std::array<VkDescriptorSetLayoutBinding, 1> binding{};
+    binding[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binding[0].descriptorCount    = 1;
+    binding[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding[0].pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo descriptorLayoutCreateInfo{};
     descriptorLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayoutCreateInfo.bindingCount = setLayoutBindings.size();
-    descriptorLayoutCreateInfo.pBindings    = setLayoutBindings.data();
+    descriptorLayoutCreateInfo.bindingCount = binding.size();
+    descriptorLayoutCreateInfo.pBindings    = binding.data();
     Check(device->CreateDescriptorSetLayout(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
-
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
-    pipelineLayoutCreateInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCreateInfo.pSetLayouts    = &descriptorSetLayout;
-    pipelineLayoutCreateInfo.setLayoutCount = 1;
-    Check(device->CreatePipelineLayout(&pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
-
-    VkDescriptorImageInfo textureDescriptor{};
-    textureDescriptor.imageView   = view->Handle();
-    textureDescriptor.sampler     = sampler.Handle();
-    textureDescriptor.imageLayout = layout;
-
-    VkWriteDescriptorSet writeDesc{};
-    writeDesc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDesc.dstSet          = descriptorSet;
-    writeDesc.descriptorCount = 1;
-    writeDesc.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writeDesc.pImageInfo      = &textureDescriptor;
-
-    device->UpdateDescriptorSets(1, &writeDesc, 0, nullptr);
-    // descriptorSet = rcast<VkDescriptorSet>(ImGui_ImplVulkan_AddTexture(sampler, *view, layout));
 }
 }
 }
