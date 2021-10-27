@@ -31,6 +31,11 @@ public:
         return handle;
     }
 
+    operator VkSampler() const
+    {
+        return handle;
+    }
+
 private:
     Device *device{ nullptr };
 
