@@ -180,7 +180,7 @@ void Texture2D::SetData(void * data, uint32_t size)
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
 }
 
-void Texture2D::Map(uint32_t slot) const
+void Texture2D::Map(uint32_t slot)
 {
     glBindTextureUnit(slot, handle);
 }

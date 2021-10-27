@@ -140,7 +140,7 @@ public:
 
     virtual void SetData(void *data, uint32_t size) { }
 
-    virtual void Map(uint32_t slot = 0) const { }
+    virtual void Map(uint32_t slot = 0) { }
 
     virtual const char *Path() const
     {
