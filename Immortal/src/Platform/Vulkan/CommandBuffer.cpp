@@ -42,7 +42,6 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *pr
         LOG::ERR("Command buffer is already recording, call end first then begin");
         return VK_NOT_READY;
     }
-
     state = State::Recording;
 
     // Reset =>

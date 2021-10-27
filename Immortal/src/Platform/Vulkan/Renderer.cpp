@@ -44,7 +44,7 @@ void Renderer::PrepareFrame()
 {
     if (swapchain)
     {
-        // LOG::INFO("Transmit Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
+        LOG::DEBUG("Using Semaphore index{0}, acquiredImageReady={1}, renderCompleted{2}", sync, (void *)semaphores[sync].acquiredImageReady, (void *)semaphores[sync].renderComplete);
         auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
         if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
         {
@@ -54,7 +54,6 @@ void Renderer::PrepareFrame()
         {
             Check(error);
         }
-        commandBuffers->at(currentBuffer)->reset(CommandBuffer::ResetMode::ResetIndividually);
     }
 }
 
@@ -89,7 +88,7 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    // LOG::INFO("Waiting for Semaphore => {0} to GPU", (void *)semaphores[sync].acquiredImageReady);
+    LOG::INFO("Waiting for Semaphore => {0} to GPU, SignalSemaphore => {1}", (void *)semaphores[sync].acquiredImageReady, (void *)semaphores[sync].renderComplete);
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &semaphores[sync].acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;
@@ -99,8 +98,9 @@ void Renderer::SwapBuffers()
     submitInfo.pCommandBuffers      = &(*commandBuffers)[currentBuffer]->Handle();
 
     queue->Submit(submitInfo, VK_NULL_HANDLE);
-
     SubmitFrame();
+
+    sync = (sync + 1) % frameSize;
 }
 
 }
