@@ -60,6 +60,16 @@ public:
         return handle;
     }
 
+    operator VkSwapchainKHR&()
+    {
+        return handle;
+    }
+
+    operator VkSwapchainKHR() const
+    {
+        return handle;
+    }
+
     template <class T>
     T &Get()
     {
