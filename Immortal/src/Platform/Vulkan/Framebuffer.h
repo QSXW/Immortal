@@ -37,6 +37,17 @@ public:
         return handle;
     }
 
+    operator VkFramebuffer&()
+    {
+        return handle;
+    }
+
+    operator VkFramebuffer() const
+    {
+        return handle;
+    }
+
+public SLVIRTUAL:
     virtual void Map() override;
 
     virtual void Unmap() override;
