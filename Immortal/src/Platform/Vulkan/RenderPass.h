@@ -18,6 +18,16 @@ public:
         return handle;
     }
 
+    operator VkRenderPass&()
+    {
+        return handle;
+    }
+
+    operator VkRenderPass() const
+    {
+        return handle;
+    }
+
 private:
     VkRenderPass handle{ VK_NULL_HANDLE };
 
