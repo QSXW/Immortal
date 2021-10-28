@@ -238,9 +238,9 @@ public:
         auto &queue = FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
 
         VkSubmitInfo submitInfo{};
-		submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers    = &copyCmd->Handle();
+        submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers    = &copyCmd->Handle();
 
         auto fence = fencePool->Request();
 
