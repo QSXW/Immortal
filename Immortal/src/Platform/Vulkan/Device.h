@@ -204,9 +204,20 @@ public:
         return vkDeviceWaitIdle(handle);
     }
 
-    VkResult Wait(uint32_t fenceCount, VkFence *pFences, VkBool32 waitAll = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max())
+    VkResult Wait(VkFence *pFences, uint32_t fenceCount = 1, VkBool32 waitAll = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max())
     {
         return vkWaitForFences(handle, fenceCount, pFences, waitAll, timeout);
+    }
+
+    VkResult Reset(VkFence *pFence, uint32_t fenceCount = 1)
+    {
+        return vkResetFences(handle, 1, pFence);
+    }
+
+    void WaitAndReset(VkFence *pFence, uint32_t fenceCount = 1)
+    {
+        Check(Wait(pFence, fenceCount));
+        Check(Reset(pFence, fenceCount));
     }
 
     VmaAllocator MemoryAllocator() const
@@ -245,7 +256,7 @@ public:
         auto fence = fencePool->Request();
 
         queue.Submit(submitInfo, fence);
-        Check(this->Wait(1, &fence, VK_TRUE, FencePool::Timeout));
+        Check(Wait(&fence, 1, VK_TRUE, FencePool::Timeout));
 
         fencePool->Discard(&fence);
         commandPool->DiscardBuffer(copyCmd);
