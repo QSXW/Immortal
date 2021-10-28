@@ -66,6 +66,7 @@ VkFence FencePool::Request()
 
 void FencePool::Discard(VkFence *pFence)
 {
+    vkResetFences(*device, 1, pFence);
     pending.push(*pFence);
     activeCount--;
     *pFence = nullptr;
