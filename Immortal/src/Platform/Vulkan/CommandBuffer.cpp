@@ -30,7 +30,7 @@ CommandBuffer::~CommandBuffer()
     }
 }
 
-VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer)
+VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
 {
     if (level == Level::Secondary)
     {
@@ -55,7 +55,7 @@ VkResult CommandBuffer::Begin(VkCommandBufferUsageFlags flags, CommandBuffer *pr
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags            = flags;
+    beginInfo.flags            = ncast<VkCommandBufferUsageFlags>(flags);
     beginInfo.pInheritanceInfo = nullptr;
     return vkBeginCommandBuffer(handle, &beginInfo);
 }

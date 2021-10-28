@@ -26,9 +26,11 @@ public:
         Executable
     };
 
-    enum class Usage : int
+    enum class Usage
     {
-        
+        OneTimeSubmit      = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        RenderPassContinue = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
+        SimultaneousUse    = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
     };
 
     VkResult reset(ResetMode reset_mode);
@@ -38,11 +40,21 @@ public:
 
     ~CommandBuffer();
 
-    VkResult Begin(VkCommandBufferUsageFlags flags =  VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, CommandBuffer *primaryCommandBuffer = nullptr);
+    VkResult Begin(Usage flags = Usage::OneTimeSubmit, CommandBuffer *primaryCommandBuffer = nullptr);
 
     VkResult End();
 
     VkCommandBuffer &Handle()
+    {
+        return handle;
+    }
+
+    operator VkCommandBuffer&()
+    {
+        return handle;
+    }
+
+    operator VkCommandBuffer() const
     {
         return handle;
     }
@@ -79,6 +91,16 @@ public:
                            const VkBufferImageCopy *pRegions)
     {
         vkCmdCopyBufferToImage(handle, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+    }
+
+    void BeginRenderPass(const VkRenderPassBeginInfo *pBeginInfo, VkSubpassContents contents)
+    {
+        vkCmdBeginRenderPass(handle, pBeginInfo, contents);
+    }
+
+    void EndRenderPass()
+    {
+        vkCmdEndRenderPass(handle);
     }
 
 private:
