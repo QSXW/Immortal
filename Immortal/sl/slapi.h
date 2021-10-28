@@ -116,4 +116,7 @@ inline constexpr void CopyProps(T *dst, T *src)
     memcpy(dst, src, sizeof(T));
 }
 
+#define SLVIRTUAL 
+#define SLINLINE
+
 }
