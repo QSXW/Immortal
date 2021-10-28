@@ -59,6 +59,16 @@ public:
         return handle;
     }
 
+    operator VkQueue&()
+    {
+        return handle;
+    }
+
+    operator VkQueue() const
+    {
+        return handle;
+    }
+
     VkQueueFamilyProperties &Properties()
     {
         return properties;
