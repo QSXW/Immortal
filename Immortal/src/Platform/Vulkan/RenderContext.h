@@ -165,6 +165,15 @@ public:
         return framebuffers.size();
     }
 
+    template <class T>
+    void Record(uint32_t bufferIndex, T &&process)
+    {
+        auto *graphicsCmdBuf = commandBuffers[bufferIndex];
+        graphicsCmdBuf->Begin();
+        process(graphicsCmdBuf, GetFramebuffer(bufferIndex));
+        graphicsCmdBuf->End();
+    }
+
     Swapchain *UpdateSurface();
 
     void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);

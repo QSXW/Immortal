@@ -69,9 +69,9 @@ void GuiLayer::OnAttach()
 
     initInfo.Instance        = context->Get<VkInstance>();
     initInfo.PhysicalDevice  = context->Get<VkPhysicalDevice>();
-    initInfo.Device          = device->Handle();
+    initInfo.Device          = *device;
     initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
-    initInfo.Queue           = queue->Handle();
+    initInfo.Queue           = *queue;
     initInfo.PipelineCache   = pipelineCache;
     initInfo.DescriptorPool  = descriptorPool;
     initInfo.Allocator       = nullptr;
@@ -84,22 +84,10 @@ void GuiLayer::OnAttach()
     {
         LOG::INFO("Initialized GUI with success");
     }
-
-    frameIndex = Render::CurrentPresentedFrameIndex();
-
-    commandBuffer = context->Get<CommandBuffers *>();
-    Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->at(frameIndex)->Handle());
-    Check(commandBuffer->at(frameIndex)->End());
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer->at(frameIndex)->Handle();
-
-    Check(queue->Submit(submitInfo, VK_NULL_HANDLE));
-
-    Check(device->Wait());
+    
+    device->Upload([&](auto *cmdbuf) -> void {
+        ImGui_ImplVulkan_CreateFontsTexture(*cmdbuf);
+        });
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -150,27 +138,24 @@ void GuiLayer::End()
         {{  .0f,  .0f,    .0f, 0.0f }}
     };
 
-    frameIndex = Render::CurrentPresentedFrameIndex();
+    context->Record(Render::CurrentPresentedFrameIndex(), [&](auto *cmdbuf, auto *framebuffer) -> void {
+        VkRenderPassBeginInfo beginInfo = {};
+        beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        beginInfo.pNext                    = nullptr;
+        beginInfo.renderPass               = *renderPass;
+        beginInfo.framebuffer              = *framebuffer;
+        beginInfo.renderArea.extent.width  = io.DisplaySize.x;
+        beginInfo.renderArea.extent.height = io.DisplaySize.y;
+        beginInfo.clearValueCount          = 2;
+        beginInfo.pClearValues             = clearValue;
+        beginInfo.renderArea.offset        = { 0, 0 };
 
-    commandBuffer = context->Get<CommandBuffers *>();
+        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    VkRenderPassBeginInfo beginInfo = {};
-    beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    beginInfo.renderPass               = renderPass->Handle();
-    beginInfo.framebuffer              = context->GetFramebuffer(frameIndex)->Handle();
-    beginInfo.renderArea.extent.width  = io.DisplaySize.x;
-    beginInfo.renderArea.extent.height = io.DisplaySize.y;
-    beginInfo.clearValueCount          = 2;
-    beginInfo.pClearValues             = clearValue;
-    beginInfo.renderArea.offset        = { 0, 0 };
+        ImGui_ImplVulkan_RenderDrawData(primaryDrawData, *cmdbuf);
 
-    Check(commandBuffer->at(frameIndex)->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
-    vkCmdBeginRenderPass(commandBuffer->at(frameIndex)->Handle(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    ImGui_ImplVulkan_RenderDrawData(primaryDrawData, commandBuffer->at(frameIndex)->Handle());
-
-    vkCmdEndRenderPass(commandBuffer->at(frameIndex)->Handle());
-    Check(commandBuffer->at(frameIndex)->End());
+        cmdbuf->EndRenderPass();
+        });
     
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
