@@ -23,7 +23,8 @@ public:
         Invalid,
         Initial,
         Recording,
-        Executable
+        Executable,
+        Pending
     };
 
     enum class Usage
@@ -43,6 +44,8 @@ public:
     VkResult Begin(Usage flags = Usage::OneTimeSubmit, CommandBuffer *primaryCommandBuffer = nullptr);
 
     VkResult End();
+
+    VkResult Execute();
 
     VkCommandBuffer &Handle()
     {

@@ -57,6 +57,7 @@ VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
     beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags            = ncast<VkCommandBufferUsageFlags>(flags);
     beginInfo.pInheritanceInfo = nullptr;
+
     return vkBeginCommandBuffer(handle, &beginInfo);
 }
 
@@ -70,6 +71,11 @@ VkResult CommandBuffer::End()
     vkEndCommandBuffer(handle);
     state = State::Executable;
 
+    return VK_SUCCESS;
+}
+
+VkResult CommandBuffer::Execute()
+{
     return VK_SUCCESS;
 }
 
