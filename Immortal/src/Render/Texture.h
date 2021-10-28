@@ -12,14 +12,13 @@ public:
     static constexpr T CalculateMipmapLevels(T width, T height)
     {
         T levels = 1;
-        while ((width | height) >> levels) {
+        while ((width >> levels) && (height >> levels)) {
             levels++;
         }
         return levels;
     }
 
 public:
-
     enum class ViewType
     {
         _1D,
