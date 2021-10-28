@@ -48,7 +48,11 @@ public:
 
     std::shared_ptr<Texture> primary;
 
+    std::shared_ptr<Texture> second;
+
     Widget::Viewport viewport{ "Viewport" };
+
+    Widget::Viewport preview{ "preview" };
 
     Widget::MenuBar menuBar;
 };
