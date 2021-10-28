@@ -21,31 +21,31 @@ Renderer::Renderer(RenderContext::Super *c) :
 void Renderer::INIT()
 {
     frameSize = context->FrameSize();
-    semaphores.resize(frameSize);
     for (int i = 0; i < frameSize; i++)
     {
         semaphores[i].acquiredImageReady = semaphorePool->Request();
         semaphores[i].renderComplete     = semaphorePool->Request();
+
+        fences[i] = device->RequestFence();
     }
 
     queue = context->Get<Queue*>();
-
-    commandBuffers = context->Get<CommandBuffers *>();
-    frameSize = commandBuffers->size();
-
-    fences.resize(frameSize);
-    for (auto &fence : fences)
-    {
-        fence = device->RequestFence();
-    }
 }
 
 void Renderer::PrepareFrame()
 {
     if (swapchain)
     {
-        LOG::DEBUG("Using Semaphore index{0}, acquiredImageReady={1}, renderCompleted{2}", sync, (void *)semaphores[sync].acquiredImageReady, (void *)semaphores[sync].renderComplete);
         auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
+        if (imagesInFlight[sync] != VK_NULL_HANDLE)
+        {
+            device->WaitAndReset(&imagesInFlight[sync]);
+        }
+        else
+        {
+            imagesInFlight[sync] = fences[sync];
+        }
+
         if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
         {
             Resize();
@@ -88,16 +88,15 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    LOG::INFO("Waiting for Semaphore => {0} to GPU, SignalSemaphore => {1}", (void *)semaphores[sync].acquiredImageReady, (void *)semaphores[sync].renderComplete);
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &semaphores[sync].acquiredImageReady;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
     submitInfo.pWaitDstStageMask    = &submitPipelineStages;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &(*commandBuffers)[currentBuffer]->Handle();
+    submitInfo.pCommandBuffers      = &context->GetCommandBuffer(currentBuffer)->Handle();
 
-    queue->Submit(submitInfo, VK_NULL_HANDLE);
+    queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();
 
     sync = (sync + 1) % frameSize;

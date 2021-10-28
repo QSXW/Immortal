@@ -160,6 +160,11 @@ public:
         return framebuffers[index].get();
     }
 
+    CommandBuffer *GetCommandBuffer(uint32_t index)
+    {
+        return commandBuffers[index];
+    }
+
     size_t FrameSize()
     {
         return framebuffers.size();
@@ -168,10 +173,15 @@ public:
     template <class T>
     void Record(uint32_t bufferIndex, T &&process)
     {
-        auto *graphicsCmdBuf = commandBuffers[bufferIndex];
-        graphicsCmdBuf->Begin();
-        process(graphicsCmdBuf, GetFramebuffer(bufferIndex));
-        graphicsCmdBuf->End();
+        graphicsCmdBuf = commandBuffers[bufferIndex];
+        Check(graphicsCmdBuf->Begin(
+            CommandBuffer::Usage::OneTimeSubmit)
+            );
+        process(
+            graphicsCmdBuf,
+            GetFramebuffer(bufferIndex)
+            );
+        Check(graphicsCmdBuf->End());
     }
 
     Swapchain *UpdateSurface();
@@ -192,6 +202,8 @@ private:
     std::unique_ptr<Swapchain> swapchain;
 
     std::vector<CommandBuffer*> commandBuffers;
+
+    CommandBuffer *graphicsCmdBuf{ nullptr };
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 

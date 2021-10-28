@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Render/Renderer.h"
+#include <array>
 
+#include "Render/Renderer.h"
 #include "Common.h"
 #include "RenderContext.h"
 #include "Texture.h"
@@ -64,13 +65,15 @@ private:
 
     Swapchain *swapchain{ nullptr };
 
-    std::vector<Semaphores> semaphores;
+    std::array<Semaphores, 3> semaphores;
     
+    std::array<VkFence, 3> fences;
+
+    std::array<VkFence, 3> imagesInFlight{ VK_NULL_HANDLE };
+
     uint32_t sync{ 0 };
 
     uint32_t frameSize{ 0 };
-
-    std::vector<VkFence> fences;
 
     VkRenderPass renderPass{ VK_NULL_HANDLE };
 
