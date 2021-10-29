@@ -146,7 +146,6 @@ Texture::~Texture()
 {
     device->Wait();
     device->Destory(descriptorSetLayout);
-    device->Destory(pipelineLayout);
     view.reset();
     device->Destory(image);
     device->FreeMemory(deviceMemory);
