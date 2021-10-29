@@ -144,6 +144,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath) :
 
 Texture::~Texture()
 {
+    device->Wait();
     device->Destory(descriptorSetLayout);
     device->Destory(pipelineLayout);
     view.reset();
