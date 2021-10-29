@@ -85,6 +85,7 @@ public:
     DEFINE_DESTORY_VK_OBJECT(Buffer)
     DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
     DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
+    DEFINE_DESTORY_VK_OBJECT(ShaderModule)
 
     VkResult CreatePipelineLayout(const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout)
     {

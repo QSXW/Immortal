@@ -20,6 +20,8 @@ public:
 public:
     Shader(Device *device, const std::string &filename, Shader::Type type = Shader::Type::Graphics);
 
+    ~Shader();
+
     VkShaderModule Load(const std::string &filename, Shader::Stage stage);
 
 private:

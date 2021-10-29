@@ -39,6 +39,14 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
     }
 }
 
+Shader::~Shader()
+{
+    for (auto &m : modules)
+    {
+        device->Destory(m);
+    }
+}
+
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 {
     GLSLCompiler compiler{};
