@@ -7,6 +7,19 @@
 namespace Immortal
 {
 
+class Buffer
+{
+public:
+    enum class Type
+    {
+        Layout,
+        Vertex,
+        Index,
+        Uniform,
+        PushConstant
+    };
+};
+
 static UINT32 ShaderDataTypeSize(Shader::DataType type)
 {
     switch (type)

@@ -17,7 +17,7 @@ namespace Vulkan
 class Texture : public SuperTexture2D
 {
 public:
-    Texture(RenderContext *context, const std::string &filepath);
+    Texture(Device *device, const std::string &filepath);
 
     ~Texture();
 

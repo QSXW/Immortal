@@ -8,8 +8,8 @@ namespace Immortal
 namespace Vulkan
 {
 
-Texture::Texture(RenderContext *context, const std::string &filepath) :
-    device{ context->Get<Device*>() }
+Texture::Texture(Device *device, const std::string &filepath) :
+    device{ device }
 {
     Frame frame{ filepath };
 

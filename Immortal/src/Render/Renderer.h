@@ -5,6 +5,7 @@
 #include "RenderContext.h"
 #include "VertexArray.h"
 #include "Texture.h"
+#include "Pipeline.h"
 
 namespace Immortal
 {
@@ -35,6 +36,11 @@ public:
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 
     virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type)
+    {
+        return nullptr;
+    }
+
+    virtual std::shared_ptr<Pipeline> CreatePipeline(std::shared_ptr<Shader> &shader)
     {
         return nullptr;
     }

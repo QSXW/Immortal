@@ -21,6 +21,7 @@ public:
 
     enum class PrimitiveType
     {
+        Point,
         Line,
         Triangles
     };
@@ -28,31 +29,33 @@ public:
 public:
     Pipeline() { }
 
+    Pipeline(std::shared_ptr<Shader> &shader) :
+        desc{ shader }
+    {
+        
+    }
+
     virtual ~Pipeline() { }
 
-    virtual void Map()   const = 0;
+    virtual void Map() { }
 
-    virtual void Unmap() const = 0;
+    virtual void Unmap() { }
 
-private:
+    virtual void Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type = Buffer::Type::Vertex) { }
+
+protected:
     struct Description
     {
+        std::shared_ptr<Shader> Shader{ nullptr };
+
         VertexLayout Layout{};
 
         DrawType Type{ DrawType::Static };
 
-        std::shared_ptr<Shader> Shader{};
-
-        struct DepthStencilState
-        {
-            bool DepthEnable = false;
-            bool StencilEnable = false;
-        };
-
-        UINT32 SampleMask = UINT_MAX;
-
         PrimitiveType PrimitiveType = PrimitiveType::Triangles;
-    } description;
+    } desc;
 };
+
+using SuperPipeline = Pipeline;
 
 }

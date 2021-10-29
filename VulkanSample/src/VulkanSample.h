@@ -70,9 +70,6 @@ public:
     {
 
     }
-
-private:
-    std::shared_ptr<Shader> shader;
 };
 
 Immortal::Application *Immortal::CreateApplication()

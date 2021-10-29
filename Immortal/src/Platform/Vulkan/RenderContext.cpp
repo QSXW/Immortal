@@ -30,6 +30,7 @@ static std::vector<const char *> ValidationLayers = {
     // VK_LAYER_LUNARG_DEVICE_SIMULATION,
     // VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
     VK_LAYER_KHRONOS_VALIDATION,
+    "VK_LAYER_KHRONOS_synchronization2",
     // VK_LAYER_LUNARG_MONITOR,
     // VK_LAYER_LUNARG_SCREENSHOT
 };
@@ -151,9 +152,9 @@ Swapchain *RenderContext::UpdateSurface()
     Check(device->GetSurfaceCapabilities(swapchain->Get<Surface>(), &properties));
     
     if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.height <= 0 && properties.currentExtent.width <= 0))
-	{
+    {
         goto end;
-	}
+    }
     if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
     {
         device->Wait();

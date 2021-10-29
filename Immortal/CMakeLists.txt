@@ -141,6 +141,8 @@ set(VULKAN_FILES
    src/Platform/Vulkan/ImageView.h
    src/Platform/Vulkan/Instance.cpp
    src/Platform/Vulkan/Instance.h
+   src/Platform/Vulkan/Pipeline.cpp
+   src/Platform/Vulkan/Pipeline.h
    src/Platform/Vulkan/PhysicalDevice.cpp
    src/Platform/Vulkan/PhysicalDevice.h
    src/Platform/Vulkan/Queue.cpp

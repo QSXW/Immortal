@@ -6,6 +6,8 @@
 #include "Common.h"
 #include "RenderContext.h"
 #include "Texture.h"
+#include "Shader.h"
+#include "Pipeline.h"
 
 namespace Immortal
 {
@@ -43,14 +45,19 @@ public:
         return context->GraphicsRenderer();
     }
 
-    virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type) override
+    virtual std::shared_ptr<Shader::Super> CreateShader(const std::string &filepath, Shader::Type type) override
     {
-        return context->CreateShader(filepath, type);
+        return std::make_shared<Shader>(device, filepath, type);
+    }
+
+    virtual std::shared_ptr<Pipeline::Super> CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    {
+        return std::make_shared<Pipeline>(device, shader);
     }
 
     virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
     {
-        return std::make_shared<Texture>(context, filepath);
+        return std::make_shared<Texture>(device, filepath);
     }
 
 private:
@@ -67,9 +74,7 @@ private:
 
     std::array<Semaphores, 3> semaphores;
     
-    std::array<VkFence, 3> fences;
-
-    std::array<VkFence, 3> imagesInFlight{ VK_NULL_HANDLE };
+    std::array<VkFence, 3> fences{ VK_NULL_HANDLE };
 
     uint32_t sync{ 0 };
 

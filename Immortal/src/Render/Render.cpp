@@ -5,7 +5,7 @@
 namespace Immortal
 {
 
-std::unique_ptr<Renderer> Render::handle;
+std::unique_ptr<Renderer> Render::renderer;
 
 std::vector<std::shared_ptr<Shader>> Render::ShaderContainer{};
 
@@ -27,28 +27,34 @@ static const char *Sringify(Render::Type type)
 }
 
 const std::string Render::ShaderProfiles[] = {
-    { "assets/shaders/texture" },
-    { "assets/shaders/PBR" },
-    { "assets/shaders/skybox" },
-    { "assets/shaders/Renderer2D" },
-    { "assets/shaders/Tonemap"},
-    { "assets/shaders/test"},
-    { "assets/shaders/mypbr"}
+    { "Texture" },
 };
 
 void Render::INIT(RenderContext *context)
 {
     LOG::INFO("Initialize Renderer with API => {0}", Sringify(Render::API));
-    handle = Renderer::Create(context);
-    handle->INIT();
+    renderer = Renderer::Create(context);
+    renderer->INIT();
 
     {
-        /*data.ShaderLibrary = CreateRef<ShaderMap>();
-
-        for (int i = 0; i < sizeof(ShaderProfiles) / sizeof(ShaderProfiles[0]); i++)
+        auto asset = API == Type::D3D12 ? 1 : 0;
+        ShaderContainer.reserve(SLLEN(ShaderProfiles));
+        for (int i = 0; i < SLLEN(ShaderProfiles); i++)
         {
-            ShaderContainer.emplace_back(context->CreateShader(ShaderProfiles[i]));
+            ShaderContainer.emplace_back(
+                    renderer->CreateShader(
+                        std::string{ AssetsPathes[asset] } + ShaderProfiles[i],
+                        Shader::Type::Graphics
+                        )
+                );
         }
+    }
+
+    auto pipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
+    pipeline->Set(std::make_shared<Buffer>(), Buffer::Type::Vertex);
+
+    {
+        /*
 
         constexpr UINT32 white        = 0xffffffff;
         constexpr UINT32 black        = 0x000000ff;
@@ -88,14 +94,14 @@ void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::
     shader->Set("u_ViewProjection", scene.viewProjectionMatrix);
     shader->Set("u_Transform", transform);
 
-    handle->DrawIndexed(vertexArray, 1);
+    renderer->DrawIndexed(vertexArray, 1);
 }
 
 void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)
 {
     shader->Map();
     shader->Set("uTransform", transform);
-    handle->DrawIndexed(mesh->VertexArrayObject(), 1);
+    renderer->DrawIndexed(mesh->VertexArrayObject(), 1);
     shader->Unmap(); 
 }
 

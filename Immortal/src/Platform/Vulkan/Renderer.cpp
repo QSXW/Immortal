@@ -25,8 +25,6 @@ void Renderer::INIT()
     {
         semaphores[i].acquiredImageReady = semaphorePool->Request();
         semaphores[i].renderComplete     = semaphorePool->Request();
-
-        fences[i] = device->RequestFence();
     }
 
     queue = context->Get<Queue*>();
@@ -34,26 +32,28 @@ void Renderer::INIT()
 
 void Renderer::PrepareFrame()
 {
-    if (swapchain)
+    if (!swapchain)
     {
-        auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
-        if (imagesInFlight[sync] != VK_NULL_HANDLE)
-        {
-            device->WaitAndReset(&imagesInFlight[sync]);
-        }
-        else
-        {
-            imagesInFlight[sync] = fences[sync];
-        }
+        return;
+    }
 
-        if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
-        {
-            Resize();
-        }
-        else
-        {
-            Check(error);
-        }
+    auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
+    if (fences[sync] != VK_NULL_HANDLE)
+    {
+        device->WaitAndReset(&fences[sync]);
+    }
+    else
+    {
+        fences[sync] = device->RequestFence();
+    }
+
+    if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
+    {
+        Resize();
+    }
+    else
+    {
+        Check(error);
     }
 }
 

@@ -41,6 +41,11 @@ public:
         { "D3D12"  }
     };
 
+    static inline const char AssetsPathes[][24] = {
+        "Assets/Shaders/glsl/",
+        "Assets/Shaders/hlsl/"
+    };
+
     enum class ShaderName : INT32
     {
         Texture,
@@ -89,33 +94,33 @@ public:
 
     static void OnWindowResize(UINT32 width, UINT32 height)
     {
-        handle->OnResize(0, 0, width, height);
+        renderer->OnResize(0, 0, width, height);
     }
 
     static void EnableDepthTest()
     {
-        handle->EnableDepthTest();
+        renderer->EnableDepthTest();
     }
 
     static void DisableDepthTest()
     {
-        handle->DisableDepthTest();
+        renderer->DisableDepthTest();
     }
 
     static void SetClearColor(Color &color)
     {
-        handle->SetClearColor(color);
+        renderer->SetClearColor(color);
     }
 
     static void Clear(Color &color = Color{ 0.0f })
     {
-        handle->SetClearColor(color);
-        handle->Clear();
+        renderer->SetClearColor(color);
+        renderer->Clear();
     }
 
     static void DrawIndexed(std::shared_ptr<VertexArray> &vao, UINT32 indexCount)
     {
-        handle->DrawIndexed(vao, indexCount);
+        renderer->DrawIndexed(vao, indexCount);
     }
 
     static void Render::Begin(OrthographicCamera &camera)
@@ -135,7 +140,7 @@ public:
 
     static uint32_t CurrentPresentedFrameIndex()
     {
-        return handle->Index();
+        return renderer->Index();
     }
 
     static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4& transform = Matrix4{ 1.0f });
@@ -144,12 +149,12 @@ public:
 
     static void SwapBuffers()
     {
-        handle->SwapBuffers();
+        renderer->SwapBuffers();
     }
 
     static void PrepareFrame()
     {
-        handle->PrepareFrame();
+        renderer->PrepareFrame();
     }
 
     static const char *Api()
@@ -159,21 +164,21 @@ public:
 
     static const char *GraphicsRenderer()
     {
-        return handle->GraphicsRenderer();
+        return renderer->GraphicsRenderer();
     }
 
     static std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
     {
-        return handle->CreateShader(filepath, type);
+        return renderer->CreateShader(filepath, type);
     }
 
     static std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
     {
-        return handle->CreateTexture(filepath);
+        return renderer->CreateTexture(filepath);
     }
 
 private:
-    static std::unique_ptr<Renderer> handle;
+    static std::unique_ptr<Renderer> renderer;
 
     struct Scene
     {
