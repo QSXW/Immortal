@@ -3,7 +3,8 @@
 
 #include <fstream>
 #include <array>
-#include <glad/glad.h>
+
+#include "Common.h"
 #include <GLFW/glfw3.h>
 
 namespace Immortal

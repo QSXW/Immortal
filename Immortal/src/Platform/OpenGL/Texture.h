@@ -1,10 +1,7 @@
 #pragma once
 
-#include "ImmortalCore.h"
-
 #include "Render/Texture.h"
-
-#include <glad/glad.h>
+#include "Common.h"
 
 namespace Immortal
 {

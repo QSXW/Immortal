@@ -1,9 +1,8 @@
 #include "impch.h"
 #include "Framebuffer.h"
 
+#include "Common.h"
 #include "Texture.h"
-
-#include <glad/glad.h>
 
 namespace Immortal
 {

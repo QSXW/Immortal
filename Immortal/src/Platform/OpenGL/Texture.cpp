@@ -2,11 +2,7 @@
 #include "Texture.h"
 
 #include "Render/Frame.h"
-
 #include "Shader.h"
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 namespace Immortal
 {

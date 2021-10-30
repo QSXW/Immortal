@@ -1,13 +1,14 @@
 #include "impch.h"
 #include "Renderer.h"
 
-#include <glad/glad.h>
+#include "Common.h"
 #include <GLFW/glfw3.h>
 
 namespace Immortal
 {
 namespace OpenGL
 {
+
 void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned severity, int length, const char *message, const void *userParam)
 {
 #define CASE(y) if (severity == y)

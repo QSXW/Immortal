@@ -171,6 +171,7 @@ set(VULKAN_FILES
 set(OPENGL_FILES
     src/Platform/OpenGL/Buffer.cpp
     src/Platform/OpenGL/Buffer.h
+    src/Platform/OpenGL/Common.h
     src/Platform/OpenGL/Framebuffer.cpp
     src/Platform/OpenGL/Framebuffer.h
     src/Platform/OpenGL/GuiLayer.cpp

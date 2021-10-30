@@ -1,8 +1,7 @@
 #include "impch.h"
 #include "VertexArray.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "Common.h"
 
 namespace Immortal
 {
@@ -59,26 +58,26 @@ void VertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuf
 
     const auto& layout = vertexBuffer->Layout();
     uint32_t attribIndex = 0;
-    for (const auto& element : layout)
+    for (const auto &e : layout)
     {
-        auto glBaseType = ShaderDataTypeToOpenGLBaseType(element.Type);
+        auto glBaseType = e.BaseType<GLenum>();
         glEnableVertexAttribArray(attribIndex);
         if (glBaseType == GL_INT)
         {
             glVertexAttribIPointer(attribIndex,
-                element.GetComponentCount(),
+                e.ComponentCount(),
                 glBaseType,
                 layout.Stride(),
-                (const void*)(intptr_t)element.Offset);
+                (const void*)(intptr_t)e.Offset());
         }
         else
         {
             glVertexAttribPointer(attribIndex,
-                element.GetComponentCount(),
+                e.ComponentCount(),
                 glBaseType,
-                element.Normalized ? GL_TRUE : GL_FALSE,
+                GL_FALSE,
                 layout.Stride(),
-                (const void*)(intptr_t)element.Offset);
+                (const void*)(intptr_t)e.Offset());
         }
         attribIndex++;
     }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImmortalCore.h"
-
 #include "Render/Framebuffer.h"
 
 namespace Immortal
