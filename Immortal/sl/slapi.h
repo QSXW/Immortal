@@ -111,7 +111,7 @@ inline constexpr void *CleanUpObject(T *ptr, int value = 0, size_t size = sizeof
 }
 
 template <class T>
-inline constexpr void CopyProps(T *dst, T *src)
+inline constexpr void CopyProps(T *dst, const T *src)
 {
     memcpy(dst, src, sizeof(T));
 }
