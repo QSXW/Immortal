@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12Common.h"
+#include "Common.h"
 #include "CommandPool.h"
 #include "CommandAllocator.h"
 
@@ -22,9 +22,9 @@ class Queue
 public:
     struct Description : public D3D12_COMMAND_QUEUE_DESC
     {
-    
+
     };
-    
+
     enum class Flag
     {
         None              = D3D12_COMMAND_QUEUE_FLAG_NONE,

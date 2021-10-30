@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Framework/Device.h"
-#include "D3D12Common.h"
+#include "Common.h"
 
 #include "Queue.h"
 #include "Descriptor.h"

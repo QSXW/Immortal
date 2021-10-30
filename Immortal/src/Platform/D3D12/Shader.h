@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12Common.h"
+#include "Common.h"
 #include "Render/Shader.h"
 #include "Framework/Utils.h"
 
@@ -130,7 +130,7 @@ private:
                  (*errorMsg)->Release();
                  *errorMsg = nullptr;
              }
-         
+
              if (*toBeReleased)
              {
                  (*toBeReleased)->Release();

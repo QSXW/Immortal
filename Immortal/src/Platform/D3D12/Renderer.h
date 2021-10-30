@@ -2,7 +2,7 @@
 
 #include "Render/Renderer.h"
 
-#include "D3D12Common.h"
+#include "Common.h"
 #include "RenderContext.h"
 #include "Shader.h"
 #include "Texture.h"
@@ -27,9 +27,9 @@ public:
     virtual void SwapBuffers() override;
 
     virtual void PrepareFrame() override
-    { 
+    {
         frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-        
+
         commandAllocators[frameIndex]->Reset();
 
         commandList->Reset(commandAllocators[frameIndex]);

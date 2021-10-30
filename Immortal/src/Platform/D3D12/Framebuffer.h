@@ -2,7 +2,7 @@
 
 #include "Render/Framebuffer.h"
 
-#include "D3D12Common.h"
+#include "Common.h"
 
 namespace Immortal
 {

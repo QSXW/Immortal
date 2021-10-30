@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12Common.h"
+#include "Common.h"
 #include "Descriptor.h"
 #include "Device.h"
 
@@ -47,11 +47,11 @@ public:
 
 private:
     ID3D12Resource *texture{ nullptr };
-    
+
     Descriptor cpuDescriptorHandle;
 
     GPUDescriptor gpuDescriptorHandle{};
-    
+
     D3D12_RESOURCE_DESC desc{};
 
     int descriptorIndex{ 1 };

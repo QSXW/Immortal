@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12Common.h"
+#include "Common.h"
 #include "CommandPool.h"
 
 #include <mutex>
@@ -18,7 +18,7 @@ public:
         type{ type },
         device{ device }
     {
-        
+
     }
 
     ~CommandAllocatorPool()

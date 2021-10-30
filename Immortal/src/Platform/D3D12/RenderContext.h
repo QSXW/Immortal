@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Render/RenderContext.h"
-#include "D3D12Common.h"
+#include "Common.h"
 
 #include <array>
 
@@ -146,7 +146,7 @@ private:
     std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
 
     std::unique_ptr<DescriptorPool> shaderResourceViewDescriptorHeap;
-    
+
     std::unique_ptr<CommandList> commandList;
 
     UINT frameIndex{ 0 };
@@ -173,7 +173,7 @@ private:
 
         bool enableST2084{ false };
 
-        float referenceWhiteNits{ 80.0f };  
+        float referenceWhiteNits{ 80.0f };
 
         UINT rootConstants[RootConstantsCount];
 

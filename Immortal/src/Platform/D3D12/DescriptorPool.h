@@ -1,5 +1,5 @@
 #pragma once
-#include "D3D12Common.h"
+#include "Common.h"
 
 namespace Immortal
 {
@@ -38,7 +38,7 @@ public:
             return *this;
         }
     };
-    
+
     D3D12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandleForHeapStart()
     {
         return handle->GetCPUDescriptorHandleForHeapStart();

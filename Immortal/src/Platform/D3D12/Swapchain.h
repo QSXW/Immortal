@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12Common.h"
+#include "Common.h"
 
 namespace Immortal
 {
@@ -12,7 +12,7 @@ class Swapchain
 public:
     struct Description : public DXGI_SWAP_CHAIN_DESC1
     {
-        
+
     };
 
     enum class BitDepth
