@@ -2,6 +2,8 @@
 #include "RenderContext.h"
 
 #include <array>
+
+#include "Common.h"
 #include <GLFW/glfw3.h>
 
 #include "Framework/Application.h"
@@ -12,6 +14,7 @@
 
 namespace Immortal
 {
+
 namespace Vulkan
 {
 VkResult RenderContext::Status = VK_NOT_READY;

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef __VULKAN_COMMON_H__
+#define __VULKAN_COMMON_H__
+#define GLFW_INCLUDE_VULKAN
+
 #include "volk.h"
 #include "vk_mem_alloc.h"
 #include "ImmortalCore.h"
@@ -217,3 +221,5 @@ static inline bool IsDepthOnlyFormat(VkFormat format)
 }
 }
 }
+
+#endif // ! __VULKAN_COMMON_H__
