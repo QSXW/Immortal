@@ -45,12 +45,12 @@ public:
     static std::shared_ptr<Mesh> Mesh::CreateSphere(float radius);
 
 private:
-    VertexLayout mLayout{
-        { Shader::DataType::Float3, "position"  },
-        { Shader::DataType::Float3, "normal"    },
-        { Shader::DataType::Float3, "tagent"    },
-        { Shader::DataType::Float3, "bitangent" },
-        { Shader::DataType::Float2, "texcoord"  },
+    VertexLayout mLayout {
+        { Format::VECTOR3, "position"  },
+        { Format::VECTOR3, "normal"    },
+        { Format::VECTOR3, "tagent"    },
+        { Format::VECTOR3, "bitangent" },
+        { Format::VECTOR2, "texcoord"  },
     };
 
 public:

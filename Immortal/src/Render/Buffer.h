@@ -1,11 +1,196 @@
 #pragma once
 
 #include "ImmortalCore.h"
-
 #include "Shader.h"
+
+#include "Platform/OpenGL/Common.h"
+#include "Platform/Vulkan/Common.h"
+#include "Platform/D3D12/Common.h"
+
+#include <array>
 
 namespace Immortal
 {
+
+/**
+  * @brief: FLOAT here represents 32-bits floating points
+  *         INT represents 32-bits signed integers
+  */
+enum class Format
+{
+    INT,
+    IVECTOR2,
+    IVECTOR3,
+    IVECTOR4,
+    FLOAT,
+    VECTOR2,
+    VECTOR3,
+    VECTOR4,
+    COLOUR = VECTOR4,
+    MATRIX4,
+    R8G8B8A8_UNORM = 0,
+    R8G8B8A8_SRGB  = 1,
+    UNDEFINED      = -1
+};
+
+struct BaseFormatElement
+{
+    BaseFormatElement(VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, uint32_t size, uint32_t count) :
+        Vulkan{ vkFormat },
+        DXGI{ dxFormat },
+        OpenGL{ glFormat },
+        size{ size },
+        componentCount{ count }
+    {
+        
+    }
+
+    VkFormat    Vulkan;
+    DXGI_FORMAT DXGI;
+    GLenum      OpenGL;
+    uint32_t    size;
+    uint32_t    componentCount;
+};
+
+static BaseFormatElement BaseFormatMapper[] = {
+    { VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,           GL_INT,   sizeof(int32_t),     1     },
+    { VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,        GL_INT,   sizeof(int32_t) * 2, 2     },
+    { VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,     GL_INT,   sizeof(int32_t) * 3, 3     },
+    { VK_FORMAT_R32G32B32A32_SINT,   DXGI_FORMAT_R32G32B32A32_SINT,  GL_INT,   sizeof(int32_t) * 4, 4     },
+    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT, sizeof(float),       1     },
+    { VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,       GL_FLOAT, sizeof(Vector2),     2     },
+    { VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,    GL_FLOAT, sizeof(Vector3),     3     },
+    { VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, GL_FLOAT, sizeof(Vector4),     4     },
+    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT, sizeof(Matrix4),     4 * 4 }
+};
+
+struct InputElement
+{
+    InputElement()
+    {
+    
+    }
+
+    InputElement(Format foramt, const std::string &name) :
+        foramt{ foramt },
+        name{ name }
+    {
+
+    }
+
+    template <class T>
+    T BaseType() const
+    {
+        if constexpr (is_same<T, GLenum>())
+        {
+            return BaseFormatMapper[ncast<int>(foramt)].OpenGL;
+        }
+        if constexpr (is_same<T, VkFormat>())
+        {
+            return BaseFormatMapper[ncast<int>(foramt)].Vulkan;
+        }
+        if constexpr (is_same<T, DXGI_FORMAT>())
+        {
+            return BaseFormatMapper[ncast<int>(foramt)].DXGI;
+        }
+    }
+
+    uint32_t ComponentCount() const
+    {
+        return BaseFormatMapper[ncast<int>(foramt)].componentCount;
+    }
+
+    uint32_t Offset() const
+    {
+        return offset;
+    }
+
+    std::string name;
+    uint32_t    offset{ 0 };
+    Format      foramt{ Format::UNDEFINED };
+};
+
+struct InputElementDescription
+{
+    InputElementDescription()
+    {
+    
+    }
+
+    InputElementDescription(const InputElementDescription &other) :
+        elements{ other.elements.begin(), other.elements.end() }
+    {
+
+    }
+
+    InputElementDescription(InputElementDescription &&other) :
+        elements{ std::move(other.elements) }
+    {
+
+    }
+
+    InputElementDescription &operator=(const InputElementDescription &other)
+    {
+        elements.resize(other.elements.size());
+        CopyProps(elements.data(), other.elements.data());
+        return *this;
+    }
+
+    InputElementDescription operator=(InputElementDescription &&other)
+    {
+        elements.swap(other.elements);
+        return *this;
+    }
+
+    InputElementDescription(std::initializer_list<InputElement> &&list) :
+        elements{ std::move(list) }
+    {
+        INIT();
+    }
+
+    auto begin()
+    {
+        return elements.begin();
+    }
+
+    auto end()
+    {
+        return elements.end();
+    }
+
+    auto begin() const
+    {
+        return elements.cbegin();
+    }
+
+    auto end() const
+    {
+        return elements.cend();
+    }
+
+    uint32_t Stride() const
+    {
+        return stride;
+    }
+
+private:
+    void INIT()
+    {
+        uint32_t offset = 0;
+        for (auto &e : elements)
+        {
+            e.offset =  offset;
+            offset   += BaseFormatMapper[ncast<int>(e.foramt)].size;
+        }
+        stride = offset;
+    }
+
+    std::vector<InputElement> elements;
+
+    uint32_t stride{ 0 };
+};
+
+using VertexLayout = InputElementDescription;
 
 class Buffer
 {
@@ -18,103 +203,6 @@ public:
         Uniform,
         PushConstant
     };
-};
-
-static UINT32 ShaderDataTypeSize(Shader::DataType type)
-{
-    switch (type)
-    {
-        case Shader::DataType::Float:    return sizeof(float);
-        case Shader::DataType::Float2:   return sizeof(float) * 2;
-        case Shader::DataType::Float3:   return sizeof(float) * 3;
-        case Shader::DataType::Float4:   return sizeof(float) * 4;
-        case Shader::DataType::Mat3:     return sizeof(float) * 3 * 3;
-        case Shader::DataType::Mat4:     return sizeof(float) * 4 * 4;
-        case Shader::DataType::Int:      return sizeof(int);
-        case Shader::DataType::Int2:     return sizeof(int) * 2;
-        case Shader::DataType::Int3:     return sizeof(int) * 3;
-        case Shader::DataType::Int4:     return sizeof(int) * 4;
-        case Shader::DataType::Bool:     return sizeof(bool);
-    }
-
-    SLASSERT(false && "Unknown ShaderDataType!");
-    return 0;
-}
-
-struct InputElementDescription
-{
-    std::string Name;
-    Shader::DataType Type;
-    UINT32 Size;
-    size_t Offset;
-    bool Normalized;
-
-    InputElementDescription() = default;
-
-    InputElementDescription(Shader::DataType type, const std::string& name, bool normalized = false)
-        : Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized)
-    {
-
-    }
-
-    uint32_t GetComponentCount() const
-    {
-        switch (Type)
-        {
-            case ShaderDataType::Float:   return 1;
-            case ShaderDataType::Float2:  return 2;
-            case ShaderDataType::Float3:  return 3;
-            case ShaderDataType::Float4:  return 4;
-            case ShaderDataType::Mat3:    return 3 * 3;
-            case ShaderDataType::Mat4:    return 4 * 4;
-            case ShaderDataType::Int:     return 1;
-            case ShaderDataType::Int2:    return 2;
-            case ShaderDataType::Int3:    return 3;
-            case ShaderDataType::Int4:    return 4;
-            case ShaderDataType::Bool:    return 1;
-        }
-
-        SLASSERT(false && "Unknown ShaderDataType!");
-        return 0;
-    }
-
-};
-
-class VertexLayout
-{
-public:
-    VertexLayout() = default;
-    VertexLayout(std::initializer_list<InputElementDescription> elements)
-        : mElementDescriptions(elements)
-    {
-        this->CalculateOffsetAndStride();
-    }
-
-    UINT32 Stride() const { return mStride; }
-    const std::vector<InputElementDescription>& Elements() const { return mElementDescriptions;  }
-
-    std::vector<InputElementDescription>::iterator begin() { return mElementDescriptions.begin(); }
-    std::vector<InputElementDescription>::iterator end() { return mElementDescriptions.end(); }
-    std::vector<InputElementDescription>::const_iterator begin() const { return mElementDescriptions.begin(); }
-    std::vector<InputElementDescription>::const_iterator end() const { return mElementDescriptions.end(); }
-
-private:
-    void CalculateOffsetAndStride()
-    {
-        size_t offset = 0;
-        mStride = 0;
-
-        for (auto &element : mElementDescriptions)
-        {
-            element.Offset = offset;
-            offset += element.Size;
-            mStride += element.Size;
-        }
-    }
-
-private:
-    std::vector<InputElementDescription> mElementDescriptions;
-    UINT32 mStride = 0;
 };
 
 class IMMORTAL_API VertexBuffer

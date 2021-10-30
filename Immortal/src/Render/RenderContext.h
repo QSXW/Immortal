@@ -4,6 +4,7 @@
 #include "Framework/Device.h"
 #include "Framework/Window.h"
 #include "Render/Shader.h"
+#include "Render/Buffer.h"
 
 namespace Immortal
 {
@@ -16,12 +17,6 @@ enum class PresentMode
     DoubleBuffer = 2,
     TripleBuffer = 3
 };
-};
-
-enum class Format
-{
-    R8G8B8A8_UNORM = 0,
-    R8G8B8A8_SRGB  = 1,
 };
 
 class Shader;

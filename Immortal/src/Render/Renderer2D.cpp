@@ -63,12 +63,12 @@ void Renderer2D::INIT()
 
     sData.QuadVertexBuffer = VertexBuffer::Create(sData.MaxVertices * sizeof(QuadVertex));
     sData.QuadVertexBuffer->SetLayout({
-        { Shader::DataType::Float3, "a_Position"     },
-        { Shader::DataType::Float4, "a_Color"        },
-        { Shader::DataType::Float2, "a_TexCoord"     },
-        { Shader::DataType::Float,  "a_TexIndex"     },
-        { Shader::DataType::Float,  "a_TilingFactor" },
-        { Shader::DataType::Int,    "a_EntityID"     }
+        { Format::VECTOR3, "a_Position"     },
+        { Format::VECTOR4, "a_Color"        },
+        { Format::VECTOR2, "a_TexCoord"     },
+        { Format::FLOAT,   "a_TexIndex"     },
+        { Format::FLOAT,   "a_TilingFactor" },
+        { Format::INT,     "a_EntityID"     }
         });
     sData.QuadVertexArray->AddVertexBuffer(sData.QuadVertexBuffer);
         
