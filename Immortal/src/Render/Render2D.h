@@ -9,8 +9,11 @@
 
 namespace Immortal
 {
-class IMMORTAL_API Renderer2D
+class IMMORTAL_API Render2D
 {
+public:
+    static std::shared_ptr<Pipeline> pipeline;
+
 public:
     static void INIT();
     static void Shutdown();
@@ -37,7 +40,7 @@ public:
     static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
     static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
 
-    static void Renderer2D::DrawSprite(const Vector::Matrix4& transform, SpriteRendererComponent& src, int entityID);
+    static void Render2D::DrawSprite(const Vector::Matrix4& transform, SpriteRendererComponent& src, int entityID);
 
     struct Statistics
     {

@@ -4,7 +4,7 @@
 #include "Framework/Application.h"
 
 #include "Render/Render.h"
-#include "Render/Renderer2D.h"
+#include "Render/Render2D.h"
 
 #include "Entity.h"
 #include "Component.h"
@@ -134,15 +134,15 @@ void Scene::OnRenderRuntime()
         glDepthMask(GL_TRUE);
 #endif
         {
-            Renderer2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
+            Render2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
             auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
             for (auto e : group)
             {
                 auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
-                Renderer2D::DrawSprite(transform.Transform(), sprite, (int)e);
+                Render2D::DrawSprite(transform.Transform(), sprite, (int)e);
             }
 
-            Renderer2D::EndScene();
+            Render2D::EndScene();
         }
 
         // Update transform uniform buffer.
@@ -217,15 +217,15 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     skyboxShader->Unmap();
 
     {
-        Renderer2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
+        Render2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
         auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto e : group)
         {
             auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
-            Renderer2D::DrawSprite(transform.Transform(), sprite, (int)e);
+            Render2D::DrawSprite(transform.Transform(), sprite, (int)e);
         }
 
-        Renderer2D::EndScene();
+        Render2D::EndScene();
     }
 
     // Update transform uniform buffer.

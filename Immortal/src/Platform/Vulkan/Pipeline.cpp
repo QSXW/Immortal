@@ -26,5 +26,28 @@ void Pipeline::Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type)
     }
 }
 
+void Pipeline::Set(const InputElementDescription &description)
+{
+    auto size                       = description.Size();
+    auto &inputAttributeDescription = configuration->inputAttributeDescriptions;
+
+    inputAttributeDescription.resize(size);
+    for (int i = 0; i < size; i++)
+    {
+        inputAttributeDescription[i].binding  = 0;
+        inputAttributeDescription[i].location = i;
+        inputAttributeDescription[i].format   = description[i].BaseType<VkFormat>();
+        inputAttributeDescription[i].offset   = description[i].Offset();
+    }
+
+    configuration->vertexInputBidings.emplace_back(VkVertexInputBindingDescription{
+            0,
+            description.Stride(),
+            VK_VERTEX_INPUT_RATE_VERTEX
+        });
+
+    INITLayout();
+}
+
 }
 }

@@ -168,6 +168,16 @@ struct InputElementDescription
         return elements.cend();
     }
 
+    auto operator[](size_t index) const
+    {
+        return elements[index];
+    }
+
+    auto Size() const
+    {
+        return elements.size();
+    }
+
     uint32_t Stride() const
     {
         return stride;

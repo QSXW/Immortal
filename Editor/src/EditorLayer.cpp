@@ -60,7 +60,7 @@ namespace Immortal
         {
             Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
             Render::Clear();
-            // Renderer2D::SetColor(mRGBA, mBrightness);
+            // Render2D::SetColor(mRGBA, mBrightness);
 
             mFramebuffer->ClearAttachment(1, -1);
             switch (mState)
@@ -257,7 +257,7 @@ namespace Immortal
             ImGui::Text(IMMORTAL_CONSTANT_STRING_RENDER_RATE, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::Text(U8("图形设备：%s"), Application::App()->Context()->GraphicsRenderer());
             ImGui::Text(U8("驱动版本：%s"), Application::App()->Context()->DriverVersion());
-            ImGui::Text(U8("图形数量：%d"), Renderer2D::Stats().QuadCount);
+            ImGui::Text(U8("图形数量：%d"), Render2D::Stats().QuadCount);
         }
         ImGui::End();
 

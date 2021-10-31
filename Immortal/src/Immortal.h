@@ -28,7 +28,7 @@
 #include "Render/OrthographicCamera.h"
 #include "Render/OrthographicCameraController.h"
 #include "Render/Renderer.h"
-#include "Render/Renderer2D.h"
+#include "Render/Render2D.h"
 #include "Render/Frame.h"
 #include "Render/Mesh.h"
 #include "Render/Render.h"

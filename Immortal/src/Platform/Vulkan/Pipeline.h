@@ -18,6 +18,7 @@ public:
 
     struct State
     {
+        VkPipelineVertexInputStateCreateInfo   vertexInput;
         VkPipelineInputAssemblyStateCreateInfo inputAssembly;
         VkPipelineRasterizationStateCreateInfo rasterization;
         VkPipelineColorBlendStateCreateInfo    colorBlend;
@@ -38,7 +39,13 @@ public:
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
         };
+
+        std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
+
+        std::vector<VkVertexInputBindingDescription> vertexInputBidings;
+
         State state;
+
         Attachment attament;
     };
 
@@ -48,6 +55,8 @@ public:
     virtual ~Pipeline();
 
     virtual void Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type = Buffer::Type::Vertex) override;
+    
+    virtual void Set(const InputElementDescription &description) override;
 
 private:
     VkPrimitiveTopology ConvertType(PrimitiveType &type)
@@ -73,7 +82,14 @@ private:
 
     void INITLayout()
     {
+        auto state = &configuration->state;
+        auto &inputAttributeDescriptions = configuration->inputAttributeDescriptions;
+        auto &vertexInputBidings         = configuration->vertexInputBidings;
         
+        state->vertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        state->vertexInput.vertexBindingDescriptionCount   = U32(vertexInputBidings.size());
+        state->vertexInput.pVertexBindingDescriptions      = vertexInputBidings.data();
+        state->vertexInput.vertexAttributeDescriptionCount = U32(inputAttributeDescriptions.size());
     }
 
 private:

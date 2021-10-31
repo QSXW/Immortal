@@ -43,6 +43,8 @@ public:
 
     virtual void Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type = Buffer::Type::Vertex) { }
 
+    virtual void Set(const InputElementDescription &description) { }
+
 protected:
     struct Description
     {

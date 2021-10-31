@@ -49,9 +49,9 @@ public:
     enum class ShaderName : INT32
     {
         Texture,
+        Render2D,
         PBR,
         Skybox,
-        Renderer2D,
         Tonemap,
         Test,
         Last
@@ -175,6 +175,11 @@ public:
     static std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
     {
         return renderer->CreateTexture(filepath);
+    }
+
+    static std::shared_ptr<Pipeline> CreatePipeline(std::shared_ptr<Shader> &shader)
+    {
+        return renderer->CreatePipeline(shader);
     }
 
 private:

@@ -26,25 +26,25 @@ void OpenGLSample2D::OnUpdate()
 	Immortal::Render::SetClearColor({ 0.18F, 0.18f, 0.18f, 1.0 });
 	Immortal::Render::Clear();
 
-	Immortal::Renderer2D::BeginScene(mCameraController.Camera());
+	Immortal::Render2D::BeginScene(mCameraController.Camera());
 
 	static float rotation = 0.0f;
 	rotation += Immortal::Application::App()->DeltaTime() * 50.0f;
 
-	Immortal::Renderer2D::DrawQuad({ 0.0f, 0.0f }, { mTexture->Ratio() * 2.0, 2.0f }, mTexture, 1.0f, Immortal::Vector::Color(1.f));
-	Immortal::Renderer2D::SetColor(mSquareColor, mLuminance);
-	Immortal::Renderer2D::EndScene();
+	Immortal::Render2D::DrawQuad({ 0.0f, 0.0f }, { mTexture->Ratio() * 2.0, 2.0f }, mTexture, 1.0f, Immortal::Vector::Color(1.f));
+	Immortal::Render2D::SetColor(mSquareColor, mLuminance);
+	Immortal::Render2D::EndScene();
 
-	Immortal::Renderer2D::BeginScene(mCameraController.Camera());
+	Immortal::Render2D::BeginScene(mCameraController.Camera());
 	for (float y = -5.0f; y < 5.0f; y += 0.5f)
 	{
 		for (float x = -5.0f; x < 5.0f; x += 0.5f)
 		{
 			glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-			Immortal::Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
+			Immortal::Render2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
 		}
 	}
-	Immortal::Renderer2D::EndScene();
+	Immortal::Render2D::EndScene();
 }
 
 void OpenGLSample2D::OnGuiRender()

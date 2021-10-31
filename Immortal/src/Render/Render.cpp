@@ -1,6 +1,6 @@
 #include "impch.h"
 #include "Render.h"
-#include "Renderer2D.h"
+#include "Render2D.h"
 
 namespace Immortal
 {
@@ -17,17 +17,18 @@ static const char *Sringify(Render::Type type)
 {
     switch (type)
     {
-#define CASE(x) case Render::Type::x: return #x;
-        CASE(None);
-        CASE(Vulkan);
-        CASE(D3D12);
-#undef CASE
-    default: return "Unknown";
+#define XX(x) case Render::Type::x: return #x;
+        XX(None);
+        XX(Vulkan);
+        XX(D3D12);
+#undef XX
+        default: return "Unknown";
     }
 }
 
 const std::string Render::ShaderProfiles[] = {
-    { "Texture" },
+    { "Texture"  },
+    { "Render2D" }
 };
 
 void Render::INIT(RenderContext *context)
@@ -53,9 +54,15 @@ void Render::INIT(RenderContext *context)
     auto pipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
     pipeline->Set(std::make_shared<Buffer>(), Buffer::Type::Vertex);
 
+    pipeline->Set({
+        { Format::VECTOR3, "position" },
+        { Format::VECTOR4, "color"    }
+        });
+        
+    int pause = 0;
+
     {
         /*
-
         constexpr UINT32 white        = 0xffffffff;
         constexpr UINT32 black        = 0x000000ff;
         constexpr UINT32 transparency = 0x00000000;
@@ -85,7 +92,7 @@ void Render::INIT(RenderContext *context)
         data.FullScreenVertexArray->AddVertexBuffer(fullScreenVertexBuffer);
         data.FullScreenVertexArray->SetIndexBuffer(fullScreenIndexBuffer);*/
     }
-    // Renderer2D::INIT();
+    Render2D::INIT();
 }
 
 void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4 &transform)
