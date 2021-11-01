@@ -69,10 +69,13 @@ public:
         return fencePool->Request();
     }
 
-    VkResult Create(const VkBufferCreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer)
-    {
-        return vkCreateBuffer(handle, pCreateInfo, pAllocator, pBuffer);
+#define DEFINE_CREATE_VK_OBJECT(T) \
+    VkResult Create(const Vk##T##CreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, Vk##T *pObject) \
+    { \
+        return vkCreate##T(handle, pCreateInfo, pAllocator, pObject); \
     }
+
+    DEFINE_CREATE_VK_OBJECT(Buffer)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destory(Vk##T object, const VkAllocationCallbacks* pAllocator = nullptr) \
