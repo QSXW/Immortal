@@ -7,6 +7,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Window
 {
 public:
@@ -103,4 +104,5 @@ public:
 public:
     static std::unique_ptr<Window> Create(const Description &description = Description{});
 };
+
 }

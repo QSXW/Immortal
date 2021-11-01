@@ -5,6 +5,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Layer
 {
 public:
@@ -34,4 +35,5 @@ public:
 protected:
     std::string debugName;
 };
+
 }

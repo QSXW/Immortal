@@ -4,6 +4,7 @@
 
 namespace Immortal
 {
+
 enum class MouseCode : uint16_t
 {
     Button0 = 0,
@@ -229,4 +230,5 @@ enum class KeyCode : uint16_t
     RightSuper   = 347,
     Menu         = 348
 };
+
 }

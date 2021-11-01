@@ -48,7 +48,7 @@ public:
 
     virtual void Set(const InputElementDescription &description)
     {
-        desc.Layout = std::move(description);
+        desc.Layout = description;
     }
 
 protected:

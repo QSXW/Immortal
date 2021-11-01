@@ -6,10 +6,13 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Input
 {
 public:
     Input() = default;
+
+    virtual ~Input() = default;
 
     virtual bool InternalIsKeyPressed(KeyCode key)
     {
@@ -26,13 +29,14 @@ public:
 
     static float GetMouseY();
 
-public:
-    virtual ~Input() = default;
-
 private:
     Input(const Input &) = delete;
+
     Input(Input &&) = delete;
+
     const Input &operator=(const Input &) = delete;
+
     const Input &operator=(Input &&) = delete;
 };
+
 }
