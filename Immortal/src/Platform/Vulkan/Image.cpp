@@ -137,7 +137,6 @@ Image::~Image()
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
     {
         vmaDestroyImage(device->MemoryAllocator(), handle, memory);
-        return;
     }
 }
 
