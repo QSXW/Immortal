@@ -18,17 +18,23 @@ Pipeline::~Pipeline()
 
 }
 
-void Pipeline::Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type)
+void Pipeline::Set(std::shared_ptr<Buffer> &buffer)
 {
-    if (type == Buffer::Type::Vertex)
+    if (buffer->GetType() == Buffer::Type::Vertex)
     {
+        desc.vertexBuffers.emplace_back(buffer);
         INITVertex();
+    }
+    if (buffer->GetType() == Buffer::Type::Index)
+    {
+        desc.indexBuffer = buffer;
     }
 }
 
 void Pipeline::Set(const InputElementDescription &description)
 {
-    auto size                       = description.Size();
+    Super::Set(std::move(description));
+    auto size                       = desc.Layout.Size();
     auto &inputAttributeDescription = configuration->inputAttributeDescriptions;
 
     inputAttributeDescription.resize(size);
@@ -36,13 +42,13 @@ void Pipeline::Set(const InputElementDescription &description)
     {
         inputAttributeDescription[i].binding  = 0;
         inputAttributeDescription[i].location = i;
-        inputAttributeDescription[i].format   = description[i].BaseType<VkFormat>();
-        inputAttributeDescription[i].offset   = description[i].Offset();
+        inputAttributeDescription[i].format   = desc.Layout[i].BaseType<VkFormat>();
+        inputAttributeDescription[i].offset   = desc.Layout[i].Offset();
     }
 
     configuration->vertexInputBidings.emplace_back(VkVertexInputBindingDescription{
             0,
-            description.Stride(),
+            desc.Layout.Stride(),
             VK_VERTEX_INPUT_RATE_VERTEX
         });
 

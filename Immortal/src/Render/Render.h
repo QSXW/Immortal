@@ -182,6 +182,18 @@ public:
         return renderer->CreatePipeline(shader);
     }
 
+    template <class T>
+    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, const T *data, Buffer::Type type)
+    {
+        return renderer->CreateBuffer(size * sizeof(T), data, type);
+    }
+
+    template <class T>
+    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
+    {
+        return renderer->CreateBuffer(size * sizeof(T), type);
+    }
+
 private:
     static std::unique_ptr<Renderer> renderer;
 

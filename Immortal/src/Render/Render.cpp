@@ -52,14 +52,6 @@ void Render::INIT(RenderContext *context)
     }
 
     auto pipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
-    pipeline->Set(std::make_shared<Buffer>(), Buffer::Type::Vertex);
-
-    pipeline->Set({
-        { Format::VECTOR3, "position" },
-        { Format::VECTOR4, "color"    }
-        });
-        
-    int pause = 0;
 
     {
         /*

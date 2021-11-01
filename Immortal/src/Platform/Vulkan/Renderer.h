@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Pipeline.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
@@ -58,6 +59,16 @@ public:
     virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
     {
         return std::make_shared<Texture>(device, filepath);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(device, size, data, type);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(device, size, type);
     }
 
 private:

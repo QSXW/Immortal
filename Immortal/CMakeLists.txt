@@ -119,6 +119,8 @@ set(D3D12_FILES
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
    src/Platform/Vulkan/volk.h
+   src/Platform/Vulkan/Buffer.cpp
+   src/Platform/Vulkan/Buffer.h
    src/Platform/Vulkan/Common.cpp
    src/Platform/Vulkan/Common.h
    src/Platform/Vulkan/Device.cpp

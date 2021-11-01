@@ -54,6 +54,16 @@ public:
     {
         return nullptr;
     }
+
+    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+    {
+        return nullptr;
+    }
+
+    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
+    {
+        return nullptr;
+    }
 };
 
 using SuperRenderer = Renderer;

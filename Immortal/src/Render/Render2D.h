@@ -19,28 +19,28 @@ public:
     static void Shutdown();
 
     static void BeginScene(const Camera& camera);
-    static void BeginScene(const Camera& camera, const Vector::mat4& transform);
+    static void BeginScene(const Camera& camera, const Matrix4& transform);
 
     static void BeginScene(const OrthographicCamera camera);
     static void EndScene();
     static void Flush();
 
-    static void SetColor(const Vector::Vector4 &color, const float brightness, const Vector::Vector3 HSV = Vector::Vector3(0.0f));
+    static void SetColor(const Vector4 &color, const float brightness, const Vector3 HSV = Vector3(0.0f));
 
-    static void DrawQuad(const Vector::Vector2& position, const Vector::Vector2& size, const Vector::Vector4& color);
-    static void DrawQuad(const Vector::Vector3& position, const Vector::Vector2& size, const Vector::Vector4& color);
-    static void DrawQuad(const Vector::Vector2& position, const Vector::Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
-    static void DrawQuad(const Vector::Vector3& position, const Vector::Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawQuad(const Vector2& position, const Vector2& size, const Vector4& color);
+    static void DrawQuad(const Vector3& position, const Vector2& size, const Vector4& color);
+    static void DrawQuad(const Vector2& position, const Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
+    static void DrawQuad(const Vector3& position, const Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
 
-    static void DrawQuad(const Vector::mat4& transform, const Vector::Vector4& color, int entityID = -1);
-    static void DrawQuad(const Vector::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f), int entityID = -1);
+    static void DrawQuad(const Matrix4& transform, const Vector4& color, int entityID = -1);
+    static void DrawQuad(const Matrix4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f), int entityID = -1);
 
-    static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const Vector::Vector4& color);
-    static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const Vector::Vector4& color);
-    static void DrawRotatedQuad(const Vector::Vector2& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
-    static void DrawRotatedQuad(const Vector::Vector3& position, const Vector::Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector::Vector4& tintColor = Vector::Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Vector4& color);
+    static void DrawRotatedQuad(const Vector3& position, const Vector2& size, float rotation, const Vector4& color);
+    static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector3& position, const Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
 
-    static void Render2D::DrawSprite(const Vector::Matrix4& transform, SpriteRendererComponent& src, int entityID);
+    static void Render2D::DrawSprite(const Matrix4& transform, SpriteRendererComponent& src, int entityID);
 
     struct Statistics
     {

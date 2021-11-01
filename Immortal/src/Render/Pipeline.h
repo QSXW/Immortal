@@ -41,14 +41,24 @@ public:
 
     virtual void Unmap() { }
 
-    virtual void Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type = Buffer::Type::Vertex) { }
+    virtual void Set(std::shared_ptr<Buffer> &buffer)
+    {
 
-    virtual void Set(const InputElementDescription &description) { }
+    }
+
+    virtual void Set(const InputElementDescription &description)
+    {
+        desc.Layout = std::move(description);
+    }
 
 protected:
     struct Description
     {
         std::shared_ptr<Shader> Shader{ nullptr };
+
+        std::vector<std::shared_ptr<Buffer>> vertexBuffers;
+
+        std::shared_ptr<Buffer> indexBuffer;
 
         VertexLayout Layout{};
 

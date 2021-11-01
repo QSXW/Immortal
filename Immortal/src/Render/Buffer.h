@@ -72,10 +72,48 @@ struct InputElement
     }
 
     InputElement(Format foramt, const std::string &name) :
-        foramt{ foramt },
+        format{ foramt },
         name{ name }
     {
 
+    }
+
+    InputElement(const InputElement &other) :
+        offset{ other.offset },
+        format{ other.format }
+    {
+        name = other.name;
+    }
+
+    InputElement(InputElement &&other) :
+        offset{ other.offset },
+        format{ other.format },
+        name{ std::move(other.name) }
+    {
+
+    }
+
+    InputElement &operator=(const InputElement &other)
+    {
+        offset = other.offset;
+        format = other.format;
+        name   = other.name;
+
+        return *this;
+    }
+
+    InputElement &operator=(InputElement &&other)
+    {
+        offset = other.offset;
+        format = other.format;
+        name   = std::move(other.name);
+
+        return *this;
+    }
+
+    ~InputElement()
+    {
+        
     }
 
     template <class T>
@@ -83,21 +121,21 @@ struct InputElement
     {
         if constexpr (is_same<T, GLenum>())
         {
-            return BaseFormatMapper[ncast<int>(foramt)].OpenGL;
+            return BaseFormatMapper[ncast<int>(format)].OpenGL;
         }
         if constexpr (is_same<T, VkFormat>())
         {
-            return BaseFormatMapper[ncast<int>(foramt)].Vulkan;
+            return BaseFormatMapper[ncast<int>(format)].Vulkan;
         }
         if constexpr (is_same<T, DXGI_FORMAT>())
         {
-            return BaseFormatMapper[ncast<int>(foramt)].DXGI;
+            return BaseFormatMapper[ncast<int>(format)].DXGI;
         }
     }
 
     uint32_t ComponentCount() const
     {
-        return BaseFormatMapper[ncast<int>(foramt)].componentCount;
+        return BaseFormatMapper[ncast<int>(format)].componentCount;
     }
 
     uint32_t Offset() const
@@ -107,7 +145,7 @@ struct InputElement
 
     std::string name;
     uint32_t    offset{ 0 };
-    Format      foramt{ Format::UNDEFINED };
+    Format      format{ Format::UNDEFINED };
 };
 
 struct InputElementDescription
@@ -118,12 +156,14 @@ struct InputElementDescription
     }
 
     InputElementDescription(const InputElementDescription &other) :
+        stride{ other.stride },
         elements{ other.elements.begin(), other.elements.end() }
     {
 
     }
 
     InputElementDescription(InputElementDescription &&other) :
+        stride{ other.stride },
         elements{ std::move(other.elements) }
     {
 
@@ -131,8 +171,9 @@ struct InputElementDescription
 
     InputElementDescription &operator=(const InputElementDescription &other)
     {
+        stride = other.Stride();
         elements.resize(other.elements.size());
-        CopyProps(elements.data(), other.elements.data());
+        std::copy(other.elements.begin(), other.elements.end(), elements.begin());
         return *this;
     }
 
@@ -190,7 +231,7 @@ private:
         for (auto &e : elements)
         {
             e.offset =  offset;
-            offset   += BaseFormatMapper[ncast<int>(e.foramt)].size;
+            offset   += BaseFormatMapper[ncast<int>(e.format)].size;
         }
         stride = offset;
     }
@@ -213,7 +254,31 @@ public:
         Uniform,
         PushConstant
     };
+
+    enum class Usage
+    {
+        Persistent
+    };
+
+public:
+    Buffer(Type type) :
+        type{ type }
+    {
+    
+    }
+
+    virtual ~Buffer() { }
+
+    Type GetType() const
+    {
+        return type;
+    }
+
+protected:
+    Type type;
 };
+
+using SuperBuffer = Buffer;
 
 class IMMORTAL_API VertexBuffer
 {

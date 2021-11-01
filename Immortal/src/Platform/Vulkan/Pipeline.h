@@ -54,7 +54,7 @@ public:
 
     virtual ~Pipeline();
 
-    virtual void Set(std::shared_ptr<Buffer> &buffer, Buffer::Type type = Buffer::Type::Vertex) override;
+    virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
     
     virtual void Set(const InputElementDescription &description) override;
 
@@ -65,10 +65,7 @@ private:
         {
             return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
         }
-        if (type == PrimitiveType::Triangles)
-        {
-            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        }
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
     void INITVertex()
