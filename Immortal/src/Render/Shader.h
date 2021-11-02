@@ -31,22 +31,6 @@ public:
         Callable
     };
 
-    enum class DataType
-    {
-        None = 0,
-        Float,
-        Float2,
-        Float3,
-        Float4,
-        Mat3,
-        Mat4,
-        Int,
-        Int2,
-        Int3,
-        Int4,
-        Bool
-    };
-
     enum class Type
     {
         Graphics,
@@ -86,18 +70,19 @@ public:
 
 using SuperShader = Shader;
 
-using ShaderDataType = Shader::DataType;
-
 class IMMORTAL_API ShaderMap
 {
 public:
     void Add(const std::string &name, const std::shared_ptr<Shader> &shader);
+
     void Add(const std::shared_ptr<Shader> &shader);
         
     std::shared_ptr<Shader> Load(const std::string &filepath);
+
     std::shared_ptr<Shader> Load(const std::string &name, const std::string &filepath);
         
     std::shared_ptr<Shader> Get(const std::string &name);
+
     std::shared_ptr<Shader> At(const std::string &name)
     {
         return this->Get(name);
