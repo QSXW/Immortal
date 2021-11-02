@@ -11,9 +11,8 @@ namespace Immortal
 
 std::shared_ptr<spdlog::logger> LOG::logger;
 
-void LOG::INIT()
+void LOG::INIT(bool async)
 {
-    spdlog::init_thread_pool(8192, 1);
     std::vector<spdlog::sink_ptr> logSinks;
     logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/Immortal.log"));
@@ -21,8 +20,16 @@ void LOG::INIT()
     logSinks[0]->set_pattern("%n: [%^%l%$][%T]: %v");
     logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-    // logger = std::make_shared<spdlog::async_logger>("Immortal", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
-    logger = std::make_shared<spdlog::logger>("Immortal", logSinks.begin(), logSinks.end());
+    if (async)
+    {
+        spdlog::init_thread_pool(8192, 1);
+        logger = std::make_shared<spdlog::async_logger>("Immortal", logSinks.begin(), logSinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+    }
+    else
+    {
+        logger = std::make_shared<spdlog::logger>("Immortal", logSinks.begin(), logSinks.end());
+    }
+    
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
 }

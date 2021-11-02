@@ -16,7 +16,7 @@ namespace Immortal
 class LOG
 {
 public:
-    static void INIT();
+    static void INIT(bool async = false);
 
     template <class... Args>
     static inline constexpr void WARN(Args&& ... args)
