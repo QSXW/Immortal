@@ -37,6 +37,7 @@ public:
 
 private:
     Type type{ Type::Unspecifed };
+
     Format format{ Format::Unknown };
 };
 

@@ -6,7 +6,7 @@
 
 #include "Types.h"
 
-namespace Media
+namespace sl
 {
 
 class Stream

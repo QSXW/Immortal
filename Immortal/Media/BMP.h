@@ -11,6 +11,8 @@
 namespace Media
 {
 
+using namespace sl;
+
 class BMPDecoder : public Decoder
 {
 public:

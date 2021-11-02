@@ -23,6 +23,11 @@ enum class Format
     R8G8B8
 };
 
+}
+
+namespace sl
+{
+
 enum class Error
 {
     SUCCEED = 0,
