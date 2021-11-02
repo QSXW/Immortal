@@ -3,20 +3,22 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "Types.h"
 #include "Checksum.h"
+#include "Stream.h"
 
-#include <map>
+using namespace sl;
 
 class RF
 {
 public:
     RF(const std::string &filename) :
         output{ filename },
-        fp{ fopen(output.c_str(), "wb+") }
+        stream{ output, Stream::Mode::Write }
     {
-        if (!fp)
+        if (!stream.Readable())
         {
             return;
         }
@@ -24,16 +26,12 @@ public:
 
     ~RF()
     {
-        if (!fp)
-        {
-            return;
-        }
-        fclose(fp);
+
     }
 
     bool Writable()
     {
-        return !!fp;
+        return stream.Writable();
     }
 
     void EndFrame()
@@ -42,21 +40,21 @@ public:
             reinterpret_cast<const uint8_t *>(&std::get<1>(pair)),
             sizeof(size_t)
             );
-        fwrite(&e, sizeof(uint64_t), 1, fp);
+        stream.Write<sizeof(uint64_t)>(&e);
     }
 
     void NewFrame(uint64_t e)
     {
         pair.first  += e;
         pair.second = e;
-        fwrite(&pair.first, sizeof(uint64_t), 1, fp);
+        stream.Write<sizeof(uint64_t)>(&pair.first);
     }
 
     void Write(const std::vector<uint8_t> &file)
     {
         NewFrame(file.size());
 
-        fwrite(file.data(), file.size(), 1, fp);
+        stream.Write(file.data(), file.size());
 
         EndFrame();
     }
@@ -66,7 +64,7 @@ private:
 
     std::vector<uint8_t> buffer;
 
-    FILE *fp{ nullptr };
+    Stream stream;
 
     std::pair<uint64_t, uint64_t> pair;
 };
