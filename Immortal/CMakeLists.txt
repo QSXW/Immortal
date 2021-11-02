@@ -61,9 +61,9 @@ set(INTERFACE_FILES
    src/Interface/Delegate.cpp
    src/Interface/Delegate.h)
 
-set(IO_FILES
-    src/io/FileSystem.cpp
-    src/io/FileSystem.h)
+set(FS_FILES
+    src/FileSystem/FileSystem.cpp
+    src/FileSystem/FileSystem.h)
 
 set(PHYSICS_FILES
     src/Physics/Physics.cpp
@@ -286,7 +286,7 @@ source_group("Event\\" FILES ${EVENT_FILES})
 source_group("Image\\" FILES ${IMAGE_FILES})
 source_group("ImGui\\" FILES ${GUI_FILES})
 source_group("Interface\\" FILES ${INTERFACE_FILES})
-source_group("io\\" FILES ${IO_FILES})
+source_group("FileSystem\\" FILES ${FS_FILES})
 source_group("Physics\\" FILES ${PHYSICS_FILES})
 source_group("Platform\\D3D12\\" FILES ${D3D12_FILES})
 source_group("Platform\\Vulkan\\" FILES ${VULKAN_FILES})
