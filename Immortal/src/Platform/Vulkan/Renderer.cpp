@@ -38,6 +38,7 @@ void Renderer::PrepareFrame()
     }
 
     auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
+    context->MoveToFrame(currentBuffer);
     if (fences[sync] != VK_NULL_HANDLE)
     {
         device->WaitAndReset(&fences[sync]);
@@ -94,7 +95,7 @@ void Renderer::SwapBuffers()
     submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
     submitInfo.pWaitDstStageMask    = &submitPipelineStages;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &context->GetCommandBuffer(currentBuffer)->Handle();
+    submitInfo.pCommandBuffers      = &context->GetCommandBuffer()->Handle();
 
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();

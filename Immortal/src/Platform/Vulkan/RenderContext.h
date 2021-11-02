@@ -42,16 +42,14 @@ public:
         return !!swapchain;
     }
 
+public:
     void CreateSurface();
 
-public:
-    void AddDeviceExtension(const char *extension, bool optional = false)
-    {
-        DeviceExtensions[extension] = optional;
-    }
-
-public:
+    Swapchain *UpdateSurface();
+    
     void Prepare(size_t threadCount = 1);
+
+    void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
     template <class T>
     inline constexpr T Get()
@@ -155,41 +153,44 @@ public:
         }
     }
 
-    Framebuffer *GetFramebuffer(size_t index)
+    void AddDeviceExtension(const char *extension, bool optional = false)
     {
-        return framebuffers[index].get();
+        DeviceExtensions[extension] = optional;
     }
 
-    CommandBuffer *GetCommandBuffer(uint32_t index)
+    void MoveToFrame(uint32_t index)
     {
-        return commandBuffers[index];
+        present.bufferIndex = index;
+    }
+
+    Framebuffer *GetFramebuffer()
+    {
+        return present.framebuffers[present.bufferIndex].get();
+    }
+
+    CommandBuffer *GetCommandBuffer()
+    {
+        return present.commandBuffers[present.bufferIndex].get();
     }
 
     size_t FrameSize()
     {
-        return framebuffers.size();
+        return present.framebuffers.size();
     }
 
     template <class T>
-    void Record(uint32_t bufferIndex, T &&process)
+    void Record(CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit, T &&process = [](auto, auto)->void{})
     {
-        graphicsCmdBuf = commandBuffers[bufferIndex];
-        Check(graphicsCmdBuf->Begin(
-            CommandBuffer::Usage::OneTimeSubmit)
-            );
-        process(
-            graphicsCmdBuf,
-            GetFramebuffer(bufferIndex)
-            );
+        auto graphicsCmdBuf = GetCommandBuffer();
+        Check(graphicsCmdBuf->Begin(CommandBuffer::Usage::OneTimeSubmit));
+        {
+            process(graphicsCmdBuf, GetFramebuffer());
+        }
         Check(graphicsCmdBuf->End());
     }
-
-    Swapchain *UpdateSurface();
-
-    void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
-
+   
 private:
-    void *handle;
+    void *handle{ nullptr };
 
     std::unique_ptr<Instance> instance;
 
@@ -197,19 +198,20 @@ private:
 
     std::unique_ptr<RenderPass> renderPass;
 
-    std::vector<std::unique_ptr<Framebuffer>> framebuffers;
-
     std::unique_ptr<Swapchain> swapchain;
 
-    std::vector<CommandBuffer*> commandBuffers;
+    Queue *queue{ nullptr };
 
-    CommandBuffer *graphicsCmdBuf{ nullptr };
+    struct
+    {
+        uint32_t bufferIndex{ 0 };
+        std::vector<std::unique_ptr<Framebuffer>> framebuffers;
+        std::array<std::unique_ptr<CommandBuffer>, Swapchain::MaxFrameCount> commandBuffers;
+    } present;
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
     VkExtent2D surfaceExtent{ 0, 0 };
-
-    Queue *queue{ nullptr };
 
     Swapchain::Properties swapchainProperties;
 
@@ -217,43 +219,44 @@ private:
 
     Frames frames;
 
-    size_t threadCount{ 1 };
-
     VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
 
-    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    struct
+    {
+        std::vector<VkPresentModeKHR> presentMode = {
+            VK_PRESENT_MODE_MAILBOX_KHR,
+            VK_PRESENT_MODE_FIFO_KHR,
+            VK_PRESENT_MODE_IMMEDIATE_KHR
+        };
 
-    bool status{ false };
-
-    std::vector<VkPresentModeKHR> presentModePriorities = {
-        VK_PRESENT_MODE_MAILBOX_KHR,
-        VK_PRESENT_MODE_FIFO_KHR,
-        VK_PRESENT_MODE_IMMEDIATE_KHR
-    };
-
-    std::vector<VkSurfaceFormatKHR> surfaceFormatPriorities = {
-        { 
-            VK_FORMAT_R8G8B8A8_UNORM,
-            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-        },
-        { 
-            VK_FORMAT_B8G8R8A8_UNORM,
-            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-        },
-        { 
-            VK_FORMAT_R8G8B8A8_SRGB,
-            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-        },
-        {
-            VK_FORMAT_B8G8R8A8_SRGB,
-            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-        }
-    };
+        std::vector<VkSurfaceFormatKHR> surfaceFormat = {
+            { 
+                VK_FORMAT_R8G8B8A8_UNORM,
+                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+            },
+            { 
+                VK_FORMAT_B8G8R8A8_UNORM,
+                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+            },
+            { 
+                VK_FORMAT_R8G8B8A8_SRGB,
+                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+            },
+            {
+                VK_FORMAT_B8G8R8A8_SRGB,
+                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+            }
+        };
+    } priorities;
 
     struct
     {
         VkSurfaceTransformFlagBitsKHR preTransform{ VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR };
     } regisry;
+
+    size_t threadCount{ 1 };
+
+    bool status{ false };
 
 public:
     static VkResult Status;

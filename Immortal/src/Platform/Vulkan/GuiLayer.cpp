@@ -138,7 +138,7 @@ void GuiLayer::End()
         {{  .0f,  .0f,    .0f, 0.0f }}
     };
 
-    context->Record(Render::CurrentPresentedFrameIndex(), [&](auto *cmdbuf, auto *framebuffer) -> void {
+    context->Record(CommandBuffer::Usage::OneTimeSubmit, [&](auto *cmdbuf, auto *framebuffer) -> void {
         VkRenderPassBeginInfo beginInfo = {};
         beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         beginInfo.pNext                    = nullptr;

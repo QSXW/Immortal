@@ -130,15 +130,14 @@ void RenderContext::Prepare(size_t threadCount)
             swapchain->Get<VkImageUsageFlags>()
             };
         auto renderTarget = RenderTarget::Create(std::move(image));
-        framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
+        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
         frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
     }
     this->threadCount = threadCount;
 
-    commandBuffers.resize(frames.size());
-    for (auto &buf : commandBuffers)
+    for (auto &buf : present.commandBuffers)
     {
-        buf = device->Request(Level::Primary);
+        buf.reset(device->Request(Level::Primary));
     }
 
     this->status = true;
@@ -174,7 +173,7 @@ end:
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
 {
-    framebuffers.clear();
+    present.framebuffers.clear();
 
     if (transform == VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform == VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
     {
@@ -200,7 +199,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
         // LOG::INFO("Create Render Target{0}", (void*)image.Handle());
         auto renderTarget = RenderTarget::Create(std::move(image));
         
-        framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
+        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
 
         if (frame != frames.end())
         {

@@ -26,6 +26,8 @@ public:
         VkPresentModeKHR              PresentMode;
     };
 
+    static constexpr uint32_t MaxFrameCount{ 3 };
+
 public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
