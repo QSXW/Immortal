@@ -74,7 +74,13 @@ public:
         return fread(dst, size, count, fp);
     }
 
-    size_t Write(void *src, size_t size, size_t count = 1)
+    template <size_t size, size_t count = 1>
+    size_t Write(const void *src)
+    {
+        return fwrite(src, size, count, fp);
+    }
+
+    size_t Write(const void *src, size_t size, size_t count = 1)
     {
         return fwrite(src, size, count, fp);
     }
