@@ -28,13 +28,21 @@ namespace sl
 template <class T, size_t align>
 inline T *aligned_malloc(size_t size)
 {
+#ifdef __GNUC__
+	auto ptr = std::aligned_alloc(size * sizeof(T), align);
+#else
 	auto ptr = ::_aligned_malloc(size * sizeof(T), align);
+#endif
 	return ptr ? static_cast<T *>(ptr) : throw std::bad_alloc{};
 }
 
 inline void aligned_free(void* ptr)
 {
-	_aligned_free(ptr);
+#ifdef __GNUC__
+	std::free(ptr);
+#else
+	::_aligned_free(ptr);
+#endif
 }
 
 #define SLASSERT(...) assert(__VA_ARGS__)
