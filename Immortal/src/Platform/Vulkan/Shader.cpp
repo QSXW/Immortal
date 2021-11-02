@@ -1,7 +1,8 @@
 #include "Shader.h"
 
-#include "io/FileSystem.h"
+#include "FileSystem/FileSystem.h"
 #include "Render/GLSLCompiler.h"
+#include "Device.h"
 
 namespace Immortal
 {

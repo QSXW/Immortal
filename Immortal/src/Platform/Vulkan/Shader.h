@@ -1,17 +1,17 @@
 #pragma once
 
+#include <array>
+
+#include "Common.h"
 #include "Render/Shader.h"
 #include "Render/GLSLCompiler.h"
-
-#include "Device.h"
-
-#include <array>
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class Shader : public SuperShader
 {
 public:
