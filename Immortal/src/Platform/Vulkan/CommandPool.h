@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 class Device;
 class RenderFrame;
 class CommandPool

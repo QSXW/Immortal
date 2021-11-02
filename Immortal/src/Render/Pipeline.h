@@ -51,6 +51,12 @@ public:
         desc.Layout = description;
     }
 
+    template <class T>
+    void Update(size_t size, const T *data, int slot = 0)
+    {
+        desc.vertexBuffers[slot]->Update(sizeof(T) * size, rcast<const void*>(data));
+    }
+
 protected:
     struct Description
     {

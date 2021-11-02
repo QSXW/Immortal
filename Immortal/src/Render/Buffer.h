@@ -1,13 +1,12 @@
 #pragma once
 
+#include <array>
+
 #include "ImmortalCore.h"
 #include "Shader.h"
-
 #include "Platform/OpenGL/Common.h"
 #include "Platform/Vulkan/Common.h"
 #include "Platform/D3D12/Common.h"
-
-#include <array>
 
 namespace Immortal
 {
@@ -246,6 +245,8 @@ using VertexLayout = InputElementDescription;
 class Buffer
 {
 public:
+    using IndexType = uint32_t;
+
     enum class Type
     {
         Layout,
@@ -267,6 +268,13 @@ public:
     
     }
 
+    Buffer(Type type, uint32_t size) :
+        type{ type },
+        size{ size }
+    {
+    
+    }
+
     virtual ~Buffer() { }
 
     Type GetType() const
@@ -274,8 +282,20 @@ public:
         return type;
     }
 
+    virtual void Update(uint32_t size, const void *src)
+    {
+        
+    }
+
+    uint32_t Size() const 
+    {
+        return size;
+    }
+
 protected:
     Type type;
+
+    uint32_t size{ 0 };
 };
 
 using SuperBuffer = Buffer;

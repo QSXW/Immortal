@@ -64,6 +64,11 @@ public:
     {
         return nullptr;
     }
+
+    virtual void Draw(const std::shared_ptr<Pipeline> &pipeline)
+    {
+    
+    }
 };
 
 using SuperRenderer = Renderer;

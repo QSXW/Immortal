@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "Buffer.h"
+#include "Pipeline.h"
 
 namespace Immortal
 {
@@ -104,6 +106,33 @@ public:
     void EndRenderPass()
     {
         vkCmdEndRenderPass(handle);
+    }
+
+    void BindVertexBuffers(std::shared_ptr<Buffer> &buffer)
+    {
+        vkCmdBindVertexBuffers(handle, 0, 1, &buffer->Handle(), &buffer->Offset());
+    }
+
+    void BindIndexBuffer(std::shared_ptr<Buffer> &buffer)
+    {
+        vkCmdBindIndexBuffer(handle, *buffer, buffer->Offset(), VK_INDEX_TYPE_UINT32);
+    }
+
+    void Draw(uint32_t indexCount)
+    {
+        vkCmdDrawIndexed(handle, indexCount, 1, 0, 0, 0);
+    }
+
+    void DrawIndexed(std::shared_ptr<Buffer> &buffer)
+    {
+        BindIndexBuffer(buffer);
+        Draw(buffer->Size());
+    }
+
+    void Draw(std::shared_ptr<Pipeline> &pipeline)
+    {
+        BindVertexBuffers(pipeline->Get<Buffer::Type::Vertex>());
+        DrawIndexed(pipeline->Get<Buffer::Type::Index>());
     }
 
 private:

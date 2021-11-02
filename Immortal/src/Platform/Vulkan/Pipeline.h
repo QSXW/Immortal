@@ -1,16 +1,17 @@
 #pragma once
 
 #include "Common.h"
-#include "Device.h"
 
 #include "Render/Pipeline.h"
 #include "Shader.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class Pipeline : public SuperPipeline
 {
 public:
@@ -54,9 +55,22 @@ public:
 
     virtual ~Pipeline();
 
-    virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
+    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
     
     virtual void Set(const InputElementDescription &description) override;
+
+    template <Buffer::Type type>
+    std::shared_ptr<Buffer> Get()
+    {
+        if constexpr (type == Buffer::Type::Vertex)
+        {
+            return std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]);
+        }
+        if constexpr (type == Buffer::Type::Index)
+        {
+            return std::dynamic_pointer_cast<Buffer>(desc.indexBuffer);
+        }
+    }
 
 private:
     VkPrimitiveTopology ConvertType(PrimitiveType &type)

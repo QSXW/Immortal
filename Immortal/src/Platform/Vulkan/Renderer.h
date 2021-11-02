@@ -71,6 +71,11 @@ public:
         return std::make_shared<Buffer>(device, size, type);
     }
 
+    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override
+    {
+        
+    }
+
 private:
     void Resize();
 

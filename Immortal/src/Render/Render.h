@@ -194,6 +194,11 @@ public:
         return renderer->CreateBuffer(size * sizeof(T), type);
     }
 
+    static void Draw(const std::shared_ptr<Pipeline> &pipeline)
+    {
+        renderer->Draw(pipeline);
+    }
+
 private:
     static std::unique_ptr<Renderer> renderer;
 

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Render/Buffer.h"
 #include "Common.h"
-#include "Device.h"
+#include "Render/Buffer.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class Buffer : public SuperBuffer
 {
 public:
-    using Super = SuperBuffer;
+    using Super  = SuperBuffer;
 
 public:
     Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage = Usage::Persistent);
@@ -21,53 +21,35 @@ public:
 
     virtual ~Buffer() override;
 
-    void Create(size_t size = 0)
+    VkDeviceSize &Offset()
     {
-        VkBufferCreateInfo createInfo{};
-        createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        createInfo.usage       = SelectBufferUsage(type);
-        createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.size        = size;
-
-        VmaAllocationInfo allocInfo{};
-        VmaAllocationCreateInfo allocCreateInfo{};
-        allocCreateInfo.usage          = VMA_MEMORY_USAGE_GPU_TO_CPU;
-        allocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        if (persistent)
-        {
-            allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        }
-        Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &handle, &memory, &allocInfo));
-
-        if (persistent)
-	    {
-		    mappedData = static_cast<uint8_t *>(allocInfo.pMappedData);
-	    }
+        return offset;
     }
 
-    void Map()
+    VkBuffer &Handle()
     {
-        if (!mappedData)
-        {
-            vmaMapMemory(device->MemoryAllocator(), memory, &mappedData);
-        }
+        return handle;
     }
 
-    void Unmap()
+    operator VkBuffer&()
     {
-        if (mappedData)
-        {
-           vmaUnmapMemory(device->MemoryAllocator(), memory);
-        }
-        mappedData = nullptr;
+        return handle;
     }
 
-    void Flush()
+    operator VkBuffer() const
     {
-        vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
+        return handle;
     }
 
-    void Update(size_t size, const void *src)
+    void Create(size_t size = 0);
+
+    void Map();
+
+    void Unmap();
+
+    void Flush();
+
+    virtual void Update(uint32_t size, const void *src) override
     {
         if (persistent)
         {
@@ -83,7 +65,7 @@ public:
         }
     }
 
-    static inline VkBufferUsageFlags SelectBufferUsage(Type type)
+    inline VkBufferUsageFlags SelectBufferUsage(Type type)
     {
         if (type == Type::Index)
         {
@@ -99,7 +81,7 @@ private:
 
     VmaAllocation memory{ VK_NULL_HANDLE };
 
-    size_t size;
+    VkDeviceSize offset{ 0 };
 
     void *mappedData{ nullptr };
 
