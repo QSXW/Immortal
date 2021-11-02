@@ -8,27 +8,6 @@ namespace Immortal
 namespace OpenGL
 {
 
-static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
-{
-    switch (type)
-    {
-        case Shader::DataType::Float:    
-        case Shader::DataType::Float2:   
-        case Shader::DataType::Float3:   
-        case Shader::DataType::Float4:   
-        case Shader::DataType::Mat3:     
-        case Shader::DataType::Mat4:     return GL_FLOAT;
-        case Shader::DataType::Int: 
-        case Shader::DataType::Int2:
-        case Shader::DataType::Int3:
-        case Shader::DataType::Int4:     return GL_INT;
-        case Shader::DataType::Bool:     return GL_BOOL;
-    }
-
-    SLASSERT(false, "Unknown ShaderDataType!");
-    return 0;
-}
-
 VertexArray::VertexArray()
 {
     glCreateVertexArrays(1, &handle);
