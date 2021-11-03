@@ -1,11 +1,7 @@
 #pragma once
 #include "ImmortalCore.h"
 
-#include <map>
-#include <unordered_map>
-
 #include "Framework/Device.h"
-
 #include "Common.h"
 #include "Instance.h"
 #include "PhysicalDevice.h"
@@ -76,6 +72,16 @@ public:
     }
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
+    DEFINE_CREATE_VK_OBJECT(PipelineLayout)
+
+#define DEFINE_CREATE_PIPELINES(T) \
+    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
+    { \
+        return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
+    }
+
+    DEFINE_CREATE_PIPELINES(Graphics)
+    DEFINE_CREATE_PIPELINES(Compute)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destory(Vk##T object, const VkAllocationCallbacks* pAllocator = nullptr) \
@@ -174,6 +180,11 @@ public:
     }
 
     operator VkDevice&()
+    {
+        return handle;
+    }
+
+    operator VkDevice() const
     {
         return handle;
     }
