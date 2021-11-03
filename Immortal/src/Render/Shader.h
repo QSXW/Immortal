@@ -53,6 +53,11 @@ public:
         return -1;
     }
 
+    virtual const bool IsGraphics() const
+    {
+        return type == Type::Graphics;
+    }
+
     virtual void Set(const std::string& name, int value) { }
     virtual void Set(const std::string& name, int* values, uint32_t count) { }
     virtual void Set(const std::string& name, float value) { }
@@ -66,6 +71,9 @@ public:
     static std::shared_ptr<Shader> Shader::Create(const std::string &filepath);
 
     static std::shared_ptr<Shader> Shader::Create(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
+
+protected:
+    Type type{ Type::Graphics };
 };
 
 using SuperShader = Shader;
