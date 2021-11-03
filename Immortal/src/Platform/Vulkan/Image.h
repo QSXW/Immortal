@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Common.h"
-#include "Device.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class ImageView;
 class Image
 {

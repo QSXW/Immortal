@@ -1,6 +1,6 @@
 #include "impch.h"
 #include "Image.h"
-
+#include "Device.h"
 #include "ImageView.h"
 
 namespace Immortal
