@@ -72,6 +72,7 @@ public:
     }
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
+    DEFINE_CREATE_VK_OBJECT(Sampler)
     DEFINE_CREATE_VK_OBJECT(PipelineLayout)
 
 #define DEFINE_CREATE_PIPELINES(T) \

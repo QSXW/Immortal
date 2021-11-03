@@ -9,7 +9,7 @@ namespace Vulkan
 Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     device{ device }
 {
-    Check(vkCreateSampler(device->Handle(), &info, nullptr, &handle));
+    Check(device->Create(&info, nullptr, &handle));
 }
 
 Sampler::~Sampler()
