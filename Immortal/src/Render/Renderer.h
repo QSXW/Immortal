@@ -6,6 +6,7 @@
 #include "VertexArray.h"
 #include "Texture.h"
 #include "Pipeline.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -61,6 +62,11 @@ public:
     }
 
     virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
+    {
+        return nullptr;
+    }
+
+    virtual std::shared_ptr <Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
     {
         return nullptr;
     }

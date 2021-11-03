@@ -56,10 +56,5 @@ UINT32 Framebuffer::DepthAttachmentHandle(UINT32 index) const
     return UINT32();
 }
 
-const SuperFramebuffer::Description &Framebuffer::Desc() const
-{
-    return SuperFramebuffer::Description();
-}
-
 }
 }

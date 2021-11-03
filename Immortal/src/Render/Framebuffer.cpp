@@ -15,9 +15,4 @@ Framebuffer::Framebuffer()
 
 }
 
-std::shared_ptr<Framebuffer> Framebuffer::Create(const Framebuffer::Description &desc)
-{
-    return CreateSuper<Framebuffer, OpenGL::Framebuffer, Vulkan::Framebuffer, D3D12::Framebuffer>(desc);
-}
-
 }

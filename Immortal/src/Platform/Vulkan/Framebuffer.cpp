@@ -18,10 +18,9 @@ Framebuffer::Framebuffer()
 
 }
 
-Framebuffer::Framebuffer(const Framebuffer::Description &description) :
-    Super{ description },
-    context{ rcast<RenderContext*>(desc.context) },
-    device{ context->Get<Device *>() }
+Framebuffer::Framebuffer(Device *device, const Framebuffer::Description &description) :
+    device{ device },
+    Super{ description }
 {
 
 }
@@ -48,7 +47,6 @@ Framebuffer::Framebuffer(Device *device, RenderPass *renderPass, std::vector<Ima
 
     Check(vkCreateFramebuffer(device->Handle(), &createInfo, nullptr, &handle));
 }
-
 
 Framebuffer::~Framebuffer()
 {
@@ -85,11 +83,6 @@ UINT32 Framebuffer::ColorAttachmentHandle(UINT32 index) const
 UINT32 Framebuffer::DepthAttachmentHandle(UINT32 index) const
 {
     return UINT32();
-}
-
-const SuperFramebuffer::Description &Framebuffer::Desc() const
-{
-    return Super::Desc();
 }
 
 void Framebuffer::INIT()

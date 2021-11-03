@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Pipeline.h"
 #include "Buffer.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -69,6 +70,11 @@ public:
     virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
     {
         return std::make_shared<Buffer>(device, size, type);
+    }
+
+    virtual std::shared_ptr <Framebuffer::Super> CreateFramebuffer(const Framebuffer::Description &description) override
+    {
+        return std::make_shared<Framebuffer>(device, description);
     }
 
     virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override

@@ -59,7 +59,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     transformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
     shadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);
 
-    framebuffer = Framebuffer::Create({ (uint32_t)1280, (uint32_t)720, { { Texture::Format::RGBA32F }, { Texture::Format::Depth } } });
+    framebuffer = Render::CreateFramebuffer({ (uint32_t)1280, (uint32_t)720, { { Texture::Format::RGBA32F }, { Texture::Format::Depth } } });
          
     toneMap = Render::Data()->FullScreenVertexArray;
 }

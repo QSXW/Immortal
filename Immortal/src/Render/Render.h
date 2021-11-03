@@ -194,6 +194,11 @@ public:
         return renderer->CreateBuffer(size * sizeof(T), type);
     }
 
+    static std::shared_ptr <Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
+    {
+        return renderer->CreateFramebuffer(description);
+    }
+
     static void Draw(const std::shared_ptr<Pipeline> &pipeline)
     {
         renderer->Draw(pipeline);

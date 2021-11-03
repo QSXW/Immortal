@@ -15,7 +15,7 @@ public:
     using Super = SuperFramebuffer;
 
 public:
-    Framebuffer::Framebuffer();
+    Framebuffer();
 
     Framebuffer(const Super::Description &descrition);
 
@@ -34,8 +34,6 @@ public:
     virtual UINT32 ColorAttachmentHandle(UINT32 index) const override;
 
     virtual UINT32 DepthAttachmentHandle(UINT32 index) const override;
-
-    virtual const Super::Description &Desc() const override;
 
 private:
     void *handle{ nullptr };

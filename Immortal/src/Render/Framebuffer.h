@@ -89,6 +89,7 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) { }
 
+
     virtual UINT32 ColorAttachmentHandle(UINT32 index = 0) const
     {
         return 0;
@@ -99,12 +100,10 @@ public:
         return 0;
     }
 
-    virtual const Description &Desc() const
+    const Description &Desc() const
     {
         return desc;
     }
-
-    static std::shared_ptr<Framebuffer> Create(const Description &desc);
 
 protected:
     Description desc{};

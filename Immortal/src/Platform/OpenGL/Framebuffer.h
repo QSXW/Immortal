@@ -31,11 +31,6 @@ public:
 
     virtual uint32_t DepthAttachmentHandle(uint32_t index = 0) const override;
 
-    virtual const Framebuffer::Description &Desc() const override
-    {
-        return desc;
-    }
-
 private:
     void Update();
     void Clear();

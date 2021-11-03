@@ -3,16 +3,14 @@
 #include "Render/Framebuffer.h"
 
 #include "Common.h"
-
+#include "RenderPass.h"
 #include "Image.h"
-#include "ImageView.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
-class RenderContext;
 class Device;
 class RenderPass;
 
@@ -24,7 +22,7 @@ public:
 public:
     Framebuffer();
 
-    Framebuffer(const Super::Description &spec);
+    Framebuffer(Device *device, const Super::Description &spec);
 
     Framebuffer(Device *device, RenderPass *renderPass, std::vector<ImageView> &views, VkExtent2D &extent);
 
@@ -47,6 +45,13 @@ public:
         return handle;
     }
 
+    template <class T = RenderPass>
+    T Get()
+    {
+        static_assert(is_same<T, RenderPass>() && "Only RenderPass can be got!");
+        return *renderPass;
+    }
+
 public SLVIRTUAL:
     virtual void Map() override;
 
@@ -62,12 +67,8 @@ public SLVIRTUAL:
 
     virtual UINT32 DepthAttachmentHandle(UINT32 index) const override;
 
-    virtual const Super::Description &Desc() const override;
-
 private:
     VkFramebuffer handle{ VK_NULL_HANDLE };
-
-    RenderContext *context{ nullptr };
 
     Device *device{ nullptr };
 
