@@ -24,12 +24,17 @@ public:
 
     VkShaderModule Load(const std::string &filename, Shader::Stage stage);
 
+    auto &Stages()
+    {
+        return stages;
+    }
+
 private:
     Device *device{ nullptr };
 
     std::vector<VkShaderModule> modules;
 
-    std::array<VkPipelineShaderStageCreateInfo, 2> stages;
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
 };
 
 }

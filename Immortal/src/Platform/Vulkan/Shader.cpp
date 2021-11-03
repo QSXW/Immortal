@@ -22,6 +22,7 @@ static inline VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module,
 Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
     : device{ d }
 {   
+    stages.reserve(2);
     if (type == Shader::Type::Graphics)
     {
         VkShaderModule vert = Load(filename + ".vert", Shader::Stage::Vertex);
@@ -29,6 +30,7 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
 
         modules.push_back(vert);
         modules.push_back(frag);
+        stages.resize(2);
         stages[0] = CreateStage(vert, VK_SHADER_STAGE_VERTEX_BIT);
         stages[1] = CreateStage(frag, VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -36,6 +38,7 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
     {
         VkShaderModule comp = Load(filename + ".comp", Shader::Stage::Compute);
         modules.push_back(comp);
+        stages.resize(1);
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
 }
