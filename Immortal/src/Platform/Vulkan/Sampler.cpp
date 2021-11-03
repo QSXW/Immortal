@@ -18,7 +18,7 @@ Sampler::~Sampler()
     {
         return;
     }
-    IfNotNullThen(vkDestroySampler, device->Handle(), handle);
+    device->Destory(handle);
 }
 
 Sampler::Sampler(Sampler &&other) :
