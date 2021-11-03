@@ -5,6 +5,7 @@
 #include "Render/Pipeline.h"
 #include "Shader.h"
 #include "Buffer.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -36,9 +37,16 @@ public:
 
     struct Configuration
     {
-        std::array<VkDynamicState, 2> dynamic{
+        std::array<VkDynamicState, 9> dynamic{
             VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
+            VK_DYNAMIC_STATE_SCISSOR,
+            VK_DYNAMIC_STATE_LINE_WIDTH,
+            VK_DYNAMIC_STATE_DEPTH_BIAS,
+            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_REFERENCE
         };
 
         std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
@@ -71,6 +79,13 @@ public:
             return std::dynamic_pointer_cast<Buffer>(desc.indexBuffer);
         }
     }
+
+    VkPipelineBindPoint &BindPoint()
+    {
+        return bindPoint;
+    }
+
+    virtual void Create(std::shared_ptr<Framebuffer::Super> &framebuffer) override;
 
 private:
     VkPrimitiveTopology ConvertType(PrimitiveType &type)
@@ -105,6 +120,14 @@ private:
 
 private:
     Device *device{ nullptr };
+
+    std::shared_ptr<Framebuffer> framebuffer;
+
+    VkPipeline handle{ VK_NULL_HANDLE };
+
+    VkPipelineCache cache{ VK_NULL_HANDLE };
+
+    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     std::unique_ptr<Configuration> configuration;
 };

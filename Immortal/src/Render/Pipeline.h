@@ -4,6 +4,7 @@
 
 #include "Buffer.h"
 #include "Shader.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
@@ -48,7 +49,12 @@ public:
 
     virtual void Set(const InputElementDescription &description)
     {
-        desc.Layout = description;
+        desc.layout = description;
+    }
+
+    virtual void Create(std::shared_ptr<Framebuffer> &framebuffer)
+    {
+        
     }
 
     template <class T>
@@ -60,13 +66,13 @@ public:
 protected:
     struct Description
     {
-        std::shared_ptr<Shader> Shader{ nullptr };
+        std::shared_ptr<Shader> shader{ nullptr };
 
         std::vector<std::shared_ptr<Buffer>> vertexBuffers;
 
         std::shared_ptr<Buffer> indexBuffer;
 
-        VertexLayout Layout{};
+        InputElementDescription layout{};
 
         DrawType Type{ DrawType::Static };
 
