@@ -1,9 +1,6 @@
 #include "impch.h"
 #include "RenderPass.h"
-
 #include "Device.h"
-
-#include <array>
 
 namespace Immortal
 {

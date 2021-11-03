@@ -9,6 +9,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 struct Attachment
 {
     VkFormat format{ VK_FORMAT_UNDEFINED };
