@@ -1,4 +1,5 @@
 #include "Sampler.h"
+#include "Device.h"
 
 namespace Immortal
 {
