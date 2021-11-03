@@ -1,6 +1,7 @@
 #include "impch.h"
 #include "ImageView.h"
 #include "image.h"
+#include "Device.h"
 
 namespace Immortal
 {
@@ -53,6 +54,24 @@ ImageView::ImageView(ImageView&& other) :
 ImageView::~ImageView()
 {
     device->Destory(handle);
+}
+
+void ImageView::INIT(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)
+{
+    subresourceRange.baseMipLevel   = baseMipLevel;
+    subresourceRange.baseArrayLayer = baseArrayLevel;
+    subresourceRange.levelCount     = nMipLevels;
+    subresourceRange.layerCount     = nArrayLayers;
+    subresourceRange.aspectMask     = IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.viewType         = viewType;
+    viewInfo.format           = format;
+    viewInfo.subresourceRange = subresourceRange;
+    viewInfo.image            = image;
+
+    Check(vkCreateImageView(*device, &viewInfo, nullptr, &handle));
 }
 
 }

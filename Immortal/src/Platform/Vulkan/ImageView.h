@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Common.h"
-#include "Device.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class Image;
 class ImageView
 {
@@ -59,23 +59,7 @@ public:
     }
 
 private:
-    void INIT(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)
-    {
-        subresourceRange.baseMipLevel   = baseMipLevel;
-        subresourceRange.baseArrayLayer = baseArrayLevel;
-        subresourceRange.levelCount     = nMipLevels;
-        subresourceRange.layerCount     = nArrayLayers;
-        subresourceRange.aspectMask     = IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-
-        VkImageViewCreateInfo viewInfo{};
-        viewInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.viewType         = viewType;
-        viewInfo.format           = format;
-        viewInfo.subresourceRange = subresourceRange;
-        viewInfo.image            = image;
-
-        Check(vkCreateImageView(device->Get<VkDevice>(), &viewInfo, nullptr, &handle));
-    }
+    void INIT(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers);
 
 private:
     VkImageView handle{ VK_NULL_HANDLE };
