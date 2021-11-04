@@ -2,6 +2,7 @@
 
 #ifdef WINDOWS
 #include "ImmortalCore.h"
+
 extern Immortal::Application* Immortal::CreateApplication();
 
 #include <memory>
@@ -9,15 +10,14 @@ extern Immortal::Application* Immortal::CreateApplication();
 
 int main(int argc, char **argv)
 {
-    Immortal::Utils::SafeChunk = new UINT8[1024];
-
     system("chcp 65001 & cls");
     Immortal::LOG::INIT();
-    auto app = Immortal::CreateApplication();
-    app->Run();
-    delete app;
 
-    delete[] Immortal::Utils::SafeChunk;
+    std::unique_ptr<Immortal::Application> app{ nullptr };
+    app.reset(Immortal::CreateApplication());
+
+    app->Run();
+
     return 0;
 }
 
