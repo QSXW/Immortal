@@ -70,7 +70,7 @@ void Render::INIT(RenderContext *context)
         });
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex));
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index));
-        data.FullScreenPipeline->Create(data.Target);
+        // data.FullScreenPipeline->Create(data.Target);
         /*
         constexpr UINT32 white        = 0xffffffff;
         constexpr UINT32 black        = 0x000000ff;

@@ -25,7 +25,6 @@ public:
     {
         switch (src.Format)
         {
-        case Format::RGBA:
         case Format::RGBA8:    
             dst.format = VK_FORMAT_R8G8B8A8_UNORM;
             break;

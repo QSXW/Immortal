@@ -33,20 +33,18 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = 
     data.Filter = filter == Texture::Filter::Linear ? GL_LINEAR : GL_NEAREST;
     switch (format)
     {
-    case Format::RedInterger:
+    case Format::R32:
         data.InternalFromat = GL_R32I;
         data.DataFormat = GL_RED_INTEGER;
         data.BinaryType = GL_INT;
         break;
 
-    case Format::RGBA:
     case Format::RGBA8:
         data.InternalFromat = GL_RGBA8;
         data.DataFormat = GL_RGBA;
         data.BinaryType = GL_UNSIGNED_BYTE;
         break;
 
-    case Format::RGB:
     case Format::RGB8:
         data.InternalFromat = GL_RGB8;
         data.DataFormat = GL_RGB;

@@ -166,7 +166,7 @@ void *Framebuffer::ReadPixel(uint32_t index, int x, int y, Format format, int wi
     glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
 
     int pixel = -1;
-    if (format == Format::RedInterger)
+    if (format == Format::R32)
     {
         glReadPixels(x, y, width, height, GL_RED_INTEGER, GL_INT, &pixel);
     }

@@ -27,22 +27,23 @@ enum class Format
     VECTOR4,
     COLOUR = VECTOR4,
     MATRIX4,
-    RedInterger,
-    RGB,
-    RGB8,
-    RGBA,
     RGBA8,
+    BGRA8,
     RGBA16F,
     RGBA32F,
+    R8,
+    R16,
+    R32,
+    R32F,
     RG32F,
     RG16F,
-    BGRA8,
     SRGB,
     RGB16F,
     RGB32F,
     Depth32F,
     Depth24Stencil8,
     Depth = Depth24Stencil8,
+    RGB8,
     None
 };
 
@@ -65,16 +66,25 @@ struct BaseFormatElement
     uint32_t    componentCount;
 };
 
+using bfloat = uint16_t;
+#define FS_C(T, CC) (sizeof(T) * (CC)), CC
+
 static inline BaseFormatElement BaseFormatMapper[] = {
-    { VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,           GL_INT,   sizeof(int32_t),     1     },
-    { VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,        GL_INT,   sizeof(int32_t) * 2, 2     },
-    { VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,     GL_INT,   sizeof(int32_t) * 3, 3     },
-    { VK_FORMAT_R32G32B32A32_SINT,   DXGI_FORMAT_R32G32B32A32_SINT,  GL_INT,   sizeof(int32_t) * 4, 4     },
-    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT, sizeof(float),       1     },
-    { VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,       GL_FLOAT, sizeof(Vector2),     2     },
-    { VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,    GL_FLOAT, sizeof(Vector3),     3     },
-    { VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, GL_FLOAT, sizeof(Vector4),     4     },
-    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT, sizeof(Matrix4),     4 * 4 }
+    { VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,           GL_INT,     FS_C(int,     1)     },
+    { VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,        GL_INT,     FS_C(int,     2)     },
+    { VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,     GL_INT,     FS_C(int,     3)     },
+    { VK_FORMAT_R32G32B32A32_SINT,   DXGI_FORMAT_R32G32B32A32_SINT,  GL_INT,     FS_C(int,     4)     },
+    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT,   FS_C(float,   1)     },
+    { VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,       GL_FLOAT,   FS_C(float,   1)     },
+    { VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,    GL_FLOAT,   FS_C(float,   2)     },
+    { VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, GL_FLOAT,   FS_C(float,   1)     },
+    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,          GL_FLOAT,   FS_C(float,   4 * 4) },
+    { VK_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,     GL_RGBA8,   FS_C(uint8_t, 4)     },
+    { VK_FORMAT_B8G8R8A8_UNORM,      DXGI_FORMAT_B8G8R8A8_UNORM,     GL_RGBA8,   FS_C(uint8_t, 4)     },
+    { VK_FORMAT_R16G16B16A16_SFLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT, GL_RGBA16F, FS_C(bfloat,  4)     },
+    { VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, FS_C(float,   4)     }
 };
 
-}
+#undef FS
+
+};
