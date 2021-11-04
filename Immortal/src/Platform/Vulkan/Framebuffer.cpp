@@ -22,7 +22,7 @@ Framebuffer::Framebuffer(Device *device, const Framebuffer::Description &descrip
     device{ device },
     Super{ description }
 {
-
+    
 }
 
 Framebuffer::Framebuffer(Device *device, RenderPass *renderPass, std::vector<ImageView> &views, VkExtent2D &extent) :
@@ -40,7 +40,7 @@ Framebuffer::Framebuffer(Device *device, RenderPass *renderPass, std::vector<Ima
     createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     createInfo.attachmentCount = U32(attachments.size());
     createInfo.pAttachments    = attachments.data();
-    createInfo.renderPass      = renderPass->Handle();
+    createInfo.renderPass      = *renderPass;
     createInfo.width           = extent.width;
     createInfo.height          = extent.height;
     createInfo.layers          = 1;
