@@ -144,4 +144,12 @@ message(what) { }
 #define SLVIRTUAL 
 #define SLINLINE
 
+#define CAT1(p, s) #p##s
+
+namespace SError
+{
+    constexpr const char OutOfBound[]  = "Index was out of bound";
+    constexpr const char OutOfMemory[] = "No more memory on the runtime";
+}
+
 }
