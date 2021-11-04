@@ -8,19 +8,19 @@
 namespace Media
 {
 
-Error BMPDecoder::Read(const std::string &filename, bool alpha)
+Status BMPDecoder::Read(const std::string &filename, bool alpha)
 {
     Stream stream{ filename.c_str(), Stream::Mode::Read };
 
     if (!stream.Readable())
     {
-        return Error::UNABLE_TO_OEPN_FILE;
+        return Status::UNABLE_TO_OEPN_FILE;
     }
     stream.Read(&identifer, HeaderSize());
 
     if (bitsPerPixel != 24)
     {
-        return Error::UNSUPPORT_FORMAT;
+        return Status::UNSUPPORT_FORMAT;
     }
 
     if (alpha)
@@ -37,7 +37,7 @@ Error BMPDecoder::Read(const std::string &filename, bool alpha)
     data.reset(new uint8_t [size]);
     if (!data)
     {
-        return Error::OUT_OF_MEMORY;
+        return Status::OUT_OF_MEMORY;
     }
 
     uint8_t *ptr = data.get() + size - linesize - width;
@@ -70,16 +70,16 @@ Error BMPDecoder::Read(const std::string &filename, bool alpha)
         }
     }
 
-    return Error::SUCCEED;
+    return Status::SUCCEED;
 }
 
-Error BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
+Status BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
 {
     Stream stream{ filepath, Stream::Mode::Write };
 
     if (!stream.Writable())
     {
-        return Error::UNABLE_TO_OEPN_FILE;
+        return Status::UNABLE_TO_OEPN_FILE;
     }
 
     auto padding  = w & 3;
@@ -115,7 +115,7 @@ Error BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, ui
         }
     }
 
-    return Error::SUCCEED;
+    return Status::SUCCEED;
 }
 
 }

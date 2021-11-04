@@ -30,7 +30,7 @@ public:
         fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
         if (!fp)
         {
-            error = Error::UNABLE_TO_OEPN_FILE;
+            error = Status::UNABLE_TO_OEPN_FILE;
             return;
         }
         fileSize = GetFileSize(fp);
@@ -110,7 +110,7 @@ public:
     }
 
 private:
-    Error error{ Error::SUCCEED };
+    Status error{ Status::SUCCEED };
 
     Mode mode{ 0 };
 

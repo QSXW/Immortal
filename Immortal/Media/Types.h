@@ -28,7 +28,7 @@ enum class Format
 namespace sl
 {
 
-enum class Error
+enum class Status
 {
     SUCCEED = 0,
     CORRUPT_FILE,

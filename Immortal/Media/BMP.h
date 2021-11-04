@@ -45,9 +45,9 @@ public:
         return reinterpret_cast<uint8_t *>(&importantColours) - reinterpret_cast<uint8_t *>(&identifer);
     }
 
-    Error Read(const std::string &filename, bool alpha = true);
+    Status Read(const std::string &filename, bool alpha = true);
 
-    Error Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
+    Status Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
 
     virtual uint32_t Width() override
     {
