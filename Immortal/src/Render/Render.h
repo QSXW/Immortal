@@ -205,6 +205,26 @@ public:
         return renderer->CreateFramebuffer(description);
     }
 
+    template <class T, class... Args>
+    static std::shared_ptr<T> Create(Args&& ... args)
+    {
+        if constexpr (is_same<T, Buffer>())
+        {
+            return CreateBuffer(std::forward<Args>(args)...);
+        }
+        if constexpr (is_same<T, Shader>())
+        {
+            return CreateShader(std::forward<Args>(args)...);
+        }
+        if constexpr (is_same<T, Framebuffer>())
+        {
+            return CreateFramebuffer(std::forward<Args>(args)...);
+        }
+
+        static_assert("Type not supported yet");
+        return nullptr;
+    }
+
     static void Draw(const std::shared_ptr<Pipeline> &pipeline)
     {
         renderer->Draw(pipeline);
