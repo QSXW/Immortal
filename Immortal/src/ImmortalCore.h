@@ -36,37 +36,8 @@
 
 namespace Immortal
 {
+
 using namespace sl;
 
-namespace Utils
-{
-
-static void *SafeChunk;
-
-template <class T>
-constexpr inline T NullValue()
-{
-    return *(T*)SafeChunk;
 }
-
-}
-
-class Exception : public std::exception
-{
-public: Exception(const char *what) noexcept : 
-#ifdef _MSC_VER
-std::exception(what, 1) { }
-#elif __GNUC__
-message(what) { }
-
-    virtual const char* what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW override
-    {
-        return message.c_str();
-    }
-
-    std::string message;
-#endif
-};
-}
-
 #endif
