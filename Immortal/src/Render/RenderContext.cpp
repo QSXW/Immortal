@@ -25,7 +25,7 @@ std::unique_ptr<RenderContext> RenderContext::Create(Description &desc)
         return std::make_unique<D3D12::RenderContext>(desc);
 
     default:
-        LOG::ERR("Not support api");
+        throw Exception{ "Not support api" };
         return nullptr;
     }
 }
