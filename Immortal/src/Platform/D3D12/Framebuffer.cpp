@@ -46,15 +46,5 @@ void Framebuffer::ClearAttachment(UINT32 attachmentIndex, int value)
 
 }
 
-UINT32 Framebuffer::ColorAttachmentHandle(UINT32 index) const
-{
-    return UINT32();
-}
-
-UINT32 Framebuffer::DepthAttachmentHandle(UINT32 index) const
-{
-    return UINT32();
-}
-
 }
 }

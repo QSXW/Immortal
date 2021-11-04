@@ -7,14 +7,20 @@
 namespace Immortal
 {
    
-class Framebuffer
+struct Attachment
 {
 public:
-    struct AttachmentDescription
+    enum class Type
     {
-        AttachmentDescription() = default;
+        Color,
+        Depth
+    };
 
-        AttachmentDescription(std::initializer_list<Texture::Description> attachments)
+    struct Description
+    {
+        Description() = default;
+
+        Description(std::initializer_list<Texture::Description> attachments)
             : Attachments(attachments) {}
 
         std::vector<Texture::Description>::iterator begin()
@@ -40,11 +46,35 @@ public:
         std::vector<Texture::Description> Attachments;
     };
 
+public:
+    Attachment() :
+        handle{ nullptr }
+    {
+    
+    }
+
+    Attachment(uint32_t handle) :
+        handle{ (void*)(uint64_t)(handle) }
+    {
+        
+    }
+
+    operator uint64_t()
+    {
+        return rcast<uint64_t>(handle);
+    }
+
+    void *handle;
+};
+
+class Framebuffer
+{
+public:
     struct Description
     {
         Description() { }
 
-        Description(Vector2 viewport, AttachmentDescription attachments) :
+        Description(Vector2 viewport, Attachment::Description attachments) :
             Width{ ncast<UINT32>(viewport.x) },
             Height{ ncast<UINT32>(viewport.y) },
             Attachments(attachments)
@@ -52,7 +82,7 @@ public:
 
         }
 
-        Description(UINT32 width, UINT32 height, AttachmentDescription attachments)
+        Description(UINT32 width, UINT32 height, Attachment::Description attachments)
             : Width(width), Height(height), Attachments(attachments)
         {
 
@@ -66,7 +96,7 @@ public:
 
         UINT32 Layers{ 0 };
 
-        AttachmentDescription Attachments{};
+        Attachment::Description Attachments{};
 
         bool SwapChainTarget = false;
 
@@ -102,14 +132,27 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) { }
 
-    virtual UINT32 ColorAttachmentHandle(UINT32 index = 0) const
+    template <Attachment::Type T, class ... Args>
+    Attachment &Get(Args&& ... args)
     {
-        return 0;
+        if constexpr (T == Attachment::Type::Color)
+        {
+            return ColorAttachment(std::forward<Args>(args)...);
+        }
+        if constexpr (T == Attachment::Type::Depth)
+        {
+            return DepthAttachment(std::forward<Args>(args)...);
+        }
     }
 
-    virtual UINT32 DepthAttachmentHandle(UINT32 index = 0) const
+    virtual Attachment ColorAttachment(size_t index = 0)
     {
-        return 0;
+        return Attachment{};
+    }
+
+    virtual Attachment DepthAttachment()
+    {
+        return Attachment{};
     }
 
     const Description &Desc() const

@@ -1,12 +1,9 @@
 #include "impch.h"
 #include "Framebuffer.h"
 
-#include <array>
-#include <vector>
-
-#include "RenderContext.h"
 #include "Device.h"
 #include "RenderPass.h"
+#include "ImageView.h"
 
 namespace Immortal
 {
@@ -73,16 +70,6 @@ void *Framebuffer::ReadPixel(UINT32 attachmentIndex, int x, int y, Format format
 
 void Framebuffer::ClearAttachment(UINT32 attachmentIndex, int value)
 {
-}
-
-UINT32 Framebuffer::ColorAttachmentHandle(UINT32 index) const
-{
-    return UINT32();
-}
-
-UINT32 Framebuffer::DepthAttachmentHandle(UINT32 index) const
-{
-    return UINT32();
 }
 
 void Framebuffer::INIT()

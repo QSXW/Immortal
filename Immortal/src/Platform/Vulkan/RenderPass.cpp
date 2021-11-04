@@ -6,6 +6,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat) :
     device{ device },
     depthFormat{ depthFormat }
@@ -80,5 +81,6 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
 
     Check(vkCreateRenderPass(device->Handle(), &createInfo, nullptr, &handle));
 }
+
 }
 }

@@ -11,18 +11,18 @@ namespace OpenGL
 
 Framebuffer::Framebuffer(const Framebuffer::Super::Description &descrition) :
     handle{ 0 },
-    mDepthAttachment{ 0 },
+    depthAttachment{ 0 },
     desc{ descrition }
 {
     for (auto spec : desc.Attachments)
     {
         if (!Texture::IsDepthFormat(spec.Format))
         {
-            mColorAttachmentSpecifications.emplace_back(spec);
+            colorAttachmentDescriptions.emplace_back(spec);
         }
         else
         {
-            mDepthAttachmentSpecification = spec;
+            depthAttachmentDescription = spec;
         }
     }
 
@@ -37,11 +37,11 @@ Framebuffer::~Framebuffer()
 void Framebuffer::Clear()
 {
     glDeleteFramebuffers(1, &handle);
-    glDeleteTextures((GLsizei)mColorAttachments.size(), mColorAttachments.data());
-    glDeleteTextures(1, &mDepthAttachment);
+    glDeleteTextures((GLsizei)colorAttachments.size(), colorAttachments.data());
+    glDeleteTextures(1, &depthAttachment);
 
-    mColorAttachments.clear();
-    mDepthAttachment = 0;
+    colorAttachments.clear();
+    depthAttachment = 0;
 }
 
 void Framebuffer::AttachColorTexture(uint32_t id, int samples, Texture::DataType type, uint32_t width, uint32_t height, int index)
@@ -99,34 +99,37 @@ void Framebuffer::Update()
     bool multisample = desc.Samples > 1;
 
     // Attachments
-    if (mColorAttachmentSpecifications.size())
+    if (colorAttachmentDescriptions.size())
     {
-        mColorAttachments.resize(mColorAttachmentSpecifications.size());
-        CreateTexture(multisample, mColorAttachments.data(), (uint32_t)mColorAttachments.size());
+        colorAttachments.resize(colorAttachmentDescriptions.size());
+        CreateTexture(multisample, colorAttachments.data(), (uint32_t)colorAttachments.size());
 
-        for (size_t i = 0; i < mColorAttachments.size(); i++)
+        for (size_t i = 0; i < colorAttachments.size(); i++)
         {
-            BindTexture(multisample, mColorAttachments[i]);
-            Texture::DataType type = NativeTypeToOpenGl(mColorAttachmentSpecifications[i].Format, mColorAttachmentSpecifications[i].Wrap, mColorAttachmentSpecifications[i].Filter);
-            AttachColorTexture(mColorAttachments[i], desc.Samples, type, desc.Width, desc.Height, (int)i);
+            BindTexture(multisample, colorAttachments[i]);
+            Texture::DataType type = NativeTypeToOpenGl(colorAttachmentDescriptions[i].Format, colorAttachmentDescriptions[i].Wrap, colorAttachmentDescriptions[i].Filter);
+            AttachColorTexture(colorAttachments[i], desc.Samples, type, desc.Width, desc.Height, (int)i);
         }
     }
 
-    if (mDepthAttachmentSpecification.Format != Format::None)
+    if (depthAttachmentDescription.Format != Format::None)
     {
-        CreateTexture(multisample, &mDepthAttachment, 1);
-        BindTexture(multisample, mDepthAttachment);
-        Texture::DataType type = NativeTypeToOpenGl(mDepthAttachmentSpecification.Format, mDepthAttachmentSpecification.Wrap, mDepthAttachmentSpecification.Filter);
-        AttachDepthTexture(mDepthAttachment, desc.Samples, type, GL_DEPTH_STENCIL_ATTACHMENT, desc.Width, desc.Height);
+        CreateTexture(multisample, &depthAttachment, 1);
+        BindTexture(multisample, depthAttachment);
+        Texture::DataType type = NativeTypeToOpenGl(depthAttachmentDescription.Format, depthAttachmentDescription.Wrap, depthAttachmentDescription.Filter);
+        AttachDepthTexture(depthAttachment, desc.Samples, type, GL_DEPTH_STENCIL_ATTACHMENT, desc.Width, desc.Height);
     }
 
-    if (mColorAttachments.size() > 1)
+    if (colorAttachments.size() > 1)
     {
-        SLASSERT(mColorAttachments.size() <= 4 && "Only Support Four Color Attchments");
+        if (colorAttachments.size() <= 4)
+        {
+            throw Exception{ "Only Support Four Color Attchments" };
+        }
         GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-        glDrawBuffers((GLsizei)mColorAttachments.size(), buffers);
+        glDrawBuffers((GLsizei)colorAttachments.size(), buffers);
     }
-    else if (mColorAttachments.empty())
+    else if (colorAttachments.empty())
     {
         glDrawBuffer(GL_NONE);
     }
@@ -153,11 +156,14 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
     this->Update();
 }
 
-void *Framebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Format format, int width, int height)
+void *Framebuffer::ReadPixel(uint32_t index, int x, int y, Format format, int width, int height)
 {
     this->Map();
-    SLASSERT(attachmentIndex < mColorAttachments.size() && "The attachmentIndex out of bound.");
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+    if (index >= colorAttachments.size())
+    {
+        throw Exception{ SError::OutOfBound };
+    }
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + index);
 
     int pixel = -1;
     if (format == Format::RedInterger)
@@ -174,21 +180,27 @@ void *Framebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Format form
 
 void Framebuffer::ClearAttachment(uint32_t index, int value)
 {
-    SLASSERT(index < mColorAttachments.size() && "Framebuffer::ClearAttachment: index out of bound");
+    if (index >= colorAttachments.size())
+    {
+        throw Exception{ SError::OutOfBound };
+    }
 
-    auto type = NativeTypeToOpenGl(mColorAttachmentSpecifications[index].Format);
-    glClearTexImage(mColorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
+    auto type = NativeTypeToOpenGl(colorAttachmentDescriptions[index].Format);
+    glClearTexImage(colorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
 }
 
-uint32_t Framebuffer::ColorAttachmentHandle(uint32_t index) const
+Attachment Framebuffer::ColorAttachment(size_t index)
 {
-    SLASSERT(index < mColorAttachments.size() && "Framebuffer::ColorAttachmentHandle: index out of bound");
-    return mColorAttachments[index];
+    if (index >= colorAttachments.size())
+    {
+        throw Exception{ SError::OutOfBound };
+    }
+    return Attachment{ colorAttachments[index] };
 }
 
-uint32_t Framebuffer::DepthAttachmentHandle(uint32_t index) const
+Attachment Framebuffer::DepthAttachment()
 {
-    return mDepthAttachment;
+    return Attachment{ depthAttachment };
 }
 
 }

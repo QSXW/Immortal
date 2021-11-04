@@ -27,9 +27,9 @@ public:
 
     virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
 
-    virtual uint32_t ColorAttachmentHandle(uint32_t index = 0) const override;
+    virtual Attachment ColorAttachment(size_t index = 0) override;
 
-    virtual uint32_t DepthAttachmentHandle(uint32_t index = 0) const override;
+    virtual Attachment DepthAttachment() override;
 
 private:
     void Update();
@@ -43,11 +43,11 @@ private:
     uint32_t handle;
     Framebuffer::Description desc;
 
-    std::vector<Texture::Description> mColorAttachmentSpecifications;
-    Texture::Description mDepthAttachmentSpecification{ Format::R8G8B8A8_UNORM };
+    std::vector<Texture::Description> colorAttachmentDescriptions;
+    Texture::Description depthAttachmentDescription{ Format::R8G8B8A8_UNORM };
 
-    std::vector<uint32_t> mColorAttachments;
-    uint32_t mDepthAttachment;
+    std::vector<uint32_t> colorAttachments;
+    uint32_t depthAttachment;
 };
 }
-}	
+}
