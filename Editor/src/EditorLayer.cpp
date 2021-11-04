@@ -22,9 +22,9 @@ namespace Immortal
         Framebuffer::Description spec;
 
         spec.Attachments = {
-            { Texture::Format::RGBA32F },
-            { Texture::Format::RedInterger },
-            { Texture::Format::Depth }
+            { Format::RGBA32F },
+            { Format::RedInterger },
+            { Format::Depth }
         };
 
         spec.Width = 1920;

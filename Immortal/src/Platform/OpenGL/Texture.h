@@ -25,7 +25,7 @@ static inline void BindTexture(bool multisampled, uint32_t id)
     glBindTexture(TextureTarget(multisampled), id);
 }
 
-static Texture::DataType NativeTypeToOpenGl(Texture::Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Linear)
+static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Linear)
 {
     Texture::DataType data{};
 
@@ -33,57 +33,57 @@ static Texture::DataType NativeTypeToOpenGl(Texture::Format format, Texture::Wra
     data.Filter = filter == Texture::Filter::Linear ? GL_LINEAR : GL_NEAREST;
     switch (format)
     {
-    case Texture::Format::RedInterger:
+    case Format::RedInterger:
         data.InternalFromat = GL_R32I;
         data.DataFormat = GL_RED_INTEGER;
         data.BinaryType = GL_INT;
         break;
 
-    case Texture::Format::RGBA:
-    case Texture::Format::RGBA8:
+    case Format::RGBA:
+    case Format::RGBA8:
         data.InternalFromat = GL_RGBA8;
         data.DataFormat = GL_RGBA;
         data.BinaryType = GL_UNSIGNED_BYTE;
         break;
 
-    case Texture::Format::RGB:
-    case Texture::Format::RGB8:
+    case Format::RGB:
+    case Format::RGB8:
         data.InternalFromat = GL_RGB8;
         data.DataFormat = GL_RGB;
         data.BinaryType = GL_UNSIGNED_BYTE;
         break;
 
-    case Texture::Format::RG16F:
+    case Format::RG16F:
         data.InternalFromat = GL_RG16F;
         data.DataFormat = GL_RG;
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Texture::Format::RGBA16F:
+    case Format::RGBA16F:
         data.InternalFromat = GL_RGBA16F;
         data.DataFormat = GL_RGBA;
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Texture::Format::RGB16F:
+    case Format::RGB16F:
         data.InternalFromat = GL_RGB16F;
         data.DataFormat = GL_RGB;
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Texture::Format::RGBA32F:
+    case Format::RGBA32F:
         data.InternalFromat = GL_RGBA32F;
         data.DataFormat = GL_RGBA;
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Texture::Format::RGB32F:
+    case Format::RGB32F:
         data.InternalFromat = GL_RGB32F;
         data.DataFormat = GL_RGB;
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Texture::Format::Depth24Stencil8:
+    case Format::Depth24Stencil8:
         data.InternalFromat = GL_DEPTH24_STENCIL8;
         break;
 

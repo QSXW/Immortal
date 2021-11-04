@@ -27,7 +27,7 @@ public:
 
     virtual void Resize(UINT32 width, UINT32 height) override;
 
-    virtual void *ReadPixel(UINT32 handle, int x, int y, Texture::Format format, int width, int height) override;
+    virtual void *ReadPixel(UINT32 handle, int x, int y, Format format, int width, int height) override;
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 

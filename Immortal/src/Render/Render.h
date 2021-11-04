@@ -13,18 +13,24 @@
 namespace Immortal
 {
 
-struct RenderData
-{
-    std::shared_ptr<ShaderMap>   ShaderLibrary;
-    std::shared_ptr<Texture2D>   BlackTexture;
-    std::shared_ptr<Texture2D>   TransparentTexture;
-    std::shared_ptr<Texture2D>   WhiteTexture;
-    std::shared_ptr<VertexArray> FullScreenVertexArray;
-};
-
 class Render
 {
 public:
+    struct Scene
+    {
+        Matrix4 viewProjectionMatrix;
+    };
+
+    struct Data
+    {
+        std::shared_ptr<Framebuffer> Target;
+        std::shared_ptr<Pipeline>    FullScreenPipeline;
+        std::shared_ptr<ShaderMap>   ShaderLibrary;
+        std::shared_ptr<Texture2D>   BlackTexture;
+        std::shared_ptr<Texture2D>   TransparentTexture;
+        std::shared_ptr<Texture2D>   WhiteTexture;
+    };
+
     enum class Type
     {
         None,
@@ -84,6 +90,11 @@ public:
         static_assert(false, "No suitable Type for getter");
     }
 
+    static auto *Preset()
+    {
+        return &data;
+    }
+
 public:
     static void INIT(RenderContext *context);
 
@@ -131,11 +142,6 @@ public:
     static void Render::End()
     {
         
-    }
-
-    static RenderData *Data()
-    {
-        return &data;
     }
 
     static uint32_t CurrentPresentedFrameIndex()
@@ -194,7 +200,7 @@ public:
         return renderer->CreateBuffer(size * sizeof(T), type);
     }
 
-    static std::shared_ptr <Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
+    static std::shared_ptr<Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
     {
         return renderer->CreateFramebuffer(description);
     }
@@ -207,13 +213,11 @@ public:
 private:
     static std::unique_ptr<Renderer> renderer;
 
-    struct Scene
-    {
-        Matrix4 viewProjectionMatrix;
-    };
+    static Data data;
 
-    static RenderData data;
     static Scene scene;
+
+    static inline Vector2 viewport{ 1, 1 };
 
 public:
     static inline Type API{ Type::None };

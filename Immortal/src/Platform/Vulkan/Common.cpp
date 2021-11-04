@@ -243,7 +243,7 @@ VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, co
     }
 
     SLASSERT(false && "No suitable depth format could be determined");
-    return Utils::NullValue<VkFormat>();
+    return VK_FORMAT_UNDEFINED;
 }
 }
 }

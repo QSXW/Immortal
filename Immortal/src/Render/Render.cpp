@@ -11,7 +11,7 @@ std::vector<std::shared_ptr<Shader>> Render::ShaderContainer{};
 
 Render::Scene Render::scene{};
 
-RenderData Render::data{};
+Render::Data Render::data{};
 
 static const char *Sringify(Render::Type type)
 {
@@ -51,19 +51,8 @@ void Render::INIT(RenderContext *context)
         }
     }
 
-    auto pipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
-
+    data.Target = CreateFramebuffer({ viewport, { {  Format::RGBA8 }, { Format::Depth } } });
     {
-        /*
-        constexpr UINT32 white        = 0xffffffff;
-        constexpr UINT32 black        = 0x000000ff;
-        constexpr UINT32 transparency = 0x00000000;
-        Texture::Description spec = { Texture::Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
-
-        data.WhiteTexture = Texture2D::Create(1, 1, &white, spec);
-        data.BlackTexture = Texture2D::Create(1, 1, &black, spec);
-        data.TransparentTexture = Texture2D::Create(1, 1, &transparency, spec);
-
         constexpr float fullScreenVertex[5 * 4] = {
              1.0,  1.0, 0.0, 1.0, 1.0,
             -1.0,  1.0, 0.0, 0.0, 1.0,
@@ -74,15 +63,24 @@ void Render::INIT(RenderContext *context)
         constexpr UINT32 fullScreenIndices[] = {
             0, 1, 2, 2, 3, 0
         };
-        auto fullScreenVertexBuffer = VertexBuffer::Create(fullScreenVertex, sizeof(fullScreenVertex));
-        fullScreenVertexBuffer->SetLayout({
-            { Shader::DataType::Float3, "position" },
-            { Shader::DataType::Float2, "texcoord" }
+        data.FullScreenPipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
+        data.FullScreenPipeline->Set({
+            { Format::VECTOR3, "Position" },
+            { Format::VECTOR2, "Texcoord" }
         });
-        auto fullScreenIndexBuffer  = IndexBuffer::Create(fullScreenIndices, sizeof(fullScreenIndices));
-        data.FullScreenVertexArray = VertexArray::Create();
-        data.FullScreenVertexArray->AddVertexBuffer(fullScreenVertexBuffer);
-        data.FullScreenVertexArray->SetIndexBuffer(fullScreenIndexBuffer);*/
+        data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex));
+        data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index));
+        data.FullScreenPipeline->Create(data.Target);
+        /*
+        constexpr UINT32 white        = 0xffffffff;
+        constexpr UINT32 black        = 0x000000ff;
+        constexpr UINT32 transparency = 0x00000000;
+        Texture::Description spec = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
+
+        data.WhiteTexture = Texture2D::Create(1, 1, &white, spec);
+        data.BlackTexture = Texture2D::Create(1, 1, &black, spec);
+        data.TransparentTexture = Texture2D::Create(1, 1, &transparency, spec);
+        */
     }
     Render2D::INIT();
 }

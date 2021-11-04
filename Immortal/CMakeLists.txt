@@ -211,6 +211,7 @@ set(RENDER_FILES
     src/Render/Environment.h
     src/Render/Frame.cpp
     src/Render/Frame.h
+    src/Render/Format.h
     src/Render/Framebuffer.cpp
     src/Render/Framebuffer.h
     src/Render/Material.cpp

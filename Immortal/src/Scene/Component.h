@@ -95,7 +95,7 @@ struct MaterialComponent : public Component
     MaterialComponent() : Component(Component::Mesh),
         AlbedoColor{ 0.995f, 0.995f, 0.995f }, Metalness(1.0f), Roughness(1.0f)
     {
-        AlbedoMap    = Render::Data()->WhiteTexture;
+        AlbedoMap    = Render::Preset()->WhiteTexture;
         NormalMap    = AlbedoMap;
         MetalnessMap = AlbedoMap;
         RoughnessMap = AlbedoMap;

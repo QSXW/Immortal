@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ImmortalCore.h"
+#include "Format.h"
 
 namespace Immortal
 {
@@ -37,28 +38,6 @@ public:
         int BinaryType;
         int Filter;
         int Wrap;
-    };
-
-    enum class Format
-    {
-        None = 0,
-        RedInterger,
-        RGB,
-        RGB8,
-        RGBA,
-        RGBA8,
-        RGBA16F,
-        RGBA32F,
-        RG32F,
-        RG16F,
-        BGRA8,
-        SRGB,
-        RGB16F,
-        RGB32F,
-        Depth32F,
-        Depth24Stencil8,
-
-        Depth = Depth24Stencil8
     };
 
     enum class Wrap
@@ -98,13 +77,13 @@ public:
     struct Description
     {
         Description() = default;
-        Description(Texture::Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Nearest, Texture::Type type = Texture::Type::Texture2D)
-            : Format(format), Wrap(wrap), Filter(filter), Type(type) {}
+        Description(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Nearest, Texture::Type type = Texture::Type::Texture2D)
+            : Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type } {}
 
-        Texture::Format Format{ Texture::Format::None };
-        Texture::Wrap   Wrap{ Texture::Wrap::Clamp };
-        Texture::Filter Filter{ Texture::Filter::Nearest };
-        Texture::Type   Type{ Texture::Type::Texture2D };
+        Format Format = Format::R8G8B8A8_UNORM;
+        Wrap   Wrap   = Wrap::Clamp;
+        Filter Filter = Filter::Nearest;
+        Type   Type   = Type::Texture2D;
 
         bool Anisotropic{ true };
     };
@@ -154,7 +133,7 @@ public:
     virtual void BindImageTexture(bool layered) { }
 
 public:
-    static inline bool IsDepthFormat(Texture::Format format)
+    static inline bool IsDepthFormat(Format format)
     {
         switch (format)
         {

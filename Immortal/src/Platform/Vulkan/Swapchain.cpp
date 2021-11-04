@@ -180,7 +180,7 @@ inline VkCompositeAlphaFlagBitsKHR SelectCompositeAlpha(VkCompositeAlphaFlagBits
     }
 
     SLASSERT(false && "No compatible composite alpha found.");
-    return Utils::NullValue<VkCompositeAlphaFlagBitsKHR>();
+    return VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 }
 
 inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::vector<VkPresentModeKHR> &available, const std::vector<VkPresentModeKHR> &priorities)

@@ -5,26 +5,13 @@
 #include <opencv2/core/core.hpp> 
 
 #include "StillPicture.h"
+#include "Format.h"
 
 namespace Immortal 
 {
 class IMMORTAL_API Frame
 {
 public:
-    enum class Format : int
-    {
-        None = 0,
-        RGB,
-        RGBA,
-        RGBA16F,
-        RGBA32F,
-        RG32F,
-        SRGB,
-        DEPTH32F,
-        Depth24Stencil8,
-        Depth = Depth24Stencil8
-    };
-
     static inline UINT32 map[] = {
             0,
             3,
@@ -38,7 +25,7 @@ public:
 public:
     Frame() = default;
 
-    Frame(const std::string &path, int channels = 0, Texture::Format format = Texture::Format::None);
+    Frame(const std::string &path, int channels = 0, Format format = Format::None);
 
     Frame(const std::string &path, bool flip);
 

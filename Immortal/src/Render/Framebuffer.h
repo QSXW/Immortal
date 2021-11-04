@@ -44,6 +44,14 @@ public:
     {
         Description() { }
 
+        Description(Vector2 viewport, AttachmentDescription attachments) :
+            Width{ ncast<UINT32>(viewport.x) },
+            Height{ ncast<UINT32>(viewport.y) },
+            Attachments(attachments)
+        {
+
+        }
+
         Description(UINT32 width, UINT32 height, AttachmentDescription attachments)
             : Width(width), Height(height), Attachments(attachments)
         {
@@ -51,10 +59,15 @@ public:
         }
 
         UINT32 Width{ 0 };
+
         UINT32 Height{ 0 };
-        AttachmentDescription Attachments{};
+
         UINT32 Samples = 1;
+
         UINT32 Layers{ 0 };
+
+        AttachmentDescription Attachments{};
+
         bool SwapChainTarget = false;
 
         void *context{ nullptr };
@@ -82,13 +95,12 @@ public:
         Resize(size.x, size.y);
     }
 
-    virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Texture::Format format, int width = 1, int height = 1)
+    virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Format format, int width = 1, int height = 1)
     {
         return nullptr;
     }
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) { }
-
 
     virtual UINT32 ColorAttachmentHandle(UINT32 index = 0) const
     {

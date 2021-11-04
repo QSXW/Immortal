@@ -112,7 +112,7 @@ void Framebuffer::Update()
         }
     }
 
-    if (mDepthAttachmentSpecification.Format != Texture::Format::None)
+    if (mDepthAttachmentSpecification.Format != Format::None)
     {
         CreateTexture(multisample, &mDepthAttachment, 1);
         BindTexture(multisample, mDepthAttachment);
@@ -153,19 +153,18 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
     this->Update();
 }
 
-void *Framebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Texture::Format format, int width, int height)
+void *Framebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y, Format format, int width, int height)
 {
     this->Map();
     SLASSERT(attachmentIndex < mColorAttachments.size() && "The attachmentIndex out of bound.");
     glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
 
     int pixel = -1;
-    if (format == Texture::Format::RedInterger)
+    if (format == Format::RedInterger)
     {
         glReadPixels(x, y, width, height, GL_RED_INTEGER, GL_INT, &pixel);
-
     }
-    else if (format == Texture::Format::RGBA8)
+    else if (format == Format::RGBA8)
     {
         glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
     }

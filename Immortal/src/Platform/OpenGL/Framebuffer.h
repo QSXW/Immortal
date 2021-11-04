@@ -23,7 +23,7 @@ public:
 
     virtual void Resize(uint32_t width, uint32_t height) override;
 
-    virtual void *ReadPixel(uint32_t attachmentIndex, int x, int y, Texture::Format format, int width = 1, int height = 1) override;
+    virtual void *ReadPixel(uint32_t attachmentIndex, int x, int y, Format format, int width = 1, int height = 1) override;
 
     virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
 
@@ -44,7 +44,7 @@ private:
     Framebuffer::Description desc;
 
     std::vector<Texture::Description> mColorAttachmentSpecifications;
-    Texture::Description mDepthAttachmentSpecification{ Texture::Format::None };
+    Texture::Description mDepthAttachmentSpecification{ Format::R8G8B8A8_UNORM };
 
     std::vector<uint32_t> mColorAttachments;
     uint32_t mDepthAttachment;

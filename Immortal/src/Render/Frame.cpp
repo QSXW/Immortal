@@ -11,7 +11,7 @@
 namespace Immortal
 {
 
-Frame::Frame(const std::string & path, int channels, Texture::Format format)
+Frame::Frame(const std::string & path, int channels, Format format)
 {
     if (!strcmp(path.c_str() + path.size() - 4, ".bmp"))
     {
@@ -62,22 +62,22 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
     {
         if (dst.depth() == CV_32F)
         {
-            desc.Format = Texture::Format::RGBA16F;
+            desc.Format = Format::RGBA16F;
         }
         else
         {
-            desc.Format = Texture::Format::RGBA8;
+            desc.Format = Format::RGBA8;
         }
     }
     else
     {
         if (dst.depth() == CV_32F)
         {
-            desc.Format = Texture::Format::RGB16F;
+            desc.Format = Format::RGB16F;
         }
         else
         {
-            desc.Format = Texture::Format::RGB8;
+            desc.Format = Format::RGB8;
         }
     }
 
@@ -86,7 +86,7 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
         src = dst;
         src.convertTo(dst, CV_32FC4, 1.0 / (float)0xff);
         src.release();
-        desc.Format = Texture::Format::RGBA16F;
+        desc.Format = Format::RGBA16F;
     }
     outputMat = dst;
 
@@ -138,7 +138,7 @@ void Frame::ReadByInternal(const std::string &path)
     height      = decoder.Height();
     spatial     = (UINT64)width * (UINT64)height;
     size        =  spatial * (UINT64)depth;
-    desc.Format = Texture::Format::BGRA8;
+    desc.Format = Format::BGRA8;
 
     decoder.Swap(data);
 }
