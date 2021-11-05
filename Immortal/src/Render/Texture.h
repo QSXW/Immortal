@@ -89,6 +89,11 @@ public:
             return Map::BaseFormat<T>(Format);
         }
 
+        auto ComponentCount() const
+        {
+            return Map::FormatComponentCount(Format);
+        }
+
         bool IsDepth() const 
         {
             return Format == Format::Depth;
