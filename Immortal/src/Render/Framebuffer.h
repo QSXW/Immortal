@@ -16,35 +16,7 @@ public:
         Depth
     };
 
-    struct Description
-    {
-        Description() = default;
-
-        Description(std::initializer_list<Texture::Description> attachments)
-            : Attachments(attachments) {}
-
-        std::vector<Texture::Description>::iterator begin()
-        { 
-            return Attachments.begin();
-        }
-
-        std::vector<Texture::Description>::iterator end()
-        {
-            return Attachments.end();
-        }
-
-        std::vector<Texture::Description>::const_iterator cbegin()
-        {
-            return Attachments.cbegin();
-        }
-
-        std::vector<Texture::Description>::const_iterator cend()
-        {
-            return Attachments.cend();
-        }
-
-        std::vector<Texture::Description> Attachments;
-    };
+    using Description = std::vector<Texture::Description>;
 
 public:
     Attachment() :
@@ -77,13 +49,15 @@ public:
         Description(Vector2 viewport, Attachment::Description attachments) :
             Width{ ncast<UINT32>(viewport.x) },
             Height{ ncast<UINT32>(viewport.y) },
-            Attachments(attachments)
+            Attachments{ attachments }
         {
 
         }
 
-        Description(UINT32 width, UINT32 height, Attachment::Description attachments)
-            : Width(width), Height(height), Attachments(attachments)
+        Description(UINT32 width, UINT32 height, Attachment::Description attachments) :
+            Width{ width },
+            Height{ height },
+            Attachments{ attachments }
         {
 
         }
@@ -96,7 +70,7 @@ public:
 
         UINT32 Layers{ 0 };
 
-        Attachment::Description Attachments{};
+        Attachment::Description Attachments;
 
         bool SwapChainTarget = false;
 
