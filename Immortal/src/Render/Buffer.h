@@ -62,23 +62,12 @@ struct InputElement
     template <class T>
     T BaseType() const
     {
-        if constexpr (is_same<T, GLenum>())
-        {
-            return BaseFormatMapper[ncast<int>(format)].OpenGL;
-        }
-        if constexpr (is_same<T, VkFormat>())
-        {
-            return BaseFormatMapper[ncast<int>(format)].Vulkan;
-        }
-        if constexpr (is_same<T, DXGI_FORMAT>())
-        {
-            return BaseFormatMapper[ncast<int>(format)].DXGI;
-        }
+        return Map::BaseFormat<T>(format);
     }
 
     uint32_t ComponentCount() const
     {
-        return BaseFormatMapper[ncast<int>(format)].componentCount;
+        return Map::FormatComponentCount(format);
     }
 
     uint32_t Offset() const
@@ -174,7 +163,7 @@ private:
         for (auto &e : elements)
         {
             e.offset =  offset;
-            offset   += BaseFormatMapper[ncast<int>(e.format)].size;
+            offset += Map::FormatSize(e.format);
         }
         stride = offset;
     }

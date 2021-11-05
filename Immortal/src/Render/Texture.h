@@ -77,8 +77,17 @@ public:
     struct Description
     {
         Description() = default;
-        Description(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Nearest, Texture::Type type = Texture::Type::Texture2D)
-            : Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type } {}
+
+        Description(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
+            Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type }
+        {
+        }
+
+        template <class T>
+        T BaseFromat()
+        {
+            return Map::BaseFormat<T>(Format);
+        }
 
         Format Format = Format::R8G8B8A8_UNORM;
         Wrap   Wrap   = Wrap::Clamp;

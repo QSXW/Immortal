@@ -47,6 +47,9 @@ enum class Format
     None
 };
 
+namespace Map
+{
+
 struct BaseFormatElement
 {
     BaseFormatElement(VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, uint32_t size, uint32_t count) :
@@ -85,6 +88,35 @@ static inline BaseFormatElement BaseFormatMapper[] = {
     { VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, GL_RGBA32F, FS_C(float,   4)     }
 };
 
-#undef FS
+template <class T>
+static inline T BaseFormat(Format format)
+{
+    if constexpr (is_same<T, GLenum>())
+    {
+        return BaseFormatMapper[ncast<int>(format)].OpenGL;
+    }
+    if constexpr (is_same<T, VkFormat>())
+    {
+        return BaseFormatMapper[ncast<int>(format)].Vulkan;
+    }
+    if constexpr (is_same<T, DXGI_FORMAT>())
+    {
+        return BaseFormatMapper[ncast<int>(format)].DXGI;
+    }
+    return ncast<T>(format);
+}
+
+static inline auto FormatComponentCount(Format format)
+{
+    return BaseFormatMapper[ncast<int>(format)].componentCount;
+}
+
+static inline auto FormatSize(Format format)
+{
+    return BaseFormatMapper[ncast<int>(format)].size;
+}
+
+}
+#undef FS_C
 
 };

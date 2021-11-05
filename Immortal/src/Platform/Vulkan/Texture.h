@@ -23,20 +23,7 @@ public:
 
     void ConvertType(VkImageCreateInfo &dst, Description &src)
     {
-        switch (src.Format)
-        {
-        case Format::RGBA8:    
-            dst.format = VK_FORMAT_R8G8B8A8_UNORM;
-            break;
-            
-        case Format::BGRA8:
-            dst.format = VK_FORMAT_B8G8R8A8_UNORM;
-            break;
-
-        default:
-            dst.format = VK_FORMAT_R8G8B8A8_UNORM;
-            break;
-        }
+        dst.format = src.BaseFromat<VkFormat>();
     }
 
     void INITSampler(const Description &desc)
