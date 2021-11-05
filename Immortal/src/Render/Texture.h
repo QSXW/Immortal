@@ -89,6 +89,11 @@ public:
             return Map::BaseFormat<T>(Format);
         }
 
+        auto FormatSize() const
+        {
+            return Map::FormatSize(Format);
+        }
+
         auto ComponentCount() const
         {
             return Map::FormatComponentCount(Format);
