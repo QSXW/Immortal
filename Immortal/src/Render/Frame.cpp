@@ -58,27 +58,13 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
     height = dst.rows;
 
     depth = dst.channels();
-    if (depth == 4)
+    if (dst.depth() == CV_32F)
     {
-        if (dst.depth() == CV_32F)
-        {
-            desc.Format = Format::RGBA16F;
-        }
-        else
-        {
-            desc.Format = Format::RGBA8;
-        }
+        desc.Format = Format::RGBA16F;
     }
     else
     {
-        if (dst.depth() == CV_32F)
-        {
-            desc.Format = Format::RGB16F;
-        }
-        else
-        {
-            desc.Format = Format::RGB8;
-        }
+        desc.Format = Format::RGBA8;
     }
 
     if (dst.depth() == CV_16U)
