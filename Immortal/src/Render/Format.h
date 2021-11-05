@@ -103,7 +103,7 @@ static inline BaseFormatElement BaseFormatMapper[] = {
     { VK_FORMAT_R32G32B32_UINT,      DXGI_FORMAT_R32G32B32_UINT,      GL_RGB32UI ,          FS_C(uint32_t, 3)     },
     { VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,     GL_RGB32F,            FS_C(float,    3)     },
     { VK_FORMAT_R8G8B8A8_SRGB,       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, GL_SRGB8,             FS_C(uint8_t,  4)     },
-    { VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,           GL_DEPTH32F_STENCIL8, FS_C(float,    1)     }
+    { VK_FORMAT_D32_SFLOAT,          DXGI_FORMAT_D32_FLOAT,           GL_DEPTH32F_STENCIL8, FS_C(float,    1)     }
 };
 
 template <class T>

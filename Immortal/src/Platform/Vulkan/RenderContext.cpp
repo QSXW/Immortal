@@ -113,7 +113,7 @@ void RenderContext::Prepare(size_t threadCount)
 
     swapchain->Create();
 
-    renderPass  = std::make_unique<RenderPass>(device.get(), swapchain->Get<VkFormat>(), depthFormat);
+    renderPass  = std::make_shared<RenderPass>(device.get(), swapchain->Get<VkFormat>(), depthFormat);
 
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
@@ -130,7 +130,7 @@ void RenderContext::Prepare(size_t threadCount)
             swapchain->Get<VkImageUsageFlags>()
             };
         auto renderTarget = RenderTarget::Create(std::move(image));
-        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
+        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass, renderTarget->Views(), surfaceExtent));
         frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
     }
     this->threadCount = threadCount;
@@ -199,7 +199,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
         // LOG::INFO("Create Render Target{0}", (void*)image.Handle());
         auto renderTarget = RenderTarget::Create(std::move(image));
         
-        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass.get(), renderTarget->Views(), surfaceExtent));
+        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass, renderTarget->Views(), surfaceExtent));
 
         if (frame != frames.end())
         {

@@ -196,9 +196,9 @@ private:
 
     std::unique_ptr<Device> device;
 
-    std::unique_ptr<RenderPass> renderPass;
-
     std::unique_ptr<Swapchain> swapchain;
+
+    std::shared_ptr<RenderPass> renderPass;
 
     Queue *queue{ nullptr };
 

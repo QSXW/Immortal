@@ -13,22 +13,28 @@ namespace Vulkan
 
 class Device;
 class RenderPass;
-
+class Texture;
 class Framebuffer : public SuperFramebuffer
 {
 public:
     using Super = SuperFramebuffer;
+
+    struct Attachment
+    {
+        std::unique_ptr<Image> image;
+        std::unique_ptr<ImageView> view;
+    };
 
 public:
     Framebuffer();
 
     Framebuffer(Device *device, const Super::Description &spec);
 
-    Framebuffer(Device *device, RenderPass *renderPass, std::vector<ImageView> &views, VkExtent2D &extent);
+    Framebuffer(Device *device, std::shared_ptr<RenderPass> &renderPass, std::vector<ImageView> &views, VkExtent2D &extent);
 
     ~Framebuffer();
 
-    void INIT();
+    void INIT(std::vector<VkImageView> views);
 
     VkFramebuffer &Handle()
     {
@@ -68,13 +74,13 @@ private:
 
     Device *device{ nullptr };
 
-    RenderPass *renderPass{ nullptr };
+    std::shared_ptr<RenderPass> renderPass{ nullptr };
 
     struct
     {
-        std::unique_ptr<Image> image;
-        std::unique_ptr<ImageView> view;
-    } depthStencil;
+        Attachment depth;
+        std::vector<Attachment> colors;
+    } attachments;
 };
 }
 }
