@@ -19,9 +19,13 @@ class Texture : public SuperTexture2D
 public:
     Texture(Device *device, const std::string &filepath);
 
+    Texture(Device *device, uint32_t width, uint32_t height, const Description &description, uint32_t levels = 1);
+
     ~Texture();
 
-    void ConvertType(VkImageCreateInfo &dst, Description &src)
+    void INIT(const Description &description, uint32_t size, const void *data = nullptr);
+
+    void ConvertType(VkImageCreateInfo &dst, const Description &src)
     {
         dst.format = src.BaseFromat<VkFormat>();
     }

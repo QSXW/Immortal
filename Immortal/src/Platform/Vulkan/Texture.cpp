@@ -1,7 +1,6 @@
 #include "Texture.h"
 
 #include "Render/Frame.h"
-// #include <backends/imgui_impl_vulkan.h>
 
 namespace Immortal
 {
@@ -17,13 +16,40 @@ Texture::Texture(Device *device, const std::string &filepath) :
     height    = frame.Height();
     mipLevels = CalculateMipmapLevels(width, height);
 
+    INIT(frame.Type(), frame.Size(), frame.Data());
+}
+
+Texture::Texture(Device *device, uint32_t width, uint32_t height, const Description &description, uint32_t levels) :
+    device{ device },
+    width{ width },
+    height{ height },
+    mipLevels{ levels }
+{
+    INIT(description, width * height * description.FormatSize(), nullptr);
+}
+
+Texture::~Texture()
+{
+    if (!device)
+    {
+        return;
+    }
+    device->Wait();
+    device->Destory(descriptorSetLayout);
+    view.reset();
+    device->Destory(image);
+    device->FreeMemory(deviceMemory);
+}
+
+void Texture::INIT(const Description &description, uint32_t size, const void *data)
+{
     VkBuffer stagingBuffer{ VK_NULL_HANDLE };
     VkDeviceMemory stagingMemory{ VK_NULL_HANDLE };
 
     VkBufferCreateInfo createInfo{};
     createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     createInfo.pNext       = nullptr;
-    createInfo.size        = frame.Size();
+    createInfo.size        = size;
     createInfo.usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -40,10 +66,13 @@ Texture::Texture(Device *device, const std::string &filepath) :
     Check(device->BindBufferMemory(stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into host local staging buffer
-    uint8_t *mappedData{ nullptr };
-    Check(device->MapMemory(stagingMemory, 0, memoryRequirements.size, 0, rcast<void **>(&mappedData)));
-    memcpy(mappedData, frame.Data(), frame.Size());
-    device->UnmapMemory(stagingMemory);
+    if (data)
+    {
+        uint8_t *mappedData{ nullptr };
+        Check(device->MapMemory(stagingMemory, 0, memoryRequirements.size, 0, rcast<void **>(&mappedData)));
+        memcpy(mappedData, data, size);
+        device->UnmapMemory(stagingMemory);
+    }
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
     uint32_t offset = 0;
@@ -63,7 +92,7 @@ Texture::Texture(Device *device, const std::string &filepath) :
     }
 
     VkImageCreateInfo imageCreateInfo{};
-    ConvertType(imageCreateInfo, frame.Type());
+    ConvertType(imageCreateInfo, description);
     imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.imageType     = VK_IMAGE_TYPE_2D;
     imageCreateInfo.mipLevels     = mipLevels;
@@ -137,18 +166,9 @@ Texture::Texture(Device *device, const std::string &filepath) :
     device->Destory(stagingBuffer);
     device->FreeMemory(stagingMemory);
 
-    INITSampler(frame.Type());
+    INITSampler(description);
     INITImageView(imageCreateInfo.format);
     INITDescriptor();
-}
-
-Texture::~Texture()
-{
-    device->Wait();
-    device->Destory(descriptorSetLayout);
-    view.reset();
-    device->Destory(image);
-    device->FreeMemory(deviceMemory);
 }
 
 void Texture::INITDescriptor()
