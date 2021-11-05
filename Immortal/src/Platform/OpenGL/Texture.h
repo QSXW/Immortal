@@ -63,12 +63,6 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = 
         data.BinaryType = GL_FLOAT;
         break;
 
-    case Format::RGB16F:
-        data.InternalFromat = GL_RGB16F;
-        data.DataFormat = GL_RGB;
-        data.BinaryType = GL_FLOAT;
-        break;
-
     case Format::RGBA32F:
         data.InternalFromat = GL_RGBA32F;
         data.DataFormat = GL_RGBA;
