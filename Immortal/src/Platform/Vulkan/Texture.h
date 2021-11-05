@@ -23,6 +23,15 @@ public:
 
     ~Texture();
 
+    template <class T>
+    T Get()
+    {
+        if (is_same<T, ImageView*>())
+        {
+            return view.get();
+        }
+    }
+
     void INIT(const Description &description, uint32_t size, const void *data = nullptr);
 
     void ConvertType(VkImageCreateInfo &dst, const Description &src)
