@@ -84,9 +84,14 @@ public:
         }
 
         template <class T>
-        T BaseFromat()
+        T BaseFromat() const
         {
             return Map::BaseFormat<T>(Format);
+        }
+
+        bool IsDepth() const 
+        {
+            return Format == Format::Depth;
         }
 
         Format Format = Format::R8G8B8A8_UNORM;
