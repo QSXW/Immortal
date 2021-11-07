@@ -13,7 +13,14 @@ namespace Immortal
 class Thread
 {
 public:
-    using Semaphore = bool;
+    enum class State : uint32_t
+    {
+        Block = BIT(0),
+        Idle  = BIT(1)
+    };
+
+    using Semaphore = State;
+
     static int Self()
     {
 #ifdef WINDOWS
@@ -29,15 +36,13 @@ using Task = std::function<void()>;
 class ThreadPool
 {
 public:
-    explicit ThreadPool(int num) :
-        semaphores{ false }
+    explicit ThreadPool(int num)
     {
         for (int i = 0; i < num; i++)
         {
-            semaphores[i] = true;
-            threads.emplace_back([=] {  while (true) {
+            semaphores[i] = Thread::State::Idle;
+            threads.emplace_back([=]() -> void {  while (true) {
                 static Thread::Semaphore *semaphore = semaphores + i;
-                *semaphores = true;
                 Task task;
                 {
                     std::unique_lock<std::mutex> lock{ mutex };
@@ -48,12 +53,12 @@ public:
                                   threads[i].get_id(), threads[i].native_handle());
                         break;
                     }
-                    *semaphore = false;
+                    *semaphore = Thread::State::Block;
                     task = std::move(tasks.front());
                     tasks.pop();
                 }
                 task();
-                *semaphore = true;
+                *semaphore = Thread::State::Idle;
             }});
             LOG::INFO("\tid => {0}\thandle => {1}", threads[i].get_id(), threads[i].native_handle());
         }
@@ -79,7 +84,7 @@ public:
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
         {
             std::unique_lock<std::mutex> lock{ mutex };
-            tasks.emplace([=]{
+            tasks.emplace([=]() -> void {
                 (*wrapper)();
             });
         }

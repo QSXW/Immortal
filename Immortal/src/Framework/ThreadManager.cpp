@@ -27,7 +27,7 @@ void ThreadPool::Join()
         tasking = false;
         for (int i = 0; i < threads.size(); i++)
         {
-            if (!semaphores[i])
+            if (semaphores[i] == Thread::State::Block)
             {
                 tasking = true;
                 break;
