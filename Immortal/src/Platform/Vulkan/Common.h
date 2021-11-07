@@ -206,11 +206,6 @@ inline void Check(VkResult status)
 constexpr inline void Check(VkResult err) { }
 #endif
 
-static inline bool Equals(const char *str1, const char *str2)
-{
-    return (strcmp(str1, str2) == 0);
-}
-
 VkFormat SuitableDepthFormat(VkPhysicalDevice             physicalDevice,
                              bool                         depthOnly             = false,
                              const std::vector<VkFormat> &depthFormatPriorities = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM });

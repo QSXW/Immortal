@@ -326,7 +326,7 @@ bool Instance::CheckValidationLayerSupport()
 
     for (auto &ext : availableLayerInstanceExtension)
     {
-        if (Vulkan::Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
+        if (Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
         {
             LOG::INFO("{0} is available. Enabling it!", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
             enabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);

@@ -50,7 +50,7 @@ public:
     {
         return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const std::string &enabledExtension)
         {
-            return Vulkan::Equals(extension.c_str(), enabledExtension.c_str());
+            return Equals(extension.c_str(), enabledExtension.c_str());
         }) != enabledExtensions.end();
     }
 

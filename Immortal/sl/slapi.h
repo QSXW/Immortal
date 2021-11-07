@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <cassert>
 #include <new>
 
@@ -122,6 +123,11 @@ template <class T>
 inline constexpr void CopyProps(T *dst, const T *src)
 {
     memcpy(dst, src, sizeof(T));
+}
+
+static inline bool Equals(const char *str1, const char *str2)
+{
+    return (strcmp(str1, str2) == 0);
 }
 
 class Exception : public std::exception
