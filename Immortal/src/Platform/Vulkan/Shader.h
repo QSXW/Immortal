@@ -30,11 +30,16 @@ public:
     }
 
 private:
+    static void Reflect(const std::string &source, std::vector<Shader::Resource> &resources);
+
+private:
     Device *device{ nullptr };
 
     std::vector<VkShaderModule> modules;
 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
+
+    std::vector<Shader::Resource> resources;
 };
 
 }

@@ -13,6 +13,24 @@ namespace Vulkan
 {
 
 class Device;
+
+class PipelineLayout
+{
+public:
+    operator VkPipelineLayout&()
+    {
+        return handle;
+    }
+
+    operator VkPipelineLayout() const
+    {
+        return handle;
+    }
+
+private:
+    VkPipelineLayout handle{ VK_NULL_HANDLE };
+};
+
 class Pipeline : public SuperPipeline
 {
 public:
@@ -128,6 +146,8 @@ private:
     VkPipelineCache cache{ VK_NULL_HANDLE };
 
     VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    std::unique_ptr<PipelineLayout> layout;
 
     std::unique_ptr<Configuration> configuration;
 };

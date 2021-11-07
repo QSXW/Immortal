@@ -11,7 +11,8 @@ class GLSLCompiler
 public:
     static bool Src2Spirv(Shader::API                 api,
                           Shader::Stage               stage,
-                          const std::vector<uint8_t> &src,
+                          uint32_t                    size,
+                          const char                 *data,
                           const char                 *entryPoint,
                           std::vector<uint32_t>      &spriv,
                           std::string                &error);

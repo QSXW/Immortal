@@ -108,6 +108,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     }
 
     {
+        state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         state->dynamic.dynamicStateCount = configuration->dynamic.size();
         state->dynamic.pDynamicStates    = configuration->dynamic.data();
     }
@@ -121,6 +122,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.renderPass          = framebuffer->Get<RenderPass>();
     createInfo.flags               = 0;
+    createInfo.layout              = *layout;
     createInfo.pInputAssemblyState = &state->inputAssembly;
     createInfo.pVertexInputState   = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;

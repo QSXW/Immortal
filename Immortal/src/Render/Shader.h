@@ -37,6 +37,68 @@ public:
         Compute
     };
 
+    struct Resource
+    {
+        enum class Type
+        {
+            Uniform,
+            Storage,
+            PushConstant,
+            Image,
+            ImageSampler,
+            ImageStorage,
+            Sampler,
+            Input,
+            Output,
+            None
+        };
+
+        enum class Mode
+        {
+            Static,
+	        Dynamic,
+	        UpdateAfterBind
+        };
+
+        enum class Qualifier
+        {
+            None,
+            ReadOnly,
+            WriteOnly
+        };
+
+        Type type;
+        
+        uint32_t set;
+
+        uint32_t binding;
+
+        uint32_t location;
+
+        uint32_t constantID;
+
+        std::string name;
+    };
+
+    static Resource::Type GetResourceType(const std::string &key)
+    {
+        static std::map<std::string, Resource::Type> map = {
+            { "uniform",   Resource::Type::Uniform      },
+            { "sampler2D", Resource::Type::ImageSampler },
+            { "texture2D", Resource::Type::Image        },
+            { "in",        Resource::Type::Input        },
+            { "out",       Resource::Type::Output       }
+        };
+
+        auto &it = map.find(key);
+
+        if (it == map.end())
+        {
+            return Resource::Type::None;
+        }
+        return it->second;
+    }
+
 public:
     virtual ~Shader() = default;
 

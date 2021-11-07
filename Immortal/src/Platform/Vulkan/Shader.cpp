@@ -3,6 +3,7 @@
 #include "FileSystem/FileSystem.h"
 #include "Render/GLSLCompiler.h"
 #include "Device.h"
+#include <stack>
 
 namespace Immortal
 {
@@ -55,12 +56,12 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 {
     GLSLCompiler compiler{};
 
-    auto src = FileSystem::ReadBinary(filename);
+    auto src = FileSystem::ReadString(filename);
 
     std::vector<uint32_t> spirv;
     std::string error;
 
-    if (!GLSLCompiler::Src2Spirv(Shader::API::Vulkan, stage, src, "main", spirv, error))
+    if (!GLSLCompiler::Src2Spirv(Shader::API::Vulkan, stage, src.size(), src.data(), "main", spirv, error))
     {
         LOG::FATAL("Failed to compiler Shader => {0}\n", error.c_str());
         return VK_NULL_HANDLE;
@@ -73,7 +74,153 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
     createInfo.pCode    = spirv.data();
 
     Check(vkCreateShaderModule(device->Handle(), &createInfo, nullptr, &shaderModule));
+
+    Reflect(src, resources);
+
     return shaderModule;
+}
+
+#define SKIP_IF(c, d, preprocess) if ((c) == (d)) \
+    { \
+        preprocess; \
+        continue; \
+    }
+
+#define BREAK_IF(c, d, preprocess) if ((c) == (d)) \
+    { \
+        preprocess; \
+        break; \
+    }
+
+inline size_t ParseKeyValue(const char *ptr, Shader::Resource &resource)
+{
+    char buffer[64] = { 0 };
+    size_t i = 0, j = 0;
+
+    while (ptr[i])
+    {
+        SKIP_IF(ptr[i], ' ', i++);
+
+        if (ptr[i] == '=')
+        {
+            buffer[j++] = '\0';
+            i++;
+            continue;
+        }
+
+        if (ptr[i] == ',' || ptr[i] == ')')
+        {
+            buffer[j] = '\0';
+            j = 0;
+            if (Equals(buffer, "set"))
+            {
+                resource.set = std::atoi(buffer + 4);
+            }
+            else if (Equals(buffer, "location"))
+            {
+                resource.location = std::atoi(buffer + 9);
+            }
+            else if (Equals(buffer, "binding"))
+            {
+                resource.binding = std::atoi(buffer + 8);
+            }
+            BREAK_IF(ptr[i], ')', );
+            i++;
+            continue;
+        }
+
+        buffer[j++] = ptr[i++];
+    }
+
+    return i;
+}
+
+inline void GetType(const char *word, Shader::Resource &resource)
+{
+    auto type = Shader::GetResourceType(std::string{ word });
+    if (type != Shader::Resource::Type::None)
+    {
+        resource.type = type;
+    }
+}
+
+inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
+{
+    size_t i = 0, j = 0;
+    std::stack<uint8_t> tokens;
+    char buffer[128] = { 0 };
+
+    while (*ptr)
+    {
+        if (ptr[i] == ' ')
+        {
+            if (j > 0)
+            {
+                j = 0;
+                GetType(buffer, resource);
+            }
+            i++;
+            continue;
+        }
+        SKIP_IF(ptr[i], '\n', i++);
+        if (ptr[i] == '(')
+        {
+            tokens.push(ptr[i++]);
+            i += ParseKeyValue(ptr + i, resource);
+            continue;
+        }
+        if (ptr[i] == '{')
+        {
+            tokens.push(ptr[i++]);
+            while (ptr[i] != '}')
+            {
+                // currently not support parsing structure
+                i++;
+            }
+            continue;
+        }
+        if (ptr[i] == ')')
+        {
+            if (tokens.top() == '(')
+            {
+                tokens.pop();
+            }
+            i++;
+            continue;
+        }
+        if (ptr[i] == '}')
+        {
+            if (tokens.top() == '{')
+            {
+                tokens.pop();
+            }
+            i++;
+            continue;
+        }
+        BREAK_IF(ptr[i], ';', buffer[j++] = '\0'; i++; resource.name = buffer);
+        buffer[j++] = ptr[i++];
+    }
+
+    if (!tokens.empty())
+    {
+        LOG::ERR("Failed to reflect the shader resources");
+    }
+
+    return i;
+}
+
+void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &resources)
+{
+    const std::string layout = std::string{ "layout" };
+
+    size_t i = 0;
+    while ((i = source.find(layout, i)) != std::string::npos)
+    {
+        resources.resize(resources.size() + 1);
+        i += layout.size();
+        i += ParseLayout(source.data() + i, resources.back());
+        continue;
+    }
 }
 
 }

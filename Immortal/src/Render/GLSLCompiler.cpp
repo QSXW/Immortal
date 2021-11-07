@@ -24,7 +24,7 @@ static inline EShLanguage SelectLanguage(Shader::Stage stage)
     return EShLangVertex;
 }
 
-bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, const std::vector<UINT8> &src, const char *entryPoint, std::vector<uint32_t> &spriv, std::string &error)
+bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size, const char *data, const char *entryPoint, std::vector<uint32_t> &spriv, std::string &error)
 {
     auto version = ncast<glslang::EShTargetLanguageVersion>(0);
     glslang::InitializeProcess();
@@ -43,8 +43,8 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, const std::ve
     EShLanguage language = SelectLanguage(stage);
 
     const char *fileNameList[] = { "" };
-    const char *source = rcast<const char *>(src.data());
-    const int length   = src.size();
+    const char *source = data;
+    const int length   = (int)size;
     glslang::TShader shader{ language };
     shader.setStringsWithLengthsAndNames(&source, &length, fileNameList, 1);
     shader.setEntryPoint(entryPoint);
