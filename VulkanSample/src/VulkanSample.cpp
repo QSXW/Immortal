@@ -104,7 +104,7 @@ bool VulkanLayer::LoadObject()
     auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
     if (res.has_value())
     {
-        primary = Render::CreateTexture(res.value());
+        primary = Render::Create<Texture>(res.value());
         return true;
     }
 

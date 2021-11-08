@@ -220,6 +220,10 @@ public:
         {
             return CreateFramebuffer(std::forward<Args>(args)...);
         }
+        if constexpr (is_same<T, Texture>())
+        {
+            return CreateTexture(std::forward<Args>(args)...);
+        }
 
         static_assert("Type not supported yet");
         return nullptr;
