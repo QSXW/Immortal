@@ -30,5 +30,6 @@ public:
 
     virtual void End() override;
 };
+
 }
 }
