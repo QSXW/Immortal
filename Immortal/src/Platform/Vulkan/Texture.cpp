@@ -19,13 +19,13 @@ Texture::Texture(Device *device, const std::string &filepath) :
     INIT(frame.Type(), frame.Size(), frame.Data());
 }
 
-Texture::Texture(Device *device, uint32_t width, uint32_t height, const Description &description, uint32_t levels) :
+Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description) :
     device{ device },
     width{ width },
     height{ height },
-    mipLevels{ levels }
+    mipLevels{ CalculateMipmapLevels(width, height) }
 {
-    INIT(description, width * height * description.FormatSize(), nullptr);
+    INIT(description, width * height * description.FormatSize(), data);
 }
 
 Texture::~Texture()

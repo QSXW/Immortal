@@ -56,6 +56,11 @@ public:
         return nullptr;
     }
 
+    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
+    {
+        return nullptr;
+    }
+
     virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type)
     {
         return nullptr;

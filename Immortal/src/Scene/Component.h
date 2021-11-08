@@ -83,10 +83,10 @@ struct MeshComponent : public Component
 
 struct MaterialComponent : public Component
 {
-    std::shared_ptr<Immortal::Texture2D> AlbedoMap;
-    std::shared_ptr<Immortal::Texture2D> NormalMap;
-    std::shared_ptr<Immortal::Texture2D> MetalnessMap;
-    std::shared_ptr<Immortal::Texture2D> RoughnessMap;
+    std::shared_ptr<Immortal::Texture> AlbedoMap;
+    std::shared_ptr<Immortal::Texture> NormalMap;
+    std::shared_ptr<Immortal::Texture> MetalnessMap;
+    std::shared_ptr<Immortal::Texture> RoughnessMap;
 
     Vector::Vector3  AlbedoColor;
     float            Metalness;

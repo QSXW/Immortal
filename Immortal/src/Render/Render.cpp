@@ -70,17 +70,16 @@ void Render::INIT(RenderContext *context)
         });
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex));
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index));
-        data.FullScreenPipeline->Create(data.Target);
-        /*
+        // data.FullScreenPipeline->Create(data.Target);
+        
         constexpr UINT32 white        = 0xffffffff;
         constexpr UINT32 black        = 0x000000ff;
         constexpr UINT32 transparency = 0x00000000;
-        Texture::Description spec = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
+        Texture::Description desc = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
 
-        data.WhiteTexture = Texture2D::Create(1, 1, &white, spec);
-        data.BlackTexture = Texture2D::Create(1, 1, &black, spec);
-        data.TransparentTexture = Texture2D::Create(1, 1, &transparency, spec);
-        */
+        data.WhiteTexture       = Render::Create<Texture>(1, 1, &white, desc);
+        data.BlackTexture       = Render::Create<Texture>(1, 1, &black, desc);
+        data.TransparentTexture = Render::Create<Texture>(1, 1, &transparency, desc);
     }
     Render2D::INIT();
 }

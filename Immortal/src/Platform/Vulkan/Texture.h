@@ -19,7 +19,7 @@ class Texture : public SuperTexture2D
 public:
     Texture(Device *device, const std::string &filepath);
 
-    Texture(Device *device, uint32_t width, uint32_t height, const Description &description, uint32_t levels = 1);
+    Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
 
     ~Texture();
 

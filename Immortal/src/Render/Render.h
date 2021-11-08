@@ -26,9 +26,9 @@ public:
         std::shared_ptr<Framebuffer> Target;
         std::shared_ptr<Pipeline>    FullScreenPipeline;
         std::shared_ptr<ShaderMap>   ShaderLibrary;
-        std::shared_ptr<Texture2D>   BlackTexture;
-        std::shared_ptr<Texture2D>   TransparentTexture;
-        std::shared_ptr<Texture2D>   WhiteTexture;
+        std::shared_ptr<Texture>     BlackTexture;
+        std::shared_ptr<Texture>     TransparentTexture;
+        std::shared_ptr<Texture>     WhiteTexture;
     };
 
     enum class Type
@@ -178,11 +178,6 @@ public:
         return renderer->CreateShader(filepath, type);
     }
 
-    static std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
-    {
-        return renderer->CreateTexture(filepath);
-    }
-
     static std::shared_ptr<Pipeline> CreatePipeline(std::shared_ptr<Shader> &shader)
     {
         return renderer->CreatePipeline(shader);
@@ -222,7 +217,7 @@ public:
         }
         if constexpr (is_same<T, Texture>())
         {
-            return CreateTexture(std::forward<Args>(args)...);
+            return renderer->CreateTexture(std::forward<Args>(args)...);
         }
 
         static_assert("Type not supported yet");

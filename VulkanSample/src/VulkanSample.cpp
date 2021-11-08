@@ -12,8 +12,8 @@ VulkanLayer::VulkanLayer()
 
 void VulkanLayer::OnAttach()
 {
-    primary = Render::CreateTexture("C:/SDK/Assets/jpeg/wallhaven-j3y9mw.jpg");
-    second = Render::CreateTexture("C:/SDK/Assets/jpeg/wallhaven-57m3z1.png");
+    primary = Render::Create<Texture>("C:/SDK/Assets/jpeg/wallhaven-j3y9mw.jpg");
+    second = Render::Create<Texture>("C:/SDK/Assets/jpeg/wallhaven-57m3z1.png");
 }
 
 void VulkanLayer::OnDetach()

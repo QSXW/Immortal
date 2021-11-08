@@ -62,6 +62,11 @@ public:
         return std::make_shared<Texture>(device, filepath);
     }
 
+    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    {
+        return std::make_shared<Texture>(device, width, height, data, description);
+    }
+
     virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
     {
         return std::make_shared<Buffer>(device, size, data, type);
