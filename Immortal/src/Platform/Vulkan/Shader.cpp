@@ -124,6 +124,10 @@ inline size_t ParseKeyValue(const char *ptr, Shader::Resource &resource)
             {
                 resource.binding = std::atoi(buffer + 8);
             }
+            else if (Equals(buffer, "push_constant"))
+            {
+                resource.type |= Shader::Resource::Type::PushConstant;
+            }
             BREAK_IF(ptr[i], ')', );
             i++;
             continue;
@@ -131,6 +135,52 @@ inline size_t ParseKeyValue(const char *ptr, Shader::Resource &resource)
 
         buffer[j++] = ptr[i++];
     }
+
+    return i;
+}
+
+inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
+{
+    size_t i = 0, j = 0;
+    char buffer[64] = { 0 };
+
+    std::vector<InputElement> elements;
+    
+    InputElement e;
+    while (ptr[i] != '}')
+    {
+        SKIP_IF(ptr[i], '\t', i++);
+        SKIP_IF(ptr[i], '\r', i++);
+        SKIP_IF(ptr[i], '\n', i++);
+        if (ptr[i] == ' ')
+        {
+            if (j > 0)
+            {
+                buffer[j] = '\0';
+                if (e.format != Format::None)
+                {
+                    e.format = Shader::GetResourceFormat(buffer);
+                }
+                j = 0;
+            }
+            i++;
+            continue;
+        }
+        if (ptr[i] == ';')
+        {
+            buffer[j] = '\0';
+            e.name = buffer;
+            elements.emplace_back(std::move(e));
+            j = 0;
+            i++;
+            continue;
+        }
+
+        buffer[j++] = ptr[i++];
+    }
+
+    InputElementDescription desc{ std::move(elements) };
+    resource.size = desc.Stride();
 
     return i;
 }
@@ -182,11 +232,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
         if (ptr[i] == '{')
         {
             tokens.push(ptr[i++]);
-            while (ptr[i] != '}')
-            {
-                // currently not support parsing structure
-                i++;
-            }
+            i += ParseStructure(ptr + i, resource);
             continue;
         }
         if (ptr[i] == ')')
