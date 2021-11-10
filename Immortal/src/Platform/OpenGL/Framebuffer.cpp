@@ -14,15 +14,15 @@ Framebuffer::Framebuffer(const Framebuffer::Super::Description &descrition) :
     depthAttachment{ 0 },
     desc{ descrition }
 {
-    for (auto spec : desc.Attachments)
+    for (auto attachment : desc.Attachments)
     {
-        if (!Texture::IsDepthFormat(spec.Format))
+        if (!attachment.IsDepth())
         {
-            colorAttachmentDescriptions.emplace_back(spec);
+            colorAttachmentDescriptions.emplace_back(attachment);
         }
         else
         {
-            depthAttachmentDescription = spec;
+            depthAttachmentDescription = attachment;
         }
     }
 

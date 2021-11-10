@@ -65,14 +65,6 @@ public:
         Texture2D,
         TextureCube
     };
-    
-    struct Properties
-    {
-        Wrap wrap = Wrap::Repeat;
-        Filter filter = Filter::Linear;
-        bool GenerateMips = true;
-        bool SRGB = false;
-    };
 
     struct Description
     {
@@ -155,19 +147,6 @@ public:
     }
 
     virtual void BindImageTexture(bool layered) { }
-
-public:
-    static inline bool IsDepthFormat(Format format)
-    {
-        switch (format)
-        {
-            case Format::Depth32F:
-            case Format::Depth24Stencil8:
-                return true;
-            default:
-                return false;
-        }
-    }
 };
 
 using Image = Texture;
