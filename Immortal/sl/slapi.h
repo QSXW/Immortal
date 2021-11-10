@@ -158,4 +158,16 @@ namespace SError
     constexpr const char OutOfMemory[] = "No more memory on the runtime";
 }
 
+#define DEFINE_ENUM_OP_OR(T, U) \
+    inline constexpr T operator|(T lhs, T rhs) \
+    { \
+        return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
+    }
+
+#define DEFINE_ENUM_OP_OR_EQUAL(T, U) \
+    inline constexpr T operator|=(T lhs, T rhs) \
+    { \
+        return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
+    }
+
 }
