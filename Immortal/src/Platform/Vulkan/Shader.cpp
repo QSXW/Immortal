@@ -144,6 +144,15 @@ inline void GetType(const char *word, Shader::Resource &resource)
     }
 }
 
+inline void GetFormat(const char *word, Shader::Resource &resource)
+{
+    auto format = Shader::GetResourceFormat(std::string{ word });
+    if (format != Format::None)
+    {
+        resource.format = format;
+    }
+}
+
 inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
 {
     size_t i = 0, j = 0;
@@ -158,6 +167,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
             {
                 j = 0;
                 GetType(buffer, resource);
+                GetFormat(buffer, resource);
             }
             i++;
             continue;

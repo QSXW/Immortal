@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ImmortalCore.h"
+#include "Render/Format.h"
 
 namespace Immortal
 {
@@ -69,11 +70,15 @@ public:
 
         Type type;
         
+        Format format;
+
         uint32_t set;
 
         uint32_t binding;
 
         uint32_t location;
+
+        uint32_t size;
 
         uint32_t constantID;
 
@@ -89,12 +94,31 @@ public:
             { "in",        Resource::Type::Input        },
             { "out",       Resource::Type::Output       }
         };
-
         auto &it = map.find(key);
 
         if (it == map.end())
         {
             return Resource::Type::None;
+        }
+        return it->second;
+    }
+
+    static Format GetResourceFormat(const std::string &key)
+    {
+        static std::map<std::string, Format> map = {
+            { "int",   Format::INT     },
+            { "float", Format::FLOAT   },
+            { "vec2",  Format::VECTOR2 },
+            { "vec3",  Format::VECTOR3 },
+            { "vec4",  Format::VECTOR4 },
+            { "mat4",  Format::MATRIX4 }
+        };
+
+        auto &it = map.find(key);
+
+        if (it == map.end())
+        {
+            return Format::None;
         }
         return it->second;
     }
