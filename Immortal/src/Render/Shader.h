@@ -40,18 +40,18 @@ public:
 
     struct Resource
     {
-        enum class Type
+        enum class Type : uint32_t
         {
-            Uniform,
-            Storage,
-            PushConstant,
-            Image,
-            ImageSampler,
-            ImageStorage,
-            Sampler,
-            Input,
-            Output,
-            None
+            Uniform       = BIT(1),
+            Storage       = BIT(2),
+            PushConstant  = BIT(3),
+            Image         = BIT(4),
+            ImageSampler  = BIT(5),
+            ImageStorage  = BIT(6),
+            Sampler       = BIT(7),
+            Input         = BIT(8),
+            Output        = BIT(9),
+            None          = BIT(10)
         };
 
         enum class Mode
@@ -170,11 +170,11 @@ public:
     void Add(const std::string &name, const std::shared_ptr<Shader> &shader);
 
     void Add(const std::shared_ptr<Shader> &shader);
-        
+
     std::shared_ptr<Shader> Load(const std::string &filepath);
 
     std::shared_ptr<Shader> Load(const std::string &name, const std::string &filepath);
-        
+
     std::shared_ptr<Shader> Get(const std::string &name);
 
     std::shared_ptr<Shader> At(const std::string &name)
@@ -187,5 +187,7 @@ public:
 private:
     std::unordered_map<std::string, std::shared_ptr<Shader> > shaders;
 };
+
+DEFINE_ENUM_OP_OR_EQUAL(Shader::Resource::Type, uint32_t)
 
 }
