@@ -10,12 +10,13 @@ class Camera
 public:
     enum class ProjectionType
     { 
-        Perspective = 0,
+        Perspective  = 0,
         Orthographic = 1
     };
 
 public:
     Camera() = default;
+
     Camera(const Vector::Matrix4 &prj)
         : projection{ prj }
     {
