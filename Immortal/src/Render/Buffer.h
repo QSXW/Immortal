@@ -121,6 +121,12 @@ struct InputElementDescription
         INIT();
     }
 
+    InputElementDescription(std::vector<InputElement> &&elements) :
+        elements{ std::move(elements) }
+    {
+        INIT();
+    }
+
     auto begin()
     {
         return elements.begin();
