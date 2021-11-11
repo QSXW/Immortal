@@ -44,7 +44,8 @@ class AddrInfo
 public:
     AddrInfo() = default;
 
-    AddrInfo(const int addressFamily, const int socketType, const int protocol)
+    AddrInfo(const int addressFamily, const int socketType, const int protocol) :
+        response{ nullptr }
     {
         CleanUpObject(&hints);
         hints.ai_family   = addressFamily;
