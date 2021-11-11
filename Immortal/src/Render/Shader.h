@@ -1,7 +1,8 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Render/Format.h"
+#include "Format.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
@@ -29,7 +30,8 @@ public:
         ClosestHit,
         Miss,
         Intersection,
-        Callable
+        Callable,
+        Pixel = Fragment,
     };
 
     enum class Type
@@ -160,6 +162,8 @@ public:
 
 protected:
     Type type{ Type::Graphics };
+
+    std::shared_ptr<Buffer> uniform;
 };
 
 using SuperShader = Shader;
@@ -188,6 +192,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Shader> > shaders;
 };
 
+DEFINE_ENUM_OP_AND(Shader::Resource::Type, uint32_t)
 DEFINE_ENUM_OP_OR_EQUAL(Shader::Resource::Type, uint32_t)
 
 }
