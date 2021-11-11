@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Shader.h"
 #include "Format.h"
 
 namespace Immortal
