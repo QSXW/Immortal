@@ -280,6 +280,9 @@ set(WIDGET_FILES
     src/Widget/Widget.h
     src/Widget/Viewport.h)
 
+set(NET_FILES
+    src/Net/Socket.h)
+
 source_group("\\" FILES ${CORE_FILES})
 source_group("Framework\\" FILES ${FRAMEWORK_FILES})
 source_group("Editor\\" FILES ${EDITOR_FILES})
@@ -300,6 +303,7 @@ source_group("Serializer\\" FILES ${SERIALIZER_FILES})
 source_group("Sync\\" FILES ${SYNC_FILES})
 source_group("Utils\\" FILES ${UTILS_FILES})
 source_group("Widget\\" FILES ${WIDGET_FILES})
+source_group("Net\\" FILES ${NET_FILES})
 
 set(PROJECT_FILES
     ${CORE_FILES}
@@ -321,7 +325,8 @@ set(PROJECT_FILES
     ${SERIALIZER_FILES}
     ${SYNC_FILES}
     ${UTILS_FILES}
-    ${WIDGET_FILES})
+    ${WIDGET_FILES}
+    ${NET_FILES})
 
 source_group("\\" FILES ${PROJECT_FILES})
 
