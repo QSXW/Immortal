@@ -71,6 +71,10 @@ public:
         {
             return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         }
+        if (type == Type::Uniform)
+        {
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        }
         return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     }
 
