@@ -39,8 +39,6 @@ private:
     VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
 
     RenderPass *renderPass{ nullptr };
-
-    CommandBuffers *commandBuffer{ nullptr };
     
     uint32_t frameIndex{ 0 };
 };
