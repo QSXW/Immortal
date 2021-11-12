@@ -145,6 +145,7 @@ set(VULKAN_FILES
    src/Platform/Vulkan/Instance.h
    src/Platform/Vulkan/Pipeline.cpp
    src/Platform/Vulkan/Pipeline.h
+   src/Platform/Vulkan/PipelineLayout.h
    src/Platform/Vulkan/PhysicalDevice.cpp
    src/Platform/Vulkan/PhysicalDevice.h
    src/Platform/Vulkan/Queue.cpp
