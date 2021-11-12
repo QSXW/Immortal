@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "Buffer.h"
 #include "Framebuffer.h"
+#include "PipelineLayout.h"
 
 namespace Immortal
 {
@@ -13,24 +14,6 @@ namespace Vulkan
 {
 
 class Device;
-
-class PipelineLayout
-{
-public:
-    operator VkPipelineLayout&()
-    {
-        return handle;
-    }
-
-    operator VkPipelineLayout() const
-    {
-        return handle;
-    }
-
-private:
-    VkPipelineLayout handle{ VK_NULL_HANDLE };
-};
-
 class Pipeline : public SuperPipeline
 {
 public:
