@@ -50,6 +50,10 @@ Shader::~Shader()
     {
         device->Destory(m);
     }
+    for (auto &u : uniforms)
+    {
+        device->Destory(u.descriptorSetLayout);
+    }
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
@@ -75,7 +79,7 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 
     Check(vkCreateShaderModule(device->Handle(), &createInfo, nullptr, &shaderModule));
 
-    Reflect(src, resources);
+    Reflect(src, resources, stage);
 
     return shaderModule;
 }
@@ -265,7 +269,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
     return i;
 }
 
-void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &resources)
+void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &resources, Stage stage)
 {
     const std::string layout = std::string{ "layout" };
 
@@ -273,10 +277,42 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
     while ((i = source.find(layout, i)) != std::string::npos)
     {
         resources.resize(resources.size() + 1);
+        auto &resource = resources.back();
+
         i += layout.size();
-        i += ParseLayout(source.data() + i, resources.back());
+        i += ParseLayout(source.data() + i, resource);
+        if (resource.type & Resource::Type::Uniform)
+        {
+           INITUniform(resource, stage);
+        }
         continue;
     }
+}
+
+void Shader::INITUniform(const Resource &resource, Stage stage)
+{
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
+    descriptorSetLayoutBinding.binding            = resource.binding;
+    descriptorSetLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorSetLayoutBinding.descriptorCount    = 1;
+    descriptorSetLayoutBinding.stageFlags         = ConvertTo(stage);
+    descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+    if (resource.binding <= uniforms.size())
+    {
+        uniforms.resize(resource.binding + 1);
+    }
+    auto &uniform = uniforms[resource.binding];
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings    = &descriptorSetLayoutBinding;
+    Check(device->Create(&layoutInfo, nullptr, &uniform.descriptorSetLayout));
+
+    uniform.pipelineLayout = PipelineLayout{ *device, 1, &uniform.descriptorSetLayout };
+
+    uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
 }
 
 }

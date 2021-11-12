@@ -162,8 +162,6 @@ public:
 
 protected:
     Type type{ Type::Graphics };
-
-    std::shared_ptr<Buffer> uniform;
 };
 
 using SuperShader = Shader;
