@@ -9,11 +9,13 @@
 #include "RenderFrame.h"
 #include "RenderPass.h"
 #include "Framebuffer.h"
+#include "CommandBuffer.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
+
 class RenderContext : public SuperRenderContext
 {
 public:
@@ -113,10 +115,6 @@ public:
         if constexpr (is_same<T, RenderPass *>())
         {
             return renderPass.get();
-        }
-        if constexpr (is_same<T, CommandBuffers *>())
-        {
-            return &commandBuffers;
         }
     }
 
