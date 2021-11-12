@@ -1,10 +1,6 @@
 #include "VulkanSample.h"
 #include "Platform/Vulkan/Common.h"
 
-#include "RF.h"
-#include "BMP.h"
-#include "Framework/ThreadManager.h"
-
 VulkanLayer::VulkanLayer()
 {
 
@@ -12,8 +8,7 @@ VulkanLayer::VulkanLayer()
 
 void VulkanLayer::OnAttach()
 {
-    primary = Render::Create<Texture>("C:/SDK/Assets/jpeg/wallhaven-j3y9mw.jpg");
-    second = Render::Create<Texture>("C:/SDK/Assets/jpeg/wallhaven-57m3z1.png");
+    primary = Render::Preset()->WhiteTexture;
 }
 
 void VulkanLayer::OnDetach()
@@ -77,7 +72,6 @@ void VulkanLayer::OnGuiRender()
     }
 
     viewport.OnUpdate(primary);
-    preview.OnUpdate(second);
 
     {
         static float f = 0.0f;
