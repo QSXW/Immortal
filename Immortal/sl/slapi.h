@@ -147,6 +147,16 @@ message(what) { }
 #endif
 };
 
+class RuntimeException : public Exception
+{
+public:
+    RuntimeException(const char *what) noexcept :
+        Exception(what)
+    {
+
+    }
+};
+
 #define SLVIRTUAL 
 #define SLINLINE
 
