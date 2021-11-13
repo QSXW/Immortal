@@ -49,6 +49,8 @@ public:
 
     void Flush();
 
+    void Update(VkDescriptorSet descriptorSet, uint32_t biding);
+
     virtual void Update(uint32_t size, const void *src) override
     {
         if (persistent)
