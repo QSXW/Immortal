@@ -313,6 +313,8 @@ void Shader::INITUniform(const Resource &resource, Stage stage)
     uniform.pipelineLayout = PipelineLayout{ *device, 1, &uniform.descriptorSetLayout };
 
     uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
+
+    Check(device->AllocateDescriptorSet(&uniform.descriptorSetLayout, &uniform.descriptorSet));
 }
 
 }
