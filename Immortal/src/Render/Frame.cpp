@@ -26,7 +26,7 @@ Frame::Frame(const std::string &path, bool flip)
     ReadByOpenCV(path, flip);
 }
 
-Frame::Frame(UINT32 width, UINT32 height, int depth, const void *data) :
+Frame::Frame(uint32_t width, uint32_t height, int depth, const void *data) :
     width{ width },
     height{ height },
     depth{ depth }
@@ -34,13 +34,14 @@ Frame::Frame(UINT32 width, UINT32 height, int depth, const void *data) :
 
 }
 
-void Frame::Read(const std::string &path, cv::Mat &outputMat)
+bool Frame::Read(const std::string &path, cv::Mat &outputMat)
 {
     cv::Mat dst;
     cv::Mat	src = cv::imread(path, cv::IMREAD_UNCHANGED);
     if (!src.data)
     {
         LOG::ERR("Failed to load image -> {{0}}", path);
+        return false;
     }
     if (src.data)
     {
@@ -54,40 +55,37 @@ void Frame::Read(const std::string &path, cv::Mat &outputMat)
             cv::cvtColor(src, dst, cv::COLOR_BGR2RGBA);
         }
     }
-    width  = dst.cols;
-    height = dst.rows;
-
-    depth = dst.channels();
-    if (dst.depth() == CV_32F)
-    {
-        desc.Format = Format::RGBA16F;
-    }
-    else
-    {
-        desc.Format = Format::RGBA8;
-    }
+    width       = dst.cols;
+    height      = dst.rows;
+    depth       = dst.channels();
+    desc.Format = Format::RGBA8;
 
     if (dst.depth() == CV_16U)
     {
-        src = dst;
-        src.convertTo(dst, CV_32FC4, 1.0 / (float)0xff);
-        src.release();
-        desc.Format = Format::RGBA16F;
+        desc.Format = Format::RGBA16;
+    }
+    if (dst.depth() == CV_32FC4)
+    {
+        desc.Format = Format::RGBA32F;
     }
     outputMat = dst;
 
-    spatial = (UINT64)width * (UINT64)height;
-    size    =  spatial * (UINT64)depth;
+    spatial = ncast<uint64_t>(width) * ncast<uint64_t>(height);
+    size    = spatial * ncast<uint64_t>(depth) * ((desc.Format == Format::RGBA32F) ? sizeof(float) :
+                                                 ((desc.Format == Format::RGBA16) ? sizeof(uint16_t ) : sizeof(uint8_t)));
+    return true;
 }
 
 void Frame::ReadByOpenCV(const std::string &path)
 {
     cv::Mat src;
-    Read(path, src);
+    if (!Read(path, src))
+    {
+        return;
+    }
 
-    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
-    data.reset(new uint8_t[pixelSize]);
-    memcpy(data.get(), src.data, pixelSize);
+    data.reset(new uint8_t[size]);
+    memcpy(data.get(), src.data, size);
         
     src.release();
 }
@@ -96,7 +94,10 @@ void Frame::ReadByOpenCV(const std::string &path, bool flip)
 {
     cv::Mat src;
     cv::Mat dst;
-    Read(path, src);
+    if (!Read(path, src))
+    {
+        return;
+    }
     if (flip)
     {
         cv::flip(src, dst, 0);
@@ -107,9 +108,8 @@ void Frame::ReadByOpenCV(const std::string &path, bool flip)
         dst = src;
     }
 
-    auto pixelSize = size * (src.depth() == CV_32F ? sizeof(float) : sizeof(uint8_t));
-    data.reset(new uint8_t[pixelSize]);
-    memcpy(data.get(), dst.data, pixelSize);
+    data.reset(new uint8_t[size]);
+    memcpy(data.get(), dst.data, size);
 
     dst.release();
 }
@@ -122,8 +122,8 @@ void Frame::ReadByInternal(const std::string &path)
     depth       = 4;
     width       = decoder.Width();
     height      = decoder.Height();
-    spatial     = (UINT64)width * (UINT64)height;
-    size        =  spatial * (UINT64)depth;
+    spatial     = ncast<uint64_t>(width) * ncast<uint64_t>(height);
+    size        = spatial * ncast<uint64_t>(depth);
     desc.Format = Format::BGRA8;
 
     decoder.Swap(data);

@@ -9,19 +9,9 @@
 
 namespace Immortal 
 {
+
 class IMMORTAL_API Frame
 {
-public:
-    static inline UINT32 map[] = {
-            0,
-            3,
-            4,
-            8,
-           16,
-            8,
-            3
-    };
-
 public:
     Frame() = default;
 
@@ -29,16 +19,16 @@ public:
 
     Frame(const std::string &path, bool flip);
 
-    Frame(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr);
+    Frame(uint32_t width, uint32_t height, int depth = 1, const void *data = nullptr);
 
     virtual ~Frame();
 
-    virtual UINT32 Width() const
+    virtual uint32_t Width() const
     { 
         return width;
     }
 
-    virtual UINT32 Height() const
+    virtual uint32_t Height() const
     {
         return height;
     }
@@ -53,7 +43,10 @@ public:
         return data.get();
     };
 
-    virtual UINT32 Hash() const { return 0xff; };
+    virtual bool Available()
+    {
+        return !!data.get();
+    }
 
     virtual size_t Size() const
     {
@@ -67,14 +60,14 @@ private:
 
     void ReadByInternal(const std::string &path);
 
-    void Read(const std::string &path, cv::Mat &outputMat);
+    bool Read(const std::string &path, cv::Mat &outputMat);
 
 private:
     Texture::Description desc;
 
-    UINT32  width{ 0 };
+    uint32_t  width{ 0 };
 
-    UINT32 height{ 0 };
+    uint32_t height{ 0 };
 
     size_t spatial{ 0 };
 
@@ -85,7 +78,7 @@ private:
     std::unique_ptr<uint8_t>  data{ nullptr };
 
 public:
-    static inline std::shared_ptr<Frame> Create(UINT32 width, UINT32 height, int depth = 1, const void *data = nullptr)
+    static inline std::shared_ptr<Frame> Create(uint32_t width, uint32_t height, int depth = 1, const void *data = nullptr)
     {
         return std::make_shared<Frame>(width, height, depth, data);
     }
@@ -93,12 +86,6 @@ public:
     static inline std::shared_ptr<Frame> Create(const std::string &filepath)
     {
         return std::make_shared<Frame>(filepath);
-    }
-
-    static inline UINT32 FormatBitsPerPixel(int format)
-    {
-        SLASSERT(format > SLLEN(map) && "Unsupport format.");
-        return map[format];
     }
 };
 }
