@@ -300,7 +300,7 @@ void Shader::INITUniform(const Resource &resource, Stage stage)
 
     if (resource.binding <= uniforms.size())
     {
-        uniforms.resize(resource.binding + 1);
+        uniforms.resize(ncast<size_t>(resource.binding) + 1);
     }
     auto &uniform = uniforms[resource.binding];
 
