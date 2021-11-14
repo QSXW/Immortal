@@ -41,11 +41,7 @@ void ColorSpace::RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size)
 
 void ColorSpace::RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size)
 {
-    auto &coeffients = ColorSpace::Coefficients[static_cast<size_t>(CoefficientType::REC601)];
-
-    auto lr = set<m256, float>(coeffients[0]);
-    auto lg = set<m256, float>(coeffients[1]);
-    auto lb = set<m256, float>(coeffients[2]);
+    auto coeffients = ColorSpace::Get<CoefficientType::REC601>();
 }
 
 }

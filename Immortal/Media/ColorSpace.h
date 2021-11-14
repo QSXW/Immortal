@@ -18,6 +18,12 @@ static float Coefficients[][4] = {
     { 0.2125, 0.7157, 0.721, 0 }, /* ITU-R Rec. 709 (1990) */
 };
 
+template <CoefficientType type>
+float* Get()
+{
+    return Coefficients[static_cast<size_t>(type)];
+}
+
 void yuv2rgb(const uint8_t *src, size_t size, uint8_t *dst);
 
 void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size);
