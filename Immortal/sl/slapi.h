@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
+
 #include <new>
+#include <string>
 
 #if defined( _MSC_VER )
 #   define SL_ALIGNED(x) __declspec(align(x))
