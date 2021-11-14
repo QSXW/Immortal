@@ -23,7 +23,7 @@ public:
 
     static int Self()
     {
-#ifdef WINDOWS
+#ifndef __GNUC__
         return GetCurrentThreadId();
 #else 
         return (int)pthread_self();
