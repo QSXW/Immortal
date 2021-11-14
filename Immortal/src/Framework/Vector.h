@@ -15,6 +15,7 @@ namespace Immortal
 {
 namespace Vector
 {
+
 using Vector2    = glm::vec2;
 using Vector3    = glm::vec3;
 using Vector4    = glm::vec4;
@@ -64,6 +65,11 @@ inline auto Translate(Vector3 position)
     return glm::translate(mat4(1.0f), position);
 }
 
+inline auto ToMatrix4(Quaternion &q)
+{
+    return glm::toMat4(q);
+}
+
 inline auto Rotate(float rotation, Vector3 direction)
 {
     return glm::rotate(mat4(1.0f), glm::radians(rotation), direction);
@@ -71,17 +77,12 @@ inline auto Rotate(float rotation, Vector3 direction)
 
 /* Rotate a vector by a quaternion  */
 template <class T>
-inline auto Rotate(Quaternion &q, T v)
+inline auto Rotate(Quaternion q, T v)
 {
     return glm::rotate(q, v);
 }
 
-inline auto ToMatrix4(Quaternion &q)
-{
-    return glm::toMat4(q);
-}
-
-inline auto Rotate(Vector3 rotation)
+inline glm::mat4 Rotate(Vector3 rotation)
 {
     return glm::toMat4(Quaternion(rotation));
 }
@@ -117,7 +118,7 @@ inline auto EpsilonNotEqual(const float &x, const float &y, const float &epsilon
 }
 
 template <class T>
-inline auto Distance(T &p0, T &p1)
+inline auto Distance(T p0, T p1)
 {
     return glm::distance(p0, p1);
 }
