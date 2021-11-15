@@ -26,6 +26,17 @@ public:
     Object::Type Type{ Object::Type::None };
     HandleType Handle;
 
+private:
+    ValueType IncreaseRef()
+    {
+        return ++refCount;
+    }
+
+    ValueType DecreaseRef()
+    {
+        return --refCount;
+    }
+
 public:
     virtual ~Object() { }
 
@@ -39,13 +50,28 @@ public:
         return !(*this == other);
     }
 
-public:
-    void __IncreaseRefCount() const { _M_refcount++; }
-    void __DecreaseRefCount() const { _M_refcount--; }
-    constexpr ValueType RefCount() const { return _M_refcount; }
+    virtual ValueType RefCount() const
+    {
+        return refCount;
+    }
+
+    virtual ValueType AddRef()
+    {
+        return IncreaseRef();
+    }
+
+    virtual ValueType Release()
+    {
+        DecreaseRef();
+        if (refCount == 0)
+        {
+            delete this;
+        }
+        return refCount;
+    }
 
 private:
-    mutable volatile ValueType _M_refcount = 0;
+    mutable volatile ValueType refCount = 0;
 };
 
 }
