@@ -137,10 +137,10 @@ void RenderContext::Prepare(size_t threadCount)
 
     for (auto &buf : present.commandBuffers)
     {
-        buf.reset(device->Request(Level::Primary));
+        buf.reset(device->RequestCommandBuffer(Level::Primary));
     }
 
-    this->status = true;
+    status = true;
 }
 
 Swapchain *RenderContext::UpdateSurface()

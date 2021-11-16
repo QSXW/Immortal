@@ -60,11 +60,6 @@ public:
     }
 
 public:
-    VkFence RequestFence()
-    {
-        return fencePool->Request();
-    }
-
 #define DEFINE_CREATE_VK_OBJECT(T) \
     VkResult Create(const Vk##T##CreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, Vk##T *pObject) \
     { \
@@ -248,14 +243,29 @@ public:
         return vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, properties);
     }
 
-    CommandBuffer *Request(Level level)
+    CommandBuffer *RequestCommandBuffer(Level level)
     {
         return commandPool->RequestBuffer(level);
     }
 
+    VkFence RequestFence()
+    {
+        return fencePool->Request();
+    }
+
+    void Discard(CommandBuffer *commandBuffer)
+    {
+        commandPool->DiscardBuffer(commandBuffer);
+    }
+
+    void Discard(VkFence *pFence)
+    {
+        fencePool->Discard(pFence);
+    }
+
     CommandBuffer *BeginUpload()
     {
-        auto *copyCmd = commandPool->RequestBuffer(Level::Primary);
+        auto *copyCmd = RequestCommandBuffer(Level::Primary);
         copyCmd->Begin();
         return copyCmd;
     }
@@ -271,13 +281,13 @@ public:
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers    = &copyCmd->Handle();
 
-        auto fence = fencePool->Request();
+        auto fence = RequestFence();
 
         queue.Submit(submitInfo, fence);
         Check(Wait(&fence, 1, VK_TRUE, FencePool::Timeout));
 
-        fencePool->Discard(&fence);
-        commandPool->DiscardBuffer(copyCmd);
+        Discard(&fence);
+        Discard(copyCmd);
     }
 
     template <class T>
@@ -286,11 +296,6 @@ public:
         auto *copyCmd = BeginUpload();
         process(copyCmd);
         EndUpload(copyCmd);
-    }
-
-    void Discard(CommandBuffer *commandBuffer)
-    {
-        commandPool->DiscardBuffer(commandBuffer);
     }
 
 private:
