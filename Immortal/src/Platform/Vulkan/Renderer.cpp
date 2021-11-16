@@ -18,6 +18,14 @@ Renderer::Renderer(RenderContext::Super *c) :
     INIT();
 }
 
+Renderer::~Renderer()
+{
+    for (auto &fence : fences)
+    {
+        device->Discard(&fence);
+    }
+}
+
 void Renderer::INIT()
 {
     frameSize = context->FrameSize();

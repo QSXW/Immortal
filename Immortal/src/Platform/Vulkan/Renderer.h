@@ -24,6 +24,8 @@ public:
 public:
     Renderer(RenderContext::Super *context);
 
+    virtual ~Renderer();
+
     virtual void INIT() override;
 
     virtual void SwapBuffers() override;

@@ -14,6 +14,8 @@ namespace Immortal
 class IMMORTAL_API Renderer
 {
 public:
+    virtual ~Renderer() { }
+
     virtual void INIT() { }
 
     virtual void OnResize(UINT32 x, UINT32 y, UINT32 width, UINT32 height) { }
