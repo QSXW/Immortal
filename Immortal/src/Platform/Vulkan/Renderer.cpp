@@ -11,10 +11,9 @@ namespace Vulkan
 Renderer::Renderer(RenderContext::Super *c) : 
     context{ dcast<RenderContext *>(c) },
     device{ context->Get<Device *>() },
-    swapchain{ context->Get<Swapchain *>() }
+    swapchain{ context->Get<Swapchain *>() },
+    semaphorePool{ device }
 {
-    depthFormat   = SuitableDepthFormat(device->Get<VkPhysicalDevice>());
-    semaphorePool = std::make_unique<SemaphorePool>(device);
     INIT();
 }
 
@@ -28,11 +27,11 @@ Renderer::~Renderer()
 
 void Renderer::INIT()
 {
-    frameSize = context->FrameSize();
+    auto frameSize = context->FrameSize();
     for (int i = 0; i < frameSize; i++)
     {
-        semaphores[i].acquiredImageReady = semaphorePool->Request();
-        semaphores[i].renderComplete     = semaphorePool->Request();
+        semaphores[i].acquiredImageReady = semaphorePool.Request();
+        semaphores[i].renderComplete     = semaphorePool.Request();
     }
 
     queue = context->Get<Queue*>();
@@ -108,7 +107,7 @@ void Renderer::SwapBuffers()
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();
 
-    sync = (sync + 1) % frameSize;
+    sync = (sync + 1) % context->FrameSize();
 }
 
 }

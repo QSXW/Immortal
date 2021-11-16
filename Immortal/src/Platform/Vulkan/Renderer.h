@@ -21,6 +21,10 @@ class Renderer : public SuperRenderer
 public:
     using Super = SuperRenderer;
 
+    static inline VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+    static inline VkPipelineStageFlags submitPipelineStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
 public:
     Renderer(RenderContext::Super *context);
 
@@ -97,9 +101,11 @@ private:
 
     Device *device{ nullptr };
 
-    std::vector<CommandBuffer*> *commandBuffers{ nullptr };
-
     Swapchain *swapchain{ nullptr };
+
+    Queue *queue{ nullptr };
+
+    SemaphorePool semaphorePool;
 
     std::array<Semaphores, 3> semaphores;
     
@@ -107,23 +113,7 @@ private:
 
     uint32_t sync{ 0 };
 
-    uint32_t frameSize{ 0 };
-
-    VkRenderPass renderPass{ VK_NULL_HANDLE };
-
-    VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
-
-    Queue *queue{ nullptr };
-
     uint32_t currentBuffer{ 0 };
-
-    std::unique_ptr<SemaphorePool> semaphorePool;
-
-    std::vector<VkFramebuffer> framebuffers;
-
-    VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-
-    VkPipelineStageFlags submitPipelineStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 };
 
 }
