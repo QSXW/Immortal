@@ -48,7 +48,7 @@ CommandPool::CommandPool(Device *device, UINT32 queueFamilyIndex, RenderFrame *r
     createInfo.queueFamilyIndex = queueFamilyIndex;
     createInfo.flags            = flags;
 
-    Check:vkCreateCommandPool(device->Get<VkDevice>(), &createInfo, nullptr, &handle);
+    Check:vkCreateCommandPool(*device, &createInfo, nullptr, &handle);
 }
 
 CommandPool::CommandPool(CommandPool &&other) :
@@ -73,16 +73,16 @@ CommandPool &CommandPool::operator=(CommandPool &&other)
 {
     if (this != &other)
     {
-        device                            = other.device;
-        handle                            = other.handle;
-        queueFamilyIndex                  = other.queueFamilyIndex;
-        primaryCommandBuffers             = std::move(other.primaryCommandBuffers);
-        primaryActiveCount                = other.primaryActiveCount;
-        secondaryCommandBuffers           = std::move(other.secondaryCommandBuffers);
-        secondaryActiveCount              = other.secondaryActiveCount;
-        renderFrame                       = other.renderFrame;
-        threadIndex                       = other.threadIndex;
-        resetMode                         = other.resetMode;
+        device                  = other.device;
+        handle                  = other.handle;
+        queueFamilyIndex        = other.queueFamilyIndex;
+        primaryCommandBuffers   = std::move(other.primaryCommandBuffers);
+        primaryActiveCount      = other.primaryActiveCount;
+        secondaryCommandBuffers = std::move(other.secondaryCommandBuffers);
+        secondaryActiveCount    = other.secondaryActiveCount;
+        renderFrame             = other.renderFrame;
+        threadIndex             = other.threadIndex;
+        resetMode               = other.resetMode;
 
         other.handle               = VK_NULL_HANDLE;
         other.queueFamilyIndex     = 0;
@@ -96,7 +96,7 @@ CommandPool::~CommandPool()
 {
     primaryCommandBuffers.clear();
     secondaryCommandBuffers.clear();
-    IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, device->Get<VkDevice>(), handle, nullptr);
+    IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, *device, handle, nullptr);
 }
 
 CommandBuffer *CommandPool::RequestBuffer(Level level)

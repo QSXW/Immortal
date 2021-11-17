@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 FencePool::FencePool(Device *device) :
     device{ device }
 {
@@ -20,7 +21,7 @@ FencePool::~FencePool()
 
     for (VkFence fence : handles)
     {
-        IfNotNullThen<VkFence>(vkDestroyFence, device->Get<VkDevice>(), fence, nullptr);
+        IfNotNullThen<VkFence>(vkDestroyFence, *device, fence, nullptr);
     }
     handles.clear();
 }
@@ -31,7 +32,7 @@ VkResult FencePool::Wait(UINT32 timeout) const
     {
         return VK_SUCCESS;
     }
-    return vkWaitForFences(device->Get<VkDevice>(), activeCount, handles.data(), true, timeout);
+    return vkWaitForFences(*device, activeCount, handles.data(), true, timeout);
 }
 
 VkResult FencePool::Reset()
@@ -41,7 +42,7 @@ VkResult FencePool::Reset()
         return VK_SUCCESS;
     }
     activeCount = 0;
-    return vkResetFences(device->Get<VkDevice>(), activeCount, handles.data());
+    return vkResetFences(*device, activeCount, handles.data());
 }
 
 VkFence FencePool::Request()
@@ -55,7 +56,7 @@ VkFence FencePool::Request()
     else 
     {
         VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-        Check(vkCreateFence(device->Get<VkDevice>(), &createInfo, nullptr, &fence));
+        Check(vkCreateFence(*device, &createInfo, nullptr, &fence));
 
         handles.emplace_back(fence);
         activeCount++;

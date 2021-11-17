@@ -16,7 +16,7 @@ Queue::Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties propert
     presented{ canPresent },
     properties{ properties }
 {
-    vkGetDeviceQueue(device.Get<VkDevice>(), familyIndex, index, &handle);
+    vkGetDeviceQueue(device, familyIndex, index, &handle);
 }
 
 Queue::Queue(Queue &&other) :
