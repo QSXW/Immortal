@@ -8,6 +8,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 class PhysicalDevice;
 class Instance
 {
@@ -15,18 +16,18 @@ public:
     Instance() = default;
 
     Instance(const char*                                  applicationName,
-                const std::unordered_map<const char*, bool> &requiredExtension        = {},
-                const std::vector<const char*>&              requiredValidationLayers = {},
-                bool                                         headless                 = false,
-                UINT32                                       apiVersion               = VK_API_VERSION_1_0);
+             const std::unordered_map<const char*, bool> &requiredExtension        = {},
+             const std::vector<const char*>&              requiredValidationLayers = {},
+             bool                                         headless                 = false,
+             UINT32                                       apiVersion               = VK_API_VERSION_1_0);
 
     Instance(VkInstance instance);
 
     ~Instance();
 
-    void QueryPhysicalDevice();
+    PhysicalDevice &SuitablePhysicalDevice();
 
-    PhysicalDevice& SuitablePhysicalDevice();
+    void QueryPhysicalDevice();
 
     bool CheckValidationLayerSupport();
 
@@ -40,8 +41,17 @@ public:
         }) != enabledExtensions.end();
     }
 
-public:
     VkInstance &Handle()
+    {
+        return handle;
+    }
+
+    operator VkInstance&()
+    {
+        return handle;
+    }
+
+    operator VkInstance() const
     {
         return handle;
     }
@@ -53,10 +63,12 @@ private:
 
     std::vector<std::unique_ptr<PhysicalDevice>> physicalDevices{};
 
-#if defined ( _DEBUG ) || defined ( VKB_VALIDATION_LAYERS )
+#if defined ( SLDEBUG ) || defined ( VKB_VALIDATION_LAYERS )
     VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };
+
     VkDebugReportCallbackEXT debugReportCallback{ VK_NULL_HANDLE };
 #endif
 };
+
 }
 }

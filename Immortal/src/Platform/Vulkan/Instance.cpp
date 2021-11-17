@@ -9,6 +9,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 #if SLDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -114,13 +115,13 @@ Instance::Instance(const char                                   *applicationName
     std::vector<VkExtensionProperties> availableExtension{ extensionCount };
     Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
 
-#if     SLDEBUG
+#ifdef SLDEBUG
     bool debugUtils = false;
 #endif
     bool headlessExtension = false;
     for (auto &ext : availableExtension)
     {
-#if			SLDEBUG
+#ifdef SLDEBUG
         if (Equals(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
         {
             debugUtils = true;
@@ -150,7 +151,7 @@ Instance::Instance(const char                                   *applicationName
         enabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
     }
 
-#if     SLDEBUG
+#ifdef SLDEBUG
     if (!debugUtils)
     {
         enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -220,7 +221,7 @@ Instance::Instance(const char                                   *applicationName
     instanceInfo.enabledLayerCount       = U32(requiredValidationLayers.size());
     instanceInfo.ppEnabledLayerNames     = requiredValidationLayers.data();
 
-#if     SLDEBUG
+#ifdef SLDEBUG
     VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
     VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT };
 
@@ -244,7 +245,7 @@ Instance::Instance(const char                                   *applicationName
     Vulkan::Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
     volkLoadInstance(handle);
 
-#if     SLDEBUG
+#ifdef SLDEBUG
     if (debugUtils)
     {
         SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
@@ -262,13 +263,16 @@ Instance::Instance(const char                                   *applicationName
 Instance::Instance(VkInstance instance)
     : handle(instance)
 {
-    SLASSERT(handle != VK_NULL_HANDLE && "Instance not valid");
+    if (handle != VK_NULL_HANDLE)
+    {
+        throw RuntimeException("Instance is not valid!");
+    }
     QueryPhysicalDevice();
 }
 
 Instance::~Instance()
 {
-#if defined( Debug ) || defined( _DEBUG )
+#ifdef SLDEBUG
     if (debugUtilsMessengers)
     {
         vkDestroyDebugUtilsMessengerEXT(handle, debugUtilsMessengers, nullptr);
@@ -335,5 +339,6 @@ bool Instance::CheckValidationLayerSupport()
     }
     return false;
 }
+
 }
 }
