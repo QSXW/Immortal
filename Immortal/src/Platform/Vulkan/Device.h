@@ -168,25 +168,17 @@ public:
     }
 
     template <class T>
-    T &Get()
+    T Get()
     {
-        if constexpr (is_same<T, VkDevice>())
-        {
-            return handle;
-        }
-        if constexpr (is_same<T, PhysicalDevice>())
+        if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
             return physicalDevice;
         }
-        if constexpr (is_same<T, Queue>())
+        if constexpr (IsPrimitiveOf<Queue, T>())
         {
             return queues;
         }
-        if constexpr (is_same<T, VkPhysicalDevice>())
-        {
-            return physicalDevice.Handle();
-        }
-        if constexpr (is_same<T, CommandPool>())
+        if constexpr (IsPrimitiveOf<CommandPool, T>())
         {
             return *commandPool;
         }
