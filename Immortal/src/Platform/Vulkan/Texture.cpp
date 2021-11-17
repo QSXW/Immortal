@@ -63,7 +63,7 @@ void Texture::INIT(const Description &description, uint32_t size, const void *da
     allocateInfo.allocationSize  = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     Check(device->AllocateMemory(&allocateInfo, nullptr, &stagingMemory));
-    Check(device->BindBufferMemory(stagingBuffer, stagingMemory, 0));
+    Check(device->BindMemory(stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into host local staging buffer
     if (data)
@@ -104,14 +104,14 @@ void Texture::INIT(const Description &description, uint32_t size, const void *da
     imageCreateInfo.extent        = { width, height, 1 };
     imageCreateInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     
-    Check(device->CreateImage(&imageCreateInfo, nullptr, &image));
+    Check(device->Create(&imageCreateInfo, nullptr, &image));
     device->GetRequirements(image, &memoryRequirements);
 
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     Check(device->AllocateMemory(&allocateInfo, nullptr, &deviceMemory));
-    Check(device->BindImageMemory(image, deviceMemory, 0));
+    Check(device->BindMemory(image, deviceMemory, 0));
 
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -183,7 +183,7 @@ void Texture::INITDescriptor()
     descriptorLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorLayoutCreateInfo.bindingCount = binding.size();
     descriptorLayoutCreateInfo.pBindings    = binding.data();
-    Check(device->CreateDescriptorSetLayout(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
+    Check(device->Create(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
 }
 }

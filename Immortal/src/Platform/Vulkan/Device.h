@@ -34,6 +34,8 @@ public:
 
     Queue &SuitableGraphicsQueue();
 
+    uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
+
 public:
     Queue *SuitableGraphicsQueuePtr()
     {
@@ -67,18 +69,11 @@ public:
     }
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
-    DEFINE_CREATE_VK_OBJECT(Sampler)
     DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_CREATE_VK_OBJECT(Image)
     DEFINE_CREATE_VK_OBJECT(PipelineLayout)
-
-#define DEFINE_CREATE_PIPELINES(T) \
-    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
-    { \
-        return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
-    }
-
-    DEFINE_CREATE_PIPELINES(Graphics)
-    DEFINE_CREATE_PIPELINES(Compute)
+    DEFINE_CREATE_VK_OBJECT(Sampler)
+    DEFINE_CREATE_VK_OBJECT(ShaderModule)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destory(Vk##T object, const VkAllocationCallbacks* pAllocator = nullptr) \
@@ -94,27 +89,32 @@ public:
     DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
 
-    VkResult CreatePipelineLayout(const VkPipelineLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout)
-    {
-        return vkCreatePipelineLayout(handle, pCreateInfo, pAllocator, pPipelineLayout);
+#define DEFINE_CREATE_PIPELINES(T) \
+    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
+    { \
+        return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
     }
 
-    VkResult CreateSampler()
-    {
+    DEFINE_CREATE_PIPELINES(Graphics)
+    DEFINE_CREATE_PIPELINES(Compute)
 
+#define DEFINE_GET_REQUIREMENTS(T) \
+    void GetRequirements(Vk##T object, VkMemoryRequirements *pMemoryRequirements) \
+    { \
+        vkGet##T##MemoryRequirements(handle, object, pMemoryRequirements); \
     }
 
-    void GetRequirements(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements)
-    {
-        vkGetBufferMemoryRequirements(handle, buffer, pMemoryRequirements);
+    DEFINE_GET_REQUIREMENTS(Buffer)
+    DEFINE_GET_REQUIREMENTS(Image)
+
+#define DEFINE_BIND_MEMORY(T) \
+    VkResult BindMemory(Vk##T buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) \
+    { \
+        return vkBind##T##Memory(handle, buffer, memory, memoryOffset); \
     }
 
-    void GetRequirements(VkImage image, VkMemoryRequirements *pMemoryRequirements)
-    {
-        vkGetImageMemoryRequirements(handle, image, pMemoryRequirements);
-    }
-
-    uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
+    DEFINE_BIND_MEMORY(Buffer)
+    DEFINE_BIND_MEMORY(Image)
 
     VkResult AllocateMemory(const VkMemoryAllocateInfo *pAllocateInfo, VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory)
     {
@@ -124,11 +124,6 @@ public:
     void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator = nullptr)
     {
         vkFreeMemory(handle, memory, pAllocator);
-    }
-
-    VkResult CreateDescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout)
-    {
-        return vkCreateDescriptorSetLayout(handle, pCreateInfo, pAllocator, pSetLayout);
     }
 
     VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
@@ -146,16 +141,6 @@ public:
         vkUpdateDescriptorSets(handle, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
     }
 
-    VkResult BindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset)
-    {
-        return vkBindBufferMemory(handle, buffer, memory, memoryOffset);
-    }
-
-    VkResult BindImageMemory(VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset)
-    {
-        return vkBindImageMemory(handle, image, memory, memoryOffset);
-    }
-
     VkResult MapMemory(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void **ppData)
     {
         return vkMapMemory(handle, memory, offset, size, flags, ppData);
@@ -164,11 +149,6 @@ public:
     void UnmapMemory(VkDeviceMemory memory)
     {
         vkUnmapMemory(handle, memory);
-    }
-
-    VkResult CreateImage(const VkImageCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkImage *pImage)
-    {
-        return vkCreateImage(handle, pCreateInfo, pAllocator, pImage);
     }
 
 public:
