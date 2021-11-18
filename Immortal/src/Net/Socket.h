@@ -42,7 +42,11 @@ enum SocketStatus
 class AddrInfo
 {
 public:
-    AddrInfo() = default;
+    AddrInfo() :
+        response{ nullptr }
+    {
+        CleanUpObject(&hints);
+    }
 
     AddrInfo(const int addressFamily, const int socketType, const int protocol) :
         response{ nullptr }
@@ -102,6 +106,12 @@ public:
     };
 
 public:
+    Socket() :
+        handle{ Status::Invalid }
+    {
+
+    }
+
     Socket(const std::string &ip, const std::string &port, const int addressFamily = Family::Ipv4, const int socketType = SocketType::Stream, const int protocol = Protocol::TCP) :
         handle{ Status::Invalid },
         addrInfo{ addressFamily, socketType, protocol }
@@ -129,6 +139,12 @@ public:
         return;
     cleanup:
         WSACleanup();
+    }
+
+    Socket(const std::string &ip, const int port, const int addressFamily = Family::Ipv4, const int socketType = SocketType::Stream, const int protocol = Protocol::TCP)
+        : Socket{ ip, std::to_string(port), addressFamily, socketType, protocol }
+    {
+
     }
 
     ~Socket()
