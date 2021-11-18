@@ -93,7 +93,7 @@ void Render2D::BeginScene(const Camera &camera, const Matrix4 &transform)
 void Render2D::BeginScene(const OrthographicCamera camera)
 {
     data.TextureShader->Map();
-    data.TextureShader->Set("u_ViewProjection", camera.ViewPorjectionMatrix());
+    data.TextureShader->Set("u_ViewProjection", camera.ViewProjection());
 
     StartBatch();
 }

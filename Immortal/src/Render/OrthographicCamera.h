@@ -1,55 +1,78 @@
 #pragma once
 
 #include "ImmortalCore.h"
+#include "Camera.h"
 
 namespace Immortal
 {
 
-class IMMORTAL_API OrthographicCamera
+class IMMORTAL_API OrthographicCamera : public Camera
 {
 public:
+    using Super = Camera;
+
+public:
     OrthographicCamera() = default;
-    OrthographicCamera(float left, float right, float bottom, float top);
 
-    void SetProjection(float left, float right, float bottom, float top);
-
-    const Vector::Vector3 &Position() const { return mPosition; }
-        
-    void SetProjection(Vector::mat4 projectionMatrix);
-    void setPosition(const Vector::Vector3 &position)
+    OrthographicCamera(float left, float right, float bottom, float top)
+        : Camera(Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f))
     {
-        mPosition = position;
+        viewProjection = projection * view;
+    }
+
+    void SetProjection(float left, float right, float bottom, float top)
+    {
+        projection = Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f);
+        viewProjection = Super::ViewProjection();
+    }
+
+    void SetProjection(Matrix4 prj)
+    {
+        projection = prj;
+        viewProjection = Super::ViewProjection();
+    }
+
+    void setPosition(const Vector3 &pos)
+    {
+        position = pos;
         ReCalculateViewMatrix();
     }
         
-    void Set(const Vector::Vector3 &position, float rotation)
+    void Set(const Vector::Vector3 &pos, float rot)
     {
-        mPosition = position;
-        mRotation = rotation;
+        position = pos;
+        rotation = rot;
         ReCalculateViewMatrix();
     }
 
-    float Rotation() const { return mRotation; }
-    void SetRotation(float rotation)
+    float Rotation() const
     { 
-        mRotation = rotation;
+        return rotation;
+    }
+
+    const Vector3 &Position() const
+    { 
+        return position;
+    }
+
+    void SetRotation(float other)
+    { 
+        rotation = other;
         ReCalculateViewMatrix();
     }
 
-    const Vector::mat4 &ProjectionMatrix() const { return mProjectionMatrix; }
-    const Vector::mat4 &ViewMatrix() const { return mViewMatrix; }
-    const Vector::mat4 &ViewPorjectionMatrix() const { return mViewProjectionMatrix; }
+    virtual Matrix4 ViewProjection() const
+    {
+        return viewProjection;
+    }
 
 private:
     void ReCalculateViewMatrix();
 
 private:
-    Vector::mat4 mProjectionMatrix;
-    Vector::mat4 mViewMatrix;
-    Vector::mat4 mViewProjectionMatrix;
-
-    Vector::Vector3 mPosition = { 0.0f, 0.0f, 0.0f };
-    float mRotation = 0.0f;
+    Matrix4 viewProjection;
+    Vector3 position{ 0.0f, 0.0f, 0.0f };
+    float   rotation{ 0.0f };
 };
 
 }

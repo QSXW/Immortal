@@ -35,7 +35,7 @@ public:
         return view;
     }
 
-    Matrix4 ViewProjection() const
+    virtual Matrix4 ViewProjection() const
     { 
         return projection * view;
     }

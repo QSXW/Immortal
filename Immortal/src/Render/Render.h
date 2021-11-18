@@ -136,7 +136,7 @@ public:
 
     static void Render::Begin(OrthographicCamera &camera)
     {
-        scene.viewProjectionMatrix = camera.ViewPorjectionMatrix();
+        scene.viewProjectionMatrix = camera.ViewProjection();
     }
 
     static void Render::End()
