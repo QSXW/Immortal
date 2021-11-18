@@ -174,24 +174,56 @@ public:
     }
 
     template <class T>
+    int Receive(T *out, size_t size)
+    {
+        return recv(handle, reinterpret_cast<char *>(out), sizeof(T) * size, 0);
+    }
+
+    template <class T>
     int Receive(std::vector<T> *out)
     {
         int status = 0;
         std::vector<char> buffer;
         buffer.resize(65536);
-        do {
-            status = recv(handle, buffer.data(), buffer.size(), 0);
-            out->resize(out->size() + status);
-            std::copy(buffer.begin(), buffer.begin() + status, out->end() - status);
-        } while (status > 0);
+
+        while(true)
+        {
+            status = Receive(buffer.data(), buffer.size());
+            if (status > 0)
+            {
+                out->resize(out->size() + status);
+                std::copy(buffer.begin(), buffer.begin() + status, out->end() - status);
+            }
+            else
+            {
+                break;
+            }
+        };
 
         return status;
     }
 
-    template <class T>
-    int Receive(T *out, size_t size)
+    template <class Callback>
+    int Receive(Callback callback)
     {
-        return recv(handle, reinterpret_cast<char *>(out), sizeof(T) * size, 0);
+        int status = 0;
+        std::vector<char> buffer;
+        buffer.resize(65536);
+
+        while (true)
+        {
+            status = Receive(buffer.data(), buffer.size());
+            if (status > 0)
+            {
+                callback(buffer, status);
+            }
+            else
+            {
+                break;
+            }
+        };
+
+        return status;
     }
 
 private:
