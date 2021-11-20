@@ -38,18 +38,6 @@ public:
 
     struct Configuration
     {
-        std::array<VkDynamicState, 9> dynamic{
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_LINE_WIDTH,
-            VK_DYNAMIC_STATE_DEPTH_BIAS,
-            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_REFERENCE
-        };
-
         std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
 
         std::vector<VkVertexInputBindingDescription> vertexInputBidings;

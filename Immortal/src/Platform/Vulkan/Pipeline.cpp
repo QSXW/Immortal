@@ -108,9 +108,20 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     }
 
     {
+        std::array<VkDynamicState, 9> dynamic{
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR,
+            VK_DYNAMIC_STATE_LINE_WIDTH,
+            VK_DYNAMIC_STATE_DEPTH_BIAS,
+            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_REFERENCE
+        };
         state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        state->dynamic.dynamicStateCount = configuration->dynamic.size();
-        state->dynamic.pDynamicStates    = configuration->dynamic.data();
+        state->dynamic.dynamicStateCount = dynamic.size();
+        state->dynamic.pDynamicStates    = dynamic.data();
     }
 
     if (!desc.shader->IsGraphics())
@@ -122,7 +133,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.renderPass          = framebuffer->Get<RenderPass>();
     createInfo.flags               = 0;
-    createInfo.layout              = *layout;
+    createInfo.layout              = std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;
     createInfo.pVertexInputState   = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;
