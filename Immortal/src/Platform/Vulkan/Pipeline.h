@@ -105,6 +105,7 @@ private:
         state->vertexInput.vertexBindingDescriptionCount   = U32(vertexInputBidings.size());
         state->vertexInput.pVertexBindingDescriptions      = vertexInputBidings.data();
         state->vertexInput.vertexAttributeDescriptionCount = U32(inputAttributeDescriptions.size());
+        state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
     }
 
 private:
