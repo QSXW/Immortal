@@ -171,7 +171,7 @@ inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
         {
             buffer[j] = '\0';
             e.name = buffer;
-            elements.emplace_back(std::move(e));
+            elements.emplace_back(e);
             j = 0;
             i++;
             continue;
