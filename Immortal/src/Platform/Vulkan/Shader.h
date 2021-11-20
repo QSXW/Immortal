@@ -49,6 +49,15 @@ public:
         return VK_SHADER_STAGE_VERTEX_BIT;
     }
 
+    template <class T>
+    T Get()
+    {
+        if (IsPrimitiveOf<PipelineLayout, T>())
+        {
+            return pipelineLayout;
+        }
+    }
+
 private:
     void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
 
