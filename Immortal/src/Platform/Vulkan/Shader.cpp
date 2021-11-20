@@ -269,6 +269,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
 void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &resources, Stage stage)
 {
     const std::string layout = std::string{ "layout" };
+    std::vector<VkPushConstantRange> ranges{};
 
     size_t i = 0;
     while ((i = source.find(layout, i)) != std::string::npos)
@@ -278,9 +279,18 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
 
         i += layout.size();
         i += ParseLayout(source.data() + i, resource);
-        if (resource.type & Resource::Type::Uniform)
+        
+        if (resource.type & Resource::Type::PushConstant)
         {
-           INITUniform(resource, stage);
+            if (resource.size >= 128)
+            {
+                LOG::WARN("Using a push constants size exceeded 128 bytes, which is not recommended by all vendor devices");
+            }
+            ranges.emplace_back(VkPushConstantRange{ ConvertTo(stage), 0, resource.size });
+        }
+        else if (resource.type & Resource::Type::Uniform)
+        {
+            INITUniform(resource, stage);
         }
         continue;
     }
@@ -291,7 +301,7 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
     layoutInfo.pBindings    = descriptorSetLayoutBidings.data();
 
     Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
-    pipelineLayout = PipelineLayout{ *device, 1, &descriptorSetLayout };
+    pipelineLayout = PipelineLayout{ *device, 1, &descriptorSetLayout, ranges.empty() ? nullptr : ranges.data(), U32(ranges.size()) };
 
     for (auto &u : uniforms)
     {
