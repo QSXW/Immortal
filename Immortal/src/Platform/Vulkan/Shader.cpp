@@ -50,10 +50,7 @@ Shader::~Shader()
     {
         device->Destory(m);
     }
-    for (auto &u : uniforms)
-    {
-        device->Destory(u.descriptorSetLayout);
-    }
+    device->Destory(descriptorSetLayout);
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
@@ -287,6 +284,19 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
         }
         continue;
     }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = U32(descriptorSetLayoutBidings.size());
+    layoutInfo.pBindings    = descriptorSetLayoutBidings.data();
+
+    Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
+    pipelineLayout = PipelineLayout{ *device, 1, &descriptorSetLayout };
+
+    for (auto &u : uniforms)
+    {
+        Check(device->AllocateDescriptorSet(&descriptorSetLayout, &u.descriptorSet));
+    }
 }
 
 void Shader::INITUniform(const Resource &resource, Stage stage)
@@ -304,17 +314,9 @@ void Shader::INITUniform(const Resource &resource, Stage stage)
     }
     auto &uniform = uniforms[resource.binding];
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings    = &descriptorSetLayoutBinding;
-    Check(device->Create(&layoutInfo, nullptr, &uniform.descriptorSetLayout));
-
-    uniform.pipelineLayout = PipelineLayout{ *device, 1, &uniform.descriptorSetLayout };
+    descriptorSetLayoutBidings.emplace_back(std::move(descriptorSetLayoutBinding));
 
     uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
-
-    Check(device->AllocateDescriptorSet(&uniform.descriptorSetLayout, &uniform.descriptorSet));
 }
 
 }

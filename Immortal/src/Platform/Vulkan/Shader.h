@@ -21,8 +21,6 @@ public:
     struct Uniform
     {
         VkDescriptorSet         descriptorSet;
-        VkDescriptorSetLayout   descriptorSetLayout;
-        PipelineLayout          pipelineLayout;
         std::shared_ptr<Buffer> buffer;
     };
 
@@ -66,6 +64,12 @@ private:
     std::vector<Shader::Resource> resources;
 
     std::vector<Uniform> uniforms;
+
+    PipelineLayout pipelineLayout;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBidings;
 };
 
 }
