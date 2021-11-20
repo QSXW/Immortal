@@ -12,13 +12,15 @@ struct PipelineLayout
 {
     PipelineLayout() = default;
 
-    PipelineLayout(VkDevice device, uint32_t layoutCount, VkDescriptorSetLayout *pLayout) :
+    PipelineLayout(VkDevice device, uint32_t layoutCount, VkDescriptorSetLayout *pLayout, VkPushConstantRange *pRange, uint32_t rangeCount = 1) :
         device{ device }
     {
         VkPipelineLayoutCreateInfo createInfo{};
-        createInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        createInfo.setLayoutCount = layoutCount;
-        createInfo.pSetLayouts    = pLayout;
+        createInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        createInfo.setLayoutCount         = layoutCount;
+        createInfo.pSetLayouts            = pLayout;
+        createInfo.pushConstantRangeCount = rangeCount;
+        createInfo.pPushConstantRanges    = pRange;
 
         vkCreatePipelineLayout(device, &createInfo, nullptr, &handle);
     }
