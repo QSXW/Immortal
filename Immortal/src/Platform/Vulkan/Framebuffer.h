@@ -69,6 +69,11 @@ public SLVIRTUAL:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
+    virtual uint32_t ColorAttachmentCount()
+    {
+        return attachments.colors.size();
+    }
+
 private:
     VkFramebuffer handle{ VK_NULL_HANDLE };
 
