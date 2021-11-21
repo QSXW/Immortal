@@ -53,7 +53,7 @@ public:
             Sampler       = BIT(7),
             Input         = BIT(8),
             Output        = BIT(9),
-            None          = BIT(10)
+            None          = 0
         };
 
         enum class Mode
