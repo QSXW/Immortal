@@ -170,22 +170,34 @@ namespace SError
     constexpr const char OutOfMemory[] = "No more memory on the runtime";
 }
 
-#define DEFINE_ENUM_OP_AND(T, U) \
+#define SL_DEFINE_ENUM_OP_AND(T, U) \
     inline constexpr U operator&(T lhs, T rhs) \
     { \
         return static_cast<U>(lhs) & static_cast<U>(rhs); \
     }
 
-#define DEFINE_ENUM_OP_OR(T, U) \
+#define SL_DEFINE_ENUM_OP_AND_EQUAL(T, U) \
+    inline constexpr T operator&=(T lhs, T rhs) \
+    { \
+        return static_cast<T>(static_cast<U>(lhs) & static_cast<U>(rhs)); \
+    }
+
+#define SL_DEFINE_ENUM_OP_OR(T, U) \
     inline constexpr T operator|(T lhs, T rhs) \
     { \
         return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
     }
 
-#define DEFINE_ENUM_OP_OR_EQUAL(T, U) \
+#define SL_DEFINE_ENUM_OP_OR_EQUAL(T, U) \
     inline constexpr T operator|=(T lhs, T rhs) \
     { \
         return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
     }
+
+#define SL_DEFINE_BITWISE_OPERATION(T, U) \
+    SL_DEFINE_ENUM_OP_AND(T, U) \
+    SL_DEFINE_ENUM_OP_AND_EQUAL(T, U) \
+    SL_DEFINE_ENUM_OP_OR(T, U) \
+    SL_DEFINE_ENUM_OP_OR_EQUAL(T, U)
 
 }

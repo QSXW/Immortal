@@ -190,7 +190,6 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Shader> > shaders;
 };
 
-DEFINE_ENUM_OP_AND(Shader::Resource::Type, uint32_t)
-DEFINE_ENUM_OP_OR_EQUAL(Shader::Resource::Type, uint32_t)
+SL_DEFINE_BITWISE_OPERATION(Shader::Resource::Type, uint32_t)
 
 }
