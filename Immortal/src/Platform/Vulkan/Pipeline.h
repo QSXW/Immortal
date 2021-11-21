@@ -31,11 +31,6 @@ public:
         VkPipelineDynamicStateCreateInfo       dynamic;
     };
 
-    struct Attachment
-    {
-        VkPipelineColorBlendAttachmentState colorBlend;
-    };
-
     struct Configuration
     {
         std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;

@@ -62,67 +62,59 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
 
     auto state = &configuration->state;
     auto attachment = &configuration->attament;
-    {
-        state->rasterization.sType            = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        state->rasterization.polygonMode      = VK_POLYGON_MODE_FILL;
-        state->rasterization.cullMode         = VK_CULL_MODE_NONE;
-        state->rasterization.frontFace        = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        state->rasterization.flags            = 0;
-        state->rasterization.depthClampEnable = VK_FALSE;
-        state->rasterization.lineWidth        = 1.0f;
-    }
+    state->rasterization.sType            = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    state->rasterization.polygonMode      = VK_POLYGON_MODE_FILL;
+    state->rasterization.cullMode         = VK_CULL_MODE_NONE;
+    state->rasterization.frontFace        = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    state->rasterization.flags            = 0;
+    state->rasterization.depthClampEnable = VK_FALSE;
+    state->rasterization.lineWidth        = 1.0f;
 
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlends;
+    colorBlends.resize(framebuffer->ColorAttachmentCount());
+    for (auto &colorBlend : colorBlends)
     {
-        attachment->colorBlend.colorWriteMask = 0xf;
-	    attachment->colorBlend.blendEnable    = VK_TRUE;
-        state->colorBlend.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        state->colorBlend.attachmentCount     = 1;
-        state->colorBlend.pAttachments        = &attachment->colorBlend;
-        state->colorBlend.blendConstants[0]   = 1.0f;
-        state->colorBlend.blendConstants[1]   = 1.0f;
-        state->colorBlend.blendConstants[2]   = 1.0f;
-        state->colorBlend.blendConstants[3]   = 1.0f;
-
+        colorBlend.colorWriteMask = 0xf;
+        colorBlend.blendEnable    = VK_TRUE;
     }
+    state->colorBlend.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    state->colorBlend.attachmentCount     = U32(colorBlends.size());
+    state->colorBlend.pAttachments        = colorBlends.data();
+    state->colorBlend.blendConstants[0]   = 1.0f;
+    state->colorBlend.blendConstants[1]   = 1.0f;
+    state->colorBlend.blendConstants[2]   = 1.0f;
+    state->colorBlend.blendConstants[3]   = 1.0f;
 
-    {
-        state->depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        state->depthStencil.depthTestEnable  = VK_TRUE;
-        state->depthStencil.depthWriteEnable = VK_TRUE;
-        state->depthStencil.depthCompareOp   = VK_COMPARE_OP_GREATER;
-        state->depthStencil.front            =  state->depthStencil.back;
-        state->depthStencil.back.compareOp   = VK_COMPARE_OP_ALWAYS;
-    }
+    state->depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    state->depthStencil.depthTestEnable  = VK_TRUE;
+    state->depthStencil.depthWriteEnable = VK_TRUE;
+    state->depthStencil.depthCompareOp   = VK_COMPARE_OP_GREATER;
+    state->depthStencil.front            = state->depthStencil.back;
+    state->depthStencil.back.compareOp   = VK_COMPARE_OP_ALWAYS;
 
-    {
-        state->viewport.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        state->viewport.viewportCount = 1;
-        state->viewport.scissorCount  = 1;
-        state->viewport.flags         = 0;
-    }
+    state->viewport.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    state->viewport.viewportCount = 1;
+    state->viewport.scissorCount  = 1;
+    state->viewport.flags         = 0;
 
-    {
-        state->multiSample.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        state->multiSample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        state->multiSample.flags                = 0;
-    }
+    state->multiSample.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    state->multiSample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    state->multiSample.flags                = 0;
 
-    {
-        std::array<VkDynamicState, 9> dynamic{
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_LINE_WIDTH,
-            VK_DYNAMIC_STATE_DEPTH_BIAS,
-            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_REFERENCE
-        };
-        state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        state->dynamic.dynamicStateCount = dynamic.size();
-        state->dynamic.pDynamicStates    = dynamic.data();
-    }
+    std::array<VkDynamicState, 9> dynamic{
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_LINE_WIDTH,
+        VK_DYNAMIC_STATE_DEPTH_BIAS,
+        VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+        VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_REFERENCE
+    };
+    state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    state->dynamic.dynamicStateCount = dynamic.size();
+    state->dynamic.pDynamicStates    = dynamic.data();
 
     if (!desc.shader->IsGraphics())
     {
@@ -141,6 +133,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     createInfo.pViewportState      = &state->viewport;
     createInfo.pMultisampleState   = &state->multiSample;
     createInfo.pDynamicState       = &state->dynamic;
+    createInfo.pColorBlendState    = &state->colorBlend;
 
     auto &stages = std::dynamic_pointer_cast<Shader>(desc.shader)->Stages();
     createInfo.pStages    = stages.data();
