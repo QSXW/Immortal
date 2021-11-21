@@ -42,6 +42,8 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
         stages.resize(1);
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
+
+    INIT();
 }
 
 Shader::~Shader()
@@ -191,7 +193,7 @@ inline void GetType(const char *word, Shader::Resource &resource)
     auto type = Shader::GetResourceType(std::string{ word });
     if (type != Shader::Resource::Type::None)
     {
-        resource.type = type;
+        resource.type = resource.type | type;
     }
 }
 
@@ -279,54 +281,69 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
 
         i += layout.size();
         i += ParseLayout(source.data() + i, resource);
-        
+
         if (resource.type & Resource::Type::PushConstant)
         {
-            if (resource.size >= 128)
+            if (resource.size >= Limit::PushConstantMaxSize)
             {
-                LOG::WARN("Using a push constants size exceeded 128 bytes, which is not recommended by all vendor devices");
+                LOG::WARN("Using a push constants size exceeded {0} bytes, "
+                          "which is not recommended by all vendor devices", Limit::PushConstantMaxSize);
             }
-            ranges.emplace_back(VkPushConstantRange{ ConvertTo(stage), 0, resource.size });
+            pushConstantRanges.emplace_back(VkPushConstantRange{ ConvertTo(stage), 0, resource.size });
         }
         else if (resource.type & Resource::Type::Uniform)
         {
-            INITUniform(resource, stage);
+            VkDescriptorSetLayoutBinding bindingInfo{};
+            bindingInfo.binding            = resource.binding;
+            bindingInfo.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            bindingInfo.descriptorCount    = 1;
+            bindingInfo.stageFlags         = ConvertTo(stage);
+            bindingInfo.pImmutableSamplers = nullptr;
+
+            if (resource.type & Resource::Type::ImageSampler)
+            {
+                bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            }
+            descriptorSetLayoutBindings.emplace_back(std::move(bindingInfo));
+
+            if (bindingInfo.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            {
+                BuildUniformBuffer(resource, stage);
+            }
         }
         continue;
     }
+}
 
+void Shader::BuildUniformBuffer(const Resource &resource, Stage stage)
+{
+    if (resource.binding <= uniforms.size())
+    {
+        uniforms.resize(ncast<size_t>(resource.binding) + 1);
+    }
+
+    auto &uniform = uniforms[resource.binding];
+    uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
+}
+
+void Shader::INIT()
+{
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = U32(descriptorSetLayoutBidings.size());
-    layoutInfo.pBindings    = descriptorSetLayoutBidings.data();
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = U32(descriptorSetLayoutBindings.size());
+    layoutInfo.pBindings = descriptorSetLayoutBindings.data();
 
     Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
-    pipelineLayout = PipelineLayout{ *device, 1, &descriptorSetLayout, ranges.empty() ? nullptr : ranges.data(), U32(ranges.size()) };
+    pipelineLayout = PipelineLayout{
+        *device, 1, &descriptorSetLayout,
+        pushConstantRanges.empty() ? nullptr : pushConstantRanges.data(),
+        U32(pushConstantRanges.size())
+    };
 
     for (auto &u : uniforms)
     {
         Check(device->AllocateDescriptorSet(&descriptorSetLayout, &u.descriptorSet));
     }
-}
-
-void Shader::INITUniform(const Resource &resource, Stage stage)
-{
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
-    descriptorSetLayoutBinding.binding            = resource.binding;
-    descriptorSetLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorSetLayoutBinding.descriptorCount    = 1;
-    descriptorSetLayoutBinding.stageFlags         = ConvertTo(stage);
-    descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
-
-    if (resource.binding <= uniforms.size())
-    {
-        uniforms.resize(ncast<size_t>(resource.binding) + 1);
-    }
-    auto &uniform = uniforms[resource.binding];
-
-    descriptorSetLayoutBidings.emplace_back(std::move(descriptorSetLayoutBinding));
-
-    uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
 }
 
 }

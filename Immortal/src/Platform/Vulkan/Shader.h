@@ -61,7 +61,9 @@ public:
 private:
     void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
 
-    void INITUniform(const Resource &resource, Stage stage);
+    void BuildUniformBuffer(const Resource &resource, Stage stage);
+
+    void INIT();
 
 private:
     Device *device{ nullptr };
@@ -78,7 +80,9 @@ private:
 
     VkDescriptorSetLayout descriptorSetLayout;
 
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBidings;
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
+
+    std::vector<VkPushConstantRange> pushConstantRanges;
 };
 
 }
