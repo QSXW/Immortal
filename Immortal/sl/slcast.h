@@ -35,3 +35,15 @@ inline constexpr T ecast(O o)
 {
     return reinterpret_cast<T>((void *)o);
 }
+
+template <class T, class O>
+inline constexpr T U32(O o)
+{
+    return static_cast<uint32_t>(o);
+}
+
+template <class T, class O>
+inline constexpr T U64(O o)
+{
+    return static_cast<uint64_t>(o);
+}
