@@ -24,6 +24,13 @@ using ThreadIndex = UINT32;
 using FrameIndex  = UINT32;
 using Surface     = VkSurfaceKHR;
 
+namespace Limit
+{
+
+constexpr int PushConstantMaxSize = 128;
+
+}
+
 enum class Level : int
 {
     None      = -1,
