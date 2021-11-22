@@ -51,6 +51,8 @@ public:
     
     virtual void Set(const InputElementDescription &description) override;
 
+    virtual void Create(std::shared_ptr<Framebuffer::Super> &framebuffer) override;
+
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
     {
@@ -64,12 +66,25 @@ public:
         }
     }
 
-    VkPipelineBindPoint &BindPoint()
+    operator VkPipeline&()
+    {
+        return handle;
+    }
+
+    operator VkPipeline() const
+    {
+        return handle;
+    }
+
+    const VkPipelineBindPoint &BindPoint() const
     {
         return bindPoint;
     }
 
-    virtual void Create(std::shared_ptr<Framebuffer::Super> &framebuffer) override;
+    const VkPipelineLayout &Layout() const
+    {
+        return std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
+    }
 
 private:
     VkPrimitiveTopology ConvertType(PrimitiveType &type)
