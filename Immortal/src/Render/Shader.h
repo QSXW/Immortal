@@ -20,11 +20,11 @@ public:
     enum class Stage
     {
         Vertex,
+        Fragment,
+        Compute,
         TesselationControl,
         TesselationEvaluation,
         Geometry,
-        Fragment,
-        Compute,
         RayGen,
         AnyHit,
         ClosestHit,
