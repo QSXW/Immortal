@@ -118,6 +118,37 @@ public:
         vkCmdBindIndexBuffer(handle, *buffer, buffer->Offset(), VK_INDEX_TYPE_UINT32);
     }
 
+    void Bind(const Pipeline &pipeline)
+    {
+        vkCmdBindPipeline(handle, pipeline.BindPoint(), pipeline);
+    }
+
+    void PushConstants(const Pipeline &pipeline, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
+    {
+        vkCmdPushConstants(handle, pipeline.Layout(), Shader::ConvertTo(stage), offset, size, data);
+    }
+
+    void SetViewport(float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)
+    {
+        VkViewport viewport{};
+        viewport.width    = width;
+        viewport.height   = height;
+        viewport.minDepth = minDepth;
+        viewport.maxDepth = maxDepth;
+
+        vkCmdSetViewport(handle, 0, 1, &viewport);
+    }
+
+    void SetScissor(uint32_t width, uint32_t height, VkOffset2D offset = { 0, 0 })
+    {
+        VkRect2D scissor{};
+        scissor.extent.width  = width;
+        scissor.extent.height = height;
+        scissor.offset        = offset;
+
+        vkCmdSetScissor(handle, 0, 1, &scissor);
+    }
+
     void Draw(uint32_t indexCount)
     {
         vkCmdDrawIndexed(handle, indexCount, 1, 0, 0, 0);
