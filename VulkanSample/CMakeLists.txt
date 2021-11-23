@@ -6,6 +6,7 @@ set(SRC_FILES
     src/VulkanSample.cpp
     src/VulkanSample.h
     src/NetLayer.h
+    src/RenderLayer.h
     )
 
 add_executable(${PROJECT_NAME}
