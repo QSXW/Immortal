@@ -82,6 +82,16 @@ public:
     {
     
     }
+
+    virtual void Begin(std::shared_ptr<Framebuffer> &renderTarget)
+    {
+
+    }
+
+    virtual void End()
+    {
+
+    }
 };
 
 using SuperRenderer = Renderer;

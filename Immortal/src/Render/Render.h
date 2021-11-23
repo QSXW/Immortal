@@ -134,14 +134,23 @@ public:
         renderer->DrawIndexed(vao, indexCount);
     }
 
-    static void Render::Begin(OrthographicCamera &camera)
+    static void Render::Begin(const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
+        renderer->Begin(data.Target);
+    }
+
+    static void Render::Begin(std::shared_ptr<Framebuffer> &renderTarget, const Camera &camera)
+    {
+        scene.viewProjectionMatrix = camera.ViewProjection();
+        user.renderTarget = renderTarget;
+
+        renderer->Begin(user.renderTarget);
     }
 
     static void Render::End()
     {
-        
+        renderer->End();
     }
 
     static uint32_t CurrentPresentedFrameIndex()
@@ -231,6 +240,11 @@ public:
 
 private:
     static std::unique_ptr<Renderer> renderer;
+
+    static inline struct
+    {
+        std::shared_ptr<Framebuffer> renderTarget;
+    } user;
 
     static Data data;
 

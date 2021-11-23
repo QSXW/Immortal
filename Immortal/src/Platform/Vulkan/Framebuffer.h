@@ -58,7 +58,7 @@ public:
         return *renderPass;
     }
 
-public SLVIRTUAL:
+public:
     virtual void Map() override;
 
     virtual void Unmap() override;

@@ -93,6 +93,36 @@ public:
         
     }
 
+    virtual void Begin(std::shared_ptr<Framebuffer::Super> &renderTarget) override
+    {
+        auto nativeRenderTarget = std::dynamic_pointer_cast<Framebuffer>(renderTarget);
+        static VkClearValue clearValues[] = {
+            {{ .40f, 0.45f, 0.60f, 0.0f }},
+            {{  .0f,  .0f,    .0f, 0.0f }}
+        };
+        context->Begin([&](CommandBuffer *cmdbuf) {
+            VkRenderPassBeginInfo beginInfo{};
+            beginInfo.sType                     = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            beginInfo.pNext                     = nullptr;
+            beginInfo.framebuffer               = *nativeRenderTarget;
+            beginInfo.clearValueCount           = 2;
+            beginInfo.pClearValues              = clearValues;
+            beginInfo.renderPass                = nativeRenderTarget->Get<RenderPass>();
+            beginInfo.renderArea.extent.width   = nativeRenderTarget->Desc().Width;
+            beginInfo.renderArea.extent.height  = nativeRenderTarget->Desc().Height;
+            beginInfo.renderArea.offset = { 0, 0 };
+
+            cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        });
+    }
+
+    virtual void End() override
+    {
+        context->End([](CommandBuffer *cmdbuf) {
+            cmdbuf->EndRenderPass();
+            });
+    }
+
 private:
     void Resize();
 
