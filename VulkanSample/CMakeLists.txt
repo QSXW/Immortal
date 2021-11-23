@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.21)
 
 project(VulkanSample LANGUAGES CXX)
 
-set(SRC_FILES 
+set(SRC_FILES
     src/VulkanSample.cpp
     src/VulkanSample.h
+    src/NetLayer.h
     )
 
 add_executable(${PROJECT_NAME}
@@ -14,7 +15,7 @@ source_group("\\" FILES ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR})
-    
+
 target_link_libraries(${PROJECT_NAME}
     Immortal)
 
