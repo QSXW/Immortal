@@ -133,24 +133,20 @@ void GuiLayer::End()
 
     ImDrawData* primaryDrawData = ImGui::GetDrawData();
 
-    VkClearValue clearValue[] = {
+    VkClearValue clearValues[] = {
         {{ .40f, 0.45f, 0.60f, 0.0f }},
         {{  .0f,  .0f,    .0f, 0.0f }}
     };
 
-    context->Record(CommandBuffer::Usage::OneTimeSubmit, [&](auto *cmdbuf, auto *framebuffer) -> void {
-        VkRenderPassBeginInfo beginInfo = {};
-        beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        beginInfo.pNext                    = nullptr;
-        beginInfo.renderPass               = *renderPass;
-        beginInfo.framebuffer              = *framebuffer;
-        beginInfo.renderArea.extent.width  = io.DisplaySize.x;
-        beginInfo.renderArea.extent.height = io.DisplaySize.y;
-        beginInfo.clearValueCount          = 2;
-        beginInfo.pClearValues             = clearValue;
-        beginInfo.renderArea.offset        = { 0, 0 };
+    context->Record([&](auto *cmdbuf, VkRenderPassBeginInfo *beginInfo) -> void {
+        beginInfo->renderPass               = *renderPass;
+        beginInfo->clearValueCount          = 2;
+        beginInfo->pClearValues             = clearValues;
+        beginInfo->renderArea.extent.width  = io.DisplaySize.x;
+        beginInfo->renderArea.extent.height = io.DisplaySize.y;
+        beginInfo->renderArea.offset        = { 0, 0 };
 
-        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        cmdbuf->BeginRenderPass(beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         ImGui_ImplVulkan_RenderDrawData(primaryDrawData, *cmdbuf);
 

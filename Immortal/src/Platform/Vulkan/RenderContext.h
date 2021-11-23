@@ -177,16 +177,37 @@ public:
     }
 
     template <class T>
-    void Record(CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit, T &&process = [](auto, auto)->void{})
+    void Record(T &&process = [](auto, auto)->void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
     {
-        auto graphicsCmdBuf = GetCommandBuffer();
-        Check(graphicsCmdBuf->Begin(CommandBuffer::Usage::OneTimeSubmit));
+        auto cmdbuf = GetCommandBuffer();
+        Check(cmdbuf->Begin(usage));
         {
-            process(graphicsCmdBuf, GetFramebuffer());
+            VkRenderPassBeginInfo beginInfo = {};
+            beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            beginInfo.pNext                    = nullptr;
+            beginInfo.renderPass               = nullptr;
+            beginInfo.framebuffer              = *GetFramebuffer();
+            process(cmdbuf, &beginInfo);
         }
-        Check(graphicsCmdBuf->End());
+        Check(cmdbuf->End());
     }
-   
+    
+    template <class T>
+    void Begin(T &&postProcess = [](auto) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
+    {
+        auto cmdBuf = GetCommandBuffer();
+        Check(cmdBuf->Begin(usage));
+        postProcess(cmdBuf);
+    }
+
+    template <class T>
+    void End(T &&preprocess = [](auto) -> void {})
+    {
+        auto cmdbuf = GetCommandBuffer();
+        preprocess(cmdbuf);
+        Check(cmdbuf->End());
+    }
+
 private:
     void *handle{ nullptr };
 
