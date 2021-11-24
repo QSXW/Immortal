@@ -90,7 +90,9 @@ public:
 
     virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override
     {
-        
+        context->Submit([&](CommandBuffer *cmdbuf) {
+            cmdbuf->Draw(std::dynamic_pointer_cast<Pipeline>(pipeline));
+        });
     }
 
     virtual void Begin(std::shared_ptr<Framebuffer::Super> &renderTarget) override
@@ -101,6 +103,8 @@ public:
             {{  .0f,  .0f,    .0f, 0.0f }}
         };
         context->Begin([&](CommandBuffer *cmdbuf) {
+            auto &desc = nativeRenderTarget->Desc();
+
             VkRenderPassBeginInfo beginInfo{};
             beginInfo.sType                     = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             beginInfo.pNext                     = nullptr;
@@ -108,11 +112,13 @@ public:
             beginInfo.clearValueCount           = 2;
             beginInfo.pClearValues              = clearValues;
             beginInfo.renderPass                = nativeRenderTarget->Get<RenderPass>();
-            beginInfo.renderArea.extent.width   = nativeRenderTarget->Desc().Width;
-            beginInfo.renderArea.extent.height  = nativeRenderTarget->Desc().Height;
+            beginInfo.renderArea.extent.width   = desc.Width;
+            beginInfo.renderArea.extent.height  = desc.Height;
             beginInfo.renderArea.offset = { 0, 0 };
 
             cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            cmdbuf->SetViewport(ncast<float>(desc.Width), ncast<float>(desc.Height));
+            cmdbuf->SetScissor(desc.Width, desc.Height);
         });
     }
 

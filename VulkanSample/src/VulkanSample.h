@@ -2,6 +2,9 @@
 #include <Immortal.h>
 #include "Framework/Main.h"
 
+#include "NetLayer.h"
+#include "RenderLayer.h"
+
 using namespace Immortal;
 
 static std::map<std::string, std::string> lt;
@@ -64,6 +67,8 @@ public:
     VulkanSample() : Application({ U8("Immortal Editor"), 1920, 1080 })
     {
         PushLayer(new VulkanLayer());
+        PushLayer(new NetLayer("Debug Layer for Net"));
+        PushLayer(new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render"));
     }
 
     ~VulkanSample()

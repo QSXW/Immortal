@@ -1,5 +1,4 @@
 #include "VulkanSample.h"
-#include "Platform/Vulkan/Common.h"
 
 VulkanLayer::VulkanLayer()
 {

@@ -8,23 +8,23 @@ namespace D3D12
 
 class DescriptorPool;
 
-struct Descriptor : D3D12_CPU_DESCRIPTOR_HANDLE
+struct CPUDescriptor : D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:
-    Descriptor() = default;
+    CPUDescriptor() = default;
 
-    explicit Descriptor(const D3D12_CPU_DESCRIPTOR_HANDLE &o) noexcept :
+    explicit CPUDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE &o) noexcept :
         D3D12_CPU_DESCRIPTOR_HANDLE{ o }
     {
 
     }
 
-    Descriptor(const D3D12_CPU_DESCRIPTOR_HANDLE &other, INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
+    CPUDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE &other, INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
     {
         InitOffsetted(other, offsetInDescriptors, descriptorIncrementSize);
     }
 
-    Descriptor& Offset(INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
+    CPUDescriptor &Offset(INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
     {
         ptr = SIZE_T(INT64(ptr) + INT64(offsetInDescriptors) * INT64(descriptorIncrementSize));
         return *this;

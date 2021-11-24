@@ -40,7 +40,7 @@ public:
 
     ~Texture();
 
-    uint64_t Handle() const override
+    uint64_t Descriptor() const override
     {
         return gpuDescriptorHandle.ptr;
     }
@@ -48,7 +48,7 @@ public:
 private:
     ID3D12Resource *texture{ nullptr };
 
-    Descriptor cpuDescriptorHandle;
+    CPUDescriptor cpuDescriptorHandle;
 
     GPUDescriptor gpuDescriptorHandle{};
 

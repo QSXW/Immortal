@@ -62,7 +62,7 @@ public:
         Check(handle->Close());
     }
 
-    void ClearRenderTargetView(Descriptor &descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
+    void ClearRenderTargetView(CPUDescriptor &descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
     {
         handle->ClearRenderTargetView(
             descriptor,

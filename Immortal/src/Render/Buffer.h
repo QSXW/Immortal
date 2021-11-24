@@ -208,7 +208,8 @@ public:
 
     Buffer(Type type, uint32_t size) :
         type{ type },
-        size{ size }
+        size{ size },
+        count{ size >> 2 }
     {
     
     }
@@ -230,10 +231,17 @@ public:
         return size;
     }
 
+    uint32_t Count() const
+    {
+        return count;
+    }
+
 protected:
     Type type;
 
     uint32_t size{ 0 };
+
+    uint32_t count{ 0 };
 };
 
 using SuperBuffer = Buffer;

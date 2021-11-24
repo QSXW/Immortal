@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace OpenGL
 {
+
 class Framebuffer : public SuperFramebuffer
 {
 public:
@@ -17,7 +18,7 @@ public:
 
     virtual ~Framebuffer();
 
-    virtual void Map() override;
+    virtual void Map(uint32_t slot = 0) override;
 
     virtual void Unmap() override;
 

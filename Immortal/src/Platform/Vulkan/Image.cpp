@@ -68,7 +68,7 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
     SLASSERT(mipLevels > 0 && "Image should have at least one level");
     SLASSERT(arrayLayers > 0 && "Image should have at least one level");
 
-    subresource.mipLevel    = mipLevels;
+    subresource.mipLevel   = mipLevels;
     subresource.arrayLayer = arrayLayers;
 
     info.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

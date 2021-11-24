@@ -5,6 +5,8 @@
 #include "Common.h"
 #include "RenderPass.h"
 #include "Image.h"
+#include "ImageView.h"
+#include "Sampler.h"
 
 namespace Immortal
 {
@@ -59,7 +61,7 @@ public:
     }
 
 public:
-    virtual void Map() override;
+    virtual void Map(uint32_t slot) override;
 
     virtual void Unmap() override;
 
@@ -74,6 +76,11 @@ public:
         return attachments.colors.size();
     }
 
+    virtual uint64_t Descriptor() const
+    {
+        return rcast<uint64_t>(descriptorSet);
+    }
+
 private:
     VkFramebuffer handle{ VK_NULL_HANDLE };
 
@@ -86,6 +93,12 @@ private:
         Attachment depth;
         std::vector<Attachment> colors;
     } attachments;
+
+    Sampler sampler;
+
+    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
+
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 };
 }
 }

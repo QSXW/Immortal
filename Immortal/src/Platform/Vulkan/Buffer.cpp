@@ -54,7 +54,7 @@ void Buffer::Create(size_t size)
     }
     Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &handle, &memory, &allocInfo));
 
-    offset = allocInfo.offset;
+    // offset = allocInfo.offset;
 
     if (persistent)
 	{

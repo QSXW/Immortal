@@ -58,7 +58,7 @@ private:
 
     std::string ReadFile(const std::string &filepath);
 
-    std::unordered_map<GLenum, std::string>  Preprocess(const std::string &source);
+    std::unordered_map<GLenum, std::string> Preprocess(const std::string &source);
 
 private:
     uint32_t handle;

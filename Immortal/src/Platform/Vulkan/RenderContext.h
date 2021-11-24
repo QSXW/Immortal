@@ -208,6 +208,12 @@ public:
         Check(cmdbuf->End());
     }
 
+    template <class T>
+    void Submit(T &&process = [](auto) -> void {})
+    {
+        process(GetCommandBuffer());
+    }
+
 private:
     void *handle{ nullptr };
 

@@ -21,7 +21,7 @@ public:
 
     ~Framebuffer();
 
-    virtual void Map() override;
+    virtual void Map(uint32_t slot) override;
 
     virtual void Unmap() override;
 

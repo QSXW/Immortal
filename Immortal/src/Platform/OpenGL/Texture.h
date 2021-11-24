@@ -119,9 +119,9 @@ public:
         return height;
     }
 
-    virtual uint64_t Handle() const override
-    { 
-        return ncast<uint64_t>(handle); 
+    virtual uint64_t Descriptor() const override
+    {
+        return ncast<uint64_t>(handle);
     }
 
     virtual void SetData(void* data, uint32_t size) override;
@@ -144,6 +144,11 @@ public:
     virtual const char *Path() const override
     { 
         return filepath.c_str();
+    }
+
+    uint32_t Handle() const
+    {
+        return ncast<uint64_t>(handle);
     }
 
 private:
@@ -197,8 +202,8 @@ public:
         return filepath.c_str();
     }
 
-    virtual uint64_t Handle() const override
-    { 
+    virtual uint64_t Descriptor() const override
+    {
         return handle;
     }
 
@@ -210,6 +215,11 @@ public:
     void Create(const uint32_t width, const uint32_t height, Texture::Description &description, int levels = 0);
 
     virtual void BindImageTexture(bool layered = false) override;
+
+    uint64_t Handle() const
+    {
+        return handle;
+    }
 
 private:
     uint32_t handle{ 0 };

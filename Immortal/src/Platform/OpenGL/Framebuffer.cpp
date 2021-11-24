@@ -138,7 +138,7 @@ void Framebuffer::Update()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Framebuffer::Map()
+void Framebuffer::Map(uint32_t slot)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
     glViewport(0, 0, desc.Width, desc.Height);

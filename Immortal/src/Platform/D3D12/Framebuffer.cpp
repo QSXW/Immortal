@@ -21,7 +21,7 @@ Framebuffer::~Framebuffer()
 
 }
 
-void Framebuffer::Map()
+void Framebuffer::Map(uint32_t slot)
 {
 
 }

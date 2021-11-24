@@ -88,7 +88,7 @@ public:
 
     virtual ~Framebuffer() = default;
 
-    virtual void Map() { }
+    virtual void Map(uint32_t slot = 0) { }
 
     virtual void Unmap() { }
          
@@ -132,6 +132,11 @@ public:
     const Description &Desc() const
     {
         return desc;
+    }
+
+    virtual uint64_t Descriptor() const
+    {
+        return 0;
     }
 
 protected:

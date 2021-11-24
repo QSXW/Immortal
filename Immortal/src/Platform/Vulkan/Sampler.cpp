@@ -1,5 +1,6 @@
 #include "Sampler.h"
 #include "Device.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -10,6 +11,47 @@ Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     device{ device }
 {
     Check(device->Create(&info, nullptr, &handle));
+}
+
+Sampler::Sampler(Device *device, const Texture::Description &desc)
+{
+    VkSamplerCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    createInfo.magFilter = VK_FILTER_NEAREST;
+    createInfo.minFilter = VK_FILTER_NEAREST;
+    createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    if (desc.Filter == Texture::Filter::Bilinear)
+    {
+        createInfo.magFilter = VK_FILTER_LINEAR;;
+        createInfo.minFilter = VK_FILTER_LINEAR;
+    }
+    if (desc.Anisotropic)
+    {
+        createInfo.anisotropyEnable = VK_TRUE;
+        createInfo.maxAnisotropy = device->Get<PhysicalDevice>().Properties.limits.maxSamplerAnisotropy;
+    }
+    if (desc.Wrap == Texture::Wrap::Clamp)
+    {
+        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+    if (desc.Wrap == Texture::Wrap::Mirror)
+    {
+        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    }
+    if (desc.Wrap == Texture::Wrap::BorderColor)
+    {
+        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    }
+    Check(device->Create(&createInfo, nullptr, &handle));
 }
 
 Sampler::~Sampler()

@@ -170,7 +170,7 @@ void RenderContext::INIT()
 
 void RenderContext::CreateRenderTarget()
 {
-    Descriptor renderTargetViewDescriptor {
+    CPUDescriptor renderTargetViewDescriptor {
         renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
         };
 

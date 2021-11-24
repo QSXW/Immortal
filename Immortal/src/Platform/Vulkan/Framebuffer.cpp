@@ -17,8 +17,9 @@ Framebuffer::Framebuffer()
 }
 
 Framebuffer::Framebuffer(Device *device, const Framebuffer::Description &description) :
+    Super{ description },
     device{ device },
-    Super{ description }
+    sampler{ device, description.Attachments[0] }
 {
     VkExtent3D extent = { desc.Width, desc.Height, 1 };
     VkFormat colorFormat{ VK_FORMAT_UNDEFINED };
@@ -86,13 +87,28 @@ Framebuffer::~Framebuffer()
 
 }
 
-void Framebuffer::Map()
+void Framebuffer::Map(uint32_t slot)
 {
+    VkDescriptorImageInfo descriptor{};
+    descriptor.imageView   = *attachments.colors[0].view;
+    descriptor.sampler     = sampler;
+    descriptor.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    VkWriteDescriptorSet writeDesc{};
+    writeDesc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDesc.pNext           = nullptr;
+    writeDesc.dstBinding      = slot;
+    writeDesc.dstSet          = descriptorSet;
+    writeDesc.descriptorCount = 1;
+    writeDesc.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writeDesc.pImageInfo      = &descriptor;
+
+    device->UpdateDescriptorSets(1, &writeDesc, 0, nullptr);
 }
 
 void Framebuffer::Unmap()
 {
+
 }
 
 void Framebuffer::Resize(UINT32 width, UINT32 height)
@@ -120,6 +136,19 @@ void Framebuffer::INIT(std::vector<VkImageView> views)
     createInfo.layers          = 1;
 
     Check(vkCreateFramebuffer(device->Handle(), &createInfo, nullptr, &handle));
+
+    std::array<VkDescriptorSetLayoutBinding, 1> binding{};
+    binding[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binding[0].descriptorCount    = 1;
+    binding[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding[0].pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo descriptorLayoutCreateInfo{};
+    descriptorLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorLayoutCreateInfo.bindingCount = binding.size();
+    descriptorLayoutCreateInfo.pBindings    = binding.data();
+    Check(device->Create(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
+    Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
 }
 
 }

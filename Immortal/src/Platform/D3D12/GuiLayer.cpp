@@ -90,7 +90,7 @@ void GuiLayer::End()
 
     commandList->ResourceBarrier(&barrier);
 
-    Descriptor rtvDescritor = std::move(context->RenderTargetDescriptor(backBufferIdx));
+    CPUDescriptor rtvDescritor = std::move(context->RenderTargetDescriptor(backBufferIdx));
 
     commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
     commandList->OMSetRenderTargets(&rtvDescritor, 1, false, nullptr);

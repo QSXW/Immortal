@@ -122,7 +122,7 @@ public:
         return 0;
     }
 
-    virtual uint64_t Handle() const
+    virtual uint64_t Descriptor() const
     {
         return 0;
     }

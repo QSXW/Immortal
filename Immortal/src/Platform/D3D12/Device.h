@@ -36,7 +36,7 @@ public:
             );
     }
 
-    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, Descriptor &descriptor)
+    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, CPUDescriptor &descriptor)
     {
         handle->CreateRenderTargetView(
             pRenderTarget,

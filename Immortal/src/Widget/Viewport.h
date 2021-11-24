@@ -29,7 +29,7 @@ public:
 
         target->Map(0);
         ImGui::Image(
-            (ImTextureID)(target->Handle()),
+            (ImTextureID)(target->Descriptor()),
             { x, y }
             );
 

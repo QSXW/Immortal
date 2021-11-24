@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Render/Texture.h"
 
 namespace Immortal
 {
@@ -15,7 +16,9 @@ public:
 
     Sampler(Device *device, const VkSamplerCreateInfo &info);
 
-    Sampler::Sampler(Sampler &&other);
+    Sampler(Device *device, const Texture::Description &desc);
+
+    Sampler(Sampler &&other);
 
     Sampler &operator =(Sampler &&other);
 

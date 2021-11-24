@@ -16,7 +16,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
     auto descriptorIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    cpuDescriptorHandle = Descriptor{
+    cpuDescriptorHandle = CPUDescriptor{
         shaderResourceViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>()
     };
     cpuDescriptorHandle.Offset(descriptorIndex, descriptorIncrementSize);

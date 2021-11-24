@@ -228,8 +228,11 @@ public:
         {
             return renderer->CreateTexture(std::forward<Args>(args)...);
         }
-
-        static_assert("Type not supported yet");
+        if constexpr (is_same<T, Pipeline>())
+        {
+            return renderer->CreatePipeline(std::forward<Args>(args)...);
+        }
+        throw RuntimeException("Type not supported yet");
         return nullptr;
     }
 

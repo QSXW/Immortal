@@ -108,7 +108,7 @@ public:
         vkCmdEndRenderPass(handle);
     }
 
-    void BindVertexBuffers(std::shared_ptr<Buffer> &buffer)
+    void BindVertexBuffer(std::shared_ptr<Buffer> &buffer)
     {
         vkCmdBindVertexBuffers(handle, 0, 1, &buffer->Handle(), &buffer->Offset());
     }
@@ -118,9 +118,24 @@ public:
         vkCmdBindIndexBuffer(handle, *buffer, buffer->Offset(), VK_INDEX_TYPE_UINT32);
     }
 
-    void Bind(const Pipeline &pipeline)
+    template <Buffer::Type type>
+    constexpr void BindBuffer(std::shared_ptr<Buffer> &buffer)
     {
-        vkCmdBindPipeline(handle, pipeline.BindPoint(), pipeline);
+        if constexpr (type == Buffer::Type::Vertex)
+        {
+            BindVertexBuffer(buffer);
+            return;
+        }
+        if constexpr (type == Buffer::Type::Index)
+        {
+            BindIndexBuffer(buffer);
+            return;
+        }
+    }
+
+    void Bind(const std::shared_ptr<Pipeline> &pipeline)
+    {
+        vkCmdBindPipeline(handle, pipeline->BindPoint(), *pipeline);
     }
 
     void PushConstants(const Pipeline &pipeline, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
@@ -157,12 +172,13 @@ public:
     void DrawIndexed(std::shared_ptr<Buffer> &buffer)
     {
         BindIndexBuffer(buffer);
-        Draw(buffer->Size());
+        Draw(buffer->Count());
     }
 
     void Draw(std::shared_ptr<Pipeline> &pipeline)
     {
-        BindVertexBuffers(pipeline->Get<Buffer::Type::Vertex>());
+        Bind(pipeline);
+        BindVertexBuffer(pipeline->Get<Buffer::Type::Vertex>());
         DrawIndexed(pipeline->Get<Buffer::Type::Index>());
     }
 

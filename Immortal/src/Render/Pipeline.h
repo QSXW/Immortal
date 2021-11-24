@@ -63,6 +63,18 @@ public:
         desc.vertexBuffers[slot]->Update(sizeof(T) * size, rcast<const void*>(data));
     }
 
+    template <class T>
+    std::shared_ptr<T> VertexBuffer(size_t index = 0)
+    {
+        return std::dynamic_pointer_cast<T>(desc.vertexBuffers(index));
+    }
+
+    template <class T>
+    std::shared_ptr<T> IndexBuffer()
+    {
+        return std::dynamic_pointer_cast<T>(desc.indexBuffer);
+    }
+
 protected:
     struct Description
     {

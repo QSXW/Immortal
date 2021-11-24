@@ -41,44 +41,7 @@ public:
 
     void INITSampler(const Description &desc)
     {
-        VkSamplerCreateInfo createInfo{};
-        createInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        createInfo.magFilter    = VK_FILTER_NEAREST;
-        createInfo.minFilter    = VK_FILTER_NEAREST;
-        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-        if (desc.Filter == Filter::Bilinear)
-        {
-            createInfo.magFilter = VK_FILTER_LINEAR;;
-            createInfo.minFilter = VK_FILTER_LINEAR;
-        }
-        if (desc.Anisotropic)
-        {
-            createInfo.anisotropyEnable = VK_TRUE;
-            createInfo.maxAnisotropy    = device->Get<PhysicalDevice>().Properties.limits.maxSamplerAnisotropy;
-        }
-        if (desc.Wrap == Wrap::Clamp)
-        {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        }
-        if (desc.Wrap == Wrap::Mirror)
-        {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-        }
-        if (desc.Wrap == Wrap::BorderColor)
-        {
-            createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        }
-
-        sampler = Sampler{ device, createInfo };
+        sampler = Sampler{ device, desc };
     }
 
     void INITImageView(VkFormat format)
@@ -97,7 +60,7 @@ public:
 
     void INITDescriptor();
 
-    virtual uint64_t Handle() const override
+    virtual uint64_t Descriptor() const override
     {
         return rcast<uint64_t>(descriptorSet);
     }
