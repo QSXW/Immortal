@@ -20,7 +20,6 @@ public:
 
     struct Uniform
     {
-        VkDescriptorSet         descriptorSet;
         std::shared_ptr<Buffer> buffer;
     };
 
@@ -89,6 +88,8 @@ private:
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
+
+    VkDescriptorSet descriptorSet;
 };
 
 }

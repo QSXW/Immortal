@@ -13,16 +13,18 @@ Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     Check(device->Create(&info, nullptr, &handle));
 }
 
-Sampler::Sampler(Device *device, const Texture::Description &desc) :
+Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
     device{ device }
 {
     VkSamplerCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    createInfo.magFilter = VK_FILTER_NEAREST;
-    createInfo.minFilter = VK_FILTER_NEAREST;
-    createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    createInfo.pNext         = nullptr;
+    createInfo.magFilter     = VK_FILTER_NEAREST;
+    createInfo.minFilter     = VK_FILTER_NEAREST;
+    createInfo.addressModeU  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.addressModeV  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    createInfo.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
     if (desc.Filter == Texture::Filter::Bilinear)
     {

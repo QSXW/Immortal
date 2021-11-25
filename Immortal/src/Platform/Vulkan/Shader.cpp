@@ -329,9 +329,9 @@ void Shader::BuildUniformBuffer(const Resource &resource, Stage stage)
 void Shader::INIT()
 {
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = U32(descriptorSetLayoutBindings.size());
-    layoutInfo.pBindings = descriptorSetLayoutBindings.data();
+    layoutInfo.pBindings    = descriptorSetLayoutBindings.data();
 
     Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
     pipelineLayout = PipelineLayout{
@@ -340,10 +340,7 @@ void Shader::INIT()
         U32(pushConstantRanges.size())
     };
 
-    for (auto &u : uniforms)
-    {
-        Check(device->AllocateDescriptorSet(&descriptorSetLayout, &u.descriptorSet));
-    }
+    Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
 }
 
 }

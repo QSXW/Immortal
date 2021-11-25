@@ -66,20 +66,21 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
     device{ device }
 {
     SLASSERT(mipLevels > 0 && "Image should have at least one level");
-    SLASSERT(arrayLayers > 0 && "Image should have at least one level");
+    SLASSERT(arrayLayers > 0 && "Image should have at least one layer");
 
     subresource.mipLevel   = mipLevels;
     subresource.arrayLayer = arrayLayers;
-
-    info.sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    info.imageType   = Vulkan::ImageType(extent);
-    info.format      = format;
-    info.extent      = extent;
-    info.mipLevels   = mipLevels;
-    info.arrayLayers = arrayLayers;
-    info.samples     = sampleCount;
-    info.tiling      = tiling;
-    info.usage       = imageUsage;
+ 
+    info.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.imageType     = Vulkan::ImageType(extent);
+    info.format        = format;
+    info.extent        = extent;
+    info.mipLevels     = mipLevels;
+    info.arrayLayers   = arrayLayers;
+    info.samples       = sampleCount;
+    info.tiling        = tiling;
+    info.usage         = imageUsage;
+    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     if (numQueueFamilies != 0)
     {

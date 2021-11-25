@@ -60,6 +60,8 @@ public:
         return *renderPass;
     }
 
+    void Prepare();
+
 public:
     virtual void Map(uint32_t slot) override;
 
@@ -78,7 +80,7 @@ public:
 
     virtual uint64_t Descriptor() const
     {
-        return rcast<uint64_t>(descriptorSet);
+        return rcast<uint64_t>(descriptor.set);
     }
 
 private:
@@ -96,9 +98,12 @@ private:
 
     Sampler sampler;
 
-    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
+    struct
+    {
+        VkDescriptorSetLayout setLayout{ VK_NULL_HANDLE };
 
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+        VkDescriptorSet set{ VK_NULL_HANDLE };
+    } descriptor;
 };
 }
 }
