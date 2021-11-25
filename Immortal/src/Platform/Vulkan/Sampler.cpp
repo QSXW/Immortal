@@ -13,7 +13,8 @@ Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     Check(device->Create(&info, nullptr, &handle));
 }
 
-Sampler::Sampler(Device *device, const Texture::Description &desc)
+Sampler::Sampler(Device *device, const Texture::Description &desc) :
+    device{ device }
 {
     VkSamplerCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
