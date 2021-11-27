@@ -135,7 +135,9 @@ public:
 
     void Bind(const std::shared_ptr<Pipeline> &pipeline)
     {
+        const VkDescriptorSet descriptorSet = pipeline->GetDescriptorSet();
         vkCmdBindPipeline(handle, pipeline->BindPoint(), *pipeline);
+        vkCmdBindDescriptorSets(handle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->Layout(), 0, 1, &descriptorSet, 0, NULL);
     }
 
     void PushConstants(const Pipeline &pipeline, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)

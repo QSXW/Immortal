@@ -2,65 +2,12 @@
 
 #include "Common.h"
 #include "Device.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
-
-struct Descriptor
-{
-    VkDescriptorType Type() const
-    {
-        return type;
-    }
-
-    VkDescriptorType type;
-};
-
-struct ImageDescriptor : public Descriptor
-{
-    ImageDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) :
-        Descriptor{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER }
-    {
-
-    }
-
-    void Update(VkSampler sampler, VkImageView imageView, VkImageLayout imageLayout)
-    {
-        info.sampler     = sampler;
-        info.imageView   = imageView;
-        info.imageLayout = imageLayout;
-    }
-
-    operator const VkDescriptorImageInfo*() const
-    {
-        return &info;
-    }
-
-    VkDescriptorImageInfo info{};
-};
-
-struct BufferDescriptor : public Descriptor
-{
-    BufferDescriptor(VkDescriptorType type) :
-        Descriptor{ type }
-    {
-
-    }
-
-    void Update()
-    {
-
-    }
-
-    operator const VkDescriptorBufferInfo*() const
-    {
-        return &info;
-    }
-
-    VkDescriptorBufferInfo info{};
-};
 
 class DescriptorSet
 {
@@ -93,9 +40,9 @@ public:
         }
         else if constexpr (IsPrimitiveOf<BufferDescriptor, T>())
         {
-            desc.pBufferInfo = &(VkDescriptorBufferInfo&)descriptorInfo;
+            desc.pBufferInfo = descriptorInfo;
         }
-        else constexpr
+        else
         {
             static_assert(false && "Incorrect Descriptor Type");
         }
@@ -105,6 +52,11 @@ public:
     operator uint64_t() const
     {
         return rcast<uint64_t>(handle);
+    }
+
+    operator const VkDescriptorSet&() const
+    {
+        return handle;
     }
 
 private:

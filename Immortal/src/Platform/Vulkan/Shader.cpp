@@ -300,30 +300,41 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
             bindingInfo.stageFlags         = ConvertTo(stage);
             bindingInfo.pImmutableSamplers = nullptr;
 
+            VkWriteDescriptorSet writeDescriptor{};
+            writeDescriptor.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptor.pNext           = nullptr;
+            writeDescriptor.descriptorCount = 1;
+            writeDescriptor.dstBinding      = resource.binding;
+
             if (resource.type & Resource::Type::ImageSampler)
             {
                 bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                writeDescriptor.pImageInfo = nullptr;
             }
-            descriptorSetLayoutBindings.emplace_back(std::move(bindingInfo));
-
             if (bindingInfo.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
             {
-                BuildUniformBuffer(resource, stage);
+                BuildUniformBuffer(resource, stage, writeDescriptor);
             }
+            writeDescriptor.descriptorType = bindingInfo.descriptorType;
+
+            descriptorSetLayoutBindings.emplace_back(std::move(bindingInfo));
+            writeDescriptors.emplace_back(std::move(writeDescriptor));
         }
         continue;
     }
 }
 
-void Shader::BuildUniformBuffer(const Resource &resource, Stage stage)
+void Shader::BuildUniformBuffer(const Resource &resource, Stage stage, VkWriteDescriptorSet &writeDescriptor)
 {
     if (resource.binding <= uniforms.size())
     {
         uniforms.resize(ncast<size_t>(resource.binding) + 1);
     }
 
-    auto &uniform = uniforms[resource.binding];
+    auto &uniform = uniforms.back();
     uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
+    uniform.descriptor.Update(*uniform.buffer);
+    writeDescriptor.pBufferInfo = uniform.descriptor;
 }
 
 void Shader::INIT()
@@ -339,8 +350,13 @@ void Shader::INIT()
         pushConstantRanges.empty() ? nullptr : pushConstantRanges.data(),
         U32(pushConstantRanges.size())
     };
-
+    
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
+
+    for (auto &writeDescriptor : writeDescriptors)
+    {
+        writeDescriptor.dstSet = descriptorSet;
+    }
 }
 
 }

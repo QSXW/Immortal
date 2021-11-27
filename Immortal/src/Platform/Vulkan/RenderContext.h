@@ -168,10 +168,10 @@ public:
         Check(cmdbuf->Begin(usage));
         {
             VkRenderPassBeginInfo beginInfo = {};
-            beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            beginInfo.pNext                    = nullptr;
-            beginInfo.renderPass               = nullptr;
-            beginInfo.framebuffer              = *GetFramebuffer();
+            beginInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            beginInfo.pNext       = nullptr;
+            beginInfo.renderPass  = nullptr;
+            beginInfo.framebuffer = *GetFramebuffer();
             process(cmdbuf, &beginInfo);
         }
         Check(cmdbuf->End());

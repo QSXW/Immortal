@@ -152,7 +152,7 @@ void RenderTarget::SetupDescriptor()
     descriptor->Update(sampler, *attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
-    descriptorSet->Update(*descriptor);
+    descriptorSet->Update<ImageDescriptor>(*descriptor);
 }
 
 uint64_t RenderTarget::Descriptor() const

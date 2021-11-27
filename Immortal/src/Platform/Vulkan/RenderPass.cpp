@@ -79,7 +79,7 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     createInfo.dependencyCount = U32(dependencies.size());
     createInfo.pDependencies   = dependencies.data();
 
-    Check(vkCreateRenderPass(device->Handle(), &createInfo, nullptr, &handle));
+    device->Create(&createInfo, nullptr, &handle);
 }
 
 }

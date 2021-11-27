@@ -122,11 +122,14 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
         bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     }
 
+    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    descriptorSet = shader->Get<VkDescriptorSet>();
+
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.renderPass          = *target->GetAddress<RenderPass>();
     createInfo.flags               = 0;
-    createInfo.layout              = std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
+    createInfo.layout              = shader->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;
     createInfo.pVertexInputState   = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;
@@ -136,12 +139,19 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     createInfo.pDynamicState       = &state->dynamic;
     createInfo.pColorBlendState    = &state->colorBlend;
 
-    auto &stages = std::dynamic_pointer_cast<Shader>(desc.shader)->Stages();
+    auto &stages = shader->Stages();
     createInfo.pStages    = stages.data();
     createInfo.stageCount = stages.size();
   
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
-}
 
+    shader->Swap(writeDescriptors);
+    shader->Swap(uniforms);
+
+    if (Ready())
+    {
+        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+    }
+}
 }
 }

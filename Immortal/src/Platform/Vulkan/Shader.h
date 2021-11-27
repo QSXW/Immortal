@@ -6,6 +6,8 @@
 #include "Render/Shader.h"
 #include "Render/GLSLCompiler.h"
 #include "PipelineLayout.h"
+#include "Buffer.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -17,11 +19,6 @@ class Shader : public SuperShader
 {
 public:
     using Super = SuperShader;
-
-    struct Uniform
-    {
-        std::shared_ptr<Buffer> buffer;
-    };
 
     static VkShaderStageFlags ConvertTo(Stage stage)
     {
@@ -57,16 +54,30 @@ public:
     template <class T>
     T Get()
     {
-        if (IsPrimitiveOf<PipelineLayout, T>())
+        if constexpr (IsPrimitiveOf<PipelineLayout, T>())
         {
             return pipelineLayout;
         }
+        if constexpr (IsPrimitiveOf<VkDescriptorSet, T>())
+        {
+            return descriptorSet;
+        }
+    }
+
+    void Swap(std::vector<VkWriteDescriptorSet> &dst)
+    {
+        dst.swap(writeDescriptors);
+    }
+
+    void Swap(std::vector<UniformDescriptor> &dst)
+    {
+        dst.swap(uniforms);
     }
 
 private:
     void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
 
-    void BuildUniformBuffer(const Resource &resource, Stage stage);
+    void BuildUniformBuffer(const Resource &resource, Stage stage, VkWriteDescriptorSet &writeDescriptor);
 
     void INIT();
 
@@ -79,7 +90,7 @@ private:
 
     std::vector<Shader::Resource> resources;
 
-    std::vector<Uniform> uniforms;
+    std::vector<UniformDescriptor> uniforms;
 
     PipelineLayout pipelineLayout;
 
@@ -88,6 +99,8 @@ private:
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
+
+    std::vector<VkWriteDescriptorSet> writeDescriptors;
 
     VkDescriptorSet descriptorSet;
 };

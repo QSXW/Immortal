@@ -130,6 +130,7 @@ set(VULKAN_FILES
    src/Platform/Vulkan/CommandBuffer.h
    src/Platform/Vulkan/CommandPool.cpp
    src/Platform/Vulkan/CommandPool.h
+   src/Platform/Vulkan/Descriptor.h
    src/Platform/Vulkan/DescriptorPool.cpp
    src/Platform/Vulkan/DescriptorPool.h
    src/Platform/Vulkan/DescriptorSet.h

@@ -7,6 +7,7 @@
 #include "Shader.h"
 #include "Buffer.h"
 #include "PipelineLayout.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -51,7 +52,7 @@ public:
     
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Create(std::shared_ptr<RenderTarget> &renderTarget) override;
+    virtual void Create(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
@@ -86,6 +87,11 @@ public:
         return std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
     }
 
+    const VkDescriptorSet &GetDescriptorSet() const
+    {
+        return descriptorSet;
+    }
+
 private:
     VkPrimitiveTopology ConvertType(PrimitiveType &type)
     {
@@ -118,6 +124,20 @@ private:
         state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
     }
 
+    bool Ready()
+    {
+        for (auto &writeDescriptor : writeDescriptors)
+        {
+            if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
+                writeDescriptor.pImageInfo == nullptr)
+            {
+                LOG::ERR("There is an image binding on slot \"{0}\" but get no texture input", writeDescriptor.dstBinding);
+                return false;
+            }
+        }
+        return true;
+    }
+
 private:
     Device *device{ nullptr };
 
@@ -130,6 +150,12 @@ private:
     std::unique_ptr<PipelineLayout> layout;
 
     std::unique_ptr<Configuration> configuration;
+
+    VkDescriptorSet descriptorSet;
+
+    std::vector<VkWriteDescriptorSet> writeDescriptors;
+
+    std::vector<UniformDescriptor> uniforms;
 };
 
 }

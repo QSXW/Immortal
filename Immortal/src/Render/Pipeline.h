@@ -52,7 +52,7 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(std::shared_ptr<RenderTarget> &framebuffer)
+    virtual void Create(std::shared_ptr<RenderTarget> &renderTarget)
     {
         
     }
