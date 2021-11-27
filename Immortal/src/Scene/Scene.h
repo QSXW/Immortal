@@ -10,7 +10,7 @@
 #include "Render/Texture.h"
 #include "Render/Environment.h"
 #include "Render/Mesh.h"
-#include "Render/Framebuffer.h"
+#include "Render/RenderTarget.h"
 
 namespace Immortal
 {
@@ -123,7 +123,7 @@ private:
 
     std::shared_ptr<VertexArray> toneMap;
 
-    std::shared_ptr<Framebuffer> framebuffer;
+    std::shared_ptr<RenderTarget> renderTarget;
 
     friend class Entity;
     friend class SceneHierarchyPanel;

@@ -119,6 +119,7 @@ set(D3D12_FILES
 set(VULKAN_FILES
    src/Platform/Vulkan/vk_mem_alloc.h
    src/Platform/Vulkan/volk.h
+   src/Platform/Vulkan/Attachment.h
    src/Platform/Vulkan/Buffer.cpp
    src/Platform/Vulkan/Buffer.h
    src/Platform/Vulkan/Common.cpp
@@ -184,6 +185,8 @@ set(OPENGL_FILES
     src/Platform/OpenGL/RenderContext.h
     src/Platform/OpenGL/Renderer.cpp
     src/Platform/OpenGL/Renderer.h
+    src/Platform/OpenGL/RenderTarget.cpp
+    src/Platform/OpenGL/RenderTarget.h
     src/Platform/OpenGL/Shader.cpp
     src/Platform/OpenGL/Shader.h
     src/Platform/OpenGL/Texture.cpp
@@ -214,8 +217,8 @@ set(RENDER_FILES
     src/Render/Frame.cpp
     src/Render/Frame.h
     src/Render/Format.h
-    src/Render/Framebuffer.cpp
-    src/Render/Framebuffer.h
+    src/Render/RenderTarget.cpp
+    src/Render/RenderTarget.h
     src/Render/Material.cpp
     src/Render/Material.h
     src/Render/Mesh.cpp

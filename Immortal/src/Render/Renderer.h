@@ -6,7 +6,7 @@
 #include "VertexArray.h"
 #include "Texture.h"
 #include "Pipeline.h"
-#include "Framebuffer.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
@@ -73,7 +73,7 @@ public:
         return nullptr;
     }
 
-    virtual std::shared_ptr <Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
+    virtual std::shared_ptr <RenderTarget> CreateRenderTarget(const RenderTarget::Description &description)
     {
         return nullptr;
     }
@@ -83,7 +83,7 @@ public:
     
     }
 
-    virtual void Begin(std::shared_ptr<Framebuffer> &renderTarget)
+    virtual void Begin(std::shared_ptr<RenderTarget> &renderTarget)
     {
 
     }

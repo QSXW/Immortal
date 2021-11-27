@@ -25,14 +25,17 @@ public:
     using PresentModePriorities = std::vector<VkPresentModeKHR>;
     using Frames                = std::vector<std::unique_ptr<RenderFrame>>;
 
+    static VkResult Status;
+    static VkDescriptorSetLayout DescriptorSetLayout;
+    static std::unordered_map<const char *, bool> InstanceExtensions;
+    static std::unordered_map<const char *, bool> DeviceExtensions;
+
 public:
     RenderContext() = default;
 
     RenderContext(const Description &desc);
 
     ~RenderContext();
-
-    virtual void SwapBuffers() override;
 
     virtual Device *GetDevice() override
     {
@@ -53,101 +56,83 @@ public:
 
     void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
+    void SetupDescriptorSetLayout();
+
     template <class T>
     inline constexpr T Get()
     {
-        if constexpr (is_same<T, VkInstance>())
+        if constexpr (IsPrimitiveOf<Instance, T>())
         {
-            return instance->Handle();
+            return *instance;
         }
-        if constexpr (is_same<T, VkPhysicalDevice>())
+        if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
-            return instance->SuitablePhysicalDevice().Handle();
+            return instance->SuitablePhysicalDevice();
         }
-        if constexpr (is_same<T, VkDevice>())
-        {
-            return device->Get<VkDevice>();
-        }
-        if constexpr (is_same<T, VkQueue>())
-        {
-            return queue->Handle();
-        }
-        if constexpr (is_same<T, Queue>())
-        {
-            return *queue;
-        }
-        if constexpr (is_same<T, Queue*>())
-        {
-            return queue;
-        }
-        if constexpr (is_same<T, Swapchain &>())
-        {
-            return *swapchain;
-        }
-        if constexpr (is_same<T, Swapchain *>())
-        {
-            return swapchain.get();
-        }
-        if constexpr (is_same<T, Device&>())
+        if constexpr (IsPrimitiveOf<Device, T>())
         {
             return *device;
         }
-        if constexpr (is_same<T, Device*>())
+        if constexpr (IsPrimitiveOf<Queue, T>())
+        {
+            return *queue;
+        }
+        if constexpr (IsPrimitiveOf<Swapchain, T>())
+        {
+            return *swapchain;
+        }
+        if constexpr (IsPointerOf<Queue, T>())
+        {
+            return queue;
+        }
+        if constexpr (IsPointerOf<Swapchain, T>())
+        {
+            return swapchain.get();
+        }
+        if constexpr (IsPointerOf<Device, T>())
         {
             return device.get();
         }
-        if constexpr (is_same<T, Frames&>())
-        {
-            return frames;
-        }
-        if constexpr (is_same<T, Extent2D>())
+        if constexpr (IsPrimitiveOf<Extent2D, T>())
         {
             return surfaceExtent;
         }
-        if constexpr (is_same<T, VkFormat>())
+        if constexpr (IsPrimitiveOf<VkFormat, T>())
         {
             return swapchain->Get<VkFormat>();
         }
-        if constexpr (is_same<T, Semaphores>())
-        {
-            return semaphores;
-        }
-        if constexpr (is_same<T, RenderPass *>())
+        if constexpr (IsPointerOf<RenderPass, T>())
         {
             return renderPass.get();
         }
     }
 
     template <class T>
-    inline constexpr void Set(const T &value)
+    inline constexpr void Set(const T value)
     {
-        if constexpr (is_same<T, SurfaceFormatPriority>())
+        if constexpr (IsPrimitiveOf<SurfaceFormatPriority, T>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             surfaceFormatPriorities = value;
         }
-        if constexpr (is_same<T, VkFormat>())
+        if constexpr (IsPrimitiveOf<VkFormat, T>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
             }
         }
-        if constexpr (is_same<T, PresentModePriorities>())
+        if constexpr (IsPrimitiveOf<PresentModePriorities, T>())
         {
             SLASSERT(!value.empty() && "Priority cannot be empty");
             presentModePriorities = value;
         }
-        if constexpr (is_same<T, VkPresentModeKHR>())
+        if constexpr (IsPrimitiveOf<VkPresentModeKHR, T>())
         {
             if (swapchain)
             {
                 swapchain->Get<Swapchain::Properties>().PresentMode = value;
             }
-        }
-        if constexpr (is_same<T, CommandBuffers>())
-        {
-            commandBuffers = value;
         }
     }
 
@@ -161,9 +146,9 @@ public:
         present.bufferIndex = index;
     }
 
-    Framebuffer *GetFramebuffer()
+    const Framebuffer *GetFramebuffer()
     {
-        return present.framebuffers[present.bufferIndex].get();
+        return present.renderTargets[present.bufferIndex]->GetAddress<Framebuffer>();
     }
 
     CommandBuffer *GetCommandBuffer()
@@ -171,9 +156,9 @@ public:
         return present.commandBuffers[present.bufferIndex].get();
     }
 
-    size_t FrameSize()
+    constexpr size_t FrameSize()
     {
-        return present.framebuffers.size();
+        return Swapchain::MaxFrameCount;
     }
 
     template <class T>
@@ -223,15 +208,17 @@ private:
 
     std::unique_ptr<Swapchain> swapchain;
 
-    std::shared_ptr<RenderPass> renderPass;
-
     Queue *queue{ nullptr };
+
+    std::shared_ptr<RenderPass> renderPass;
 
     struct
     {
-        uint32_t bufferIndex{ 0 };
-        std::vector<std::unique_ptr<Framebuffer>> framebuffers;
         std::array<std::unique_ptr<CommandBuffer>, Swapchain::MaxFrameCount> commandBuffers;
+
+        std::vector<std::unique_ptr<RenderTarget>> renderTargets;
+
+        uint32_t bufferIndex{ 0 };
     } present;
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
@@ -241,10 +228,6 @@ private:
     Swapchain::Properties swapchainProperties;
 
     VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
-
-    Frames frames;
-
-    VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
 
     struct
     {
@@ -280,13 +263,6 @@ private:
     } regisry;
 
     size_t threadCount{ 1 };
-
-    bool status{ false };
-
-public:
-    static VkResult Status;
-    static std::unordered_map<const char *, bool> InstanceExtensions;
-    static std::unordered_map<const char *, bool> DeviceExtensions;
 };
 }
 }

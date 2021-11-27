@@ -18,7 +18,7 @@ public:
     RenderLayer(Vector2 viewport, const std::string &label) :
         Layer(label)
     {
-        renderTarget = Render::Create<Framebuffer>(Framebuffer::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } });
+        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } });
 
         const std::vector<Vertex> vertices = {
             {{  0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f }},
@@ -63,7 +63,7 @@ public:
     }
 
 private:
-    std::shared_ptr<Framebuffer> renderTarget;
+    std::shared_ptr<RenderTarget> renderTarget;
 
     std::shared_ptr<Shader> shader;
 

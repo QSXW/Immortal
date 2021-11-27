@@ -27,7 +27,6 @@ public:
 
         auto &[x, y] = ImGui::GetContentRegionAvail();
 
-        target->Map(0);
         ImGui::Image(
             (ImTextureID)(target->Descriptor()),
             { x, y }

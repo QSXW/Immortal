@@ -70,6 +70,7 @@ public:
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
     DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_CREATE_VK_OBJECT(Framebuffer)
     DEFINE_CREATE_VK_OBJECT(Image)
     DEFINE_CREATE_VK_OBJECT(PipelineLayout)
     DEFINE_CREATE_VK_OBJECT(Sampler)
@@ -81,12 +82,13 @@ public:
         IfNotNullThen(vkDestroy##T, handle, object, pAllocator); \
     }
 
-    DEFINE_DESTORY_VK_OBJECT(Image)
-    DEFINE_DESTORY_VK_OBJECT(ImageView)
-    DEFINE_DESTORY_VK_OBJECT(Sampler)
     DEFINE_DESTORY_VK_OBJECT(Buffer)
     DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_DESTORY_VK_OBJECT(Framebuffer)
+    DEFINE_DESTORY_VK_OBJECT(Image)
+    DEFINE_DESTORY_VK_OBJECT(ImageView)
     DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
+    DEFINE_DESTORY_VK_OBJECT(Sampler)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
 
 #define DEFINE_CREATE_PIPELINES(T) \

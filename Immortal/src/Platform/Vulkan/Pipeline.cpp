@@ -1,5 +1,6 @@
 #include "Pipeline.h"
 #include "Device.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
@@ -56,9 +57,9 @@ void Pipeline::Set(const InputElementDescription &description)
     INITLayout();
 }
 
-void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
+void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
 {
-    framebuffer = std::dynamic_pointer_cast<Framebuffer>(superFramebuffer);
+    auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
     auto state = &configuration->state;
     auto attachment = &configuration->attament;
@@ -71,7 +72,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
     state->rasterization.lineWidth        = 1.0f;
 
     std::vector<VkPipelineColorBlendAttachmentState> colorBlends;
-    colorBlends.resize(framebuffer->ColorAttachmentCount());
+    colorBlends.resize(target->ColorAttachmentCount());
     for (auto &colorBlend : colorBlends)
     {
         colorBlend.colorWriteMask = 0xf;
@@ -123,7 +124,7 @@ void Pipeline::Create(std::shared_ptr<Framebuffer::Super> &superFramebuffer)
 
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.renderPass          = framebuffer->Get<RenderPass>();
+    createInfo.renderPass          = *target->GetAddress<RenderPass>();
     createInfo.flags               = 0;
     createInfo.layout              = std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;

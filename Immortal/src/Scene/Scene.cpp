@@ -59,7 +59,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     transformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
     shadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);
 
-    framebuffer = Render::CreateFramebuffer({ (uint32_t)1280, (uint32_t)720, { { Format::RGBA32F }, { Format::Depth } } });
+    renderTarget = Render::CreateRenderTarget({ (uint32_t)1280, (uint32_t)720, { { Format::RGBA32F }, { Format::Depth } } });
          
     toneMap = nullptr;
 }
@@ -120,8 +120,7 @@ void Scene::OnRenderRuntime()
         primaryCamera->SetTransform(cameraTransform);
     }
     {
-        framebuffer->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
-        framebuffer->Map();
+        renderTarget->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
         Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
 #if 0
         // draw skybox
@@ -196,15 +195,15 @@ void Scene::OnRenderRuntime()
                 Render::Submit(shader, mesh.Mesh, transform.Transform());
             }
         }
-        framebuffer->Unmap();
+        renderTarget->Unmap();
     }
 
 }
 
 void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 {
-    framebuffer->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
-    framebuffer->Map();
+    renderTarget->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
+    renderTarget->Map();
     Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
 
     // draw skybox
@@ -279,7 +278,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
         }
     }
 
-    framebuffer->Unmap();
+    renderTarget->Unmap();
 }
 
 Entity Scene::CreateEntity(const std::string & name)

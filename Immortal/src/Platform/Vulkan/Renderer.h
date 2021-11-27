@@ -83,9 +83,9 @@ public:
         return std::make_shared<Buffer>(device, size, type);
     }
 
-    virtual std::shared_ptr <Framebuffer::Super> CreateFramebuffer(const Framebuffer::Description &description) override
+    virtual std::shared_ptr <RenderTarget::Super> CreateRenderTarget(const RenderTarget::Description &description) override
     {
-        return std::make_shared<Framebuffer>(device, description);
+        return std::make_shared<RenderTarget>(device, description);
     }
 
     virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override
@@ -95,9 +95,9 @@ public:
         });
     }
 
-    virtual void Begin(std::shared_ptr<Framebuffer::Super> &renderTarget) override
+    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override
     {
-        auto nativeRenderTarget = std::dynamic_pointer_cast<Framebuffer>(renderTarget);
+        auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
         static VkClearValue clearValues[] = {
             {{ .40f, 0.45f, 0.60f, 0.0f }},
             {{  .0f,  .0f,    .0f, 0.0f }}
@@ -108,10 +108,10 @@ public:
             VkRenderPassBeginInfo beginInfo{};
             beginInfo.sType                     = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             beginInfo.pNext                     = nullptr;
-            beginInfo.framebuffer               = *nativeRenderTarget;
+            beginInfo.framebuffer               = *nativeRenderTarget->GetAddress<Framebuffer>();
             beginInfo.clearValueCount           = 2;
             beginInfo.pClearValues              = clearValues;
-            beginInfo.renderPass                = nativeRenderTarget->Get<RenderPass>();
+            beginInfo.renderPass                = *nativeRenderTarget->GetAddress<RenderPass>();
             beginInfo.renderArea.extent.width   = desc.Width;
             beginInfo.renderArea.extent.height  = desc.Height;
             beginInfo.renderArea.offset = { 0, 0 };

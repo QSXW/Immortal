@@ -39,7 +39,7 @@ public:
     void *handle;
 };
 
-class Framebuffer
+class RenderTarget
 {
 public:
     struct Description
@@ -78,15 +78,15 @@ public:
     };
 
 public:
-    Framebuffer();
+    RenderTarget() = default;
 
-    Framebuffer(const Description &description) : 
+    RenderTarget(const Description &description) :
         desc{ description }
     {
     
     }
 
-    virtual ~Framebuffer() = default;
+    virtual ~RenderTarget() = default;
 
     virtual void Map(uint32_t slot = 0) { }
 
@@ -143,6 +143,6 @@ protected:
     Description desc{};
 };
 
-using SuperFramebuffer = Framebuffer;
+using SuperRenderTarget = RenderTarget;
 
 }

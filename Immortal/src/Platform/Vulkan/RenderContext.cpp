@@ -14,9 +14,9 @@
 
 namespace Immortal
 {
-
 namespace Vulkan
 {
+
 VkResult RenderContext::Status = VK_NOT_READY;
 
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
@@ -28,14 +28,14 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 };
 
 static std::vector<const char *> ValidationLayers = {
-    // "VK_LAYER_RENDERDOC_Capture",
-    // VK_LAYER_LUNARG_API_DUMP,
-    // VK_LAYER_LUNARG_DEVICE_SIMULATION,
-    // VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER,
-    VK_LAYER_KHRONOS_VALIDATION,
+    "VK_LAYER_KHRONOS_validation",
     "VK_LAYER_KHRONOS_synchronization2",
-    // VK_LAYER_LUNARG_MONITOR,
-    // VK_LAYER_LUNARG_SCREENSHOT
+    // "VK_LAYER_LUNARG_api_dump",
+    // "VK_LAYER_LUNARG_device_simulation",
+    // "VK_LAYER_LUNARG_assistant_layer",
+    // "VK_LAYER_LUNARG_monitor",
+    // "VK_LAYER_LUNARG_screenshot",
+    // "VK_LAYER_RENDERDOC_Capture",
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc)
@@ -91,7 +91,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
 
 RenderContext::~RenderContext()
 {
-    LOG::INFO("Application Closed => deconstruct RenderContex.");
     vkDestroySurfaceKHR(instance->Handle(), surface, nullptr);
     instance.release();
 }
@@ -113,8 +112,8 @@ void RenderContext::Prepare(size_t threadCount)
 
     swapchain->Create();
 
-    renderPass  = std::make_shared<RenderPass>(device.get(), swapchain->Get<VkFormat>(), depthFormat);
-
+    renderPass.reset(new RenderPass{ device.get(), swapchain->Get<VkFormat>(), depthFormat });
+    
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
     
@@ -122,16 +121,16 @@ void RenderContext::Prepare(size_t threadCount)
 
     for (auto &handle : swapchain->Get<Swapchain::Images>())
     {
-        Image image{ 
+        auto image = std::make_unique<Image>(
             device.get(),
             handle,
             extent,
             swapchain->Get<VkFormat>(),
             swapchain->Get<VkImageUsageFlags>()
-            };
+            );
         auto renderTarget = RenderTarget::Create(std::move(image));
-        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass, renderTarget->Views(), surfaceExtent));
-        frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget)));
+        renderTarget->Set(renderPass);
+        present.renderTargets.emplace_back(std::move(renderTarget));
     }
     this->threadCount = threadCount;
 
@@ -140,7 +139,9 @@ void RenderContext::Prepare(size_t threadCount)
         buf.reset(device->RequestCommandBuffer(Level::Primary));
     }
 
-    status = true;
+    SetupDescriptorSetLayout();
+
+    Status = VK_SUCCESS;
 }
 
 Swapchain *RenderContext::UpdateSurface()
@@ -161,10 +162,7 @@ Swapchain *RenderContext::UpdateSurface()
     {
         device->Wait();
         surfaceExtent = properties.currentExtent;
-
-        // LOG::INFO("Destory swapchain => {0}", (void *)swapchain->Handle());
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
-        // LOG::INFO("Create  swapchain => {0}", (void *)swapchain->Handle());
     }
 
 end:
@@ -173,7 +171,7 @@ end:
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
 {
-    present.framebuffers.clear();
+    present.renderTargets.clear();
 
     if (transform == VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform == VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
     {
@@ -185,38 +183,36 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
     }
     regisry.preTransform = transform;
 
-    auto frame = frames.begin();
     for (auto &handle : swapchain->Get<Swapchain::Images>())
     {
-        Image image{
+        auto image = std::make_unique<Image>(
             device.get(),
             handle,
             VkExtent3D{ extent.width, extent.height, 1 },
             swapchain->Get<VkFormat>(),
             swapchain->Get<VkImageUsageFlags>()
-        };
+        );
 
-        // LOG::INFO("Create Render Target{0}", (void*)image.Handle());
         auto renderTarget = RenderTarget::Create(std::move(image));
-        
-        present.framebuffers.emplace_back(std::make_unique<Framebuffer>(device.get(), renderPass, renderTarget->Views(), surfaceExtent));
-
-        if (frame != frames.end())
-        {
-            (*frame)->Set(renderTarget);
-        }
-        else
-        {
-            frames.emplace_back(std::make_unique<RenderFrame>(device.get(), std::move(renderTarget), threadCount));
-        }
-        
-        frame++;
+        renderTarget->Set(renderPass);
+        present.renderTargets.emplace_back(std::move(renderTarget));
     }
 }
 
-void RenderContext::SwapBuffers()
+VkDescriptorSetLayout RenderContext::DescriptorSetLayout{ VK_NULL_HANDLE };
+void RenderContext::SetupDescriptorSetLayout()
 {
-    
+    std::array<VkDescriptorSetLayoutBinding, 1> bindings{};
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[0].pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    info.bindingCount = U32(bindings.size());
+    info.pBindings = bindings.data();
+    Check(device->Create(&info, nullptr, &DescriptorSetLayout));
 }
 
 }

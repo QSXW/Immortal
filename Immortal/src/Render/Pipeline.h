@@ -4,7 +4,7 @@
 
 #include "Buffer.h"
 #include "Shader.h"
-#include "Framebuffer.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
@@ -52,7 +52,7 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(std::shared_ptr<Framebuffer> &framebuffer)
+    virtual void Create(std::shared_ptr<RenderTarget> &framebuffer)
     {
         
     }

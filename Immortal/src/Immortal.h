@@ -25,7 +25,7 @@
 #include "Render/Shader.h"
 #include "Render/Texture.h"
 #include "Render/VertexArray.h"
-#include "Render/Framebuffer.h"
+#include "Render/RenderTarget.h"
 #include "Render/Render.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/OrthographicCameraController.h"

@@ -30,7 +30,7 @@ private:
         
     std::vector<VkDescriptorPoolSize> poolSize;
 
-   VkDescriptorPool handle{ VK_NULL_HANDLE };
+    VkDescriptorPool handle{ VK_NULL_HANDLE };
 
     std::vector<UINT32> setsCount;
 

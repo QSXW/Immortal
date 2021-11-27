@@ -1,35 +1,17 @@
 #pragma once
 
+#include "Render/RenderTarget.h"
+
 #include "Common.h"
 #include "Device.h"
-#include "Image.h"
-#include "ImageView.h"
+#include "Attachment.h"
+#include "DescriptorSet.h"
+#include "Framebuffer.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
-
-struct Attachment
-{
-    VkFormat format{ VK_FORMAT_UNDEFINED };
-
-    VkSampleCountFlagBits samples{ VK_SAMPLE_COUNT_1_BIT };
-
-    VkImageUsageFlags usage{ VK_IMAGE_USAGE_SAMPLED_BIT };
-
-    VkImageLayout initialLayout{ VK_IMAGE_LAYOUT_UNDEFINED };
-
-    Attachment() = default;
-
-    Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage) :
-        format{ format },
-        samples{ samples },
-        usage{ usage }
-    {
-
-    }
-};
 
 struct CompareExtent2D
 {
@@ -39,13 +21,17 @@ struct CompareExtent2D
     }
 };
 
-class RenderTarget
+class RenderTarget : public SuperRenderTarget
 {
 public:
-    static std::unique_ptr<RenderTarget> Create(Image &&image);
+    using Super = SuperRenderTarget;
+
+    static std::unique_ptr<RenderTarget> Create(std::unique_ptr<Image> &&image);
 
 public:
-    RenderTarget(std::vector<Image> &&images);
+    RenderTarget(std::vector<std::unique_ptr<Image>> images);
+
+    RenderTarget(Device *device, const Description &description);
 
     RenderTarget(RenderTarget &&other);
 
@@ -53,25 +39,69 @@ public:
 
     RenderTarget &operator=(RenderTarget &&other);
 
-    std::vector<ImageView> &Views()
+    template <class T>
+    T *GetAddress()
     {
-        return views;
+        if constexpr (IsPrimitiveOf<RenderPass, T>())
+        {
+            return renderPass.get();
+        }
+        if constexpr (IsPrimitiveOf<Framebuffer, T>())
+        {
+            return framebuffer.get();
+        }
     }
+
+    void SetupFramebuffer()
+    {
+        std::vector<VkImageView> views;
+
+        for (auto &color : attachments.colors)
+        {
+            views.emplace_back(color.view->Handle());
+        }
+        views.emplace_back(attachments.depth.view->Handle());
+
+        framebuffer.reset(new Framebuffer{ device, *renderPass, views, extent });
+    }
+
+    void Set(std::shared_ptr<RenderPass> &value)
+    {
+        renderPass = value;
+        SetupFramebuffer();
+    }
+
+    uint32_t ColorAttachmentCount()
+    {
+        return attachments.colors.size();
+    }
+
+    void SetupDescriptor();
+
+public:
+    virtual uint64_t Descriptor() const override;
 
 private:
     Device *device{ nullptr };
 
     VkExtent2D extent{};
 
-    std::vector<Image> images;
+    std::shared_ptr<RenderPass> renderPass;
 
-    std::vector<Attachment> attachments;
+    std::unique_ptr<Framebuffer> framebuffer;
 
-    std::vector<ImageView> views;
+    std::unique_ptr<DescriptorSet> descriptorSet;
 
-    std::vector<UINT32> inputAttachments{};
+    std::unique_ptr<ImageDescriptor> descriptor;
 
-    std::vector<UINT32> outputAttachments{ 0 };
+    Sampler sampler;
+
+    struct
+    {
+        Attachment depth;
+
+        std::vector<Attachment> colors;
+    } attachments;
 };
 }
 }

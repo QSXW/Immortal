@@ -23,7 +23,7 @@ public:
 
     struct Data
     {
-        std::shared_ptr<Framebuffer> Target;
+        std::shared_ptr<RenderTarget> Target;
         std::shared_ptr<Pipeline>    FullScreenPipeline;
         std::shared_ptr<ShaderMap>   ShaderLibrary;
         std::shared_ptr<Texture>     BlackTexture;
@@ -140,7 +140,7 @@ public:
         renderer->Begin(data.Target);
     }
 
-    static void Render::Begin(std::shared_ptr<Framebuffer> &renderTarget, const Camera &camera)
+    static void Render::Begin(std::shared_ptr<RenderTarget> &renderTarget, const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
         user.renderTarget = renderTarget;
@@ -204,9 +204,9 @@ public:
         return renderer->CreateBuffer(size * sizeof(T), type);
     }
 
-    static std::shared_ptr<Framebuffer> CreateFramebuffer(const Framebuffer::Description &description)
+    static std::shared_ptr<RenderTarget> CreateRenderTarget(const RenderTarget::Description &description)
     {
-        return renderer->CreateFramebuffer(description);
+        return renderer->CreateRenderTarget(description);
     }
 
     template <class T, class... Args>
@@ -220,9 +220,9 @@ public:
         {
             return CreateShader(std::forward<Args>(args)...);
         }
-        if constexpr (is_same<T, Framebuffer>())
+        if constexpr (is_same<T, RenderTarget>())
         {
-            return CreateFramebuffer(std::forward<Args>(args)...);
+            return CreateRenderTarget(std::forward<Args>(args)...);
         }
         if constexpr (is_same<T, Texture>())
         {
@@ -246,7 +246,7 @@ private:
 
     static inline struct
     {
-        std::shared_ptr<Framebuffer> renderTarget;
+        std::shared_ptr<RenderTarget> renderTarget;
     } user;
 
     static Data data;

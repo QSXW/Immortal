@@ -65,13 +65,6 @@ inline constexpr bool operator==(int a, T b)
     }
 }
 
-#define VK_LAYER_LUNARG_API_DUMP              "VK_LAYER_LUNARG_api_dump"
-#define VK_LAYER_LUNARG_DEVICE_SIMULATION     "VK_LAYER_LUNARG_device_simulation"
-#define VK_LAYER_LAYER_LUNARG_ASSISTANT_LAYER "VK_LAYER_LUNARG_assistant_layer"
-#define VK_LAYER_KHRONOS_VALIDATION           "VK_LAYER_KHRONOS_validation"
-#define VK_LAYER_LUNARG_MONITOR               "VK_LAYER_LUNARG_monitor"
-#define VK_LAYER_LUNARG_SCREENSHOT            "VK_LAYER_LUNARG_screenshot"
-
 using Extent2D = VkExtent2D;
 using Extent3D = VkExtent3D;
 
@@ -197,7 +190,6 @@ const char *Stringify(VkPresentModeKHR presentMode);
 const char *Stringify(VkImageUsageFlagBits imageUsage);
 const char *Stringify(VkSurfaceTransformFlagBitsKHR transform);
 const char *Stringify(VkCompositeAlphaFlagBitsKHR compositeAlpha);
-
 
 inline const std::string Stringify(VkSurfaceFormatKHR surfaceFormat)
 {

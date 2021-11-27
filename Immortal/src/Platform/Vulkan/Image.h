@@ -92,6 +92,11 @@ public:
         return views;
     }
 
+    bool IsDepth() const
+    {
+        return IsDepthOnlyFormat(info.format);
+    }
+
 private:
     Device *device{ nullptr };
 

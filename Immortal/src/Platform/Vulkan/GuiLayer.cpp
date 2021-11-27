@@ -62,13 +62,13 @@ void GuiLayer::OnAttach()
     createInfo.poolSizeCount = size;
     createInfo.pPoolSizes    = poolSizes;
 
-    Check(vkCreateDescriptorPool(device->Handle(), &createInfo, nullptr, &descriptorPool));
+    Check(vkCreateDescriptorPool(*device, &createInfo, nullptr, &descriptorPool));
 
     ImGui_ImplVulkan_InitInfo initInfo{};
     auto queue = context->Get<Queue*>();
 
-    initInfo.Instance        = context->Get<VkInstance>();
-    initInfo.PhysicalDevice  = context->Get<VkPhysicalDevice>();
+    initInfo.Instance        = context->Get<Instance&>();
+    initInfo.PhysicalDevice  = context->Get<PhysicalDevice&>();
     initInfo.Device          = *device;
     initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
     initInfo.Queue           = *queue;
@@ -76,7 +76,7 @@ void GuiLayer::OnAttach()
     initInfo.DescriptorPool  = descriptorPool;
     initInfo.Allocator       = nullptr;
     initInfo.MinImageCount   = 3;
-    initInfo.ImageCount      = context->Get<RenderContext::Frames&>().size();
+    initInfo.ImageCount      = context->FrameSize();
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);

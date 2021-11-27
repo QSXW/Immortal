@@ -1,6 +1,7 @@
 #include "Texture.h"
 
 #include "Render/Frame.h"
+#include "GuiLayer.h"
 
 namespace Immortal
 {
@@ -35,7 +36,6 @@ Texture::~Texture()
         return;
     }
     device->Wait();
-    device->Destory(descriptorSetLayout);
     view.reset();
     device->Destory(image);
     device->FreeMemory(deviceMemory);
@@ -166,25 +166,14 @@ void Texture::INIT(const Description &description, uint32_t size, const void *da
     device->Destory(stagingBuffer);
     device->FreeMemory(stagingMemory);
 
-    INITSampler(description);
-    INITImageView(imageCreateInfo.format);
-    INITDescriptor();
+    SetupSampler(description);
+    SetupImageView(imageCreateInfo.format);
+
+    descriptor.Update(sampler, *view, layout);
+
+    descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
+    descriptorSet->Update(descriptor);
 }
 
-void Texture::INITDescriptor()
-{
-    std::array<VkDescriptorSetLayoutBinding, 1> binding{};
-    binding[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    binding[0].descriptorCount    = 1;
-    binding[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding[0].pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayoutCreateInfo{};
-    descriptorLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayoutCreateInfo.bindingCount = binding.size();
-    descriptorLayoutCreateInfo.pBindings    = binding.data();
-    Check(device->Create(&descriptorLayoutCreateInfo, nullptr, &descriptorSetLayout));
-    Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
-}
 }
 }

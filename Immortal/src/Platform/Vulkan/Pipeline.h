@@ -2,10 +2,10 @@
 
 #include "Common.h"
 
+#include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Shader.h"
 #include "Buffer.h"
-#include "Framebuffer.h"
 #include "PipelineLayout.h"
 
 namespace Immortal
@@ -51,7 +51,7 @@ public:
     
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Create(std::shared_ptr<Framebuffer::Super> &framebuffer) override;
+    virtual void Create(std::shared_ptr<RenderTarget> &renderTarget) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
@@ -120,8 +120,6 @@ private:
 
 private:
     Device *device{ nullptr };
-
-    std::shared_ptr<Framebuffer> framebuffer;
 
     VkPipeline handle{ VK_NULL_HANDLE };
 

@@ -8,8 +8,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-class Device;
-
 struct Descriptor
 {
     VkDescriptorType Type() const

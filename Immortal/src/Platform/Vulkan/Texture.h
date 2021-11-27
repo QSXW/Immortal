@@ -8,6 +8,7 @@
 #include "Image.h"
 #include "ImageView.h"
 #include "Sampler.h"
+#include "DescriptorSet.h"
 
 namespace Immortal
 {
@@ -39,12 +40,12 @@ public:
         dst.format = src.BaseFromat<VkFormat>();
     }
 
-    void INITSampler(const Description &desc)
+    void SetupSampler(const Description &desc)
     {
         sampler = Sampler{ device, desc };
     }
 
-    void INITImageView(VkFormat format)
+    void SetupImageView(VkFormat format)
     {
         view = std::make_unique<ImageView>(
             device,
@@ -58,37 +59,14 @@ public:
             );
     }
 
-    void INITDescriptor();
-
     virtual uint64_t Descriptor() const override
     {
-        return rcast<uint64_t>(descriptorSet);
+        return *descriptorSet;
     }
 
     virtual void Map(uint32_t slot = 0) override
     {
-        if (binding)
-        {
-            return;
-        }
 
-        VkDescriptorImageInfo textureDescriptor{};
-        textureDescriptor.imageView   = *view;
-        textureDescriptor.sampler     = sampler;
-        textureDescriptor.imageLayout = layout;
-
-        VkWriteDescriptorSet writeDesc{};
-        writeDesc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDesc.pNext           = nullptr;
-        writeDesc.dstBinding      = slot;
-        writeDesc.dstSet          = descriptorSet;
-        writeDesc.descriptorCount = 1;
-        writeDesc.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDesc.pImageInfo      = &textureDescriptor;
-
-        device->UpdateDescriptorSets(1, &writeDesc, 0, nullptr);
-
-        binding = true;
     }
 
 private:
@@ -110,11 +88,9 @@ private:
 
     VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
 
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+    std::unique_ptr<DescriptorSet> descriptorSet;
 
-    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
-
-    bool binding{ false };
+    ImageDescriptor descriptor{};
 };
 
 }
