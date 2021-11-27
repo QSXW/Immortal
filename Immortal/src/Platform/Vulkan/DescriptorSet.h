@@ -80,6 +80,13 @@ public:
     void Update(T descriptorInfo, uint32_t slot = 0)
     {
         VkWriteDescriptorSet desc{};
+        desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        desc.pNext           = nullptr;
+        desc.dstBinding      = slot;
+        desc.dstSet          = handle;
+        desc.descriptorCount = 1;
+        desc.descriptorType  = descriptorInfo.Type();
+
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {
             desc.pImageInfo = descriptorInfo;
@@ -92,13 +99,6 @@ public:
         {
             static_assert(false && "Incorrect Descriptor Type");
         }
-        desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        desc.pNext           = nullptr;
-        desc.dstBinding      = slot;
-        desc.dstSet          = handle;
-        desc.descriptorCount = 1;
-        desc.descriptorType  = descriptorInfo.Type();
-
         device->UpdateDescriptorSets(1, &desc, 0, nullptr);
     }
 
