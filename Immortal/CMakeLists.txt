@@ -131,6 +131,7 @@ set(VULKAN_FILES
    src/Platform/Vulkan/CommandPool.h
    src/Platform/Vulkan/DescriptorPool.cpp
    src/Platform/Vulkan/DescriptorPool.h
+   src/Platform/Vulkan/DescriptorSet.h
    src/Platform/Vulkan/FencePool.cpp
    src/Platform/Vulkan/FencePool.h
    src/Platform/Vulkan/Framebuffer.cpp
