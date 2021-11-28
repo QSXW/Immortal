@@ -23,7 +23,6 @@ Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vec
     createInfo.width           = extent.width;
     createInfo.height          = extent.height;
     createInfo.layers          = 1;
-    createInfo.flags           = 0;
 
     Check(device->Create(&createInfo, nullptr, &handle));
 }

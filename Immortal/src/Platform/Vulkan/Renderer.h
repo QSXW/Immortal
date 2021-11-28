@@ -120,11 +120,6 @@ private:
     uint32_t sync{ 0 };
 
     uint32_t currentBuffer{ 0 };
-
-    struct
-    {
-        VkImageMemoryBarrier image;
-    } barriers;
 };
 
 }

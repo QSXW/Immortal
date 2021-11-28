@@ -13,6 +13,8 @@ class RenderPass
 public:
     RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat, bool isPresent = true);
 
+    RenderPass(Device *device, VkRenderPassCreateInfo *pCreateInfo);
+
     VkRenderPass &Handle()
     {
         return handle;

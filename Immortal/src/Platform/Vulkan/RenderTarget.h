@@ -52,6 +52,16 @@ public:
         }
     }
 
+    VkRenderPass GetRenderPass()
+    {
+        return *renderPass;
+    }
+
+    VkFramebuffer GetFramebuffer()
+    {
+        return *framebuffer;
+    }
+
     void SetupFramebuffer()
     {
         std::vector<VkImageView> views;

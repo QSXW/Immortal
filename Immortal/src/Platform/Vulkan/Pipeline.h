@@ -134,7 +134,7 @@ private:
             if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
                 writeDescriptor.pImageInfo == nullptr)
             {
-                LOG::ERR("There is an image binding on slot \"{0}\" but get no texture input", writeDescriptor.dstBinding);
+                LOG::WARN("There is an image binding on slot \"{0}\" but get no texture input", writeDescriptor.dstBinding);
                 return false;
             }
         }
