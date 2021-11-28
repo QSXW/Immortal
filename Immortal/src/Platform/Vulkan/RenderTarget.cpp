@@ -22,7 +22,8 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colo
         device,
         colorImage->Extent(),
         depthFormat,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY
     );
     
     images.emplace_back(std::move(colorImage));
@@ -152,7 +153,7 @@ void RenderTarget::SetupDescriptor()
     descriptor->Update(sampler, *attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
-    descriptorSet->Update<ImageDescriptor>(*descriptor);
+    descriptorSet->Update(*descriptor);
 }
 
 uint64_t RenderTarget::Descriptor() const

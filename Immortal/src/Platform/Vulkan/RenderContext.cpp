@@ -203,15 +203,15 @@ VkDescriptorSetLayout RenderContext::DescriptorSetLayout{ VK_NULL_HANDLE };
 void RenderContext::SetupDescriptorSetLayout()
 {
     std::array<VkDescriptorSetLayoutBinding, 1> bindings{};
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    bindings[0].descriptorCount = 1;
-    bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[0].descriptorCount    = 1;
+    bindings[0].stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
     bindings[0].pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     info.bindingCount = U32(bindings.size());
-    info.pBindings = bindings.data();
+    info.pBindings    = bindings.data();
     Check(device->Create(&info, nullptr, &DescriptorSetLayout));
 }
 

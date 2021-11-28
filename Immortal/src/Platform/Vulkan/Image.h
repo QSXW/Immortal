@@ -48,6 +48,16 @@ public:
         return handle;
     }
 
+    operator VkImage&()
+    {
+        return handle;
+    }
+
+    operator const VkImage&() const
+    {
+        return handle;
+    }
+
     template <class T>
     T Get()
     {

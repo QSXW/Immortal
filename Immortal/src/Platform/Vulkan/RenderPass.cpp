@@ -72,6 +72,7 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
 
     VkRenderPassCreateInfo createInfo{};
     createInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    createInfo.pNext           = nullptr;
     createInfo.attachmentCount = U32(attachments.size());
     createInfo.pAttachments    = attachments.data();
     createInfo.subpassCount    = 1;

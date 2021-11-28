@@ -5,7 +5,6 @@
 #include "RenderPass.h"
 #include "ImageView.h"
 #include "Texture.h"
-#include "DescriptorSet.h"
 
 namespace Immortal
 {

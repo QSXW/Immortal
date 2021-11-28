@@ -1,6 +1,7 @@
 #include "Pipeline.h"
 #include "Device.h"
 #include "RenderTarget.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -153,5 +154,24 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
         device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
     }
 }
+
+void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
+{
+    for (auto &writeDescriptor : writeDescriptors)
+    {
+        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
+            writeDescriptor.dstBinding == slot)
+        {
+            auto texture = std::dynamic_pointer_cast<Texture>(superTexture);
+            writeDescriptor.pImageInfo = texture->DescriptorInfo();
+            break;
+        }
+    }
+    if (Ready())
+    {
+        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+    }
+}
+
 }
 }

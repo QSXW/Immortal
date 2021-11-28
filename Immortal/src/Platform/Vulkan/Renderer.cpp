@@ -110,5 +110,68 @@ void Renderer::SwapBuffers()
     sync = (sync + 1) % context->FrameSize();
 }
 
+void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
+{
+    auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
+    static VkClearValue clearValues[2];
+    clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    clearValues[1].depthStencil = { 0.0f, 100 };
+
+    context->Begin([&](CommandBuffer *cmdbuf) {
+        auto &desc = nativeRenderTarget->Desc();
+
+        barriers.image.image = nativeRenderTarget->GetColorImage();
+
+        VkRenderPassBeginInfo beginInfo{};
+        beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        beginInfo.pNext                    = nullptr;
+        beginInfo.framebuffer              = *nativeRenderTarget->GetAddress<Framebuffer>();
+        beginInfo.clearValueCount          = 2;
+        beginInfo.pClearValues             = clearValues;
+        beginInfo.renderPass               = *nativeRenderTarget->GetAddress<RenderPass>();
+        beginInfo.renderArea.extent.width  = desc.Width;
+        beginInfo.renderArea.extent.height = desc.Height;
+        beginInfo.renderArea.offset        = { 0, 0 };
+
+        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        cmdbuf->SetViewport(ncast<float>(desc.Width), ncast<float>(desc.Height));
+        cmdbuf->SetScissor(desc.Width, desc.Height);
+    });
+}
+
+void Renderer::End()
+{
+    context->End([&](CommandBuffer *cmdbuf) {
+        VkImageSubresourceRange subresourceRange{};
+        subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel   = 0;
+        subresourceRange.levelCount     = 1;
+        subresourceRange.baseArrayLayer = 0;
+        subresourceRange.layerCount     = 1;
+
+        barriers.image.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barriers.image.pNext               = nullptr;
+        barriers.image.subresourceRange    = subresourceRange;
+        barriers.image.srcAccessMask       = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        barriers.image.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
+        barriers.image.oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+        barriers.image.newLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barriers.image.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barriers.image.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        
+
+        cmdbuf->EndRenderPass();
+
+        cmdbuf->PipelineBarrier(
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barriers.image
+        );
+    });
+}
+
 }
 }

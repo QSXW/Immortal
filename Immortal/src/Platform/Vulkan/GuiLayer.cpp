@@ -80,7 +80,7 @@ void GuiLayer::OnAttach()
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
-    if (ImGui_ImplVulkan_Init(&initInfo, renderPass->Handle()))
+    if (ImGui_ImplVulkan_Init(&initInfo, *renderPass))
     {
         LOG::INFO("Initialized GUI with success");
     }
@@ -131,14 +131,14 @@ void GuiLayer::End()
 
     io.DisplaySize = ImVec2{ (float)width, (float)height };
 
-    ImDrawData* primaryDrawData = ImGui::GetDrawData();
+    ImDrawData *primaryDrawData = ImGui::GetDrawData();
 
     VkClearValue clearValues[] = {
         {{ .40f, 0.45f, 0.60f, 0.0f }},
         {{  .0f,  .0f,    .0f, 0.0f }}
     };
 
-    context->Record([&](auto *cmdbuf, VkRenderPassBeginInfo *beginInfo) -> void {
+    context->Record([&](CommandBuffer *cmdbuf, VkRenderPassBeginInfo *beginInfo) -> void {
         beginInfo->renderPass               = *renderPass;
         beginInfo->clearValueCount          = 2;
         beginInfo->pClearValues             = clearValues;

@@ -41,6 +41,7 @@ public:
             { Format::VECTOR3, "Color"    }
             });
         pipeline->Create(renderTarget);
+        pipeline->Bind(Render::Preset()->WhiteTexture, 1);
     }
 
     virtual void OnDetach() override

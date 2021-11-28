@@ -76,6 +76,11 @@ public:
         return attachments.colors.size();
     }
 
+    const Image &GetColorImage(uint32_t index = 0) const
+    {
+        return *attachments.colors[index].image;
+    }
+
     void SetupDescriptor();
 
 public:

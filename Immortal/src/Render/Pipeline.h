@@ -42,6 +42,11 @@ public:
 
     virtual void Unmap() { }
 
+    virtual void Bind(std::shared_ptr<Texture> &texture, uint32_t slot = 0)
+    {
+
+    }
+
     virtual void Set(std::shared_ptr<Buffer> &buffer)
     {
 

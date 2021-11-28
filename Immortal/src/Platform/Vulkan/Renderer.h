@@ -95,39 +95,9 @@ public:
         });
     }
 
-    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override
-    {
-        auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
-        static VkClearValue clearValues[] = {
-            {{ .40f, 0.45f, 0.60f, 0.0f }},
-            {{  .0f,  .0f,    .0f, 0.0f }}
-        };
-        context->Begin([&](CommandBuffer *cmdbuf) {
-            auto &desc = nativeRenderTarget->Desc();
+    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 
-            VkRenderPassBeginInfo beginInfo{};
-            beginInfo.sType                     = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            beginInfo.pNext                     = nullptr;
-            beginInfo.framebuffer               = *nativeRenderTarget->GetAddress<Framebuffer>();
-            beginInfo.clearValueCount           = 2;
-            beginInfo.pClearValues              = clearValues;
-            beginInfo.renderPass                = *nativeRenderTarget->GetAddress<RenderPass>();
-            beginInfo.renderArea.extent.width   = desc.Width;
-            beginInfo.renderArea.extent.height  = desc.Height;
-            beginInfo.renderArea.offset = { 0, 0 };
-
-            cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-            cmdbuf->SetViewport(ncast<float>(desc.Width), ncast<float>(desc.Height));
-            cmdbuf->SetScissor(desc.Width, desc.Height);
-        });
-    }
-
-    virtual void End() override
-    {
-        context->End([](CommandBuffer *cmdbuf) {
-            cmdbuf->EndRenderPass();
-            });
-    }
+    virtual void End() override;
 
 private:
     void Resize();
@@ -150,6 +120,11 @@ private:
     uint32_t sync{ 0 };
 
     uint32_t currentBuffer{ 0 };
+
+    struct
+    {
+        VkImageMemoryBarrier image;
+    } barriers;
 };
 
 }

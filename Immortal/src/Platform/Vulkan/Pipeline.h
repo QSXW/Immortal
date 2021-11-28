@@ -4,6 +4,7 @@
 
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
+#include "Render/Texture.h"
 #include "Shader.h"
 #include "Buffer.h"
 #include "PipelineLayout.h"
@@ -53,6 +54,8 @@ public:
     virtual void Set(const InputElementDescription &description) override;
 
     virtual void Create(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+
+    virtual void Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()

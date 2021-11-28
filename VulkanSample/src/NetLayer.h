@@ -31,7 +31,7 @@ public:
             socket.Receive([](auto buffer, auto size) {
                 for (auto i = 0; i < size; i++)
                 {
-                    printf("%d\n", buffer[i]);
+                    printf("%s\n", buffer.data());
                 }
                 });
             });
