@@ -116,9 +116,10 @@ void Renderer::SwapBuffers()
 void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
 {
     auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
-    static VkClearValue clearValues[2];
-    clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
-    clearValues[1].depthStencil = { 0.0f, 100 };
+    VkClearValue clearValues[2] {
+        {{ .0f, .0f, .0f, 1.0f }},
+        {{ .0f, .0f, .0f, 0.0f }}
+    };
 
     context->Begin([&](CommandBuffer *cmdbuf) {
         auto &desc = nativeRenderTarget->Desc();

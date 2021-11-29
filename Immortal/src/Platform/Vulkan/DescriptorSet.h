@@ -12,13 +12,18 @@ namespace Vulkan
 class DescriptorSet
 {
 public:
-    DescriptorSet::DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout) :
+    DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout) :
         device{ device }
     {
         Check(device->AllocateDescriptorSet(&descriptorSetLayout, &handle));
     }
 
-    DescriptorSet::~DescriptorSet()
+    DescriptorSet(const VkDescriptorSet other)
+    {
+        handle = other;
+    }
+
+    ~DescriptorSet()
     {
         
     }

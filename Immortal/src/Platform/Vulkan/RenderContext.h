@@ -167,7 +167,7 @@ public:
         VkRenderPassBeginInfo beginInfo = {};
         beginInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         beginInfo.pNext       = nullptr;
-        beginInfo.renderPass  = nullptr;
+        beginInfo.renderPass  = *renderPass;
         beginInfo.framebuffer = *GetFramebuffer();
         process(GetCommandBuffer(), &beginInfo);
     }

@@ -22,7 +22,7 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colo
         device,
         colorImage->Extent(),
         depthFormat,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
     
@@ -42,7 +42,6 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
     VkFormat colorFormat{ VK_FORMAT_UNDEFINED };
     VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
 
-    std::vector<VkImageView> imageViews;
     for (auto &attachment : description.Attachments)
     {
         if (attachment.IsDepth())
@@ -52,11 +51,10 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
                 device,
                 extent,
                 depthFormat,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY
                 });
             attachments.depth.view.reset(new ImageView{ attachments.depth.image.get(), VK_IMAGE_VIEW_TYPE_2D });
-            imageViews.emplace_back(*attachments.depth.view);
         }
         else
         {
@@ -67,11 +65,10 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
                 device,
                 extent,
                 colorFormat,
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT ,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY
                 });
             color.view.reset(new ImageView{ color.image.get(), VK_IMAGE_VIEW_TYPE_2D });
-            imageViews.emplace_back(*color.view);
         }
     }
 
@@ -218,6 +215,11 @@ void RenderTarget::SetupDescriptor()
 uint64_t RenderTarget::Descriptor() const
 {
     return *descriptorSet;
+}
+
+void RenderTarget::Map(uint32_t slot)
+{
+
 }
 
 }

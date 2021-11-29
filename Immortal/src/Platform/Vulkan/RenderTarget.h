@@ -96,6 +96,8 @@ public:
 public:
     virtual uint64_t Descriptor() const override;
 
+    virtual void Map(uint32_t slot = 0) override;
+
 private:
     Device *device{ nullptr };
 

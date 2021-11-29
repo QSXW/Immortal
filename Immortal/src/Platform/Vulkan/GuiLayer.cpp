@@ -139,7 +139,6 @@ void GuiLayer::End()
     };
 
     context->Record([&](CommandBuffer *cmdbuf, VkRenderPassBeginInfo *beginInfo) -> void {
-        beginInfo->renderPass               = *renderPass;
         beginInfo->clearValueCount          = 2;
         beginInfo->pClearValues             = clearValues;
         beginInfo->renderArea.extent.width  = io.DisplaySize.x;
