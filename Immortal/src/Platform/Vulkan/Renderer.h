@@ -88,12 +88,7 @@ public:
         return std::make_shared<RenderTarget>(device, description);
     }
 
-    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override
-    {
-        context->Submit([&](CommandBuffer *cmdbuf) {
-            cmdbuf->Draw(std::dynamic_pointer_cast<Pipeline>(pipeline));
-        });
-    }
+    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

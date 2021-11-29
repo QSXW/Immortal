@@ -115,7 +115,7 @@ public:
 
     void BindIndexBuffer(std::shared_ptr<Buffer> &buffer)
     {
-        vkCmdBindIndexBuffer(handle, *buffer, buffer->Offset(), VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(handle, *buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     template <Buffer::Type type>

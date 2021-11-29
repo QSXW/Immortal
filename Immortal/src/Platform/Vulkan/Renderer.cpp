@@ -117,7 +117,7 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
 {
     auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
     VkClearValue clearValues[2] {
-        {{ .0f, .0f, .0f, 1.0f }},
+        {{ .45f, .56f, .65f, 1.0f }},
         {{ .0f, .0f, .0f, 0.0f }}
     };
 
@@ -146,6 +146,20 @@ void Renderer::End()
     context->End([&](CommandBuffer *cmdbuf) {
         cmdbuf->EndRenderPass();
     });
+}
+
+void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
+{
+    context->Submit([&](CommandBuffer *cmdbuf) {
+        auto pl = std::dynamic_pointer_cast<Pipeline>(pipeline);
+        vkCmdBindDescriptorSets(*cmdbuf, pl->BindPoint(), pl->Layout(), 0, 1, &pl->GetDescriptorSet(), 0, 0);
+        vkCmdBindPipeline(*cmdbuf, pl->BindPoint(), *pl);
+        VkDeviceSize offsets[1] = { 0 };
+        vkCmdBindVertexBuffers(*cmdbuf, 0, 1, &pl->Get<Buffer::Type::Vertex>()->Handle(), offsets);
+        vkCmdDraw(*cmdbuf, pl->Get<Buffer::Type::Vertex>()->Size(), 1, 0, 0);
+        /*vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(*cmdbuf, pl->Get<Buffer::Type::Index>()->Count(), 1, 0, 0, 0);*/
+        });
 }
 
 }

@@ -46,7 +46,7 @@ void Buffer::Create(size_t size)
 
     VmaAllocationInfo allocInfo{};
     VmaAllocationCreateInfo allocCreateInfo{};
-    allocCreateInfo.usage          = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    allocCreateInfo.usage          = VMA_MEMORY_USAGE_CPU_ONLY;
     allocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     if (persistent)
     {
@@ -81,7 +81,7 @@ void Buffer::Unmap()
 
 void Buffer::Flush()
 {
-    vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
+    // vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
 }
 
 void Buffer::Update(VkDescriptorSet descriptorSet, uint32_t biding)
@@ -103,6 +103,22 @@ void Buffer::Update(VkDescriptorSet descriptorSet, uint32_t biding)
     writeInfo.pTexelBufferView = nullptr;
 
     device->UpdateDescriptorSets(1, &writeInfo, 0, nullptr);
+}
+
+void Buffer::Update(uint32_t size, const void *src)
+{
+    if (persistent)
+    {
+        memcpy(mappedData, src, size);
+        Flush();
+    }
+    else
+    {
+        Map();
+        memcpy(mappedData, src, size);
+        Flush();
+        Unmap();
+    }
 }
 
 }

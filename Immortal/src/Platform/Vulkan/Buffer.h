@@ -51,21 +51,7 @@ public:
 
     void Update(VkDescriptorSet descriptorSet, uint32_t biding);
 
-    virtual void Update(uint32_t size, const void *src) override
-    {
-        if (persistent)
-        {
-            memcpy(mappedData, src, size);
-            Flush();
-        }
-        else
-        {
-            Map();
-            memcpy(mappedData, src, size);
-            Flush();
-            Unmap();
-        }
-    }
+    virtual void Update(uint32_t size, const void *src) override;
 
     inline VkBufferUsageFlags SelectBufferUsage(Type type)
     {

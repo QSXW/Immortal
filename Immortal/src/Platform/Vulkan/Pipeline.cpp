@@ -66,7 +66,7 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     auto attachment = &configuration->attament;
     state->rasterization.sType            = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     state->rasterization.polygonMode      = VK_POLYGON_MODE_FILL;
-    state->rasterization.cullMode         = VK_CULL_MODE_NONE;
+    state->rasterization.cullMode         = VK_CULL_MODE_FRONT_BIT;
     state->rasterization.frontFace        = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     state->rasterization.flags            = 0;
     state->rasterization.depthClampEnable = VK_FALSE;
@@ -103,16 +103,16 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     state->multiSample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     state->multiSample.flags                = 0;
 
-    std::array<VkDynamicState, 9> dynamic{
+    std::array<VkDynamicState, 2> dynamic{
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
-        VK_DYNAMIC_STATE_LINE_WIDTH,
-        VK_DYNAMIC_STATE_DEPTH_BIAS,
-        VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-        VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-        VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-        VK_DYNAMIC_STATE_STENCIL_REFERENCE
+        //VK_DYNAMIC_STATE_LINE_WIDTH,
+        //VK_DYNAMIC_STATE_DEPTH_BIAS,
+        //VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+        //VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+        //VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+        //VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+        //VK_DYNAMIC_STATE_STENCIL_REFERENCE
     };
     state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     state->dynamic.dynamicStateCount = dynamic.size();
@@ -128,7 +128,8 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
 
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.renderPass          = *target->GetAddress<RenderPass>();
+    createInfo.pNext               = nullptr;
+    createInfo.renderPass          = target->GetRenderPass();
     createInfo.flags               = 0;
     createInfo.layout              = shader->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;
