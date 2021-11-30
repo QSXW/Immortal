@@ -30,6 +30,13 @@ public:
     static std::unordered_map<const char *, bool> InstanceExtensions;
     static std::unordered_map<const char *, bool> DeviceExtensions;
 
+    static inline RenderContext *That = nullptr;
+
+    void EnableGlobal()
+    {
+        That = this;
+    }
+
 public:
     RenderContext() = default;
 

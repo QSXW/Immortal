@@ -85,6 +85,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
         }
     }
     Prepare();
+    EnableGlobal();
 
     Super::UpdateMeta(physicalDevice.Properties.deviceName, nullptr, nullptr);
 }
