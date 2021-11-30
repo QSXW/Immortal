@@ -52,6 +52,13 @@ public:
 
     virtual void OnUpdate() override
     {
+        Vector2 viewportSize = offline.Size();
+        if ((viewportSize.x != renderTarget->Desc().Width ||
+            viewportSize.y != renderTarget->Desc().Height) &&
+            (viewportSize.x != 0 && viewportSize.y != 0))
+        {
+            renderTarget->Resize(viewportSize);
+        }
         Render::Begin(renderTarget, primaryCamera);
         {
             Render::Draw(pipeline);

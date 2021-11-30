@@ -11,7 +11,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, VkExtent2D &extent) :
+Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, const VkExtent2D &extent) :
     device{ device }
 {
     VkFramebufferCreateInfo createInfo{};

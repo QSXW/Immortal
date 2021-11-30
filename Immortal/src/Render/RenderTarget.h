@@ -92,11 +92,11 @@ public:
 
     virtual void Unmap() { }
          
-    virtual void Resize(UINT32 width, UINT32 height) { }
+    virtual void Resize(uint32_t width, uint32_t height) { }
 
     virtual void Resize(Vector2 size)
     {
-        Resize(size.x, size.y);
+        Resize(ncast<uint32_t>(size.x), ncast<uint32_t>(size.y));
     }
 
     virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Format format, int width = 1, int height = 1)

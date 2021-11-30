@@ -14,7 +14,7 @@ namespace Vulkan
 class Framebuffer
 {
 public:
-    Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, VkExtent2D &extent);
+    Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, const VkExtent2D &extent);
 
     ~Framebuffer();
 
@@ -38,5 +38,6 @@ private:
 
     VkFramebuffer handle{ VK_NULL_HANDLE };
 };
+
 }
 }

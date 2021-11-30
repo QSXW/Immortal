@@ -72,7 +72,7 @@ public:
         }
         views.emplace_back(attachments.depth.view->Handle());
 
-        framebuffer.reset(new Framebuffer{ device, *renderPass, views, extent });
+        framebuffer.reset(new Framebuffer{ device, *renderPass, views, VkExtent2D{ desc.Width, desc.Height }});
     }
 
     void Set(std::shared_ptr<RenderPass> &value)
@@ -91,17 +91,25 @@ public:
         return *attachments.colors[index].image;
     }
 
+    void Create();
+
     void SetupDescriptor();
+
+    void SetupExtent(Extent2D extent)
+    {
+        desc.Width  = extent.width;
+        desc.Height = extent.height;
+    }
 
 public:
     virtual uint64_t Descriptor() const override;
 
     virtual void Map(uint32_t slot = 0) override;
 
+    virtual void Resize(uint32_t x, uint32_t y) override;
+
 private:
     Device *device{ nullptr };
-
-    VkExtent2D extent{};
 
     std::shared_ptr<RenderPass> renderPass;
 
@@ -120,5 +128,6 @@ private:
         std::vector<Attachment> colors;
     } attachments;
 };
+
 }
 }
