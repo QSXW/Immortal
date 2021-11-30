@@ -64,20 +64,22 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
 
     auto state = &configuration->state;
     auto attachment = &configuration->attament;
-    state->rasterization.sType            = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    state->rasterization.polygonMode      = VK_POLYGON_MODE_FILL;
-    state->rasterization.cullMode         = VK_CULL_MODE_FRONT_BIT;
-    state->rasterization.frontFace        = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    state->rasterization.flags            = 0;
-    state->rasterization.depthClampEnable = VK_FALSE;
-    state->rasterization.lineWidth        = 1.0f;
+
+    state->rasterization.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    state->rasterization.polygonMode             = VK_POLYGON_MODE_FILL;
+    state->rasterization.cullMode                = VK_CULL_MODE_NONE;
+    state->rasterization.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    state->rasterization.depthClampEnable        = VK_FALSE;
+    state->rasterization.rasterizerDiscardEnable = VK_FALSE;
+    state->rasterization.depthBiasEnable         = VK_FALSE;
+    state->rasterization.lineWidth               = 1.0f;
 
     std::vector<VkPipelineColorBlendAttachmentState> colorBlends;
     colorBlends.resize(target->ColorAttachmentCount());
     for (auto &colorBlend : colorBlends)
     {
         colorBlend.colorWriteMask = 0xf;
-        colorBlend.blendEnable    = VK_TRUE;
+        colorBlend.blendEnable    = VK_FALSE;
     }
     state->colorBlend.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     state->colorBlend.attachmentCount     = U32(colorBlends.size());
@@ -87,12 +89,16 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     state->colorBlend.blendConstants[2]   = 1.0f;
     state->colorBlend.blendConstants[3]   = 1.0f;
 
-    state->depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    state->depthStencil.depthTestEnable  = VK_TRUE;
-    state->depthStencil.depthWriteEnable = VK_TRUE;
-    state->depthStencil.depthCompareOp   = VK_COMPARE_OP_GREATER;
-    state->depthStencil.front            = state->depthStencil.back;
-    state->depthStencil.back.compareOp   = VK_COMPARE_OP_ALWAYS;
+    state->depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    state->depthStencil.depthTestEnable       = VK_TRUE;
+    state->depthStencil.depthWriteEnable      = VK_TRUE;
+    state->depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
+    state->depthStencil.depthBoundsTestEnable = VK_FALSE;
+    state->depthStencil.back.failOp           = VK_STENCIL_OP_KEEP;
+    state->depthStencil.back.passOp           = VK_STENCIL_OP_KEEP;
+    state->depthStencil.back.compareOp        = VK_COMPARE_OP_ALWAYS;
+    state->depthStencil.stencilTestEnable     = VK_FALSE;
+    state->depthStencil.front                 = state->depthStencil.back;
 
     state->viewport.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     state->viewport.viewportCount = 1;
@@ -106,13 +112,6 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     std::array<VkDynamicState, 2> dynamic{
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
-        //VK_DYNAMIC_STATE_LINE_WIDTH,
-        //VK_DYNAMIC_STATE_DEPTH_BIAS,
-        //VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-        //VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-        //VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-        //VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-        //VK_DYNAMIC_STATE_STENCIL_REFERENCE
     };
     state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     state->dynamic.dynamicStateCount = dynamic.size();

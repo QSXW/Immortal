@@ -1,14 +1,15 @@
 #pragma once
 
 #include <Immortal.h>
-
+#include "Platform/Vulkan/Common.h"
+#include "Platform/Vulkan/Device.h"
 
 namespace Immortal
 {
 
 struct Vertex
 {
-    Vector2 pos;
+    Vector3 pos;
     Vector3 color;
 };
 
@@ -18,16 +19,16 @@ public:
     RenderLayer(Vector2 viewport, const std::string &label) :
         Layer(label)
     {
-        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } });
+        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } });
 
         const std::vector<Vertex> vertices = {
-            {{  0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f }},
-            {{  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f }},
-            {{ -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }}
+            { {  0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+            { { -0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+            { {  0.0f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
         };
 
         const std::vector<uint32_t> indices = {
-            0, 1, 2, 2, 3, 0
+            0, 1, 2
         };
 
         shader = Render::Create<Shader>("Assets\\shaders\\glsl\\basic");
@@ -37,7 +38,7 @@ public:
         pipeline->Set(Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex));
         pipeline->Set(Render::Create<Buffer>(indices.size(), indices.data(), Buffer::Type::Index));
         pipeline->Set({
-            { Format::VECTOR2, "Position" },
+            { Format::VECTOR3, "Position" },
             { Format::VECTOR3, "Color"    }
             });
         pipeline->Create(renderTarget);

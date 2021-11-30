@@ -154,11 +154,12 @@ void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
         auto pl = std::dynamic_pointer_cast<Pipeline>(pipeline);
         vkCmdBindDescriptorSets(*cmdbuf, pl->BindPoint(), pl->Layout(), 0, 1, &pl->GetDescriptorSet(), 0, 0);
         vkCmdBindPipeline(*cmdbuf, pl->BindPoint(), *pl);
-        VkDeviceSize offsets[1] = { 0 };
+
+        VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(*cmdbuf, 0, 1, &pl->Get<Buffer::Type::Vertex>()->Handle(), offsets);
         vkCmdDraw(*cmdbuf, pl->Get<Buffer::Type::Vertex>()->Size(), 1, 0, 0);
-        /*vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(*cmdbuf, pl->Get<Buffer::Type::Index>()->Count(), 1, 0, 0, 0);*/
+        vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(*cmdbuf, pl->Get<Buffer::Type::Index>()->Count(), 1, 0, 0, 0);
         });
 }
 
