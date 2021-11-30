@@ -19,6 +19,11 @@ public:
     
     }
 
+    void Set(const Vector2 &value)
+    {
+        size = value;
+    }
+
     template<class T>
     void OnUpdate(std::shared_ptr<T> &target)
     {
@@ -26,6 +31,8 @@ public:
         ImGui::Begin(Super::text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
 
         auto &[x, y] = ImGui::GetContentRegionAvail();
+
+        Set({ x, y });
 
         ImGui::Image(
             (ImTextureID)(target->Descriptor()),
@@ -35,6 +42,14 @@ public:
         ImGui::End();
         ImGui::PopStyleVar();
     }
+
+    Vector2 Size() const
+    {
+        return size;
+    }
+
+private:
+    Vector2 size{ 0, 0 };
 };
 
 }
