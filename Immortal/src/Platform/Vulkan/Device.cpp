@@ -210,6 +210,8 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     };
 
     descriptorPool = std::make_unique<DescriptorPool>(this, poolSize);
+
+    EnableGlobal();
 }
 
 UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)

@@ -21,6 +21,13 @@ class Device : public SuperDevice
 public:
     using UploadProcess = void (*)(CommandBuffer *);
 
+    static inline Device *That = nullptr;
+
+    void EnableGlobal()
+    {
+        That = this;
+    }
+
 public:
     Device() = default;
 
