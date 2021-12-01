@@ -242,6 +242,7 @@ set(RENDER_FILES
     src/Render/Shader.h
     src/Render/Texture.cpp
     src/Render/Texture.h
+    src/Render/Types.h
     src/Render/VertexArray.cpp
     src/Render/VertexArray.h
     src/Render/GLSLCompiler.cpp
