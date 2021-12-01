@@ -62,6 +62,11 @@ public:
         
     }
 
+    virtual void Reconstruct(std::shared_ptr<RenderTarget> &renderTarget)
+    {
+
+    }
+
     template <class T>
     void Update(size_t size, const T *data, int slot = 0)
     {

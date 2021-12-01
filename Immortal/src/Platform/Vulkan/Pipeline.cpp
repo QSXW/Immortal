@@ -60,6 +60,20 @@ void Pipeline::Set(const InputElementDescription &description)
 
 void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
 {
+    Reconstruct(superTarget);
+
+    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    shader->Swap(writeDescriptors);
+    shader->Swap(uniforms);
+
+    if (Ready())
+    {
+        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+    }
+}
+
+void Pipeline::Reconstruct(std::shared_ptr<SuperRenderTarget> &superTarget)
+{
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
     auto state = &configuration->state;
@@ -145,14 +159,6 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     createInfo.stageCount = stages.size();
   
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
-
-    shader->Swap(writeDescriptors);
-    shader->Swap(uniforms);
-
-    if (Ready())
-    {
-        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
-    }
 }
 
 void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)

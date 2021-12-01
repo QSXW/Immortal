@@ -55,6 +55,8 @@ public:
 
     virtual void Create(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
+    virtual void Reconstruct(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+
     virtual void Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
 
     template <Buffer::Type type>
