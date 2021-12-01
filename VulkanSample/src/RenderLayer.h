@@ -68,6 +68,9 @@ public:
 
     virtual void OnGuiRender() override
     {
+        ImGui::Begin("Render Target");
+        ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
+        ImGui::End();
         offline.OnUpdate(renderTarget);
     }
 

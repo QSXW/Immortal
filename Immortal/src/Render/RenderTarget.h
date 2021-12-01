@@ -3,6 +3,7 @@
 #include "ImmortalCore.h"
 
 #include "Texture.h"
+#include "Types.h"
 
 namespace Immortal
 {
@@ -139,8 +140,24 @@ public:
         return 0;
     }
 
-protected:
+    void Set(Colour colour)
+    {
+        clearValues.color = colour;
+    }
+    
+    Colour *ClearColor()
+    {
+        return &clearValues.color;
+    }
+
+public:
     Description desc{};
+
+    struct
+    {
+        Colour color{ 0.0f, 0.0f, 0.0f, 1.0f };
+        DepthStencilValue depthStencil{ 1.0f, 0 };
+    } clearValues;
 };
 
 using SuperRenderTarget = RenderTarget;

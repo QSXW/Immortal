@@ -116,10 +116,6 @@ void Renderer::SwapBuffers()
 void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
 {
     auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
-    VkClearValue clearValues[2] {
-        {{ .45f, .56f, .65f, 1.0f }},
-        {{ .0f, .0f, .0f, 0.0f }}
-    };
 
     context->Begin([&](CommandBuffer *cmdbuf) {
         auto &desc = nativeRenderTarget->Desc();
@@ -129,7 +125,7 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
         beginInfo.pNext                    = nullptr;
         beginInfo.framebuffer              = nativeRenderTarget->GetFramebuffer();
         beginInfo.clearValueCount          = 2;
-        beginInfo.pClearValues             = clearValues;
+        beginInfo.pClearValues             = rcast<VkClearValue*>(&nativeRenderTarget->clearValues);
         beginInfo.renderPass               = nativeRenderTarget->GetRenderPass();
         beginInfo.renderArea.extent.width  = desc.Width;
         beginInfo.renderArea.extent.height = desc.Height;
@@ -160,7 +156,7 @@ void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
         vkCmdDraw(*cmdbuf, pl->Get<Buffer::Type::Vertex>()->Size(), 1, 0, 0);
         vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(*cmdbuf, pl->Get<Buffer::Type::Index>()->Count(), 1, 0, 0, 0);
-        });
+    });
 }
 
 }
