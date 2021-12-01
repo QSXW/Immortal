@@ -69,9 +69,9 @@ public:
         dst.swap(writeDescriptors);
     }
 
-    void Swap(std::vector<UniformDescriptor> &dst)
+    void Swap(UniformMap &dst)
     {
-        dst.swap(uniforms);
+        dst.swap(uniformMap);
     }
 
 private:
@@ -90,7 +90,7 @@ private:
 
     std::vector<Shader::Resource> resources;
 
-    std::vector<UniformDescriptor> uniforms;
+    UniformMap uniformMap;
 
     PipelineLayout pipelineLayout;
 

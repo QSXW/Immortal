@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <map>
+
 #include "Common.h"
 #include "Buffer.h"
 
@@ -64,17 +67,18 @@ struct BufferDescriptor : public Descriptor
     VkDescriptorBufferInfo info{};
 };
 
-struct UniformDescriptor
+struct UniformDescriptor : public BufferDescriptor
 {
     UniformDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) :
-        descriptor{ type }
+        BufferDescriptor{ type }
     {
 
     }
 
     std::shared_ptr<Buffer> buffer;
-    BufferDescriptor descriptor;
 };
+
+using UniformMap = std::map<std::string, UniformDescriptor>;
 
 }
 }

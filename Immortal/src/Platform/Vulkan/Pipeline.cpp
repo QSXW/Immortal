@@ -64,7 +64,7 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     shader->Swap(writeDescriptors);
-    shader->Swap(uniforms);
+    shader->Swap(uniformMap);
 
     if (Ready())
     {

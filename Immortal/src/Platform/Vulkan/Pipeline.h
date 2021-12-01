@@ -160,7 +160,7 @@ private:
 
     std::vector<VkWriteDescriptorSet> writeDescriptors;
 
-    std::vector<UniformDescriptor> uniforms;
+    UniformMap uniformMap;
 };
 
 }

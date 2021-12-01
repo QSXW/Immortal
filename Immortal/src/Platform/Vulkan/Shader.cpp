@@ -182,6 +182,27 @@ inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
         buffer[j++] = ptr[i++];
     }
 
+    j = 0;
+    int offset = 0;
+    while (++offset && ptr[i] != '\n')
+    {
+        SKIP_IF(ptr[i], '\t', i++);
+        SKIP_IF(ptr[i], '\r', i++);
+        SKIP_IF(ptr[i],  ' ', i++);
+        SKIP_IF(ptr[i],  '}', i++);
+
+        if (ptr[i] == ';')
+        {
+            i++;
+            buffer[j] = '\0';
+            resource.name = buffer;
+            break;
+        }
+
+        buffer[j++] = ptr[i++];
+    }
+
+    i -= offset;
     InputElementDescription desc{ std::move(elements) };
     resource.size = desc.Stride();
 
@@ -326,15 +347,12 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
 
 void Shader::BuildUniformBuffer(const Resource &resource, Stage stage, VkWriteDescriptorSet &writeDescriptor)
 {
-    if (resource.binding <= uniforms.size())
-    {
-        uniforms.resize(ncast<size_t>(resource.binding) + 1);
-    }
+    uniformMap.insert({ resource.name, UniformDescriptor{} });
+    auto &uniform = uniformMap[resource.name];
 
-    auto &uniform = uniforms.back();
     uniform.buffer.reset(new Buffer{ device, resource.size, Buffer::Type::Uniform });
-    uniform.descriptor.Update(*uniform.buffer);
-    writeDescriptor.pBufferInfo = uniform.descriptor;
+    uniform.Update(*uniform.buffer);
+    writeDescriptor.pBufferInfo = &uniform.info;
 }
 
 void Shader::INIT()
