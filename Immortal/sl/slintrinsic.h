@@ -31,15 +31,15 @@ using m512d = __m512d;
 template <class T, class U>
 inline constexpr T load(const U *m)
 {
-    if constexpr (sl::is_same<T, m128, m128i, m128d>>)
+    if constexpr (sl::is_same<T, m128, m128i, m128d>())
     {
         return bcast<T>();
     }
-    if constexpr (sl::is_same<T, m256, m256i, m256d>>)
+    if constexpr (sl::is_same<T, m256, m256i, m256d>())
     {
         return bcast<T>(_mm256_load_ps(rcast<const float*>(m)));
     }
-    if constexpr (sl::is_same<T, m512, m512i, m512d>>)
+    if constexpr (sl::is_same<T, m512, m512i, m512d>())
     {
         return bcast<T>(_mm512_load_ps(rcast<const float*>(m)));
     }
