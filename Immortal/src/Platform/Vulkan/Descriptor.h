@@ -67,18 +67,51 @@ struct BufferDescriptor : public Descriptor
     VkDescriptorBufferInfo info{};
 };
 
-struct UniformDescriptor : public BufferDescriptor
-{
-    UniformDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) :
-        BufferDescriptor{ type }
-    {
+using WriteDescriptorSetMap = std::map<std::string, size_t>;
 
+struct DescriptorSetUpdater
+{
+    DescriptorSetUpdater() = default;
+
+    void Emplace(const std::string &key, VkWriteDescriptorSet &&writeDescriptorSet)
+    {
+        WriteDescriptorSets.emplace_back(writeDescriptorSet);
+        Map[key] = WriteDescriptorSets.size() - 1;
     }
 
-    std::shared_ptr<Buffer> buffer;
-};
+    void Update(VkDevice device)
+    {
+        vkUpdateDescriptorSets(device, WriteDescriptorSets.size(), WriteDescriptorSets.data(), 0, nullptr);
+    }
 
-using UniformMap = std::map<std::string, UniformDescriptor>;
+    void Set(VkDescriptorSet descriptorSet)
+    {
+        for (auto &w : WriteDescriptorSets)
+        {
+            w.dstSet = descriptorSet;
+        }
+    }
+
+    bool Ready()
+    {
+        for (auto &writeDescriptor : WriteDescriptorSets)
+        {
+            if (!writeDescriptor.pImageInfo && !writeDescriptor.pBufferInfo)
+            {
+                LOG::WARN("There is a(n) \"{0}\" binding on slot \"{1}\" but no input yet", 
+                    writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? 
+                    "Image(Sampler)" : "(Uniform) Buffer",
+                    writeDescriptor.dstBinding);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    WriteDescriptorSetMap Map;
+
+    std::vector<VkWriteDescriptorSet> WriteDescriptorSets;
+};
 
 }
 }

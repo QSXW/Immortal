@@ -63,12 +63,11 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     Reconstruct(superTarget);
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
-    shader->Swap(writeDescriptors);
-    shader->Swap(uniformMap);
+    descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
 
     if (Ready())
     {
-        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+        descriptorSetUpdater->Update(*device);
     }
 }
 
@@ -163,7 +162,7 @@ void Pipeline::Reconstruct(std::shared_ptr<SuperRenderTarget> &superTarget)
 
 void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
 {
-    for (auto &writeDescriptor : writeDescriptors)
+    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
     {
         if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
             writeDescriptor.dstBinding == slot)
@@ -175,7 +174,7 @@ void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
     }
     if (Ready())
     {
-        device->UpdateDescriptorSets(writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+        descriptorSetUpdater->Update(*device);
     }
 }
 

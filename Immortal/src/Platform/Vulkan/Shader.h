@@ -64,22 +64,19 @@ public:
         }
     }
 
-    void Swap(std::vector<VkWriteDescriptorSet> &dst)
+    template <class T>
+    T *GetAddress()
     {
-        dst.swap(writeDescriptors);
-    }
-
-    void Swap(UniformMap &dst)
-    {
-        dst.swap(uniformMap);
+        if constexpr (IsPrimitiveOf<DescriptorSetUpdater, T>())
+        {
+            return &descriptorSetUpdater;
+        }
     }
 
 private:
     void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
 
-    void BuildUniformBuffer(const Resource &resource, Stage stage, VkWriteDescriptorSet &writeDescriptor);
-
-    void INIT();
+    void Shader::Setup(const std::vector<VkDescriptorSetLayoutBinding> &bindings, const std::vector<VkPushConstantRange> &pushConstantRanges);
 
 private:
     Device *device{ nullptr };
@@ -90,17 +87,11 @@ private:
 
     std::vector<Shader::Resource> resources;
 
-    UniformMap uniformMap;
-
     PipelineLayout pipelineLayout;
 
     VkDescriptorSetLayout descriptorSetLayout;
 
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-
-    std::vector<VkPushConstantRange> pushConstantRanges;
-
-    std::vector<VkWriteDescriptorSet> writeDescriptors;
+    DescriptorSetUpdater descriptorSetUpdater;
 
     VkDescriptorSet descriptorSet;
 };

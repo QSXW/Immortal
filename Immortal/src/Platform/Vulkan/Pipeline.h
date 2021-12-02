@@ -131,16 +131,7 @@ private:
 
     bool Ready()
     {
-        for (auto &writeDescriptor : writeDescriptors)
-        {
-            if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
-                writeDescriptor.pImageInfo == nullptr)
-            {
-                LOG::WARN("There is an image binding on slot \"{0}\" but get no texture input", writeDescriptor.dstBinding);
-                return false;
-            }
-        }
-        return true;
+        return descriptorSetUpdater->Ready();
     }
 
 private:
@@ -158,9 +149,7 @@ private:
 
     VkDescriptorSet descriptorSet;
 
-    std::vector<VkWriteDescriptorSet> writeDescriptors;
-
-    UniformMap uniformMap;
+    DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
 };
 
 }
