@@ -60,6 +60,7 @@ void Buffer::Create(size_t size)
 	{
 		mappedData = static_cast<uint8_t *>(allocInfo.pMappedData);
 	}
+    descriptor.Update(handle, offset, VK_WHOLE_SIZE);
 }
 
 void Buffer::Map()
@@ -81,28 +82,7 @@ void Buffer::Unmap()
 
 void Buffer::Flush()
 {
-    // vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
-}
-
-void Buffer::Update(VkDescriptorSet descriptorSet, uint32_t biding)
-{
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = handle;
-    bufferInfo.offset = offset;
-    bufferInfo.range  = VK_WHOLE_SIZE;
-
-    VkWriteDescriptorSet writeInfo{};
-    writeInfo.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeInfo.dstSet           = descriptorSet;
-    writeInfo.dstBinding       = biding;
-    writeInfo.dstArrayElement  = 0;
-    writeInfo.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeInfo.descriptorCount  = 1;
-    writeInfo.pBufferInfo      = &bufferInfo;
-    writeInfo.pImageInfo       = nullptr;
-    writeInfo.pTexelBufferView = nullptr;
-
-    device->UpdateDescriptorSets(1, &writeInfo, 0, nullptr);
+    vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
 }
 
 void Buffer::Update(uint32_t size, const void *src)

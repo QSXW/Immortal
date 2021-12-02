@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "Render/Buffer.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -49,8 +50,6 @@ public:
 
     void Flush();
 
-    void Update(VkDescriptorSet descriptorSet, uint32_t biding);
-
     virtual void Update(uint32_t size, const void *src) override;
 
     inline VkBufferUsageFlags SelectBufferUsage(Type type)
@@ -74,6 +73,8 @@ private:
     VmaAllocation memory{ VK_NULL_HANDLE };
 
     VkDeviceSize offset{ 0 };
+
+    BufferDescriptor descriptor;
 
     void *mappedData{ nullptr };
 
