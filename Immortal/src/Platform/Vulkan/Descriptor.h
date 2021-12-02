@@ -46,7 +46,7 @@ struct ImageDescriptor : public Descriptor
 
 struct BufferDescriptor : public Descriptor
 {
-    BufferDescriptor(VkDescriptorType type) :
+    BufferDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) :
         Descriptor{ type }
     {
 
