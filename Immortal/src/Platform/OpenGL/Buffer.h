@@ -14,9 +14,9 @@ public:
     using BindPointType = uint32_t;
 
 public:
-    Buffer(uint32_t size, Type type);
+    Buffer(size_t size, Type type);
 
-    Buffer(uint32_t size, const void *data, Type type);
+    Buffer(size_t size, const void *data, Type type);
 
     Buffer(size_t size, int binding);
 

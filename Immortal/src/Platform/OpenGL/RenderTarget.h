@@ -32,6 +32,11 @@ public:
 
     virtual Attachment DepthAttachment() override;
 
+    virtual uint64_t Descriptor() const
+    {
+        return ncast<uint64_t>(handle);
+    }
+
 private:
     void Update();
     void Clear();

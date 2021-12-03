@@ -48,7 +48,12 @@ public:
         return std::make_shared<Texture2D>(filepath);
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, int binding)
+    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    {
+        return std::make_shared<Texture2D>(width, height, data, description, 0);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, int binding) override
     {
         return std::make_shared<Buffer>(size, binding);
     }

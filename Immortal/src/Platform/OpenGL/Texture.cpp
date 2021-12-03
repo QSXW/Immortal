@@ -9,9 +9,9 @@ namespace Immortal
 namespace OpenGL
 {
 
-UINT32 InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType & type, int level)
+uint32_t InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType & type, int level)
 {
-    UINT32 texture;
+    uint32_t texture;
 
     glCreateTextures(target, 1, &texture);
     glTextureStorage2D(texture, level, type.InternalFromat, width, height);
@@ -97,7 +97,7 @@ Texture2D::Texture2D(const std::string &path, bool flip) :
     LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
-Texture2D::Texture2D(const std::string & path, Texture::Wrap wrap, Texture::Filter filter)
+Texture2D::Texture2D(const std::string &path, Texture::Wrap wrap, Texture::Filter filter)
 {
     LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path);
@@ -126,13 +126,13 @@ Texture2D::Texture2D(const std::string & path, Texture::Wrap wrap, Texture::Filt
     LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
-Texture2D::Texture2D(const uint32_t width, const uint32_t height, Texture::Description & spec, int levels) :
+Texture2D::Texture2D(const uint32_t width, const uint32_t height, Texture::Description &description, int levels) :
     width{ width },
     height{ height }
 {
     level = (levels > 0) ? levels : Texture::CalculateMipmapLevels(width, height);
 
-    type = NativeTypeToOpenGl(spec);
+    type = NativeTypeToOpenGl(description);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
     glTextureStorage2D(handle, level, type.InternalFromat, width, height);
@@ -147,11 +147,12 @@ Texture2D::Texture2D(const uint32_t width, const uint32_t height, Texture::Descr
 }
 
 
-Texture2D::Texture2D(UINT32 width, UINT32 height, const void *data, Texture::Description &spec, INT32 level)
-    : width(width), height(height)
+Texture2D::Texture2D(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level) :
+    width{ width },
+    height{ height }
 {
-    level   = (level > 0) ? level : Texture::CalculateMipmapLevels(width, height);
-    type    = NativeTypeToOpenGl(spec);
+    level   = (level > 0) ? level : CalculateMipmapLevels(width, height);
+    type    = NativeTypeToOpenGl(description);
     handle = InternalCreate(GL_TEXTURE_2D, width, height, type, level);
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);

@@ -8,7 +8,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-static UINT32 InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType &spec, int levels = 0);
+static uint32_t InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType &spec, int levels = 0);
 
 static inline GLenum TextureTarget(bool multisampled)
 {
@@ -77,6 +77,12 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = 
 
     case Format::Depth24Stencil8:
         data.InternalFromat = GL_DEPTH24_STENCIL8;
+        data.BinaryType = GL_FLOAT;
+        break;
+
+    case Format::Depth32F:
+        data.InternalFromat = GL_DEPTH32F_STENCIL8;
+        data.BinaryType = GL_FLOAT;
         break;
 
     default:
@@ -87,7 +93,7 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = 
     return data;
 }
 
-static Texture::DataType NativeTypeToOpenGl(Texture::Description &spec)
+static inline Texture::DataType NativeTypeToOpenGl(const Texture::Description &spec)
 {
     return NativeTypeToOpenGl(spec.Format, spec.Wrap, spec.Filter);
 }
@@ -99,13 +105,13 @@ public:
 
     Texture2D(const std::string& path, bool flip = false);
 
-    Texture2D(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels);
+    Texture2D(const uint32_t width, const uint32_t height, Texture::Description &description, int levels);
 
     Texture2D(const std::string & path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
 
     Texture2D(const std::string & path, Texture::Wrap wrap, Texture::Filter filter);
 
-    Texture2D(UINT32 width, UINT32 height, const void * data, Texture::Description & spec, INT32 level = 0);
+    Texture2D(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level = 0);
 
     virtual ~Texture2D();
 
@@ -160,9 +166,9 @@ private:
 
     uint32_t handle;
 
-    int32_t level;
+    int32_t level{ 0 };
 
-    float ratio;
+    float ratio{ 1.0 };
 
     Texture::DataType type;
 };
