@@ -33,8 +33,9 @@ public:
         glBindVertexArray(0);
     }
 
-    void Set(const InputElementDescription &inputElementDescription)
+    void Set(const Buffer *buffer, const InputElementDescription &inputElementDescription)
     {
+        buffer->Bind();
         glBindVertexArray(handle);
 
         uint32_t attributeIndex = 0;

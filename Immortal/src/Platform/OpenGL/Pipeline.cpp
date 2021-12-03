@@ -19,12 +19,35 @@ Pipeline::~Pipeline()
 
 void Pipeline::Set(const InputElementDescription &description)
 {
-    handle.Set(description);
+    if (!desc.vertexBuffers.empty())
+    {
+        handle.Set(std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get(), description);
+    }
+    else
+    {
+        inputElementDesription = description;
+    }
 }
 
 void Pipeline::Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot)
 {
 
+}
+
+void Pipeline::Set(std::shared_ptr<SuperBuffer> &buffer)
+{
+    if (buffer->GetType() == Buffer::Type::Vertex)
+    {
+        desc.vertexBuffers.emplace_back(buffer);
+        if (!inputElementDesription.Empty())
+        {
+            handle.Set(std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get(), inputElementDesription);
+        }
+    }
+    if (buffer->GetType() == Buffer::Type::Index)
+    {
+        desc.indexBuffer = buffer;
+    }
 }
 
 }

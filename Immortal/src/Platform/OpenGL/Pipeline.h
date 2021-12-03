@@ -42,8 +42,12 @@ public:
         }
     }
 
+    virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
+
 private:
     VertexArray handle;
+
+    InputElementDescription inputElementDesription;
 };
 
 }
