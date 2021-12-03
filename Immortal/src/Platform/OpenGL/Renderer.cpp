@@ -11,29 +11,22 @@ namespace OpenGL
 
 void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned severity, int length, const char *message, const void *userParam)
 {
-#define CASE(y) if (severity == y)
-        CASE(GL_DEBUG_SEVERITY_HIGH)
-        {
-            LOG::ERR(message);
-            return;
-        }
-        CASE(GL_DEBUG_SEVERITY_MEDIUM)
-        {
-            LOG::ERR(message);
-            return;
-        }
-        CASE(GL_DEBUG_SEVERITY_LOW)
-        {
-            LOG::WARN(message);
-            return;
-        }
-        CASE(GL_DEBUG_SEVERITY_NOTIFICATION)
-        {
-            LOG::INFO(message);
-            return;
-        }
-#undef CASE
-    LOG::WARN("Unknown severity level!");
+    switch (severity)
+    {
+    case GL_DEBUG_SEVERITY_HIGH:
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        LOG::ERR(message);
+        break;
+
+    case GL_DEBUG_SEVERITY_LOW:
+        LOG::WARN(message);
+        break;
+
+    case GL_DEBUG_SEVERITY_NOTIFICATION:
+    default:
+        LOG::INFO(message);
+        break;
+    }
 }
 
 void Renderer::INIT()
