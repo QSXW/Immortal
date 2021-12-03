@@ -161,6 +161,11 @@ struct InputElementDescription
         return stride;
     }
 
+    bool Empty() const
+    {
+        return elements.empty();
+    }
+
 private:
     void INIT()
     {
