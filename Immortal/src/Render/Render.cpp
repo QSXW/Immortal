@@ -85,20 +85,10 @@ void Render::INIT(RenderContext *context)
     Render2D::INIT();
 }
 
-void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4 &transform)
-{
-    shader->Map();
-    shader->Set("u_ViewProjection", scene.viewProjectionMatrix);
-    shader->Set("u_Transform", transform);
-
-    renderer->DrawIndexed(vertexArray, 1);
-}
-
 void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)
 {
     shader->Map();
     shader->Set("uTransform", transform);
-    renderer->DrawIndexed(mesh->VertexArrayObject(), 1);
     shader->Unmap(); 
 }
 

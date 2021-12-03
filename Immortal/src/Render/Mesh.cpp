@@ -1,7 +1,7 @@
 #include "impch.h"
 #include "Mesh.h"
 
-#include "Renderer.h"
+#include "Render.h"
 #include "Math.h"
 
 #include "Framework/Math.h"
@@ -36,22 +36,22 @@ void Mesh::LoadPrimitives()
 }
 
 Mesh::Mesh(const std::string & filepath)
-    : mPath(filepath)
+    : path(filepath)
 {
     LogStream::initialize();
 
     LOG::INFO("Loading mesh: {0}", filepath.c_str());
 
-    mImporter.reset(new Assimp::Importer());
+    importer.reset(new Assimp::Importer());
 
-    const aiScene *scene = mImporter->ReadFile(filepath, ImportFlags);
+    const aiScene *scene = importer->ReadFile(filepath, ImportFlags);
     SLASSERT(scene && scene->HasMeshes() && "Failed to load Mesh file: {0}" && filepath.c_str());
 
     const aiMesh *mesh = scene->mMeshes[0];
     SLASSERT(mesh->HasPositions() && mesh->HasNormals() && "No Position and Normals in the mesh object");
 
-    // Set the capacity to the number of vertieces
-    mVertices.reserve(mesh->mNumVertices);
+    // Set the capacity to the number of vertices
+    vertices.reserve(mesh->mNumVertices);
     for (size_t i = 0; i < mesh->mNumVertices; ++i)
     {
         Vertex vertex;
@@ -67,40 +67,30 @@ Mesh::Mesh(const std::string & filepath)
         {
             vertex.Texcoord = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
         }
-        mVertices.push_back(vertex);
+        vertices.push_back(vertex);
     }
 
-    mFaces.reserve(mesh->mNumFaces);
+    faces.reserve(mesh->mNumFaces);
     for (size_t i = 0; i < mesh->mNumFaces; ++i)
     {
         SLASSERT(mesh->mFaces[i].mNumIndices == 3 && "Must have three indices per face.");
         Face face = { mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2] };
-        mFaces.push_back(face);
+        faces.push_back(face);
     }
 
-    mVertexBuffer = VertexBuffer::Create(mVertices.data(), (UINT32)mVertices.size() * sizeof(Vertex));
-    mVertexBuffer->SetLayout(mLayout);
+    vertexBuffer = Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex);
     
-    mIndexBuffer = IndexBuffer::Create(mFaces.data(), (UINT32)mFaces.size() * sizeof(Face));
+    indexBuffer = Render::Create<Buffer>(faces.size(), faces.data(), Buffer::Type::Index);
 
-    mVertexArray = VertexArray::Create();
-    mVertexArray->AddVertexBuffer(mVertexBuffer);
-    mVertexArray->SetIndexBuffer(mIndexBuffer);
-
-    mVertices.clear();
-    mFaces.clear();
+    vertices.clear();
+    faces.clear();
 }
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies)
 {
-    mVertexBuffer = VertexBuffer::Create(vertices.data(), (UINT32)vertices.size() * sizeof(Vertex));
-    mVertexBuffer->SetLayout(mLayout);
+    vertexBuffer = Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex);
 
-    mIndexBuffer = IndexBuffer::Create(indicies.data(), (UINT32)indicies.size() * sizeof(Face));
-
-    mVertexArray = VertexArray::Create();
-    mVertexArray->AddVertexBuffer(mVertexBuffer);
-    mVertexArray->SetIndexBuffer(mIndexBuffer);
+    indexBuffer = Render::Create<Buffer>(faces.size(), faces.data(), Buffer::Type::Index);
 }
 
 std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)

@@ -4,10 +4,12 @@
 #include "Render/Renderer.h"
 
 #include "RenderContext.h"
-#include "Render/VertexArray.h"
 #include <glad/glad.h>
 
 #include "Texture.h"
+#include "Buffer.h"
+#include "Pipeline.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
@@ -34,8 +36,6 @@ public:
 
     virtual void DisableDepthTest() override;
 
-    virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray, uint32_t indexCount = 0) override;
-
     virtual void SwapBuffers() override;
 
     virtual const char *GraphicsRenderer() override
@@ -46,6 +46,31 @@ public:
     virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
     {
         return std::make_shared<Texture2D>(filepath);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, int binding)
+    {
+        return std::make_shared<Buffer>(size, binding);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(size, data, type);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(size, type);
+    }
+
+    virtual std::shared_ptr<SuperPipeline> CreatePipeline(std::shared_ptr<SuperShader> &shader)
+    {
+        return std::make_shared<Pipeline>(shader);
+    }
+
+    virtual std::shared_ptr<SuperRenderTarget>CreateRenderTarget(const RenderTarget::Description &description) override
+    {
+        return std::make_shared<RenderTarget>(description);
     }
 
 private:

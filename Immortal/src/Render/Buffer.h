@@ -221,7 +221,7 @@ public:
         return type;
     }
 
-    virtual void Update(uint32_t size, const void *src)
+    virtual void Update(uint32_t size, const void *data)
     {
         
     }
@@ -245,57 +245,5 @@ protected:
 };
 
 using SuperBuffer = Buffer;
-
-class IMMORTAL_API VertexBuffer
-{
-public:
-    virtual ~VertexBuffer() = default;
-
-    virtual uint32_t Handle() const = 0;
-
-    virtual void Map() const  = 0;
-    virtual void Unmap() const = 0;
-
-    virtual void SetLayout(const VertexLayout &layout) = 0;
-    virtual const VertexLayout &Layout() const = 0;
-
-    virtual void SetData(const void *data, uint32_t size) = 0;
-
-    static std::shared_ptr<VertexBuffer> Create(uint32_t size);
-    static std::shared_ptr<VertexBuffer> Create(const void *vertices, uint32_t size);
-};
-
-using SuperVertexBuffer = VertexBuffer;
-
-class IMMORTAL_API IndexBuffer
-{
-public:
-    virtual ~IndexBuffer() = default;
-
-    virtual uint32_t Handle() const = 0;
-
-    virtual void Map() const = 0;
-    virtual void Unmap() const = 0;
-
-    virtual uint32_t Count() const = 0;
-
-    static std::shared_ptr<IndexBuffer> Create(const void *indices, uint32_t count);
-};
-
-using SuperIndexBuffer = IndexBuffer;
-
-class IMMORTAL_API UniformBuffer
-{
-public:
-    virtual ~UniformBuffer() = default;
-
-    virtual void SetData(size_t size, const void *data) const = 0;
-
-    virtual void Unmap() const = 0;
-
-    static std::shared_ptr<UniformBuffer> Create(size_t size, int biding = 0);
-};
-
-using SuperUniformBuffer = UniformBuffer;
 
 }

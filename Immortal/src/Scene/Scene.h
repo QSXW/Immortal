@@ -11,6 +11,7 @@
 #include "Render/Environment.h"
 #include "Render/Mesh.h"
 #include "Render/RenderTarget.h"
+#include "Render/Pipeline.h"
 
 namespace Immortal
 {
@@ -115,13 +116,11 @@ private:
 
     LightEnvironment lightEnvironment;
 
-    std::shared_ptr<UniformBuffer> transformUniformBuffer;
+    std::shared_ptr<Buffer> transformUniformBuffer;
 
-    std::shared_ptr<UniformBuffer> shadingUniformBuffer;
+    std::shared_ptr<Buffer> shadingUniformBuffer;
 
-    std::shared_ptr<VertexArray> vertexArray;
-
-    std::shared_ptr<VertexArray> toneMap;
+    std::shared_ptr<Pipeline> toneMap;
 
     std::shared_ptr<RenderTarget> renderTarget;
 

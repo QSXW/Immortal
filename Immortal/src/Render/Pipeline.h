@@ -49,7 +49,14 @@ public:
 
     virtual void Set(std::shared_ptr<Buffer> &buffer)
     {
-
+        if (buffer->GetType() == Buffer::Type::Vertex)
+        {
+            desc.vertexBuffers.emplace_back(buffer);
+        }
+        if (buffer->GetType() == Buffer::Type::Index)
+        {
+            desc.indexBuffer = buffer;
+        }
     }
 
     virtual void Set(const InputElementDescription &description)

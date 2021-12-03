@@ -97,14 +97,5 @@ void Renderer::SwapBuffers()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray, uint32_t indexCount)
-{
-    vertexArray->GetVertexBuffers()[0]->Map();
-    vertexArray->Map();
-    vertexArray->GetIndexBuffer()->Map();
-    uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->Count();
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
-}
-
 }
 }

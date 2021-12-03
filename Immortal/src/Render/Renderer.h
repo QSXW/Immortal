@@ -3,7 +3,6 @@
 #include "ImmortalCore.h"
 
 #include "RenderContext.h"
-#include "VertexArray.h"
 #include "Texture.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
@@ -28,13 +27,16 @@ public:
 
     virtual void Clear() { }
 
-    virtual void DrawIndexed(const std::shared_ptr<VertexArray> &vertexArray, UINT32 indexCount) { }
-
     virtual void SwapBuffers() { }
 
     virtual void PrepareFrame() { }
 
     virtual uint32_t Index() { return 0; }
+
+    virtual const char *GraphicsRenderer()
+    {
+        return "None";
+    };
 
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 
@@ -47,11 +49,6 @@ public:
     {
         return nullptr;
     }
-
-    virtual const char *GraphicsRenderer()
-    {
-        return "None";
-    };
 
     virtual std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
     {
@@ -73,7 +70,12 @@ public:
         return nullptr;
     }
 
-    virtual std::shared_ptr <RenderTarget> CreateRenderTarget(const RenderTarget::Description &description)
+    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, int binding)
+    {
+        return nullptr;
+    }
+
+    virtual std::shared_ptr<RenderTarget>CreateRenderTarget(const RenderTarget::Description &description)
     {
         return nullptr;
     }

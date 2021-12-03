@@ -4,7 +4,6 @@
 #include "Framework/Object.h"
 
 #include "Buffer.h"
-#include "VertexArray.h"
 #include "Shader.h"
 
 #include <assimp/scene.h>
@@ -37,7 +36,7 @@ public:
     template <Primitive I>
     static inline constexpr std::shared_ptr<Mesh> Get()
     {
-        return Primitives[static_cast<UINT32>(I)];
+        return Primitives[static_cast<uint32_t>(I)];
     }
 
     static void LoadPrimitives();
@@ -65,25 +64,25 @@ public:
 
     struct Face
     {
-        UINT32 v1, v2, v3;
+        uint32_t v1, v2, v3;
     };
 
     using Index = Face;
 
     struct SubMesh
     {
-        UINT32 BaseVertex;
-        UINT32 BaseIndex;
-        UINT32 MaterialIndex;
-        UINT32 IndexCount;
-        UINT32 VertexCount;
+        uint32_t BaseVertex;
+        uint32_t BaseIndex;
+        uint32_t MaterialIndex;
+        uint32_t IndexCount;
+        uint32_t VertexCount;
 
         Vector::Matrix4 Transform{ 1.0f };
         std::string NodeName;
         std::string MeshName;
     };
 
-    static constexpr UINT32 ImportFlags =
+    static constexpr uint32_t ImportFlags =
         aiProcess_CalcTangentSpace |
         aiProcess_Triangulate |
         aiProcess_SortByPType |
@@ -104,7 +103,7 @@ public:
             }
         }
 
-        void write(const char* message) override
+        void write(const char *message) override
         {
             std::fprintf(stderr, "Assimp: %s", message);
         }
@@ -112,38 +111,42 @@ public:
 
 public:
     Mesh(const std::string &filepath);
-    Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies);
+
+    Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies);
+
     ~Mesh() { }
 
-    std::shared_ptr<VertexArray> VertexArrayObject() { return mVertexArray; }
-
-    const char *Path() const noexcept
+    const std::string &Path() const
     {
-        return mPath.c_str();
+        return path;
     }
 
 private:
-    std::unique_ptr<Assimp::Importer> mImporter{ nullptr };
+    std::unique_ptr<Assimp::Importer> importer{ nullptr };
 
-    std::string mPath;
+    std::string path;
 
-    std::shared_ptr<Shader> mShader;
+    std::vector<Vertex> vertices;
 
-    std::vector<Vertex> mVertices;
+    std::vector<Face> faces;
 
-    std::vector<Face> mFaces;
+    std::shared_ptr<Buffer>vertexBuffer;
 
-    std::shared_ptr<VertexBuffer> mVertexBuffer;
+    std::shared_ptr<Buffer> indexBuffer;
 
-    std::shared_ptr<IndexBuffer>  mIndexBuffer;
+    struct
+    {
+        float time = 0.0f;
 
-    std::shared_ptr<VertexArray>  mVertexArray;
+        float worldTime = 0.0f;
 
-    float mAnimationTime    = 0.0f;
-    float mWorldTime        = 0.0f;
-    float mTimeMultiplier   = 1.0f;
-    bool  mAnimated         = false;
-    bool  mAnimationPlaying = true;
+        float timeMultiplier = 1.0f;
+
+        bool animated = false;
+
+        bool playing = true;
+    } animation;
+
 };
 
 }

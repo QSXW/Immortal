@@ -56,8 +56,8 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     skyboxTexture = TextureCube::Create("assets/textures/environment.hdr");
     environment = std::make_shared<Environment>(skyboxTexture);
 
-    transformUniformBuffer = UniformBuffer::Create(sizeof(TransformUniformBuffer), 0);
-    shadingUniformBuffer   = UniformBuffer::Create(sizeof(ShadingUniformBuffer), 1);
+    transformUniformBuffer = Render::Create<Buffer>(sizeof(TransformUniformBuffer), 0);
+    shadingUniformBuffer   = Render::Create<Buffer>(sizeof(ShadingUniformBuffer), 1);
 
     renderTarget = Render::CreateRenderTarget({ (uint32_t)1280, (uint32_t)720, { { Format::RGBA32F }, { Format::Depth } } });
          
@@ -150,7 +150,7 @@ void Scene::OnRenderRuntime()
             transformUniforms.viewProjectionMatrix = primaryCamera->ViewProjection();
             transformUniforms.skyProjectionMatrix = primaryCamera->Projection() * Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
             transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
-            transformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
+            transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
         }
 
         // Update shading uniform buffer.
@@ -169,7 +169,7 @@ void Scene::OnRenderRuntime()
                     shadingUniforms.lights[i].radiance = Vector::Vector4{};
                 }
             }
-            shadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
+            shadingUniformBuffer->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
         }
 
         {
@@ -211,7 +211,6 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     auto &skyboxShader = Render::Get<Shader, ShaderName::Skybox>();
     skyboxShader->Map();
     skyboxTexture->Map();
-    Render::DrawIndexed(skybox->VertexArrayObject(), 0);
     Render::EnableDepthTest();
     skyboxShader->Unmap();
 
@@ -233,7 +232,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
         transformUniforms.viewProjectionMatrix = editorCamera.ViewProjection();
         transformUniforms.skyProjectionMatrix = editorCamera.Projection() * Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
         transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
-        transformUniformBuffer->SetData(sizeof(TransformUniformBuffer), &transformUniforms);
+        transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
     }
 
     // Update shading uniform buffer.
@@ -252,7 +251,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
                 shadingUniforms.lights[i].radiance = Vector::Vector4{};
             }
         }
-        shadingUniformBuffer->SetData(sizeof(ShadingUniformBuffer), &shadingUniforms);
+        shadingUniformBuffer->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
     }
 
     {

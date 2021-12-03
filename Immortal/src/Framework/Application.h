@@ -14,7 +14,6 @@
 
 #include "Framework/Input.h"
 
-#include "Render/VertexArray.h"
 #include "Render/Shader.h"
 #include "Render/Buffer.h"
 

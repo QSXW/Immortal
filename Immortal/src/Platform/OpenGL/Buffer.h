@@ -7,82 +7,55 @@ namespace Immortal
 namespace OpenGL
 {
 
-class VertexBuffer : public SuperVertexBuffer
+class Buffer : public SuperBuffer
 {
 public:
-    VertexBuffer(uint32_t size);
+    using Super         = SuperBuffer;
+    using BindPointType = uint32_t;
 
-    VertexBuffer(const void *vertices, uint32_t size);
+public:
+    Buffer(uint32_t size, Type type);
 
-    ~VertexBuffer() override;
+    Buffer(uint32_t size, const void *data, Type type);
 
-    uint32_t Handle() const override
+    Buffer(size_t size, int binding);
+
+    virtual ~Buffer() override;
+
+    uint32_t Handle() const
     { 
         return handle;
     }
 
-    void Map() const override;
-    void Unmap() const override;
-
-    void SetLayout(const VertexLayout &other) override
+    operator uint32_t() const
     {
-        layout = other;
-    }
-
-    const VertexLayout &Layout() const override
-    { 
-        return layout;
-    }
-
-    void SetData(const void *data, uint32_t size) override;
-
-private:
-    uint32_t handle{};
-
-    VertexLayout layout;
-};
-
-class IndexBuffer : public SuperIndexBuffer
-{
-public:
-    IndexBuffer(const void *indices, uint32_t count);
-    ~IndexBuffer();
-
-    uint32_t Handle() const override 
-    { 
         return handle;
     }
 
-    void Map() const override;
+    virtual void Update(uint32_t size, const void *data) override;
 
-    void Unmap() const override;
-
-    virtual uint32_t Count() const override
+    void Bind() const
     {
-        return count;
+        glBindBuffer(bindPoint, handle);
     }
-    
-private:
-    uint32_t handle{};
 
-    uint32_t count;
-};
+    void Unbind() const
+    {
+        glBindBuffer(bindPoint, 0);
+    }
 
-class UniformBuffer : public SuperUniformBuffer
-{
-public:
-    UniformBuffer(size_t size, int binding);
-
-    ~UniformBuffer();
-
-    virtual void SetData(size_t size, const void *data) const override;
-
-    void Map() const;
-
-    void Unmap() const override;
+    void SelectBindPoint(Type type)
+    {
+        if (type == Type::Index)
+        {
+            bindPoint = GL_ELEMENT_ARRAY_BUFFER;
+        }
+    }
 
 private:
     uint32_t handle{};
+
+    BindPointType bindPoint{ GL_ARRAY_BUFFER };
 };
 
 }

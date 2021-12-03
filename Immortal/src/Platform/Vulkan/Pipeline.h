@@ -107,7 +107,7 @@ private:
         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     }
 
-    void INITVertex()
+    void SetupVertex()
     {
         auto state = &configuration->state;
 	    state->inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -116,7 +116,7 @@ private:
 	    state->inputAssembly.primitiveRestartEnable = VK_FALSE;
     }
 
-    void INITLayout()
+    void SetupLayout()
     {
         auto state = &configuration->state;
         auto &inputAttributeDescriptions = configuration->inputAttributeDescriptions;

@@ -190,9 +190,10 @@ set(OPENGL_FILES
     src/Platform/OpenGL/RenderTarget.h
     src/Platform/OpenGL/Shader.cpp
     src/Platform/OpenGL/Shader.h
+    src/Platform/OpenGL/Pipeline.cpp
+    src/Platform/OpenGL/Pipeline.h
     src/Platform/OpenGL/Texture.cpp
     src/Platform/OpenGL/Texture.h
-    src/Platform/OpenGL/VertexArray.cpp
     src/Platform/OpenGL/VertexArray.h)
 
 set(WINDOWS_FILES
@@ -205,7 +206,6 @@ set(WINDOWS_FILES
     src/Platform/Windows/WindowsInput.h)
 
 set(RENDER_FILES
-    src/Render/Buffer.cpp
     src/Render/Buffer.h
     src/Render/Camera.cpp
     src/Render/Camera.h
@@ -243,8 +243,6 @@ set(RENDER_FILES
     src/Render/Texture.cpp
     src/Render/Texture.h
     src/Render/Types.h
-    src/Render/VertexArray.cpp
-    src/Render/VertexArray.h
     src/Render/GLSLCompiler.cpp
     src/Render/GLSLCompiler.h)
 

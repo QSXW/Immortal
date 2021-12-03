@@ -26,7 +26,7 @@ void Pipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
     if (buffer->GetType() == Buffer::Type::Vertex)
     {
         desc.vertexBuffers.emplace_back(buffer);
-        INITVertex();
+        SetupVertex();
     }
     if (buffer->GetType() == Buffer::Type::Index)
     {
@@ -55,7 +55,7 @@ void Pipeline::Set(const InputElementDescription &description)
         VK_VERTEX_INPUT_RATE_VERTEX
         });
 
-    INITLayout();
+    SetupLayout();
 }
 
 void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)

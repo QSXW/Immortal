@@ -5,7 +5,6 @@
 #include "OrthographicCamera.h"
 #include "RenderContext.h"
 #include "Renderer.h"
-#include "VertexArray.h"
 #include "Texture.h"
 #include "Shader.h"
 #include "Mesh.h"
@@ -129,11 +128,6 @@ public:
         renderer->Clear();
     }
 
-    static void DrawIndexed(std::shared_ptr<VertexArray> &vao, UINT32 indexCount)
-    {
-        renderer->DrawIndexed(vao, indexCount);
-    }
-
     static void Render::Begin(const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
@@ -157,8 +151,6 @@ public:
     {
         return renderer->Index();
     }
-
-    static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<VertexArray> &vertexArray, const Matrix4& transform = Matrix4{ 1.0f });
 
     static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
 
@@ -195,13 +187,18 @@ public:
     template <class T>
     static std::shared_ptr<Buffer> CreateBuffer(const size_t size, const T *data, Buffer::Type type)
     {
-        return renderer->CreateBuffer(size * sizeof(T), data, type);
+        return renderer->CreateBuffer(sizeof(T) * size, data, type);
     }
 
     template <class T>
     static std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
     {
-        return renderer->CreateBuffer(size * sizeof(T), type);
+        return renderer->CreateBuffer(sizeof(T) * size, type);
+    }
+
+    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, int binding = 0)
+    {
+        return renderer->CreateBuffer(size, binding);
     }
 
     static std::shared_ptr<RenderTarget> CreateRenderTarget(const RenderTarget::Description &description)
