@@ -76,7 +76,7 @@ public:
 private:
     void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
 
-    void Shader::Setup(const std::vector<VkDescriptorSetLayoutBinding> &bindings, const std::vector<VkPushConstantRange> &pushConstantRanges);
+    void Setup();
 
 private:
     Device *device{ nullptr };
@@ -94,6 +94,10 @@ private:
     DescriptorSetUpdater descriptorSetUpdater;
 
     VkDescriptorSet descriptorSet;
+
+    std::vector<VkPushConstantRange> pushConstantRanges;
+
+    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 };
 
 }

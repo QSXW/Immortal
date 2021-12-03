@@ -42,6 +42,7 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
         stages.resize(1);
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
+    Setup();
 }
 
 Shader::~Shader()
@@ -292,9 +293,6 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
     const std::string layout = std::string{ "layout" };
     std::vector<VkPushConstantRange> ranges{};
 
-    std::vector<VkPushConstantRange> pushConstantRanges;
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
-
     size_t i = 0;
     while ((i = source.find(layout, i)) != std::string::npos)
     {
@@ -344,15 +342,14 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
         }
         continue;
     }
-    Setup(descriptorSetLayoutBindings, pushConstantRanges);
 }
 
-void Shader::Setup(const std::vector<VkDescriptorSetLayoutBinding> &bindings, const std::vector<VkPushConstantRange> &pushConstantRanges)
+void Shader::Setup()
 {
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = U32(bindings.size());
-    layoutInfo.pBindings    = bindings.data();
+    layoutInfo.bindingCount = U32(descriptorSetLayoutBindings.size());
+    layoutInfo.pBindings    = descriptorSetLayoutBindings.data();
 
     Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
     pipelineLayout = PipelineLayout{
@@ -364,6 +361,9 @@ void Shader::Setup(const std::vector<VkDescriptorSetLayoutBinding> &bindings, co
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
 
     descriptorSetUpdater.Set(descriptorSet);
+
+    pushConstantRanges.clear();
+    descriptorSetLayoutBindings.clear();
 }
 
 }
