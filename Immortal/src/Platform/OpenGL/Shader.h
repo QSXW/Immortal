@@ -15,7 +15,7 @@ public:
     using Super = SuperShader;
 
 public:
-    Shader(const std::string &filepath);
+    Shader(const std::string &filepath, Type type);
 
     Shader(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
 
@@ -56,9 +56,6 @@ private:
 
     uint32_t CompileShader(int type, const char *src);
 
-    std::string ReadFile(const std::string &filepath);
-
-    std::unordered_map<GLenum, std::string> Preprocess(const std::string &source);
 
 private:
     uint32_t handle;

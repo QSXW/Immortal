@@ -226,7 +226,7 @@ TextureCube::TextureCube(const std::string & path)
     TextureCube envCubeUnfiltered(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear });
     // Load & convert Equirectangular Environment Map to a Cubemap texture.
     {
-        OpenGL::Shader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl");
+        OpenGL::Shader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl", Shader::Type::Compute);
         Texture2D envEquirect(path, false, Texture::Wrap::Clamp, Texture::Filter::Linear);
 
         equirectangleToCubeShader.Map();
@@ -238,7 +238,7 @@ TextureCube::TextureCube(const std::string & path)
 
     // Compute pre-filtered specular environment map.
     {
-        OpenGL::Shader spmapShader("assets/shaders/spmap_cs.glsl");
+        OpenGL::Shader spmapShader("assets/shaders/spmap_cs.glsl", Shader::Type::Compute);
         this->Create(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear });
 
         // Copy unfiltered texture to the current

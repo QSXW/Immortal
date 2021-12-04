@@ -34,7 +34,7 @@ std::shared_ptr<Shader> RenderContext::CreateShader(const std::string &filename,
 {
     if (Render::API == Render::Type::OpenGL)
     {
-        return std::make_shared<OpenGL::Shader>(filename);
+        return std::make_shared<OpenGL::Shader>(filename, type);
     }
     if (Render::API == Render::Type::Vulkan)
     {

@@ -238,7 +238,6 @@ set(RENDER_FILES
     src/Render/Renderer.h
     src/Render/Render2D.cpp
     src/Render/Render2D.h
-    src/Render/Shader.cpp
     src/Render/Shader.h
     src/Render/Texture.cpp
     src/Render/Texture.h

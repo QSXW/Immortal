@@ -41,6 +41,16 @@ public:
     {
         return Read<std::string>(filename);
     }
+
+    static std::string ExtractFileName(const std::string &path)
+    {
+        auto lastSlash = path.find_last_of("/\\");
+        auto lastDot   = path.rfind('.');
+
+        lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
+        
+        return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
+    }
 };
 
 }

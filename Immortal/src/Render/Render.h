@@ -23,11 +23,10 @@ public:
     struct Data
     {
         std::shared_ptr<RenderTarget> Target;
-        std::shared_ptr<Pipeline>    FullScreenPipeline;
-        std::shared_ptr<ShaderMap>   ShaderLibrary;
-        std::shared_ptr<Texture>     BlackTexture;
-        std::shared_ptr<Texture>     TransparentTexture;
-        std::shared_ptr<Texture>     WhiteTexture;
+        std::shared_ptr<Pipeline>     FullScreenPipeline;
+        std::shared_ptr<Texture>      BlackTexture;
+        std::shared_ptr<Texture>      TransparentTexture;
+        std::shared_ptr<Texture>      WhiteTexture;
     };
 
     enum class Type
@@ -264,7 +263,7 @@ inline constexpr std::shared_ptr<SuperType> CreateSuper(Args&& ... args)
     if (Render::API == Render::Type::OpenGL)
     {
         return std::make_shared<OPENGL>(std::forward<Args>(args)...);
-    }  
+    }
     if (Render::API == Render::Type::Vulkan)
     {
         return std::make_shared<VULKAN>(std::forward<Args>(args)...);

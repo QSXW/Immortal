@@ -20,8 +20,9 @@ static inline VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module,
     return createInfo;
 }
 
-Shader::Shader(Device *d, const std::string &filename, Shader::Type type)
-    : device{ d }
+Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
+    Super{ type },
+    device { d }
 {   
     stages.reserve(2);
     if (type == Shader::Type::Graphics)

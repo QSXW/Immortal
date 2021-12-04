@@ -8,6 +8,7 @@
 
 #include "Texture.h"
 #include "Buffer.h"
+#include "Shader.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
 
@@ -76,6 +77,11 @@ public:
     virtual std::shared_ptr<SuperRenderTarget>CreateRenderTarget(const RenderTarget::Description &description) override
     {
         return std::make_shared<RenderTarget>(description);
+    }
+
+    virtual std::shared_ptr<Shader::Super> CreateShader(const std::string &filepath, Shader::Type type) override
+    {
+        return std::make_shared<Shader>(filepath, type);
     }
 
 private:

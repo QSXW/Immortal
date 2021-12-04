@@ -57,7 +57,8 @@ public:
     };
 
 public:
-    Shader(const std::string &filepath, Type type = Type::Graphics)
+    Shader(const std::string &filepath, Type type = Type::Graphics) :
+        Super{ type }
     {
         ComPtr<ID3DBlob> errorMsg{ nullptr };
 

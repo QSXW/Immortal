@@ -1,11 +1,10 @@
 #include "impch.h"
 #include "Shader.h"
 
-#include <fstream>
-#include <array>
-
 #include "Common.h"
 #include <GLFW/glfw3.h>
+
+#include "FileSystem/FileSystem.h"
 
 namespace Immortal
 {
@@ -31,24 +30,22 @@ static GLenum ShaderTypeFromString(const std::string &type)
     return 0;
 }
 
-Shader::Shader(const std::string &filepath)
+Shader::Shader(const std::string &filepath, Type type) :
+    Super{ type },
+    name{ std::move(FileSystem::ExtractFileName(filepath)) }
 {
-    auto source = ReadFile(filepath);
-    auto shaderSources = Preprocess(source);
-        
-    if (shaderSources.find(GL_COMPUTE_SHADER) != shaderSources.end())
+    std::unordered_map<GLenum, std::string> shaderSources;
+    if (type == Shader::Type::Graphics)
     {
-        type = Shader::Type::Compute;
+        shaderSources.insert({   GL_VERTEX_SHADER, FileSystem::ReadString(filepath + ".vert") });
+        shaderSources.insert({ GL_FRAGMENT_SHADER, FileSystem::ReadString(filepath + ".frag") });
+    }
+    if (type == Type::Compute)
+    {
+        shaderSources.insert({ GL_COMPUTE_SHADER, FileSystem::ReadString(filepath + ".comp") });
     }
 
     Compile(shaderSources);
-
-    /* Extract name from filepath */
-    auto lastSlash = filepath.find_last_of("/\\");
-    lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
-    auto lastDot = filepath.rfind('.');
-    auto count = lastDot == std::string::npos ? filepath.size() - lastSlash : lastDot - lastSlash;
-    name = filepath.substr(lastSlash, count);
 }
 
 Shader::Shader(const std::string &name, const std::string & vertexSrc, const std::string & fragmentSrc)
@@ -94,8 +91,8 @@ void Shader::Compile(const std::unordered_map<GLenum, std::string>& source)
             glDeleteShader(shaderIDs[i]);
         }
 
+        LOG::ERR("Shader program link failure!");
         LOG::ERR("{0}", infoLog.get());
-        SLASSERT(isLinked == GL_FALSE && "Shader compilation failure!");
     }
 
     for (int i = 0; i < source.size(); i++)
@@ -122,56 +119,12 @@ uint32_t Shader::CompileShader(int type, const char *src)
         error.resize(maxLength);
         glGetShaderInfoLog(shader, maxLength, &maxLength, error.data());
         glDeleteShader(shader);
+
+        LOG::ERR("Shader compilation failure!");
         LOG::ERR("{0}", error.data());
-        SLASSERT(isCompiled && "Shader compilation failure!");
     }
 
     return shader;
-}
-
-std::string Shader::ReadFile(const std::string & filepath)
-{
-    std::string result;
-    std::ifstream in(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
-    if (in)
-    {
-        in.seekg(0, std::ios::end);
-        size_t size = in.tellg();
-        if (size != -1)
-        {
-            result.resize(size);
-            in.seekg(0, std::ios::beg);
-            in.read(&result[0], size);
-            return result;
-        }
-    }
-    LOG::ERR("Could not open file '{0}'", filepath);
-    return {};
-}
-
-std::unordered_map<GLenum, std::string> Shader::Preprocess(const std::string & source)
-{
-    std::unordered_map<GLenum, std::string> shaderSources;
-
-    const char* typeToken = "#type";
-    size_t typeTokenLength = strlen(typeToken);
-    size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
-    while (pos != std::string::npos)
-    {
-        size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
-        SLASSERT(eol != std::string::npos && "Syntax error");
-        size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
-        std::string type = source.substr(begin, eol - begin);
-        SLASSERT(ShaderTypeFromString(type) && "Invalid shader type specified");
-
-        size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
-        SLASSERT(nextLinePos != std::string::npos && "Syntax error");
-        pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
-
-        shaderSources[ShaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
-    }
-
-    return shaderSources;
 }
 
 void Shader::Map() const
