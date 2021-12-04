@@ -48,6 +48,7 @@ void Pipeline::Set(std::shared_ptr<SuperBuffer> &buffer)
     {
         desc.indexBuffer = buffer;
     }
+    handle.Bind(std::dynamic_pointer_cast<Buffer>(buffer).get());
 }
 
 }

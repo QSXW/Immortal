@@ -51,6 +51,11 @@ public:
         return name.c_str();
     }
 
+    operator GLint() const
+    {
+        return handle;
+    }
+
 private:
     void Compile(const std::unordered_map<GLenum, std::string> &source);
 

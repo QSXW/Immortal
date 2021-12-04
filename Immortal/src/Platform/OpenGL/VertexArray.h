@@ -35,14 +35,12 @@ public:
 
     void Set(const Buffer *buffer, const InputElementDescription &inputElementDescription)
     {
+        Bind();
         buffer->Bind();
-        glBindVertexArray(handle);
-
         uint32_t attributeIndex = 0;
         for (const auto &e : inputElementDescription)
         {
             auto glBaseType = e.BaseType<GLenum>();
-            glEnableVertexAttribArray(attributeIndex);
             if (glBaseType == GL_INT)
             {
                 glVertexAttribIPointer(attributeIndex,
@@ -60,8 +58,10 @@ public:
                     inputElementDescription.Stride(),
                     rcast<const void *>((intptr_t)e.Offset()));
             }
-            attributeIndex++;
+            glEnableVertexAttribArray(attributeIndex++);
         }
+        buffer->Unbind();
+        Unbind();
     }
 
     void Bind(const Buffer *buffer)

@@ -4,6 +4,9 @@
 #include "Common.h"
 #include <GLFW/glfw3.h>
 
+#include "RenderTarget.h"
+#include "Pipeline.h"
+
 namespace Immortal
 {
 namespace OpenGL
@@ -88,6 +91,23 @@ void Renderer::SwapBuffers()
 {
     glfwSwapBuffers(context->Handle());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
+{
+   auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
+   pipeline->Draw();
+}
+
+void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+{
+    auto target = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
+    target->Map();
+}
+
+void Renderer::End()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 }

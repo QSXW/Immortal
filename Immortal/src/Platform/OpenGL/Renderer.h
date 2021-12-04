@@ -84,6 +84,12 @@ public:
         return std::make_shared<Shader>(filepath, type);
     }
 
+    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
+
+    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
+
+    virtual void End() override;
+
 private:
     RenderContext *context{ nullptr };
 };

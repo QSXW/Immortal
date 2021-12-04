@@ -34,7 +34,12 @@ public:
 
     virtual uint64_t Descriptor() const
     {
-        return ncast<uint64_t>(handle);
+        return colorAttachments[0];
+    }
+
+    operator GLint() const
+    {
+        return handle;
     }
 
 private:

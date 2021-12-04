@@ -92,10 +92,8 @@ void RenderTarget::Update()
         Clear();
     }
 
-    // @Create Framebuffer
     glCreateFramebuffers(1, &handle);
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
-
     bool multisample = desc.Samples > 1;
 
     // Attachments
@@ -142,6 +140,9 @@ void RenderTarget::Map(uint32_t slot)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
     glViewport(0, 0, desc.Width, desc.Height);
+
+    glClearColor(clearValues.color.r, clearValues.color.g, clearValues.color.b, clearValues.color.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void RenderTarget::Unmap()
@@ -153,7 +154,7 @@ void RenderTarget::Resize(uint32_t width, uint32_t height)
 {
     desc.Width = width;
     desc.Height = height;
-    this->Update();
+    Update();
 }
 
 void *RenderTarget::ReadPixel(uint32_t index, int x, int y, Format format, int width, int height)
