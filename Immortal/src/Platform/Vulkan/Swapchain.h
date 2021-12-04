@@ -28,6 +28,8 @@ public:
 
     static constexpr uint32_t MaxFrameCount{ 3 };
 
+    static inline constexpr bool IsOutputNeed = false;
+
 public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 

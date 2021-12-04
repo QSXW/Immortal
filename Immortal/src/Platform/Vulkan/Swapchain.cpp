@@ -7,6 +7,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 inline UINT32 SelectImageCount(UINT32 request, UINT32 min, UINT32 max)
 {
     Utils::Clamp(request, min, max);
@@ -23,7 +24,7 @@ inline VkExtent2D SelectExtent(VkExtent2D request, const VkExtent2D &min, const 
 {
     if (request.width < 1 || request.height < 1)
     {
-        LOG::WARN("(Swapchain) Image extent ({0}, {1}) not supported. Selecting ({2}, {3}).",
+        LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Image extent ({0}, {1}) not supported. Selecting ({2}, {3}).",
             request.width, request.height, current.width, current.height);
         return current;
     }
@@ -60,7 +61,7 @@ inline VkSurfaceFormatKHR SelectSurfaceFormat(const VkSurfaceFormatKHR request, 
             if (it != available.end())
             {
             __IM__000_000_001_ReturnSurfaceFormat:
-                LOG::WARN("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
+                LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
                             Stringify(request), Stringify(*it));
                 return *it;
             }
@@ -70,7 +71,7 @@ inline VkSurfaceFormatKHR SelectSurfaceFormat(const VkSurfaceFormatKHR request, 
     }
     else
     {
-        LOG::INFO("(Swapchain) Surface format selected: {0}", Stringify(request));
+        LOG::DEBUG<Swapchain::IsOutputNeed>("(Swapchain) Surface format selected: {0}", Stringify(request));
     }
     return *it;
 }
@@ -98,7 +99,7 @@ inline std::set<VkImageUsageFlagBits> SelectImageUsage(const std::set<VkImageUsa
         }
         else
         {
-            LOG::WARN("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
+            LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
         }
     }
 
@@ -122,13 +123,12 @@ inline std::set<VkImageUsageFlagBits> SelectImageUsage(const std::set<VkImageUsa
     }
 
     SLASSERT(!validated.empty() && "No compatible image usage found.");
-#if SLDEBUG
-    LOG::INFO("(Swapchain) Image usage flags:");
+
+    LOG::DEBUG<Swapchain::IsOutputNeed>("(Swapchain) Image usage flags:");
     for (auto &flag : validated)
     {
-        LOG::INFO("  \t{0}", Stringify(flag));
+        LOG::DEBUG<Swapchain::IsOutputNeed>("  \t{0}", Stringify(flag));
     }
-#endif
 
     return validated;
 }
@@ -150,7 +150,7 @@ inline VkSurfaceTransformFlagBitsKHR SelectTransform(VkSurfaceTransformFlagBitsK
         return request;
     }
 
-    LOG::WARN("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
+    LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
 
     return current;
 }
@@ -173,7 +173,7 @@ inline VkCompositeAlphaFlagBitsKHR SelectCompositeAlpha(VkCompositeAlphaFlagBits
     {
         if (compositeAlphaFlags[i] & support)
         {
-            LOG::WARN("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
+            LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
                         Stringify(request), Stringify(compositeAlphaFlags[i]));
             return compositeAlphaFlags[i];
         }
@@ -199,14 +199,13 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
                 chosen = presentMode;
             }
         }
-
-        LOG::WARN("(Swapchain) Present mode '{}' not supported. Selecting '{}'."),
+        LOG::WARN<Swapchain::IsOutputNeed>("(Swapchain) Present mode '{}' not supported. Selecting '{}'."),
                     Stringify(request), Stringify(chosen);
         return chosen;
     }
     else
     {
-        LOG::INFO("(Swapchain) Present mode selected: {0}"), Stringify(request);
+        LOG::DEBUG<Swapchain::IsOutputNeed>("(Swapchain) Present mode selected: {0}"), Stringify(request);
         return *it;
     }
 }
@@ -254,25 +253,22 @@ Swapchain::Swapchain(Swapchain &oldSwapchain,
     surfaceFormats.resize(surfaceFormatCount);
     Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDeviceHandle, surface, &surfaceFormatCount, surfaceFormats.data()));
 
-#if     SLDEBUG
-    LOG::INFO("Surface supports the following surface formats:");
+    LOG::DEBUG<Swapchain::IsOutputNeed>("Surface supports the following surface formats:");
     for (auto &f : surfaceFormats)
     {
-        LOG::INFO("  \t{0}", Vulkan::Stringify(f));
+        LOG::DEBUG<Swapchain::IsOutputNeed>("  \t{0}", Vulkan::Stringify(f));
     }
-#endif
+
     UINT32 presentModeCount{ 0U };
     Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDeviceHandle, surface, &presentModeCount, nullptr));
     presentModes.resize(presentModeCount);
     Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDeviceHandle, surface, &presentModeCount, presentModes.data()));
 
-#if     SLDEBUG
-    LOG::INFO("Surface supports the following present modes:");
+    LOG::DEBUG<Swapchain::IsOutputNeed>("Surface supports the following present modes:");
     for (auto &p : presentModes)
     {
-            LOG::INFO("  \t{0}", Vulkan::Stringify(p));
+        LOG::DEBUG<Swapchain::IsOutputNeed>("  \t{0}", Vulkan::Stringify(p));
     }
-#endif
 
     this->properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
     this->properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
@@ -325,5 +321,6 @@ void Swapchain::Create()
     images.resize(count);
     Check(vkGetSwapchainImagesKHR(device, handle, &count, images.data()));
 }
+
 }
 }
