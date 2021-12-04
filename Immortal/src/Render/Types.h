@@ -7,6 +7,7 @@ namespace Immortal
 
 union Colour
 {
+    struct { float r, g, b, a; };
     Vector4     v4;
     float       float32[4];
     int32_t     int32[4];
