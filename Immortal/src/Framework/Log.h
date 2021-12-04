@@ -18,10 +18,13 @@ class LOG
 public:
     static void INIT(bool async = false);
 
-    template <class... Args>
+    template <bool On = true, class... Args>
     static inline constexpr void WARN(Args&& ... args)
     {
-        logger->warn(std::forward<Args>(args)...);
+        if constexpr (On)
+        {
+            logger->warn(std::forward<Args>(args)...);
+        }
     }
 
     template <class... Args>
@@ -30,10 +33,13 @@ public:
         logger->info(std::forward<Args>(args)...);
     }
 
-    template <class... Args>
+    template <bool On = true, class... Args>
     static inline constexpr void DEBUG(Args&& ... args)
     {
-        logger->debug(std::forward<Args>(args)...);
+        if constexpr (On)
+        {
+            logger->debug(std::forward<Args>(args)...);
+        }
     }
 
     template <class... Args>
