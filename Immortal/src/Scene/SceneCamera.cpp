@@ -34,11 +34,11 @@ void SceneCamera::SetViewportSize(float width, float height)
 {
     if (type == ProjectionType::Perspective)
     {
-        projection = Vector::PerspectiveFOV(perspectiveFOV, (float)width, (float)height, perspectiveNear, perspectiveFar);
+        projection = Vector::PerspectiveFOV(perspectiveFOV, width, height, perspectiveNear, perspectiveFar);
     }
     else if (type == ProjectionType::Orthographic)
     {
-        float aspect = (float)width / (float)height;
+        float aspect = width / height;
         float w = orthographicSize * aspect;
         float h = orthographicSize;
         projection = Vector::Ortho(-w * 0.5f, w * 0.5f, -h * 0.5f, h * 0.5f, orthographicNear, orthographicFar);
