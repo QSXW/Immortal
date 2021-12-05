@@ -178,5 +178,14 @@ void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
     }
 }
 
+void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+{
+    descriptorSetUpdater->Set(name, Deanonymize<BufferDescriptor>(uniform->Descriptor()));
+    if (Ready())
+    {
+        descriptorSetUpdater->Update(*device);
+    }
+}
+
 }
 }

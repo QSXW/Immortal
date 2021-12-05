@@ -47,6 +47,11 @@ public:
 
     }
 
+    virtual void Bind(const std::string &name, const Buffer *uniform)
+    {
+
+    }
+
     virtual void Set(std::shared_ptr<Buffer> &buffer)
     {
         if (buffer->GetType() == Buffer::Type::Vertex)

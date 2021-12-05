@@ -23,7 +23,7 @@ void Render2D::INIT()
         { Format::FLOAT,   "TilingFactor" },
         { Format::INT,     "EntityID"     }
         });
-    pipeline->Set(Render::CreateBuffer<QuadVertex>(data.MaxVertices, Buffer::Type::Vertex));
+    pipeline->Set(Render::Create<Buffer>(data.MaxVertices, Buffer::Type::Vertex));
 
     {
         std::unique_ptr<uint32_t> quadIndices;
