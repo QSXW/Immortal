@@ -108,6 +108,20 @@ struct DescriptorSetUpdater
         return true;
     }
 
+    bool Set(const std::string &name, const BufferDescriptor &descriptor)
+    {
+        auto it = Map.find(name);
+        if (it == Map.end())
+        {
+            LOG::WARN("There is no any buffer named \"{0}\". Buffer updating is invalid.", name);
+            return false;
+        }
+        auto index = it->second;
+
+        WriteDescriptorSets[index].pBufferInfo = &descriptor.info;
+        return true;
+    }
+
     WriteDescriptorSetMap Map;
 
     std::vector<VkWriteDescriptorSet> WriteDescriptorSets;
