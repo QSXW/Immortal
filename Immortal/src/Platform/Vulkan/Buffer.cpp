@@ -101,5 +101,10 @@ void Buffer::Update(uint32_t size, const void *src)
     }
 }
 
+Anonymous Buffer::Descriptor() const
+{
+    return Anonymize(descriptor);
+}
+
 }
 }

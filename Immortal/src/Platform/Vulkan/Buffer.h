@@ -22,6 +22,10 @@ public:
 
     virtual ~Buffer() override;
 
+    virtual void Update(uint32_t size, const void *src) override;
+
+    virtual Anonymous Descriptor() const override;
+
     VkDeviceSize &Offset()
     {
         return offset;
@@ -49,8 +53,6 @@ public:
     void Unmap();
 
     void Flush();
-
-    virtual void Update(uint32_t size, const void *src) override;
 
     inline VkBufferUsageFlags SelectBufferUsage(Type type)
     {

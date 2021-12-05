@@ -231,6 +231,11 @@ public:
         
     }
 
+    virtual Anonymous Descriptor() const
+    {
+        return nullptr;
+    }
+
     uint32_t Size() const 
     {
         return size;
