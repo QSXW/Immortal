@@ -84,6 +84,8 @@ using UINT32 = unsigned int;
 using INT64  = int64_t;
 using UINT64 = uint64_t;
 
+using Anonymous = void*;
+
 /*
  * @brief: Helper Template
  */

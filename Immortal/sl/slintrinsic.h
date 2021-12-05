@@ -9,6 +9,8 @@
 #include "slapi.h"
 #include "slcast.h"
 
+using namespace sl;
+
 #ifndef __GNUC__
 
 #define SL_DONT_USE_DIV [[deprecated("avoid to use, try convert to a multiply before broadcast")]]
