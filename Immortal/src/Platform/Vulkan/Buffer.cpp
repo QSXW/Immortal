@@ -30,6 +30,7 @@ Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
 
 Buffer::~Buffer()
 {
+    device->Wait();
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
     {
         vmaDestroyBuffer(device->MemoryAllocator(), handle, memory);
