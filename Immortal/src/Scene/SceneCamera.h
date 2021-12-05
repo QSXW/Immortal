@@ -13,7 +13,7 @@ public:
 
     virtual ~SceneCamera();
 
-    void SetPerspective(float verticalFOV, float nearClip = 0.1f, float farClip = 10000.0f);
+    void SetPerspective(float verticalFOV, float nearClip = 1.0f, float farClip = 10000.0f);
 
     void SetOrthographic(float size, float nearClip = -1.0f, float farClip = 1.0f);
 
