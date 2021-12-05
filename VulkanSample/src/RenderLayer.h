@@ -43,6 +43,14 @@ public:
             });
         pipeline->Create(renderTarget);
         pipeline->Bind(Render::Preset()->WhiteTexture, 1);
+
+        camera.primaryCamera.SetPerspective(90.0f);
+        camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+
+        uniformBuffer = Render::Create<Buffer>(sizeof(ubo), Buffer::Type::Uniform);
+        pipeline->Bind("ubo", uniformBuffer.get());
+
+        camera.transform.Position = Vector3{ .5f, 0.0, 0.0 };
     }
 
     virtual void OnDetach() override
@@ -53,13 +61,19 @@ public:
     virtual void OnUpdate() override
     {
         Vector2 viewportSize = offline.Size();
-        if ((viewportSize.x != renderTarget->Desc().Width ||
-            viewportSize.y != renderTarget->Desc().Height) &&
+        if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
             (viewportSize.x != 0 && viewportSize.y != 0))
         {
             renderTarget->Resize(viewportSize);
+            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
         }
-        Render::Begin(renderTarget, primaryCamera);
+
+        ubo.projectionMatrix = camera.primaryCamera.Projection();
+        ubo.viewMatrix       = camera.primaryCamera.View();
+        ubo.modelMatrix      = camera.transform;
+        uniformBuffer->Update(sizeof(ubo), &ubo);
+
+        Render::Begin(renderTarget, camera.primaryCamera);
         {
             Render::Draw(pipeline);
         }
@@ -81,9 +95,24 @@ private:
 
     std::shared_ptr<Pipeline> pipeline;
 
-    Camera primaryCamera;
+    struct {
+        SceneCamera primaryCamera;
+
+        TransformComponent transform;
+    } camera;
 
     Widget::Viewport offline{ "Offline Render" };
+
+    struct
+    {
+        Matrix4 projectionMatrix;
+        Matrix4 modelMatrix;
+        Matrix4 viewMatrix;
+    } ubo;
+
+    std::shared_ptr<Buffer> uniformBuffer;
+
+    Entity cameraObject;
 };
 
 }
