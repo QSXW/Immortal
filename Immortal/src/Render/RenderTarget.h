@@ -150,6 +150,21 @@ public:
         return &clearValues.color;
     }
 
+    Vector2 ViewportSize()
+    {
+        return Vector2{ ncast<float>(desc.Width), ncast<float>(desc.Height) };
+    }
+
+    uint32_t Width() const
+    {
+        return desc.Width;
+    }
+
+    uint32_t Height() const
+    {
+        return desc.Height;
+    }
+
 public:
     Description desc{};
 
