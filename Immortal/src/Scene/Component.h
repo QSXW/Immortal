@@ -9,11 +9,11 @@
 
 namespace IMMORTAL_API Immortal
 {
+
 struct Component
 {
-    Component(uint32_t c) : Category(c) { }
-
-    enum Category {
+    enum class Type
+    {
         None,
         ID,
         Tag,
@@ -25,143 +25,243 @@ struct Component
         SpriteRenderer,
         Camera
     };
-    uint32_t Category{ None };
+
+    Component(Type c) :
+        type{ type }
+    {
+        
+    }
+
+    Type type{ None };
 };
 
 struct IDComponent : public Component
 {
-    IDComponent() : Component(Component::ID) { }
-    IDComponent(uint64_t id) : uid(id), Component(Component::ID) { }
+    IDComponent() :
+        Component{ Type::ID }
+    {
+        
+    }
+
+    IDComponent(uint64_t id) :
+        Component{ Type::ID },
+        uid(id)
+    {
+    
+    }
 
     uint64_t uid{ 0 };
 };
 
 struct TagComponent : public Component
 {
-    TagComponent() : Component(Component::Tag) { }
-    TagComponent(const std::string &tag) : Tag(tag), Component(Component::Tag) { }
+    TagComponent() :
+        Component{ Type::Tag }
+    {
+        
+    }
+
+    TagComponent(const std::string &tag) :
+        Component{ Type::Tag },
+        Tag{ tag }
+    {
+
+    }
+
     std::string Tag;
 };
 
 struct TransformComponent : public Component
 {
-    TransformComponent() : Component(Component::Transform) { }
-    void Set(Vector::Vector3 position, Vector::Vector3 rotation, Vector::Vector3 scale)
+    TransformComponent() :
+        Component{ Type::Transform }
+    {
+        
+    }
+
+    void Set(Vector3 position, Vector3 rotation, Vector3 scale)
     { 
         Position = position;
         Rotation = rotation;
-        Scale = scale;
+        Scale    = scale;
     }
 
-    Vector::mat4 Transform() const
+    Matrix4 Transform() const
     {
         return Vector::Translate(Position) * Vector::Rotate(Rotation) * Vector::Scale(Scale);
     }
 
-    operator Vector::mat4() const
+    operator Matrix4() const
     {
         return Transform();
     }
 
-    Vector::Vector3 Position{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 Rotation{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 Scale{ 1.0f, 1.0f, 1.0f };
+    static constexpr Vector3 Up{ 0.0f, 1.0f, 0.0f };
 
-    static constexpr Vector::Vector3 Up{ 0.0f, 1.0f, 0.0f };
-    static constexpr Vector::Vector3 Right{ 1.0f, 0.0f, 0.0f };
-    static constexpr Vector::Vector3 Forward{ 0.0f, 0.0f, -1.0f };
+    static constexpr Vector3 Right{ 1.0f, 0.0f, 0.0f };
+
+    static constexpr Vector3 Forward{ 0.0f, 0.0f, -1.0f };
+
+    Vector3 Position{ 0.0f, 0.0f, 0.0f };
+
+    Vector3 Rotation{ 0.0f, 0.0f, 0.0f };
+
+    Vector3 Scale{ 1.0f, 1.0f, 1.0f };
 };
 
 struct MeshComponent : public Component
 {
-    std::shared_ptr<Immortal::Mesh> Mesh;
+    MeshComponent() :
+        Component{ Type::Mesh }
+    {
+    
+    }
 
-    MeshComponent() : Component(Component::Mesh) { }
-    MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) : Mesh(mesh), Component(Component::Mesh) { }
+    MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) :
+        Component{ Type::Mesh },
+        Mesh{ mesh }
+    {
+    
+    }
+
     operator std::shared_ptr<Immortal::Mesh>() { return Mesh; }
+
+    std::shared_ptr<Immortal::Mesh> Mesh;
 };
 
 struct MaterialComponent : public Component
 {
-    std::shared_ptr<Immortal::Texture> AlbedoMap;
-    std::shared_ptr<Immortal::Texture> NormalMap;
-    std::shared_ptr<Immortal::Texture> MetalnessMap;
-    std::shared_ptr<Immortal::Texture> RoughnessMap;
+    Vector3  AlbedoColor;
+    float    Metalness;
+    float    Roughness;
 
-    Vector::Vector3  AlbedoColor;
-    float            Metalness;
-    float            Roughness;
-
-    MaterialComponent() : Component(Component::Mesh),
-        AlbedoColor{ 0.995f, 0.995f, 0.995f }, Metalness(1.0f), Roughness(1.0f)
+    MaterialComponent() :
+        Component{ Type::Mesh },
+        AlbedoColor{ 0.995f, 0.995f, 0.995f },
+        Metalness(1.0f),
+        Roughness(1.0f)
     {
         AlbedoMap    = Render::Preset()->WhiteTexture;
         NormalMap    = AlbedoMap;
         MetalnessMap = AlbedoMap;
         RoughnessMap = AlbedoMap;
     }
+
+    std::shared_ptr<Immortal::Texture> AlbedoMap;
+    std::shared_ptr<Immortal::Texture> NormalMap;
+    std::shared_ptr<Immortal::Texture> MetalnessMap;
+    std::shared_ptr<Immortal::Texture> RoughnessMap;
 };
 
 struct LightComponent : public Component
 {
-    LightComponent() : Component(Component::Light) { }
+    LightComponent() :
+        Component{ Type::Light }
+    {
+        
+    }
 };
 
 struct SceneComponent : public Component
 {
-    SceneComponent() : Component(Component::Scene) { }
+    SceneComponent() :
+        Component{ Type::Scene }
+    {
+    
+    }
 };
 
 struct SpriteRendererComponent : public Component
 {
-    Vector::Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
-    std::shared_ptr<Texture2D> Texture;
-    float TilingFactor = 1.0f;
-
-    SpriteRendererComponent() : Component(Component::SpriteRenderer)
+    SpriteRendererComponent() :
+        Component{ Type::SpriteRenderer }
     {
-        constexpr uint64_t white = 0xffffffff;
-        Texture = Texture2D::Create(1, 1);
-        Texture->SetData((void*)(&white), 4);
+        Texture = Render::Preset()->WhiteTexture;
     }
-    SpriteRendererComponent(std::shared_ptr<Texture2D> texture) : Texture(texture), Component(Component::SpriteRenderer) { }
-    SpriteRendererComponent(std::shared_ptr<Texture2D> texture, const Vector::Vector4 color) : Texture(texture), Color(color), Component(Component::SpriteRenderer) { }
-    SpriteRendererComponent(const SpriteRendererComponent& other) = default;
+
+    SpriteRendererComponent(std::shared_ptr<Texture2D> texture) :
+        Component{ Type::SpriteRenderer },
+        Texture{ texture }
+    {
+
+    }
+
+    SpriteRendererComponent(std::shared_ptr<Texture2D> texture, const Vector4 color) :
+        Component{ Type::SpriteRenderer },
+        Texture{ texture },
+        Color{ color }
+    {
+    
+    }
+
+    SpriteRendererComponent(const SpriteRendererComponent &other) = default;
+
+    std::shared_ptr<Texture> Texture;
+
+    Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+
+    float TilingFactor = 1.0f;
 };
 
 struct CameraComponent : public Component
 {
-    CameraComponent() : Component(Component::Camera) { }
+    CameraComponent() :
+        Component{ Type::Camera }
+    {
+    
+    }
+
     CameraComponent(const CameraComponent &other) = default;
 
-    SceneCamera Camera;
-    bool Primary = false;
+    operator SceneCamera&()
+    { 
+        return Camera;
+    }
 
-    operator SceneCamera&() { return Camera; }
-    operator const SceneCamera&() const { return Camera; }
+    operator const SceneCamera&() const
+    { 
+        return Camera;
+    }
+
+    SceneCamera Camera;
+
+    bool Primary = false;
 };
 
 struct DirectionalLightComponent : public Component
 {
-    DirectionalLightComponent() : Component(Component::Light) { }
+    DirectionalLightComponent() :
+        Component{ Type::Light }
+    {
+    
+    }
 
-    Vector::Vector3 Radiance = { 1.0f, 1.0f, 1.0f };
+    Vector3 Radiance{ 1.0f, 1.0f, 1.0f };
+
     float Intensity   = 1.0f;
     bool  CastShadows = true;
     bool  SoftShadows = true;
-    float LightSize = 0.5f; // For PCSS
+    float LightSize   = 0.5f; // For PCSS
 };
 
 struct ScriptComponent : public Component
 {
-    std::string Name;
+    ScriptComponent() :
+        Component{ Type::Script }
+    {
+    
+    }
 
-    ScriptComponent() : Component(Component::Script) { }
     ScriptComponent(const ScriptComponent & other) = default;
-    ScriptComponent(const std::string &name)
-        : Component(Component::Script), Name(name)
+
+    ScriptComponent(const std::string &name) :
+        Component{ Type::Script },
+        Name{ name }
     {
 
     }
+
+    std::string Name;
 };
+
 }

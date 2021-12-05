@@ -187,7 +187,7 @@ void Render2D::DrawQuad(const Matrix4 &transform, const Vector4 &color, int enti
     data.Stats.QuadCount++;
 }
 
-void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture2D>&texture, float tilingFactor, const Vector4 &tintColor, int entityID)
+void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture>&texture, float tilingFactor, const Vector4 &tintColor, int entityID)
 {
     constexpr size_t quadVertexCount = 4;
     constexpr Vector2 textureCoords[] = {

@@ -31,7 +31,7 @@ public:
     struct CircleVertex
     {
         Vector3 WorldPosition;
-        float           Thickness;
+        float   Thickness;
         Vector2 LocalPosition;
         Vector4 Color;
     };
@@ -65,7 +65,7 @@ public:
         std::unique_ptr<QuadVertex> QuadVertexBufferBase;
         QuadVertex *QuadVertexBufferPtr = nullptr;
 
-        std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> TextureSlots;
+        std::array<std::shared_ptr<Texture>, MaxTextureSlots> TextureSlots;
         uint32_t TextureSlotIndex = 1; // 0 = white texture
 
         Vector4 QuadVertexPositions[4];
@@ -77,8 +77,8 @@ public:
     static void INIT();
     static void Shutdown();
 
-    static void BeginScene(const Camera& camera);
-    static void BeginScene(const Camera& camera, const Matrix4& transform);
+    static void BeginScene(const Camera &camera);
+    static void BeginScene(const Camera &camera, const Matrix4 &transform);
 
     static void BeginScene(const OrthographicCamera camera);
     static void EndScene();
@@ -86,20 +86,20 @@ public:
 
     static void SetColor(const Vector4 &color, const float brightness, const Vector3 HSV = Vector3(0.0f));
 
-    static void DrawQuad(const Vector2& position, const Vector2& size, const Vector4& color);
-    static void DrawQuad(const Vector3& position, const Vector2& size, const Vector4& color);
-    static void DrawQuad(const Vector2& position, const Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
-    static void DrawQuad(const Vector3& position, const Vector2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
+    static void DrawQuad(const Vector2 &position, const Vector2 &size, const Vector4 &color);
+    static void DrawQuad(const Vector3 &position, const Vector2 &size, const Vector4 &color);
+    static void DrawQuad(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
+    static void DrawQuad(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
 
-    static void DrawQuad(const Matrix4& transform, const Vector4& color, int entityID = -1);
-    static void DrawQuad(const Matrix4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f), int entityID = -1);
+    static void DrawQuad(const Matrix4 &transform, const Vector4 &color, int entityID = -1);
+    static void DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f), int entityID = -1);
 
-    static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const Vector4& color);
-    static void DrawRotatedQuad(const Vector3& position, const Vector2& size, float rotation, const Vector4& color);
-    static void DrawRotatedQuad(const Vector2& position, const Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
-    static void DrawRotatedQuad(const Vector3& position, const Vector2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor = 1.0f, const Vector4& tintColor = Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector2 &position, const Vector2 &size, float rotation, const Vector4 &color);
+    static void DrawRotatedQuad(const Vector3 &position, const Vector2 &size, float rotation, const Vector4 &color);
+    static void DrawRotatedQuad(const Vector2 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
+    static void DrawRotatedQuad(const Vector3 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
 
-    static void DrawSprite(const Matrix4& transform, SpriteRendererComponent& src, int entityID);
+    static void DrawSprite(const Matrix4 &transform, SpriteRendererComponent &src, int entityID);
 
     static void ResetStats();
 
