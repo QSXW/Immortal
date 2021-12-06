@@ -7,26 +7,6 @@
 
 using namespace Immortal;
 
-static std::map<std::string, std::string> lt;
-
-struct LanguageSettings
-{
-    LanguageSettings(const std::string &path)
-    {
-        Profiler p{ "Initializing language settings" };
-        auto json = JSON::Parse(path);
-
-        auto &map = json["settings"]["map"];
-
-        for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
-        {
-            auto &item = it->items();            
-            lt[it.key()] = it.value().get<std::string>();
-            int pause = 0;
-        }
-    }
-};
-
 class VulkanLayer : public Layer
 {
 public:
@@ -46,8 +26,6 @@ public:
         bool showDemoWindow{ true };
         Vector4 clearColor{ 0.45f, 0.55f, 0.60f, 1.00f };
     } Settings;
-
-    LanguageSettings languageSettings{ "Assets/json/default_language.json" };
 
     std::shared_ptr<Texture> primary;
 

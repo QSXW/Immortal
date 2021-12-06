@@ -22,43 +22,43 @@ void VulkanLayer::OnGuiRender()
 
     ImGui::PushFont(gui->Bold());
     menuBar.OnUpdate([=]() -> void {
-        if (ImGui::BeginMenu(lt["menu"]))
+        if (ImGui::BeginMenu(WordsMap::Get("menu")))
         {
-            if (ImGui::MenuItem(lt["open"], "Ctrl + O"))
+            if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + O"))
             {
                 this->LoadObject();
             }
-            if (ImGui::MenuItem(lt["save"], "Ctrl + S"))
+            if (ImGui::MenuItem(WordsMap::Get("save"), "Ctrl + S"))
             {
             
             }
-            if (ImGui::MenuItem(lt["save_as"], "Ctrl+Alt+S"))
+            if (ImGui::MenuItem(WordsMap::Get("save_as"), "Ctrl+AWordsMap::Get<+S"))
             {
 
             }
-            if (ImGui::MenuItem(lt["exit"], "Ctrl + W"))
+            if (ImGui::MenuItem(WordsMap::Get("exit"), "Ctrl + W"))
             { 
                 Application::App()->Close();
             }
-            if (ImGui::MenuItem(lt["open"], "Ctrl + W"))
+            if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + W"))
             {
             
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(lt["edit"]))
+        if (ImGui::BeginMenu(WordsMap::Get("edit")))
         {
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(lt["view"]))
+        if (ImGui::BeginMenu(WordsMap::Get("view")))
         {
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(lt["graphics"]))
+        if (ImGui::BeginMenu(WordsMap::Get("graphics")))
         {
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu(lt["help"]))
+        if (ImGui::BeginMenu(WordsMap::Get("help")))
         {
             ImGui::EndMenu();
         }
@@ -76,7 +76,7 @@ void VulkanLayer::OnGuiRender()
         static float f = 0.0f;
         static int counter = 0;
 
-        ImGui::Begin(lt["debug_tools"]);
+        ImGui::Begin(WordsMap::Get("debug_tools"));
 
         static char title[128] = { 0 };
         sprintf(

@@ -268,6 +268,9 @@ set(SERIALIZER_FILES
     src/Serializer/SceneSerializer.cpp
     src/Serializer/SceneSerializer.h)
 
+set(STRING_FILES
+    src/String/LanguageSettings.h)
+
 set(SYNC_FILES
     src/Sync/Semaphore.cpp
     src/Sync/Semaphore.h
@@ -304,6 +307,7 @@ source_group("Render\\" FILES ${RENDER_FILES})
 source_group("Scene\\" FILES ${SCENE_FILES})
 source_group("Script\\" FILES ${SCRIPT_FILES})
 source_group("Serializer\\" FILES ${SERIALIZER_FILES})
+source_group("String\\" FILES ${STRING_FILES})
 source_group("Sync\\" FILES ${SYNC_FILES})
 source_group("Utils\\" FILES ${UTILS_FILES})
 source_group("Widget\\" FILES ${WIDGET_FILES})
@@ -327,6 +331,7 @@ set(PROJECT_FILES
     ${SCENE_FILES}
     ${SCRIPT_FILES}
     ${SERIALIZER_FILES}
+    ${STRING_FILES}
     ${SYNC_FILES}
     ${UTILS_FILES}
     ${WIDGET_FILES}

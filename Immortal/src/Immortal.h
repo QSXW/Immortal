@@ -51,6 +51,7 @@
 #include "Serializer/SceneSerializer.h"
 
 #include "String/ChineseString.h"
+#include "String/LanguageSettings.h"
 
 #include "Widget/Widget.h"
 #include "Widget/Viewport.h"
