@@ -31,7 +31,7 @@ const std::string Render::ShaderProfiles[] = {
     { "Render2D" }
 };
 
-void Render::INIT(RenderContext *context)
+void Render::Setup(RenderContext *context)
 {
     LOG::INFO("Initialize Renderer with API => {0}", Sringify(Render::API));
     renderer = Renderer::Create(context);
@@ -82,7 +82,7 @@ void Render::INIT(RenderContext *context)
         data.BlackTexture       = Render::Create<Texture>(1, 1, &black, desc);
         data.TransparentTexture = Render::Create<Texture>(1, 1, &transparency, desc);
     }
-    Render2D::INIT();
+    Render2D::Setup();
 }
 
 void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)

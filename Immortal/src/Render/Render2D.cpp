@@ -11,7 +11,7 @@ Render2D::Data Render2D::data;
 
 std::shared_ptr<Pipeline> Render2D::pipeline{ nullptr };
 
-void Render2D::INIT()
+void Render2D::Setup()
 {
     data.QuadVertexBufferBase.reset(new QuadVertex[data.MaxVertices]);
     pipeline = Render::CreatePipeline(Render::Get<Shader, ShaderName::Render2D>());
@@ -45,28 +45,26 @@ void Render2D::INIT()
         pipeline->Set(Render::CreateBuffer<uint32_t>(data.MaxIndices, quadIndices.get(), Buffer::Type::Index));
     }
 
-    //data.WhiteTexture = Texture2D::Create(1, 1);
-    //uint32_t whiteTextureData = 0xffffffff;
-    //data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+    data.WhiteTexture = Render::Preset()->WhiteTexture;
 
-    //// texture slots with order
-    //int32_t samplers[data.MaxTextureSlots];
-    //for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
-    //{
-    //    samplers[i] = i;
-    //}
+    // texture slots with order
+    int32_t samplers[data.MaxTextureSlots] = { 0 };
+    for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
+    {
+        samplers[i] = i;
+    }
 
-    //data.TextureShader = Render::Get<Shader, ShaderName::Texture>();
-    //data.TextureShader->Map();
-    //data.TextureShader->Set("u_Textures", samplers, data.MaxTextureSlots);
+    data.TextureShader = Render::Get<Shader, ShaderName::Texture>();
+    data.TextureShader->Map();
+    data.TextureShader->Set("u_Textures", samplers, data.MaxTextureSlots);
 
-    //// Set first texture slot = 0;
-    //data.TextureSlots[0] = data.WhiteTexture;
+    // Set first texture slot = 0;
+    data.TextureSlots[0] = data.WhiteTexture;
 
-    //data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-    //data.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
-    //data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
-    //data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
+    data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
+    data.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
+    data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
+    data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
 }
 
 void Render2D::Shutdown()
@@ -107,7 +105,7 @@ void Render2D::EndScene()
 void Render2D::Flush()
 {
     /* Nothing to draw */
-    if (data.QuadIndexCount == 0)
+    if (!data.QuadIndexCount)
     {
         return;
     }
@@ -145,12 +143,12 @@ void Render2D::DrawQuad(const Vector3 &position, const Vector2 &size, const Vect
     DrawQuad(transform, color);
 }
 
-void Render2D::DrawQuad(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture2D>&texture, float tilingFactor, const Vector4 &tintColor)
+void Render2D::DrawQuad(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture>&texture, float tilingFactor, const Vector4 &tintColor)
 {
     DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
 }
 
-void Render2D::DrawQuad(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture2D>&texture, float tilingFactor, const Vector4 &tintColor)
+void Render2D::DrawQuad(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture>&texture, float tilingFactor, const Vector4 &tintColor)
 {
     Matrix4 transform = Vector::Translate(position) * Vector::Scale({ size.x, size.y, 1.0f });
     DrawQuad(transform, texture, tilingFactor, tintColor);

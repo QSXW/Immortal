@@ -37,7 +37,7 @@ Application::Application(const Window::Description &descrition)
         timer.Start();
     });
 
-    Render::INIT(context.get());
+    Render::Setup(context.get());
 
     Async::Join();
 

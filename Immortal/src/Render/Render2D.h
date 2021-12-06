@@ -9,6 +9,7 @@
 
 namespace Immortal
 {
+
 class IMMORTAL_API Render2D
 {
 public:
@@ -59,7 +60,7 @@ public:
         static const uint32_t MaxIndices = MaxQuads * 6;
         static const uint32_t MaxTextureSlots = 32;
 
-        std::shared_ptr<Texture2D> WhiteTexture;
+        std::shared_ptr<Texture> WhiteTexture;
         std::shared_ptr<Shader> TextureShader;
         uint32_t QuadIndexCount = 0;
         std::unique_ptr<QuadVertex> QuadVertexBufferBase;
@@ -74,7 +75,7 @@ public:
     };
 
 public:
-    static void INIT();
+    static void Setup();
     static void Shutdown();
 
     static void BeginScene(const Camera &camera);
@@ -88,8 +89,8 @@ public:
 
     static void DrawQuad(const Vector2 &position, const Vector2 &size, const Vector4 &color);
     static void DrawQuad(const Vector3 &position, const Vector2 &size, const Vector4 &color);
-    static void DrawQuad(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
-    static void DrawQuad(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
+    static void DrawQuad(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
+    static void DrawQuad(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f));
 
     static void DrawQuad(const Matrix4 &transform, const Vector4 &color, int entityID = -1);
     static void DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f), int entityID = -1);
@@ -114,5 +115,5 @@ private:
     static void StartBatch();
     static void NextBatch();
 };
-}
 
+}

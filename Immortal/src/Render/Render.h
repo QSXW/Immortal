@@ -94,7 +94,7 @@ public:
     }
 
 public:
-    static void INIT(RenderContext *context);
+    static void Setup(RenderContext *context);
 
     static void Set(Type type)
     {
