@@ -55,7 +55,7 @@ set(GUI_FILES
     src/ImGui/ImGuiBuild.cpp
     src/ImGui/ImGuizmo.cpp
     src/ImGui/ImGuizmo.h
-    src/ImGui/ui.h)
+    src/ImGui/Utils.h)
 
 set(INTERFACE_FILES
    src/Interface/Delegate.cpp
