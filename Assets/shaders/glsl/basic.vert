@@ -7,13 +7,12 @@ layout (location = 0) out vec3 outColor;
 
 layout (set = 0, binding = 0) uniform UBO
 {
-	mat4 projectionMatrix;
-	mat4 modelMatrix;
-	mat4 viewMatrix;
+	mat4 viewProjection;
+	mat4 modelTransform;
 } ubo;
 
 void main()
 {
 	outColor = inColor;
-	gl_Position = ubo.projectionMatrix * ubo.viewMatrix * ubo.modelMatrix * vec4(inPos.xyz, 1.0);
+	gl_Position = ubo.viewProjection * ubo.modelTransform * vec4(inPos.xyz, 1.0);
 }
