@@ -51,16 +51,20 @@ Application::~Application()
     timer.Stop();
 }
 
-void Application::PushLayer(Layer *layer)
+Layer *Application::PushLayer(Layer *layer)
 {
     layerStack.PushLayer(layer);
     layer->OnAttach();
+
+    return layer;
 }
 
-void Application::PushOverlay(Layer *overlay)
+Layer *Application::PushOverlay(Layer *overlay)
 {
     layerStack.PushOverlay(overlay);
     overlay->OnAttach();
+
+    return overlay;
 }
     
 void Application::Run()

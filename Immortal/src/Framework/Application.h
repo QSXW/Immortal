@@ -39,9 +39,9 @@ public:
 
     void OnEvent(Event &e);
 
-    virtual void PushLayer(Layer *layer);
+    virtual Layer *PushLayer(Layer *layer);
 
-    virtual void PushOverlay(Layer *overlay);
+    virtual Layer *PushOverlay(Layer *overlay);
 
     static Application *App()
     {

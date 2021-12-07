@@ -12,15 +12,17 @@ LayerStack::~LayerStack()
     }
 }
 
-void LayerStack::PushLayer(Layer *layer)
+Layer *LayerStack::PushLayer(Layer *layer)
 {
     layers.emplace(layers.begin() + layerInsertIndex, layer);
     layerInsertIndex++; 
+    return layer;
 }
 
-void LayerStack::PushOverlay(Layer *overlay)
+Layer *LayerStack::PushOverlay(Layer *overlay)
 {
     layers.emplace_back(overlay);
+    return overlay;
 }
 
 void LayerStack::PopLayer(Layer *layer)

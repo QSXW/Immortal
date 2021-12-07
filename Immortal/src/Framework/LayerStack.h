@@ -13,9 +13,9 @@ class IMMORTAL_API LayerStack
 public:
     ~LayerStack();
 
-    void PushLayer(Layer *layer);
+    Layer *PushLayer(Layer *layer);
 
-    void PushOverlay(Layer *overlay);
+    Layer *PushOverlay(Layer *overlay);
 
     void PopLayer(Layer *layer);
 
