@@ -53,9 +53,9 @@ public:
     
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Create(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
-    virtual void Reconstruct(std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
     virtual void Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
 

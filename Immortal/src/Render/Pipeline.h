@@ -69,12 +69,12 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget)
     {
         
     }
 
-    virtual void Reconstruct(std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget)
     {
 
     }

@@ -58,7 +58,7 @@ void Pipeline::Set(const InputElementDescription &description)
     SetupLayout();
 }
 
-void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
+void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
 {
     Reconstruct(superTarget);
 
@@ -71,7 +71,7 @@ void Pipeline::Create(std::shared_ptr<RenderTarget::Super> &superTarget)
     }
 }
 
-void Pipeline::Reconstruct(std::shared_ptr<SuperRenderTarget> &superTarget)
+void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
 {
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
