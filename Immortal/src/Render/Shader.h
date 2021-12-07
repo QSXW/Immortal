@@ -74,11 +74,13 @@ public:
         
         Format format;
 
-        uint32_t set;
+        uint8_t set;
 
-        uint32_t binding;
+        uint8_t binding;
 
-        uint32_t location;
+        uint8_t location;
+        
+        uint8_t count;
 
         uint32_t size;
 

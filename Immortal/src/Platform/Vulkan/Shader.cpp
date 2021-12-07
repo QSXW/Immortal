@@ -277,6 +277,17 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
             i++;
             continue;
         }
+        if (ptr[i] == '[')
+        {
+            i++;
+            j = 0;
+            while (ptr[i] != ']')
+            {
+                buffer[j++] = ptr[i++];
+            }
+            buffer[j] = '\0';
+            resource.count = std::atoi(buffer);
+        }
         BREAK_IF(ptr[i], ';', buffer[j++] = '\0'; i++; resource.name = buffer);
         buffer[j++] = ptr[i++];
     }
@@ -299,6 +310,7 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
     {
         resources.resize(resources.size() + 1);
         auto &resource = resources.back();
+        resource.count = 1;
 
         i += layout.size();
         i += ParseLayout(source.data() + i, resource);
@@ -317,14 +329,14 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
             VkDescriptorSetLayoutBinding bindingInfo{};
             bindingInfo.binding            = resource.binding;
             bindingInfo.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            bindingInfo.descriptorCount    = 1;
+            bindingInfo.descriptorCount    = resource.count;
             bindingInfo.stageFlags         = ConvertTo(stage);
             bindingInfo.pImmutableSamplers = nullptr;
 
             VkWriteDescriptorSet writeDescriptor{};
             writeDescriptor.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescriptor.pNext           = nullptr;
-            writeDescriptor.descriptorCount = 1;
+            writeDescriptor.descriptorCount = resource.count;
             writeDescriptor.dstBinding      = resource.binding;
 
             if (resource.type & Resource::Type::ImageSampler)
