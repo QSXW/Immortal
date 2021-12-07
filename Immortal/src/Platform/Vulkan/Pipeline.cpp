@@ -160,7 +160,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
 }
 
-void Pipeline::Bind(std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
+void Pipeline::Bind(const std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
 {
     for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
     {

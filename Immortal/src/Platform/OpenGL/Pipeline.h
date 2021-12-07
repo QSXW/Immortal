@@ -29,7 +29,7 @@ public:
 
     virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
 
-    virtual void Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
+    virtual void Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()

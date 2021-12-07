@@ -29,7 +29,7 @@ void Pipeline::Set(const InputElementDescription &description)
     }
 }
 
-void Pipeline::Bind(std::shared_ptr<SuperTexture> &texture, uint32_t slot)
+void Pipeline::Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot)
 {
 
 }

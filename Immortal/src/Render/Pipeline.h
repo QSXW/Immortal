@@ -42,7 +42,7 @@ public:
 
     virtual void Unmap() { }
 
-    virtual void Bind(std::shared_ptr<Texture> &texture, uint32_t slot = 0)
+    virtual void Bind(const std::shared_ptr<Texture> &texture, uint32_t slot = 0)
     {
 
     }
