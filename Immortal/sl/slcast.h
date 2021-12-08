@@ -54,15 +54,15 @@ inline constexpr T U64(O o)
 }
 
 template <class T>
-inline constexpr Anonymous Anonymize(T object)
+inline constexpr Anonymous Anonymize(T &object)
 {
     if constexpr (std::is_pointer<T>())
     {
-        return reinterpret_cast<Anonymous>(object);
+        return (Anonymous)(object);
     }
     else
     {
-        return reinterpret_cast<Anonymous>(&object);
+        return (Anonymous)(&object);
     }
 }
 
