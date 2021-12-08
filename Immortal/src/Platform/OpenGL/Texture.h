@@ -125,7 +125,7 @@ public:
         return height;
     }
 
-    virtual uint64_t Descriptor() const override
+    virtual operator uint64_t() const override
     {
         return ncast<uint64_t>(handle);
     }
@@ -208,7 +208,7 @@ public:
         return filepath.c_str();
     }
 
-    virtual uint64_t Descriptor() const override
+    virtual operator uint64_t() const override
     {
         return handle;
     }

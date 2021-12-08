@@ -2,6 +2,7 @@
 
 #include "ImmortalCore.h"
 #include "Format.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -122,9 +123,14 @@ public:
         return 0;
     }
 
-    virtual uint64_t Descriptor() const
+    virtual operator uint64_t() const
     {
         return 0;
+    }
+
+    virtual void As(Descriptor *descriptor, size_t index)
+    {
+
     }
 
     virtual uint32_t MipLevelCount() const

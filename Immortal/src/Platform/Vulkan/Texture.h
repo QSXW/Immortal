@@ -62,10 +62,12 @@ public:
             );
     }
 
-    virtual uint64_t Descriptor() const override
+    virtual operator uint64_t() const override
     {
         return *descriptorSet;
     }
+
+    virtual void As(Descriptor *descriptor, size_t index) override;
 
     virtual void Map(uint32_t slot = 0) override
     {

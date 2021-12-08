@@ -57,6 +57,8 @@ public:
 
     virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
+
     virtual void Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;

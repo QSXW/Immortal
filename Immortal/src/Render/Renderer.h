@@ -6,6 +6,7 @@
 #include "Texture.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -93,6 +94,16 @@ public:
     virtual void End()
     {
 
+    }
+
+    virtual Descriptor *CreateImageDescriptor(uint32_t count)
+    {
+        return nullptr;
+    }
+
+    virtual Descriptor *CreateBufferDescriptor(uint32_t count)
+    {
+        return nullptr;
     }
 };
 

@@ -162,25 +162,31 @@ void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget
 
 void Pipeline::Bind(const std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
 {
-    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
-    {
-        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
-            writeDescriptor.dstBinding == slot)
-        {
-            auto texture = std::dynamic_pointer_cast<Texture>(superTexture);
-            writeDescriptor.pImageInfo = texture->DescriptorInfo();
-            break;
-        }
-    }
+    auto texture = std::dynamic_pointer_cast<Texture>(superTexture);
+    Bind(rcast<const Descriptor *>(&texture->DescriptorInfo()), slot);
+}
+
+void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+{
+    auto descriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
+    descriptorSetUpdater->Set(name, descriptor);
     if (Ready())
     {
         descriptorSetUpdater->Update(*device);
     }
 }
 
-void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 {
-    descriptorSetUpdater->Set(name, Deanonymize<BufferDescriptor>(uniform->Descriptor()));
+    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
+    {
+        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
+            writeDescriptor.dstBinding == slot)
+        {
+            writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
+            break;
+        }
+    }
     if (Ready())
     {
         descriptorSetUpdater->Update(*device);

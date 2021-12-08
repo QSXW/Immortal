@@ -172,7 +172,13 @@ void Texture::INIT(const Description &description, uint32_t size, const void *da
     descriptor.Update(sampler, *view, layout);
 
     descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
-    descriptorSet->Update(descriptor);
+    descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+}
+
+void Texture::As(Descriptor *descriptors, size_t index)
+{
+    ImageDescriptor *imageDescriptors = rcast<ImageDescriptor *>(descriptors);
+    imageDescriptors[index] = descriptor;
 }
 
 }

@@ -88,6 +88,10 @@ public:
         return std::make_shared<RenderTarget>(device, description);
     }
 
+    virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
+
+    virtual Descriptor *CreateBufferDescriptor(uint32_t count) override;
+
     virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;

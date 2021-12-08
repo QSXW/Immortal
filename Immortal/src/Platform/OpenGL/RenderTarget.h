@@ -32,7 +32,7 @@ public:
 
     virtual Attachment DepthAttachment() override;
 
-    virtual uint64_t Descriptor() const
+    virtual operator uint64_t() const override
     {
         return colorAttachments[0];
     }

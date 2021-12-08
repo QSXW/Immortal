@@ -102,7 +102,7 @@ public:
     }
 
 public:
-    virtual uint64_t Descriptor() const override;
+    virtual operator uint64_t() const override;
 
     virtual void Map(uint32_t slot = 0) override;
 

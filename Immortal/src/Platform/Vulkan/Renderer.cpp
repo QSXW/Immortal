@@ -159,5 +159,21 @@ void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
     });
 }
 
+Descriptor *Renderer::CreateImageDescriptor(uint32_t count)
+{
+    auto descriptor = new ImageDescriptor[count];
+    CleanUpObject(descriptor);
+
+    return descriptor;
+}
+
+Descriptor *Renderer::CreateBufferDescriptor(uint32_t count)
+{
+    auto descriptor = new BufferDescriptor[count];
+    CleanUpObject(descriptor);
+
+    return descriptor;
+}
+
 }
 }

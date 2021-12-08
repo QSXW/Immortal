@@ -5,26 +5,16 @@
 
 #include "Common.h"
 #include "Buffer.h"
+#include "Render/Descriptor.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
-struct Descriptor
-{
-    VkDescriptorType Type() const
-    {
-        return type;
-    }
-
-    VkDescriptorType type;
-};
-
 struct ImageDescriptor : public Descriptor
 {
-    ImageDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) :
-        Descriptor{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER }
+    ImageDescriptor()
     {
 
     }
@@ -46,8 +36,7 @@ struct ImageDescriptor : public Descriptor
 
 struct BufferDescriptor : public Descriptor
 {
-    BufferDescriptor(VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) :
-        Descriptor{ type }
+    BufferDescriptor() 
     {
 
     }
@@ -108,7 +97,7 @@ struct DescriptorSetUpdater
         return true;
     }
 
-    bool Set(const std::string &name, const BufferDescriptor &descriptor)
+    bool Set(const std::string &name, const BufferDescriptor *descriptor)
     {
         auto it = Map.find(name);
         if (it == Map.end())
@@ -118,7 +107,7 @@ struct DescriptorSetUpdater
         }
         auto index = it->second;
 
-        WriteDescriptorSets[index].pBufferInfo = &descriptor.info;
+        WriteDescriptorSets[index].pBufferInfo = &descriptor->info;
         return true;
     }
 

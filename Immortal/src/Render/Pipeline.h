@@ -3,6 +3,7 @@
 #include "ImmortalCore.h"
 
 #include "Buffer.h"
+#include "Descriptor.h"
 #include "Shader.h"
 #include "RenderTarget.h"
 
@@ -43,6 +44,11 @@ public:
     virtual void Unmap() { }
 
     virtual void Bind(const std::shared_ptr<Texture> &texture, uint32_t slot = 0)
+    {
+
+    }
+
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
     {
 
     }

@@ -222,10 +222,10 @@ void RenderTarget::SetupDescriptor()
     {
         descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
     }
-    descriptorSet->Update(*descriptor);
+    descriptorSet->Update(*descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-uint64_t RenderTarget::Descriptor() const
+RenderTarget::operator uint64_t() const
 {
     return *descriptorSet;
 }

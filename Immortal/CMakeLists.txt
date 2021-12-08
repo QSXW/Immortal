@@ -213,6 +213,7 @@ set(RENDER_FILES
     src/Render/CommandBuffer.h
     src/Render/CommandQueue.cpp
     src/Render/CommandQueue.h
+    src/Render/Descriptor.h
     src/Render/Environment.cpp
     src/Render/Environment.h
     src/Render/Frame.cpp

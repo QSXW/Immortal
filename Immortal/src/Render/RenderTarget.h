@@ -135,7 +135,7 @@ public:
         return desc;
     }
 
-    virtual uint64_t Descriptor() const
+    virtual operator uint64_t() const
     {
         return 0;
     }

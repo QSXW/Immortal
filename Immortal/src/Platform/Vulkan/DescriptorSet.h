@@ -29,7 +29,7 @@ public:
     }
 
     template <class T>
-    void Update(T descriptorInfo, uint32_t slot = 0)
+    void Update(T descriptorInfo, VkDescriptorType type, uint32_t slot = 0)
     {
         VkWriteDescriptorSet desc{};
         desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -37,7 +37,7 @@ public:
         desc.dstBinding      = slot;
         desc.dstSet          = handle;
         desc.descriptorCount = 1;
-        desc.descriptorType  = descriptorInfo.Type();
+        desc.descriptorType  = type;
 
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {

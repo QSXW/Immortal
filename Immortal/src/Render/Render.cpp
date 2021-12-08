@@ -85,6 +85,11 @@ void Render::Setup(RenderContext *context)
     Render2D::Setup();
 }
 
+void Render::Setup(const std::shared_ptr<RenderTarget> &renderTarget)
+{
+    Render2D::Setup(renderTarget);
+}
+
 void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)
 {
     shader->Map();

@@ -35,7 +35,7 @@ public:
         Set({ x, y });
 
         ImGui::Image(
-            (ImTextureID)(target->Descriptor()),
+            (ImTextureID)(uint64_t)(*target),
             { x, y }
             );
 

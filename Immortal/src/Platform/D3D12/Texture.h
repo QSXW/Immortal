@@ -40,7 +40,7 @@ public:
 
     ~Texture();
 
-    uint64_t Descriptor() const override
+    virtual operator uint64_t() const override
     {
         return gpuDescriptorHandle.ptr;
     }

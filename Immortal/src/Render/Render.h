@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Mesh.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -95,6 +96,8 @@ public:
 
 public:
     static void Setup(RenderContext *context);
+
+    static void Setup(const std::shared_ptr<RenderTarget> &renderTarget);
 
     static void Set(Type type)
     {
@@ -207,28 +210,41 @@ public:
     template <class T, class... Args>
     static std::shared_ptr<T> Create(Args&& ... args)
     {
-        if constexpr (is_same<T, Buffer>())
+        if constexpr (IsPrimitiveOf<Buffer, T>())
         {
             return CreateBuffer(std::forward<Args>(args)...);
         }
-        if constexpr (is_same<T, Shader>())
+        if constexpr (IsPrimitiveOf<Shader, T>())
         {
             return CreateShader(std::forward<Args>(args)...);
         }
-        if constexpr (is_same<T, RenderTarget>())
+        if constexpr (IsPrimitiveOf<RenderTarget, T>())
         {
             return CreateRenderTarget(std::forward<Args>(args)...);
         }
-        if constexpr (is_same<T, Texture>())
+        if constexpr (IsPrimitiveOf<Texture, T>())
         {
             return renderer->CreateTexture(std::forward<Args>(args)...);
         }
-        if constexpr (is_same<T, Pipeline>())
+        if constexpr (IsPrimitiveOf<Pipeline, T>())
         {
             return renderer->CreatePipeline(std::forward<Args>(args)...);
         }
         throw RuntimeException("Type not supported yet");
         return nullptr;
+    }
+
+    template <class T>
+    static Descriptor *CreateDescriptor(uint32_t count)
+    {
+        if constexpr (IsPrimitiveOf<Buffer, T>())
+        {
+            return renderer->CreateBufferDescriptor(count);
+        }
+        if constexpr (IsPrimitiveOf<Texture, T>())
+        {
+            return renderer->CreateImageDescriptor(count);
+        }
     }
 
     static void Draw(const std::shared_ptr<Pipeline> &pipeline)
