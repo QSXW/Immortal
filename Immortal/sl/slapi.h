@@ -117,6 +117,24 @@ inline constexpr bool is_same()
     return false;
 }
 
+template <class T, class U>
+inline constexpr bool IsReferenceOf()
+{
+    return is_same<T&, U>();
+}
+
+template <class T, class U>
+inline constexpr bool IsPrimitiveOf()
+{
+    return is_same<T, U>() || IsReferenceOf<T, U>();
+}
+
+template <class T, class U>
+inline constexpr bool IsPointerOf()
+{
+    return is_same<T*, U>();
+}
+
 template <class T>
 inline constexpr void *CleanUpObject(T *ptr, int value = 0, size_t size = sizeof(T))
 {

@@ -12,6 +12,7 @@ namespace Immortal
 {
 namespace Vulkan
 {
+
 static struct VolkDeviceTable DeviceMap {};
 
 struct Semaphores
@@ -72,24 +73,6 @@ template <class T>
 constexpr inline UINT32 U32(T x)
 {
     return static_cast<UINT32>(x);
-}
-
-template <class T, class U>
-inline constexpr bool IsReferenceOf()
-{
-    return is_same<T&, U>();
-}
-
-template <class T, class U>
-inline constexpr bool IsPrimitiveOf()
-{
-    return is_same<T, U>() || IsReferenceOf<T, U>();
-}
-
-template <class T, class U>
-inline constexpr bool IsPointerOf()
-{
-    return is_same<T*, U>();
 }
 
 template <class T, class F>
