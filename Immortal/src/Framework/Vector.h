@@ -149,6 +149,7 @@ bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotat
 using Vector2    = Vector::Vector2;
 using Vector3    = Vector::Vector3;
 using Vector4    = Vector::Vector4;
+using Matrix3    = Vector::Matrix3;
 using Matrix4    = Vector::Matrix4;
 using Color      = Vector::Color;
 using Quaternion = Vector::Quaternion;
