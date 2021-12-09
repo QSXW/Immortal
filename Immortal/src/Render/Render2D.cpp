@@ -58,6 +58,7 @@ void Render2D::Setup()
     for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
     {
         data.WhiteTexture->As(data.textureDescriptors.get(), i);
+        data.ActiveTextures[i] = data.WhiteTexture;
     }
 
     pipeline->Bind("ubo", uniform.get());
@@ -147,8 +148,18 @@ void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture>
     }
 
     float textureIndex = static_cast<float>(data.TextureSlotIndex);
-    texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
-    isTextureChanged = true;
+
+    if (*data.ActiveTextures[data.TextureSlotIndex] == *texture)
+    {
+        isTextureChanged = false;
+    }
+    else
+    {
+        data.ActiveTextures[data.TextureSlotIndex] = texture;
+        texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
+        isTextureChanged = true;
+    }
+
     data.TextureSlotIndex++;
 
     for (size_t i = 0; i < quadVertexCount; i++)

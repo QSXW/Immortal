@@ -68,7 +68,7 @@ public:
         std::unique_ptr<QuadVertex> QuadVertexBufferBase;
         QuadVertex *QuadVertexBufferPtr = nullptr;
 
-        std::array<std::shared_ptr<Texture>, MaxTextureSlots> TextureSlots;
+        std::array<std::shared_ptr<Texture>, MaxTextureSlots> ActiveTextures;
         uint32_t TextureSlotIndex = 1; // 0 = white texture
 
         Vector4 QuadVertexPositions[4];
