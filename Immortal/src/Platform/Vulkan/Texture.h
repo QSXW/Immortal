@@ -15,10 +15,10 @@ namespace Immortal
 namespace Vulkan
 {
 
-class Texture : public SuperTexture2D
+class Texture : public SuperTexture
 {
 public:
-    using Super = SuperTexture2D;
+    using Super = SuperTexture;
 
 public:
     Texture(Device *device, const std::string &filepath);
@@ -36,7 +36,7 @@ public:
         }
     }
 
-    void INIT(const Description &description, uint32_t size, const void *data = nullptr);
+    void Setup(const Description &description, uint32_t size, const void *data = nullptr);
 
     void ConvertType(VkImageCreateInfo &dst, const Description &src)
     {
@@ -81,12 +81,6 @@ public:
 
 private:
     Device *device{ nullptr };
-
-    uint32_t width{ 0 };
-
-    uint32_t height{ 0 };
-
-    uint32_t mipLevels{ 1 };
 
     Sampler sampler;
 

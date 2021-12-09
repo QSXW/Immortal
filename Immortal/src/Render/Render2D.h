@@ -172,12 +172,12 @@ public:
         DrawQuad(transform, color);
     }
 
-    static void DrawRotatedQuad(const Vector2 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
+    static void DrawRotatedQuad(const Vector2 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
     {
         DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
     }
 
-    static void DrawRotatedQuad(const Vector3 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture2D> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
+    static void DrawRotatedQuad(const Vector3 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
     {
         Matrix4 transform = Vector::Translate(position) * Vector::Rotate(rotation, { 0.0f, 0.0f, 1.0f }) * Vector::Scale({ size.x, size.y, 1.0f });
         DrawQuad(transform, texture, tilingFactor, tintColor);
@@ -196,6 +196,8 @@ public:
     static std::shared_ptr<Pipeline> pipeline;
 
     static std::shared_ptr<Buffer> uniform;
+
+    static inline bool isTextureChanged = false;
 };
 
 }

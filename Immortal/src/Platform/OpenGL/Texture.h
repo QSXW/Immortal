@@ -98,32 +98,25 @@ static inline Texture::DataType NativeTypeToOpenGl(const Texture::Description &s
     return NativeTypeToOpenGl(spec.Format, spec.Wrap, spec.Filter);
 }
 
-class Texture2D : public SuperTexture2D
+class Texture : public SuperTexture
 {
 public:
-    Texture2D(uint32_t width, uint32_t height);
+    using Super = SuperTexture;
 
-    Texture2D(const std::string& path, bool flip = false);
+public:
+    Texture(uint32_t width, uint32_t height);
 
-    Texture2D(const uint32_t width, const uint32_t height, Texture::Description &description, int levels);
+    Texture(const std::string& path, bool flip = false);
 
-    Texture2D(const std::string & path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
+    Texture(const uint32_t width, const uint32_t height, Texture::Description &description, int levels);
 
-    Texture2D(const std::string & path, Texture::Wrap wrap, Texture::Filter filter);
+    Texture(const std::string & path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
 
-    Texture2D(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level = 0);
+    Texture(const std::string & path, Texture::Wrap wrap, Texture::Filter filter);
 
-    virtual ~Texture2D();
+    Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level = 0);
 
-    virtual uint32_t Width() const override
-    { 
-        return width;
-    }
-
-    virtual uint32_t Height() const override
-    { 
-        return height;
-    }
+    virtual ~Texture();
 
     virtual operator uint64_t() const override
     {
@@ -138,13 +131,10 @@ public:
 
     virtual uint32_t MipLevelCount() const override;
 
-    virtual bool operator==(const Texture& other) const override
+    virtual bool operator==(const Super &super) const override
     {
-        return handle == ((Texture2D&)other).handle;
-    }
-    virtual float Ratio() const override
-    {
-        return ratio;
+        auto &other = dcast<const Texture &>(super);
+        return handle == other.handle;
     }
 
     virtual const char *Path() const override
@@ -160,15 +150,7 @@ public:
 private:
     std::string filepath;
 
-    uint32_t width;
-
-    uint32_t height;
-
     uint32_t handle;
-
-    int32_t level{ 0 };
-
-    float ratio{ 1.0 };
 
     Texture::DataType type;
 };
@@ -229,12 +211,6 @@ public:
 
 private:
     uint32_t handle{ 0 };
-
-    uint32_t width{ 0 };
-
-    uint32_t height{ 0 };
-
-    int32_t level{ 0 };
 
     Description desc;
 

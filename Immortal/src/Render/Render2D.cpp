@@ -86,6 +86,11 @@ void Render2D::Flush()
     uint32_t dataSize = data.QuadVertexBufferPtr - data.QuadVertexBufferBase.get();
     pipeline->Update(dataSize, data.QuadVertexBufferBase.get());
 
+    if (isTextureChanged)
+    {
+        pipeline->Bind(data.textureDescriptors.get(), 1);
+    }
+
     Render::Draw(pipeline);
     data.Stats.DrawCalls++;
 }
@@ -143,6 +148,7 @@ void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture>
 
     float textureIndex = static_cast<float>(data.TextureSlotIndex);
     texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
+    isTextureChanged = true;
     data.TextureSlotIndex++;
 
     for (size_t i = 0; i < quadVertexCount; i++)

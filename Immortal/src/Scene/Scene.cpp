@@ -53,7 +53,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 
 
     skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
-    skyboxTexture = TextureCube::Create("assets/textures/environment.hdr");
+    // skyboxTexture = Render::Create<TextureCube>("assets/textures/environment.hdr");
     environment = std::make_shared<Environment>(skyboxTexture);
 
     transformUniformBuffer = Render::Create<Buffer>(sizeof(TransformUniformBuffer), 0);
@@ -190,7 +190,7 @@ void Scene::OnRenderRuntime()
                 material.RoughnessMap->Map(3);
 
                 skyboxTexture->Map(4);
-                environment->IrradianceMap->Map(5);
+                // environment->IrradianceMap->Map(5);
                 environment->SpecularBRDFLookUpTable->Map(6);
                 Render::Submit(shader, mesh.Mesh, transform.Transform());
             }

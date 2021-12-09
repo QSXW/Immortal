@@ -240,7 +240,6 @@ set(RENDER_FILES
     src/Render/Render2D.cpp
     src/Render/Render2D.h
     src/Render/Shader.h
-    src/Render/Texture.cpp
     src/Render/Texture.h
     src/Render/Types.h
     src/Render/GLSLCompiler.cpp

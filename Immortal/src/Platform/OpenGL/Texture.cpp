@@ -25,11 +25,9 @@ uint32_t InternalCreate(GLenum target, const uint32_t width, const uint32_t heig
     return texture;
 }
 
-Texture2D::Texture2D(uint32_t width, uint32_t height) :
-    width{ width }, 
-    height{ height },
-    handle{ 0 },
-    ratio{ ncast<float>(width) / ncast<float>(height) }
+Texture::Texture(uint32_t width, uint32_t height) :
+    Super{ width, height },
+    handle{ 0 }
 {
     type.InternalFromat = GL_RGBA8;
     type.DataFormat     = GL_RGBA;
@@ -45,28 +43,27 @@ Texture2D::Texture2D(uint32_t width, uint32_t height) :
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-Texture2D::Texture2D(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter)
+Texture::Texture(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter)
 {
     LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path, flip);
 
     width = frame.Width();
     height = frame.Height();
-    ratio = (float)width / (float)height;
 
-    level = Texture::CalculateMipmapLevels(width, height);
+    mipLevels = Texture::CalculateMipmapLevels(width, height);
     type = NativeTypeToOpenGl(frame.Type().Format, wrap, filter);
-    handle = InternalCreate(GL_TEXTURE_2D, width, height, type, level);
+    handle = InternalCreate(GL_TEXTURE_2D, width, height, type, mipLevels);
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, frame.Data());
 
-    if (level > 0)
+    if (mipLevels > 0)
     {
         glGenerateTextureMipmap(handle);
     }
 }
 
-Texture2D::Texture2D(const std::string &path, bool flip) :
+Texture::Texture(const std::string &path, bool flip) :
     filepath{ path },
     handle{ 0 }
 {
@@ -75,7 +72,6 @@ Texture2D::Texture2D(const std::string &path, bool flip) :
 
     width  = frame.Width();
     height = frame.Height();
-    ratio  = (float)width / (float)height;
 
     type = NativeTypeToOpenGl(frame.Type());
 
@@ -89,22 +85,21 @@ Texture2D::Texture2D(const std::string &path, bool flip) :
     glTextureParameteri(handle, GL_TEXTURE_WRAP_S, type.Wrap);
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, type.Wrap);
 
-    level = Texture::CalculateMipmapLevels(width, height);
-    if (level > 0)
+    mipLevels = Texture::CalculateMipmapLevels(width, height);
+    if (mipLevels > 0)
     {
         glGenerateTextureMipmap(handle);
     }
     LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
-Texture2D::Texture2D(const std::string &path, Texture::Wrap wrap, Texture::Filter filter)
+Texture::Texture(const std::string &path, Texture::Wrap wrap, Texture::Filter filter)
 {
     LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path);
 
     width = frame.Width();
     height = frame.Height();
-    ratio = (float)width / (float)height;
 
     type = NativeTypeToOpenGl(frame.Type().Format, wrap, filter);
 
@@ -118,28 +113,27 @@ Texture2D::Texture2D(const std::string &path, Texture::Wrap wrap, Texture::Filte
     glTextureParameteri(handle, GL_TEXTURE_WRAP_S, type.Wrap);
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, type.Wrap);
 
-    level = Texture::CalculateMipmapLevels(width, height);
-    if (level > 0)
+    mipLevels = Texture::CalculateMipmapLevels(width, height);
+    if (mipLevels > 0)
     {
         glGenerateTextureMipmap(handle);
     }
     LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
-Texture2D::Texture2D(const uint32_t width, const uint32_t height, Texture::Description &description, int levels) :
-    width{ width },
-    height{ height }
+Texture::Texture(const uint32_t width, const uint32_t height, Texture::Description &description, int levels) :
+    Super{ width, height }
 {
-    level = (levels > 0) ? levels : Texture::CalculateMipmapLevels(width, height);
+    mipLevels = (levels > 0) ? levels : Texture::CalculateMipmapLevels(width, height);
 
     type = NativeTypeToOpenGl(description);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
-    glTextureStorage2D(handle, level, type.InternalFromat, width, height);
+    glTextureStorage2D(handle, mipLevels, type.InternalFromat, width, height);
         
     // glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
 
-    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, level > 1 ? GL_LINEAR_MIPMAP_LINEAR : type.Filter);
+    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : type.Filter);
     glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, type.Filter);
 
     glTextureParameteri(handle, GL_TEXTURE_WRAP_S, type.Wrap);
@@ -147,28 +141,27 @@ Texture2D::Texture2D(const uint32_t width, const uint32_t height, Texture::Descr
 }
 
 
-Texture2D::Texture2D(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level) :
-    width{ width },
-    height{ height }
+Texture::Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level) :
+    Super{ width, height }
 {
-    level   = (level > 0) ? level : CalculateMipmapLevels(width, height);
+    mipLevels = (level > 0) ? level : CalculateMipmapLevels(width, height);
     type    = NativeTypeToOpenGl(description);
-    handle = InternalCreate(GL_TEXTURE_2D, width, height, type, level);
+    handle = InternalCreate(GL_TEXTURE_2D, width, height, type, mipLevels);
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
 
-    if (level > 0)
+    if (mipLevels > 0)
     {
         glGenerateTextureMipmap(handle);
     }
 }
 
-Texture2D::~Texture2D()
+Texture::~Texture()
 {
     glDeleteTextures(1, &handle);
 }
 
-void Texture2D::SetData(void * data, uint32_t size)
+void Texture::SetData(void * data, uint32_t size)
 {
     uint32_t bpp = type.DataFormat == GL_RGBA ? 4 : 3;
     SLASSERT(size == width * height * bpp && "Data must be entire texture!");
@@ -177,17 +170,17 @@ void Texture2D::SetData(void * data, uint32_t size)
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
 }
 
-void Texture2D::Map(uint32_t slot)
+void Texture::Map(uint32_t slot)
 {
     glBindTextureUnit(slot, handle);
 }
 
-uint32_t Texture2D::MipLevelCount() const
+uint32_t Texture::MipLevelCount() const
 {
     return uint32_t();
 }
 
-void Texture2D::BindImageTexture(bool layered)
+void Texture::BindImageTexture(bool layered)
 {
     glBindImageTexture(0, handle, 0, layered ? GL_TRUE : GL_FALSE, 0, GL_WRITE_ONLY, type.InternalFromat);
 }
@@ -201,14 +194,14 @@ void TextureCube::Create(const uint32_t width, const uint32_t height, Texture::D
 {
     this->width = width;
     this->height = height;
-    level = (levels > 0) ? levels : CalculateMipmapLevels(width, height);
+    mipLevels = (levels > 0) ? levels : CalculateMipmapLevels(width, height);
     desc = description;
 
     type = NativeTypeToOpenGl(desc);
 
     glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
-    glTextureStorage2D(handle, level, type.InternalFromat, width, height);
-    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, level > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+    glTextureStorage2D(handle, mipLevels, type.InternalFromat, width, height);
+    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTextureParameteri(handle, GL_TEXTURE_WRAP_S, type.Wrap);
@@ -216,8 +209,7 @@ void TextureCube::Create(const uint32_t width, const uint32_t height, Texture::D
     glTextureParameteri(handle, GL_TEXTURE_WRAP_R, type.Wrap);
 }
 
-TextureCube::TextureCube(const std::string & path)
-    : width(0), height(0), level(0), handle(0)
+TextureCube::TextureCube(const std::string &path)
 {
     // Parameters
     static constexpr uint32_t cubemapSize = 1024;
@@ -227,7 +219,7 @@ TextureCube::TextureCube(const std::string & path)
     // Load & convert Equirectangular Environment Map to a Cubemap texture.
     {
         OpenGL::Shader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl", Shader::Type::Compute);
-        Texture2D envEquirect(path, false, Texture::Wrap::Clamp, Texture::Filter::Linear);
+        OpenGL::Texture envEquirect(path, false, Texture::Wrap::Clamp, Texture::Filter::Linear);
 
         equirectangleToCubeShader.Map();
         envEquirect.Map(1);
@@ -250,7 +242,7 @@ TextureCube::TextureCube(const std::string & path)
         envCubeUnfiltered.Map();
 
         // Pre-filter rest of the mip chain.
-        const float deltaRoughness = 1.0f / std::max(float(level - 1), 1.0f);
+        const float deltaRoughness = 1.0f / std::max(float(mipLevels - 1), 1.0f);
         for (int level = 1, size = cubemapSize / 2; level <= level; level++, size /= 2)
         {
             const GLuint numGroups = std::max(1, size / 32);

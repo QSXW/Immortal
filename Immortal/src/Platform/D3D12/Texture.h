@@ -12,10 +12,10 @@ namespace Immortal
 namespace D3D12
 {
 
-class Texture : public SuperTexture2D
+class Texture : public SuperTexture
 {
 public:
-    using Super = SuperTexture2D;
+    using Super = SuperTexture;
 
     void ConvertType(D3D12_RESOURCE_DESC &dst, Description &src)
     {

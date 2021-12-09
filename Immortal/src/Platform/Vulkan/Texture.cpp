@@ -17,16 +17,14 @@ Texture::Texture(Device *device, const std::string &filepath) :
     height    = frame.Height();
     mipLevels = CalculateMipmapLevels(width, height);
 
-    INIT(frame.Type(), frame.Size(), frame.Data());
+    Setup(frame.Type(), frame.Size(), frame.Data());
 }
 
 Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description) :
     device{ device },
-    width{ width },
-    height{ height },
-    mipLevels{ CalculateMipmapLevels(width, height) }
+    Super{ width, height }
 {
-    INIT(description, width * height * description.FormatSize(), data);
+    Setup(description, width * height * description.FormatSize(), data);
 }
 
 Texture::~Texture()
@@ -41,7 +39,7 @@ Texture::~Texture()
     device->FreeMemory(deviceMemory);
 }
 
-void Texture::INIT(const Description &description, uint32_t size, const void *data)
+void Texture::Setup(const Description &description, uint32_t size, const void *data)
 {
     VkBuffer stagingBuffer{ VK_NULL_HANDLE };
     VkDeviceMemory stagingMemory{ VK_NULL_HANDLE };

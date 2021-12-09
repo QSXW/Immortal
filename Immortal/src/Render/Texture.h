@@ -106,21 +106,34 @@ public:
     };
 
 public:
+    Texture()
+    {
+
+    }
+
+    Texture(uint32_t width, uint32_t height) :
+        width{ width },
+        height{ height },
+        mipLevels{ CalculateMipmapLevels(width, height) }
+    {
+
+    }
+
     virtual ~Texture() = default;
 
-    virtual uint32_t Width() const
+    uint32_t Width() const
     {
-        return 0;
+        return width;
     }
 
-    virtual uint32_t Height() const
+    uint32_t Height() const
     {
-        return 0;
+        return height;
     }
 
-    virtual float Ratio() const
+    float Ratio() const
     {
-        return 0;
+        return ncast<float>(width) / ncast<float>(height);
     }
 
     virtual operator uint64_t() const
@@ -153,35 +166,23 @@ public:
     }
 
     virtual void BindImageTexture(bool layered) { }
+
+protected:
+    uint32_t width{ 0 };
+
+    uint32_t height{ 0 };
+
+    uint32_t mipLevels{ 1 };
 };
 
 using Image = Texture;
 using SuperTexture = Texture;
 
-class IMMORTAL_API Texture2D : public Texture
-{
-public:
-    static std::shared_ptr<Texture2D> Create(uint32_t width, uint32_t height);
-
-    static std::shared_ptr<Texture2D> Create(const std::string &filepath);
-
-    static std::shared_ptr<Texture2D> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
-
-    static std::shared_ptr<Texture2D> Create(const std::string &path, Texture::Wrap wrap, Texture::Filter filter);
-
-    static std::shared_ptr<Texture2D> Create(UINT32 width, UINT32 height, const void *data, Texture::Description &spec);
-
-    static std::shared_ptr<Texture2D> Create(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
-};
-
 class IMMORTAL_API TextureCube : public Texture
 {
-public:
-    static std::shared_ptr<TextureCube> Create(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels = 0);
-    static std::shared_ptr<TextureCube> Create(const std::string &filepath);
+
 };
 
-using SuperTexture2D  = Texture2D;
 using SuperTextureCube = TextureCube;
 
 }

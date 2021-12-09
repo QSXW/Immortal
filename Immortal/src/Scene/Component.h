@@ -179,14 +179,14 @@ struct SpriteRendererComponent : public Component
         Texture = Render::Preset()->WhiteTexture;
     }
 
-    SpriteRendererComponent(std::shared_ptr<Texture2D> texture) :
+    SpriteRendererComponent(std::shared_ptr<Texture> texture) :
         Component{ Type::SpriteRenderer },
         Texture{ texture }
     {
 
     }
 
-    SpriteRendererComponent(std::shared_ptr<Texture2D> texture, const Vector4 color) :
+    SpriteRendererComponent(std::shared_ptr<Texture> texture, const Vector4 color) :
         Component{ Type::SpriteRenderer },
         Texture{ texture },
         Color{ color }
