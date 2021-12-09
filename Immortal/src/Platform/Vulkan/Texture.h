@@ -79,6 +79,12 @@ public:
         return descriptor;
     }
 
+    virtual bool operator==(const Texture::Super &super) const override
+    {
+        auto other = dcast<const Texture *>(&super);
+        return image == other->image;
+    }
+
 private:
     Device *device{ nullptr };
 
