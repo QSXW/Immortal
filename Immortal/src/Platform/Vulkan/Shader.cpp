@@ -370,10 +370,6 @@ void Shader::Setup()
         pushConstantRanges.empty() ? nullptr : pushConstantRanges.data(),
         U32(pushConstantRanges.size())
     };
-    
-    Check(device->AllocateDescriptorSet(&descriptorSetLayout, &descriptorSet));
-
-    descriptorSetUpdater.Set(descriptorSet);
 
     pushConstantRanges.clear();
     descriptorSetLayoutBindings.clear();

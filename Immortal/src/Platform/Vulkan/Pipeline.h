@@ -9,6 +9,7 @@
 #include "Buffer.h"
 #include "PipelineLayout.h"
 #include "Descriptor.h"
+#include "DescriptorPool.h"
 
 namespace Immortal
 {
@@ -135,7 +136,13 @@ private:
 
     bool Ready()
     {
-        return descriptorSetUpdater->Ready();
+        bool ready = descriptorSetUpdater->Ready();
+        if (ready)
+        {
+            Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
+            descriptorSetUpdater->Set(descriptorSet);
+        }
+        return ready;
     }
 
 private:
@@ -150,6 +157,10 @@ private:
     std::unique_ptr<PipelineLayout> layout;
 
     std::unique_ptr<Configuration> configuration;
+
+    std::unique_ptr<DescriptorPool> descriptorPool;
+
+    VkDescriptorSetLayout descriptorSetLayout;
 
     VkDescriptorSet descriptorSet;
 

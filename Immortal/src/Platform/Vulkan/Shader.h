@@ -58,9 +58,9 @@ public:
         {
             return pipelineLayout;
         }
-        if constexpr (IsPrimitiveOf<VkDescriptorSet, T>())
+        if constexpr (IsPrimitiveOf<VkDescriptorSetLayout, T>())
         {
-            return descriptorSet;
+            return descriptorSetLayout;
         }
     }
 
@@ -92,8 +92,6 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
 
     DescriptorSetUpdater descriptorSetUpdater;
-
-    VkDescriptorSet descriptorSet;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
 

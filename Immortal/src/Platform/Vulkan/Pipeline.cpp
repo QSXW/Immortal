@@ -62,6 +62,8 @@ void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
 {
     Reconstruct(superTarget);
 
+    descriptorPool.reset(new DescriptorPool{ device, Limit::PoolSize  });
+
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
 
@@ -136,7 +138,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget
     }
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
-    descriptorSet = shader->Get<VkDescriptorSet>();
+    descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
 
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
