@@ -30,9 +30,9 @@ void VulkanLayer::OnGuiRender()
             }
             if (ImGui::MenuItem(WordsMap::Get("save"), "Ctrl + S"))
             {
-            
+                
             }
-            if (ImGui::MenuItem(WordsMap::Get("save_as"), "Ctrl+AWordsMap::Get<+S"))
+            if (ImGui::MenuItem(WordsMap::Get("saveAs"), "Ctrl+A"))
             {
 
             }
@@ -43,6 +43,14 @@ void VulkanLayer::OnGuiRender()
             if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + W"))
             {
             
+            }
+            if (ImGui::MenuItem(WordsMap::Get("loadObject"), "Ctrl + L"))
+            {
+                auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+                if (res.has_value())
+                {
+                    VulkanSample::renderLayer->OnTextureLoaded(res.value());
+                }
             }
             ImGui::EndMenu();
         }
@@ -76,7 +84,7 @@ void VulkanLayer::OnGuiRender()
         static float f = 0.0f;
         static int counter = 0;
 
-        ImGui::Begin(WordsMap::Get("debug_tools"));
+        ImGui::Begin(WordsMap::Get("debugTools"));
 
         static char title[128] = { 0 };
         sprintf(

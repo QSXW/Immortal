@@ -46,13 +46,18 @@ public:
     {
         PushLayer(new VulkanLayer());
         PushLayer(new NetLayer("Debug Layer for Net"));
-        PushLayer(new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render"));
+
+        renderLayer = new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render");
+        PushLayer(renderLayer);
     }
 
     ~VulkanSample()
     {
 
     }
+
+public:
+    static inline RenderLayer *renderLayer{ nullptr };
 };
 
 Immortal::Application *Immortal::CreateApplication()

@@ -7,14 +7,18 @@
             "edit": "编辑",
             "open": "打开",
             "save": "保存",
-            "save_as": "保存为",
+            "saveAs": "保存为",
             "exit": "退出",
-            "new_scene": "新建场景",
+            "newScene": "新建场景",
             "view": "视图",
             "graphics": "图形",
             "help": "帮助",
             "close": "关闭",
-            "debug_tools": "调试工具"
+            "debugTools": "调试工具",
+            "offlineRender": "离线渲染",
+            "preview": "预览",
+            "viewport": "视口",
+            "loadObject": "加载对象"
         }
     }
 }

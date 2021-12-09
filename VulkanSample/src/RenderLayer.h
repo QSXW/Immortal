@@ -1,8 +1,6 @@
 #pragma once
 
 #include <Immortal.h>
-#include "Platform/Vulkan/Common.h"
-#include "Platform/Vulkan/Device.h"
 
 namespace Immortal
 {
@@ -22,9 +20,9 @@ public:
         renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } });
 
         const std::vector<Vertex> vertices = {
-            { {  0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-            { { -0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-            { {  0.0f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
+            { {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+            { { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+            { {  0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
         };
 
         const std::vector<uint32_t> indices = {
@@ -50,7 +48,14 @@ public:
         uniformBuffer = Render::Create<Buffer>(sizeof(ubo), Buffer::Type::Uniform);
         pipeline->Bind("ubo", uniformBuffer.get());
 
-        camera.transform.Position = Vector3{ .5f, 0.0, 0.0 };
+        camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
+
+        auto clearColor = renderTarget->ClearColor();
+        clearColor->r = 0.10980392;
+        clearColor->g = 0.10980392;
+        clearColor->b = 0.10980392;
+
+        Render2D::Setup(renderTarget);
     }
 
     virtual void OnDetach() override
@@ -68,14 +73,17 @@ public:
             camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
         }
 
-        ubo.projectionMatrix = camera.primaryCamera.Projection();
-        ubo.viewMatrix       = camera.primaryCamera.View();
-        ubo.modelMatrix      = camera.transform;
+        ubo.viewProjection = camera.primaryCamera.ViewProjection();
+        ubo.modeTransform  = camera.transform;
         uniformBuffer->Update(sizeof(ubo), &ubo);
+
+        camera.transform.Scale = { image->Ratio(), 1.0, 0.0 };
 
         Render::Begin(renderTarget, camera.primaryCamera);
         {
-            Render::Draw(pipeline);
+            Render2D::BeginScene(camera.primaryCamera);
+            Render2D::DrawQuad(camera.transform, image);
+            Render2D::EndScene();
         }
         Render::End();
     }
@@ -84,8 +92,16 @@ public:
     {
         ImGui::Begin("Render Target");
         ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
+        UI::DrawVec3Control("Position", camera.transform.Position);
+        UI::DrawVec3Control("Rotation", camera.transform.Rotation);
+        UI::DrawVec3Control("Scale", camera.transform.Scale);
         ImGui::End();
         offline.OnUpdate(renderTarget);
+    }
+
+    void OnTextureLoaded(const std::string &path)
+    {
+        image = Render::Create<Texture>(path);
     }
 
 private:
@@ -101,18 +117,19 @@ private:
         TransformComponent transform;
     } camera;
 
-    Widget::Viewport offline{ "Offline Render" };
+    Widget::Viewport offline{ WordsMap::Get("offlineRender")};
 
     struct
     {
-        Matrix4 projectionMatrix;
-        Matrix4 modelMatrix;
-        Matrix4 viewMatrix;
+        Matrix4 viewProjection;
+        Matrix4 modeTransform;
     } ubo;
 
     std::shared_ptr<Buffer> uniformBuffer;
 
     Entity cameraObject;
+
+    std::shared_ptr<Texture> image{ Render::Preset()->WhiteTexture };
 };
 
 }
