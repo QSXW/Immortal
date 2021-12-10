@@ -7,288 +7,288 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CORE_FILES
-    src/Immortal.h
-    src/ImmortalCore.h)
+    Immortal.h
+    ImmortalCore.h)
 
 set(FRAMEWORK_FILES
-    src/Framework/Application.cpp
-    src/Framework/Application.h
-    src/Framework/Core.cpp
-    src/Framework/Main.h
-    src/Framework/Input.h
-    src/Framework/KeyCodes.h
-    src/Framework/Layer.cpp
-    src/Framework/Layer.h
-    src/Framework/LayerStack.cpp
-    src/Framework/LayerStack.h
-    src/Framework/Log.cpp
-    src/Framework/Log.h
-    src/Framework/Math.h
-    src/Framework/Object.h
-    src/Framework/Timer.h
-    src/Framework/Utils.h
-    src/Framework/Vector.cpp
-    src/Framework/Vector.h
-    src/Framework/Window.cpp
-    src/Framework/Window.h
-    src/Framework/Device.h
-    src/Framework/ThreadManager.cpp
-    src/Framework/ThreadManager.h)
+    Framework/Application.cpp
+    Framework/Application.h
+    Framework/Core.cpp
+    Framework/Main.h
+    Framework/Input.h
+    Framework/KeyCodes.h
+    Framework/Layer.cpp
+    Framework/Layer.h
+    Framework/LayerStack.cpp
+    Framework/LayerStack.h
+    Framework/Log.cpp
+    Framework/Log.h
+    Framework/Math.h
+    Framework/Object.h
+    Framework/Timer.h
+    Framework/Utils.h
+    Framework/Vector.cpp
+    Framework/Vector.h
+    Framework/Window.cpp
+    Framework/Window.h
+    Framework/Device.h
+    Framework/ThreadManager.cpp
+    Framework/ThreadManager.h)
 
 set(EDITOR_FILES
-    src/Editor/EditorCamera.cpp
-    src/Editor/EditorCamera.h)
+    Editor/EditorCamera.cpp
+    Editor/EditorCamera.h)
 
 set(EVENT_FILES
-    src/Event/ApplicationEvent.cpp
-    src/Event/ApplicationEvent.h
-    src/Event/Event.h
-    src/Event/KeyEvent.h
-    src/Event/MouseEvent.h)
+    Event/ApplicationEvent.cpp
+    Event/ApplicationEvent.h
+    Event/Event.h
+    Event/KeyEvent.h
+    Event/MouseEvent.h)
 
 set(IMAGE_FILES
 )
 
 set(GUI_FILES
-    src/ImGui/GuiLayer.cpp
-    src/ImGui/GuiLayer.h
-    src/ImGui/ImGuiBuild.cpp
-    src/ImGui/ImGuizmo.cpp
-    src/ImGui/ImGuizmo.h
-    src/ImGui/Utils.h)
+    ImGui/GuiLayer.cpp
+    ImGui/GuiLayer.h
+    ImGui/ImGuiBuild.cpp
+    ImGui/ImGuizmo.cpp
+    ImGui/ImGuizmo.h
+    ImGui/Utils.h)
 
 set(INTERFACE_FILES
-   src/Interface/Delegate.cpp
-   src/Interface/Delegate.h)
+   Interface/Delegate.cpp
+   Interface/Delegate.h)
 
 set(FS_FILES
-    src/FileSystem/FileSystem.cpp
-    src/FileSystem/FileSystem.h)
+    FileSystem/FileSystem.cpp
+    FileSystem/FileSystem.h)
 
 set(PHYSICS_FILES
-    src/Physics/Physics.cpp
-    src/Physics/Physics.h)
+    Physics/Physics.cpp
+    Physics/Physics.h)
 
 set(D3D12_FILES
-    src/Platform/D3D12/Barrier.h
-    src/Platform/D3D12/CommandAllocator.h
-    src/Platform/D3D12/CommandBuffer.cpp
-    src/Platform/D3D12/CommandBuffer.h
-    src/Platform/D3D12/CommandPool.cpp
-    src/Platform/D3D12/CommandPool.h
-    src/Platform/D3D12/Common.h
-    src/Platform/D3D12/DescriptorPool.cpp
-    src/Platform/D3D12/DescriptorPool.h
-    src/Platform/D3D12/Descriptor.cpp
-    src/Platform/D3D12/Descriptor.h
-    src/Platform/D3D12/Device.cpp
-    src/Platform/D3D12/Device.h
-    src/Platform/D3D12/FencePool.cpp
-    src/Platform/D3D12/FencePool.h
-    src/Platform/D3D12/Framebuffer.cpp
-    src/Platform/D3D12/Framebuffer.h
-    src/Platform/D3D12/Image.cpp
-    src/Platform/D3D12/Image.h
-    src/Platform/D3D12/ImageView.cpp
-    src/Platform/D3D12/ImageView.h
-    src/Platform/D3D12/Instance.cpp
-    src/Platform/D3D12/Instance.h
-    src/Platform/D3D12/PhysicalDevice.cpp
-    src/Platform/D3D12/PhysicalDevice.h
-    src/Platform/D3D12/Queue.cpp
-    src/Platform/D3D12/Queue.h
-    src/Platform/D3D12/RenderContext.cpp
-    src/Platform/D3D12/RenderContext.h
-    src/Platform/D3D12/Renderer.cpp
-    src/Platform/D3D12/Renderer.h
-    src/Platform/D3D12/RenderFrame.cpp
-    src/Platform/D3D12/RenderFrame.h
-    src/Platform/D3D12/RenderTarget.cpp
-    src/Platform/D3D12/RenderTarget.h
-    src/Platform/D3D12/SemaphorePool.cpp
-    src/Platform/D3D12/SemaphorePool.h
-    src/Platform/D3D12/Swapchain.cpp
-    src/Platform/D3D12/Swapchain.h
-    src/Platform/D3D12/Shader.cpp
-    src/Platform/D3D12/Shader.h
-    src/Platform/D3D12/Texture.cpp
-    src/Platform/D3D12/Texture.h
-    src/Platform/D3D12/GuiLayer.cpp
-    src/Platform/D3D12/GuiLayer.h)
+    Platform/D3D12/Barrier.h
+    Platform/D3D12/CommandAllocator.h
+    Platform/D3D12/CommandBuffer.cpp
+    Platform/D3D12/CommandBuffer.h
+    Platform/D3D12/CommandPool.cpp
+    Platform/D3D12/CommandPool.h
+    Platform/D3D12/Common.h
+    Platform/D3D12/DescriptorPool.cpp
+    Platform/D3D12/DescriptorPool.h
+    Platform/D3D12/Descriptor.cpp
+    Platform/D3D12/Descriptor.h
+    Platform/D3D12/Device.cpp
+    Platform/D3D12/Device.h
+    Platform/D3D12/FencePool.cpp
+    Platform/D3D12/FencePool.h
+    Platform/D3D12/Framebuffer.cpp
+    Platform/D3D12/Framebuffer.h
+    Platform/D3D12/Image.cpp
+    Platform/D3D12/Image.h
+    Platform/D3D12/ImageView.cpp
+    Platform/D3D12/ImageView.h
+    Platform/D3D12/Instance.cpp
+    Platform/D3D12/Instance.h
+    Platform/D3D12/PhysicalDevice.cpp
+    Platform/D3D12/PhysicalDevice.h
+    Platform/D3D12/Queue.cpp
+    Platform/D3D12/Queue.h
+    Platform/D3D12/RenderContext.cpp
+    Platform/D3D12/RenderContext.h
+    Platform/D3D12/Renderer.cpp
+    Platform/D3D12/Renderer.h
+    Platform/D3D12/RenderFrame.cpp
+    Platform/D3D12/RenderFrame.h
+    Platform/D3D12/RenderTarget.cpp
+    Platform/D3D12/RenderTarget.h
+    Platform/D3D12/SemaphorePool.cpp
+    Platform/D3D12/SemaphorePool.h
+    Platform/D3D12/Swapchain.cpp
+    Platform/D3D12/Swapchain.h
+    Platform/D3D12/Shader.cpp
+    Platform/D3D12/Shader.h
+    Platform/D3D12/Texture.cpp
+    Platform/D3D12/Texture.h
+    Platform/D3D12/GuiLayer.cpp
+    Platform/D3D12/GuiLayer.h)
 
 set(VULKAN_FILES
-   src/Platform/Vulkan/vk_mem_alloc.h
-   src/Platform/Vulkan/volk.h
-   src/Platform/Vulkan/Attachment.h
-   src/Platform/Vulkan/Buffer.cpp
-   src/Platform/Vulkan/Buffer.h
-   src/Platform/Vulkan/Common.cpp
-   src/Platform/Vulkan/Common.h
-   src/Platform/Vulkan/Device.cpp
-   src/Platform/Vulkan/Device.h
-   src/Platform/Vulkan/CommandBuffer.cpp
-   src/Platform/Vulkan/CommandBuffer.h
-   src/Platform/Vulkan/CommandPool.cpp
-   src/Platform/Vulkan/CommandPool.h
-   src/Platform/Vulkan/Descriptor.h
-   src/Platform/Vulkan/DescriptorPool.cpp
-   src/Platform/Vulkan/DescriptorPool.h
-   src/Platform/Vulkan/DescriptorSet.h
-   src/Platform/Vulkan/FencePool.cpp
-   src/Platform/Vulkan/FencePool.h
-   src/Platform/Vulkan/Framebuffer.cpp
-   src/Platform/Vulkan/Framebuffer.h
-   src/Platform/Vulkan/GuiLayer.cpp
-   src/Platform/Vulkan/GuiLayer.h
-   src/Platform/Vulkan/Image.cpp
-   src/Platform/Vulkan/Image.h
-   src/Platform/Vulkan/ImageView.cpp
-   src/Platform/Vulkan/ImageView.h
-   src/Platform/Vulkan/Instance.cpp
-   src/Platform/Vulkan/Instance.h
-   src/Platform/Vulkan/Pipeline.cpp
-   src/Platform/Vulkan/Pipeline.h
-   src/Platform/Vulkan/PipelineLayout.h
-   src/Platform/Vulkan/PhysicalDevice.cpp
-   src/Platform/Vulkan/PhysicalDevice.h
-   src/Platform/Vulkan/Queue.cpp
-   src/Platform/Vulkan/Queue.h
-   src/Platform/Vulkan/RenderContext.cpp
-   src/Platform/Vulkan/RenderContext.h
-   src/Platform/Vulkan/Renderer.cpp
-   src/Platform/Vulkan/Renderer.h
-   src/Platform/Vulkan/RenderFrame.cpp
-   src/Platform/Vulkan/RenderFrame.h
-   src/Platform/Vulkan/RenderTarget.cpp
-   src/Platform/Vulkan/RenderTarget.h
-   src/Platform/Vulkan/SemaphorePool.cpp
-   src/Platform/Vulkan/SemaphorePool.h
-   src/Platform/Vulkan/Swapchain.cpp
-   src/Platform/Vulkan/Swapchain.h
-   src/Platform/Vulkan/Sampler.cpp
-   src/Platform/Vulkan/Sampler.h
-   src/Platform/Vulkan/Shader.cpp
-   src/Platform/Vulkan/Shader.h
-   src/Platform/Vulkan/Texture.cpp
-   src/Platform/Vulkan/Texture.h
-   src/Platform/Vulkan/RenderPass.cpp
-   src/Platform/Vulkan/RenderPass.h)
+   Platform/Vulkan/vk_mem_alloc.h
+   Platform/Vulkan/volk.h
+   Platform/Vulkan/Attachment.h
+   Platform/Vulkan/Buffer.cpp
+   Platform/Vulkan/Buffer.h
+   Platform/Vulkan/Common.cpp
+   Platform/Vulkan/Common.h
+   Platform/Vulkan/Device.cpp
+   Platform/Vulkan/Device.h
+   Platform/Vulkan/CommandBuffer.cpp
+   Platform/Vulkan/CommandBuffer.h
+   Platform/Vulkan/CommandPool.cpp
+   Platform/Vulkan/CommandPool.h
+   Platform/Vulkan/Descriptor.h
+   Platform/Vulkan/DescriptorPool.cpp
+   Platform/Vulkan/DescriptorPool.h
+   Platform/Vulkan/DescriptorSet.h
+   Platform/Vulkan/FencePool.cpp
+   Platform/Vulkan/FencePool.h
+   Platform/Vulkan/Framebuffer.cpp
+   Platform/Vulkan/Framebuffer.h
+   Platform/Vulkan/GuiLayer.cpp
+   Platform/Vulkan/GuiLayer.h
+   Platform/Vulkan/Image.cpp
+   Platform/Vulkan/Image.h
+   Platform/Vulkan/ImageView.cpp
+   Platform/Vulkan/ImageView.h
+   Platform/Vulkan/Instance.cpp
+   Platform/Vulkan/Instance.h
+   Platform/Vulkan/Pipeline.cpp
+   Platform/Vulkan/Pipeline.h
+   Platform/Vulkan/PipelineLayout.h
+   Platform/Vulkan/PhysicalDevice.cpp
+   Platform/Vulkan/PhysicalDevice.h
+   Platform/Vulkan/Queue.cpp
+   Platform/Vulkan/Queue.h
+   Platform/Vulkan/RenderContext.cpp
+   Platform/Vulkan/RenderContext.h
+   Platform/Vulkan/Renderer.cpp
+   Platform/Vulkan/Renderer.h
+   Platform/Vulkan/RenderFrame.cpp
+   Platform/Vulkan/RenderFrame.h
+   Platform/Vulkan/RenderTarget.cpp
+   Platform/Vulkan/RenderTarget.h
+   Platform/Vulkan/SemaphorePool.cpp
+   Platform/Vulkan/SemaphorePool.h
+   Platform/Vulkan/Swapchain.cpp
+   Platform/Vulkan/Swapchain.h
+   Platform/Vulkan/Sampler.cpp
+   Platform/Vulkan/Sampler.h
+   Platform/Vulkan/Shader.cpp
+   Platform/Vulkan/Shader.h
+   Platform/Vulkan/Texture.cpp
+   Platform/Vulkan/Texture.h
+   Platform/Vulkan/RenderPass.cpp
+   Platform/Vulkan/RenderPass.h)
 
 set(OPENGL_FILES
-    src/Platform/OpenGL/Buffer.cpp
-    src/Platform/OpenGL/Buffer.h
-    src/Platform/OpenGL/Common.h
-    src/Platform/OpenGL/Framebuffer.cpp
-    src/Platform/OpenGL/Framebuffer.h
-    src/Platform/OpenGL/GuiLayer.cpp
-    src/Platform/OpenGL/GuiLayer.h
-    src/Platform/OpenGL/RenderContext.cpp
-    src/Platform/OpenGL/RenderContext.h
-    src/Platform/OpenGL/Renderer.cpp
-    src/Platform/OpenGL/Renderer.h
-    src/Platform/OpenGL/RenderTarget.cpp
-    src/Platform/OpenGL/RenderTarget.h
-    src/Platform/OpenGL/Shader.cpp
-    src/Platform/OpenGL/Shader.h
-    src/Platform/OpenGL/Pipeline.cpp
-    src/Platform/OpenGL/Pipeline.h
-    src/Platform/OpenGL/Texture.cpp
-    src/Platform/OpenGL/Texture.h
-    src/Platform/OpenGL/VertexArray.h)
+    Platform/OpenGL/Buffer.cpp
+    Platform/OpenGL/Buffer.h
+    Platform/OpenGL/Common.h
+    Platform/OpenGL/Framebuffer.cpp
+    Platform/OpenGL/Framebuffer.h
+    Platform/OpenGL/GuiLayer.cpp
+    Platform/OpenGL/GuiLayer.h
+    Platform/OpenGL/RenderContext.cpp
+    Platform/OpenGL/RenderContext.h
+    Platform/OpenGL/Renderer.cpp
+    Platform/OpenGL/Renderer.h
+    Platform/OpenGL/RenderTarget.cpp
+    Platform/OpenGL/RenderTarget.h
+    Platform/OpenGL/Shader.cpp
+    Platform/OpenGL/Shader.h
+    Platform/OpenGL/Pipeline.cpp
+    Platform/OpenGL/Pipeline.h
+    Platform/OpenGL/Texture.cpp
+    Platform/OpenGL/Texture.h
+    Platform/OpenGL/VertexArray.h)
 
 set(WINDOWS_FILES
-    src/Platform/Windows/DirectWindow.cpp
-    src/Platform/Windows/DirectWindow.h
-    src/Platform/Windows/GLFWWindow.cpp
-    src/Platform/Windows/GLFWWindow.h
-    src/Platform/Windows/WindowPlatformUtils.cpp
-    src/Platform/Windows/WindowsInput.cpp
-    src/Platform/Windows/WindowsInput.h)
+    Platform/Windows/DirectWindow.cpp
+    Platform/Windows/DirectWindow.h
+    Platform/Windows/GLFWWindow.cpp
+    Platform/Windows/GLFWWindow.h
+    Platform/Windows/WindowPlatformUtils.cpp
+    Platform/Windows/WindowsInput.cpp
+    Platform/Windows/WindowsInput.h)
 
 set(RENDER_FILES
-    src/Render/Buffer.h
-    src/Render/Camera.cpp
-    src/Render/Camera.h
-    src/Render/CommandBuffer.cpp
-    src/Render/CommandBuffer.h
-    src/Render/CommandQueue.cpp
-    src/Render/CommandQueue.h
-    src/Render/Descriptor.h
-    src/Render/Environment.cpp
-    src/Render/Environment.h
-    src/Render/Frame.cpp
-    src/Render/Frame.h
-    src/Render/Format.h
-    src/Render/RenderTarget.cpp
-    src/Render/RenderTarget.h
-    src/Render/Material.cpp
-    src/Render/Material.h
-    src/Render/Mesh.cpp
-    src/Render/Mesh.h
-    src/Render/OrthographicCamera.cpp
-    src/Render/OrthographicCamera.h
-    src/Render/OrthographicCameraController.cpp
-    src/Render/OrthographicCameraController.h
-    src/Render/Pipeline.cpp
-    src/Render/Pipeline.h
-    src/Render/Render.cpp
-    src/Render/Render.h
-    src/Render/RenderContext.cpp
-    src/Render/RenderContext.h
-    src/Render/Renderer.cpp
-    src/Render/Renderer.h
-    src/Render/Render2D.cpp
-    src/Render/Render2D.h
-    src/Render/Shader.h
-    src/Render/Texture.h
-    src/Render/Types.h
-    src/Render/GLSLCompiler.cpp
-    src/Render/GLSLCompiler.h)
+    Render/Buffer.h
+    Render/Camera.cpp
+    Render/Camera.h
+    Render/CommandBuffer.cpp
+    Render/CommandBuffer.h
+    Render/CommandQueue.cpp
+    Render/CommandQueue.h
+    Render/Descriptor.h
+    Render/Environment.cpp
+    Render/Environment.h
+    Render/Frame.cpp
+    Render/Frame.h
+    Render/Format.h
+    Render/RenderTarget.cpp
+    Render/RenderTarget.h
+    Render/Material.cpp
+    Render/Material.h
+    Render/Mesh.cpp
+    Render/Mesh.h
+    Render/OrthographicCamera.cpp
+    Render/OrthographicCamera.h
+    Render/OrthographicCameraController.cpp
+    Render/OrthographicCameraController.h
+    Render/Pipeline.cpp
+    Render/Pipeline.h
+    Render/Render.cpp
+    Render/Render.h
+    Render/RenderContext.cpp
+    Render/RenderContext.h
+    Render/Renderer.cpp
+    Render/Renderer.h
+    Render/Render2D.cpp
+    Render/Render2D.h
+    Render/Shader.h
+    Render/Texture.h
+    Render/Types.h
+    Render/GLSLCompiler.cpp
+    Render/GLSLCompiler.h)
 
 set(SCENE_FILES
-    src/Scene/Component.cpp
-    src/Scene/Component.h
-    src/Scene/Entity.cpp
-    src/Scene/Entity.h
-    src/Scene/entt.hpp
-    src/Scene/ObserverCamera.cpp
-    src/Scene/ObserverCamera.h
-    src/Scene/Scene.cpp
-    src/Scene/Scene.h
-    src/Scene/SceneCamera.cpp
-    src/Scene/SceneCamera.h
-    src/Scene/ScriptableObject.cpp
-    src/Scene/ScriptableObject.h)
+    Scene/Component.cpp
+    Scene/Component.h
+    Scene/Entity.cpp
+    Scene/Entity.h
+    Scene/entt.hpp
+    Scene/ObserverCamera.cpp
+    Scene/ObserverCamera.h
+    Scene/Scene.cpp
+    Scene/Scene.h
+    Scene/SceneCamera.cpp
+    Scene/SceneCamera.h
+    Scene/ScriptableObject.cpp
+    Scene/ScriptableObject.h)
 
 set(SCRIPT_FILES
-    src/Script/ScriptDriver.cpp
-    src/Script/ScriptDriver.h)
+    Script/ScriptDriver.cpp
+    Script/ScriptDriver.h)
 
 set(SERIALIZER_FILES
-    src/Serializer/SceneSerializer.cpp
-    src/Serializer/SceneSerializer.h)
+    Serializer/SceneSerializer.cpp
+    Serializer/SceneSerializer.h)
 
 set(STRING_FILES
-    src/String/LanguageSettings.h)
+    String/LanguageSettings.h)
 
 set(SYNC_FILES
-    src/Sync/Semaphore.cpp
-    src/Sync/Semaphore.h
-    src/Sync/SemaphorePool.cpp
-    src/Sync/SemaphorePool.h)
+    Sync/Semaphore.cpp
+    Sync/Semaphore.h
+    Sync/SemaphorePool.cpp
+    Sync/SemaphorePool.h)
 
 set(UTILS_FILES
-    src/Utils/nlohmann_json.h
-    src/Utils/json.h
-    src/Utils/PlatformUtils.h)
+    Utils/nlohmann_json.h
+    Utils/json.h
+    Utils/PlatformUtils.h)
 
 set(WIDGET_FILES
-    src/Widget/MenuBar.h
-    src/Widget/Widget.h
-    src/Widget/Viewport.h)
+    Widget/MenuBar.h
+    Widget/Widget.h
+    Widget/Viewport.h)
 
 set(NET_FILES
-    src/Net/Socket.h)
+    Net/Socket.h)
 
 source_group("\\" FILES ${CORE_FILES})
 source_group("Framework\\" FILES ${FRAMEWORK_FILES})
@@ -341,11 +341,11 @@ source_group("\\" FILES ${PROJECT_FILES})
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_FILES})
 
-target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_FILES})
+target_sources(${PROJECT_NAME} PUBLIC ${PROJECT_FILES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/impch.h>)
+target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
 
 add_subdirectory(sl)
 add_subdirectory(Media)
