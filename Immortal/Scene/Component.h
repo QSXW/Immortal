@@ -26,13 +26,13 @@ struct Component
         Camera
     };
 
-    Component(Type c) :
+    Component(Type type) :
         type{ type }
     {
         
     }
 
-    Type type{ None };
+    Type type{ Type::None };
 };
 
 struct IDComponent : public Component
