@@ -13,22 +13,9 @@ Render::Scene Render::scene{};
 
 Render::Data Render::data{};
 
-static const char *Sringify(Render::Type type)
-{
-    switch (type)
-    {
-#define XX(x) case Render::Type::x: return #x;
-        XX(None);
-        XX(Vulkan);
-        XX(D3D12);
-#undef XX
-        default: return "Unknown";
-    }
-}
-
-const std::string Render::ShaderProfiles[] = {
-    { "Texture"  },
-    { "Render2D" }
+const Shader::Properties Render::ShaderProperties[] = {
+    {  "Texture", U32(Render::Type::Vulkan | Render::Type::D3D12), Shader::Type::Graphics },
+    { "Render2D", U32(Render::Type::Vulkan                      ), Shader::Type::Graphics }
 };
 
 void Render::Setup(RenderContext *context)
@@ -39,15 +26,17 @@ void Render::Setup(RenderContext *context)
 
     {
         auto asset = API == Type::D3D12 ? 1 : 0;
-        ShaderContainer.reserve(SLLEN(ShaderProfiles));
-        for (int i = 0; i < SLLEN(ShaderProfiles); i++)
+        ShaderContainer.reserve(SLLEN(ShaderProperties));
+        for (int i = 0; i < SLLEN(ShaderProperties); i++)
         {
-            ShaderContainer.emplace_back(
-                    renderer->CreateShader(
-                        std::string{ AssetsPathes[asset] } + ShaderProfiles[i],
-                        Shader::Type::Graphics
-                        )
-                );
+            if (ncast<Render::Type>(ShaderProperties[i].API) & API)
+            {
+                auto &&shader = Create<Shader>(
+                    std::string{ AssetsPathes[asset] } + ShaderProperties[i].Path,
+                    ShaderProperties[i].Type
+                    );
+                ShaderContainer.emplace_back(std::move(shader));
+            }    
         }
     }
 

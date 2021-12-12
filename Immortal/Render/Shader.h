@@ -89,6 +89,15 @@ public:
         std::string name;
     };
 
+    struct Properties
+    {
+        std::string Path;
+
+        uint32_t API;
+
+        Shader::Type Type;
+    };
+
     static Resource::Type GetResourceType(const std::string &key)
     {
         static std::map<std::string, Resource::Type> map = {

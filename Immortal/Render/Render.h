@@ -32,18 +32,20 @@ public:
 
     enum class Type
     {
-        None,
-        Vulkan,
-        OpenGL,
-        D3D12
+        None   = 0,
+        Vulkan = BIT(1),
+        OpenGL = BIT(2),
+        D3D12  = BIT(3),
+        Metal  = BIT(4)
     };
 
-    static inline const char Stringify[4][8]
+    static inline const char Stringify[5][8]
     {
         { "None"   },
         { "Vulkan" },
         { "OpenGL" },
-        { "D3D12"  }
+        { "D3D12"  },
+        { "Metal"  }
     };
 
     static inline const char AssetsPathes[][24] = {
@@ -64,7 +66,7 @@ public:
 
     static std::vector<std::shared_ptr<Immortal::Shader>> ShaderContainer;
 
-    static const std::string Render::ShaderProfiles[];
+    static const Shader::Properties ShaderProperties[];
 
     template <class T, ShaderName U>
     static constexpr inline std::shared_ptr<Shader> Get()
@@ -270,7 +272,22 @@ public:
     static inline Type API{ Type::None };
 };
 
+static std::string Sringify(Render::Type type)
+{
+    switch (type)
+    {
+#define XX(x) case Render::Type::x: return #x;
+        XX(None);
+        XX(Vulkan);
+        XX(D3D12);
+#undef XX
+    default: return "Unknown";
+    }
+}
+
 using ShaderName = Render::ShaderName;
+
+SL_DEFINE_BITWISE_OPERATION(Render::Type, uint32_t)
 
 template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
 inline constexpr std::shared_ptr<SuperType> CreateSuper(Args&& ... args)
