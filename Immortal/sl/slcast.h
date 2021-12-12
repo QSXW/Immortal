@@ -76,4 +76,16 @@ inline constexpr auto Deanonymize(Anonymous anonymous)
     return reinterpret_cast<R>(*reinterpret_cast<P>(anonymous));
 }
 
+template <class T>
+inline constexpr uint32_t U32(T num)
+{
+    return static_cast<uint32_t>(num);
+}
+
+template <class T>
+inline constexpr uint32_t U64(T num)
+{
+    return static_cast<uint64_t>(num);
+}
+
 }
