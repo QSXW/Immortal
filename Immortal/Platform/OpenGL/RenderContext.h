@@ -23,7 +23,7 @@ public:
         return nullptr;
     }
 
-    void INIT();
+    void Setup();
 
     GLFWwindow *Handle()
     {

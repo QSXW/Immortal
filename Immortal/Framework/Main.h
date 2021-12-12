@@ -11,7 +11,7 @@ extern Immortal::Application* Immortal::CreateApplication();
 int main(int argc, char **argv)
 {
     system("chcp 65001 & cls");
-    Immortal::LOG::INIT();
+    Immortal::LOG::Setup();
 
     std::unique_ptr<Immortal::Application> app{ nullptr };
     app.reset(Immortal::CreateApplication());

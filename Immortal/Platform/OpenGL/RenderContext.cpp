@@ -13,10 +13,10 @@ RenderContext::RenderContext(RenderContext::Description &desc)
     : handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
 {
     SLASSERT(handle && "Window Handle is null!");
-    INIT();
+    Setup();
 }
 
-void RenderContext::INIT()
+void RenderContext::Setup()
 {
     glfwMakeContextCurrent(handle);
     int status = gladLoadGLLoader(rcast<GLADloadproc>(glfwGetProcAddress));

@@ -32,7 +32,7 @@ void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned
     }
 }
 
-void Renderer::INIT()
+void Renderer::Setup()
 {
 #ifdef SLDEBUG
     glEnable(GL_DEBUG_OUTPUT);

@@ -25,7 +25,7 @@ public:
 public:
     Renderer(SuperRenderContext *context);
 
-    virtual void INIT() override;
+    virtual void Setup() override;
 
     virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 

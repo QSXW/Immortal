@@ -18,7 +18,7 @@ Application::Application(const Window::Description &descrition)
 {
     !!instance ? throw Exception("Unable to create Two Application") : instance = this;
     
-    Async::INIT();
+    Async::Setup();
 
     desc = descrition;
     

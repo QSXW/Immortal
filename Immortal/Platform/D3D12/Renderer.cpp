@@ -17,10 +17,10 @@ Renderer::Renderer(RenderContext::Super *superContext)
 
     commandAllocators = context->Get<ID3D12CommandAllocator **>();
 
-    INIT();
+    Setup();
 }
 
-void Renderer::INIT()
+void Renderer::Setup()
 {
 
 }

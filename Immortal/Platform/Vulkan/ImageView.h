@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    void INIT(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers);
+    void Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers);
 
 private:
     VkImageView handle{ VK_NULL_HANDLE };

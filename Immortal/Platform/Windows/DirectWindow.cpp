@@ -58,7 +58,7 @@ end:
 
 DirectWindow::DirectWindow(const Description &description)
 {
-    INIT(description);
+    Setup(description);
 }
 
 void DirectWindow::Show()
@@ -87,7 +87,7 @@ void DirectWindow::SetIcon(const std::string &filepath)
 
 }
 
-void DirectWindow::INIT(const Description &description)
+void DirectWindow::Setup(const Description &description)
 {
     desc = description;
 

@@ -51,7 +51,7 @@ public:
     virtual void SetIcon(const std::string &filepath) override;
 
 private:
-    virtual void INIT(const Description &description);
+    virtual void Setup(const Description &description);
 
     virtual void Shutdown();
 

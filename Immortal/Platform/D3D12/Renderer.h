@@ -22,7 +22,7 @@ public:
 public:
     Renderer(RenderContext::Super *context);
 
-    virtual void INIT() override;
+    virtual void Setup() override;
 
     virtual void SwapBuffers() override;
 

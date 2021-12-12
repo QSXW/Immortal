@@ -117,13 +117,13 @@ struct InputElementDescription
     InputElementDescription(std::initializer_list<InputElement> &&list) :
         elements{ std::move(list) }
     {
-        INIT();
+        Setup();
     }
 
     InputElementDescription(std::vector<InputElement> &&elements) :
         elements{ std::move(elements) }
     {
-        INIT();
+        Setup();
     }
 
     auto begin()
@@ -167,7 +167,7 @@ struct InputElementDescription
     }
 
 private:
-    void INIT()
+    void Setup()
     {
         uint32_t offset = 0;
         for (auto &e : elements)

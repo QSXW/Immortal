@@ -30,7 +30,7 @@ public:
 
     virtual ~Renderer();
 
-    virtual void INIT() override;
+    virtual void Setup() override;
 
     virtual void SwapBuffers() override;
 

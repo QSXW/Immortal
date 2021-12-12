@@ -112,7 +112,7 @@ private:
 class Async
 {
 public:
-    static void INIT();
+    static void Setup();
 
     template <class T>
     static auto Execute(T &&task)

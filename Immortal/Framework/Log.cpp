@@ -11,7 +11,7 @@ namespace Immortal
 
 std::shared_ptr<spdlog::logger> LOG::logger;
 
-void LOG::INIT(bool async)
+void LOG::Setup(bool async)
 {
     std::vector<spdlog::sink_ptr> logSinks;
     logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());

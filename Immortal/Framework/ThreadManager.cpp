@@ -6,7 +6,7 @@ namespace Immortal
 
 std::unique_ptr<ThreadPool> Async::threadPool{ nullptr };
 
-void Async::INIT()
+void Async::Setup()
 {
     int count = std::thread::hardware_concurrency();
     

@@ -41,7 +41,7 @@ public:
 
     ~RenderContext();
 
-    void INIT();
+    void Setup();
 
     template <class T>
     T Get()

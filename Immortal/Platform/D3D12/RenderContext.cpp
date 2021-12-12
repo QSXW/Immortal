@@ -12,12 +12,12 @@ namespace D3D12
 RenderContext::RenderContext(Description &descrition) :
     desc{ descrition }
 {
-    INIT();
+    Setup();
 }
 
 RenderContext::RenderContext(const void *handle)
 {
-    INIT();
+    Setup();
 }
 
 RenderContext::~RenderContext()
@@ -25,7 +25,7 @@ RenderContext::~RenderContext()
     IfNotNullThen<FreeLibrary>(hModule);
 }
 
-void RenderContext::INIT()
+void RenderContext::Setup()
 {
     desc.FrameCount = Swapchain::SWAP_CHAIN_BUFFER_COUNT;
     hWnd = rcast<HWND>(desc.WindowHandle->PlatformNativeWindow());

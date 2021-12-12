@@ -18,7 +18,7 @@ ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UI
         this->format = format = image->Format();
     }
 
-    INIT(
+    Setup(
         image->Handle(),
         viewType,
         baseMipLevel,
@@ -34,7 +34,7 @@ ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, Vk
     device{ device },
     format{ format }
 {
-    INIT(image, viewType, baseMipLevel, baseArrayLevel, nMipLevels, nArrayLayers);
+    Setup(image, viewType, baseMipLevel, baseArrayLevel, nMipLevels, nArrayLayers);
 }
 
 ImageView::ImageView(ImageView&& other) :
@@ -56,7 +56,7 @@ ImageView::~ImageView()
     device->Destory(handle);
 }
 
-void ImageView::INIT(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)
+void ImageView::Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)
 {
     subresourceRange.baseMipLevel   = baseMipLevel;
     subresourceRange.baseArrayLayer = baseArrayLevel;

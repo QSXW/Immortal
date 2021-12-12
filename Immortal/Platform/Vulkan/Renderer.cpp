@@ -14,7 +14,7 @@ Renderer::Renderer(RenderContext::Super *c) :
     swapchain{ context->Get<Swapchain *>() },
     semaphorePool{ device }
 {
-    INIT();
+    Setup();
 }
 
 Renderer::~Renderer()
@@ -25,7 +25,7 @@ Renderer::~Renderer()
     }
 }
 
-void Renderer::INIT()
+void Renderer::Setup()
 {
     auto frameSize = context->FrameSize();
     for (int i = 0; i < frameSize; i++)

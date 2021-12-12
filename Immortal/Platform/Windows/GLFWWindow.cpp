@@ -19,7 +19,7 @@ static void GLFWErrorCallback(int error, const char *description)
 
 GLFWWindow::GLFWWindow(const Description &description)
 {
-    INIT(description);
+    Setup(description);
 }
 
 GLFWWindow::~GLFWWindow()
@@ -63,7 +63,7 @@ void GLFWWindow::SetIcon(const std::string &filepath)
     glfwSetWindowIcon(window, 1, &image);
 }
 
-void GLFWWindow::INIT(const Description &description)
+void GLFWWindow::Setup(const Description &description)
 {
     desc = description;
 

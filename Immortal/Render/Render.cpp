@@ -35,7 +35,7 @@ void Render::Setup(RenderContext *context)
 {
     LOG::INFO("Initialize Renderer with API => {0}", Sringify(Render::API));
     renderer = Renderer::Create(context);
-    renderer->INIT();
+    renderer->Setup();
 
     {
         auto asset = API == Type::D3D12 ? 1 : 0;
