@@ -9,32 +9,45 @@ namespace Immortal
 class KeyEvent : public Event
 {
 public:
-    int GetKeyCode() const { return keyCode; }
-    EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
+    KeyEvent(const int keyCode) :
+        keyCode{ keyCode }
+    {
 
+    }
+
+    int GetKeyCode() const
+    {
+        return keyCode;
+    }
+
+    DEFINE_EVENT_CATEGORY(Category::Keyboard | Category::Input)
+   
 protected:
-    KeyEvent(const int keyCode)
-        : keyCode(keyCode) { }
-
     int keyCode;
 };
 
 class KeyPressedEvent : public KeyEvent
 {
 public:
-    KeyPressedEvent(const int keyCode, const uint16_t repeatCount)
-        : KeyEvent(keyCode), repeatCount(repeatCount) { }
+    KeyPressedEvent(const int keyCode, const uint16_t repeatCount) :
+        KeyEvent{ keyCode },
+        repeatCount{ repeatCount }
+    {
+    }
+
         
-    uint16_t RepeatCount() const { return repeatCount; }
+    uint16_t RepeatCount() const
+    {
+        return repeatCount;
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s.append("KeyPressedEvent: ").append(std::to_string(keyCode)).append(" (").append(std::to_string(repeatCount)).append(" repeats");
-        return s;
+        return std::string{ "KeyPressedEvent: " + std::to_string(keyCode) + " (" + std::to_string(repeatCount) + " repeats" };
     }
 
-    EVENT_CLASS_TYPE(KeyPressed)
+    DEFINE_EVENT_TYPE(KeyPressed)
+
 private:
     uint16_t repeatCount;
 };
@@ -42,31 +55,35 @@ private:
 class KeyReleasedEvent : public KeyEvent
 {
 public:
-    KeyReleasedEvent(const int keyCode)
-        : KeyEvent(keyCode) { }
+    KeyReleasedEvent(const int keyCode) :
+        KeyEvent{ keyCode }
+    {
+    
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s.append("KeyReleasedEvent: ").append(std::to_string(keyCode));
-        return s;
+        return std::string{ "KeyReleasedEvent: " + std::to_string(keyCode) };
     }
-    EVENT_CLASS_TYPE(KeyReleased)
+
+    DEFINE_EVENT_TYPE(KeyReleased)
 };
 
 class KeyTypedEvent : public KeyEvent
 {
 public:
-    KeyTypedEvent(const int keyCode)
-        : KeyEvent(keyCode) { }
+    KeyTypedEvent(const int keyCode) :
+        KeyEvent{ keyCode }
+    {
+        
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s.append("KeyTypedEvent: ").append(std::to_string(keyCode));
-        return s;
+        return std::string{ "KeyTypedEvent: " + std::to_string(keyCode) };
     }
-    EVENT_CLASS_TYPE(KeyTyped)
+
+    DEFINE_EVENT_TYPE(KeyTyped)
 };
 
 }

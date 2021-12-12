@@ -150,8 +150,8 @@ void GuiLayer::OnEvent(Event &e)
     if (blockEvents)
     {
         ImGuiIO &io = ImGui::GetIO();
-        e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-        e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+        e.Handled |= e.IsInCategory(Event::Category::Mouse) & io.WantCaptureMouse;
+        e.Handled |= e.IsInCategory(Event::Category::Keyboard) & io.WantCaptureKeyboard;
     }
 }
 

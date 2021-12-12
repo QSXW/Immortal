@@ -8,49 +8,85 @@
 namespace Immortal
 {
 
-enum class EventType
-{
-    None = 0,
-    WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-    AppTick, AppUpdate, AppRender,
-    KeyPressed, KeyReleased, KeyTyped,
-    MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
-};
+#define DEFINE_EVENT_TYPE(T) \
+static Event::Type GetStaticType() \
+{ \
+    return Event::Type::T; \
+} \
+\
+virtual Event::Type GetType() const override \
+{ \
+    return GetStaticType(); \
+} \
+\
+virtual std::string Name() const override \
+{\
+    return #T; \
+}
 
-enum EventCategory
-{
-    None						= 0,
-    EventCategoryApplication	= BIT(0),
-    EventCategoryInput			= BIT(1),
-    EventCategoryKeyboard		= BIT(2),
-    EventCategoryMouse			= BIT(3),
-    EventCategoryMouseButton	= BIT(4)
-};
-
-#define EVENT_CLASS_TYPE(T) \
-static EventType GetStaticType() { return EventType::T; }\
-virtual EventType Type() const override { return GetStaticType(); }\
-virtual const char *Name() const override { return #T; }
-
-#define EVENT_CLASS_CATEGORY(category) \
-virtual int GetCategoryFlags() const override { return category; }
+#define DEFINE_EVENT_CATEGORY(category) \
+virtual Event::Category GetCategoryFlags() const override \
+{ \
+    return category; \
+}
 
 class IMMORTAL_API Event
 {
 public:
-    virtual EventType Type() const = 0;
-    virtual const char *Name() const = 0;
-    virtual int GetCategoryFlags() const = 0;
-    virtual std::string Stringify() const { return Name(); }
-
-    inline bool IsInCategory(EventCategory category)
+    enum class Type
     {
-        return  GetCategoryFlags() & static_cast<int>(category);
+        None = 0,
+        WindowClose,
+        WindowResize,
+        WindowFocus,
+        WindowLostFocus,
+        WindowMoved,
+        AppTick,
+        AppUpdate,
+        AppRender,
+        KeyPressed,
+        KeyReleased,
+        KeyTyped,
+        MouseButtonPressed,
+        MouseButtonReleased,
+        MouseMoved,
+        MouseScrolled
+    };
+
+    enum class Category
+    {
+        None = 0,
+        Application = BIT(0),
+        Input       = BIT(1),
+        Keyboard    = BIT(2),
+        Mouse       = BIT(3),
+        MouseButton = BIT(4)
+    };
+
+public:
+    virtual Type GetType() const = 0;
+
+    virtual std::string Name() const = 0;
+
+    virtual Category GetCategoryFlags() const = 0;
+
+    virtual std::string Stringify() const
+    {
+        return Name();
     }
+
+    bool IsInCategory(Category category);
 
 public:
     bool Handled = false;
 };
+
+SL_DEFINE_BITWISE_OPERATION(Event::Category, int32_t)
+
+inline bool Event::IsInCategory(Event::Category category)
+{
+    return GetCategoryFlags() & category;
+}
 
 class EventDispatcher
 {
@@ -62,9 +98,9 @@ public:
     }
 
     template <class T, class F>
-    bool Dispatch(const F& func)
+    bool Dispatch(const F &func)
     {
-        if (e.Type() == T::GetStaticType())
+        if (e.GetType() == T::GetStaticType())
         {
             e.Handled |= func(static_cast<T&>(e));
             return true;
@@ -74,6 +110,12 @@ public:
 
 private:
     Event &e;
+};
+
+class EventSink
+{
+
+
 };
 
 inline std::ostream& operator<<(std::ostream &os, const Event &e)

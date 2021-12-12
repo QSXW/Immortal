@@ -9,21 +9,30 @@ namespace Immortal
 class MouseMoveEvent : public Event
 {
 public:
-    MouseMoveEvent(const float x, const float y)
-        : mouseX(x), mouseY(y) { }
+    MouseMoveEvent(const float x, const float y) :
+        mouseX{ x },
+        mouseY{ y }
+    {
+    
+    }
 
-    float GetX() const { return mouseX; }
-    float GetY() const { return mouseY; }
+    float GetX() const
+    {
+        return mouseX;
+    }
+
+    float GetY() const
+    { 
+        return mouseY;
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s += "MouseMovedEvent: " + std::to_string(mouseX) + ", " + std::to_string(mouseY);
-        return s;
+        return std::string{ "MouseMovedEvent: " + std::to_string(mouseX) + ", " + std::to_string(mouseY) };
     }
 
-    EVENT_CLASS_TYPE(MouseMoved)
-    EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+    DEFINE_EVENT_TYPE(MouseMoved)
+    DEFINE_EVENT_CATEGORY(Category::Mouse | Category::Input)
 
 private:
     float mouseX;
@@ -33,70 +42,88 @@ private:
 class MouseScrolledEvent : public Event
 {
 public:
-    MouseScrolledEvent(const float xOffset, const float yOffset)
-        : xOffset(xOffset), yOffset(yOffset) {}
+    MouseScrolledEvent(const float offsetX, const float offsetY) :
+        offsetX{ offsetX },
+        offsetY{ offsetY }
+    {
+        
+    }
 
-    float GetXOffset() const { return xOffset; }
-    float GetYOffset() const { return yOffset; }
+    float GetOffsetX() const
+    {
+        return offsetX;
+    }
+
+    float GetOffsetY() const
+    { 
+        return offsetY;
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s += "MouseScrolledEvent: " + std::to_string(xOffset) + ", " + std::to_string(yOffset);
-        return s;
+        return std::string{ "MouseScrolledEvent: " + std::to_string(offsetX) + ", " + std::to_string(offsetY)  };
     }
 
-    EVENT_CLASS_TYPE(MouseScrolled)
-    EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+    DEFINE_EVENT_TYPE(MouseScrolled)
+    DEFINE_EVENT_CATEGORY(Category::Mouse | Category::Input)
+
 private:
-    float xOffset;
-    float yOffset;
+    float offsetX;
+    float offsetY;
 };
 
 class MouseButtonEvent : public Event
 {
 public:
-    MouseCode GetMouseButton() const { return button; }
+    MouseButtonEvent(const MouseCode button) : 
+        button{ button }
+    {
+        
+    }
 
-    EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
+    MouseCode GetMouseButton() const
+    { 
+        return button;
+    }
+
+    DEFINE_EVENT_CATEGORY(Category::Mouse | Category::Input | Category::MouseButton)
 
 protected:
-    MouseButtonEvent(const MouseCode button)
-        : button(button) {}
-
     MouseCode button;
 };
 
 class MouseButtonPressedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonPressedEvent(const MouseCode button)
-        : MouseButtonEvent(button) {}
+    MouseButtonPressedEvent(const MouseCode button) :
+        MouseButtonEvent{ button }
+    {
+    
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s += "MouseButtonPressedEvent: " + std::to_string((int)button);
-        return s;
+        return std::string{ "MouseButtonPressedEvent: " + std::to_string(ncast<int>(button)) };
     }
 
-    EVENT_CLASS_TYPE(MouseButtonPressed)
+    DEFINE_EVENT_TYPE(MouseButtonPressed)
 };
 
 class MouseButtonReleasedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonReleasedEvent(const MouseCode button)
-        : MouseButtonEvent(button) {}
+    MouseButtonReleasedEvent(const MouseCode button) :
+        MouseButtonEvent{ button }
+    {
+    
+    }
 
     std::string Stringify() const override
     {
-        std::string s;
-        s += "MouseButtonReleasedEvent: " + std::to_string((int)button);
-        return s;
+        return std::string{ "MouseButtonReleasedEvent: " + std::to_string(ncast<int>(button)) };
     }
 
-    EVENT_CLASS_TYPE(MouseButtonReleased)
+    DEFINE_EVENT_TYPE(MouseButtonReleased)
 };
 
 }

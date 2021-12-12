@@ -82,7 +82,7 @@ namespace Immortal {
 
 	bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent & e)
 	{
-		mZoomLevel -= e.GetYOffset() * 0.25f;
+		mZoomLevel -= e.GetOffsetY() * 0.25f;
 		mZoomLevel = std::max(mZoomLevel, 0.1f);
 		mCamera.SetProjection(-mAspectRatio * mZoomLevel, mAspectRatio * mZoomLevel, -mZoomLevel, mZoomLevel);
 		return false;
