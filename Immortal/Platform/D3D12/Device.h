@@ -24,6 +24,16 @@ public:
         return handle;
     }
 
+    operator const ID3D12Device*() const
+    {
+        return handle;
+    }
+
+    operator ID3D12Device*()
+    {
+        return handle;
+    }
+
     std::unique_ptr<Queue> CreateQueue(Queue::Description &desc)
     {
         return std::make_unique<Queue>(handle, desc);
