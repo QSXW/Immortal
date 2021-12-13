@@ -112,7 +112,7 @@ inline std::set<VkImageUsageFlagBits> SelectImageUsage(const std::set<VkImageUsa
             VK_IMAGE_USAGE_TRANSFER_DST_BIT
         };
 
-        for (size_t i = 0; i < SLLEN(imageUsageFlags); i++)
+        for (size_t i = 0; i < SL_ARRAY_LENGTH(imageUsageFlags); i++)
         {
             if ((imageUsageFlags[i] & support) && ValidateFormatFeature(imageUsageFlags[i], supportedFeatures))
             {
@@ -169,7 +169,7 @@ inline VkCompositeAlphaFlagBitsKHR SelectCompositeAlpha(VkCompositeAlphaFlagBits
         VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
     };
 
-    for (size_t i = 0; i < SLLEN(compositeAlphaFlags); i++)
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(compositeAlphaFlags); i++)
     {
         if (compositeAlphaFlags[i] & support)
         {

@@ -27,8 +27,8 @@ void Render::Setup(RenderContext *context)
 
     {
         auto asset = API == Type::D3D12 ? 1 : 0;
-        ShaderContainer.reserve(SLLEN(ShaderProperties));
-        for (int i = 0; i < SLLEN(ShaderProperties); i++)
+        ShaderContainer.reserve(SL_ARRAY_LENGTH(ShaderProperties));
+        for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)
         {
             if (ncast<Render::Type>(ShaderProperties[i].API) & API)
             {
