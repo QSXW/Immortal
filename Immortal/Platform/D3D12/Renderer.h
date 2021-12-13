@@ -6,8 +6,8 @@
 #include "RenderContext.h"
 #include "Shader.h"
 #include "Texture.h"
-
-#include <mutex>
+#include "Pipeline.h"
+#include "Device.h"
 
 namespace Immortal
 {
@@ -62,6 +62,11 @@ public:
         return std::make_shared<Shader>(filepath, type);
     }
 
+    virtual std::shared_ptr<Pipeline::Super> CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    {
+        return std::make_shared<Pipeline>(context->GetAddress<Device>(), shader);
+    }
+
     virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
     {
         SLASSERT(context != nullptr && "Render Context isn't initialized yet");
@@ -77,11 +82,11 @@ public:
 
     CommandList *commandList{ nullptr };
 
+    ID3D12CommandAllocator **commandAllocators;
+
     UINT frameIndex{ Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1 };
 
     UINT64 fenceValues[Swapchain::SWAP_CHAIN_BUFFER_COUNT]{ 0 };
-
-    ID3D12CommandAllocator **commandAllocators;
 };
 
 }

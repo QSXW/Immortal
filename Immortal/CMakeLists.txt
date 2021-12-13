@@ -95,6 +95,8 @@ set(D3D12_FILES
     Platform/D3D12/Instance.h
     Platform/D3D12/PhysicalDevice.cpp
     Platform/D3D12/PhysicalDevice.h
+    Platform/D3D12/Pipeline.cpp
+    Platform/D3D12/Pipeline.h
     Platform/D3D12/Queue.cpp
     Platform/D3D12/Queue.h
     Platform/D3D12/RenderContext.cpp
