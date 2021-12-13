@@ -14,6 +14,7 @@ Render::Scene Render::scene{};
 Render::Data Render::data{};
 
 const Shader::Properties Render::ShaderProperties[] = {
+    {    "Basic", U32(Render::Type::Vulkan | Render::Type::D3D12), Shader::Type::Graphics },
     {  "Texture", U32(Render::Type::Vulkan | Render::Type::D3D12), Shader::Type::Graphics },
     { "Render2D", U32(Render::Type::Vulkan                      ), Shader::Type::Graphics }
 };
