@@ -10,6 +10,7 @@
 #include "DescriptorPool.h"
 #include "CommandPool.h"
 #include "CommandAllocator.h"
+#include "Queue.h"
 
 namespace Immortal
 {
@@ -46,41 +47,46 @@ public:
     template <class T>
     T Get()
     {
-        if constexpr (is_same<T, Swapchain*>())
-        {
-            return swapchain.get();
-        }
-        if constexpr (is_same<T, HWND>())
+        if constexpr (IsPrimitiveOf<HWND, T>())
         {
             return hWnd;
         }
-        if constexpr (is_same<T, ID3D12Device*>())
-        {
-            return device->Handle();
-        }
-        if constexpr (is_same<T, DXGI_FORMAT>())
+        if constexpr (IsPrimitiveOf<DXGI_FORMAT, T>())
         {
             return NORMALIZE(desc.format);
         }
-        if constexpr (is_same<T, Queue *>())
+    }
+
+    template <class T>
+    inline constexpr T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<Device, T>())
+        {
+            return device.get();
+        }
+        if constexpr (IsPrimitiveOf<Swapchain, T>())
+        {
+            return swapchain.get();
+        }
+        if constexpr (IsPrimitiveOf<Queue, T>())
         {
             return queue.get();
         }
-        if constexpr (is_same<T, CommandList *>())
+        if constexpr (IsPrimitiveOf<CommandList, T>())
         {
             return commandList.get();
         }
-        if constexpr (is_same<T, ID3D12CommandAllocator **>())
-        {
-            return commandAllocator;
-        }
-        if constexpr (is_same<T, Window*>())
+        if constexpr (IsPrimitiveOf<Window, T>())
         {
             return desc.WindowHandle;
         }
-        if constexpr (is_same<T, ID3D12Fence *>())
+        if constexpr (IsPrimitiveOf<ID3D12Fence, T>())
         {
             return fence.Get();
+        }
+        if constexpr (IsPrimitiveOf<ID3D12CommandAllocator*, T>())
+        {
+            return commandAllocator;
         }
     }
 

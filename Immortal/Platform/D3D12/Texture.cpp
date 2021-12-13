@@ -12,7 +12,8 @@ namespace D3D12
 
 Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
 {
-    auto device = context->Get<ID3D12Device *>();
+    ID3D12Device *device = *context->GetAddress<Device>();
+
     auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
     auto descriptorIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -139,7 +140,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-    auto queue = context->Get<Queue *>();
+    auto queue = context->GetAddress<Queue>();
     auto cmdlist = queue->BeginUpload();
 
     cmdlist->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);

@@ -5,18 +5,13 @@ namespace Immortal
 namespace D3D12
 {
 
-Renderer::Renderer(RenderContext::Super *superContext)
+Renderer::Renderer(RenderContext::Super *superContext) :
+    context { dcast<RenderContext *>(superContext) }
 {
-    context = dcast<RenderContext *>(superContext);
-
-    swapchain = context->Get<Swapchain*>();
-
-    queue = context->Get<Queue *>();
-
-    commandList = context->Get<CommandList *>();
-
-    commandAllocators = context->Get<ID3D12CommandAllocator **>();
-
+    swapchain         = context->GetAddress<Swapchain>();
+    queue             = context->GetAddress<Queue>();
+    commandList       = context->GetAddress<CommandList>();
+    commandAllocators = context->GetAddress<ID3D12CommandAllocator*>();
     Setup();
 }
 
