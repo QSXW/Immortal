@@ -196,7 +196,8 @@ public:
         Vertex,
         Index,
         Uniform,
-        PushConstant
+        PushConstant,
+        Unspecified
     };
 
     enum class Usage
@@ -205,6 +206,12 @@ public:
     };
 
 public:
+    Buffer() :
+        type{ Type::Unspecified }
+    {
+
+    }
+
     Buffer(Type type) :
         type{ type }
     {
