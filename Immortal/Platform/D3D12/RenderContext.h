@@ -105,7 +105,7 @@ public:
         return renderTargets[backBufferIndex];
     }
 
-    CPUDescriptor RenderTargetDescriptor(INT backBufferIndex)
+    CPUDescriptor &&RenderTargetDescriptor(INT backBufferIndex)
     {
         return CPUDescriptor{
                  renderTargetViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>(),
