@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Common.h"
+#include "Render/Descriptor.h"
 
 namespace Immortal
 {
@@ -8,7 +10,7 @@ namespace D3D12
 
 class DescriptorPool;
 
-struct CPUDescriptor : D3D12_CPU_DESCRIPTOR_HANDLE
+struct CPUDescriptor : public Descriptor, D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:
     CPUDescriptor() = default;
@@ -41,7 +43,7 @@ public:
     }
 };
 
-struct GPUDescriptor : D3D12_GPU_DESCRIPTOR_HANDLE
+struct GPUDescriptor : public Descriptor, D3D12_GPU_DESCRIPTOR_HANDLE
 {
 public:
     GPUDescriptor() = default;
