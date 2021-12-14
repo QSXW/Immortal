@@ -165,5 +165,11 @@ Texture::~Texture()
     IfNotNullThenRelease(texture);
 }
 
+void Texture::As(Descriptor *descriptors, size_t index)
+{
+    GPUDescriptor *gpuDescriptors = rcast<GPUDescriptor *>(descriptors);
+    gpuDescriptors[index] = gpuDescriptor;
+}
+
 }
 }

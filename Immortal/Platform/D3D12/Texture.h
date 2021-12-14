@@ -45,6 +45,8 @@ public:
         return gpuDescriptor.ptr;
     }
 
+    virtual void As(Descriptor *descriptors, size_t index) override;
+
 private:
     ID3D12Resource *texture{ nullptr };
 
