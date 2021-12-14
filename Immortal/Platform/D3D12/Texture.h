@@ -42,15 +42,15 @@ public:
 
     virtual operator uint64_t() const override
     {
-        return gpuDescriptorHandle.ptr;
+        return gpuDescriptor.ptr;
     }
 
 private:
     ID3D12Resource *texture{ nullptr };
 
-    CPUDescriptor cpuDescriptorHandle;
+    CPUDescriptor cpuDescriptor;
 
-    GPUDescriptor gpuDescriptorHandle{};
+    GPUDescriptor gpuDescriptor{};
 
     D3D12_RESOURCE_DESC desc{};
 

@@ -17,15 +17,15 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
     auto descriptorIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    cpuDescriptorHandle = CPUDescriptor{
+    cpuDescriptor = CPUDescriptor{
         shaderResourceViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>()
     };
-    cpuDescriptorHandle.Offset(descriptorIndex, descriptorIncrementSize);
+    cpuDescriptor.Offset(descriptorIndex, descriptorIncrementSize);
 
-    gpuDescriptorHandle = GPUDescriptor{
+    gpuDescriptor = GPUDescriptor{
         shaderResourceViewDescriptorHeap->Get<D3D12_GPU_DESCRIPTOR_HANDLE>()
     };
-    gpuDescriptorHandle.Offset(descriptorIndex, descriptorIncrementSize);
+    gpuDescriptor.Offset(descriptorIndex, descriptorIncrementSize);
 
     Frame frame{ filepath };
 
@@ -157,7 +157,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     srvDesc.Texture2D.MipLevels       = desc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(texture, &srvDesc, cpuDescriptorHandle);
+    device->CreateShaderResourceView(texture, &srvDesc, cpuDescriptor);
 }
 
 Texture::~Texture()
