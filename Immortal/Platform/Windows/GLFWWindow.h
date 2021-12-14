@@ -39,10 +39,7 @@ public:
         return window;
     }
 
-    virtual void *PlatformNativeWindow() const
-    {
-        return glfwGetWin32Window(window);
-    }
+    virtual void *Primitive() const override;
 
     float Time() override;
 

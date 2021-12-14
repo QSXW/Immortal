@@ -85,7 +85,7 @@ public:
 
     virtual void *GetNativeWindow() const = 0;
 
-    virtual void *PlatformNativeWindow() const = 0;
+    virtual void *Primitive() const = 0;
 
     virtual void Clear() {}
 

@@ -61,6 +61,11 @@ DirectWindow::DirectWindow(const Description &description)
     Setup(description);
 }
 
+void *DirectWindow::Primitive() const
+{
+    return handle;
+}
+
 void DirectWindow::Show()
 {
     ::ShowWindow(handle, SW_SHOWDEFAULT);

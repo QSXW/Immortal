@@ -28,7 +28,6 @@ RenderContext::~RenderContext()
 void RenderContext::Setup()
 {
     desc.FrameCount = Swapchain::SWAP_CHAIN_BUFFER_COUNT;
-    hWnd = rcast<HWND>(desc.WindowHandle->PlatformNativeWindow());
 
     uint32_t dxgiFactoryFlags = 0;
 
@@ -52,6 +51,8 @@ void RenderContext::Setup()
         nullptr,
         nullptr
         );
+
+    auto hWnd = rcast<HWND>(desc.WindowHandle->Primitive());
 
     {
         Queue::Description queueDesc{};

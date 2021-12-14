@@ -22,16 +22,14 @@ namespace D3D12
 GuiLayer::GuiLayer(SuperRenderContext *superContext) :
     context{ dcast<RenderContext*>(superContext)}
 {
-    swapchain        = context->GetAddress<Swapchain>();
-    commandList      = context->GetAddress<CommandList>();
-    queue            = context->GetAddress<Queue>();
+    swapchain   = context->GetAddress<Swapchain>();
+    commandList = context->GetAddress<CommandList>();
+    queue       = context->GetAddress<Queue>();
 }
 
 void GuiLayer::OnAttach()
 {
     Super::OnAttach();
-
-    auto window    = context->GetAddress<Window>();
 
     auto &io       = ImGui::GetIO();
     Vector2 extent = context->Extent();
@@ -39,7 +37,8 @@ void GuiLayer::OnAttach()
 
     srvDescriptorHeap = context->ShaderResourceViewDescritorHeap();
 
-    ImGui_ImplWin32_Init(context->Get<HWND>());
+    auto window = context->GetAddress<Window>();
+    ImGui_ImplWin32_Init(rcast<HWND>(window->Primitive()));
 
     ImGui_ImplDX12_Init(
         *context->GetAddress<Device>(),

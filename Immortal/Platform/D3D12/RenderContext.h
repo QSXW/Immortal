@@ -135,8 +135,6 @@ public:
 private:
     Super::Description desc{};
 
-    HWND hWnd{ nullptr };
-
     HMODULE hModule{ nullptr };
 
     ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };

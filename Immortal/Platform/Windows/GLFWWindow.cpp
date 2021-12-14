@@ -181,6 +181,11 @@ void GLFWWindow::Shutdown()
     }
 }
 
+void *GLFWWindow::Primitive() const
+{
+    return glfwGetWin32Window(window);
+}
+
 float GLFWWindow::Time()
 {
     return ncast<float>(glfwGetTime());

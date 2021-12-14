@@ -27,7 +27,7 @@ public:
         return desc.Height;
     }
 
-    virtual void SetEventCallback(const EventCallbackFunc& callback) override
+    virtual void SetEventCallback(const EventCallbackFunc &callback) override
     {
         EventDispatcher = callback;
     }
@@ -37,10 +37,7 @@ public:
         return handle;
     }
 
-    virtual void *PlatformNativeWindow() const override 
-    {
-        return handle;
-    }
+    virtual void *Primitive() const override;
 
     virtual void Show() override;
 
