@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "Pipeline.h"
 #include "Device.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
@@ -55,6 +56,16 @@ public:
         {
             fenceValues[i] = queue->FenceValue();
         }
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, data, type);
+    }
+
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    {
+        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, type);
     }
 
     virtual std::shared_ptr<SuperShader> CreateShader(const std::string &filepath, Shader::Type type) override
