@@ -34,19 +34,19 @@ public:
         return handle;
     }
 
-    std::unique_ptr<Queue> CreateQueue(Queue::Description &desc)
+    std::unique_ptr<Queue> CreateQueue(Queue::Description &desc) const
     {
         return std::make_unique<Queue>(handle, desc);
     }
 
-    UINT DescriptorHandleIncrementSize(const D3D12_DESCRIPTOR_HEAP_TYPE &type)
+    UINT DescriptorHandleIncrementSize(const D3D12_DESCRIPTOR_HEAP_TYPE &type) const
     {
         return handle->GetDescriptorHandleIncrementSize(
             type
             );
     }
 
-    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, CPUDescriptor &descriptor)
+    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const
     {
         handle->CreateRenderTargetView(
             pRenderTarget,
@@ -55,7 +55,7 @@ public:
             );
     }
 
-    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator)
+    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
     {
         Check(handle->CreateCommandAllocator(
             type,
@@ -63,7 +63,7 @@ public:
             ));
     }
 
-    void CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0)
+    void CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0) const
     {
         Check(handle->CreateCommandList(
             nodeMask,
@@ -74,13 +74,31 @@ public:
             ));
     }
 
-    void CreateFence(ID3D12Fence **pfence, UINT64 initialValue = 0, D3D12_FENCE_FLAGS flag = D3D12_FENCE_FLAG_NONE)
+    void CreateFence(ID3D12Fence **pfence, UINT64 initialValue = 0, D3D12_FENCE_FLAGS flag = D3D12_FENCE_FLAG_NONE) const
     {
-        handle->CreateFence(
+        Check(handle->CreateFence(
             initialValue,
             flag,
             IID_PPV_ARGS(pfence)
-            );
+            ));
+    }
+
+    void CreateCommittedResource(
+        const D3D12_HEAP_PROPERTIES *pHeapProperties,
+              D3D12_HEAP_FLAGS       heapFlags,
+        const D3D12_RESOURCE_DESC   *pDesc,
+              D3D12_RESOURCE_STATES  initialResourceState,
+        const D3D12_CLEAR_VALUE     *pOptimizedClearValue,
+              ID3D12Resource       **pResource) const
+    {
+        Check(handle->CreateCommittedResource(
+            pHeapProperties,
+            heapFlags,
+            pDesc,
+            initialResourceState,
+            pOptimizedClearValue,
+            IID_PPV_ARGS(pResource)
+            ));
     }
 
     DXGI_ADAPTER_DESC AdaptorDesc();
