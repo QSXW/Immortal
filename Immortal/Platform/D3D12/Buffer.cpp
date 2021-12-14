@@ -18,6 +18,11 @@ Buffer::Buffer(Device * device, const size_t size, Type type) :
     InternelCreate(device);
 }
 
+Buffer::~Buffer()
+{
+    IfNotNullThenRelease(handle);
+}
+
 void Buffer::InternelCreate(const Device *device)
 {
     D3D12_HEAP_PROPERTIES heapProperties{};

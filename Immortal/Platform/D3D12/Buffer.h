@@ -20,6 +20,8 @@ public:
     Buffer(Device *device, const size_t size, const void *data, Type type);
 
     Buffer(Device *device, const size_t size, Type type);
+    
+    virtual ~Buffer() override;
 
     operator const HandleType() const
     {
