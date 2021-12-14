@@ -6,16 +6,6 @@ namespace Immortal
 
 std::unique_ptr<ThreadPool> Async::threadPool{ nullptr };
 
-void Async::Setup()
-{
-    int count = std::thread::hardware_concurrency();
-    
-    Profiler p;
-    LOG::INFO("Creating {0} Thread(s)", count);
-
-    threadPool.reset(new ThreadPool{ count });
-}
-
 #pragma sl_disable_optimizations
 void ThreadPool::Join()
 {

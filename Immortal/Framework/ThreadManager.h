@@ -112,7 +112,16 @@ private:
 class Async
 {
 public:
-    static void Setup();
+    template <bool isLogNeed = false>
+    static void Setup()
+    {
+        int count = std::thread::hardware_concurrency();
+
+        Profiler p;
+        LOG::DEBUG<isLogNeed>("Creating {0} Thread(s)", count);
+
+        threadPool.reset(new ThreadPool{ count });
+    }
 
     template <class T>
     static auto Execute(T &&task)
