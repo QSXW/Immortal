@@ -55,6 +55,7 @@ public:
 
     enum class ShaderName : INT32
     {
+        Basic,
         Texture,
         Render2D,
         PBR,
