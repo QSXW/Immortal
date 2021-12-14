@@ -184,10 +184,12 @@ public:
 
 #define CAT1(p, s) #p##s
 
+#define DERROR(name, str) static constexpr const char name[] = str;
 namespace SError
 {
-    constexpr const char OutOfBound[]  = "Index was out of bound";
-    constexpr const char OutOfMemory[] = "No more memory on the runtime";
+    DERROR(OutOfBound,       "Index was out of bound"                  )
+    DERROR(OutOfMemory,      "No more memory on the runtime"           )
+    DERROR(InvalidSingleton, "Cannot construct more than one singleton")
 }
 
 #define SL_DEFINE_ENUM_OP_AND(T, U) \
