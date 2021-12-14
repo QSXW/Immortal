@@ -12,6 +12,25 @@ namespace D3D12
 
 Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
 {
+    Frame frame{ filepath };
+
+    Super::Update(width, height);
+    InternalCreate(context, frame.Type(), frame.Data());
+}
+
+Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description) :
+    Super{ width, height }
+{
+    InternalCreate(context, description, data);
+}
+
+Texture::~Texture()
+{
+    IfNotNullThenRelease(texture);
+}
+
+void Texture::InternalCreate(RenderContext *context, const Description &description, const void *data)
+{
     ID3D12Device *device = *context->GetAddress<Device>();
 
     auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
@@ -27,31 +46,30 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     };
     gpuDescriptor.Offset(descriptorIndex, descriptorIncrementSize);
 
-    Frame frame{ filepath };
-
     D3D12_HEAP_PROPERTIES props{};
     CleanUpObject(&props);
     props.Type                 = D3D12_HEAP_TYPE_DEFAULT;
     props.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
-    CleanUpObject(&desc);
-    ConvertType(desc, frame.Type());
-    desc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    desc.Alignment          = 0;
-    desc.Width              = frame.Width();
-    desc.Height             = frame.Height();
-    desc.DepthOrArraySize   = 1;
-    desc.MipLevels          = 1;
-    desc.SampleDesc.Count   = 1;
-    desc.SampleDesc.Quality = 0;
-    desc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_RESOURCE_DESC resourceDesc{};
+    CleanUpObject(&resourceDesc);
+    resourceDesc.Format             = description.BaseFromat<DXGI_FORMAT>();
+    resourceDesc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    resourceDesc.Alignment          = 0;
+    resourceDesc.Width              = width;
+    resourceDesc.Height             = height;
+    resourceDesc.DepthOrArraySize   = 1;
+    resourceDesc.MipLevels          = mipLevels;
+    resourceDesc.SampleDesc.Count   = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    resourceDesc.Flags              = D3D12_RESOURCE_FLAG_NONE;
 
     Check(device->CreateCommittedResource(
         &props,
         D3D12_HEAP_FLAG_NONE,
-        &desc,
+        &resourceDesc,
         D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
         IID_PPV_ARGS(&texture)
@@ -66,8 +84,8 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
     D3D12_RESOURCE_DESC uploadDesc{};
     CleanUpObject(&uploadDesc);
 
-    UINT uploadPitch              = (desc.Width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
-    UINT uploadSize               = desc.Height * uploadPitch;
+    UINT uploadPitch              = (resourceDesc.Width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
+    UINT uploadSize               = resourceDesc.Height * uploadPitch;
     uploadDesc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
     uploadDesc.Alignment          = 0;
     uploadDesc.Width              = uploadSize;
@@ -105,25 +123,24 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
         &mapped)
         );
 
-    auto imageData = frame.Data();
-    for (int y = 0; y < desc.Height; y++)
+    auto imageData = rcast<const uint8_t *>(data);
+    for (int y = 0; y < resourceDesc.Height; y++)
     {
         memcpy(
             (void *)((uintptr_t)mapped + y * uploadPitch),
-            imageData + y * desc.Width * 4,
-            desc.Width * 4
+            imageData + y * resourceDesc.Width * 4,
+            resourceDesc.Width * 4
             );
     }
-
     uploadBuffer->Unmap(0, &range);
 
      // Copy the upload resource content into the real resource
     D3D12_TEXTURE_COPY_LOCATION srcLocation{};
     srcLocation.pResource                          = uploadBuffer;
     srcLocation.Type                               = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    srcLocation.PlacedFootprint.Footprint.Format   = desc.Format;
-    srcLocation.PlacedFootprint.Footprint.Width    = desc.Width;
-    srcLocation.PlacedFootprint.Footprint.Height   = desc.Height;
+    srcLocation.PlacedFootprint.Footprint.Format   = resourceDesc.Format;
+    srcLocation.PlacedFootprint.Footprint.Width    = resourceDesc.Width;
+    srcLocation.PlacedFootprint.Footprint.Height   = resourceDesc.Height;
     srcLocation.PlacedFootprint.Footprint.Depth    = 1;
     srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
 
@@ -152,17 +169,12 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
     CleanUpObject(&srvDesc);
-    srvDesc.Format                    = desc.Format;
+    srvDesc.Format                    = resourceDesc.Format;
     srvDesc.ViewDimension             = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels       = desc.MipLevels;
+    srvDesc.Texture2D.MipLevels       = resourceDesc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     device->CreateShaderResourceView(texture, &srvDesc, cpuDescriptor);
-}
-
-Texture::~Texture()
-{
-    IfNotNullThenRelease(texture);
 }
 
 void Texture::As(Descriptor *descriptors, size_t index)

@@ -84,6 +84,15 @@ public:
         return std::make_shared<Texture>(context, filepath);
     }
 
+    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    {
+        return std::make_shared<Texture>(context, width, height, data, description);
+    }
+
+    virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
+
+    virtual Descriptor *CreateBufferDescriptor(uint32_t count) override;
+
 public:
     RenderContext *context{ nullptr };
 

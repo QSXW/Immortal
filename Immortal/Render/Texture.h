@@ -136,6 +136,13 @@ public:
         return ncast<float>(width) / ncast<float>(height);
     }
 
+    void Update(uint32_t w, uint32_t h)
+    {
+        width     = w;
+        height    = h;
+        mipLevels = CalculateMipmapLevels(w, h);
+    }
+
     virtual operator uint64_t() const
     {
         return 0;

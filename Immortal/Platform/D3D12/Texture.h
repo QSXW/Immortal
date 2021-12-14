@@ -17,26 +17,10 @@ class Texture : public SuperTexture
 public:
     using Super = SuperTexture;
 
-    void ConvertType(D3D12_RESOURCE_DESC &dst, Description &src)
-    {
-        switch (src.Format)
-        {
-        case Format::RGBA8:
-            dst.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
-
-        case Format::BGRA8:
-            dst.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            break;
-
-        default:
-            dst.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
-        }
-    }
-
 public:
     Texture(RenderContext *context, const std::string &filepath, bool flip = false);
+
+    Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description);
 
     ~Texture();
 
@@ -48,13 +32,14 @@ public:
     virtual void As(Descriptor *descriptors, size_t index) override;
 
 private:
+    void InternalCreate(RenderContext *context, const Description &description, const void *data);
+
+private:
     ID3D12Resource *texture{ nullptr };
 
     CPUDescriptor cpuDescriptor;
 
     GPUDescriptor gpuDescriptor{};
-
-    D3D12_RESOURCE_DESC desc{};
 
     int descriptorIndex{ 1 };
 };

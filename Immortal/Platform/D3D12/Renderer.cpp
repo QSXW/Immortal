@@ -1,5 +1,7 @@
 #include "Renderer.h"
 
+#include "Descriptor.h"
+
 namespace Immortal
 {
 namespace D3D12
@@ -28,6 +30,20 @@ void Renderer::SwapBuffers()
     swapchain->Present(1, 0);
 
     frameIndex = context->WaitForPreviousFrame();
+}
+
+
+Descriptor *Renderer::CreateImageDescriptor(uint32_t count)
+{
+    auto descriptor = new GPUDescriptor[count];
+    CleanUpObject(descriptor);
+
+    return descriptor;
+}
+
+Descriptor *Renderer::CreateBufferDescriptor(uint32_t count)
+{
+    return CreateImageDescriptor(count);
 }
 
 }
