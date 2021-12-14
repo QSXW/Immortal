@@ -14,7 +14,7 @@ Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
 
 Pipeline::~Pipeline()
 {
-    pipelineState->Release();
+    IfNotNullThenRelease(pipelineState);
 }
 
 }
