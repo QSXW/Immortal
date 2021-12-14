@@ -1,26 +1,22 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Timer.h"
 
-#include "Event/Event.h"
-#include "Event/ApplicationEvent.h"
-#include "Event/MouseEvent.h"
-#include "Event/KeyEvent.h"
+#include "Timer.h"
+#include "Input.h"
 #include "Window.h"
 #include "LayerStack.h"
+
 #include "ImGui/GuiLayer.h"
 #include "Render/RenderContext.h"
 
-#include "Framework/Input.h"
-
-#include "Render/Shader.h"
-#include "Render/Buffer.h"
-
-#include "Render/OrthographicCamera.h"
+#include "Event/ApplicationEvent.h"
+#include "Event/KeyEvent.h"
+#include "Event/MouseEvent.h"
 
 namespace Immortal
 {
+
 struct Configuration
 {
     float FontSize{ 12.0f };
@@ -45,7 +41,7 @@ public:
 
     static Application *App()
     {
-        return instance;
+        return That;
     }
 
     virtual GuiLayer *GetGuiLayer() const
@@ -65,7 +61,7 @@ public:
 
     static bool IsKeyPressed(KeyCode code)
     {
-        return instance->_M_input.InternalIsKeyPressed(code);
+        return That->_M_input.InternalIsKeyPressed(code);
     }
 
     RenderContext *Context()
@@ -76,27 +72,27 @@ public:
 public:
     static UINT32 Width()
     { 
-        return instance->desc.Width;
+        return That->desc.Width;
     }
 
     static UINT32 Height()
     {
-        return instance->desc.Height;
+        return That->desc.Height;
     }
 
     static const char *Name()
     { 
-        return instance->desc.Title.c_str();
+        return That->desc.Title.c_str();
     }
 
     static float DeltaTime()
     {
-        return instance->deltaTime;
+        return That->deltaTime;
     }
 
     static void SetTitle(const std::string &title)
     {
-        instance->desc.Title = title;
+        That->desc.Title = title;
     }
 
 private:
@@ -107,9 +103,10 @@ private:
 private:
     std::unique_ptr<Window> window;
 
-    void *handle{ nullptr };
+    std::unique_ptr<RenderContext> context;
 
-    struct {
+    struct
+    {
         bool running   = true;
         bool minimized = false;
     } runtime;
@@ -122,13 +119,11 @@ private:
 
     Input _M_input;
 
-    std::unique_ptr<RenderContext> context;
-
     Timer timer;
 
     float deltaTime;
 
-    static Application *instance;
+    static Application *That;
 
 public:
     Configuration configuration{};

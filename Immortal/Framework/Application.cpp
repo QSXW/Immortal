@@ -1,28 +1,24 @@
 #include "impch.h"
 #include "Application.h"
 
-#include "Event/Event.h"
-#include "Event/ApplicationEvent.h"
 #include "Log.h"
-
-#include "Render/Render.h"
-#include "Input.h"
-
 #include "ThreadManager.h"
+#include "Render/Render.h"
 
 namespace Immortal
 {
-Application *Application::instance{ nullptr };
 
-Application::Application(const Window::Description &descrition)
+Application *Application::That{ nullptr };
+
+Application::Application(const Window::Description &description)
 {
-    !!instance ? throw Exception("Unable to create Two Application") : instance = this;
+    !!That ? throw Exception(SError::InvalidSingleton) : That = this;
     
     Async::Setup();
 
-    desc = descrition;
+    desc = description;
     
-    window  = Window::Create(desc);
+    window.reset(Window::Create(desc));
     window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(SLBIND(Application::OnEvent));
 

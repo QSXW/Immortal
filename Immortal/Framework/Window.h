@@ -16,7 +16,7 @@ public:
     struct Description
     {
     public:
-        Description(const std::string &title = "Immortal Engine", UINT32 width = 1, UINT32 height = 1) :
+        Description(const std::string &title = "Immortal Engine", uint32_t width = 1, uint32_t height = 1) :
             Title{ title }, Width{ width }, Height{ height }, Vsync{ true }, EventCallback{ nullptr }
         {
 
@@ -67,9 +67,9 @@ public:
 
         std::string Title;
 
-        UINT32 Width;
+        uint32_t Width;
 
-        UINT32 Height;
+        uint32_t Height;
 
         bool Vsync;
     };
@@ -77,9 +77,9 @@ public:
 public:
     virtual ~Window() { }
 
-    virtual UINT32 Width() const = 0;
+    virtual uint32_t Width() const = 0;
 
-    virtual UINT32 Height() const = 0;
+    virtual uint32_t Height() const = 0;
 
     virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
 
@@ -87,22 +87,22 @@ public:
 
     virtual void *Primitive() const = 0;
 
-    virtual void Clear() {}
-
-    virtual float Time() { return .0f; }
-
     virtual void ProcessEvents() = 0;
+
+    virtual void Clear() const {}
+
+    virtual float Time() const { return .0f; }
 
     virtual float DpiFactor() const { return .0f;  }
 
-    virtual void SetTitle(const std::string &title) { }
+    virtual void SetTitle(const std::string &title) {}
 
-    virtual void Show() { }
+    virtual void Show() {}
 
-    virtual void SetIcon(const std::string &filepath) { }
+    virtual void SetIcon(const std::string &filepath) {}
 
 public:
-    static std::unique_ptr<Window> Create(const Description &description = Description{});
+    static Window *Create(const Description &description = Description{});
 };
 
 }

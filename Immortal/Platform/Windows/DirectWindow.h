@@ -17,12 +17,12 @@ public:
 
     virtual ~DirectWindow();
 
-    virtual UINT32 Width() const override
+    virtual uint32_t Width() const override
     {
         return desc.Width;
     }
 
-    virtual UINT32 Height() const override
+    virtual uint32_t Height() const override
     {
         return desc.Height;
     }
@@ -41,11 +41,11 @@ public:
 
     virtual void Show() override;
 
-    virtual void ProcessEvents();
-
     virtual void SetTitle(const std::string &title) override;
 
     virtual void SetIcon(const std::string &filepath) override;
+
+    virtual void ProcessEvents() override;
 
 private:
     virtual void Setup(const Description &description);

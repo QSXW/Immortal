@@ -3,15 +3,13 @@
 #include "Framework/Window.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include "Render/RenderContext.h"
-
 namespace Immortal
 {
+
 class GLFWWindow : public Window
 {
 public:
@@ -19,12 +17,12 @@ public:
 
     virtual ~GLFWWindow();
 
-    UINT32 Width() const override
+    uint32_t Width() const override
     {
         return desc.Width;
     }
 
-    UINT32 Height() const override
+    uint32_t Height() const override
     {
         return desc.Height;
     }
@@ -41,7 +39,7 @@ public:
 
     virtual void *Primitive() const override;
 
-    float Time() override;
+    float Time() const override;
 
     virtual void ProcessEvents() override
     {
@@ -65,6 +63,6 @@ private:
     Description desc{};
 
 public:
-    static UINT8 GLFWWindowCount;
+    static uint8_t GLFWWindowCount;
 };
 }

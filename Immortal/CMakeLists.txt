@@ -13,7 +13,6 @@ set(CORE_FILES
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
-    Framework/Core.cpp
     Framework/Main.h
     Framework/Input.h
     Framework/KeyCodes.h

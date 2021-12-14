@@ -10,7 +10,7 @@
 namespace Immortal
 {
 
-UINT8 GLFWWindow::GLFWWindowCount = 0;
+uint8_t GLFWWindow::GLFWWindowCount = 0;
 
 static void GLFWErrorCallback(int error, const char *description)
 {
@@ -186,7 +186,7 @@ void *GLFWWindow::Primitive() const
     return glfwGetWin32Window(window);
 }
 
-float GLFWWindow::Time()
+float GLFWWindow::Time() const
 {
     return ncast<float>(glfwGetTime());
 }
