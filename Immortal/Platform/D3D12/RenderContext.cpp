@@ -152,18 +152,13 @@ void RenderContext::Setup()
         if (!fenceEvent)
         {
             Check(HRESULT_FROM_WIN32(GetLastError()));
+            return;
         }
 
-        // Wait for the command list to execute; we are reusing the same command 
-        // list in our main loop but for now, we just want to wait for setup to 
-        // complete before continuing.
-
-        // Signal and increment the fence value.
-        const UINT64 fenceToWaitFor = fenceValues[frameIndex];
+        const uint64_t fenceToWaitFor = fenceValues[frameIndex];
         queue->Signal(fence, fenceToWaitFor);
         fenceValues[frameIndex]++;
 
-        // Wait until the fence is completed.
         Check(fence->SetEventOnCompletion(fenceToWaitFor, fenceEvent));
         WaitForSingleObject(fenceEvent, INFINITE);
     }
