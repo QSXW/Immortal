@@ -14,7 +14,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
 {
     Frame frame{ filepath };
 
-    Super::Update(width, height);
+    Super::Update(frame.Width(), frame.Height());
     InternalCreate(context, frame.Type(), frame.Data());
 }
 
