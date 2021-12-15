@@ -48,14 +48,14 @@ public:
         Description() { }
 
         Description(Vector2 viewport, Attachment::Description attachments) :
-            Width{ ncast<UINT32>(viewport.x) },
-            Height{ ncast<UINT32>(viewport.y) },
+            Width{ ncast<uint32_t>(viewport.x) },
+            Height{ ncast<uint32_t>(viewport.y) },
             Attachments{ attachments }
         {
 
         }
 
-        Description(UINT32 width, UINT32 height, Attachment::Description attachments) :
+        Description(uint32_t width, uint32_t height, Attachment::Description attachments) :
             Width{ width },
             Height{ height },
             Attachments{ attachments }
@@ -63,13 +63,11 @@ public:
 
         }
 
-        UINT32 Width{ 0 };
-
-        UINT32 Height{ 0 };
-
-        UINT32 Samples = 1;
-
-        UINT32 Layers{ 0 };
+        uint32_t Width     = 0;
+        uint32_t Height    = 1;
+        uint32_t Samples   = 1;
+        uint32_t Layers    = 1;
+        uint32_t MipLevels = 1;
 
         Attachment::Description Attachments;
 
@@ -100,12 +98,12 @@ public:
         Resize(ncast<uint32_t>(size.x), ncast<uint32_t>(size.y));
     }
 
-    virtual void *ReadPixel(UINT32 attachmentIndex, int x, int y, Format format, int width = 1, int height = 1)
+    virtual void *ReadPixel(uint32_t attachmentIndex, int x, int y, Format format, int width = 1, int height = 1)
     {
         return nullptr;
     }
 
-    virtual void ClearAttachment(UINT32 attachmentIndex, int value) { }
+    virtual void ClearAttachment(uint32_t attachmentIndex, int value) { }
 
     template <Attachment::Type T, class ... Args>
     Attachment &Get(Args&& ... args)
