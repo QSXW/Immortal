@@ -1,5 +1,6 @@
 #include "impch.h"
 #include "RenderTarget.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -11,9 +12,23 @@ RenderTarget::RenderTarget()
 
 }
 
-RenderTarget::RenderTarget(const RenderTarget::Description &descrition)
+RenderTarget::RenderTarget(const Device *device, const RenderTarget::Description &descrition) :
+    Super{ descrition }
 {
-
+    for (auto &attachment : descrition.Attachments)
+    {
+        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        if (attachment.IsDepth())
+        {
+            flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+        }
+        D3D12_RESOURCE_DESC resourceDesc = SuperToBase(
+            descrition,
+            attachment.BaseFromat<DXGI_FORMAT>(),
+            flags
+        );
+        int pause = 0;
+    }
 }
 
 RenderTarget::~RenderTarget()

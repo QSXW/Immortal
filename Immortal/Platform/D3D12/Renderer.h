@@ -4,6 +4,7 @@
 
 #include "Common.h"
 #include "RenderContext.h"
+#include "RenderTarget.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "Pipeline.h"
@@ -87,6 +88,11 @@ public:
     virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
     {
         return std::make_shared<Texture>(context, width, height, data, description);
+    }
+
+    virtual std::shared_ptr<RenderTarget::Super> CreateRenderTarget(const RenderTarget::Description &description) override
+    {
+        return std::make_shared<RenderTarget>(context->GetAddress<Device>(), description);
     }
 
     virtual Descriptor *CreateImageDescriptor(uint32_t count) override;

@@ -57,6 +57,8 @@ enum DisplayCurve
     None
 };
 
+#define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
+
 static const float HDRMetaDataPool[4][4] = {
     // MaxOutputNits, MinOutputNits,  MaxCLL, MaxFALL
     {        1000.0f,        0.001f, 2000.0f,  500.0f },

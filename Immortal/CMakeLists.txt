@@ -92,10 +92,6 @@ set(D3D12_FILES
     Platform/D3D12/Image.h
     Platform/D3D12/ImageView.cpp
     Platform/D3D12/ImageView.h
-    Platform/D3D12/Instance.cpp
-    Platform/D3D12/Instance.h
-    Platform/D3D12/PhysicalDevice.cpp
-    Platform/D3D12/PhysicalDevice.h
     Platform/D3D12/Pipeline.cpp
     Platform/D3D12/Pipeline.h
     Platform/D3D12/Queue.cpp
@@ -222,7 +218,6 @@ set(RENDER_FILES
     Render/Frame.cpp
     Render/Frame.h
     Render/Format.h
-    Render/RenderTarget.cpp
     Render/RenderTarget.h
     Render/Material.cpp
     Render/Material.h
