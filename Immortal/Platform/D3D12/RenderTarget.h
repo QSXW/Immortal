@@ -3,6 +3,7 @@
 #include "Render/RenderTarget.h"
 
 #include "Common.h"
+#include "Resource.h"
 #include "Descriptor.h"
 
 namespace Immortal
@@ -12,21 +13,18 @@ namespace D3D12
 
 class Device;
 
-struct PixelBuffer
+class PixelBuffer : public Resource
 {
-    void Create(Device *device)
-    {
-
-    }
-
-    ID3D12Resource           *resource;
-    D3D12_RESOURCE_STATES     usageState;
-    D3D12_RESOURCE_STATES     transitioningState;
-    D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress;
+public:
+    void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 };
 
-struct ColorBuffer : public PixelBuffer
+class ColorBuffer : public PixelBuffer
 {
+public:
+    using Super = PixelBuffer;
+
+public:
     ColorBuffer()
     {
         srvdescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
@@ -37,13 +35,20 @@ struct ColorBuffer : public PixelBuffer
         }
     }
 
+    void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+
+private:
     CPUDescriptor srvdescriptor;
     CPUDescriptor rtvDescriptor;
     CPUDescriptor uavDescriptor[12];
 };
 
-struct DepthBuffer : public PixelBuffer
+class DepthBuffer : public PixelBuffer
 {
+public:
+    using Super = PixelBuffer;
+
+public:
     DepthBuffer()
     {
         dsvDescriptor[0].ptr     = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
@@ -54,6 +59,7 @@ struct DepthBuffer : public PixelBuffer
         srvStencilDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
 
+private:
     CPUDescriptor dsvDescriptor[4];
     CPUDescriptor srvDepthDescriptor;
     CPUDescriptor srvStencilDescriptor;
@@ -81,9 +87,9 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
-    D3D12_RESOURCE_DESC SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
+    Resource::Description SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
     {
-        D3D12_RESOURCE_DESC desc{};
+        Resource::Description desc{};
         desc.Alignment          = 0;
         desc.Flags              = flags;
         desc.Format             = format;
