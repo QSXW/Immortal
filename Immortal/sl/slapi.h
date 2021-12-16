@@ -177,6 +177,28 @@ public:
     {
 
     }
+
+    RuntimeException(const std::string &what) noexcept :
+        RuntimeException(what.c_str())
+    {
+
+    }
+};
+
+class StaticException : public Exception
+{
+public:
+    StaticException(const char *what) noexcept :
+        Exception(what)
+    {
+
+    }
+
+    StaticException(const std::string &what) noexcept :
+        StaticException(what.c_str())
+    {
+
+    }
 };
 
 #define SLVIRTUAL 
@@ -190,6 +212,7 @@ namespace SError
     DERROR(OutOfBound,       "Index was out of bound"                  )
     DERROR(OutOfMemory,      "No more memory on the runtime"           )
     DERROR(InvalidSingleton, "Cannot construct more than one singleton")
+    DERROR(SelfAssignment,   "Self-assignment is not permitted"        )
 }
 
 #define SL_DEFINE_ENUM_OP_AND(T, U) \
@@ -221,5 +244,23 @@ namespace SError
     SL_DEFINE_ENUM_OP_AND_EQUAL(T, U) \
     SL_DEFINE_ENUM_OP_OR(T, U) \
     SL_DEFINE_ENUM_OP_OR_EQUAL(T, U)
+
+#ifdef SLDEBUG
+static constexpr bool IsDebugEnabled = true;
+#else
+static constexpr bool IsDebugEnabled = false;
+#endif
+
+template <class T>
+inline constexpr void ThrowIf(bool expr, const T what)
+{
+    if constexpr (IsDebugEnabled)
+    {
+        if (expr)
+        {
+            throw StaticException(what);
+        }
+    }
+}
 
 }
