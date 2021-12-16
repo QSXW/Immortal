@@ -58,6 +58,7 @@ static bool DrawVec3Control(const std::string &label, Vector::Vector3 &values, f
     float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y  *2.0f;
     ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
@@ -69,13 +70,14 @@ static bool DrawVec3Control(const std::string &label, Vector::Vector3 &values, f
     }
 
     ImGui::PopFont();
-    ImGui::PopStyleColor(3);
+    ImGui::PopStyleColor(4);
 
     ImGui::SameLine();
     modified |= ImGui::DragFloat("##X", &values.x, speed, 0.0f, 0.0f, "%.2f");
     ImGui::PopItemWidth();
     ImGui::SameLine();
 
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
@@ -87,13 +89,14 @@ static bool DrawVec3Control(const std::string &label, Vector::Vector3 &values, f
     }
 
     ImGui::PopFont();
-    ImGui::PopStyleColor(3);
+    ImGui::PopStyleColor(4);
 
     ImGui::SameLine();
     modified |= ImGui::DragFloat("##Y", &values.y, speed, 0.0f, 0.0f, "%.2f");
     ImGui::PopItemWidth();
     ImGui::SameLine();
 
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
@@ -105,16 +108,14 @@ static bool DrawVec3Control(const std::string &label, Vector::Vector3 &values, f
     }
 
     ImGui::PopFont();
-    ImGui::PopStyleColor(3);
+    ImGui::PopStyleColor(4);
 
     ImGui::SameLine();
     modified |= ImGui::DragFloat("##Z", &values.z, speed, 0.0f, 0.0f, "%.2f");
     ImGui::PopItemWidth();
 
     ImGui::PopStyleVar();
-
     ImGui::Columns(1);
-
     ImGui::PopID();
 
     return modified;
