@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Framework/Utils.h"
 #include "Framework/Device.h"
 #include "Common.h"
 
@@ -18,6 +19,11 @@ public:
 
 public:
     Device(ComPtr<IDXGIFactory4> factory);
+
+    ~Device()
+    {
+        IfNotNullThenRelease(handle);
+    }
 
     ID3D12Device *Handle()
     {
@@ -102,6 +108,17 @@ public:
     }
 
     DXGI_ADAPTER_DESC AdaptorDesc();
+
+    void Set(const std::wstring &name)
+    {
+        handle->SetName(name.c_str());
+    }
+
+    void Set(const std::string &name)
+    {
+        auto wName = Utils::s2ws(name);
+        Set(wName);
+    }
 
 private:
     ID3D12Device *handle{ nullptr };

@@ -162,6 +162,10 @@ void RenderContext::Setup()
         Check(fence->SetEventOnCompletion(fenceToWaitFor, fenceEvent));
         WaitForSingleObject(fenceEvent, INFINITE);
     }
+
+#ifdef SLDEBUG
+    device->Set("RenderContext::Device");
+#endif
 }
 
 void RenderContext::CreateRenderTarget()
