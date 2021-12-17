@@ -14,7 +14,7 @@ PhysicalDevice::PhysicalDevice(Instance &instance, VkPhysicalDevice physicalDevi
     vkGetPhysicalDeviceProperties(handle, &Properties);
     vkGetPhysicalDeviceMemoryProperties(handle, &MemoryProperties);
 
-    UINT32 count = 0;
+    uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(handle, &count, nullptr);
     QueueFamilyProperties.resize(count);
     vkGetPhysicalDeviceQueueFamilyProperties(handle, &count, QueueFamilyProperties.data());

@@ -23,6 +23,8 @@ public:
 
     static inline Device *That = nullptr;
 
+    static inline constexpr bool isLogNeed = false;
+
     void EnableGlobal()
     {
         That = this;

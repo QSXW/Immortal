@@ -102,11 +102,11 @@ Instance::Instance(const char                                   *applicationName
                     const std::unordered_map<const char *, bool> &requiredExtension,
                     const std::vector<const char *>              &requiredValidationLayers,
                     bool                                          headless,
-                    UINT32                                        apiVersion)
+                    uint32_t                                      apiVersion)
 {
     CheckDynamicLoadedLibarary();
 
-    UINT32 extensionCount;
+    uint32_t extensionCount;
     Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
     std::vector<VkExtensionProperties> availableExtension{ extensionCount };
     Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
@@ -180,7 +180,7 @@ Instance::Instance(const char                                   *applicationName
         }
     }
 
-    UINT32 layerCount;
+    uint32_t layerCount;
     Vulkan::Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
     std::vector<VkLayerProperties> supportedValidationLayers(layerCount);
@@ -286,7 +286,7 @@ Instance::~Instance()
 
 void Instance::QueryPhysicalDevice()
 {
-    UINT32 count{ 0 };
+    uint32_t count{ 0 };
     Check(vkEnumeratePhysicalDevices(handle, &count, nullptr));
 
     SLASSERT(count >= 1 && "Couldn't find a physical device that supports Vulkan.");
@@ -318,7 +318,7 @@ PhysicalDevice &Instance::SuitablePhysicalDevice()
 
 bool Instance::CheckValidationLayerSupport()
 {
-    UINT32 layerInstanceExtensionCount;
+    uint32_t layerInstanceExtensionCount;
     Vulkan::Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, nullptr));
 
     std::vector<VkExtensionProperties> availableLayerInstanceExtension(layerInstanceExtensionCount);

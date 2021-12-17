@@ -16,20 +16,18 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     : physicalDevice(physicalDevice),
         surface(surface)
 {
-    LOG::INFO("Selected GPU: {0}", physicalDevice.Properties.deviceName);
-
-    UINT32 propsCount = U32(physicalDevice.QueueFamilyProperties.size());
+    uint32_t propsCount = U32(physicalDevice.QueueFamilyProperties.size());
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
     std::vector<std::vector<float>>      queueProps(propsCount);
 
-    for (UINT32 index = 0; index < propsCount; index++)
+    for (uint32_t index = 0; index < propsCount; index++)
     {
         const VkQueueFamilyProperties &prop = physicalDevice.QueueFamilyProperties[index];
         if (physicalDevice.HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
         {
             queueProps[index].reserve(prop.queueCount);
             queueProps[index].push_back(1.0f);
-            for (UINT32 i = 1; i < prop.queueCount; i++)
+            for (uint32_t i = 1; i < prop.queueCount; i++)
             {
                 queueProps[index].push_back(0.5f);
             }
@@ -45,7 +43,7 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     }
 
     std::vector<VkExtensionProperties> deviceExtensions;
-    UINT32 deviceExtensionCount;
+    uint32_t deviceExtensionCount;
     Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, nullptr));
 
     deviceExtensions.resize(deviceExtensionCount);
@@ -59,10 +57,10 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 #if SLDEBUG
     if (!deviceExtensions.empty())
     {
-        LOG::INFO("Device supports the following extensions: ");
+        LOG::DEBUG<isLogNeed>("Device supports the following extensions: ");
         for (auto &ext : deviceExtensions)
         {
-            LOG::INFO("  \t{0}", ext.extensionName);
+            LOG::DEBUG<isLogNeed>("  \t{0}", ext.extensionName);
         }
     }
 #endif
@@ -73,18 +71,18 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
         enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
         enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
 
-        LOG::INFO("Dedicated Allocation enabled");
+        LOG::DEBUG<isLogNeed>("Dedicated Allocation enabled");
     }
 
     if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
     {
         auto &perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
         auto &host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
-        LOG::INFO("Performance query enabled");
+        LOG::DEBUG<isLogNeed>("Performance query enabled");
     }
 
     std::vector<const char*> unsupportedExtensions{};
-    for (auto& ext : requestedExtensions)
+    for (auto &ext : requestedExtensions)
     {
         if (IsExtensionSupport(ext.first))
         {
@@ -98,10 +96,10 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     if (!enabledExtensions.empty())
     {
-        LOG::INFO("Device supports the following requested extensions:");
+        LOG::DEBUG<isLogNeed>("Device supports the following requested extensions:");
         for (auto& ext : enabledExtensions)
         {
-            LOG::INFO("  \t{0}", ext);
+            LOG::DEBUG<isLogNeed>("  \t{0}", ext);
         }
     }
 
@@ -139,12 +137,12 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     volkLoadDeviceTable(&DeviceMap, handle);
 
     queues.resize(propsCount);
-    for (UINT32 queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
+    for (uint32_t queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {
         const auto& queueFamilyProps = physicalDevice.QueueFamilyProperties[queueFamilyIndex];
         VkBool32 presentSupported = physicalDevice.IsPresentSupported(surface, queueFamilyIndex);
 
-        for (UINT32 queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
+        for (uint32_t queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
         {
             queues[queueFamilyIndex].emplace_back(*this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
         }
@@ -172,9 +170,9 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     // @required
     VmaAllocatorCreateInfo allocatorInfo{};
-    allocatorInfo.physicalDevice = physicalDevice.Handle();
+    allocatorInfo.physicalDevice = physicalDevice;
     allocatorInfo.device         = handle;
-    allocatorInfo.instance       = physicalDevice.Get<Instance>().Handle();
+    allocatorInfo.instance       = physicalDevice.Get<Instance&>();
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
@@ -200,14 +198,14 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     EnableGlobal();
 }
 
-UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
+uint32_t Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
 {
     const auto& queueFamilyProperties = physicalDevice.QueueFamilyProperties;
 
     // @required Compute Queue
     if (queueFlag & VK_QUEUE_COMPUTE_BIT)
     {
-        for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
+        for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
         {
             if ((queueFamilyProperties[i].queueFlags & queueFlag) && !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT))
             {
@@ -220,7 +218,7 @@ UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
     // @required Transfer Queue
     if (queueFlag & VK_QUEUE_TRANSFER_BIT)
     {
-        for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
+        for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
         {
             if ((queueFamilyProperties[i].queueFlags & queueFlag) &&
                 !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
@@ -232,7 +230,7 @@ UINT32 Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
         }
     }
 
-    for (UINT32 i = 0; i < U32(queueFamilyProperties.size()); i++)
+    for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
     {
         if (queueFamilyProperties[i].queueFlags & queueFlag)
         {
@@ -262,11 +260,11 @@ Device::~Device()
 
 Queue &Device::SuitableGraphicsQueue()
 {
-    for (UINT32 familyIndex = 0; familyIndex < queues.size(); familyIndex++)
+    for (uint32_t familyIndex = 0; familyIndex < queues.size(); familyIndex++)
     {
         Queue &firstQueue = queues[familyIndex][0];
 
-        UINT32 queueCount = firstQueue.Properties().queueCount;
+        uint32_t queueCount = firstQueue.Properties().queueCount;
 
         if (firstQueue.IsPresentSupported() && 0 < queueCount)
         {
@@ -277,7 +275,7 @@ Queue &Device::SuitableGraphicsQueue()
     return FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
 }
 
-Queue &Device::FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex)
+Queue &Device::FindQueueByFlags(VkQueueFlags flags, uint32_t queueIndex)
 {
     for (uint32_t familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
     {
