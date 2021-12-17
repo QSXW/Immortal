@@ -209,10 +209,11 @@ public:
 #define DERROR(name, str) static constexpr const char name[] = str;
 namespace SError
 {
-    DERROR(OutOfBound,       "Index was out of bound"                  )
-    DERROR(OutOfMemory,      "No more memory on the runtime"           )
-    DERROR(InvalidSingleton, "Cannot construct more than one singleton")
-    DERROR(SelfAssignment,   "Self-assignment is not permitted"        )
+    DERROR(OutOfBound,           "Index was out of bound"                  )
+    DERROR(OutOfMemory,          "No more memory on the runtime"           )
+    DERROR(InvalidSingleton,     "Cannot construct more than one singleton")
+    DERROR(SelfAssignment,       "Self-assignment is not permitted"        )
+    DERROR(NullPointerReference, "Null pointer reference"                  )
 }
 
 #define SL_DEFINE_ENUM_OP_AND(T, U) \
