@@ -10,7 +10,8 @@ namespace Immortal
 
 Application *Application::That{ nullptr };
 
-Application::Application(const Window::Description &description)
+Application::Application(const Window::Description &description) :
+    eventSink{ this }
 {
     !!That ? throw Exception(SError::InvalidSingleton) : That = this;
     
@@ -20,7 +21,7 @@ Application::Application(const Window::Description &description)
     
     window.reset(Window::Create(desc));
     window->SetIcon("Assets/Icon/terminal.png");
-    window->SetEventCallback(SLBIND(Application::OnEvent));
+    window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
     context = RenderContext::Create(RenderContext::Description{
         window.get(),
@@ -40,6 +41,9 @@ Application::Application(const Window::Description &description)
     window->Show();
 
     PushOverlay(gui);
+
+    eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
+    eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
 }
 
 Application::~Application()
@@ -96,10 +100,7 @@ void Application::Close()
 
 void Application::OnEvent(Event &e)
 {
-    EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<WindowCloseEvent>(SLBIND(Application::OnWindowClosed));
-    dispatcher.Dispatch<WindowResizeEvent>(SLBIND(Application::OnWindowResize));
-
+    eventSink.Dispatch(e);
     for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
         (*--it)->OnEvent(e);
@@ -110,7 +111,7 @@ void Application::OnEvent(Event &e)
     }
 }
 
-bool Application::OnWindowClosed(WindowCloseEvent& e)
+bool Application::OnWindowClosed(WindowCloseEvent &e)
 {
     runtime.running = false;
     return !runtime.running;

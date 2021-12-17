@@ -50,7 +50,8 @@ public:
         MouseButtonPressed,
         MouseButtonReleased,
         MouseMoved,
-        MouseScrolled
+        MouseScrolled,
+        MaxCount
     };
 
     enum class Category
@@ -112,10 +113,54 @@ private:
     Event &e;
 };
 
+template <class T>
 class EventSink
 {
+public:
+    using Handle = T*;
+    using Func   = bool(T::*)(Event&);
 
+public:
+    EventSink() :
+        that{ nullptr }
+    {
+        CleanUp();
+    }
 
+    EventSink(Handle other) :
+        that{ other }
+    {
+        CleanUp();
+    }
+
+    void CleanUp()
+    {
+        for (auto &&e : pool)
+        {
+            e = nullptr;
+        }
+    }
+
+    template <class F>
+    void Listen(const F &func, Event::Type type)
+    {
+        pool[U64(type)] = rcast<Func>(func);
+    }
+
+    void Dispatch(Event &e)
+    {
+        auto func = pool[U64(e.GetType())];
+        if (!func)
+        {
+            return;
+        }
+        std::bind(func, that, std::placeholders::_1)(e);
+    }
+
+private:
+    Handle that;
+
+    std::array<Func, U64(Event::Type::MaxCount)> pool;
 };
 
 inline std::ostream& operator<<(std::ostream &os, const Event &e)

@@ -96,7 +96,7 @@ public:
     }
 
 private:
-    bool OnWindowClosed(WindowCloseEvent& e);
+    bool OnWindowClosed(WindowCloseEvent &e);
 
     bool OnWindowResize(WindowResizeEvent &e);
 
@@ -122,6 +122,8 @@ private:
     Timer timer;
 
     float deltaTime;
+
+    EventSink<Application> eventSink;
 
     static Application *That;
 
