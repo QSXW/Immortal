@@ -15,6 +15,9 @@ Application::Application(const Window::Description &description) :
 {
     !!That ? throw Exception(SError::InvalidSingleton) : That = this;
     
+    eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
+    eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
+
     Async::Setup();
 
     desc = description;
@@ -41,9 +44,6 @@ Application::Application(const Window::Description &description) :
     window->Show();
 
     PushOverlay(gui);
-
-    eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
-    eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
 }
 
 Application::~Application()
