@@ -133,8 +133,8 @@ public:
 
     virtual bool operator==(const Super &super) const override
     {
-        auto &other = dcast<const Texture &>(super);
-        return handle == other.handle;
+        auto other = dcast<const Texture *>(&super);
+        return handle == other->handle;
     }
 
     virtual const char *Path() const override
