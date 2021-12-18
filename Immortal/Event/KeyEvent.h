@@ -15,9 +15,9 @@ public:
 
     }
 
-    int GetKeyCode() const
+    KeyCode GetKeyCode() const
     {
-        return keyCode;
+        return ncast<KeyCode>(keyCode);
     }
 
     DEFINE_EVENT_CATEGORY(Category::Keyboard | Category::Input)
