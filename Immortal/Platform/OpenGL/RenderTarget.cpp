@@ -12,9 +12,9 @@ namespace OpenGL
 RenderTarget::RenderTarget(const RenderTarget::Super::Description &descrition) :
     handle{ 0 },
     depthAttachment{ 0 },
-    desc{ descrition }
+    Super{ descrition }
 {
-    for (auto attachment : desc.Attachments)
+    for (auto &attachment : desc.Attachments)
     {
         if (!attachment.IsDepth())
         {

@@ -52,7 +52,6 @@ private:
 
 private:
     uint32_t handle;
-    RenderTarget::Description desc;
 
     std::vector<Texture::Description> colorAttachmentDescriptions;
     Texture::Description depthAttachmentDescription{ Format::R8G8B8A8_UNORM };
