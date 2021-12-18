@@ -8,4 +8,6 @@ struct Descriptor
 
 };
 
+using SuperDescriptor = Descriptor;
+
 }

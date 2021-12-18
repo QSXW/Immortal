@@ -12,7 +12,9 @@ struct Context
 {
     int ID = 0;
     uint32_t Counter = 0;
-} context;
+};
+
+static inline Context context;
 
 static inline void PushID()
 {

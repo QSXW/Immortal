@@ -54,9 +54,9 @@ public:
         return std::make_shared<Texture>(width, height, data, description, 0);
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, int binding) override
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
     {
-        return std::make_shared<Buffer>(size, binding);
+        return std::make_shared<UniformBuffer>(size, binding);
     }
 
     virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
@@ -83,6 +83,8 @@ public:
     {
         return std::make_shared<Shader>(filepath, type);
     }
+
+    virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;
 
     virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
 

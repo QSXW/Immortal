@@ -18,16 +18,16 @@ public:
 
     Buffer(size_t size, const void *data, Type type);
 
-    Buffer(size_t size, int binding);
+    Buffer(size_t size, uint32_t binding);
 
     virtual ~Buffer() override;
 
-    uint32_t Handle() const
+    virtual uint32_t Handle() const
     { 
         return handle;
     }
 
-    operator uint32_t() const
+    virtual operator uint32_t() const
     {
         return handle;
     }
@@ -46,16 +46,45 @@ public:
 
     void SelectBindPoint(Type type)
     {
-        if (type == Type::Index)
+        switch (type)
         {
+        case Type::Index:
             bindPoint = GL_ELEMENT_ARRAY_BUFFER;
+            break;
+
+        case Type::Uniform:
+            bindPoint = GL_UNIFORM_BUFFER;
+            break;
+
+        case Type::Vertex:
+        default:
+            break;
         }
     }
 
-private:
+protected:
     uint32_t handle{};
 
     BindPointType bindPoint{ GL_ARRAY_BUFFER };
+};
+
+class UniformBuffer : public Buffer
+{
+public:
+    using Super = Buffer;
+
+public:
+    UniformBuffer(size_t size, uint32_t binding);
+
+    GLuint Binding() const
+    {
+        return binding;
+    }
+
+    virtual void Update(uint32_t size, const void *data) override;
+
+private:
+    uint32_t binding{ 0 };
 };
 
 }

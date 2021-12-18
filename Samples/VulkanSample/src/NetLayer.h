@@ -1,7 +1,5 @@
 #pragma once
-
 #include <Immortal.h>
-
 
 namespace Immortal
 {
@@ -25,7 +23,7 @@ public:
                 return;
             }
             std::vector<uint8_t> data = {
-                'H', 'L', 'L', 'O', 0
+                'H', 'E', 'L', 'L', 'O', 0
             };
             socket.Send(data);
             socket.Receive([](auto buffer, auto size) {

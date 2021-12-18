@@ -20,6 +20,8 @@ public:
 
     Buffer(Device *device, const size_t size, Type type, Usage usage = Usage::Persistent);
 
+    Buffer(Device *device, const size_t size, uint32_t binding);
+
     virtual ~Buffer() override;
 
     virtual void Update(uint32_t size, const void *src) override;

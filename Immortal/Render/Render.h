@@ -200,7 +200,7 @@ public:
         return renderer->CreateBuffer(size, type);
     }
 
-    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, int binding = 0)
+    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, uint32_t binding = 0)
     {
         return renderer->CreateBuffer(size, binding);
     }

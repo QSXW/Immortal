@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include "Device.h"
+#include "..\OpenGL\Buffer.h"
 
 namespace Immortal
 {
@@ -25,6 +26,15 @@ Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
 {
     ASSERT_ZERO_SIZE_BUFFER(size);
 
+    Create(size);
+}
+
+Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
+    Super{ Type::Uniform, size },
+    device{ device },
+    persistent{ true }
+{
+    ASSERT_ZERO_SIZE_BUFFER(size);
     Create(size);
 }
 

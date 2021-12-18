@@ -71,7 +71,7 @@ public:
         return nullptr;
     }
 
-    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, int binding)
+    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, uint32_t binding)
     {
         return nullptr;
     }

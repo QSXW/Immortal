@@ -62,6 +62,15 @@ Shader::~Shader()
     glDeleteProgram(handle);
 }
 
+GLuint Shader::Get(const std::string &name) const
+{
+    Map();
+    GLuint location = glGetUniformLocation(handle, name.c_str());
+    Unmap();
+
+    return location;
+}
+
 void Shader::Compile(const std::unordered_map<GLenum, std::string>& source)
 {
     std::array<GLenum, 2> shaderIDs{};

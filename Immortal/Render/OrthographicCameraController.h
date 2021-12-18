@@ -25,29 +25,57 @@ public:
 
     void Resize(float width, float height);
 
-    OrthographicCamera& Camera() { return mCamera; }
-    const OrthographicCamera& Camera() const { return mCamera; }
+    OrthographicCamera &Camera()
+    { 
+        return camera;
+    }
 
-    float ZoomLevel() const { return mZoomLevel; }
-    void SetZoomLevel(float level = 1.0f) { mZoomLevel = level; }
-    float AspectRatio() const { return mAspectRatio; }
+    operator const OrthographicCamera&() const
+    {
+        return camera;
+    }
 
-    void Reset(Vector::Vector3 &position = Vector::Vector3(0.0f), float rotation = 0.0f);
+    const OrthographicCamera &Camera() const
+    { 
+        return camera;
+    }
+
+    float ZoomLevel() const
+    { 
+        return zoomLevel;
+    }
+
+    void SetZoomLevel(float level = 1.0f)
+    {
+        zoomLevel = level;
+    }
+
+    float AspectRatio() const
+    { 
+        return aspectRatio;
+    }
+
+    void Reset(Vector3 &position = Vector3{ 0.0f }, float rotation = 0.0f);
 
 private:
     bool OnMouseScrolled(MouseScrolledEvent &e);
     bool OnWindowResized(WindowResizeEvent &e);
 
 private:
-    float mAspectRatio;
-    float mZoomLevel = 1.0f;
-    OrthographicCamera mCamera;
+    OrthographicCamera camera;
 
-    bool mRotation;
+    Vector3 cameraPosition{ 0.0f, 0.0f, 0.0f };
 
-    Vector::Vector3 mCameraPosition{ 0.0f, 0.0f, 0.0f };
-    float mCameraRotation = 0.0f;
-    float mCameraTranslationSpeed = 5.0f;
-    float mCameraRotationSpeed = 180.0f;
+    bool rotation;
+
+    float aspectRatio;
+
+    float zoomLevel              = 1.0f;
+
+    float cameraRotation         = 0.0f;
+
+    float cameraRotationSpeed    = 180.0f;
+
+    float cameraTranslationSpeed = 5.0f;
 };
 }

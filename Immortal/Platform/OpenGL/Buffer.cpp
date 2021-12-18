@@ -30,7 +30,7 @@ Buffer::Buffer(size_t size, const void *data, Type type) :
     glBindBuffer(bindPoint, 0);
 }
 
-Buffer::Buffer(size_t size, int binding) :
+Buffer::Buffer(size_t size, uint32_t binding) :
     Super{ Type::Uniform, size }
 {
     SelectBindPoint(type);
@@ -48,6 +48,19 @@ Buffer::~Buffer()
 }
 
 void Buffer::Update(uint32_t size, const void *data)
+{
+    glBindBuffer(bindPoint, handle);
+    glBufferSubData(bindPoint, 0, size, data);
+}
+
+UniformBuffer::UniformBuffer(size_t size, uint32_t binding) :
+    Super{ size, binding },
+    binding{ U32(binding) }
+{
+
+}
+
+void UniformBuffer::Update(uint32_t size, const void *data)
 {
     glBindBuffer(bindPoint, handle);
     glBufferSubData(bindPoint, 0, size, data);

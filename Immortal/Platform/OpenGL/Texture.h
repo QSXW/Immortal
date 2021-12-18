@@ -2,6 +2,7 @@
 
 #include "Render/Texture.h"
 #include "Common.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -146,6 +147,8 @@ public:
     {
         return ncast<uint64_t>(handle);
     }
+
+    virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
 private:
     std::string filepath;

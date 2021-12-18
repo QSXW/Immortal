@@ -34,6 +34,4 @@ private:
     static WordsMap That;
 };
 
-WordsMap WordsMap::That{ "Assets/json/default_language.json" };
-
 }

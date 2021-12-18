@@ -29,6 +29,11 @@ void Pipeline::Set(const InputElementDescription &description)
     }
 }
 
+void Pipeline::Bind(const std::string &name, const Buffer::Super *superUniform)
+{
+
+}
+
 void Pipeline::Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot)
 {
 
@@ -49,6 +54,16 @@ void Pipeline::Set(std::shared_ptr<SuperBuffer> &buffer)
         desc.indexBuffer = buffer;
     }
     handle.Bind(std::dynamic_pointer_cast<Buffer>(buffer).get());
+}
+
+void Pipeline::Bind(const Descriptor::Super *descriptors, uint32_t slot)
+{
+    auto textures = rcast<const GLuint *>(descriptors);
+    
+    for (int i = 0; i < 32; i++)
+    {
+        glBindTextureUnit(i, textures[i]);
+    }
 }
 
 }

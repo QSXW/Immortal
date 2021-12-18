@@ -29,7 +29,7 @@ public:
             0, 1, 2
         };
 
-        shader = Render::Create<Shader>("Assets\\shaders\\glsl\\basic");
+        shader = Render::Get<Shader, ShaderName::Basic>();
 
         pipeline = Render::Create<Pipeline>(shader);
 
@@ -43,17 +43,15 @@ public:
         pipeline->Bind(Render::Preset()->WhiteTexture, 1);
 
         camera.primaryCamera.SetPerspective(90.0f);
+        // camera.primaryCamera.SetOrthographic(1.2f);
         camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
 
-        uniformBuffer = Render::Create<Buffer>(sizeof(ubo), Buffer::Type::Uniform);
+        uniformBuffer = Render::Create<Buffer>(sizeof(ubo), 0);
         pipeline->Bind("ubo", uniformBuffer.get());
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
-        auto clearColor = renderTarget->ClearColor();
-        clearColor->r = 0.10980392;
-        clearColor->g = 0.10980392;
-        clearColor->b = 0.10980392;
+        renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 
         Render2D::Setup(renderTarget);
     }
@@ -97,11 +95,103 @@ public:
         UI::DrawVec3Control("Scale", camera.transform.Scale);
         ImGui::End();
         offline.OnUpdate(renderTarget);
+
+        auto *gui = Application::App()->GetGuiLayer();
+        gui->UpdateTheme();
+
+        ImGui::PushFont(gui->Bold());
+        menuBar.OnUpdate([=]() -> void {
+            if (ImGui::BeginMenu(WordsMap::Get("menu")))
+            {
+                if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + O"))
+                {
+                    this->LoadObject();
+                }
+                if (ImGui::MenuItem(WordsMap::Get("save"), "Ctrl + S"))
+                {
+
+                }
+                if (ImGui::MenuItem(WordsMap::Get("saveAs"), "Ctrl+A"))
+                {
+
+                }
+                if (ImGui::MenuItem(WordsMap::Get("exit"), "Ctrl + W"))
+                {
+                    Application::App()->Close();
+                }
+                if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + W"))
+                {
+
+                }
+                if (ImGui::MenuItem(WordsMap::Get("loadObject"), "Ctrl + L"))
+                {
+                    auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+                    if (res.has_value())
+                    {
+                        OnTextureLoaded(res.value());
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(WordsMap::Get("edit")))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(WordsMap::Get("view")))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(WordsMap::Get("graphics")))
+            {
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(WordsMap::Get("help")))
+            {
+                ImGui::EndMenu();
+            }
+            });
+        ImGui::PopFont();
+
+        if (Settings.showDemoWindow)
+        {
+            ImGui::ShowDemoWindow(&Settings.showDemoWindow);
+        }
+
+        {
+            static float f = 0.0f;
+            static int counter = 0;
+
+            ImGui::Begin(WordsMap::Get("debugTools"));
+
+            static char title[128] = { 0 };
+            sprintf(
+                title,
+                "Immortal Editor (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
+                Render::Api(),
+                Render::GraphicsRenderer(),
+                1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate
+            );
+            Application::SetTitle(title);
+            ImGui::End();
+        }
     }
 
     void OnTextureLoaded(const std::string &path)
     {
         image = Render::Create<Texture>(path);
+    }
+
+    bool LoadObject()
+    {
+        auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+        if (res.has_value())
+        {
+            image = Render::Create<Texture>(res.value());
+            return true;
+        }
+
+        return false;
     }
 
 private:
@@ -117,7 +207,12 @@ private:
         TransformComponent transform;
     } camera;
 
+    struct {
+        bool showDemoWindow{ true };
+    } Settings;
+
     Widget::Viewport offline{ WordsMap::Get("offlineRender")};
+    Widget::MenuBar menuBar;
 
     struct
     {

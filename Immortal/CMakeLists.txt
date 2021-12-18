@@ -13,7 +13,6 @@ set(CORE_FILES
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
-    Framework/Main.h
     Framework/Input.h
     Framework/KeyCodes.h
     Framework/Layer.cpp
@@ -39,7 +38,6 @@ set(EDITOR_FILES
     Editor/EditorCamera.h)
 
 set(EVENT_FILES
-    Event/ApplicationEvent.cpp
     Event/ApplicationEvent.h
     Event/Event.h
     Event/KeyEvent.h
@@ -178,6 +176,7 @@ set(OPENGL_FILES
     Platform/OpenGL/Buffer.cpp
     Platform/OpenGL/Buffer.h
     Platform/OpenGL/Common.h
+    Platform/OpenGL/Descriptor.h
     Platform/OpenGL/Framebuffer.cpp
     Platform/OpenGL/Framebuffer.h
     Platform/OpenGL/GuiLayer.cpp
@@ -268,6 +267,7 @@ set(SERIALIZER_FILES
     Serializer/SceneSerializer.h)
 
 set(STRING_FILES
+    String/LanguageSettings.cpp
     String/LanguageSettings.h)
 
 set(SYNC_FILES

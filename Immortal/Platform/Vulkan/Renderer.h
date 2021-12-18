@@ -83,6 +83,11 @@ public:
         return std::make_shared<Buffer>(device, size, type);
     }
 
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
+    {
+        return std::make_shared<Buffer>(device, size, binding);
+    }
+
     virtual std::shared_ptr <RenderTarget::Super> CreateRenderTarget(const RenderTarget::Description &description) override
     {
         return std::make_shared<RenderTarget>(device, description);

@@ -56,11 +56,12 @@ public:
         return handle;
     }
 
+    GLuint Get(const std::string &name) const;
+
 private:
     void Compile(const std::unordered_map<GLenum, std::string> &source);
 
     uint32_t CompileShader(int type, const char *src);
-
 
 private:
     uint32_t handle;

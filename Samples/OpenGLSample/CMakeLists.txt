@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.21)
 
 project(OpenGLSample LANGUAGES CXX)
 
-set(SRC_FILES 
+set(SRC_FILES
     src/OpenGLSample.cpp
-    src/OpenGLSample2D.h
-    src/OpenGLSample2D.cpp
+    src/OpenGLSample.h
+    src/RenderLayer.h
     )
 
 source_group("\\" FILES ${SRC_FILES})
@@ -20,13 +20,13 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR})
-    
+
 target_link_libraries(${PROJECT_NAME}
     Immortal)
 
 target_sources(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-file(COPY ../Assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${WORKSPACE}/Assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${MONO_SHARED}   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

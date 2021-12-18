@@ -185,6 +185,12 @@ void Texture::BindImageTexture(bool layered)
     glBindImageTexture(0, handle, 0, layered ? GL_TRUE : GL_FALSE, 0, GL_WRITE_ONLY, type.InternalFromat);
 }
 
+void Texture::As(Descriptor::Super *superDescriptors, size_t index)
+{
+    Descriptor *descriptors = rcast<Descriptor *>(superDescriptors);
+    descriptors[index] = handle;
+}
+
 TextureCube::TextureCube(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels)
 {
     this->Create(width, height, spec, levels);
@@ -277,6 +283,7 @@ void TextureCube::SetData(void * data, uint32_t size)
 {
 
 }
+
 
 }
 }

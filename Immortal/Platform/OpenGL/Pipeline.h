@@ -9,6 +9,7 @@
 #include "Buffer.h"
 #include "VertexArray.h"
 #include "Buffer.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -29,7 +30,11 @@ public:
 
     virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
 
+    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+
     virtual void Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
+
+    virtual void Bind(const Descriptor::Super *descriptors, uint32_t slot) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()

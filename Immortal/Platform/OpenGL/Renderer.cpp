@@ -6,6 +6,7 @@
 
 #include "RenderTarget.h"
 #include "Pipeline.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
@@ -108,6 +109,14 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 void Renderer::End()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+Descriptor::Super *Renderer::CreateImageDescriptor(uint32_t count)
+{
+    auto descriptor = new Descriptor[count];
+    ThrowIf(!descriptor, SError::OutOfMemory);
+
+    return descriptor;
 }
 
 }

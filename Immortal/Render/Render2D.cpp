@@ -19,7 +19,7 @@ void Render2D::Setup()
 
     data.QuadVertexBufferBase.reset(new QuadVertex[data.MaxVertices]);
     pipeline = Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Render2D>());
-    uniform  = Render::Create<Buffer>(sizeof(Matrix4), Buffer::Type::Uniform);
+    uniform  = Render::Create<Buffer>(sizeof(Matrix4), 0);
 
     pipeline->Set({
         { Format::VECTOR3, "Position"     },
