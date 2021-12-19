@@ -52,14 +52,18 @@ public:
             );
     }
 
-    void CreateRenderTargetView(ID3D12Resource *pRenderTarget, D3D12_RENDER_TARGET_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const
-    {
-        handle->CreateRenderTargetView(
-            pRenderTarget,
-            pDesc,
-            descriptor
-            );
+#define DEFINE_CREATE_VIEW(T, F) \
+    void CreateView(ID3D12Resource *p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
+    { \
+        handle->Create##F##View( \
+            p##F, \
+            pDesc, \
+            descriptor \
+            ); \
     }
+
+    DEFINE_CREATE_VIEW(RENDER_TARGET, RenderTarget)
+    DEFINE_CREATE_VIEW(SHADER_RESOURCE, ShaderResource)
 
     void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
     {

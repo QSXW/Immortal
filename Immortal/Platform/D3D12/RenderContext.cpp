@@ -177,7 +177,7 @@ void RenderContext::CreateRenderTarget()
     for (UINT i = 0; i < desc.FrameCount; i++)
     {
         swapchain->AccessBackBuffer(i, &renderTargets[i]);
-        device->CreateRenderTargetView(renderTargets[i], nullptr, renderTargetViewDescriptor);
+        device->CreateView(renderTargets[i], rcast<D3D12_RENDER_TARGET_VIEW_DESC *>(nullptr), renderTargetViewDescriptor);
         renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
         renderTargets[i]->SetName((std::wstring(L"Render Target{") + std::to_wstring(i) + std::wstring(L"}")).c_str());
     }
