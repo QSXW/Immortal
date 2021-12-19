@@ -132,6 +132,14 @@ public:
 
     void SetHDRMetaData(float MaxOutputNits = 1000.0f, float MinOutputNits = 0.001f, float MaxCLL = 2000.0f, float MaxFALL = 500.0f);
 
+    void WaitForGPU();
+
+    void WaitForNextFrameResources();
+
+    void UpdateSwapchain(UINT width, UINT height);
+
+    UINT WaitForPreviousFrame();
+
 private:
     Super::Description desc{};
 
@@ -194,16 +202,17 @@ private:
         int bottom{ 0 };
     } windowBounds;
 
-public:
     ErrorHandle error;
 
-    void WaitForGPU();
+public:
+    static Device *UnlimitedDevice;
 
-    UINT WaitForPreviousFrame();
+    static DescriptorAllocator descriptorAllocator[U32(DescriptorPool::Type::Quantity)];
 
-    void WaitForNextFrameResources();
-
-    void UpdateSwapchain(UINT width, UINT height);
+    static inline CPUDescriptor AllocateDescriptor(DescriptorPool::Type type, uint32_t count = 1)
+    {
+        return descriptorAllocator[U32(type)].Allocate(UnlimitedDevice, count);
+    }
 };
 
 }

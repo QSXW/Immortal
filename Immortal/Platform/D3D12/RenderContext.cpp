@@ -9,6 +9,15 @@ namespace Immortal
 namespace D3D12
 {
 
+Device *RenderContext::UnlimitedDevice = nullptr;
+
+DescriptorAllocator RenderContext::descriptorAllocator[U32(DescriptorPool::Type::Quantity)] = {
+    DescriptorPool::Type::RenderTargetView,
+    DescriptorPool::Type::DepthStencilView,
+    DescriptorPool::Type::ShaderResourceView,
+    DescriptorPool::Type::Sampler
+};
+
 RenderContext::RenderContext(Description &descrition) :
     desc{ descrition }
 {
@@ -44,6 +53,8 @@ void RenderContext::Setup()
 #endif
     Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
     device = std::make_unique<Device>(dxgiFactory);
+
+    UnlimitedDevice = device.get();
 
     auto adaptorDesc = device->AdaptorDesc();
     Super::UpdateMeta(

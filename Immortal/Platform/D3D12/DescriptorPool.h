@@ -1,18 +1,24 @@
 #pragma once
 #include "Common.h"
 
+#include "Descriptor.h"
+
 namespace Immortal
 {
 namespace D3D12
 {
 
+class Device;
 class DescriptorPool
 {
 public:
     enum class Type
     {
+        DepthStencilView   = D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
         RenderTargetView   = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-        ShaderResourceView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+        ShaderResourceView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        Sampler            = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+        Quantity           = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES
     };
 
     enum class Flag
@@ -52,13 +58,15 @@ public:
     template <class T>
     T Get()
     {
-        if constexpr (is_same<T, D3D12_CPU_DESCRIPTOR_HANDLE>())
+        if constexpr (IsPrimitiveOf<D3D12_CPU_DESCRIPTOR_HANDLE, T>() ||
+                      IsPrimitiveOf<CPUDescriptor, T>())
         {
-            return handle->GetCPUDescriptorHandleForHeapStart();
+            return T{ handle->GetCPUDescriptorHandleForHeapStart() };
         }
-        if constexpr (is_same<T, D3D12_GPU_DESCRIPTOR_HANDLE>())
+        if constexpr (IsPrimitiveOf<D3D12_GPU_DESCRIPTOR_HANDLE, T>() ||
+                      IsPrimitiveOf<GPUDescriptor, T>())
         {
-            return handle->GetGPUDescriptorHandleForHeapStart();
+            return T{ handle->GetGPUDescriptorHandleForHeapStart() };
         }
     }
 
@@ -85,6 +93,41 @@ public:
 
 private:
     ID3D12DescriptorHeap *handle{ nullptr };
+};
+
+class DescriptorAllocator
+{
+public:
+    static constexpr int NumDescriptorPerPool = 256;
+
+public:
+    DescriptorAllocator(DescriptorPool::Type type) :
+        type{ type },
+        activeDescriptorPool{ nullptr },
+        descriptorSize{ 0 }
+    {
+        avtiveDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+    }
+
+    static DescriptorPool *Request(Device *device, DescriptorPool::Type type);
+
+    CPUDescriptor Allocate(Device *device, uint32_t count);
+
+private:
+    DescriptorPool *activeDescriptorPool;
+
+    CPUDescriptor avtiveDescriptor;
+
+    DescriptorPool::Type type;
+
+    uint32_t descriptorSize;
+
+    uint32_t freeDescritorCount;
+
+public:
+    static std::vector<DescriptorPool> descriptorPools;
+
+    static std::mutex mutex;
 };
 
 }
