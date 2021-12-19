@@ -30,7 +30,7 @@ public:
         pool.clear();
     }
 
-    ID3D12CommandAllocator *CommandAllocatorPool::RequestAllocator(uint64_t CompletedFenceValue)
+    ID3D12CommandAllocator *RequestAllocator(uint64_t CompletedFenceValue)
     {
         std::lock_guard<std::mutex> lock{ mutex };
         ID3D12CommandAllocator *allocator{ nullptr };
@@ -61,7 +61,7 @@ public:
         return allocator;
     }
 
-    void CommandAllocatorPool::DiscardAllocator(uint64_t fenceValue, ID3D12CommandAllocator *allocator)
+    void DiscardAllocator(uint64_t fenceValue, ID3D12CommandAllocator *allocator)
     {
         std::lock_guard<std::mutex> lock{ mutex };
         readyAllocators.push(std::make_pair(fenceValue, allocator));
