@@ -93,7 +93,7 @@ void GuiLayer::End()
 
     commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
     commandList->OMSetRenderTargets(&rtvDescritor, 1, false, nullptr);
-    commandList->SetDescriptorHeaps(srvDescriptorHeap, 1);
+    commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
 
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->Handle());
 

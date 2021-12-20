@@ -85,12 +85,9 @@ public:
             );
     }
 
-    void SetDescriptorHeaps(DescriptorPool *descriptroHeap, UINT num)
+    void SetDescriptorHeaps(ID3D12DescriptorHeap *const *pDescriptroHeaps, UINT num)
     {
-        handle->SetDescriptorHeaps(
-            num,
-            descriptroHeap->AddressOf()
-            );
+        handle->SetDescriptorHeaps(num, pDescriptroHeaps);
     }
 
     void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION *pDst, UINT dstX, UINT dstY, UINT dstZ, const D3D12_TEXTURE_COPY_LOCATION *pSrc,  const D3D12_BOX *pSrcBox)

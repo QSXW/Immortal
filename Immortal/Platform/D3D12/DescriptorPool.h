@@ -88,7 +88,7 @@ public:
 
     ID3D12DescriptorHeap **AddressOf()
     {
-        return &handle;
+        return handle.GetAddressOf();
     }
 
 private:
