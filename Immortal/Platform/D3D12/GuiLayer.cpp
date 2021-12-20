@@ -35,18 +35,21 @@ void GuiLayer::OnAttach()
     Vector2 extent = context->Extent();
     io.DisplaySize = ImVec2{ extent.x, extent.y };
 
-    srvDescriptorHeap = context->ShaderResourceViewDescritorHeap();
+    
 
     auto window = context->GetAddress<Window>();
     ImGui_ImplWin32_Init(rcast<HWND>(window->Primitive()));
+
+    srvDescriptorHeap     = context->ShaderResourceViewDescritorHeap();
+    Descriptor descriptor = context->AllocatorTextureDescriptor();
 
     ImGui_ImplDX12_Init(
         *context->GetAddress<Device>(),
          context->FrameSize(),
          context->Get<DXGI_FORMAT>(),
          srvDescriptorHeap->Handle(),
-         srvDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>(),
-         srvDescriptorHeap->Get<D3D12_GPU_DESCRIPTOR_HANDLE>()
+         descriptor.cpu,
+         descriptor.gpu
         );
 }
 

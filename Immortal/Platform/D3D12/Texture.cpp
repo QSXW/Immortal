@@ -36,15 +36,7 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
     auto descriptorIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    cpuDescriptor = CPUDescriptor{
-        shaderResourceViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>()
-    };
-    cpuDescriptor.Offset(descriptorIndex, descriptorIncrementSize);
-
-    gpuDescriptor = GPUDescriptor{
-        shaderResourceViewDescriptorHeap->Get<D3D12_GPU_DESCRIPTOR_HANDLE>()
-    };
-    gpuDescriptor.Offset(descriptorIndex, descriptorIncrementSize);
+    descriptor = context->AllocatorTextureDescriptor();
 
     D3D12_HEAP_PROPERTIES props{};
     CleanUpObject(&props);
@@ -174,13 +166,13 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     srvDesc.Texture2D.MipLevels       = resourceDesc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(texture, &srvDesc, cpuDescriptor);
+    device->CreateShaderResourceView(texture, &srvDesc, descriptor.cpu);
 }
 
-void Texture::As(Descriptor *descriptors, size_t index)
+void Texture::As(Descriptor::Super *descriptors, size_t index)
 {
     GPUDescriptor *gpuDescriptors = rcast<GPUDescriptor *>(descriptors);
-    gpuDescriptors[index] = gpuDescriptor;
+    gpuDescriptors[index] = descriptor.gpu;
 }
 
 }

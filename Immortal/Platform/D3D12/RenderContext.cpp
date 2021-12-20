@@ -122,17 +122,6 @@ void RenderContext::Setup()
         renderTargetViewDescriptorSize = device->DescriptorHandleIncrementSize(
             renderTargetViewDesc.Type
             );
-
-        DescriptorPool::Description shaderResourceViewDesc{
-            DescriptorPool::Type::ShaderResourceView,
-            2,
-            DescriptorPool::Flag::ShaderVisible
-        };
-
-        shaderResourceViewDescriptorHeap = std::make_unique<DescriptorPool>(
-            device->Handle(),
-            &shaderResourceViewDesc
-            );
     }
 
     CreateRenderTarget();

@@ -97,7 +97,12 @@ public:
 
     DescriptorPool *ShaderResourceViewDescritorHeap()
     {
-        return shaderResourceViewDescriptorHeap.get();
+        return textureDescriptorAllocator.GetAddress<DescriptorPool>();
+    }
+
+    Descriptor AllocatorTextureDescriptor()
+    {
+        return textureDescriptorAllocator.Allocate(device.get());
     }
 
     ID3D12Resource *RenderTarget(UINT backBufferIndex)
@@ -157,7 +162,7 @@ private:
 
     std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
 
-    std::unique_ptr<DescriptorPool> shaderResourceViewDescriptorHeap;
+    DescriptorAllocator textureDescriptorAllocator{ DescriptorPool::Type::ShaderResourceView, DescriptorPool::Flag::ShaderVisible };
 
     std::unique_ptr<CommandList> commandList;
 

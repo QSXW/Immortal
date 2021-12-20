@@ -68,6 +68,13 @@ public:
         {
             return T{ handle->GetGPUDescriptorHandleForHeapStart() };
         }
+        if constexpr (IsPrimitiveOf<Descriptor, T>())
+        {
+            return Descriptor{
+                Get<CPUDescriptor>(),
+                Get<GPUDescriptor>()
+            };
+        }
     }
 
 public:
@@ -101,25 +108,40 @@ public:
     static constexpr int NumDescriptorPerPool = 256;
 
 public:
-    DescriptorAllocator(DescriptorPool::Type type) :
+    DescriptorAllocator(DescriptorPool::Type type, DescriptorPool::Flag flag = DescriptorPool::Flag::None) :
         type{ type },
+        flag{ flag },
         activeDescriptorPool{ nullptr },
         descriptorSize{ 0 },
-        freeDescritorCount{ 0 }
+        freeDescritorCount{ 0 },
+        avtiveDescriptor{ D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN }
     {
-        avtiveDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+
     }
 
-    static DescriptorPool *Request(Device *device, DescriptorPool::Type type);
+    static DescriptorPool *Request(Device *device, DescriptorPool::Type type, DescriptorPool::Flag flag = DescriptorPool::Flag::None);
 
     CPUDescriptor Allocate(Device *device, uint32_t count);
+
+    Descriptor Allocate(Device *device);
+
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<DescriptorPool, T>())
+        {
+            return activeDescriptorPool;
+        }
+    }
 
 private:
     DescriptorPool *activeDescriptorPool;
 
-    CPUDescriptor avtiveDescriptor;
+    Descriptor avtiveDescriptor;
 
     DescriptorPool::Type type;
+
+    DescriptorPool::Flag flag;
 
     uint32_t descriptorSize;
 

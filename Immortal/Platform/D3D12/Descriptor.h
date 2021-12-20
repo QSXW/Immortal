@@ -10,7 +10,7 @@ namespace D3D12
 
 class DescriptorPool;
 
-struct CPUDescriptor : public Descriptor, D3D12_CPU_DESCRIPTOR_HANDLE
+struct CPUDescriptor : public SuperDescriptor, D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:
     CPUDescriptor() = default;
@@ -43,7 +43,7 @@ public:
     }
 };
 
-struct GPUDescriptor : public Descriptor, D3D12_GPU_DESCRIPTOR_HANDLE
+struct GPUDescriptor : public SuperDescriptor, D3D12_GPU_DESCRIPTOR_HANDLE
 {
 public:
     GPUDescriptor() = default;
@@ -74,6 +74,35 @@ public:
     {
         handle.ptr = SIZE_T(INT64(base.ptr) + INT64(offsetInDescriptors) * INT64(descriptorIncrementSize));
     }
+};
+
+struct Descriptor
+{
+    using Super = SuperDescriptor;
+
+    Descriptor(CPUDescriptor cpu, GPUDescriptor gpu) :
+        cpu{ cpu },
+        gpu{ gpu }
+    {
+
+    }
+
+    Descriptor(D3D12_GPU_VIRTUAL_ADDRESS virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL)
+    {
+        cpu.ptr = virtualAddress;
+        gpu.ptr = virtualAddress;
+    }
+
+    Descriptor &Offset(INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
+    {
+        cpu.Offset(offsetInDescriptors, descriptorIncrementSize);
+        gpu.Offset(offsetInDescriptors, descriptorIncrementSize);
+
+        return *this;
+    }
+
+    CPUDescriptor cpu;
+    GPUDescriptor gpu;
 };
 
 }

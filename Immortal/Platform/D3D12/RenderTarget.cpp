@@ -26,7 +26,21 @@ void PixelBuffer::Create(const Device *device, const Description &desc, const D3
     );
 }
 
-void ColorBuffer::Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
+void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
+{
+    Super::Create(device, desc, clearValue);
+
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+
+    rtvDescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
+    srvdescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+
+    // device->CreateView(resource, &rtvDesc, rtvDescriptor);
+    // device->CreateView(resource, &srvDesc, srvdescriptor);
+}
+
+void DepthBuffer::Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
     Super::Create(device, desc, clearValue);
 }
@@ -36,13 +50,13 @@ RenderTarget::RenderTarget()
 
 }
 
-RenderTarget::RenderTarget(const Device *device, const RenderTarget::Description &descrition) :
+RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &descrition) :
     Super{ descrition }
 {
     D3D12_CLEAR_VALUE clearValue{};
     for (auto &attachment : descrition.Attachments)
     {
-        D3D12_RESOURCE_FLAGS flags = attachment.IsDepth() ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL:
+        D3D12_RESOURCE_FLAGS flags = attachment.IsDepth() ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL :
                                                             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS |
                                                             D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
         Resource::Description resourceDesc = SuperToBase(

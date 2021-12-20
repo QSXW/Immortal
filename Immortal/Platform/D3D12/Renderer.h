@@ -95,9 +95,9 @@ public:
         return std::make_shared<RenderTarget>(context->GetAddress<Device>(), description);
     }
 
-    virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
+    virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;
 
-    virtual Descriptor *CreateBufferDescriptor(uint32_t count) override;
+    virtual Descriptor::Super *CreateBufferDescriptor(uint32_t count) override;
 
 public:
     RenderContext *context{ nullptr };

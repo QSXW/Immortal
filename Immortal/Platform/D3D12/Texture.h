@@ -26,10 +26,10 @@ public:
 
     virtual operator uint64_t() const override
     {
-        return gpuDescriptor.ptr;
+        return descriptor.gpu.ptr;
     }
 
-    virtual void As(Descriptor *descriptors, size_t index) override;
+    virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
 private:
     void InternalCreate(RenderContext *context, const Description &description, const void *data);
@@ -37,9 +37,7 @@ private:
 private:
     ID3D12Resource *texture{ nullptr };
 
-    CPUDescriptor cpuDescriptor;
-
-    GPUDescriptor gpuDescriptor{};
+    Descriptor descriptor;
 
     int descriptorIndex{ 1 };
 };

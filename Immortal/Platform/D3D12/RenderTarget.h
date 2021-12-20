@@ -35,7 +35,7 @@ public:
         }
     }
 
-    void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 
 private:
     CPUDescriptor srvdescriptor;
@@ -59,6 +59,8 @@ public:
         srvStencilDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
 
+    void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+
 private:
     CPUDescriptor dsvDescriptor[4];
     CPUDescriptor srvDepthDescriptor;
@@ -73,7 +75,7 @@ public:
 public:
     RenderTarget();
 
-    RenderTarget(const Device *context, const Super::Description &descrition);
+    RenderTarget(Device *context, const Super::Description &descrition);
 
     ~RenderTarget();
 
