@@ -7,17 +7,17 @@
 #include <locale>
 #include <codecvt>
 
-#include <Event/ApplicationEvent.h>
 #ifndef _UNICODE
 #define _UNICODE
 #endif
 #include <backends/imgui_impl_win32.cpp>
 
 #include "Framework/Utils.h"
+#include "Render/Frame.h"
+#include "Event/ApplicationEvent.h"
+#include "Event/KeyEvent.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-#include "Render/Frame.h"
 
 namespace Immortal
 {
@@ -30,28 +30,40 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
 
-    if (msg == WM_SIZE)
+    switch (msg)
     {
-        WindowResizeEvent resizeEvent{ 
+    case WM_SIZE:
+    {
+        WindowResizeEvent resizeEvent{
             (UINT)LOWORD(lParam),
             (UINT)HIWORD(lParam)
         };
         DirectWindow::EventDispatcher(resizeEvent);
         return 0;
     }
-    if (msg == WM_SYSCOMMAND)
+
+    case WM_KEYDOWN:
     {
+        KeyPressedEvent e{
+            (int)wParam,
+            LOWORD(lParam & ~1)
+        };
+        DirectWindow::EventDispatcher(e);
+        return 0;
+    }
+
+    case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
             return 0;
         goto end;
-    }
-    if (msg == WM_DESTROY)
-    {
+
+    case WM_DESTROY:
         ::PostQuitMessage(0);
         WindowCloseEvent closeEvent;
         DirectWindow::EventDispatcher(closeEvent);
         return 0;
     }
+
 end:
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }

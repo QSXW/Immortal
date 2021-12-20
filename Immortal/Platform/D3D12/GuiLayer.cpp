@@ -35,8 +35,6 @@ void GuiLayer::OnAttach()
     Vector2 extent = context->Extent();
     io.DisplaySize = ImVec2{ extent.x, extent.y };
 
-    
-
     auto window = context->GetAddress<Window>();
     ImGui_ImplWin32_Init(rcast<HWND>(window->Primitive()));
 
