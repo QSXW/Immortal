@@ -26,7 +26,7 @@ CPUDescriptor DescriptorAllocator::Allocate(Device *device, uint32_t count)
     if (activeDescriptorPool == nullptr || freeDescritorCount < count)
     {
         activeDescriptorPool = Request(device, type);
-        avtiveDescriptor     = CPUDescriptor{ activeDescriptorPool->CPUDescriptorHandleForHeapStart() };
+        avtiveDescriptor     = activeDescriptorPool->Get<CPUDescriptor>();
         freeDescritorCount   = NumDescriptorPerPool;
 
         if (!descriptorSize)

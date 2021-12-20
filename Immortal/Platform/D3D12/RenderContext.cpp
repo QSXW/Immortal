@@ -12,10 +12,10 @@ namespace D3D12
 Device *RenderContext::UnlimitedDevice = nullptr;
 
 DescriptorAllocator RenderContext::descriptorAllocator[U32(DescriptorPool::Type::Quantity)] = {
-    DescriptorPool::Type::RenderTargetView,
-    DescriptorPool::Type::DepthStencilView,
     DescriptorPool::Type::ShaderResourceView,
-    DescriptorPool::Type::Sampler
+    DescriptorPool::Type::Sampler,
+    DescriptorPool::Type::RenderTargetView,
+    DescriptorPool::Type::DepthStencilView
 };
 
 RenderContext::RenderContext(Description &descrition) :

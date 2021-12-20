@@ -208,6 +208,11 @@ public:
     static Device *UnlimitedDevice;
 
     static DescriptorAllocator descriptorAllocator[U32(DescriptorPool::Type::Quantity)];
+    
+    static DescriptorPool *Request(DescriptorPool::Type type)
+    {
+        return DescriptorAllocator::Request(UnlimitedDevice, type);
+    }
 
     static inline CPUDescriptor AllocateDescriptor(DescriptorPool::Type type, uint32_t count = 1)
     {

@@ -14,10 +14,10 @@ class DescriptorPool
 public:
     enum class Type
     {
-        DepthStencilView   = D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
-        RenderTargetView   = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
         ShaderResourceView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         Sampler            = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+        RenderTargetView   = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+        DepthStencilView   = D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
         Quantity           = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES
     };
 
@@ -78,12 +78,12 @@ public:
 
     ~DescriptorPool()
     {
-        IfNotNullThenRelease(handle);
+
     }
 
     ID3D12DescriptorHeap *Handle()
     {
-        return handle;
+        return handle.Get();
     }
 
     ID3D12DescriptorHeap **AddressOf()
@@ -92,7 +92,7 @@ public:
     }
 
 private:
-    ID3D12DescriptorHeap *handle{ nullptr };
+    ComPtr<ID3D12DescriptorHeap> handle{ nullptr };
 };
 
 class DescriptorAllocator
@@ -104,7 +104,8 @@ public:
     DescriptorAllocator(DescriptorPool::Type type) :
         type{ type },
         activeDescriptorPool{ nullptr },
-        descriptorSize{ 0 }
+        descriptorSize{ 0 },
+        freeDescritorCount{ 0 }
     {
         avtiveDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
