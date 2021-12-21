@@ -15,8 +15,11 @@ class RenderLayer : public Layer
 {
 public:
     RenderLayer(Vector2 viewport, const std::string &label) :
-        Layer(label)
+        Layer{ label },
+        eventSink{ this }
     {
+        eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
+
         renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } });
 
         const std::vector<Vertex> vertices = {
@@ -175,6 +178,8 @@ public:
             Application::SetTitle(title);
             ImGui::End();
         }
+
+        Application::App()->GetGuiLayer()->BlockEvent(false);
     }
 
     void OnTextureLoaded(const std::string &path)
@@ -192,6 +197,43 @@ public:
         }
 
         return false;
+    }
+
+    bool OnKeyPressed(KeyPressedEvent &e)
+    {
+        if (e.RepeatCount() > 0)
+        {
+            return false;
+        }
+
+        bool control = Input::IsKeyPressed(KeyCode::LeftControl) || Input::IsKeyPressed(KeyCode::RightControl);
+        bool shift   = Input::IsKeyPressed(KeyCode::LeftShift) || Input::IsKeyPressed(KeyCode::RightShift);
+        switch (e.GetKeyCode())
+        {
+        case KeyCode::L:
+            if (control || shift)
+            {
+                LoadObject();
+            }
+            break;
+
+        case KeyCode::W:
+            if (control || shift)
+            {
+                Application::App()->Close();
+            }
+            break;
+
+        case KeyCode::N:
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    virtual void OnEvent(Event &e) override
+    {
+        eventSink.Dispatch(e);
     }
 
 private:
@@ -225,6 +267,8 @@ private:
     Entity cameraObject;
 
     std::shared_ptr<Texture> image{ Render::Preset()->WhiteTexture };
+
+    EventSink<RenderLayer> eventSink;
 };
 
 }
