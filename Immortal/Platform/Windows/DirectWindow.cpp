@@ -64,11 +64,21 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         DirectWindow::Input->KeysDown[wParam] = down;
 
-        KeyPressedEvent e{
-            (int)wParam,
-            LOWORD(lParam & ~1)
-        };
-        DirectWindow::EventDispatcher(e);
+        if (down)
+        {
+            KeyPressedEvent e{
+                (int)wParam,
+                msg == WM_KEYDOWN ? (uint16_t)0 : LOWORD(lParam)
+            };
+            DirectWindow::EventDispatcher(e);
+        }
+        else
+        {
+            KeyReleasedEvent e{
+                (int)wParam
+            };
+            DirectWindow::EventDispatcher(e);
+        }
         return 0;
     }
 
@@ -134,6 +144,15 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         return 0;
     }
+
+    case WM_SETFOCUS:
+    case WM_KILLFOCUS:
+        DirectWindow::Input->Focus = (msg == WM_SETFOCUS);
+        if (!DirectWindow::Input->Focus)
+        {
+            DirectWindow::Input->CleanUpInputs();
+        }
+        return 0;
 
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu

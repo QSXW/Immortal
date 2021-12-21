@@ -36,6 +36,8 @@ public:
 
     bool MouseDown[sizeof(int64_t)];
 
+    bool Focus{ false };
+
     struct
     {
         bool Control;
