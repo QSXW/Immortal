@@ -1,5 +1,4 @@
 #include "D3D12Sample.h"
-using namespace Immortal;
 
 int main()
 {
