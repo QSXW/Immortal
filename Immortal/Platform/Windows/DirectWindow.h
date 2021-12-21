@@ -2,7 +2,7 @@
 
 #include "Framework/Window.h"
 #include "Render/RenderContext.h"
-#include "Framework/Input.h"
+#include "NativeInput.h"
 
 #ifndef UNICODE
 #define UNICODE
@@ -60,10 +60,10 @@ private:
 
     Description desc;
 
-    std::unique_ptr<Input> input;
-
 public:
     static Window::EventCallbackFunc EventDispatcher;
+
+    static std::unique_ptr<NativeInput> Input;
 };
 
 }

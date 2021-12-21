@@ -16,12 +16,14 @@
 #include "Render/Frame.h"
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
-#include "NativeInput.h"
+#include "Event/MouseEvent.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace Immortal
 {
+
+std::unique_ptr<NativeInput> DirectWindow::Input = nullptr;
 
 Window::EventCallbackFunc DirectWindow::EventDispatcher = nullptr;
 
@@ -42,14 +44,94 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         DirectWindow::EventDispatcher(resizeEvent);
         return 0;
     }
-
     case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP:
     {
+        bool down = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+        if (wParam == VK_CONTROL)
+        {
+            DirectWindow::Input->KeysDown[U32(KeyCode::Control)]  = down;
+        }
+        else if (wParam == VK_SHIFT)
+        {
+            DirectWindow::Input->KeysDown[U32(KeyCode::Shift)]  = down;
+        }
+        else if (wParam == VK_MENU)
+        {
+            DirectWindow::Input->KeysDown[U32(KeyCode::Alt)] = down;
+        }
+        DirectWindow::Input->KeysDown[wParam] = down;
+
         KeyPressedEvent e{
             (int)wParam,
             LOWORD(lParam & ~1)
         };
         DirectWindow::EventDispatcher(e);
+        return 0;
+    }
+
+    case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
+    case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
+    case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
+    case WM_XBUTTONDOWN: case WM_XBUTTONDBLCLK:
+    {
+        MouseCode button;
+        if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONDBLCLK)
+        { 
+            button = MouseCode::Left;
+        }
+        if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONDBLCLK)
+        { 
+            button = MouseCode::Right;
+        }
+        if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONDBLCLK)
+        { 
+            button = MouseCode::Middle;
+        }
+        if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONDBLCLK)
+        { 
+            button = GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseCode::Button3 : MouseCode::Button4;;
+        }
+        DirectWindow::Input->MouseDown[U32(button)] = true;
+
+        MouseButtonPressedEvent e{
+            button
+        };
+        DirectWindow::EventDispatcher(e);
+
+        return 0;
+    }
+
+    case WM_LBUTTONUP:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_XBUTTONUP:
+    {
+        MouseCode button;
+        if (msg == WM_LBUTTONUP)
+        {
+            button = MouseCode::Left;
+        }
+        if (msg == WM_RBUTTONUP)
+        {
+            button = MouseCode::Right;
+        }
+        if (msg == WM_MBUTTONUP)
+        {
+            button = MouseCode::Middle;
+        }
+        if (msg == WM_XBUTTONUP)
+        {
+            button = GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseCode::Button3 : MouseCode::Button4;
+        }
+        DirectWindow::Input->MouseDown[U32(button)] = false;
+        MouseButtonReleasedEvent e{
+            button
+        };
+        DirectWindow::EventDispatcher(e);
+
         return 0;
     }
 
@@ -144,7 +226,7 @@ void DirectWindow::Setup(const Description &description)
         wc.hInstance,
         nullptr);
 
-    input.reset(new NativeInput{ this });
+    Input.reset(new NativeInput{ this });
 }
 
 DirectWindow::~DirectWindow()

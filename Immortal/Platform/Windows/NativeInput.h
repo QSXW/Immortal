@@ -25,11 +25,25 @@ public:
 
     void CleanUpInputs()
     {
-        CleanUpObject(Input::KeysDown, 0, sizeof(Input::KeysDown));
-        
-        auto *i64 = rcast<uint64_t *>(Input::MouseDown);
+        CleanUpObject(KeysDown, 0, sizeof(KeysDown));
+
+        auto *i64 = rcast<uint64_t *>(MouseDown);
         *i64 = 0;
     }
+
+public:
+    bool KeysDown[MaxKeyCodes];
+
+    bool MouseDown[sizeof(int64_t)];
+
+    struct
+    {
+        bool Control;
+
+        bool Shift;
+
+        bool Alt;
+    } Modifiers;
 };
 
 }

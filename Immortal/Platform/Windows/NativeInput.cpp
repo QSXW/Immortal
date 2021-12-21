@@ -6,6 +6,7 @@ namespace Immortal
 NativeInput::NativeInput(Window *window)
 {
     !!Input::That ? throw Exception(SError::InvalidSingleton) : That = this;
+    CleanUpInputs();
 }
 
 NativeInput::~NativeInput()
@@ -15,12 +16,12 @@ NativeInput::~NativeInput()
 
 bool NativeInput::InternalIsKeyPressed(const KeyCode key)
 {
-    return Input::KeysDown[U32(key)];
+    return KeysDown[U32(key)];
 }
 
 bool NativeInput::InternalIsMouseButtonPressed(const MouseCode button)
 {
-    return false;
+    return MouseDown[U32(button)];
 }
 
 Vector2 NativeInput::InternalGetMousePosition()

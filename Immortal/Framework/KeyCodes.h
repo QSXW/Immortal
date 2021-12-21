@@ -224,11 +224,15 @@ enum class KeyCode : uint16_t
     LeftControl  = 341,
     LeftAlt      = 342,
     LeftSuper    = 343,
-    RightShift   = 344,
-    RightControl = 345,
-    RightAlt     = 346,
+    RightShift   = LeftShift,
+    RightControl = LeftControl,
+    RightAlt     = LeftAlt,
     RightSuper   = 347,
-    Menu         = 348
+    Menu         = 348,
+
+    Shift   = LeftShift, 
+    Control = LeftControl,
+    Alt     = LeftAlt
 };
 
 }
