@@ -58,10 +58,6 @@ public:
     }
 
 public:
-    bool KeysDown[MaxKeyCodes];
-
-    bool MouseDown[sizeof(int64_t)];
-
     Input(const Input &) = delete;
 
     Input(Input &&) = delete;
