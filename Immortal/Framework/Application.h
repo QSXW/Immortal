@@ -59,11 +59,6 @@ public:
         return window->GetNativeWindow();
     }
 
-    static bool IsKeyPressed(KeyCode code)
-    {
-        return That->_M_input.InternalIsKeyPressed(code);
-    }
-
     RenderContext *Context()
     {
         return context.get();
@@ -116,8 +111,6 @@ private:
     GuiLayer *gui;
 
     Window::Description desc;
-
-    Input _M_input;
 
     Timer timer;
 

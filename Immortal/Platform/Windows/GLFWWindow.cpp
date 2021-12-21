@@ -6,6 +6,7 @@
 #include "Event/KeyEvent.h"
 #include "Render/Render.h"
 #include "Render/Frame.h"
+#include "GLFWInput.h"
 
 namespace Immortal
 {
@@ -168,6 +169,8 @@ void GLFWWindow::Setup(const Description &description)
         MouseMoveEvent event((float)xPos, (float)yPos);
         desc->EventCallback(event);
     });
+
+    input.reset(new GLFWInput{ this });
 }
 
 void GLFWWindow::Shutdown()

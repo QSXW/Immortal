@@ -16,6 +16,7 @@
 #include "Render/Frame.h"
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
+#include "NativeInput.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -142,6 +143,8 @@ void DirectWindow::Setup(const Description &description)
         nullptr,
         wc.hInstance,
         nullptr);
+
+    input.reset(new NativeInput{ this });
 }
 
 DirectWindow::~DirectWindow()

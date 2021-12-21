@@ -13,6 +13,7 @@ set(CORE_FILES
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
+    Framework/Input.cpp
     Framework/Input.h
     Framework/KeyCodes.h
     Framework/Layer.cpp
@@ -201,8 +202,10 @@ set(WINDOWS_FILES
     Platform/Windows/GLFWWindow.cpp
     Platform/Windows/GLFWWindow.h
     Platform/Windows/WindowPlatformUtils.cpp
-    Platform/Windows/WindowsInput.cpp
-    Platform/Windows/WindowsInput.h)
+    Platform/Windows/GLFWInput.cpp
+    Platform/Windows/GLFWInput.h
+    Platform/Windows/NativeInput.cpp
+    Platform/Windows/NativeInput.h)
 
 set(RENDER_FILES
     Render/Buffer.h

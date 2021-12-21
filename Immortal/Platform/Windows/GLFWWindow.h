@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Framework/Window.h"
+#include "Framework/Input.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glad/glad.h>
@@ -61,6 +62,8 @@ private:
     GLFWwindow *window;
 
     Description desc{};
+
+    std::unique_ptr<Input> input;
 
 public:
     static uint8_t GLFWWindowCount;
