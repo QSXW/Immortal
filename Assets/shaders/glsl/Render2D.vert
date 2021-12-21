@@ -9,7 +9,7 @@ layout(location = 5) in int   inEntityID;
 
 layout (binding = 0) uniform UBO
 {
-	mat4 projection;
+	mat4 viewProjection;
 } ubo;
 
 layout(location = 0) out vec4       outColor;
@@ -26,5 +26,5 @@ void main()
 	outTilingFactor = inTilingFactor;
 	outEntityID     = inEntityID;
 
-	gl_Position = ubo.projection * vec4(inPosition, 1.0);
+	gl_Position = ubo.viewProjection * vec4(inPosition, 1.0);
 }
