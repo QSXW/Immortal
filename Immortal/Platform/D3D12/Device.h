@@ -64,6 +64,15 @@ public:
 
     DEFINE_CREATE_VIEW(RENDER_TARGET, RenderTarget)
     DEFINE_CREATE_VIEW(SHADER_RESOURCE, ShaderResource)
+    DEFINE_CREATE_VIEW(DEPTH_STENCIL, DepthStencil)
+
+    void CreateView(ID3D12Resource *pResource,
+                    ID3D12Resource *pCounterResouce,
+                    const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc,
+                    CPUDescriptor descriptor)
+    {
+        handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
+    }
 
     void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
     {
