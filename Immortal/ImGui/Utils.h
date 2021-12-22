@@ -40,12 +40,12 @@ static inline void EndPropertyGrid()
     PopID();
 }
 
-static bool DrawVec3Control(const std::string &label, Vector3 &values, float speed = 0.01f, float resetValue = 0.0f, float columnWidth = 100.0f)
+static bool DrawVec3Control(const std::string &label, Vector3 &values, float speed = 0.01f, float resetValue = 0.0f, float columnWidth = 64.0f)
 {
     bool modified = false;
 
     const ImGuiIO &io = ImGui::GetIO();
-    auto boldFont = io.Fonts->Fonts[0];
+    auto boldFont = io.Fonts->Fonts[1];
 
     ImGui::PushID(label.c_str());
 
