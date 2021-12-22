@@ -72,10 +72,10 @@ public:
     template <class T, ShaderName U>
     static constexpr inline std::shared_ptr<Shader> Get()
     {
-        static_assert(sl::is_same<T, Shader>() && "No suitable Type for getter");
-        if constexpr (sl::is_same<T, Shader>())
+        static_assert(IsPrimitiveOf<Shader, T>() && "No suitable Type for getter");
+        if constexpr (IsPrimitiveOf<Shader, T>())
         {
-            static_assert(U < ShaderName::Last, "Shader Index out of bound.");
+            ThrowIf(U >= ShaderName::Last, SError::OutOfBound);
             return ShaderContainer[ncast<INT32>(U)];
         }
     }
@@ -83,7 +83,7 @@ public:
     template <class T>
     static inline std::shared_ptr<Shader> Get(const ShaderName index)
     {
-        if constexpr (sl::is_same<T, Shader>())
+        if constexpr (IsPrimitiveOf<T, Shader>())
         {
             size_t i = static_cast<size_t>(index);
             SLASSERT(i < ShaderContainer.size() && "Shader Index out of bound.");
