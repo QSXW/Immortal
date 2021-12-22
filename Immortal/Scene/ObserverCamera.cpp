@@ -8,8 +8,8 @@ namespace Immortal
 {
 void ObserverCamera::UpdateViewMatrix()
 {
-    Vector::Matrix4 rotationMatrix    = Vector::Rotate(mRotation);
-    Vector::Matrix4 translationMatrix = Vector::Translate(mPosition);
+    Matrix4 rotationMatrix    = Vector::Rotate(mRotation);
+    Matrix4 translationMatrix = Vector::Translate(mPosition);
 
     if (mType == Type::FirstPerson)
     {
@@ -61,16 +61,16 @@ void ObserverCamera::OnUpdate(float deltaTime)
 
     if (mMouseButtons.Left)
     {
-        mRotation += Vector::Vector3(dy * mRotationSpeed * deltaTime, -dx * mRotationSpeed * deltaTime, 0.0f);
+        mRotation += Vector3(dy * mRotationSpeed * deltaTime, -dx * mRotationSpeed * deltaTime, 0.0f);
     }
     if (mMouseButtons.Right)
     {
         mZoom += dy * .005f * mZoomSpeed * deltaTime;
-        mPosition += Vector::Vector3(-0.0f, 0.0f, mZoom);
+        mPosition += Vector3(-0.0f, 0.0f, mZoom);
     }
     if (mMouseButtons.Middle)
     {
-        mPosition += Vector::Vector3(-dx * 0.01f, -dy * 0.01f, 0.0f);
+        mPosition += Vector3(-dx * 0.01f, -dy * 0.01f, 0.0f);
     }
 
     mMouseButtons.Left   = false;
@@ -94,7 +94,7 @@ void ObserverCamera::Update(float deltaTime)
     {
         if (Moving())
         {
-            Vector::Vector3 front = Vector::Normalize(Vector::Vector3 {
+            Vector3 front = Vector::Normalize(Vector3 {
                 -Math::Cos(Vector::Radians(mRotation.x)) * Math::Sin(Vector::Radians(mRotation.y)),
                     Math::Sin(Vector::Radians(mRotation.x)),
                     Math::Cos(Vector::Radians(mRotation.x)) * Math::Cos(Vector::Radians(mRotation.y))
@@ -112,11 +112,11 @@ void ObserverCamera::Update(float deltaTime)
             }
             if (mKeys.Left)
             {
-                mPosition -= Vector::Normalize(Vector::Cross(front, Vector::Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+                mPosition -= Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
             }
             if (mKeys.Right)
             {
-                mPosition += Vector::Normalize(Vector::Cross(front, Vector::Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+                mPosition += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
             }
         }
     }
@@ -135,7 +135,7 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
         const float deadZone = 0.0015f;
         const float range = 1.0f - deadZone;
 
-        Vector::Vector3 front = Vector::Normalize(Vector::Vector3{
+        Vector3 front = Vector::Normalize(Vector3{
                 -Math::Cos(Vector::Radians(mRotation.x)) * Math::Sin(Vector::Radians(mRotation.y)),
                     Math::Sin(Vector::Radians(mRotation.x)),
                     Math::Cos(Vector::Radians(mRotation.x)) * Math::Cos(Vector::Radians(mRotation.y))
@@ -154,7 +154,7 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
         if (fabsf(axisLeft.x) > deadZone)
         {
             float pos = (fabsf(axisLeft.x) - deadZone) / range;
-            mPosition += Vector::Normalize(Vector::Cross(front, Vector::Vector3(0.0f, 1.0f, 0.0f))) * pos * ((axisLeft.x < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
+            mPosition += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * pos * ((axisLeft.x < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
             changed = true;
         }
 

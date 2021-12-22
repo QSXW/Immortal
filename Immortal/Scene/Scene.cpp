@@ -18,9 +18,9 @@ namespace Immortal
 
 struct TransformUniformBuffer
 {
-    Vector::mat4 viewProjectionMatrix;
-    Vector::mat4 skyProjectionMatrix;
-    Vector::mat4 sceneRotationMatrix;
+    Matrix4 viewProjectionMatrix;
+    Matrix4 skyProjectionMatrix;
+    Matrix4 sceneRotationMatrix;
 };
 
 struct ShadingUniformBuffer
@@ -39,9 +39,9 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     registry.emplace<TransformComponent>(entity);
     auto &transform = registry.get<TransformComponent>(entity);
 
-    lightEnvironment.lights[0].Direction = Vector::Normalize(Vector::Vector3{ -1.0f,  0.0f, 0.0f });
-    lightEnvironment.lights[1].Direction = Vector::Normalize(Vector::Vector3{ 1.0f,  0.0f, 0.0f });
-    lightEnvironment.lights[2].Direction = Vector::Normalize(Vector::Vector3{ 0.0f, -1.0f, 0.0f });
+    lightEnvironment.lights[0].Direction = Vector::Normalize(Vector3{ -1.0f,  0.0f, 0.0f });
+    lightEnvironment.lights[1].Direction = Vector::Normalize(Vector3{ 1.0f,  0.0f, 0.0f });
+    lightEnvironment.lights[2].Direction = Vector::Normalize(Vector3{ 0.0f, -1.0f, 0.0f });
 
     lightEnvironment.lights[0].Radiance = Vector3{ 1.0f };;
     lightEnvironment.lights[1].Radiance = Vector3{ 1.0f };;
@@ -93,7 +93,7 @@ void Scene::OnRenderRuntime()
     }
 
     SceneCamera *primaryCamera = nullptr;
-    Vector::mat4 cameraTransform;
+    Matrix4 cameraTransform;
     {
         auto view = registry.view<TransformComponent, CameraComponent>();
         for (auto &e : view)
@@ -148,8 +148,8 @@ void Scene::OnRenderRuntime()
         {
             TransformUniformBuffer transformUniforms;
             transformUniforms.viewProjectionMatrix = primaryCamera->ViewProjection();
-            transformUniforms.skyProjectionMatrix = primaryCamera->Projection() * Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
-            transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(primaryCamera->View()));
+            transformUniforms.skyProjectionMatrix = primaryCamera->Projection() * Matrix4(Vector::Matrix3(primaryCamera->View()));
+            transformUniforms.sceneRotationMatrix = Matrix4(Vector::Matrix3(primaryCamera->View()));
             transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
         }
 
@@ -230,8 +230,8 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     {
         TransformUniformBuffer transformUniforms;
         transformUniforms.viewProjectionMatrix = editorCamera.ViewProjection();
-        transformUniforms.skyProjectionMatrix = editorCamera.Projection() * Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
-        transformUniforms.sceneRotationMatrix = Vector::Matrix4(Vector::Matrix3(editorCamera.View()));
+        transformUniforms.skyProjectionMatrix = editorCamera.Projection() * Matrix4(Vector::Matrix3(editorCamera.View()));
+        transformUniforms.sceneRotationMatrix = Matrix4(Vector::Matrix3(editorCamera.View()));
         transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
     }
 

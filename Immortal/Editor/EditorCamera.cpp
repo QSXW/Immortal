@@ -5,10 +5,10 @@
 
 namespace Immortal {
 
-	EditorCamera::EditorCamera(const Vector::Matrix4 & projection)
+	EditorCamera::EditorCamera(const Matrix4 & projection)
 		: Camera(projection)/*, mRotation{ 90.0f, 0.0f, 0.0f }, mFocalPoint(0.0f)*/
 	{
-		mDistance = Vector::Distance(Vector::Vector3{ -5.0f, 5.0f, 5.0f }, mFocalPoint);
+		mDistance = Vector::Distance(Vector3{ -5.0f, 5.0f, 5.0f }, mFocalPoint);
 
 		mYaw = 0.0f;
 		mPitch = 0.0f;
@@ -18,7 +18,7 @@ namespace Immortal {
 		UpdateView();
 	}
 
-	void EditorCamera::Focus(const Vector::Vector3 & focusPoint)
+	void EditorCamera::Focus(const Vector3 & focusPoint)
 	{
 		mFocalPoint = focusPoint;
 		if (mDistance > mMinFocusDistance)
@@ -60,24 +60,24 @@ namespace Immortal {
 		dispatcher.Dispatch<MouseScrolledEvent>(std::bind(&EditorCamera::OnMouseScroll, this, std::placeholders::_1));
 	}
 
-	Vector::Vector3 EditorCamera::UpDirection()
+	Vector3 EditorCamera::UpDirection()
 	{
-		return Vector::Rotate(Orientation(), Vector::Vector3(0.0f, 1.0f, 0.0f));
+		return Vector::Rotate(Orientation(), Vector3(0.0f, 1.0f, 0.0f));
 	}
 
-	Vector::Vector3 EditorCamera::RightDirection()
+	Vector3 EditorCamera::RightDirection()
 	{
-		return Vector::Rotate(Orientation(), Vector::Vector3(1.0f, 0.0f, 0.0f));
+		return Vector::Rotate(Orientation(), Vector3(1.0f, 0.0f, 0.0f));
 	}
 
-	Vector::Vector3 EditorCamera::ForwardDirection()
+	Vector3 EditorCamera::ForwardDirection()
 	{
-		return Vector::Rotate(Orientation(), Vector::Vector3(0.0f, 0.0f, -1.0f));
+		return Vector::Rotate(Orientation(), Vector3(0.0f, 0.0f, -1.0f));
 	}
 
 	Vector::Quaternion EditorCamera::Orientation() const
 	{
-		return Vector::Quaternion(Vector::Vector3(-mPitch, -mYaw, 0.0f));
+		return Vector::Quaternion(Vector3(-mPitch, -mYaw, 0.0f));
 	}
 
 	void EditorCamera::UpdateView()
@@ -121,7 +121,7 @@ namespace Immortal {
 		}
 	}
 
-	Vector::Vector3 EditorCamera::CalculatePosition()
+	Vector3 EditorCamera::CalculatePosition()
 	{
 		return mFocalPoint - ForwardDirection() * mDistance;
 	}

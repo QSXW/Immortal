@@ -40,7 +40,7 @@ static inline void EndPropertyGrid()
     PopID();
 }
 
-static bool DrawVec3Control(const std::string &label, Vector::Vector3 &values, float speed = 0.01f, float resetValue = 0.0f, float columnWidth = 100.0f)
+static bool DrawVec3Control(const std::string &label, Vector3 &values, float speed = 0.01f, float resetValue = 0.0f, float columnWidth = 100.0f)
 {
     bool modified = false;
 

@@ -77,7 +77,7 @@ void OrthographicCameraController::OnEvent(Event &e)
     dispatcher.Dispatch<WindowResizeEvent>(std::bind(&OrthographicCameraController::OnWindowResized, this, std::placeholders::_1));
 }
 
-void OrthographicCameraController::Reset(Vector::Vector3 &position, float rotation)
+void OrthographicCameraController::Reset(Vector3 &position, float rotation)
 {
     cameraPosition = position;
     cameraRotation = rotation;

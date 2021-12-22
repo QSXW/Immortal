@@ -17,7 +17,7 @@ public:
 public:
     Camera() = default;
 
-    Camera(const Vector::Matrix4 &prj)
+    Camera(const Matrix4 &prj)
         : projection{ prj }
     {
 
@@ -40,7 +40,7 @@ public:
         return projection * view;
     }
 
-    void SetProjection(const Vector::Matrix4 &prj)
+    void SetProjection(const Matrix4 &prj)
     { 
         projection = prj;
     }

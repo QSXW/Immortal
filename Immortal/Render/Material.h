@@ -22,7 +22,7 @@ public:
 
     struct MaterialUniforms
     {
-        Vector::Vector3  AlbedoColor;
+        Vector3  AlbedoColor;
         float            Metalness;
         float            Roughness;
     };

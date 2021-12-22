@@ -99,7 +99,7 @@ public:
         return type;
     }
 
-    void SetTransform(const Vector::Matrix4 &transform)
+    void SetTransform(const Matrix4 &transform)
     {
         view = Vector::Inverse(transform);
     }

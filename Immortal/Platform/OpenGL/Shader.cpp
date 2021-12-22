@@ -170,7 +170,7 @@ void Shader::Set(const std::string & name, const Vector::Vector2 & value)
     glUniform2f(location, value.x, value.y);
 }
 
-void Shader::Set(const std::string & name, const Vector::Vector3 & value)
+void Shader::Set(const std::string & name, const Vector3 & value)
 {
     GLint location = glGetUniformLocation(handle, name.c_str());
     glUniform3f(location, value.x, value.y, value.z);

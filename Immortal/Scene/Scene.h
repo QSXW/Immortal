@@ -18,28 +18,28 @@ namespace Immortal
 
 struct Light
 {
-    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
 
     bool Enabled = false;
 };
 
 struct PointLight
 {
-    Vector::Vector3 Position{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+    Vector3 Position{ 0.0f, 0.0f, 0.0f };
+    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
 };
 
 struct DirectionalLight
 {
-    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
+    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
 };
 
 // This type of light needs the most time to calculate
 struct SpotLight
 {
-    Vector::Vector3 Direction{ 0.0f, 0.0f, 0.0f };
+    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
     float Falloff{ 1.0 };
     float Theta; // the radian angle of the spotlight's inner cone
     float Phi;   // the angle for the outer cone of light.

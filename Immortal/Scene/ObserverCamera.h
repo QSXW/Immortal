@@ -27,8 +27,8 @@ namespace Immortal
 	private:
 		ObserverCamera::Type mType = ObserverCamera::Type::FirstPerson;
 		
-		Vector::Vector3 mRotation{ 0.0f };
-		Vector::Vector3 mPosition{ 0.0f };
+		Vector3 mRotation{ 0.0f };
+		Vector3 mPosition{ 0.0f };
 		Vector::Vector2 mMousePos{ 0.0f };
 
 		float mRotationSpeed = 1.0f;

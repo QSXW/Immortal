@@ -38,7 +38,7 @@ public:
         ReCalculateViewMatrix();
     }
         
-    void Set(const Vector::Vector3 &pos, float rot)
+    void Set(const Vector3 &pos, float rot)
     {
         position = pos;
         rotation = rot;

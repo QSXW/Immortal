@@ -10,9 +10,9 @@ class EditorCamera : public Camera
 {
 public:
     EditorCamera() = default;
-    EditorCamera(const Vector::Matrix4 &projection);
+    EditorCamera(const Matrix4 &projection);
 
-    void Focus(const Vector::Vector3 &focusPoint);
+    void Focus(const Vector3 &focusPoint);
     void OnUpdate();
     void OnEvent(Event &e);
 
@@ -20,11 +20,11 @@ public:
 
     void SetViewportSize(const Vector::Vector2 &size);
 
-    Vector::Vector3 UpDirection();
-    Vector::Vector3 RightDirection();
-    Vector::Vector3 ForwardDirection();
+    Vector3 UpDirection();
+    Vector3 RightDirection();
+    Vector3 ForwardDirection();
 
-    const Vector::Vector3 &Position() const { return mPosition; }
+    const Vector3 &Position() const { return mPosition; }
     Vector::Quaternion Orientation() const;
 
     float Pitch() const { return mPitch; }
@@ -38,7 +38,7 @@ private:
     void MouseRotate(const Vector::Vector2 &delta);
     void MouseZoom(float delta);
 
-    Vector::Vector3 CalculatePosition();
+    Vector3 CalculatePosition();
 
     Vector::Vector2 PanSpeed() const;
     constexpr float RotateSpeed()	 const;
@@ -46,13 +46,13 @@ private:
 
 private:
 
-    Vector::Vector3 mPosition{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 mRotation{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 mFocalPoint{ 0.0f, 0.0f, 0.0f };
+    Vector3 mPosition{ 0.0f, 0.0f, 0.0f };
+    Vector3 mRotation{ 0.0f, 0.0f, 0.0f };
+    Vector3 mFocalPoint{ 0.0f, 0.0f, 0.0f };
 
     Vector::Vector2 mInitialPosition{ 0.0f, 0.0f };
-    Vector::Vector3 mInitialFocalPoint{ 0.0f, 0.0f, 0.0f };
-    Vector::Vector3 mInitialRotation{ 0.0f, 0.0f, 0.0f };
+    Vector3 mInitialFocalPoint{ 0.0f, 0.0f, 0.0f };
+    Vector3 mInitialRotation{ 0.0f, 0.0f, 0.0f };
 
     Vector::Vector2 viewportSize{ 1280.0f, 720.0f };
 

@@ -55,11 +55,11 @@ private:
 public:
     struct Vertex
     {
-        Vector::Vector3 Position;
-        Vector::Vector3 Normal;
-        Vector::Vector3 Tangent;
-        Vector::Vector3 Bitangent;
-        Vector::Vector2 Texcoord;
+        Vector3 Position;
+        Vector3 Normal;
+        Vector3 Tangent;
+        Vector3 Bitangent;
+        Vector2 Texcoord;
     };
 
     struct Face
@@ -77,7 +77,7 @@ public:
         uint32_t IndexCount;
         uint32_t VertexCount;
 
-        Vector::Matrix4 Transform{ 1.0f };
+        Matrix4 Transform{ 1.0f };
         std::string NodeName;
         std::string MeshName;
     };
