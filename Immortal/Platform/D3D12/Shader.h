@@ -123,7 +123,7 @@ public:
 private:
     void InternalCheck(HRESULT result, ID3DBlob **errorMsg, ID3DBlob **toBeReleased)
     {
-         if ( FAILED(result) )
+         if ( FAILED(result) || !*toBeReleased )
          {
              if (*errorMsg)
              {
@@ -137,6 +137,8 @@ private:
                  (*toBeReleased)->Release();
                  *toBeReleased = nullptr;
              }
+
+             ThrowIf(true, "Failed to compile shader source");
          }
     }
 
