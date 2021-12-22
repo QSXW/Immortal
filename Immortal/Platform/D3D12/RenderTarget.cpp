@@ -30,19 +30,159 @@ void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CL
 {
     Super::Create(device, desc, clearValue);
 
-    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    struct {
+        D3D12_RENDER_TARGET_VIEW_DESC RenderTarget;
+        D3D12_SHADER_RESOURCE_VIEW_DESC ShaderResource;
+        D3D12_UNORDERED_ACCESS_VIEW_DESC UnorderedAccess;
+    } viewDescription{};
+    
+    viewDescription.RenderTarget.Format    = desc.Format;
+    viewDescription.ShaderResource.Format  = desc.Format;
+    viewDescription.UnorderedAccess.Format = GetUAVFormat(desc.Format);
 
-    rtvDescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
-    srvdescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+    viewDescription.ShaderResource.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    // device->CreateView(resource, &rtvDesc, rtvDescriptor);
-    // device->CreateView(resource, &srvDesc, srvdescriptor);
+    if (desc.DepthOrArraySize > 1)
+    {
+        viewDescription.RenderTarget.ViewDimension                  = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+        viewDescription.RenderTarget.Texture2DArray.MipSlice        = 0;
+        viewDescription.RenderTarget.Texture2DArray.FirstArraySlice = 0;
+        viewDescription.RenderTarget.Texture2DArray.ArraySize       = (UINT)desc.DepthOrArraySize;
+
+        viewDescription.UnorderedAccess.ViewDimension                  = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+        viewDescription.UnorderedAccess.Texture2DArray.MipSlice        = 0;
+        viewDescription.UnorderedAccess.Texture2DArray.FirstArraySlice = 0;
+        viewDescription.UnorderedAccess.Texture2DArray.ArraySize       = (UINT)desc.DepthOrArraySize;
+
+        viewDescription.ShaderResource.ViewDimension                  = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+        viewDescription.ShaderResource.Texture2DArray.MipLevels       = desc.MipLevels;
+        viewDescription.ShaderResource.Texture2DArray.MostDetailedMip = 0;
+        viewDescription.ShaderResource.Texture2DArray.FirstArraySlice = 0;
+        viewDescription.ShaderResource.Texture2DArray.ArraySize       = (UINT)desc.DepthOrArraySize;
+    }
+    else if (desc.SampleDesc.Count > 1)
+    {
+        viewDescription.RenderTarget.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+        viewDescription.ShaderResource.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+    }
+    else
+    {
+        viewDescription.RenderTarget.ViewDimension      = D3D12_RTV_DIMENSION_TEXTURE2D;
+        viewDescription.RenderTarget.Texture2D.MipSlice = 0;
+
+        viewDescription.UnorderedAccess.ViewDimension      = D3D12_UAV_DIMENSION_TEXTURE2D;
+        viewDescription.UnorderedAccess.Texture2D.MipSlice = 0;
+
+        viewDescription.ShaderResource.ViewDimension             = D3D12_SRV_DIMENSION_TEXTURE2D;
+        viewDescription.ShaderResource.Texture2D.MipLevels       = desc.MipLevels;
+        viewDescription.ShaderResource.Texture2D.MostDetailedMip = 0;
+    }
+
+    if (shaderResourceViewDescriptor.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+    {
+        renderTargetViewDescriptor   = RenderContext::AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
+        shaderResourceViewDescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+    }
+   
+    device->CreateView(resource, &viewDescription.RenderTarget, renderTargetViewDescriptor);
+    device->CreateView(resource, &viewDescription.ShaderResource, shaderResourceViewDescriptor);
+
+    if (desc.SampleDesc.Count > 1)
+    {
+        return;
+    }
+
+    for (uint32_t i = 0; i < desc.MipLevels; ++i)
+    {
+        if (unorderedAccessViewDescriptor[i].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+        {
+            unorderedAccessViewDescriptor[i] = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+        }
+        device->CreateView(resource, nullptr, &viewDescription.UnorderedAccess, unorderedAccessViewDescriptor[i]);
+        viewDescription.UnorderedAccess.Texture2D.MipSlice++;
+    }
 }
 
 void DepthBuffer::Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
     Super::Create(device, desc, clearValue);
+
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDescription{};
+
+    depthStencilViewDescription.Format = GetDSVFormat(desc.Format);
+    if (desc.SampleDesc.Count == 1)
+    {
+        depthStencilViewDescription.ViewDimension      = D3D12_DSV_DIMENSION_TEXTURE2D;
+        depthStencilViewDescription.Texture2D.MipSlice = 0;
+    }
+    else
+    {
+        depthStencilViewDescription.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    }
+
+    if (depthStencilViewDescriptor[0].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+    {
+        depthStencilViewDescriptor[0] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+        depthStencilViewDescriptor[1] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+    }
+
+    depthStencilViewDescription.Flags = D3D12_DSV_FLAG_NONE;
+    device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[0]);
+
+    depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[1]);
+
+    DXGI_FORMAT stencilReadFormat = GetStencilFormat(desc.Format);
+    if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
+    {
+        if (depthStencilViewDescriptor[2].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+        {
+            depthStencilViewDescriptor[2] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+            depthStencilViewDescriptor[3] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+        }
+
+        depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+        device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[2]);
+
+        depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+        device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[3]);
+    }
+    else
+    {
+        depthStencilViewDescriptor[2] = depthStencilViewDescriptor[0];
+        depthStencilViewDescriptor[3] = depthStencilViewDescriptor[1];
+    }
+
+    if (shaderResourceDescriptor.depth.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+    {
+        shaderResourceDescriptor.depth = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+    }
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceDesc{};
+    shaderResourceDesc.Format = GetDepthFormat(desc.Format);
+    if (depthStencilViewDescription.ViewDimension == D3D12_DSV_DIMENSION_TEXTURE2D)
+    {
+        shaderResourceDesc.ViewDimension       = D3D12_SRV_DIMENSION_TEXTURE2D;
+        shaderResourceDesc.Texture2D.MipLevels = 1;
+    }
+    else
+    {
+        shaderResourceDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+    }
+
+    shaderResourceDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    device->CreateView(resource, &shaderResourceDesc, shaderResourceDescriptor.depth);
+
+    if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
+    {
+        if (shaderResourceDescriptor.stencil.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+        {
+            shaderResourceDescriptor.stencil = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+        }
+
+        shaderResourceDesc.Format = stencilReadFormat;
+        device->CreateView(resource, &shaderResourceDesc, shaderResourceDescriptor.stencil);
+    }
 }
 
 RenderTarget::RenderTarget()

@@ -16,6 +16,133 @@ class Device;
 class PixelBuffer : public Resource
 {
 public:
+    DXGI_FORMAT GetUAVFormat(DXGI_FORMAT defaultFormat)
+    {
+        switch (defaultFormat)
+        {
+        case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+            return DXGI_FORMAT_R8G8B8A8_UNORM;
+
+        case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+            return DXGI_FORMAT_B8G8R8A8_UNORM;
+
+        case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+        case DXGI_FORMAT_B8G8R8X8_UNORM:
+        case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+            return DXGI_FORMAT_B8G8R8X8_UNORM;
+
+        case DXGI_FORMAT_R32_TYPELESS:
+        case DXGI_FORMAT_R32_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+
+#ifdef SLDEBUG
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+        case DXGI_FORMAT_D16_UNORM:
+            ThrowIf(true, "Requested a UAV Format for a depth stencil Format.");
+            return defaultFormat;
+#endif
+
+        default:
+            return defaultFormat;
+        }
+    }
+
+
+    DXGI_FORMAT GetDSVFormat(DXGI_FORMAT defaultFormat)
+    {
+        switch (defaultFormat)
+        {
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+            return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+
+        case DXGI_FORMAT_R32_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R32_FLOAT:
+            return DXGI_FORMAT_D32_FLOAT;
+
+        case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+            return DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+        case DXGI_FORMAT_R16_TYPELESS:
+        case DXGI_FORMAT_D16_UNORM:
+        case DXGI_FORMAT_R16_UNORM:
+            return DXGI_FORMAT_D16_UNORM;
+
+        default:
+            return defaultFormat;
+        }
+    }
+
+    DXGI_FORMAT PixelBuffer::GetDepthFormat(DXGI_FORMAT defaultFormat)
+    {
+        switch (defaultFormat)
+        {
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+            return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+
+        case DXGI_FORMAT_R32_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT:
+        case DXGI_FORMAT_R32_FLOAT:
+            return DXGI_FORMAT_R32_FLOAT;
+
+        case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+            return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+
+        case DXGI_FORMAT_R16_TYPELESS:
+        case DXGI_FORMAT_D16_UNORM:
+        case DXGI_FORMAT_R16_UNORM:
+            return DXGI_FORMAT_R16_UNORM;
+
+        default:
+            return DXGI_FORMAT_UNKNOWN;
+        }
+    }
+
+    DXGI_FORMAT GetStencilFormat(DXGI_FORMAT defaultFormat)
+    {
+        switch (defaultFormat)
+        {
+        case DXGI_FORMAT_R32G8X24_TYPELESS:
+        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+        case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+        case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+            return DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+
+        case DXGI_FORMAT_R24G8_TYPELESS:
+        case DXGI_FORMAT_D24_UNORM_S8_UINT:
+        case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+        case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+            return DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+
+        default:
+            return DXGI_FORMAT_UNKNOWN;
+        }
+    }
+
     void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 };
 
@@ -27,20 +154,33 @@ public:
 public:
     ColorBuffer()
     {
-        srvdescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        rtvDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        for (int i = 0; i < SL_ARRAY_LENGTH(uavDescriptor); i++)
+        shaderResourceViewDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        renderTargetViewDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        for (int i = 0; i < SL_ARRAY_LENGTH(unorderedAccessViewDescriptor); i++)
         {
-            uavDescriptor[i].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+            unorderedAccessViewDescriptor[i].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
         }
     }
 
     void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 
+    template <Descriptor::Type T>
+    CPUDescriptor Get() const
+    {
+        if constexpr (T == Descriptor::Type::ShaderResourceView)
+        {
+            return shaderResourceViewDescriptor;
+        }
+        if constexpr (T == Descriptor::Type::RenderTargetView)
+        {
+            return renderTargetViewDescriptor;
+        }
+    }
+
 private:
-    CPUDescriptor srvdescriptor;
-    CPUDescriptor rtvDescriptor;
-    CPUDescriptor uavDescriptor[12];
+    CPUDescriptor shaderResourceViewDescriptor;
+    CPUDescriptor renderTargetViewDescriptor;
+    CPUDescriptor unorderedAccessViewDescriptor[12];
 };
 
 class DepthBuffer : public PixelBuffer
@@ -51,20 +191,23 @@ public:
 public:
     DepthBuffer()
     {
-        dsvDescriptor[0].ptr     = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        dsvDescriptor[1].ptr     = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        dsvDescriptor[2].ptr     = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        dsvDescriptor[3].ptr     = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        srvDepthDescriptor.ptr   = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        srvStencilDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        depthStencilViewDescriptor[0].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        depthStencilViewDescriptor[1].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        depthStencilViewDescriptor[2].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        depthStencilViewDescriptor[3].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+
+        shaderResourceDescriptor.depth.ptr   = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+        shaderResourceDescriptor.stencil.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
 
     void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 
 private:
-    CPUDescriptor dsvDescriptor[4];
-    CPUDescriptor srvDepthDescriptor;
-    CPUDescriptor srvStencilDescriptor;
+    CPUDescriptor depthStencilViewDescriptor[4];
+    struct {
+        CPUDescriptor depth;
+        CPUDescriptor stencil;
+    } shaderResourceDescriptor;
 };
 
 class RenderTarget : public SuperRenderTarget
@@ -105,6 +248,16 @@ public:
         desc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
         return desc;
+    }
+
+    virtual operator uint64_t() const
+    {
+        return 0;
+    }
+
+    operator D3D12_CPU_DESCRIPTOR_HANDLE() const
+    {
+        return attachments.color[0].Get<Descriptor::Type::RenderTargetView>();
     }
 
 private:
