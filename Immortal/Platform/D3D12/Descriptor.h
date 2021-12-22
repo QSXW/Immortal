@@ -80,6 +80,14 @@ struct Descriptor
 {
     using Super = SuperDescriptor;
 
+    enum class Type
+    {
+        ShaderResourceView,
+        RenderTargetView,
+        Sampler,
+        DepthStencilView
+    };
+
     Descriptor(CPUDescriptor cpu, GPUDescriptor gpu) :
         cpu{ cpu },
         gpu{ gpu }
