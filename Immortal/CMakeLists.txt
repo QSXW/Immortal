@@ -104,6 +104,7 @@ set(D3D12_FILES
     Platform/D3D12/RenderTarget.cpp
     Platform/D3D12/RenderTarget.h
     Platform/D3D12/Resource.h
+    Platform/D3D12/RootSignature.h
     Platform/D3D12/SemaphorePool.cpp
     Platform/D3D12/SemaphorePool.h
     Platform/D3D12/Swapchain.cpp
