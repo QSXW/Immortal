@@ -160,25 +160,6 @@ public:
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
         }
 
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin(WordsMap::Get("debugTools"));
-
-            static char title[128] = { 0 };
-            sprintf(
-                title,
-                "Immortal Editor (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
-                Render::Api(),
-                Render::GraphicsRenderer(),
-                1000.0f / ImGui::GetIO().Framerate,
-                ImGui::GetIO().Framerate
-            );
-            Application::SetTitle(title);
-            ImGui::End();
-        }
-
         Application::App()->GetGuiLayer()->BlockEvent(false);
     }
 
