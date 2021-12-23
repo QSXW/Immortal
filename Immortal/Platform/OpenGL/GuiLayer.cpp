@@ -48,7 +48,7 @@ void GuiLayer::OnEvent(Event &e)
 
 void GuiLayer::OnGuiRender()
 {
-
+    Super::OnGuiRender();
 }
 
 void GuiLayer::Begin()

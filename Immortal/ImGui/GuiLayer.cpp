@@ -89,17 +89,17 @@ void GuiLayer::SetTheme()
 
     style->WindowMinSize.x                  = 320.0f;
     style->WindowBorderSize                 = 0.0f;
-    colors[ImGuiCol_Text]                   = ImVec4(0.02f, 0.02f, 0.02f, 1.13f);
+    colors[ImGuiCol_Text]                   = ImVec4(0.89f, 0.89f, 0.89f, 1.13f);
     colors[ImGuiCol_TextDisabled]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-    colors[ImGuiCol_WindowBg]               = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+    colors[ImGuiCol_WindowBg]               = ImVec4(0.1058f, 0.1058f, 0.1058f, 0.1058f);
     colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_PopupBg]                = ImVec4(1.00f, 1.00f, 1.00f, 0.98f);
     colors[ImGuiCol_Border]                 = ImVec4(0.00f, 0.00f, 0.00f, 0.30f);
     colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg]                = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+    colors[ImGuiCol_FrameBg]                = ImVec4(0.19f, 0.19f, 0.19f, 1.00f);
     colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
     colors[ImGuiCol_FrameBgActive]          = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_TitleBg]                = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
+    colors[ImGuiCol_TitleBg]                = ImVec4(0.19f, 0.19f, 0.19f, 1.00f);
     colors[ImGuiCol_TitleBgActive]          = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
     colors[ImGuiCol_MenuBarBg]              = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -224,7 +224,17 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::OnGuiRender()
 {
-
+    static char title[128] = { 0 };
+    sprintf(
+        title,
+        "%s (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
+        Application::Name(),
+        Render::Api(),
+        Render::GraphicsRenderer(),
+        1000.0f / ImGui::GetIO().Framerate,
+        ImGui::GetIO().Framerate
+    );
+    Application::SetTitle(title);
 }
 
 }
