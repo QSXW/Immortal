@@ -74,6 +74,21 @@ public:
         handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
     }
 
+    void Create(UINT nodeMask, ID3DBlob *pSignature, ID3D12RootSignature **ppRootSignature)
+    {
+        Check(handle->CreateRootSignature(
+            nodeMask,
+            pSignature->GetBufferPointer(),
+            pSignature->GetBufferSize(),
+            IID_PPV_ARGS(ppRootSignature)
+            ));
+    }
+
+    void Create(const D3D12_GRAPHICS_PIPELINE_STATE_DESC *pDesc, ID3D12PipelineState **ppPipelineState)
+    {
+        Check(handle->CreateGraphicsPipelineState(pDesc, IID_PPV_ARGS(ppPipelineState)));
+    }
+
     void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
     {
         Check(handle->CreateCommandAllocator(
