@@ -74,6 +74,11 @@ struct InputElement
         return offset;
     }
 
+    const std::string &Name() const
+    {
+        return name;
+    }
+
     std::string name;
     uint32_t    offset{ 0 };
     Format      format{ Format::UNDEFINED };
@@ -146,7 +151,7 @@ struct InputElementDescription
         return elements.cend();
     }
 
-    auto operator[](size_t index) const
+    const InputElement &operator[](size_t index) const
     {
         return elements[index];
     }
