@@ -9,6 +9,8 @@ namespace D3D12
 
 void PixelBuffer::Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
+    Format = desc.Format;
+
     D3D12_HEAP_PROPERTIES heapProperties{};
     heapProperties.Type                 = D3D12_HEAP_TYPE_DEFAULT;
     heapProperties.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -36,9 +38,9 @@ void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CL
         D3D12_UNORDERED_ACCESS_VIEW_DESC UnorderedAccess;
     } viewDescription{};
     
-    viewDescription.RenderTarget.Format    = desc.Format;
-    viewDescription.ShaderResource.Format  = desc.Format;
-    viewDescription.UnorderedAccess.Format = GetUAVFormat(desc.Format);
+    viewDescription.RenderTarget.Format    = Format;
+    viewDescription.ShaderResource.Format  = Format;
+    viewDescription.UnorderedAccess.Format = GetUAVFormat(Format);
 
     viewDescription.ShaderResource.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 

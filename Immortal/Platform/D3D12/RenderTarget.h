@@ -144,6 +144,9 @@ public:
     }
 
     void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+
+public:
+    DXGI_FORMAT Format{ DXGI_FORMAT_UNKNOWN };
 };
 
 class ColorBuffer : public PixelBuffer
@@ -202,6 +205,11 @@ public:
 
     void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
 
+    bool IsAvailable() const
+    {
+        return depthStencilViewDescriptor[0].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+    }
+
 private:
     CPUDescriptor depthStencilViewDescriptor[4];
     struct {
@@ -258,6 +266,21 @@ public:
     operator D3D12_CPU_DESCRIPTOR_HANDLE() const
     {
         return attachments.color[0].Get<Descriptor::Type::RenderTargetView>();
+    }
+
+    const std::vector<ColorBuffer> &GetColorBuffers() const
+    {
+        return attachments.color;
+    }
+
+    const DepthBuffer &GetDepthBuffer() const
+    {
+        return attachments.depth;
+    }
+
+    bool IsDepth() const
+    {
+        return attachments.depth.IsAvailable();
     }
 
 private:
