@@ -18,10 +18,10 @@ Application::Application(const Window::Description &description) :
     eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
 
+    UpdateMeta(description);
+
     Async::Setup();
 
-    desc = description;
-    
     window.reset(Window::Create(desc));
     window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
@@ -133,4 +133,11 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
 
     return runtime.minimized;
 }
+
+void Application::UpdateMeta(const Window::Description &description)
+{
+    desc = description;
+    name = desc.Title;
+}
+
 }

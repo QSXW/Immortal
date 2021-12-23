@@ -35,14 +35,11 @@ public:
 
     void OnEvent(Event &e);
 
+    void UpdateMeta(const Window::Description &desc);
+
     virtual Layer *PushLayer(Layer *layer);
 
     virtual Layer *PushOverlay(Layer *overlay);
-
-    static Application *App()
-    {
-        return That;
-    }
 
     virtual GuiLayer *GetGuiLayer() const
     {
@@ -65,19 +62,24 @@ public:
     }
 
 public:
-    static UINT32 Width()
+    static Application *App()
+    {
+        return That;
+    }
+
+    static uint32_t Width()
     { 
         return That->desc.Width;
     }
 
-    static UINT32 Height()
+    static uint32_t Height()
     {
         return That->desc.Height;
     }
 
     static const char *Name()
     { 
-        return That->desc.Title.c_str();
+        return That->name.c_str();
     }
 
     static float DeltaTime()
@@ -111,6 +113,8 @@ private:
     GuiLayer *gui;
 
     Window::Description desc;
+
+    std::string name;
 
     Timer timer;
 
