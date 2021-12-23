@@ -12,6 +12,16 @@ public:
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->WhiteTexture;
+
+        pipeline = Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Basic>());
+        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }});
+
+        auto inputElementDescription = InputElementDescription{
+            { Format::VECTOR3, "POSITION" },
+            { Format::VECTOR4, "COLOR" }
+        };
+        pipeline->Set(inputElementDescription);
+        pipeline->Reconstruct(renderTarget);
     }
 
     ~RenderLayer()
@@ -83,12 +93,15 @@ private:
     Widget::Viewport viewport{ "Texture Preview " };
 
     EventSink<RenderLayer> eventSink;
+
+    std::shared_ptr<RenderTarget> renderTarget;
+    std::shared_ptr<Pipeline> pipeline;
 };
 
 class D3D12Sample : public Application
 {
 public:
-    D3D12Sample() : Application({ U8("D3D12 Sample (Graphics API: DirectX 12)"), 1920, 1080 })
+    D3D12Sample() : Application({ U8("D3D12 Sample"), 1920, 1080 })
     {
         PushLayer(new RenderLayer());
     }
