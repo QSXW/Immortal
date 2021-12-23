@@ -181,10 +181,10 @@ Instance::Instance(const char                                   *applicationName
     }
 
     uint32_t layerCount;
-    Vulkan::Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+    Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
 
     std::vector<VkLayerProperties> supportedValidationLayers(layerCount);
-    Vulkan::Check(vkEnumerateInstanceLayerProperties(&layerCount, supportedValidationLayers.data()));
+    Check(vkEnumerateInstanceLayerProperties(&layerCount, supportedValidationLayers.data()));
 
     if (ValidateLayers(requiredValidationLayers, supportedValidationLayers))
     {
@@ -225,32 +225,32 @@ Instance::Instance(const char                                   *applicationName
     {
         debugUtilsCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
         debugUtilsCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugUtilsCreateInfo.pfnUserCallback = Vulkan::DebugUtilsMessengerCallback;
+        debugUtilsCreateInfo.pfnUserCallback =DebugUtilsMessengerCallback;
 
         instanceInfo.pNext = &debugUtilsCreateInfo;
     }
     else
     {
         debugReportCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        debugReportCreateInfo.pfnCallback = Vulkan::DebugCallback;
+        debugReportCreateInfo.pfnCallback =DebugCallback;
 
         instanceInfo.pNext = &debugReportCallback;
     }
 #endif
 
-    Vulkan::Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
+    Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
     volkLoadInstance(handle);
 
 #ifdef SLDEBUG
     if (debugUtils)
     {
         SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
-        Vulkan::Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));
+        Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));
     }
     else
     {
         SLASSERT(vkCreateDebugReportCallbackEXT != nullptr && "");
-        Vulkan::Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &debugReportCallback));
+        Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &debugReportCallback));
     }
 #endif
     QueryPhysicalDevice();
@@ -319,10 +319,10 @@ PhysicalDevice &Instance::SuitablePhysicalDevice()
 bool Instance::CheckValidationLayerSupport()
 {
     uint32_t layerInstanceExtensionCount;
-    Vulkan::Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, nullptr));
+    Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, nullptr));
 
     std::vector<VkExtensionProperties> availableLayerInstanceExtension(layerInstanceExtensionCount);
-    Vulkan::Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, availableLayerInstanceExtension.data()));
+    Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, availableLayerInstanceExtension.data()));
 
     for (auto &ext : availableLayerInstanceExtension)
     {
