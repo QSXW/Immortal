@@ -22,6 +22,7 @@
 #include "Utils/PlatformUtils.h"
 #include "Utils/json.h"
 
+#include "Render/DataSet.h"
 #include "Render/Shader.h"
 #include "Render/Texture.h"
 #include "Render/RenderTarget.h"

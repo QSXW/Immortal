@@ -206,6 +206,7 @@ set(RENDER_FILES
     Render/CommandBuffer.h
     Render/CommandQueue.cpp
     Render/CommandQueue.h
+    Render/DataSet.h
     Render/Descriptor.h
     Render/Environment.cpp
     Render/Environment.h
