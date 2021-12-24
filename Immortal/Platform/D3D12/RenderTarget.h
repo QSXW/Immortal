@@ -263,7 +263,7 @@ public:
         return 0;
     }
 
-    operator D3D12_CPU_DESCRIPTOR_HANDLE() const
+    operator CPUDescriptor&() const
     {
         return attachments.color[0].Get<Descriptor::Type::RenderTargetView>();
     }

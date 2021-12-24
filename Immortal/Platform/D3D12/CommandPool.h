@@ -39,12 +39,9 @@ public:
 
     void Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState = nullptr);
 
-    void ResourceBarrier(Barrier *barrier, UINT num = 1)
+    void ResourceBarrier(const D3D12_RESOURCE_BARRIER *pBarrier, UINT num = 1)
     {
-        handle->ResourceBarrier(
-            num,
-            barrier
-            );
+        handle->ResourceBarrier(num, pBarrier);
     }
 
     ID3D12GraphicsCommandList *Handle()
@@ -62,7 +59,7 @@ public:
         Check(handle->Close());
     }
 
-    void ClearRenderTargetView(CPUDescriptor &descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
+    void ClearRenderTargetView(CPUDescriptor descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
     {
         handle->ClearRenderTargetView(
             descriptor,

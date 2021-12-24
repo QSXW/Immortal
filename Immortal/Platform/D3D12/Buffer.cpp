@@ -20,7 +20,7 @@ Buffer::Buffer(Device * device, const size_t size, Type type) :
 
 Buffer::~Buffer()
 {
-    IfNotNullThenRelease(resource);
+
 }
 
 void Buffer::InternelCreate(const Device *device)

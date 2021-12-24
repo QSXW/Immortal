@@ -80,13 +80,11 @@ void GuiLayer::End()
 
     UINT backBufferIdx = Render::CurrentPresentedFrameIndex();
 
-    Barrier barrier{};
-    barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource   = context->RenderTarget(backBufferIdx);
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    Barrier<BarrierType::Transition> barrier{ 
+        context->RenderTarget(backBufferIdx),
+        D3D12_RESOURCE_STATE_PRESENT,
+        D3D12_RESOURCE_STATE_RENDER_TARGET
+    };
 
     commandList->ResourceBarrier(&barrier);
 
@@ -98,8 +96,7 @@ void GuiLayer::End()
 
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->Handle());
 
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Swap();
 
     commandList->ResourceBarrier(&barrier);
 
