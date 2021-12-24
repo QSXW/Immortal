@@ -20,7 +20,7 @@ Buffer::Buffer(Device * device, const size_t size, Type type) :
 
 Buffer::~Buffer()
 {
-    IfNotNullThenRelease(handle);
+    IfNotNullThenRelease(resource);
 }
 
 void Buffer::InternelCreate(const Device *device)
@@ -51,18 +51,15 @@ void Buffer::InternelCreate(const Device *device)
         &resourceDesciption,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        &handle
+        &resource
     );
 
-    gpuVirtualAddress = handle->GetGPUVirtualAddress();
+    gpuVirtualAddress = resource->GetGPUVirtualAddress();
 }
 
 void Buffer::Update(uint32_t updateSize, const void *data)
 {
-    if (updateSize > size)
-    {
-        throw Exception(SError::OutOfBound);
-    }
+    ThrowIf(updateSize > size, SError::OutOfBound);
     uint8_t *memory = nullptr;
     Map(rcast<void **>(&memory));
     memcpy(memory, data, updateSize);

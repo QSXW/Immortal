@@ -3,13 +3,14 @@
 #include "Common.h"
 #include "Render/Buffer.h"
 #include "Device.h"
+#include "Resource.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-class Buffer : public SuperBuffer
+class Buffer : public SuperBuffer, public Resource
 {
 public:
     using Super = SuperBuffer;
@@ -25,7 +26,7 @@ public:
 
     operator const HandleType() const
     {
-        return handle;
+        return resource;
     }
 
     virtual void Update(uint32_t size, const void *data) override;
@@ -33,26 +34,17 @@ public:
     void Map(void **data)
     {
         D3D12_RANGE range{ 0, size };
-        handle->Map(0, &range, data);
+        resource->Map(0, &range, data);
     }
 
     void Unmap()
     {
         D3D12_RANGE range{ 0, size };
-        handle->Unmap(0, &range);
+        resource->Unmap(0, &range);
     }
 
 private:
     void InternelCreate(const Device *device);
-
-private:
-    HandleType handle{ nullptr };
-
-    D3D12_RESOURCE_STATES usageState{ D3D12_RESOURCE_STATE_COMMON };
-
-    D3D12_RESOURCE_STATES transitioningState{ D3D12_RESOURCE_STATE_COMMON };
-
-    D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress{ 0  };
 };
 
 }
