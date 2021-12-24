@@ -120,6 +120,77 @@ static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **p
     }
 }
 
+/*
+ * @brief Concise Helper Structures
+ */
+
+#define TYPE_HINT(S) \
+    "Only "#S" Type is acceptable"
+
+#define ASSERT_TYPES4(is_type, T, hint) \
+    static_assert(is_type<T##0>() && is_type<T##1>() && is_type<T##2>() && is_type<T##3>() && hint);
+
+struct Viewport : public D3D12_VIEWPORT
+{
+    using Primitive = D3D12_VIEWPORT;
+
+    Viewport()
+    {
+
+    }
+
+    explicit Viewport(const Primitive &p) noexcept :
+        Primitive{ p }
+    {
+
+    }
+
+    template <class T0, class T1, class T2, class T3>
+    explicit Viewport(
+        T0 topLeftX,
+        T1 topLeftY,
+        T2 width,
+        T3 height,
+        float minDepth = D3D12_MIN_DEPTH,
+        float maxDepth = D3D12_MAX_DEPTH) noexcept
+    {
+        ASSERT_TYPES4(std::is_arithmetic, T, TYPE_HINT(Arithmetic))
+
+        TopLeftX = FLOAT(topLeftX);
+        TopLeftY = FLOAT(topLeftY);
+        Width    = FLOAT(width);
+        Height   = FLOAT(height);
+        MinDepth = FLOAT(minDepth);
+        MaxDepth = FLOAT(maxDepth);
+    }
+};
+
+struct Rect : public D3D12_RECT
+{
+    using Primitive = D3D12_RECT;
+
+    Rect()
+    {
+
+    }
+
+    explicit Rect(const Primitive &p) noexcept :
+        Primitive{ p }
+    {
+    
+    }
+
+    template <class T0, class T1, class T2, class T3>
+    explicit Rect(T0 left, T1 top, T2 right, T3 bottom) noexcept
+    {
+        ASSERT_TYPES4(std::is_arithmetic, T, TYPE_HINT(Arithmetic))
+        Primitive::left   = LONG(left);
+        Primitive::top    = LONG(top);
+        Primitive::right  = LONG(right);
+        Primitive::bottom = LONG(bottom);
+    }
+};
+
 }
 }
 
