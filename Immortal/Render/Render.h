@@ -210,6 +210,12 @@ public:
         return renderer->CreateBuffer(sizeof(T) * size, data, type);
     }
 
+    template <class T>
+    static std::shared_ptr<Buffer> CreateBuffer(const std::vector<T> &v, Buffer::Type type)
+    {
+        return renderer->CreateBuffer(sizeof(T) * v.size(), v.data(), type);
+    }
+
     static std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
     {
         return renderer->CreateBuffer(size, type);
