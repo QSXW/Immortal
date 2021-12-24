@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Platform/OpenGL/Common.h"
-#include "Platform/Vulkan/Common.h"
-#include "Platform/D3D12/Common.h"
+#include <glad/glad.h>
+#include <vulkan/vulkan_core.h>
+#include <dxgiformat.h>
 
 namespace Immortal
 {
