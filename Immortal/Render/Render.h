@@ -39,7 +39,7 @@ public:
         Metal  = BIT(4)
     };
 
-    static inline const char Stringify[5][8]
+    static inline const char SAPIs[5][8]
     {
         { "None"   },
         { "Vulkan" },
@@ -102,9 +102,24 @@ public:
 
     static void Setup(const std::shared_ptr<RenderTarget> &renderTarget);
 
+
+    static const char *Sringify(Render::Type type)
+    {
+        switch (type)
+        {
+        case Type::None:   return SAPIs[0];
+        case Type::Vulkan: return SAPIs[1];
+        case Type::OpenGL: return SAPIs[2];
+        case Type::D3D12:  return SAPIs[3];
+        case Type::Metal:  return SAPIs[4];
+        default:           return SAPIs[0];
+        }
+    }
+
     static void Set(Type type)
     {
-        API = type;
+        API  = type;
+        SAPI = Sringify(type);
     }
 
     static void OnWindowResize(UINT32 width, UINT32 height)
@@ -171,7 +186,7 @@ public:
 
     static const char *Api()
     {
-        return Stringify[ncast<int>(API)];
+        return SAPI;
     }
 
     static const char *GraphicsRenderer()
@@ -271,20 +286,9 @@ private:
 
 public:
     static inline Type API{ Type::None };
-};
 
-static std::string Sringify(Render::Type type)
-{
-    switch (type)
-    {
-#define XX(x) case Render::Type::x: return #x;
-        XX(None);
-        XX(Vulkan);
-        XX(D3D12);
-#undef XX
-    default: return "Unknown";
-    }
-}
+    static inline const char *SAPI{ nullptr };
+};
 
 using ShaderName = Render::ShaderName;
 
