@@ -85,12 +85,8 @@ set(D3D12_FILES
     Platform/D3D12/Device.h
     Platform/D3D12/FencePool.cpp
     Platform/D3D12/FencePool.h
-    Platform/D3D12/Framebuffer.cpp
-    Platform/D3D12/Framebuffer.h
-    Platform/D3D12/Image.cpp
-    Platform/D3D12/Image.h
-    Platform/D3D12/ImageView.cpp
-    Platform/D3D12/ImageView.h
+    Platform/D3D12/GuiLayer.cpp
+    Platform/D3D12/GuiLayer.h
     Platform/D3D12/Pipeline.cpp
     Platform/D3D12/Pipeline.h
     Platform/D3D12/Queue.cpp
@@ -99,22 +95,16 @@ set(D3D12_FILES
     Platform/D3D12/RenderContext.h
     Platform/D3D12/Renderer.cpp
     Platform/D3D12/Renderer.h
-    Platform/D3D12/RenderFrame.cpp
-    Platform/D3D12/RenderFrame.h
     Platform/D3D12/RenderTarget.cpp
     Platform/D3D12/RenderTarget.h
     Platform/D3D12/Resource.h
     Platform/D3D12/RootSignature.h
-    Platform/D3D12/SemaphorePool.cpp
-    Platform/D3D12/SemaphorePool.h
     Platform/D3D12/Swapchain.cpp
     Platform/D3D12/Swapchain.h
     Platform/D3D12/Shader.cpp
     Platform/D3D12/Shader.h
     Platform/D3D12/Texture.cpp
-    Platform/D3D12/Texture.h
-    Platform/D3D12/GuiLayer.cpp
-    Platform/D3D12/GuiLayer.h)
+    Platform/D3D12/Texture.h)
 
 set(VULKAN_FILES
    Platform/Vulkan/vk_mem_alloc.h
