@@ -207,7 +207,7 @@ public:
     template <class T>
     static std::shared_ptr<Buffer> CreateBuffer(const size_t size, const T *data, Buffer::Type type)
     {
-        return renderer->CreateBuffer(sizeof(T) * size, data, type);
+        return renderer->CreateBuffer(size, data, type);
     }
 
     template <class T>

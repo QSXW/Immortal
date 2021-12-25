@@ -78,9 +78,9 @@ Mesh::Mesh(const std::string & filepath)
         faces.push_back(face);
     }
 
-    vertexBuffer = Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex);
+    vertexBuffer = Render::Create<Buffer>(vertices, Buffer::Type::Vertex);
     
-    indexBuffer = Render::Create<Buffer>(faces.size(), faces.data(), Buffer::Type::Index);
+    indexBuffer = Render::Create<Buffer>(faces, Buffer::Type::Index);
 
     vertices.clear();
     faces.clear();
@@ -88,9 +88,9 @@ Mesh::Mesh(const std::string & filepath)
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies)
 {
-    vertexBuffer = Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex);
+    vertexBuffer = Render::Create<Buffer>(vertices, Buffer::Type::Vertex);
 
-    indexBuffer = Render::Create<Buffer>(faces.size(), faces.data(), Buffer::Type::Index);
+    indexBuffer = Render::Create<Buffer>(faces, Buffer::Type::Index);
 }
 
 std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)

@@ -88,9 +88,9 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
     );
     commandList->ResourceBarrier(&barrier);
 
-    CPUDescriptor rtvDescritor = renderTarget->GetDescriptor();
-    commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(renderTarget->ClearColor()));
-    commandList->OMSetRenderTargets(&rtvDescritor, 1, false, nullptr);
+    CPUDescriptor rtvDescriptor = renderTarget->GetDescriptor();
+    commandList->ClearRenderTargetView(rtvDescriptor, rcast<float *>(renderTarget->ClearColor()));
+    commandList->OMSetRenderTargets(&rtvDescriptor, 1, false, nullptr);
 }
 
 void Renderer::End()

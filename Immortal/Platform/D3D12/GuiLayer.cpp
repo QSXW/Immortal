@@ -85,19 +85,16 @@ void GuiLayer::End()
         D3D12_RESOURCE_STATE_PRESENT,
         D3D12_RESOURCE_STATE_RENDER_TARGET
     };
-
     commandList->ResourceBarrier(&barrier);
 
     CPUDescriptor rtvDescritor = std::move(context->RenderTargetDescriptor(backBufferIdx));
-
     commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
     commandList->OMSetRenderTargets(&rtvDescritor, 1, false, nullptr);
-    commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
 
+    commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->Handle());
 
     barrier.Swap();
-
     commandList->ResourceBarrier(&barrier);
 
     auto &io = ImGui::GetIO();
