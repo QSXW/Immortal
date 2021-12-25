@@ -230,7 +230,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
     attachments.depth.Set(L"RenderTarget::DepthStencilAttachment");
     for (size_t i = 0; i < attachments.color.size(); i++)
     {
-        attachments.color[i].Set(std::wstring{ L"RenderTarget::DepthStencilAttachment#" } + std::to_wstring(i));
+        attachments.color[i].Set(std::wstring{ L"RenderTarget::ColorAttachment#" } + std::to_wstring(i));
     }
 #endif
 }
