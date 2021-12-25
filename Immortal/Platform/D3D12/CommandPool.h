@@ -91,6 +91,52 @@ public:
     {
         handle->CopyTextureRegion(pDst, dstX, dstY, dstZ, pSrc, pSrcBox);
     }
+    
+    void RSSetViewports(const D3D12_VIEWPORT *pViewport, UINT num = 1)
+    {
+        handle->RSSetViewports(num, pViewport);
+    }
+
+    void RSSetScissorRects(const D3D12_RECT *pRect, UINT num = 1)
+    {
+        handle->RSSetScissorRects(num, pRect);
+    }
+
+    void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitiveTopology)
+    {
+        handle->IASetPrimitiveTopology(primitiveTopology);
+    }
+
+    void SetPipelineState(ID3D12PipelineState *pPipelineState)
+    {
+        handle->SetPipelineState(pPipelineState);
+    }
+
+    void SetGraphicsRootSignature(ID3D12RootSignature *rootSignature)
+    {
+        handle->SetGraphicsRootSignature(rootSignature);
+    }
+
+    void SetVertexBuffers(const D3D12_VERTEX_BUFFER_VIEW *pViews, UINT numViews = 1, UINT startSlot = 0)
+    {
+        handle->IASetVertexBuffers(startSlot, numViews, pViews);
+    }
+
+    void SetIndexBuffer(const D3D12_INDEX_BUFFER_VIEW *pView)
+    {
+        handle->IASetIndexBuffer(pView);
+    }
+    
+    void DrawIndexedInstance(
+        UINT indexCountPerInstance,
+        UINT instanceCount,
+        UINT startIndexLocation,
+        INT  baseVertexLocation,
+        UINT startInstanceLocation)
+    {
+        handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+    }
+
 
 private:
     ID3D12GraphicsCommandList *handle;

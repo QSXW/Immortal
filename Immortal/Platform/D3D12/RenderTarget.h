@@ -157,7 +157,6 @@ public:
 public:
     ColorBuffer()
     {
-        shaderResourceViewDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
         renderTargetViewDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
         for (int i = 0; i < SL_ARRAY_LENGTH(unorderedAccessViewDescriptor); i++)
         {
@@ -172,7 +171,7 @@ public:
     {
         if constexpr (T == Descriptor::Type::ShaderResourceView)
         {
-            return shaderResourceViewDescriptor;
+            return shaderResourceViewDescriptor.cpu;
         }
         if constexpr (T == Descriptor::Type::RenderTargetView)
         {
@@ -180,9 +179,16 @@ public:
         }
     }
 
+    operator uint64_t() const
+    {
+        return shaderResourceViewDescriptor.gpu.ptr;
+    }
+
 private:
-    CPUDescriptor shaderResourceViewDescriptor;
+    Descriptor shaderResourceViewDescriptor;
+
     CPUDescriptor renderTargetViewDescriptor;
+
     CPUDescriptor unorderedAccessViewDescriptor[12];
 };
 
@@ -260,12 +266,17 @@ public:
 
     virtual operator uint64_t() const
     {
-        return 0;
+        return attachments.color[0];
     }
 
-    operator CPUDescriptor() const
+    CPUDescriptor GetDescriptor() const
     {
         return attachments.color[0].Get<Descriptor::Type::RenderTargetView>();
+    }
+
+    operator ID3D12Resource*()
+    {
+        return attachments.color[0];
     }
 
     const std::vector<ColorBuffer> &GetColorBuffers() const

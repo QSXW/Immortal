@@ -80,14 +80,14 @@ void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CL
         viewDescription.ShaderResource.Texture2D.MostDetailedMip = 0;
     }
 
-    if (shaderResourceViewDescriptor.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+    if (renderTargetViewDescriptor.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
     {
         renderTargetViewDescriptor   = RenderContext::AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
-        shaderResourceViewDescriptor = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+        shaderResourceViewDescriptor = RenderContext::AllocateShaderVisibleDescriptor();
     }
    
     device->CreateView(resource, &viewDescription.RenderTarget, renderTargetViewDescriptor);
-    device->CreateView(resource, &viewDescription.ShaderResource, shaderResourceViewDescriptor);
+    device->CreateView(resource, &viewDescription.ShaderResource, shaderResourceViewDescriptor.cpu);
 
     if (desc.SampleDesc.Count > 1)
     {

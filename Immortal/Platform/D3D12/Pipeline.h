@@ -4,6 +4,7 @@
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Render/Texture.h"
+#include "Buffer.h"
 #include "Shader.h"
 #include "RootSignature.h"
 
@@ -129,7 +130,48 @@ public:
 
     virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
+    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
+
     virtual void Set(const InputElementDescription &description) override;
+
+    template <class T, Buffer::Type type = Buffer::Type::Index>
+    T Get()
+    {
+        if constexpr (IsPrimitiveOf<Buffer::VertexView, T>())
+        {
+            return bufferViews.vertex;
+        }
+        if constexpr (IsPrimitiveOf<Buffer::IndexView, T>())
+        {
+            return bufferViews.index;
+        }
+        if constexpr (IsPrimitiveOf<D3D_PRIMITIVE_TOPOLOGY, T>())
+        {
+            return primitiveTopology;
+        }
+        if constexpr (IsPrimitiveOf<RootSignature, T>())
+        {
+            return rootSignature;
+        }
+    }
+
+    template <Buffer::Type type>
+    Buffer *GetBuffer()
+    {
+        if constexpr (type == Buffer::Type::Vertex)
+        {
+            return std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get();
+        }
+        if constexpr (type == Buffer::Type::Index)
+        {
+            return std::dynamic_pointer_cast<Buffer>(desc.indexBuffer).get();
+        }
+    }
+
+    operator ID3D12PipelineState*()
+    {
+        return pipelineState;
+    }
 
 private:
     Device *device{ nullptr };
@@ -137,6 +179,13 @@ private:
     ID3D12PipelineState *pipelineState{ nullptr };
 
     RootSignature rootSignature;
+
+    struct {
+        Buffer::VertexView vertex;
+        Buffer::IndexView index;
+    } bufferViews;
+
+    D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 
     std::unique_ptr<State> state;
 };

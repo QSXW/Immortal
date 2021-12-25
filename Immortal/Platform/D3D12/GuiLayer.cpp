@@ -38,14 +38,14 @@ void GuiLayer::OnAttach()
     auto window = context->GetAddress<Window>();
     ImGui_ImplWin32_Init(rcast<HWND>(window->Primitive()));
 
-    srvDescriptorHeap     = context->ShaderResourceViewDescritorHeap();
-    Descriptor descriptor = context->AllocatorTextureDescriptor();
+    srvDescriptorHeap  = context->ShaderResourceViewDescritorHeap();
 
+    Descriptor descriptor = context->AllocateShaderVisibleDescriptor();
     ImGui_ImplDX12_Init(
         *context->GetAddress<Device>(),
          context->FrameSize(),
          context->Get<DXGI_FORMAT>(),
-         srvDescriptorHeap->Handle(),
+        *srvDescriptorHeap,
          descriptor.cpu,
          descriptor.gpu
         );

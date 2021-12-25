@@ -97,12 +97,7 @@ public:
 
     DescriptorPool *ShaderResourceViewDescritorHeap()
     {
-        return textureDescriptorAllocator.GetAddress<DescriptorPool>();
-    }
-
-    Descriptor AllocatorTextureDescriptor()
-    {
-        return textureDescriptorAllocator.Allocate(device.get());
+        return shaderVisibleDescriptorAllocator.GetAddress<DescriptorPool>();
     }
 
     ID3D12Resource *RenderTarget(UINT backBufferIndex)
@@ -143,6 +138,8 @@ public:
 
     void UpdateSwapchain(UINT width, UINT height);
 
+    void CopyDescriptorHeapToShaderVisible();
+
     UINT WaitForPreviousFrame();
 
 private:
@@ -161,8 +158,6 @@ private:
     HANDLE swapchainWritableObject{ nullptr };
 
     std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
-
-    DescriptorAllocator textureDescriptorAllocator{ DescriptorPool::Type::ShaderResourceView, DescriptorPool::Flag::ShaderVisible };
 
     std::unique_ptr<CommandList> commandList;
 
@@ -212,8 +207,10 @@ private:
 public:
     static Device *UnlimitedDevice;
 
-    static DescriptorAllocator descriptorAllocator[U32(DescriptorPool::Type::Quantity)];
+    static DescriptorAllocator descriptorAllocators[U32(DescriptorPool::Type::Quantity)];
     
+    static DescriptorAllocator shaderVisibleDescriptorAllocator;
+
     static DescriptorPool *Request(DescriptorPool::Type type)
     {
         return DescriptorAllocator::Request(UnlimitedDevice, type);
@@ -221,7 +218,12 @@ public:
 
     static inline CPUDescriptor AllocateDescriptor(DescriptorPool::Type type, uint32_t count = 1)
     {
-        return descriptorAllocator[U32(type)].Allocate(UnlimitedDevice, count);
+        return descriptorAllocators[U32(type)].Allocate(UnlimitedDevice, count);
+    }
+
+    static inline Descriptor AllocateShaderVisibleDescriptor(uint32_t count = 1)
+    {
+        return shaderVisibleDescriptorAllocator.Allocate(UnlimitedDevice);
     }
 };
 

@@ -11,7 +11,12 @@ namespace D3D12
 
 Device *RenderContext::UnlimitedDevice = nullptr;
 
-DescriptorAllocator RenderContext::descriptorAllocator[U32(DescriptorPool::Type::Quantity)] = {
+DescriptorAllocator RenderContext::shaderVisibleDescriptorAllocator{
+    DescriptorPool::Type::ShaderResourceView,
+    DescriptorPool::Flag::ShaderVisible
+};
+
+DescriptorAllocator RenderContext::descriptorAllocators[U32(DescriptorPool::Type::Quantity)] = {
     DescriptorPool::Type::ShaderResourceView,
     DescriptorPool::Type::Sampler,
     DescriptorPool::Type::RenderTargetView,
@@ -55,6 +60,12 @@ void RenderContext::Setup()
     device = std::make_unique<Device>(dxgiFactory);
 
     UnlimitedDevice = device.get();
+
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(descriptorAllocators); i++)
+    {
+        descriptorAllocators[i].Init(device.get());
+    }
+    shaderVisibleDescriptorAllocator.Init(device.get());
 
     auto adaptorDesc = device->AdaptorDesc();
     Super::UpdateMeta(
@@ -419,6 +430,18 @@ void RenderContext::WaitForNextFrameResources()
     }
 
     WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
+}
+
+void RenderContext::CopyDescriptorHeapToShaderVisible()
+{
+    auto srcDescriptorAllocator = descriptorAllocators[U32(DescriptorPool::Type::ShaderResourceView)];
+
+    device->CopyDescriptors(
+        srcDescriptorAllocator.CountOfDescriptor(),
+        shaderVisibleDescriptorAllocator.FreeStartOfHeap(),
+        srcDescriptorAllocator.StartOfHeap(),
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+        );
 }
 
 }

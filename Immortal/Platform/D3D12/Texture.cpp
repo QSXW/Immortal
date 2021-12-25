@@ -33,10 +33,7 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
 {
     ID3D12Device *device = *context->GetAddress<Device>();
 
-    auto shaderResourceViewDescriptorHeap = context->ShaderResourceViewDescritorHeap();
-    auto descriptorIncrementSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-    descriptor = context->AllocatorTextureDescriptor();
+    descriptor = context->AllocateShaderVisibleDescriptor();
 
     D3D12_HEAP_PROPERTIES props{};
     CleanUpObject(&props);

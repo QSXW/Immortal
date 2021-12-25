@@ -32,59 +32,44 @@ struct Barrier : public D3D12_RESOURCE_BARRIER
     {
         if constexpr (T == BarrierType::Transition)
         {
-            *this = Transition(std::forward<Args>(args)...);
+            Transition(std::forward<Args>(args)...);
         }
         if constexpr (T == BarrierType::Aliasing)
         {
-            *this = Aliasing(std::forward<Args>(args)...);
+            Aliasing(std::forward<Args>(args)...);
         }
         if constexpr (T == BarrierType::UAV)
         {
-            *this = UAV(std::forward<Args>(args)...);
+            UAV(std::forward<Args>(args)...);
         }
     }
 
-    static inline Barrier Transition(
-        ID3D12Resource* pResource,
+    void Transition(
+        ID3D12Resource *pResource,
         D3D12_RESOURCE_STATES stateBefore,
         D3D12_RESOURCE_STATES stateAfter,
         UINT subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
         D3D12_RESOURCE_BARRIER_FLAGS flags = D3D12_RESOURCE_BARRIER_FLAG_NONE) noexcept
     {
-        Barrier result{};
-        Primitive &barrier = result;
-
-        result.Type                    = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        result.Flags                   = flags;
-        barrier.Transition.pResource   = pResource;
-        barrier.Transition.StateBefore = stateBefore;
-        barrier.Transition.StateAfter  = stateAfter;
-        barrier.Transition.Subresource = subresource;
-
-        return result;
+        Primitive::Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        Primitive::Flags                  = flags;
+        Primitive::Transition.pResource   = pResource;
+        Primitive::Transition.StateBefore = stateBefore;
+        Primitive::Transition.StateAfter  = stateAfter;
+        Primitive::Transition.Subresource = subresource;
     }
 
-    static inline Barrier Aliasing(ID3D12Resource* pResourceBefore, ID3D12Resource* pResourceAfter) noexcept
+    void Aliasing(ID3D12Resource *pResourceBefore, ID3D12Resource *pResourceAfter) noexcept
     {
-        Barrier result{};
-        Primitive &barrier = result;
-
-        result.Type                      = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
-        barrier.Aliasing.pResourceBefore = pResourceBefore;
-        barrier.Aliasing.pResourceAfter  = pResourceAfter;
-
-        return result;
+        Primitive::Type                     = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
+        Primitive::Aliasing.pResourceBefore = pResourceBefore;
+        Primitive::Aliasing.pResourceAfter  = pResourceAfter;
     }
 
-    static inline Barrier UAV(ID3D12Resource* pResource) noexcept
+    void UAV(ID3D12Resource *pResource) noexcept
     {
-        Barrier result{};
-        D3D12_RESOURCE_BARRIER &barrier = result;
-
-        result.Type           = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = pResource;
-
-        return result;
+        Primitive::Type           = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        Primitive::UAV.pResource = pResource;
     }
 
     void Swap()

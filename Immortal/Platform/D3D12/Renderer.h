@@ -28,14 +28,7 @@ public:
 
     virtual void SwapBuffers() override;
 
-    virtual void PrepareFrame() override
-    {
-        frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-
-        commandAllocators[frameIndex]->Reset();
-
-        commandList->Reset(commandAllocators[frameIndex]);
-    }
+    virtual void PrepareFrame() override;
 
     virtual uint32_t Index() override
     {
@@ -99,6 +92,12 @@ public:
 
     virtual Descriptor::Super *CreateBufferDescriptor(uint32_t count) override;
 
+    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
+
+    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
+
+    virtual void End() override;
+
 public:
     RenderContext *context{ nullptr };
 
@@ -113,6 +112,8 @@ public:
     UINT frameIndex{ Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1 };
 
     UINT64 fenceValues[Swapchain::SWAP_CHAIN_BUFFER_COUNT]{ 0 };
+
+    Barrier<BarrierType::Transition> barrier;
 };
 
 }

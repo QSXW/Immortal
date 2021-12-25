@@ -134,6 +134,41 @@ public:
             IID_PPV_ARGS(pResource)
             ));
     }
+    
+    void CopyDescriptors(
+        UINT numDestDescriptorRanges,
+        const D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptorRangeStarts,
+        const UINT *pDestDescriptorRangeSizes,
+        UINT numSrcDescriptorRanges,
+        const D3D12_CPU_DESCRIPTOR_HANDLE *pSrcDescriptorRangeStarts,
+        const UINT *pSrcDescriptorRangeSizes,
+        D3D12_DESCRIPTOR_HEAP_TYPE descriptorHeapsType)
+    {
+        handle->CopyDescriptors(
+            numDestDescriptorRanges,
+            pDestDescriptorRangeStarts,
+            pDestDescriptorRangeSizes,
+            numSrcDescriptorRanges,
+            pSrcDescriptorRangeStarts,
+            pSrcDescriptorRangeSizes,
+            descriptorHeapsType
+            );
+    }
+
+    void CopyDescriptors(
+        UINT                        numDescriptors,
+        D3D12_CPU_DESCRIPTOR_HANDLE destDescriptorRangeStart,
+        D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptorRangeStart,
+        D3D12_DESCRIPTOR_HEAP_TYPE  descriptorHeapsType
+    )
+    {
+        handle->CopyDescriptorsSimple(
+            numDescriptors,
+            destDescriptorRangeStart,
+            srcDescriptorRangeStart,
+            descriptorHeapsType
+            );
+    }
 
     DXGI_ADAPTER_DESC AdaptorDesc();
 

@@ -1,5 +1,6 @@
 #include "Pipeline.h"
 #include "Device.h"
+#include "Buffer.h"
 
 #include "RenderTarget.h"
 namespace Immortal
@@ -20,6 +21,24 @@ Pipeline::~Pipeline()
     IfNotNullThenRelease(pipelineState);
 }
 
+void Pipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
+{
+    Super::Set(superBuffer);
+
+    auto buffer = std::dynamic_pointer_cast<Buffer>(superBuffer);
+
+    if (buffer->GetType() == Buffer::Type::Vertex)
+    {
+        bufferViews.vertex.BufferLocation = *buffer;
+        bufferViews.vertex.SizeInBytes = buffer->Size();
+    }
+    else if (buffer->GetType() == Buffer::Type::Index)
+    {
+        bufferViews.index.BufferLocation = *buffer;
+        bufferViews.index.SizeInBytes = buffer->Size();
+    }
+}
+
 void Pipeline::Set(const InputElementDescription &description)
 {
     ThrowIf(!state, SError::NullPointerReference);
@@ -36,6 +55,7 @@ void Pipeline::Set(const InputElementDescription &description)
         inputElementDesc[i].InputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         inputElementDesc[i].InstanceDataStepRate = 0;
     }
+    bufferViews.vertex.StrideInBytes = description.Stride();
 }
 
 void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)

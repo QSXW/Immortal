@@ -37,6 +37,11 @@ public:
         return !!resource;
     }
 
+    operator ID3D12Resource*()
+    {
+        return resource;
+    }
+
 protected:
     ID3D12Resource *resource{ nullptr };
 

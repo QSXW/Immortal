@@ -83,23 +83,59 @@ public:
         Check(device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&handle)));
     }
 
+    DescriptorPool(const DescriptorPool &other) :
+        handle{ other.handle }
+    {
+
+    }
+
+    DescriptorPool(DescriptorPool &&other) :
+        handle{ std::move(other.handle) }
+    {
+        other.handle = nullptr;
+    }
+
+    DescriptorPool &operator=(const DescriptorPool &other)
+    {
+        ThrowIf(&other == this, SError::SelfAssignment);
+
+        handle = other.handle;
+
+        return *this;
+    }
+
+    DescriptorPool &operator=(DescriptorPool &&other)
+    {
+        ThrowIf(&other == this, SError::SelfAssignment);
+
+        handle = other.handle;
+        other.handle = nullptr;
+
+        return *this;
+    }
+
     ~DescriptorPool()
     {
 
     }
 
+    operator ID3D12DescriptorHeap*()
+    {
+        return handle;
+    }
+    
     ID3D12DescriptorHeap *Handle()
     {
-        return handle.Get();
+        return handle;
     }
 
     ID3D12DescriptorHeap **AddressOf()
     {
-        return handle.GetAddressOf();
+        return &handle;
     }
 
 private:
-    ComPtr<ID3D12DescriptorHeap> handle{ nullptr };
+    ID3D12DescriptorHeap *handle{ nullptr };
 };
 
 class DescriptorAllocator
@@ -121,9 +157,31 @@ public:
 
     static DescriptorPool *Request(Device *device, DescriptorPool::Type type, DescriptorPool::Flag flag = DescriptorPool::Flag::None);
 
+    void Init(Device *device, uint32_t count = 1);
+
     CPUDescriptor Allocate(Device *device, uint32_t count);
 
     Descriptor Allocate(Device *device);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE StartOfHeap()
+    {
+        return activeDescriptorPool->CPUDescriptorHandleForHeapStart();
+    }
+
+    D3D12_CPU_DESCRIPTOR_HANDLE FreeStartOfHeap()
+    {
+        return avtiveDescriptor.cpu;
+    }
+
+    uint32_t CountOfDescriptor()
+    {
+        return NumDescriptorPerPool - freeDescritorCount;
+    }
+
+    uint32_t DescriptorSize()
+    {
+        return descriptorSize;
+    }
 
     template <class T>
     T *GetAddress()
@@ -148,7 +206,7 @@ private:
     uint32_t freeDescritorCount;
 
 public:
-    static std::vector<DescriptorPool> descriptorPools;
+    static std::vector<std::unique_ptr<DescriptorPool>> descriptorPools;
 
     static std::mutex mutex;
 };
