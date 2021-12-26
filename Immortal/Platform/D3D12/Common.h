@@ -191,6 +191,63 @@ struct Rect : public D3D12_RECT
     }
 };
 
+struct DescriptorRange : public D3D12_DESCRIPTOR_RANGE1
+{
+    using Primitive = D3D12_DESCRIPTOR_RANGE1;
+
+    DescriptorRange()
+    {
+
+    }
+
+    explicit DescriptorRange(const Primitive &p) noexcept :
+        Primitive{ p }
+    {
+
+    }
+
+    DescriptorRange(
+        D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
+        UINT numDescriptors,
+        UINT baseShaderRegister,
+        UINT registerSpace = 0,
+        D3D12_DESCRIPTOR_RANGE_FLAGS flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE,
+        UINT offsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND) noexcept
+    {
+        Init(rangeType, numDescriptors, baseShaderRegister, registerSpace, flags, offsetInDescriptorsFromTableStart);
+    }
+
+    inline void Init(
+        D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
+        UINT numDescriptors,
+        UINT baseShaderRegister,
+        UINT registerSpace = 0,
+        D3D12_DESCRIPTOR_RANGE_FLAGS flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE,
+        UINT offsetInDescriptorsFromTableStart =
+        D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND) noexcept
+    {
+        Init(*this, rangeType, numDescriptors, baseShaderRegister, registerSpace, flags, offsetInDescriptorsFromTableStart);
+    }
+
+    static inline void Init(
+        Primitive &range,
+        D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
+        UINT numDescriptors,
+        UINT baseShaderRegister,
+        UINT registerSpace = 0,
+        D3D12_DESCRIPTOR_RANGE_FLAGS flags = D3D12_DESCRIPTOR_RANGE_FLAG_NONE,
+        UINT offsetInDescriptorsFromTableStart =
+        D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND) noexcept
+    {
+        range.RangeType                         = rangeType;
+        range.NumDescriptors                    = numDescriptors;
+        range.BaseShaderRegister                = baseShaderRegister;
+        range.RegisterSpace                     = registerSpace;
+        range.Flags                             = flags;
+        range.OffsetInDescriptorsFromTableStart = offsetInDescriptorsFromTableStart;
+    }
+};
+
 }
 }
 
