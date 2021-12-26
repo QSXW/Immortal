@@ -32,6 +32,8 @@ public:
     }
 
 public:
+    HWND handle{ nullptr };
+
     bool KeysDown[MaxKeyCodes];
 
     bool MouseDown[sizeof(int64_t)];

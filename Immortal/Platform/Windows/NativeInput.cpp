@@ -3,7 +3,16 @@
 namespace Immortal
 {
  
-NativeInput::NativeInput(Window *window)
+static inline void GetClientCursorPosition(HWND handle, LPPOINT pos)
+{
+    if (::GetCursorPos(pos))
+    {
+        ::ScreenToClient(handle, pos);
+    }
+}
+
+NativeInput::NativeInput(Window *window) :
+    handle{ rcast<HWND>(window->Primitive()) }
 {
     !!Input::That ? throw Exception(SError::InvalidSingleton) : That = this;
     CleanUpInputs();
@@ -26,17 +35,29 @@ bool NativeInput::InternalIsMouseButtonPressed(const MouseCode button)
 
 Vector2 NativeInput::InternalGetMousePosition()
 {
-    return Vector2{ 0, 0 };
+    POINT pos;
+    GetClientCursorPosition(handle, &pos);
+
+    return Vector2{
+        ncast<float>(pos.x),
+        ncast<float>(pos.y),
+    };
 }
 
 float NativeInput::InternalGetMouseX()
 {
-    return 0.0f;
+    POINT pos;
+    GetClientCursorPosition(handle, &pos);
+
+    return ncast<float>(pos.x);
 }
 
 float NativeInput::InternalGetMouseY()
 {
-    return 0.0f;
+    POINT pos;
+    GetClientCursorPosition(handle, &pos);
+
+    return ncast<float>(pos.y);
 }
 
 }
