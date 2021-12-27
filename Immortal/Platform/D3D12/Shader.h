@@ -6,6 +6,7 @@
 
 #include <array>
 #include <d3dcompiler.h>
+#include <d3d12shader.h>
 
 namespace Immortal
 {
@@ -14,15 +15,19 @@ namespace D3D12
 
 struct ShaderByteCode : public D3D12_SHADER_BYTECODE
 {
+    using Primitive = D3D12_SHADER_BYTECODE;
+
     ShaderByteCode()
     {
         pShaderBytecode = nullptr;
         BytecodeLength  = 0;
     };
 
-    explicit ShaderByteCode(const D3D12_SHADER_BYTECODE &o) noexcept :
-        D3D12_SHADER_BYTECODE(o)
-    {}
+    explicit ShaderByteCode(const Primitive &p) noexcept :
+        Primitive{ p }
+    {
+    
+    }
 
     ShaderByteCode(ID3DBlob *pShaderBlob) noexcept
     {
@@ -105,11 +110,18 @@ public:
         {
             errorMsg->Release();
         }
+
+        Reflect();
     }
 
-    std::array<ShaderByteCode, MaxHandleCount> ByteCodes()
+    const std::array<ShaderByteCode, MaxHandleCount> &ByteCodes() const
     {
         return byteCodes;
+    }
+
+    const std::vector<DescriptorRange> &DescriptorRanges() const
+    {
+        return descriptorRanges;
     }
 
     virtual ~Shader()
@@ -142,10 +154,14 @@ private:
          }
     }
 
+    void Reflect();
+
 private:
     std::array<ID3DBlob*, MaxHandleCount> handles{ nullptr };
 
     std::array<ShaderByteCode, MaxHandleCount> byteCodes;
+
+    std::vector<DescriptorRange> descriptorRanges;
 };
 
 }

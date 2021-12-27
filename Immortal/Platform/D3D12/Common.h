@@ -43,7 +43,7 @@ void IfNotNullThenRelease(T ptr)
     }
 }
 
-enum RootConstants
+enum
 {
     ReferenceWhiteNits = 0,
     DisplayCurve,

@@ -65,9 +65,21 @@ void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)
 
 void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 {
+    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    auto &bytesCodes       = shader->ByteCodes();
+    auto &descriptorRanges = shader->DescriptorRanges();
+
+    std::vector<RootParameter> rootParameters{};
+    for (auto &range : descriptorRanges)
+    {
+        RootParameter rootParameter;
+        rootParameter.InitAsDescriptorTable(range.NumDescriptors, &range, D3D12_SHADER_VISIBILITY_VERTEX);
+        rootParameters.emplace_back(std::move(rootParameter));
+    }
+
     RootSignature::Description rootSignatureDesc{
-        0,
-        nullptr,
+        U32(rootParameters.size()),
+        rootParameters.data(),
         0,
         nullptr,
         RootSignature::Flag::AllowInputAssemblerInputLayout
@@ -75,11 +87,8 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
-    Check(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+    Check(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error));
     device->Create(0, signature.Get(), &rootSignature);
-
-    auto shader     = std::dynamic_pointer_cast<Shader>(desc.shader);
-    auto bytesCodes = shader->ByteCodes();
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = { 
         state->InputElementDescription.data(),
