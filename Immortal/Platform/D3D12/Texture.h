@@ -1,10 +1,11 @@
 #pragma once
 
+#include "Render/Texture.h"
+
 #include "Common.h"
 #include "Descriptor.h"
 #include "Device.h"
-
-#include "Render/Texture.h"
+#include "Resource.h"
 #include "RenderContext.h"
 
 namespace Immortal
@@ -12,7 +13,7 @@ namespace Immortal
 namespace D3D12
 {
 
-class Texture : public SuperTexture
+class Texture : public SuperTexture, public Resource
 {
 public:
     using Super = SuperTexture;
@@ -35,8 +36,6 @@ private:
     void InternalCreate(RenderContext *context, const Description &description, const void *data);
 
 private:
-    ID3D12Resource *texture{ nullptr };
-
     Descriptor descriptor;
 
     int descriptorIndex{ 1 };

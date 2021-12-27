@@ -7,7 +7,7 @@ namespace Immortal
 namespace D3D12
 {
 
-void PixelBuffer::Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
+void PixelBuffer::Create(const Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
     Format = desc.Format;
 
@@ -28,7 +28,7 @@ void PixelBuffer::Create(const Device *device, const Description &desc, const D3
     );
 }
 
-void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
+void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
     Super::Create(device, desc, clearValue);
 
@@ -105,7 +105,7 @@ void ColorBuffer::Create(Device *device, const Description &desc, const D3D12_CL
     }
 }
 
-void DepthBuffer::Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue)
+void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
     Super::Create(device, desc, clearValue);
 
@@ -201,7 +201,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
         D3D12_RESOURCE_FLAGS flags = attachment.IsDepth() ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL :
                                                             D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS |
                                                             D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-        Resource::Description resourceDesc = SuperToBase(
+        D3D12_RESOURCE_DESC resourceDesc = SuperToBase(
             descrition,
             attachment.BaseFromat<DXGI_FORMAT>(),
             flags

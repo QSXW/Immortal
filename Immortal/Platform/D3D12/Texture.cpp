@@ -26,7 +26,7 @@ Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const 
 
 Texture::~Texture()
 {
-    IfNotNullThenRelease(texture);
+
 }
 
 void Texture::InternalCreate(RenderContext *context, const Description &description, const void *data)
@@ -61,10 +61,10 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
         &resourceDesc,
         D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
-        IID_PPV_ARGS(&texture)
+        IID_PPV_ARGS(&resource)
         ));
 
-    if (!texture)
+    if (!resource)
     {
         OutputDebugStringW(L"Faild to Create Texture");
         return;
@@ -134,12 +134,12 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
 
     D3D12_TEXTURE_COPY_LOCATION dstLocation{};
-    dstLocation.pResource        = texture;
+    dstLocation.pResource        = resource;
     dstLocation.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
     dstLocation.SubresourceIndex = 0;
 
     Barrier<BarrierType::Transition> barrier{
-        texture,
+        resource,
         D3D12_RESOURCE_STATE_COPY_DEST,
         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
     };
@@ -161,7 +161,7 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     srvDesc.Texture2D.MipLevels       = resourceDesc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(texture, &srvDesc, descriptor.cpu);
+    device->CreateShaderResourceView(resource, &srvDesc, descriptor.cpu);
 }
 
 void Texture::As(Descriptor::Super *descriptors, size_t index)

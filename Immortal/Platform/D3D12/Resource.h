@@ -10,12 +10,6 @@ namespace D3D12
 class Resource
 {
 public:
-    struct Description : public D3D12_RESOURCE_DESC
-    {
-
-    };
-
-public:
     virtual ~Resource()
     {
         Destory();

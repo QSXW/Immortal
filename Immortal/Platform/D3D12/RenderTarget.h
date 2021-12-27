@@ -143,7 +143,7 @@ public:
         }
     }
 
-    void Create(const Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(const Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
 public:
     DXGI_FORMAT Format{ DXGI_FORMAT_UNKNOWN };
@@ -164,7 +164,7 @@ public:
         }
     }
 
-    void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
     template <Descriptor::Type T>
     CPUDescriptor Get() const
@@ -209,7 +209,7 @@ public:
         shaderResourceDescriptor.stencil.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
 
-    void Create(Device *device, const Description &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
     bool IsAvailable() const
     {
@@ -246,9 +246,9 @@ public:
 
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
-    Resource::Description SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
+    D3D12_RESOURCE_DESC SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
     {
-        Resource::Description desc{};
+        D3D12_RESOURCE_DESC desc{};
         desc.Alignment          = 0;
         desc.Flags              = flags;
         desc.Format             = format;
