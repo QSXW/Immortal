@@ -106,11 +106,6 @@ public:
             byteCodes[PixelShaderPos] = ShaderByteCode{ handles[PixelShaderPos] };
         }
 
-        if (errorMsg)
-        {
-            errorMsg->Release();
-        }
-
         Reflect();
     }
 
@@ -119,7 +114,7 @@ public:
         return byteCodes;
     }
 
-    const std::vector<DescriptorRange> &DescriptorRanges() const
+    const std::vector<std::pair<DescriptorRange, D3D12_SHADER_VISIBILITY>> &DescriptorRanges() const
     {
         return descriptorRanges;
     }
@@ -154,12 +149,14 @@ private:
 
     void Reflect();
 
+    void SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility);
+
 private:
     std::array<ID3DBlob*, MaxHandleCount> handles{ nullptr };
 
     std::array<ShaderByteCode, MaxHandleCount> byteCodes;
 
-    std::vector<DescriptorRange> descriptorRanges;
+    std::vector<std::pair<DescriptorRange, D3D12_SHADER_VISIBILITY>> descriptorRanges;
 };
 
 }

@@ -178,6 +178,8 @@ private:
 
     ID3D12PipelineState *pipelineState{ nullptr };
 
+    DescriptorAllocator descriptorAllocator;
+
     RootSignature rootSignature;
 
     struct {

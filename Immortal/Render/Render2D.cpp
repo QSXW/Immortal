@@ -22,12 +22,12 @@ void Render2D::Setup()
     uniform  = Render::Create<Buffer>(sizeof(Matrix4), 0);
 
     pipeline->Set({
-        { Format::VECTOR3, "Position"     },
-        { Format::VECTOR4, "Color"        },
-        { Format::VECTOR2, "TexCoord"     },
-        { Format::FLOAT,   "TexIndex"     },
-        { Format::FLOAT,   "TilingFactor" },
-        { Format::INT,     "EntityID"     }
+        { Format::VECTOR3, "POSITION"      },
+        { Format::VECTOR4, "COLOR"         },
+        { Format::VECTOR2, "TEXCOORD"      },
+        { Format::FLOAT,   "INDEX"         },
+        { Format::FLOAT,   "TILING_FACTOR" },
+        { Format::INT,     "OBJECT_ID"     }
     });
 
     pipeline->Set(Render::Create<Buffer>(data.MaxVertices, Buffer::Type::Vertex));

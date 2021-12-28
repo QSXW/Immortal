@@ -11,7 +11,8 @@ namespace D3D12
 Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
     Super{ shader },
     device{ device },
-    state{ new State{} }
+    state{ new State{} },
+    descriptorAllocator{ DescriptorPool::Type::ShaderResourceView, DescriptorPool::Flag::ShaderVisible }
 {
 
 }
@@ -41,26 +42,27 @@ void Pipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
 
 void Pipeline::Set(const InputElementDescription &description)
 {
+    Super::Set(description);
     ThrowIf(!state, SError::NullPointerReference);
 
     auto &inputElementDesc = state->InputElementDescription;
-    inputElementDesc.resize(description.Size());
-    for (size_t i = 0; i < description.Size(); i++)
+    inputElementDesc.resize(desc.layout.Size());
+    for (size_t i = 0; i < desc.layout.Size(); i++)
     {
-        inputElementDesc[i].SemanticName         = description[i].Name().c_str();
+        inputElementDesc[i].SemanticName         = desc.layout[i].Name().c_str();
         inputElementDesc[i].SemanticIndex        = 0;
-        inputElementDesc[i].Format               = description[i].BaseType<DXGI_FORMAT>();
+        inputElementDesc[i].Format               = desc.layout[i].BaseType<DXGI_FORMAT>();
         inputElementDesc[i].InputSlot            = 0;
-        inputElementDesc[i].AlignedByteOffset    = description[i].Offset();
+        inputElementDesc[i].AlignedByteOffset    = desc.layout[i].Offset();
         inputElementDesc[i].InputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         inputElementDesc[i].InstanceDataStepRate = 0;
     }
-    bufferViews.vertex.StrideInBytes = description.Stride();
+    bufferViews.vertex.StrideInBytes = desc.layout.Stride();
 }
 
 void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)
 {
-    // Reconstruct(renderTarget);
+    Reconstruct(renderTarget);
 }
 
 void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget)
@@ -69,25 +71,57 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     auto &bytesCodes       = shader->ByteCodes();
     auto &descriptorRanges = shader->DescriptorRanges();
 
+    std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
     std::vector<RootParameter> rootParameters{};
-    for (auto &range : descriptorRanges)
+
+    for (size_t i = 0; i < descriptorRanges.size(); i++)
     {
+        auto &range = descriptorRanges[i].first;
+        if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
+        {
+            if (samplers.empty())
+            {
+                D3D12_STATIC_SAMPLER_DESC sampler = {};
+                sampler.Filter           = D3D12_FILTER_MIN_MAG_MIP_POINT;
+                sampler.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                sampler.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                sampler.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+                sampler.MipLODBias       = 0;
+                sampler.MaxAnisotropy    = 0;
+                sampler.ComparisonFunc   = D3D12_COMPARISON_FUNC_NEVER;
+                sampler.BorderColor      = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+                sampler.MinLOD           = 0.0f;
+                sampler.MaxLOD           = D3D12_FLOAT32_MAX;
+                sampler.ShaderRegister   = i;
+                sampler.RegisterSpace    = 0;
+                sampler.ShaderVisibility = descriptorRanges[i].second;
+
+                samplers.emplace_back(std::move(sampler));
+            }
+        }
+
         RootParameter rootParameter;
-        rootParameter.InitAsDescriptorTable(range.NumDescriptors, &range, D3D12_SHADER_VISIBILITY_VERTEX);
+        rootParameter.InitAsDescriptorTable(1, &range, descriptorRanges[i].second);
         rootParameters.emplace_back(std::move(rootParameter));
     }
 
     RootSignature::Description rootSignatureDesc{
         U32(rootParameters.size()),
         rootParameters.data(),
-        0,
-        nullptr,
+        U32(samplers.size()),
+        samplers.data(),
         RootSignature::Flag::AllowInputAssemblerInputLayout
     };
 
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
-    Check(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error));
+    if (FAILED(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error)) && error)
+    {
+        const char *msg = rcast<const char *>(error->GetBufferPointer());
+        LOG::ERR("{0}", msg);
+        ThrowIf(true, msg);
+    }
+
     device->Create(0, signature.Get(), &rootSignature);
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = { 
