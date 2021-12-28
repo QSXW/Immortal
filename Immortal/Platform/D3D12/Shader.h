@@ -140,8 +140,6 @@ private:
              if (*errorMsg)
              {
                  LOG::ERR("D3D12 Shader Compiling failed with...\n{0}", rcast<char *>((*errorMsg)->GetBufferPointer()));
-                 (*errorMsg)->Release();
-                 *errorMsg = nullptr;
              }
 
              if (*toBeReleased)
