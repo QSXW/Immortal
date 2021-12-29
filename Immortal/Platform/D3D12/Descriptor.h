@@ -85,7 +85,9 @@ struct Descriptor
         ShaderResourceView,
         RenderTargetView,
         Sampler,
-        DepthStencilView
+        DepthStencilView,
+        UnorderedAccessView,
+        ConstantBufferView
     };
 
     Descriptor(CPUDescriptor cpu, GPUDescriptor gpu) :

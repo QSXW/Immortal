@@ -182,7 +182,7 @@ void RenderContext::Setup()
 void RenderContext::CreateRenderTarget()
 {
     CPUDescriptor renderTargetViewDescriptor {
-        renderTargetViewDescriptorHeap->CPUDescriptorHandleForHeapStart()
+        renderTargetViewDescriptorHeap->StartOfCPU()
         };
 
     for (UINT i = 0; i < desc.FrameCount; i++)

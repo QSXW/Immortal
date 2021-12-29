@@ -67,11 +67,16 @@ public:
     DEFINE_CREATE_VIEW(DEPTH_STENCIL, DepthStencil)
 
     void CreateView(ID3D12Resource *pResource,
-                    ID3D12Resource *pCounterResouce,
-                    const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc,
-                    CPUDescriptor descriptor)
+        ID3D12Resource *pCounterResouce,
+        const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc,
+        CPUDescriptor descriptor)
     {
         handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
+    }
+
+    void CreateView(const D3D12_CONSTANT_BUFFER_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)
+    {
+        handle->CreateConstantBufferView(pDesc, descriptor);
     }
 
     void Create(UINT nodeMask, ID3DBlob *pSignature, ID3D12RootSignature **ppRootSignature)

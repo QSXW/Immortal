@@ -2,14 +2,15 @@
 
 #include "Common.h"
 #include "Render/Buffer.h"
-#include "Device.h"
 #include "Resource.h"
+#include "Descriptor.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
+class Device;
 class Buffer : public SuperBuffer, public Resource
 {
 public:
@@ -60,6 +61,8 @@ public:
 
     Buffer(Device *device, const size_t size, Type type);
     
+    Buffer(Device *device, const size_t size, uint32_t binding);
+
     virtual ~Buffer() override;
 
     operator const HandleType() const
@@ -86,8 +89,24 @@ public:
         return gpuVirtualAddress;
     }
 
+    D3D12_CONSTANT_BUFFER_VIEW_DESC Desc() const
+    {
+        return D3D12_CONSTANT_BUFFER_VIEW_DESC{
+            gpuVirtualAddress,
+            size
+        };
+    }
+
+    uint32_t Binding() const
+    {
+        return binding;
+    }
+
 private:
     void InternelCreate(const Device *device);
+
+private:
+    uint32_t binding = 0;
 };
 
 }

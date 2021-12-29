@@ -62,6 +62,11 @@ public:
         return std::make_shared<Buffer>(context->GetAddress<Device>(), size, type);
     }
 
+    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
+    {
+        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, binding);
+    }
+
     virtual std::shared_ptr<SuperShader> CreateShader(const std::string &filepath, Shader::Type type) override
     {
         return std::make_shared<Shader>(filepath, type);

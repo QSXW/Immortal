@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include "Device.h"
 
 namespace Immortal
 {
@@ -6,14 +7,21 @@ namespace D3D12
 {
 
 Buffer::Buffer(Device *device, const size_t size, const void *data, Type type) :
-    Super{ type, size }
+    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size }
 {
     InternelCreate(device);
     Update(size, data);
 }
 
 Buffer::Buffer(Device * device, const size_t size, Type type) :
-    Super{ type, size }
+    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size }
+{
+    InternelCreate(device);
+}
+
+Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
+    Super{ Buffer::Type::Uniform, SLALIGN(size, 256) },
+    binding{ binding }
 {
     InternelCreate(device);
 }
@@ -32,23 +40,23 @@ void Buffer::InternelCreate(const Device *device)
     heapProperties.CreationNodeMask     = 1;
     heapProperties.VisibleNodeMask      = 1;
 
-    D3D12_RESOURCE_DESC resourceDesciption{};
-    resourceDesciption.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
-    resourceDesciption.Width              = size;
-    resourceDesciption.Height             = 1;
-    resourceDesciption.DepthOrArraySize   = 1;
-    resourceDesciption.MipLevels          = 1;
-    resourceDesciption.Format             = DXGI_FORMAT_UNKNOWN;
-    resourceDesciption.SampleDesc.Count   = 1;
-    resourceDesciption.SampleDesc.Quality = 0;
-    resourceDesciption.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    resourceDesciption.Alignment          = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // Zero is effectively 64KB also
-    resourceDesciption.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
+    desc.Width              = size;
+    desc.Height             = 1;
+    desc.DepthOrArraySize   = 1;
+    desc.MipLevels          = 1;
+    desc.Format             = DXGI_FORMAT_UNKNOWN;
+    desc.SampleDesc.Count   = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    desc.Alignment          = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // Zero is effectively 64KB also
+    desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
 
     device->CreateCommittedResource(
         &heapProperties,
         D3D12_HEAP_FLAG_NONE,
-        &resourceDesciption,
+        &desc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
         &resource

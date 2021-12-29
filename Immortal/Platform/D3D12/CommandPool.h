@@ -117,6 +117,11 @@ public:
         handle->SetGraphicsRootSignature(rootSignature);
     }
 
+    void SetGraphicsRootDescriptorTable(UINT parameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor)
+    {
+        handle->SetGraphicsRootDescriptorTable(parameterIndex, baseDescriptor);
+    }
+
     void SetVertexBuffers(const D3D12_VERTEX_BUFFER_VIEW *pViews, UINT numViews = 1, UINT startSlot = 0)
     {
         handle->IASetVertexBuffers(startSlot, numViews, pViews);

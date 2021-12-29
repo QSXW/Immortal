@@ -45,12 +45,12 @@ public:
         }
     };
 
-    D3D12_CPU_DESCRIPTOR_HANDLE CPUDescriptorHandleForHeapStart()
+    D3D12_CPU_DESCRIPTOR_HANDLE StartOfCPU()
     {
         return handle->GetCPUDescriptorHandleForHeapStart();
     }
 
-    D3D12_GPU_DESCRIPTOR_HANDLE GPUDescriptorHandleForHeapStart()
+    D3D12_GPU_DESCRIPTOR_HANDLE StartOfGPU()
     {
         return handle->GetGPUDescriptorHandleForHeapStart();
     }
@@ -119,7 +119,7 @@ public:
 
     }
 
-    operator ID3D12DescriptorHeap*()
+    operator ID3D12DescriptorHeap*() const
     {
         return handle;
     }
@@ -163,9 +163,11 @@ public:
 
     Descriptor Allocate(Device *device);
 
+    Descriptor Bind(Device *device, size_t pos);
+
     D3D12_CPU_DESCRIPTOR_HANDLE StartOfHeap()
     {
-        return activeDescriptorPool->CPUDescriptorHandleForHeapStart();
+        return activeDescriptorPool->StartOfCPU();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE FreeStartOfHeap()

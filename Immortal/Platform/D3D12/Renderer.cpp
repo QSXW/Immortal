@@ -60,8 +60,12 @@ void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
     auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
     auto indexBuffer = pipeline->GetBuffer<Buffer::Type::Index>();
 
+    auto descriptorHeap = pipeline->GetAddress<DescriptorPool>();
+
     commandList->SetPipelineState(*pipeline);
     commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
+    commandList->SetDescriptorHeaps(descriptorHeap->AddressOf(), 1);
+    commandList->SetGraphicsRootDescriptorTable(0, descriptorHeap->StartOfGPU());
     commandList->SetPrimitiveTopology(pipeline->Get<D3D12_PRIMITIVE_TOPOLOGY>());
     commandList->SetVertexBuffers(&pipeline->Get<Buffer::VertexView>());
     commandList->SetIndexBuffer(&pipeline->Get<Buffer::IndexView>());

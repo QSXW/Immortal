@@ -1,8 +1,8 @@
 #include "Pipeline.h"
 #include "Device.h"
 #include "Buffer.h"
-
 #include "RenderTarget.h"
+
 namespace Immortal
 {
 namespace D3D12
@@ -14,7 +14,7 @@ Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
     state{ new State{} },
     descriptorAllocator{ DescriptorPool::Type::ShaderResourceView, DescriptorPool::Flag::ShaderVisible }
 {
-
+    descriptorAllocator.Init(device);
 }
 
 Pipeline::~Pipeline()
@@ -158,6 +158,15 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     pipelineStateDesc.DSVFormat = depthBuffer.Format;
 
     device->Create(&pipelineStateDesc, &pipelineState);
+}
+
+void Pipeline::Bind(const std::string &name, const Buffer::Super *superConstantBuffer)
+{
+    auto constantBuffer = RemoveConst(dcast<const Buffer *>(superConstantBuffer));
+
+    auto cbvDescriptor = descriptorAllocator.Bind(device, constantBuffer->Binding());
+
+    device->CreateView(&constantBuffer->Desc(), cbvDescriptor.cpu);
 }
 
 }

@@ -7,6 +7,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "RootSignature.h"
+#include "DescriptorPool.h"
 
 namespace Immortal
 {
@@ -134,6 +135,8 @@ public:
 
     virtual void Set(const InputElementDescription &description) override;
 
+    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+
     template <class T, Buffer::Type type = Buffer::Type::Index>
     T Get()
     {
@@ -152,6 +155,15 @@ public:
         if constexpr (IsPrimitiveOf<RootSignature, T>())
         {
             return rootSignature;
+        }
+    }
+
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<DescriptorPool, T>())
+        {
+            return descriptorAllocator.GetAddress<DescriptorPool>();
         }
     }
 

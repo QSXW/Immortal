@@ -58,5 +58,15 @@ Descriptor DescriptorAllocator::Allocate(Device *device)
     return descriptor;
 }
 
+Descriptor DescriptorAllocator::Bind(Device *device, size_t pos)
+{
+    Init(device, 1);
+
+    Descriptor descriptor = activeDescriptorPool->Get<Descriptor>();
+    descriptor.Offset(pos, descriptorSize);
+
+    return descriptor;
+}
+
 }
 }

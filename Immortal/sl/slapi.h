@@ -70,6 +70,7 @@ elif defined(__linux__)
  */
 #define U8(str) u8##str
 #define BIT(x) (1 << (x))
+#define SLALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 #define SL_ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
 
 /*
