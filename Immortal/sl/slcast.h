@@ -88,4 +88,10 @@ inline constexpr uint32_t U64(T num)
     return static_cast<uint64_t>(num);
 }
 
+template <class T>
+inline constexpr T RemoveConst(const T o)
+{
+    return const_cast<T>(o);
+}
+
 }
