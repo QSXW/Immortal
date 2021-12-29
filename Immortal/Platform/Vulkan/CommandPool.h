@@ -48,28 +48,38 @@ public:
         return handle;
     }
 
-    template <class T>
-    T &Get()
+    operator VkCommandPool() const
     {
-        if constexpr (is_same<T, Device *>())
-        {
-            return device;
-        }
-        if constexpr (is_same<T, CommandBuffer::ResetMode>())
+        return handle;
+    }
+
+    template <class T>
+    T Get()
+    {
+        if constexpr (IsPrimitiveOf<CommandBuffer::ResetMode, T>())
         {
             return resetMode;
         }
-        if constexpr (is_same<T, QueueFamilyIndex>())
+        if constexpr (IsPrimitiveOf<QueueFamilyIndex, T>())
         {
             return queueFamilyIndex;
         }
-        if constexpr (is_same<T, ThreadIndex>())
+        if constexpr (IsPrimitiveOf<ThreadIndex, T>())
         {
             return threadIndex;
         }
-        if constexpr (is_same<T, RenderFrame>())
+        if constexpr (IsPrimitiveOf<RenderFrame, T>())
         {
             return renderFrame;
+        }
+    }
+
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<Device, T>())
+        {
+            return device;
         }
     }
 

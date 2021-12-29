@@ -143,7 +143,7 @@ private:
                  *toBeReleased = nullptr;
              }
 
-             ThrowIf(true, "Failed to compile shader source");
+             THROWIF(true, "Failed to compile shader source");
          }
     }
 

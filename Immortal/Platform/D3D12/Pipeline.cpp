@@ -43,7 +43,7 @@ void Pipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
 void Pipeline::Set(const InputElementDescription &description)
 {
     Super::Set(description);
-    ThrowIf(!state, SError::NullPointerReference);
+    THROWIF(!state, SError::NullPointerReference);
 
     auto &inputElementDesc = state->InputElementDescription;
     inputElementDesc.resize(desc.layout.Size());
@@ -119,7 +119,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     {
         const char *msg = rcast<const char *>(error->GetBufferPointer());
         LOG::ERR("{0}", msg);
-        ThrowIf(true, msg);
+        THROWIF(true, msg);
     }
 
     device->Create(0, signature.Get(), &rootSignature);
@@ -147,7 +147,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
     auto &colorBuffers = renderTarget->GetColorBuffers();
 
-    ThrowIf(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);
+    THROWIF(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);
     pipelineStateDesc.NumRenderTargets = colorBuffers.size();
     for (int i = 0; i < pipelineStateDesc.NumRenderTargets; i++)
     {

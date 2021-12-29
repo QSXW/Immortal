@@ -114,7 +114,7 @@ void Renderer::End()
 Descriptor::Super *Renderer::CreateImageDescriptor(uint32_t count)
 {
     auto descriptor = new Descriptor[count];
-    ThrowIf(!descriptor, SError::OutOfMemory);
+    THROWIF(!descriptor, SError::OutOfMemory);
 
     return descriptor;
 }

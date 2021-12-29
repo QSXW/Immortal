@@ -75,7 +75,7 @@ public:
         static_assert(IsPrimitiveOf<Shader, T>() && "No suitable Type for getter");
         if constexpr (IsPrimitiveOf<Shader, T>())
         {
-            ThrowIf(U >= ShaderName::Last, SError::OutOfBound);
+            THROWIF(U >= ShaderName::Last, SError::OutOfBound);
             return ShaderContainer[ncast<INT32>(U)];
         }
     }

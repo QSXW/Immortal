@@ -67,7 +67,7 @@ void Buffer::InternelCreate(const Device *device)
 
 void Buffer::Update(uint32_t updateSize, const void *data)
 {
-    ThrowIf(updateSize > size, SError::OutOfBound);
+    THROWIF(updateSize > size, SError::OutOfBound);
     uint8_t *memory = nullptr;
     Map(rcast<void **>(&memory));
     memcpy(memory, data, updateSize);

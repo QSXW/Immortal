@@ -16,17 +16,17 @@ CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool        = cmdPool->Handle();
+    allocInfo.commandPool        = *cmdPool;
     allocInfo.level              = ncast<VkCommandBufferLevel>(level);
     allocInfo.commandBufferCount = 1;
-    Check(vkAllocateCommandBuffers(cmdPool->Get<Device *>()->Handle(), &allocInfo, &handle));
+    Check(vkAllocateCommandBuffers(*cmdPool->GetAddress<Device>(), &allocInfo, &handle));
 }
 
 CommandBuffer::~CommandBuffer()
 {
     if (handle != VK_NULL_HANDLE)
     {
-       vkFreeCommandBuffers(commandPool->Get<Device *>()->Handle(), commandPool->Handle(), 1, &handle);
+       vkFreeCommandBuffers(*commandPool->GetAddress<Device>(), commandPool->Handle(), 1, &handle);
     }
 }
 

@@ -77,31 +77,31 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (is_same<T, VkImageUsageFlags>())
+        if constexpr (IsPrimitiveOf<VkImageUsageFlags, T>())
         {
             return properties.ImageUsage;
         }
-        if constexpr (is_same<T, Properties>())
+        if constexpr (IsPrimitiveOf<Properties, T>())
         {
             return properties;
         }
-        if constexpr (is_same<T, VkExtent2D>())
+        if constexpr (IsPrimitiveOf<VkExtent2D, T>())
         {
             return properties.Extent;
         }
-        if constexpr (is_same <T, VkFormat>())
+        if constexpr (IsPrimitiveOf <VkFormat, T>())
         {
             return properties.SurfaceFormat.format;
         }
-        if constexpr (is_same<T, Images>())
+        if constexpr (IsPrimitiveOf<Images, T>())
         {
             return images;
         }
-        if constexpr (is_same<T, FrameIndex>())
+        if constexpr (IsPrimitiveOf<FrameIndex, T>())
         {
             return frameIndex;
         }
-        if constexpr (is_same<T, Surface>())
+        if constexpr (IsPrimitiveOf<Surface, T>())
         {
             return surface;
         }

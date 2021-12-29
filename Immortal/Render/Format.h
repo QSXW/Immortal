@@ -111,15 +111,15 @@ static inline BaseFormatElement BaseFormatMapper[] = {
 template <class T>
 static inline T BaseFormat(Format format)
 {
-    if constexpr (is_same<T, GLenum>())
+    if constexpr (IsPrimitiveOf<GLenum, T>())
     {
         return BaseFormatMapper[ncast<int>(format)].OpenGL;
     }
-    if constexpr (is_same<T, VkFormat>())
+    if constexpr (IsPrimitiveOf<VkFormat, T>())
     {
         return BaseFormatMapper[ncast<int>(format)].Vulkan;
     }
-    if constexpr (is_same<T, DXGI_FORMAT>())
+    if constexpr (IsPrimitiveOf<DXGI_FORMAT, T>())
     {
         return BaseFormatMapper[ncast<int>(format)].DXGI;
     }

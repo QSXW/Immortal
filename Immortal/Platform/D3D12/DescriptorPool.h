@@ -97,7 +97,7 @@ public:
 
     DescriptorPool &operator=(const DescriptorPool &other)
     {
-        ThrowIf(&other == this, SError::SelfAssignment);
+        THROWIF(&other == this, SError::SelfAssignment);
 
         handle = other.handle;
 
@@ -106,7 +106,7 @@ public:
 
     DescriptorPool &operator=(DescriptorPool &&other)
     {
-        ThrowIf(&other == this, SError::SelfAssignment);
+        THROWIF(&other == this, SError::SelfAssignment);
 
         handle = other.handle;
         other.handle = nullptr;

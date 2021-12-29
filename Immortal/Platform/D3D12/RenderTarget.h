@@ -50,7 +50,7 @@ public:
         case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
         case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
         case DXGI_FORMAT_D16_UNORM:
-            ThrowIf(true, "Requested a UAV Format for a depth stencil Format.");
+            THROWIF(true, "Requested a UAV Format for a depth stencil Format.");
             return defaultFormat;
 #endif
 

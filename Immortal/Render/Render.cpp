@@ -56,7 +56,8 @@ void Render::Setup(RenderContext *context)
         data.FullScreenPipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
         data.FullScreenPipeline->Set({
             { Format::VECTOR3, "POSITION" },
-            { Format::VECTOR2, "TEXCOORD" }
+            { Format::VECTOR2, "TEXCOORD" },
+            { Format::VECTOR3, "NORMAL"   }
         });
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex));
         data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index));
