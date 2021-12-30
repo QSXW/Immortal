@@ -16,6 +16,8 @@ public:
                           const char                 *entryPoint,
                           std::vector<uint32_t>      &spriv,
                           std::string                &error);
+
+    static bool Reflect(const std::vector<uint32_t> &spirv, std::vector<Shader::Resource> &resouces);
 };
 
 };
