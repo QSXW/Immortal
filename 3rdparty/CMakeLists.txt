@@ -60,7 +60,7 @@ add_subdirectory(GLFW)
 # glad
 add_library(glad INTERFACE)
 set(GLAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Glad)
-target_sources(glad INTERFACE 
+target_sources(glad INTERFACE
     ${GLAD_DIR}/include/glad/glad.h
     ${GLAD_DIR}/include/KHR/khrplatform.h
     ${GLAD_DIR}/src/glad.c)
@@ -168,7 +168,7 @@ if (NOT TARGET glslang-default-resource-limits)
                 glslang/StandAlone/ResourceLimits.cpp)
 
     set_property(TARGET glslang-default-resource-limits PROPERTY FOLDER "3rdparty")
-    
+
     target_include_directories(glslang-default-resource-limits
                                 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang/StandAlone)
 endif()
@@ -183,3 +183,6 @@ set_property(TARGET glslang PROPERTY FOLDER "3rdparty")
 set_property(TARGET OGLCompiler PROPERTY FOLDER "3rdparty")
 set_property(TARGET OSDependent PROPERTY FOLDER "3rdparty")
 set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")
+
+# SPIRV-Cross
+add_subdirectory(SPIRV-Cross)

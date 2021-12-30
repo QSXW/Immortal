@@ -349,7 +349,6 @@ target_link_libraries(${PROJECT_NAME}
     glm
     glad
     glfw
-    # mono
     assimp
     vulkan
     spdlog::spdlog
@@ -357,4 +356,5 @@ target_link_libraries(${PROJECT_NAME}
     opencv
     glslang
     glslang-default-resource-limits
-    SPIRV)
+    SPIRV
+    spirv-cross-glsl)
