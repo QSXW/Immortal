@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 
+#include "sl.h"
 #include "Types.h"
 
 namespace sl
@@ -19,21 +20,16 @@ public:
     };
 
 public:
-    Stream()
+    Stream(Mode mode) :
+        mode{ mode }
     {
-    
+        
     }
 
     Stream(const std::string &filepath, Mode mode) :
         mode{ mode }
     {
-        fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
-        if (!fp)
-        {
-            error = Status::UNABLE_TO_OEPN_FILE;
-            return;
-        }
-        fileSize = GetFileSize(fp);
+        Open(filepath);
     }
 
     ~Stream()
@@ -43,6 +39,18 @@ public:
             return;
         }
         fclose(fp);
+    }
+
+    bool Open(const std::string &filepath)
+    {
+        fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
+        if (!fp)
+        {
+            error = Status::UNABLE_TO_OEPN_FILE;
+            return false;
+        }
+        fileSize = GetFileSize(fp);
+        return true;
     }
 
     bool ReOpen(const std::string &filepath, Mode mode)
@@ -98,6 +106,11 @@ public:
     int Skip(size_t offset)
     {
         return fseek(fp, offset, SEEK_CUR);
+    }
+
+    int Close()
+    {
+        return fclose(fp);
     }
 
 public:

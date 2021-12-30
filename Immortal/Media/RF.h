@@ -8,20 +8,43 @@
 #include "Types.h"
 #include "Checksum.h"
 #include "Stream.h"
+#include "sl.h"
 
 using namespace sl;
+
+struct Chunk
+{
+    Chunk()
+    {
+
+    }
+
+    Chunk(uint64_t size, const void *data) :
+        size{ size },
+        ptr{ rcast<const void *>(data) }
+    {
+
+    }
+
+    uint64_t size   = 0;
+    const void *ptr = nullptr;
+};
 
 class RF
 {
 public:
     RF(const std::string &filename) :
         output{ filename },
-        stream{ output, Stream::Mode::Write }
+        stream{ Stream::Mode::Write }
     {
-        if (!stream.Readable())
-        {
-            return;
-        }
+        stream.Open(output);
+    }
+
+    RF(const std::string &filename, Stream::Mode mode) :
+        output{ filename },
+        stream{ mode }
+    {
+        stream.Open(output);
     }
 
     ~RF()
@@ -36,27 +59,76 @@ public:
 
     void EndFrame()
     {
-        auto e =  Checksum::CyclicRedundancyCheck32(
-            reinterpret_cast<const uint8_t *>(&std::get<1>(pair)),
-            sizeof(size_t)
-            );
-        stream.Write<sizeof(uint64_t)>(&e);
+
     }
 
-    void NewFrame(uint64_t e)
+    void NewFrame(uint64_t size)
     {
-        pair.first  += e;
-        pair.second = e;
+        pair.first = size;
         stream.Write<sizeof(uint64_t)>(&pair.first);
     }
 
-    void Write(const std::vector<uint8_t> &file)
+    /*
+     * @brief shallow copy. Must call write before release resources
+     */
+    template <class T>
+    void Append(const std::vector<T> &data)
     {
-        NewFrame(file.size());
+        chunks.emplace_back(data.size() * sizeof(T), data.data());
+    }
 
-        stream.Write(file.data(), file.size());
+    void Write()
+    {
+        for (auto &c : chunks)
+        {
+            NewFrame(c.size);
+            stream.Write(c.ptr, c.size);
+            EndFrame();
+        }
 
-        EndFrame();
+        stream.Close();
+    }
+
+    template <class T>
+    void Write(const std::vector<T> &file)
+    {
+        Append(file);
+        Write();
+    }
+    
+    const std::vector<Chunk> & Parse(const std::vector<uint8_t> &buf)
+    {
+        auto start = buf.data();
+        auto ptr   = buf.data();
+        auto end = ptr + buf.size();
+
+        while (ptr < end)
+        {
+            Chunk chunk{};
+            chunk.size = *rcast<const uint64_t *>(ptr);
+            ptr += sizeof(uint64_t);
+            chunk.ptr  = ptr;
+
+            chunks.emplace_back(std::move(chunk));
+            if (chunk.size < (end - ptr))
+            {
+                ptr += chunk.size;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return chunks;
+    }
+
+    const std::vector<Chunk> &Read()
+    {
+        buffer.resize(stream.Size());
+        stream.Read(buffer.data(), buffer.size());
+
+        return Parse(buffer);
     }
 
 private:
@@ -66,5 +138,7 @@ private:
 
     Stream stream;
 
-    std::pair<uint64_t, uint64_t> pair;
+    std::pair<uint64_t, uint64_t> pair{ 0, 0 };
+
+    std::vector<Chunk> chunks;
 };
