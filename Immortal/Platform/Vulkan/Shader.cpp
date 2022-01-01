@@ -4,11 +4,67 @@
 #include "Render/GLSLCompiler.h"
 #include "Device.h"
 #include <stack>
+#include "RF.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
+
+void CacheSpirv(const std::string &path, const std::string &shaderName, const std::string &src, const std::vector<uint32_t> &spirv)
+{
+    std::string filename = std::to_string(std::hash<std::string>{}(shaderName)) + std::string{ ".spirv" };
+
+    if (!FileSystem::Path::Exsits(path))
+    {
+        FileSystem::MakeDirectory(path);
+    }
+
+    RF rf{ FileSystem::Path::Join(path, filename), sl::Stream::Mode::Write };
+
+    if (!rf.Writable())
+    {
+        return;
+    }
+
+    size_t srcHash = std::hash<std::string>{}(src);
+    rf.Append(&srcHash);
+    rf.Append(spirv);
+    rf.Write();
+}
+
+bool ReadSpirv(const std::string &path, const std::string &shaderName, const std::string &src, std::vector<uint32_t> &spirv)
+{
+    std::string filename = std::to_string(std::hash<std::string>{}(shaderName)) + std::string{ ".spirv" };
+
+    if (!FileSystem::Path::Exsits(path))
+    {
+        FileSystem::MakeDirectory(path);
+    }
+
+    RF rf{ FileSystem::Path::Join(path, filename), sl::Stream::Mode::Read };
+    if (!rf.Readable())
+    {
+        return false;
+    }
+
+    auto &chunks = rf.Read();
+    if (chunks.size() != 2)
+    {
+        LOG::WARN("Cached spirv file corrupted!");
+        return false;
+    }
+    auto hash = *rcast<const size_t *>(chunks[0].ptr);
+    if (hash != std::hash<std::string>{}(src))
+    {
+        return false;
+    }
+
+    spirv.resize(chunks[1].size / sizeof(uint32_t));
+    memcpy(spirv.data(), chunks[1].ptr, chunks[1].size);
+
+    return true;
+}
 
 static inline VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module, VkShaderStageFlagBits stage)
 {
@@ -57,6 +113,8 @@ Shader::~Shader()
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 {
+    constexpr const char *tmpPath = "tmp/";
+
     GLSLCompiler compiler{};
 
     auto src = FileSystem::ReadString(filename);
@@ -64,13 +122,17 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
     std::vector<uint32_t> spirv;
     std::string error;
 
-    if (!GLSLCompiler::Src2Spirv(Shader::API::Vulkan, stage, src.size(), src.data(), "main", spirv, error))
+    if (!ReadSpirv(tmpPath, filename, src, spirv))
     {
-        LOG::FATAL("Failed to compiler Shader => {0}\n", error.c_str());
-        return VK_NULL_HANDLE;
+        if (!GLSLCompiler::Src2Spirv(Shader::API::Vulkan, stage, src.size(), src.data(), "main", spirv, error))
+        {
+            LOG::FATAL("Failed to compiler Shader => {0}\n", error.c_str());
+            return VK_NULL_HANDLE;
+        }
+        CacheSpirv(tmpPath, filename, src, spirv);
     }
 
-    // GLSLCompiler::Reflect(spirv, resources);
+    GLSLCompiler::Reflect(spirv, resources);
 
     VkShaderModule shaderModule{ VK_NULL_HANDLE };
     VkShaderModuleCreateInfo createInfo{};
@@ -80,7 +142,7 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 
     Check(vkCreateShaderModule(*device, &createInfo, nullptr, &shaderModule));
 
-    Reflect(src);
+    // Reflect(src);
     SetupDescriptorSetLayout(stage);
     resources.clear();
 

@@ -10,8 +10,6 @@
 #include "Stream.h"
 #include "sl.h"
 
-using namespace sl;
-
 struct Chunk
 {
     Chunk()
@@ -21,7 +19,7 @@ struct Chunk
 
     Chunk(uint64_t size, const void *data) :
         size{ size },
-        ptr{ rcast<const void *>(data) }
+        ptr{ sl::rcast<const void *>(data) }
     {
 
     }
@@ -35,12 +33,12 @@ class RF
 public:
     RF(const std::string &filename) :
         output{ filename },
-        stream{ Stream::Mode::Write }
+        stream{ sl::Stream::Mode::Write }
     {
         stream.Open(output);
     }
 
-    RF(const std::string &filename, Stream::Mode mode) :
+    RF(const std::string &filename, sl::Stream::Mode mode) :
         output{ filename },
         stream{ mode }
     {
@@ -50,6 +48,11 @@ public:
     ~RF()
     {
 
+    }
+
+    bool Readable()
+    {
+        return stream.Readable();
     }
 
     bool Writable()
@@ -75,6 +78,12 @@ public:
     void Append(const std::vector<T> &data)
     {
         chunks.emplace_back(data.size() * sizeof(T), data.data());
+    }
+    
+    template <class T>
+    void Append(const T *constant)
+    {
+        chunks.emplace_back(sizeof(T), constant);
     }
 
     void Write()
@@ -105,7 +114,7 @@ public:
         while (ptr < end)
         {
             Chunk chunk{};
-            chunk.size = *rcast<const uint64_t *>(ptr);
+            chunk.size = *sl::rcast<const uint64_t *>(ptr);
             ptr += sizeof(uint64_t);
             chunk.ptr  = ptr;
 
@@ -136,7 +145,7 @@ private:
 
     std::vector<uint8_t> buffer;
 
-    Stream stream;
+    sl::Stream stream;
 
     std::pair<uint64_t, uint64_t> pair{ 0, 0 };
 

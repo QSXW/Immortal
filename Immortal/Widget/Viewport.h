@@ -5,10 +5,11 @@
 #include "ImGui/GuiLayer.h"
 #include "Render/Texture.h"
 
-namespace Widget
+namespace Immortal
 {
 
-using namespace Immortal;
+namespace Widget
+{
 
 class Viewport : public Super
 {
@@ -52,4 +53,5 @@ private:
     Vector2 size{ 0, 0 };
 };
 
+}
 }
