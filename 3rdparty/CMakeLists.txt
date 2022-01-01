@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(3rdparty LANGUAGES CXX)
 
-# assimp
-message(编译环境：${CMAKE_CXX_COMPILER_ID})
+message("Compiler Detected: " ${CMAKE_CXX_COMPILER_ID})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(assimp_lib libassimp)
@@ -13,15 +12,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(opencv_lib opencv_world452)
 endif()
 
+message("Build Type: " ${CMAKE_BUILD_TYPE})
 if(CMAKE_BUILD_TYPE AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-    message(检测到为调试模式)
     string(APPEND assimp_lib "d")
     string(APPEND opencv_lib "d")
-elseif(CMAKE_BUILD_TYPE AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
-    message(检测到为Release模式)
+
 endif()
 
-MESSAGE(使用的assimp库名称: ${assimp_lib})
+# assimp
+MESSAGE("Assimp: " ${assimp_lib})
 add_library(assimp INTERFACE)
 set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
 set(ASSIMP_LIB_DIR ${ASSIMP_DIR}/bin/${CMAKE_BUILD_TYPE})
@@ -29,7 +28,7 @@ set(ENV{ASSIMP_LIB_DIR} ${ASSIMP_LIB_DIR})
 target_sources(assimp INTERFACE ${ASSIMP_DIR}/include/assimp/scene.h)
 target_include_directories(assimp INTERFACE ${ASSIMP_DIR}/include)
 target_link_directories(assimp INTERFACE ${ASSIMP_LIB_DIR})
-message(assimp路径:  ${ASSIMP_LIB_DIR})
+message("Assimp path: "  ${ASSIMP_LIB_DIR})
 target_link_libraries(assimp INTERFACE ${assimp_lib})
 set(ASSIMP_SHARED ${ASSIMP_LIB_DIR}/${assimp_lib}.dll PARENT_SCOPE)
 
@@ -131,27 +130,16 @@ target_include_directories(imgui PUBLIC ${IMGUI_DIR})
 set_property(TARGET imgui PROPERTY FOLDER "3rdparty")
 
 # opencv
-MESSAGE(使用的 opencv 库名称: ${opencv_lib})
+MESSAGE("OpenCV: " ${opencv_lib})
 add_library(opencv INTERFACE)
 set(OEPNCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencv)
 set(OEPNCV_LIB_DIR ${OEPNCV_DIR}/bin/${CMAKE_BUILD_TYPE})
 set(ENV{OEPNCV_LIB_DIR} ${ASSIMP_LIB_DIR})
 target_include_directories(opencv INTERFACE ${OEPNCV_DIR}/)
 target_link_directories(opencv INTERFACE ${OEPNCV_LIB_DIR})
-message(opencv路径:  ${OEPNCV_LIB_DIR})
+message("OpenCV path: "  ${OEPNCV_LIB_DIR})
 target_link_libraries(opencv INTERFACE ${opencv_lib})
 set(OPENCV_SHARED ${OEPNCV_LIB_DIR}/${opencv_lib}.dll PARENT_SCOPE)
-
-# mono
-# add_library(mono INTERFACE)
-# set(mono_lib mono-2.0-sgen)
-# MESSAGE(使用的 mono 库名称: ${mono_lib})
-# set(MONO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mono)
-# set(MONO_LIB_DIR ${MONO_DIR}/bin/${CMAKE_BUILD_TYPE})
-# target_include_directories(mono INTERFACE ${MONO_DIR}/include)
-# target_link_directories(mono INTERFACE ${MONO_LIB_DIR})
-# target_link_libraries(mono INTERFACE ${mono_lib})
-# set(MONO_SHARED ${MONO_LIB_DIR}/${mono_lib}.dll PARENT_SCOPE)
 
 #glslang
 option(ENABLE_SPVREMAPPER OFF)
