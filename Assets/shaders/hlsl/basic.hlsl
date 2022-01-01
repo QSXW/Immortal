@@ -9,6 +9,12 @@
 //
 //*********************************************************
 
+cbuffer ubo : register(b0)
+{
+	float4x4 viewProjection;
+	float4x4 modelTransform;
+};
+
 struct PSInput
 {
     float4 position : SV_POSITION;
@@ -19,8 +25,10 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 {
     PSInput result;
 
-    result.position = position;
     result.color = color;
+    result.position = position;
+    result.position.y = -position.y;
+    result.position = mul(viewProjection, mul(modelTransform, result.position));
 
     return result;
 }

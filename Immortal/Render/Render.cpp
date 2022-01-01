@@ -32,16 +32,13 @@ void Render::Setup(RenderContext *context)
         {
             if (ncast<Render::Type>(ShaderProperties[i].API) & API)
             {
-                auto &&shader = Create<Shader>(
-                    std::string{ AssetsPathes[asset] } + ShaderProperties[i].Path,
-                    ShaderProperties[i].Type
-                    );
+                auto &&shader = std::shared_ptr<Shader>{ Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Path, ShaderProperties[i].Type) };
                 ShaderContainer.emplace_back(std::move(shader));
             }    
         }
     }
 
-    data.Target = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } });
+    data.Target.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } }));
     {
         constexpr float fullScreenVertex[5 * 4] = {
              1.0,  1.0, 0.0, 1.0, 1.0,
@@ -53,14 +50,15 @@ void Render::Setup(RenderContext *context)
         constexpr UINT32 fullScreenIndices[] = {
             0, 1, 2, 2, 3, 0
         };
-        data.FullScreenPipeline = renderer->CreatePipeline(Get<Shader, ShaderName::Texture>());
+        data.FullScreenPipeline.reset(Render::Create<Pipeline>(Get<Shader, ShaderName::Texture>()));
         data.FullScreenPipeline->Set({
             { Format::VECTOR3, "POSITION" },
             { Format::VECTOR2, "TEXCOORD" },
             { Format::VECTOR3, "NORMAL"   }
         });
-        data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex));
-        data.FullScreenPipeline->Set(CreateBuffer(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index));
+
+        data.FullScreenPipeline->Set(std::shared_ptr<Buffer>{ Create<Buffer>(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex)  });
+        data.FullScreenPipeline->Set(std::shared_ptr<Buffer>{ Create<Buffer>(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index) });
         data.FullScreenPipeline->Create(data.Target);
         
         constexpr UINT32 white        = 0xffffffff;
@@ -68,9 +66,9 @@ void Render::Setup(RenderContext *context)
         constexpr UINT32 transparency = 0x00000000;
         Texture::Description desc = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
 
-        data.WhiteTexture       = Render::Create<Texture>(1, 1, &white, desc);
-        data.BlackTexture       = Render::Create<Texture>(1, 1, &black, desc);
-        data.TransparentTexture = Render::Create<Texture>(1, 1, &transparency, desc);
+        data.WhiteTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
+        data.BlackTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };
+        data.TransparentTexture = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &transparency, desc) };
     }
     Render2D::Setup();
 }

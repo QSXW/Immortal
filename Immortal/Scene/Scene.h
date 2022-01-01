@@ -16,6 +16,28 @@
 namespace Immortal
 {
 
+struct Resolution
+{
+    operator std::string()
+    {
+        return std::string{
+            std::to_string(Width) +
+            std::string{ "x" } +
+            std::to_string(Height)
+        };
+    }
+
+    uint32_t Width;
+    uint32_t Height;
+};
+
+namespace Resolutions
+{
+    static Resolution UHD = { 3840, 2160 };
+    static Resolution FHD = { 1920, 1080 };
+    static Resolution HD  = { 1280, 720  };
+}
+
 struct Light
 {
     Vector3 Direction{ 0.0f, 0.0f, 0.0f };
@@ -47,6 +69,21 @@ struct SpotLight
 
 struct LightEnvironment
 {
+    LightEnvironment()
+    {
+        lights[0].Direction = Vector::Normalize(Vector3{ -1.0f,  0.0f, 0.0f });
+        lights[1].Direction = Vector::Normalize(Vector3{ 1.0f,  0.0f, 0.0f });
+        lights[2].Direction = Vector::Normalize(Vector3{ 0.0f, -1.0f, 0.0f });
+
+        lights[0].Radiance = Vector3{ 1.0f };;
+        lights[1].Radiance = Vector3{ 1.0f };;
+        lights[2].Radiance = Vector3{ 1.0f };;
+
+        lights[0].Enabled = true;
+        lights[1].Enabled = true;
+        lights[2].Enabled = true;
+    }
+
     static constexpr int LightNumbers = 3;
     float pitch = 0.0f;
     float yaw   = 0.0f;
@@ -77,7 +114,7 @@ public:
 
     Entity PrimaryCameraEntity();
 
-    auto& Registry()
+    auto &Registry()
     {
         return registry;
     }
@@ -98,35 +135,37 @@ public:
 private:
     std::string debugName;
 
-    entt::entity entity;
+    entt::registry registry;
 
-    entt::registry registry; // Entity Context: a container that contains our enties
+    entt::entity entity;
 
     EntityMap entityMap;
 
-    std::vector<Entity *> meshEntities;
+    struct {
+        std::shared_ptr<Mesh> skybox;
+    } meshes;
 
-    Vector2 viewportSize{ 0.0f, 0.0f };
+    struct {
+        std::shared_ptr<TextureCube> skybox;
+    } textures;
 
-    std::shared_ptr<TextureCube> skyboxTexture;
+    struct {
+        std::shared_ptr<Pipeline> tonemap;
+    } pipelines;
 
-    std::shared_ptr<Environment> environment;
-
-    std::shared_ptr<Mesh> skybox;
-
-    LightEnvironment lightEnvironment;
-
-    std::shared_ptr<Buffer> transformUniformBuffer;
-
-    std::shared_ptr<Buffer> shadingUniformBuffer;
-
-    std::shared_ptr<Pipeline> toneMap;
+    struct {
+        std::unique_ptr<Buffer> transform;
+        std::unique_ptr<Buffer> shading;
+    } uniforms;
+    
+    struct {
+        std::unique_ptr<Environment> global;
+        LightEnvironment light;
+    } environments;
 
     std::shared_ptr<RenderTarget> renderTarget;
 
-    friend class Entity;
-    friend class SceneHierarchyPanel;
-    friend class EditorLayer;
+    Vector2 viewportSize{ 0.0f, 0.0f };
 
 private:
     ObserverCamera observerCamera;

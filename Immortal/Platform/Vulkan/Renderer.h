@@ -53,44 +53,44 @@ public:
         return context->GraphicsRenderer();
     }
 
-    virtual std::shared_ptr<Shader::Super> CreateShader(const std::string &filepath, Shader::Type type) override
+    virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override
     {
-        return std::make_shared<Shader>(device, filepath, type);
+        return new Shader{ device, filepath, type };
     }
 
-    virtual std::shared_ptr<Pipeline::Super> CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<Shader::Super> &shader)
     {
-        return std::make_shared<Pipeline>(device, shader);
+        return new Pipeline{ device, shader };
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    virtual Texture::Super *CreateTexture(const std::string &filepath) override
     {
-        return std::make_shared<Texture>(device, filepath);
+        return new Texture{ device, filepath };
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    virtual Texture::Super *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
     {
-        return std::make_shared<Texture>(device, width, height, data, description);
+        return new Texture{ device, width, height, data, description };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(device, size, data, type);
+        return new Buffer{ device, size, data, type };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(device, size, type);
+        return new Buffer{ device, size, type };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override
     {
-        return std::make_shared<Buffer>(device, size, binding);
+        return new Buffer{ device, size, binding };
     }
 
-    virtual std::shared_ptr <RenderTarget::Super> CreateRenderTarget(const RenderTarget::Description &description) override
+    virtual RenderTarget::Super *CreateRenderTarget(const RenderTarget::Description &description) override
     {
-        return std::make_shared<RenderTarget>(device, description);
+        return new RenderTarget{ device, description };
     }
 
     virtual Descriptor *CreateImageDescriptor(uint32_t count) override;

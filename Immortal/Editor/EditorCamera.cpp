@@ -3,164 +3,156 @@
 
 #include "Framework/Input.h"
 
-namespace Immortal {
+namespace Immortal
+{
 
-	EditorCamera::EditorCamera(const Matrix4 & projection)
-		: Camera(projection)/*, mRotation{ 90.0f, 0.0f, 0.0f }, mFocalPoint(0.0f)*/
-	{
-		mDistance = Vector::Distance(Vector3{ -5.0f, 5.0f, 5.0f }, mFocalPoint);
+EditorCamera::EditorCamera(const Matrix4 &projection) :
+    Camera{ projection }
+{
+    distance = Vector::Distance(Vector3{ -5.0f, 5.0f, 5.0f }, focalPoint);
 
-		mYaw = 0.0f;
-		mPitch = 0.0f;
-		/*mYaw = 3.0f * Vector::PI / 4.0f;
-		mPitch = Vector::PI / 4.0f;*/
+    yaw = 0.0f;
+    pitch = 0.0f;
+    /*yaw = 3.0f * Vector::PI / 4.0f;
+    pitch = Vector::PI / 4.0f;*/
 
-		UpdateView();
-	}
+    UpdateView();
+}
 
-	void EditorCamera::Focus(const Vector3 & focusPoint)
-	{
-		mFocalPoint = focusPoint;
-		if (mDistance > mMinFocusDistance)
-		{
-			float distance = mDistance - mMinFocusDistance;
-			MouseZoom(distance / ZoomSpeed());
-			UpdateView();
-		}
-	}
+void EditorCamera::Focus(const Vector3 & focusPoint)
+{
+    focalPoint = focusPoint;
+    if (distance > minFocusDistance)
+    {
+        MouseZoom((distance - minFocusDistance) / ZoomSpeed());
+        UpdateView();
+    }
+}
 
-	void EditorCamera::OnUpdate()
-	{
-		if (Input::IsKeyPressed(KeyCode::LeftAlt))
-		{
-			const Vector::Vector2 &mouse = Input::GetMousePosition();
-			Vector::Vector2 delta = (mouse - mInitialPosition) * 0.003f;
-			mInitialPosition = mouse;
+void EditorCamera::OnUpdate()
+{
+    if (Input::IsKeyPressed(KeyCode::LeftAlt))
+    {
+        const Vector2 &mouse = Input::GetMousePosition();
+        Vector2 delta = (mouse - initialPosition) * 0.003f;
+        initialPosition = mouse;
 
-			if (Input::IsMouseButtonPressed(MouseCode::Middle))
-			{
-				MousePan(delta);
-			}
-			else if (Input::IsMouseButtonPressed(MouseCode::Left))
-			{
-				MouseRotate(delta);
-			}
-			else if (Input::IsMouseButtonPressed(MouseCode::Right))
-			{
-				MouseZoom(delta.y);
-			}
-		}
+        if (Input::IsMouseButtonPressed(MouseCode::Middle))
+        {
+            MousePan(delta);
+        }
+        else if (Input::IsMouseButtonPressed(MouseCode::Left))
+        {
+            MouseRotate(delta);
+        }
+        else if (Input::IsMouseButtonPressed(MouseCode::Right))
+        {
+            MouseZoom(delta.y);
+        }
+    }
 
-		UpdateView();
-	}
+    UpdateView();
+}
 
-	void EditorCamera::OnEvent(Event & e)
-	{
-		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<MouseScrolledEvent>(std::bind(&EditorCamera::OnMouseScroll, this, std::placeholders::_1));
-	}
+void EditorCamera::OnEvent(Event & e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<MouseScrolledEvent>(std::bind(&EditorCamera::OnMouseScroll, this, std::placeholders::_1));
+}
 
-	Vector3 EditorCamera::UpDirection()
-	{
-		return Vector::Rotate(Orientation(), Vector3(0.0f, 1.0f, 0.0f));
-	}
+Vector3 EditorCamera::UpDirection()
+{
+    return Vector::Rotate(Orientation(), Vector3(0.0f, 1.0f, 0.0f));
+}
 
-	Vector3 EditorCamera::RightDirection()
-	{
-		return Vector::Rotate(Orientation(), Vector3(1.0f, 0.0f, 0.0f));
-	}
+Vector3 EditorCamera::RightDirection()
+{
+    return Vector::Rotate(Orientation(), Vector3(1.0f, 0.0f, 0.0f));
+}
 
-	Vector3 EditorCamera::ForwardDirection()
-	{
-		return Vector::Rotate(Orientation(), Vector3(0.0f, 0.0f, -1.0f));
-	}
+Vector3 EditorCamera::ForwardDirection()
+{
+    return Vector::Rotate(Orientation(), Vector3(0.0f, 0.0f, -1.0f));
+}
 
-	Vector::Quaternion EditorCamera::Orientation() const
-	{
-		return Vector::Quaternion(Vector3(-mPitch, -mYaw, 0.0f));
-	}
+Quaternion EditorCamera::Orientation() const
+{
+    return Quaternion{ Vector3{ -pitch, -yaw, 0.0f } };
+}
 
-	void EditorCamera::UpdateView()
-	{
-		mPosition = CalculatePosition();
-		Quaternion orientation = Orientation();
-		mRotation = Vector::EulerAngles(orientation) * (180.0f / Vector::PI);
-		view = Vector::Translate(mPosition) * Vector::ToMatrix4(orientation);
-		view = Vector::Inverse(view);
-	}
+void EditorCamera::UpdateView()
+{
+    position = CalculatePosition();
+    Quaternion orientation = Orientation();
+    rotation = Vector::EulerAngles(orientation) * (180.0f / Vector::PI);
+    view     = Vector::Translate(position) * Vector::ToMatrix4(orientation);
+    view     = Vector::Inverse(view);
+}
 
-	bool EditorCamera::OnMouseScroll(MouseScrolledEvent & e)
-	{
-		float delta = e.GetOffsetY() * 0.1f;
-		MouseZoom(delta);
-		UpdateView();
-		return false;
-	}
+bool EditorCamera::OnMouseScroll(MouseScrolledEvent & e)
+{
+    float delta = e.GetOffsetY() * 0.1f;
+    MouseZoom(delta);
+    UpdateView();
+    return false;
+}
 
-	void EditorCamera::MousePan(const Vector::Vector2 & delta)
-	{
-		Vector::Vector2 speed = PanSpeed();
-		mFocalPoint += -RightDirection() * delta.x * speed.x * mDistance;
-		mFocalPoint += UpDirection() * delta.y * speed.y * mDistance;
-	}
+void EditorCamera::MousePan(const Vector::Vector2 & delta)
+{
+    Vector::Vector2 speed = PanSpeed();
+    focalPoint += -RightDirection() * delta.x * speed.x * distance;
+    focalPoint += UpDirection() * delta.y * speed.y * distance;
+}
 
-	void EditorCamera::MouseRotate(const Vector::Vector2 & delta)
-	{
-		float yawSign = UpDirection().y < 0 ? -1.0f : 1.0f;
-		mYaw += yawSign * delta.x * RotateSpeed();
-		mPitch += delta.y * RotateSpeed();
-	}
+void EditorCamera::MouseRotate(const Vector::Vector2 & delta)
+{
+    float yawSign = UpDirection().y < 0 ? -1.0f : 1.0f;
+    yaw += yawSign * delta.x * RotateSpeed();
+    pitch += delta.y * RotateSpeed();
+}
 
-	void EditorCamera::MouseZoom(float delta)
-	{
-		mDistance -= delta * ZoomSpeed();
-		if (mDistance < 1.0f)
-		{
-			mFocalPoint += ForwardDirection();
-			mDistance = 1.0f;
-		}
-	}
+void EditorCamera::MouseZoom(float delta)
+{
+    distance -= delta * ZoomSpeed();
+    if (distance < 1.0f)
+    {
+        focalPoint += ForwardDirection();
+        distance = 1.0f;
+    }
+}
 
-	Vector3 EditorCamera::CalculatePosition()
-	{
-		return mFocalPoint - ForwardDirection() * mDistance;
-	}
+Vector3 EditorCamera::CalculatePosition()
+{
+    return focalPoint - ForwardDirection() * distance;
+}
 
-	template <class T>
-	inline float SolveSpeedFactorFromQuadraticFormula(T &x)
-	{
-		return 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
-	}
+template <class T>
+inline float SpeedFactor(T &x)
+{
+    return 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
+}
 
-	/* Max speed = 2.4f, this function build on magic. */
-	Vector::Vector2 EditorCamera::PanSpeed() const
-	{
-		float x = std::min(viewportSize.x / 1000.0f, 2.4f);
-		float xFactor = SolveSpeedFactorFromQuadraticFormula(x);
+Vector2 EditorCamera::PanSpeed() const
+{
+    float x = std::min(viewportSize.x / 1000.0f, 2.4f);
+    float xFactor = SpeedFactor(x);
 
-		float y = std::min(viewportSize.y / 1000.0f, 2.4f);
-		float yFactor = SolveSpeedFactorFromQuadraticFormula(y);
+    float y = std::min(viewportSize.y / 1000.0f, 2.4f);
+    float yFactor = SpeedFactor(y);
 
-		return { xFactor, yFactor };
-	}
+    return { xFactor, yFactor };
+}
 
-	constexpr float EditorCamera::RotateSpeed() const
-	{
-		return 0.8f;
-	}
+float EditorCamera::ZoomSpeed() const
+{
+    float speed = distance * 0.2f;
+    speed = std::max(speed, 0.0f);
+    return std::min(speed * speed, 100.0f);
+}
 
-	/* max speed = 100.0f */
-	float EditorCamera::ZoomSpeed() const
-	{
-		float distance = mDistance * 0.2f;
-		distance = std::max(distance, 0.0f);
-		float speed = distance * distance;
-		return std::min(speed, 100.0f);
-	}
-
-	void EditorCamera::SetViewportSize(const Vector::Vector2 &size)
-	{
-		viewportSize = size;
-		SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
-	}
+void EditorCamera::SetViewportSize(const Vector2 &size)
+{
+    viewportSize = size;
+    SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
+}
 }

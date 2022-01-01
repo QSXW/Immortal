@@ -38,6 +38,9 @@ void Mesh::LoadPrimitives()
 Mesh::Mesh(const std::string & filepath)
     : path(filepath)
 {
+    std::vector<Vertex> vertices;
+    std::vector<Face> faces;
+
     LogStream::initialize();
 
     LOG::INFO("Loading mesh: {0}", filepath.c_str());
@@ -78,19 +81,14 @@ Mesh::Mesh(const std::string & filepath)
         faces.push_back(face);
     }
 
-    vertexBuffer = Render::Create<Buffer>(vertices, Buffer::Type::Vertex);
-    
-    indexBuffer = Render::Create<Buffer>(faces, Buffer::Type::Index);
-
-    vertices.clear();
-    faces.clear();
+    buffer.vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex)); 
+    buffer.index.reset(Render::Create<Buffer>(faces, Buffer::Type::Index));
 }
 
-Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies)
+Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indicies)
 {
-    vertexBuffer = Render::Create<Buffer>(vertices, Buffer::Type::Vertex);
-
-    indexBuffer = Render::Create<Buffer>(faces, Buffer::Type::Index);
+    buffer.vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
+    buffer.index.reset(Render::Create<Buffer>(indicies, Buffer::Type::Index));
 }
 
 std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)

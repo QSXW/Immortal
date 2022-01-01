@@ -13,24 +13,30 @@ class IMMORTAL_API Entity
 {
 public:
     Entity() = default;
-    Entity(entt::entity handle, Scene *scene)
-        : handle(handle), scene(scene)
+
+    Entity(entt::entity handle, Scene *scene) :
+        handle{ handle },
+        scene{ scene }
     {
 
     }
 
-    Entity(int handle, Scene *scene)
-        : handle(entt::entity(handle)), scene(scene)
+    Entity(int handle, Scene *scene) :
+        handle{ entt::entity(handle) },
+        scene{ scene }
     {
 
     }
 
-    ~Entity() { }
+    ~Entity()
+    {
+    
+    }
 
     template <class T>
     void RemoveComponent()
     {
-        scene->registry.remove<T>(handle);
+        scene->Registry().remove<T>(handle);
     }
 
     template <class T, class... Args>
@@ -41,19 +47,19 @@ public:
             LOG::WARN("Add component to a enity which alread has an identical component. The previous one would be remove.");
             RemoveComponent<T>();
         }
-        return scene->registry.emplace<T>(handle, std::forward<Args>(args)...);
+        return scene->Registry().emplace<T>(handle, std::forward<Args>(args)...);
     }
 
     template <class T>
     T &GetComponent() const
     {
-        return scene->registry.get<T>(handle);
+        return scene->Registry().get<T>(handle);
     }
 
     template <class T>
     bool HasComponent()
     {
-        return scene->registry.has<T>(handle);
+        return scene->Registry().has<T>(handle);
     }
 
     TransformComponent &Transform() 
@@ -93,9 +99,8 @@ public:
 
 private:
     entt::entity handle{ entt::null };
-    Scene *scene{ nullptr };
 
-    friend class Scene;
+    Scene *scene{ nullptr };
 };
 
 }

@@ -154,6 +154,12 @@ public:
         renderer->Begin(data.Target);
     }
 
+    static void Render::Begin(std::shared_ptr<RenderTarget> &renderTarget)
+    {
+        user.renderTarget = renderTarget;
+        renderer->Begin(user.renderTarget);
+    }
+
     static void Render::Begin(std::shared_ptr<RenderTarget> &renderTarget, const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
@@ -194,45 +200,45 @@ public:
         return renderer->GraphicsRenderer();
     }
 
-    static std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
+    static Shader *CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
     {
         return renderer->CreateShader(filepath, type);
     }
 
-    static std::shared_ptr<Pipeline> CreatePipeline(std::shared_ptr<Shader> &shader)
+    static Pipeline *CreatePipeline(std::shared_ptr<Shader> &shader)
     {
         return renderer->CreatePipeline(shader);
     }
 
     template <class T>
-    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, const T *data, Buffer::Type type)
+    static Buffer *CreateBuffer(const size_t size, const T *data, Buffer::Type type)
     {
         return renderer->CreateBuffer(size, data, type);
     }
 
     template <class T>
-    static std::shared_ptr<Buffer> CreateBuffer(const std::vector<T> &v, Buffer::Type type)
+    static Buffer *CreateBuffer(const std::vector<T> &v, Buffer::Type type)
     {
         return renderer->CreateBuffer(sizeof(T) * v.size(), v.data(), type);
     }
 
-    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
+    static Buffer *CreateBuffer(const size_t size, Buffer::Type type)
     {
         return renderer->CreateBuffer(size, type);
     }
 
-    static std::shared_ptr<Buffer> CreateBuffer(const size_t size, uint32_t binding = 0)
+    static Buffer *CreateBuffer(const size_t size, uint32_t binding = 0)
     {
         return renderer->CreateBuffer(size, binding);
     }
 
-    static std::shared_ptr<RenderTarget> CreateRenderTarget(const RenderTarget::Description &description)
+    static RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
     {
         return renderer->CreateRenderTarget(description);
     }
 
     template <class T, class... Args>
-    static std::shared_ptr<T> Create(Args&& ... args)
+    static T *Create(Args&& ... args)
     {
         if constexpr (IsPrimitiveOf<Buffer, T>())
         {

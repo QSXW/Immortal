@@ -18,8 +18,8 @@ void Render2D::Setup()
     data.textureDescriptors.reset(Render::CreateDescriptor<Texture>(Data::MaxTextureSlots));
 
     data.QuadVertexBufferBase.reset(new QuadVertex[data.MaxVertices]);
-    pipeline = Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Render2D>());
-    uniform  = Render::Create<Buffer>(sizeof(Matrix4), 0);
+    pipeline.reset(Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Render2D>()));
+    uniform.reset(Render::Create<Buffer>(sizeof(Matrix4), 0));
 
     pipeline->Set({
         { Format::VECTOR3, "POSITION"      },
@@ -30,7 +30,7 @@ void Render2D::Setup()
         { Format::INT,     "OBJECT_ID"     }
     });
 
-    pipeline->Set(Render::Create<Buffer>(data.MaxVertices, Buffer::Type::Vertex));
+    pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(data.MaxVertices, Buffer::Type::Vertex) });
 
     {
         std::unique_ptr<uint32_t> quadIndices;
@@ -49,7 +49,7 @@ void Render2D::Setup()
 
             offset += 4;
         }
-        pipeline->Set(Render::CreateBuffer<uint32_t>(data.MaxIndices, quadIndices.get(), Buffer::Type::Index));
+        pipeline->Set(std::shared_ptr<Buffer>{ Render::CreateBuffer<uint32_t>(data.MaxIndices, quadIndices.get(), Buffer::Type::Index) });
     }
     pipeline->Create(Render::Preset()->Target);
 

@@ -52,45 +52,44 @@ public:
         }
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, data, type);
+        return new Buffer{ context->GetAddress<Device>(), size, data, type };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, type);
+        return new Buffer{ context->GetAddress<Device>(), size, type };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override
     {
-        return std::make_shared<Buffer>(context->GetAddress<Device>(), size, binding);
+        return new Buffer{ context->GetAddress<Device>(), size, binding };
     }
 
-    virtual std::shared_ptr<SuperShader> CreateShader(const std::string &filepath, Shader::Type type) override
+    virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override
     {
-        return std::make_shared<Shader>(filepath, type);
+        return new Shader{ filepath, type };
     }
 
-    virtual std::shared_ptr<Pipeline::Super> CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<Shader::Super> &shader)
     {
-        return std::make_shared<Pipeline>(context->GetAddress<Device>(), shader);
+        return new Pipeline{ context->GetAddress<Device>(), shader };
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    virtual Texture::Super *CreateTexture(const std::string &filepath) override
     {
-        SLASSERT(context != nullptr && "Render Context isn't initialized yet");
-        return std::make_shared<Texture>(context, filepath);
+        return new Texture{ context, filepath };
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    virtual Texture::Super *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
     {
-        return std::make_shared<Texture>(context, width, height, data, description);
+        return new Texture{ context, width, height, data, description };
     }
 
-    virtual std::shared_ptr<RenderTarget::Super> CreateRenderTarget(const RenderTarget::Description &description) override
+    virtual RenderTarget::Super *CreateRenderTarget(const RenderTarget::Description &description) override
     {
-        return std::make_shared<RenderTarget>(context->GetAddress<Device>(), description);
+        return new RenderTarget{ context->GetAddress<Device>(), description };
     }
 
     virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;

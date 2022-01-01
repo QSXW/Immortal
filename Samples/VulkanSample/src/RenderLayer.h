@@ -5,12 +5,6 @@
 namespace Immortal
 {
 
-struct Vertex
-{
-    Vector3 pos;
-    Vector3 color;
-};
-
 class RenderLayer : public Layer
 {
 public:
@@ -20,37 +14,26 @@ public:
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
 
-        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } });
-
-        const std::vector<Vertex> vertices = {
-            { {  1.0f,  1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-            { { -1.0f,  1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-            { {  0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
-        };
-
-        const std::vector<uint32_t> indices = {
-            0, 1, 2
-        };
+        renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } }));
 
         shader = Render::Get<Shader, ShaderName::Basic>();
 
-        pipeline = Render::Create<Pipeline>(shader);
+        pipeline.reset(Render::Create<Pipeline>(shader));
 
-        pipeline->Set(Render::Create<Buffer>(vertices.size(), vertices.data(), Buffer::Type::Vertex));
-        pipeline->Set(Render::Create<Buffer>(indices.size(), indices.data(), Buffer::Type::Index));
-        pipeline->Set({
-            { Format::VECTOR3, "Position" },
-            { Format::VECTOR3, "Color"    }
-            });
+        auto &triangle = DataSet::Classic::Triangle;
+
+        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) });
+        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index)   });
+        pipeline->Set(triangle.Description());
         pipeline->Create(renderTarget);
         pipeline->Bind(Render::Preset()->WhiteTexture, 1);
 
-        camera.primaryCamera.SetPerspective(90.0f);
-        // camera.primaryCamera.SetOrthographic(1.2f);
+        // camera.primaryCamera.SetPerspective(90.0f);
+        camera.primaryCamera.SetOrthographic(1.2f);
         camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
 
-        uniformBuffer = Render::Create<Buffer>(sizeof(ubo), 0);
-        pipeline->Bind("ubo", uniformBuffer.get());
+        uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
+        pipeline->Bind("UBO", uniformBuffer.get());
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
@@ -66,6 +49,8 @@ public:
 
     virtual void OnUpdate() override
     {
+        auto pos = Input::GetMousePosition();
+
         Vector2 viewportSize = offline.Size();
         if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
             (viewportSize.x != 0 && viewportSize.y != 0))
@@ -82,6 +67,7 @@ public:
 
         Render::Begin(renderTarget, camera.primaryCamera);
         {
+            Render::Draw(pipeline);
             Render2D::BeginScene(camera.primaryCamera);
             Render2D::DrawQuad(camera.transform, image);
             Render2D::EndScene();
@@ -96,6 +82,10 @@ public:
         UI::DrawVec3Control("Position", camera.transform.Position);
         UI::DrawVec3Control("Rotation", camera.transform.Rotation);
         UI::DrawVec3Control("Scale", camera.transform.Scale);
+        if (ImGui::DragFloat("Orthographic Size", &camera.primaryCamera.OrthographicSize(), 0.1f, 0.000001f, 90.0f))
+        {
+            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+        }
         ImGui::End();
         offline.OnUpdate(renderTarget);
 
@@ -165,7 +155,7 @@ public:
 
     void OnTextureLoaded(const std::string &path)
     {
-        image = Render::Create<Texture>(path);
+        image.reset(Render::Create<Texture>(path));
     }
 
     bool LoadObject()
@@ -173,7 +163,7 @@ public:
         auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
         if (res.has_value())
         {
-            image = Render::Create<Texture>(res.value());
+            image.reset(Render::Create<Texture>(res.value()));
             return true;
         }
 
@@ -250,6 +240,10 @@ private:
     std::shared_ptr<Texture> image{ Render::Preset()->WhiteTexture };
 
     EventSink<RenderLayer> eventSink;
+
+    Scene scene{ "Viewport", true };
+
+    GameObject textureObject;
 };
 
 }

@@ -10,7 +10,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-#if SLDEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                                     const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
@@ -54,7 +53,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags,
     
     return VK_FALSE;
 }
-#endif
 
 static bool ValidateLayers(const std::vector<const char *> &required, const std::vector<VkLayerProperties> &available)
 {

@@ -37,31 +37,22 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 {
     entity = registry.create();
     registry.emplace<TransformComponent>(entity);
-    auto &transform = registry.get<TransformComponent>(entity);
 
-    lightEnvironment.lights[0].Direction = Vector::Normalize(Vector3{ -1.0f,  0.0f, 0.0f });
-    lightEnvironment.lights[1].Direction = Vector::Normalize(Vector3{ 1.0f,  0.0f, 0.0f });
-    lightEnvironment.lights[2].Direction = Vector::Normalize(Vector3{ 0.0f, -1.0f, 0.0f });
+    meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
+    // textures.skybox.reset(Render::Create<TextureCube>("assets/textures/environment.hdr"));
 
-    lightEnvironment.lights[0].Radiance = Vector3{ 1.0f };;
-    lightEnvironment.lights[1].Radiance = Vector3{ 1.0f };;
-    lightEnvironment.lights[2].Radiance = Vector3{ 1.0f };;
+    uniforms.transform.reset(Render::Create<Buffer>(sizeof(TransformUniformBuffer), 0));
+    uniforms.shading.reset(Render::Create<Buffer>(sizeof(ShadingUniformBuffer), 1));
 
-    lightEnvironment.lights[0].Enabled = true;
-    lightEnvironment.lights[1].Enabled = true;
-    lightEnvironment.lights[2].Enabled = true;
-
-
-    skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
-    // skyboxTexture = Render::Create<TextureCube>("assets/textures/environment.hdr");
-    environment = std::make_shared<Environment>(skyboxTexture);
-
-    transformUniformBuffer = Render::Create<Buffer>(sizeof(TransformUniformBuffer), 0);
-    shadingUniformBuffer   = Render::Create<Buffer>(sizeof(ShadingUniformBuffer), 1);
-
-    renderTarget = Render::CreateRenderTarget({ (uint32_t)1280, (uint32_t)720, { { Format::RGBA32F }, { Format::Depth } } });
+    renderTarget.reset(Render::CreateRenderTarget({
+        Resolutions::FHD.Width, Resolutions::FHD.Height,
+        {
+            { Format::RGBA32F },
+            { Format::Depth   }
+        }
+    }));
          
-    toneMap = nullptr;
+    pipelines.tonemap = nullptr;
 }
 
 Scene::~Scene()
@@ -120,18 +111,9 @@ void Scene::OnRenderRuntime()
         primaryCamera->SetTransform(cameraTransform);
     }
     {
-        renderTarget->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
-        Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
-#if 0
-        // draw skybox
-        glDepthMask(GL_FALSE);
-        auto &shader = Renderer::Shader<ShaderName::Skybox>();
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        shader->Map();
-        skyboxTexture->Map();
-        Render::DrawIndexed(mSkyBox->VertexArrayObject(), 0);
-        glDepthMask(GL_TRUE);
-#endif
+        renderTarget->Resize(viewportSize);
+        Render::Begin(renderTarget);
+
         {
             Render2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
             auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
@@ -144,32 +126,30 @@ void Scene::OnRenderRuntime()
             Render2D::EndScene();
         }
 
-        // Update transform uniform buffer.
         {
             TransformUniformBuffer transformUniforms;
             transformUniforms.viewProjectionMatrix = primaryCamera->ViewProjection();
-            transformUniforms.skyProjectionMatrix = primaryCamera->Projection() * Matrix4(Vector::Matrix3(primaryCamera->View()));
-            transformUniforms.sceneRotationMatrix = Matrix4(Vector::Matrix3(primaryCamera->View()));
-            transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
+            transformUniforms.skyProjectionMatrix  = primaryCamera->Projection() * Matrix4(Vector::Matrix3(primaryCamera->View()));
+            transformUniforms.sceneRotationMatrix  = Matrix4(Vector::Matrix3(primaryCamera->View()));
+            uniforms.transform->Update(sizeof(TransformUniformBuffer), &transformUniforms);
         }
 
-        // Update shading uniform buffer.
         {
             ShadingUniformBuffer shadingUniforms;
             shadingUniforms.eyePosition = primaryCamera->View()[3];
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < SL_ARRAY_LENGTH(shadingUniforms.lights); ++i)
             {
-                const Light& light = lightEnvironment.lights[i];
-                shadingUniforms.lights[i].direction = Vector::Vector4{ light.Direction, 0.0f };
+                const Light &light = environments.light.lights[i];
+                shadingUniforms.lights[i].direction = Vector4{ light.Direction, 0.0f };
+
+                Vector4 finalLight = Vector4{};
                 if (light.Enabled)
                 {
-                    shadingUniforms.lights[i].radiance = Vector::Vector4{ light.Radiance, 0.0f };
+                    finalLight = Vector4{ light.Radiance, 0.0f };
                 }
-                else {
-                    shadingUniforms.lights[i].radiance = Vector::Vector4{};
-                }
+                shadingUniforms.lights[i].radiance = finalLight;
             }
-            shadingUniformBuffer->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
+            uniforms.shading->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
         }
 
         {
@@ -178,41 +158,18 @@ void Scene::OnRenderRuntime()
             {
                 auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
                 auto &shader = Render::Get<Shader, ShaderName::PBR>();
-                shader->Map();
-
-                shader->Set("uMaterial.AlbedoColor", material.AlbedoColor);
-                shader->Set("uMaterial.Metalness", material.Metalness);
-                shader->Set("uMaterial.Roughness", material.Roughness);
-
-                material.AlbedoMap->Map(0);
-                material.NormalMap->Map(1);
-                material.MetalnessMap->Map(2);
-                material.RoughnessMap->Map(3);
-
-                skyboxTexture->Map(4);
-                // environment->IrradianceMap->Map(5);
-                environment->SpecularBRDFLookUpTable->Map(6);
                 Render::Submit(shader, mesh.Mesh, transform.Transform());
             }
         }
-        renderTarget->Unmap();
+        Render::End();
     }
 
 }
 
 void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 {
-    renderTarget->Resize(static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y));
-    renderTarget->Map();
-    Render::Clear(Color{ 0.0f, 0.0f, 0.0f, 1.0 });
-
-    // draw skybox
-    Render::DisableDepthTest();
-    auto &skyboxShader = Render::Get<Shader, ShaderName::Skybox>();
-    skyboxShader->Map();
-    skyboxTexture->Map();
-    Render::EnableDepthTest();
-    skyboxShader->Unmap();
+    renderTarget->Resize(viewportSize);
+    Render::Begin(renderTarget);
 
     {
         Render2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
@@ -226,58 +183,42 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
         Render2D::EndScene();
     }
 
-    // Update transform uniform buffer.
     {
         TransformUniformBuffer transformUniforms;
         transformUniforms.viewProjectionMatrix = editorCamera.ViewProjection();
-        transformUniforms.skyProjectionMatrix = editorCamera.Projection() * Matrix4(Vector::Matrix3(editorCamera.View()));
-        transformUniforms.sceneRotationMatrix = Matrix4(Vector::Matrix3(editorCamera.View()));
-        transformUniformBuffer->Update(sizeof(TransformUniformBuffer), &transformUniforms);
+        transformUniforms.skyProjectionMatrix  = editorCamera.Projection() * Matrix4(Vector::Matrix3(editorCamera.View()));
+        transformUniforms.sceneRotationMatrix  = Matrix4{ Matrix3{ editorCamera.View() } };
+        uniforms.shading->Update(sizeof(TransformUniformBuffer), &transformUniforms);
     }
 
-    // Update shading uniform buffer.
     {
         ShadingUniformBuffer shadingUniforms;
         shadingUniforms.eyePosition = editorCamera.View()[3];
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < SL_ARRAY_LENGTH(shadingUniforms.lights); ++i)
         {
-            const Light& light = lightEnvironment.lights[i];
-            shadingUniforms.lights[i].direction = Vector::Vector4{ light.Direction, 0.0f };
+            const Light &light = environments.light.lights[i];
+            shadingUniforms.lights[i].direction = Vector4{ light.Direction, 0.0f };
+
+            Vector4 finalLight{};
             if (light.Enabled)
             {
-                shadingUniforms.lights[i].radiance = Vector::Vector4{ light.Radiance, 0.0f };
+                finalLight = Vector4{ light.Radiance, 0.0f };
             }
-            else {
-                shadingUniforms.lights[i].radiance = Vector::Vector4{};
-            }
+
+            shadingUniforms.lights[i].radiance = finalLight;
         }
-        shadingUniformBuffer->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
+        uniforms.shading->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
     }
 
+    auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
+    for (auto e : view)
     {
-        auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-        for (auto e : view)
-        {
-            auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
-            auto &shader = Render::Get<Shader, ShaderName::PBR>();
-            shader->Map();
-
-            shader->Set("uMaterial.AlbedoColor", material.AlbedoColor);
-            shader->Set("uMaterial.Metalness", material.Metalness);
-            shader->Set("uMaterial.Roughness", material.Roughness);
-
-            material.AlbedoMap->Map(0);
-            material.NormalMap->Map(1);
-            material.MetalnessMap->Map(2);
-            material.RoughnessMap->Map(3);
-            skyboxTexture->Map(4);
-            environment->IrradianceMap->Map(5);
-            environment->SpecularBRDFLookUpTable->Map(6);
-            Render::Submit(shader, mesh.Mesh, transform.Transform());
-        }
+        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
+        auto &shader = Render::Get<Shader, ShaderName::PBR>();
+        Render::Submit(shader, mesh.Mesh, transform.Transform());
     }
 
-    renderTarget->Unmap();
+    Render::End();
 }
 
 Entity Scene::CreateEntity(const std::string & name)

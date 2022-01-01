@@ -44,44 +44,44 @@ public:
         return context->GraphicsRenderer();
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(const std::string &filepath) override
+    virtual Texture::Super *CreateTexture(const std::string &filepath) override
     {
-        return std::make_shared<Texture>(filepath);
+        return new Texture{ filepath };
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
+    virtual Texture::Super *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
     {
-        return std::make_shared<Texture>(width, height, data, description, 0);
+        return new Texture{ width, height, data, description, 0 };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, uint32_t binding) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override
     {
-        return std::make_shared<UniformBuffer>(size, binding);
+        return new UniformBuffer{ size, binding };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(size, data, type);
+        return new Buffer{ size, data, type };
     }
 
-    virtual std::shared_ptr<SuperBuffer> CreateBuffer(const size_t size, Buffer::Type type) override
+    virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override
     {
-        return std::make_shared<Buffer>(size, type);
+        return new Buffer{ size, type };
     }
 
-    virtual std::shared_ptr<SuperPipeline> CreatePipeline(std::shared_ptr<SuperShader> &shader)
+    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<SuperShader> &shader)
     {
-        return std::make_shared<Pipeline>(shader);
+        return new Pipeline{ shader };
     }
 
-    virtual std::shared_ptr<SuperRenderTarget>CreateRenderTarget(const RenderTarget::Description &description) override
+    virtual RenderTarget::Super *CreateRenderTarget(const RenderTarget::Description &description) override
     {
-        return std::make_shared<RenderTarget>(description);
+        return new RenderTarget{ description };
     }
 
-    virtual std::shared_ptr<Shader::Super> CreateShader(const std::string &filepath, Shader::Type type) override
+    virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override
     {
-        return std::make_shared<Shader>(filepath, type);
+        return new Shader{ filepath, type };
     }
 
     virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;

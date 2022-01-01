@@ -41,42 +41,42 @@ public:
 
     static std::unique_ptr<Renderer> Create(RenderContext *context);
 
-    virtual std::shared_ptr<Shader> CreateShader(const std::string &filepath, Shader::Type type)
+    virtual Shader *CreateShader(const std::string &filepath, Shader::Type type)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<Pipeline> CreatePipeline(std::shared_ptr<Shader> &shader)
+    virtual Pipeline *CreatePipeline(std::shared_ptr<Shader> &shader)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<Texture> CreateTexture(const std::string &filepath)
+    virtual Texture *CreateTexture(const std::string &filepath)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<SuperTexture> CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
+    virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+    virtual Buffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, Buffer::Type type)
+    virtual Buffer *CreateBuffer(const size_t size, Buffer::Type type)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<Buffer> CreateBuffer(const size_t size, uint32_t binding)
+    virtual Buffer *CreateBuffer(const size_t size, uint32_t binding)
     {
         return nullptr;
     }
 
-    virtual std::shared_ptr<RenderTarget>CreateRenderTarget(const RenderTarget::Description &description)
+    virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
     {
         return nullptr;
     }

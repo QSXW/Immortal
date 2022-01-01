@@ -126,13 +126,10 @@ private:
 
     std::string path;
 
-    std::vector<Vertex> vertices;
-
-    std::vector<Face> faces;
-
-    std::shared_ptr<Buffer>vertexBuffer;
-
-    std::shared_ptr<Buffer> indexBuffer;
+    struct {
+        std::shared_ptr<Buffer> vertex;
+        std::shared_ptr<Buffer> index;
+    } buffer;
 
     struct
     {
