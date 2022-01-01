@@ -96,10 +96,11 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
 inline Shader::Resource GetDecoration(spirv_cross::CompilerGLSL &glsl, spirv_cross::Resource &resource)
 {
     Shader::Resource ret;
+    CleanUpObject(&ret);
     ret.set      = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
     ret.binding  = glsl.get_decoration(resource.id, spv::DecorationBinding);
     ret.location = glsl.get_decoration(resource.id, spv::DecorationLocation);
-    ret.name     = resource.name;
+    ret.name     = std::string{ resource.name };
 
     return ret;
 }
@@ -121,7 +122,7 @@ bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shade
     for (auto &spirvResource : spirvResources->sampled_images)
     {
         Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type |= Shader::Resource::Type::ImageSampler | Shader::Resource::Type::Uniform;
+        resource.type = Shader::Resource::Type::ImageSampler | Shader::Resource::Type::Uniform;
 
         spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
         resource.count = type.array.empty() ? 1 : type.array[0];
@@ -131,11 +132,11 @@ bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shade
     for (auto &spirvResource : spirvResources->uniform_buffers)
     {
         Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type |= Shader::Resource::Type::Uniform;
+        resource.type = Shader::Resource::Type::Uniform;
 
         spirv_cross::SPIRType type = glsl->get_type(spirvResource.base_type_id);
         resource.size  = glsl->get_declared_struct_size(type);
-        resource.count = type.member_types.size();
+        resource.count = 1; /* resource.member_count = type.member_types.size(); */
 
         resouces.emplace_back(std::move(resource));
     }

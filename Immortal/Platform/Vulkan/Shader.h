@@ -74,7 +74,9 @@ public:
     }
 
 private:
-    void Reflect(const std::string &source, std::vector<Resource> &resources, Stage stage);
+    void Reflect(const std::string &source);
+
+    void SetupDescriptorSetLayout(Stage stage);
 
     void Setup();
 

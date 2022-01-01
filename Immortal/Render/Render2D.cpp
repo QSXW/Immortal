@@ -61,7 +61,7 @@ void Render2D::Setup()
         data.ActiveTextures[i] = data.WhiteTexture;
     }
 
-    pipeline->Bind("ubo", uniform.get());
+    pipeline->Bind("UBO", uniform.get());
     pipeline->Bind(data.textureDescriptors.get(), 1);
 
     data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };

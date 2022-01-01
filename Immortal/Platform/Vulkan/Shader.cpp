@@ -70,15 +70,19 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
         return VK_NULL_HANDLE;
     }
 
+    // GLSLCompiler::Reflect(spirv, resources);
+
     VkShaderModule shaderModule{ VK_NULL_HANDLE };
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirv.size() * sizeof(uint32_t);
     createInfo.pCode    = spirv.data();
 
-    Check(vkCreateShaderModule(device->Handle(), &createInfo, nullptr, &shaderModule));
+    Check(vkCreateShaderModule(*device, &createInfo, nullptr, &shaderModule));
 
-    Reflect(src, resources, stage);
+    Reflect(src);
+    SetupDescriptorSetLayout(stage);
+    resources.clear();
 
     return shaderModule;
 }
@@ -164,8 +168,8 @@ inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
                 {
                     e.format = Shader::GetResourceFormat(buffer);
                 }
-                j = 0;
             }
+            j = 0;
             i++;
             continue;
         }
@@ -182,27 +186,6 @@ inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
         buffer[j++] = ptr[i++];
     }
 
-    j = 0;
-    int offset = 0;
-    while (++offset && ptr[i] != '\n')
-    {
-        SKIP_IF(ptr[i], '\t', i++);
-        SKIP_IF(ptr[i], '\r', i++);
-        SKIP_IF(ptr[i],  ' ', i++);
-        SKIP_IF(ptr[i],  '}', i++);
-
-        if (ptr[i] == ';')
-        {
-            i++;
-            buffer[j] = '\0';
-            resource.name = buffer;
-            break;
-        }
-
-        buffer[j++] = ptr[i++];
-    }
-
-    i -= offset;
     InputElementDescription desc{ std::move(elements) };
     resource.size = desc.Stride();
 
@@ -232,6 +215,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
     size_t i = 0, j = 0;
     std::stack<uint8_t> tokens;
     char buffer[128] = { 0 };
+    bool isStructure = false;
 
     while (*ptr)
     {
@@ -239,14 +223,15 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
         {
             if (j > 0)
             {
-                j = 0;
                 GetType(buffer, resource);
                 GetFormat(buffer, resource);
             }
+            j = 0;
             i++;
             continue;
         }
         SKIP_IF(ptr[i], '\n', i++);
+        SKIP_IF(ptr[i], '\r', i++);
         if (ptr[i] == '(')
         {
             tokens.push(ptr[i++]);
@@ -255,6 +240,9 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
         }
         if (ptr[i] == '{')
         {
+            isStructure = true;
+            buffer[j] = '\0';
+            resource.name = buffer;
             tokens.push(ptr[i++]);
             i += ParseStructure(ptr + i, resource);
             continue;
@@ -288,7 +276,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
             buffer[j] = '\0';
             resource.count = std::atoi(buffer);
         }
-        BREAK_IF(ptr[i], ';', buffer[j++] = '\0'; i++; resource.name = buffer);
+        BREAK_IF(ptr[i], ';', buffer[j++] = '\0'; i++; if (!isStructure) { resource.name = buffer; });
         buffer[j++] = ptr[i++];
     }
 
@@ -300,7 +288,7 @@ inline size_t ParseLayout(const char *ptr, Shader::Resource &resource)
     return i;
 }
 
-void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &resources, Stage stage)
+void Shader::Reflect(const std::string &source)
 {
     const std::string layout = std::string{ "layout" };
     std::vector<VkPushConstantRange> ranges{};
@@ -314,13 +302,19 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
 
         i += layout.size();
         i += ParseLayout(source.data() + i, resource);
+    }
+}
 
+void Shader::SetupDescriptorSetLayout(Stage stage)
+{
+    for (auto &resource : resources)
+    {
         if (resource.type & Resource::Type::PushConstant)
         {
             if (resource.size >= Limit::PushConstantMaxSize)
             {
                 LOG::WARN("Using a push constants size exceeded {0} bytes, "
-                          "which is not recommended by all vendor devices", Limit::PushConstantMaxSize);
+                    "which is not recommended by all vendor devices", Limit::PushConstantMaxSize);
             }
             pushConstantRanges.emplace_back(VkPushConstantRange{ ConvertTo(stage), 0, resource.size });
         }
@@ -353,7 +347,6 @@ void Shader::Reflect(const std::string &source, std::vector<Shader::Resource> &r
             descriptorSetLayoutBindings.emplace_back(std::move(bindingInfo));
             descriptorSetUpdater.Emplace(resource.name, std::move(writeDescriptor));
         }
-        continue;
     }
 }
 
