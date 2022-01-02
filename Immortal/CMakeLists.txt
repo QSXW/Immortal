@@ -23,7 +23,6 @@ set(FRAMEWORK_FILES
     Framework/Log.cpp
     Framework/Log.h
     Framework/Math.h
-    Framework/Object.h
     Framework/Timer.h
     Framework/Utils.h
     Framework/Vector.cpp
@@ -241,17 +240,15 @@ set(RENDER_FILES
 set(SCENE_FILES
     Scene/Component.cpp
     Scene/Component.h
-    Scene/Entity.cpp
-    Scene/Entity.h
+    Scene/Object.h
     Scene/entt.hpp
+    Scene/GameObject.h
     Scene/ObserverCamera.cpp
     Scene/ObserverCamera.h
     Scene/Scene.cpp
     Scene/Scene.h
     Scene/SceneCamera.cpp
-    Scene/SceneCamera.h
-    Scene/ScriptableObject.cpp
-    Scene/ScriptableObject.h)
+    Scene/SceneCamera.h)
 
 set(SCRIPT_FILES
     Script/ScriptDriver.cpp

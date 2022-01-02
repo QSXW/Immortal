@@ -25,11 +25,11 @@ public:
         size = value;
     }
 
-    template<class T>
-    void OnUpdate(std::shared_ptr<T> &target)
+    template<class T, class P>
+    void OnUpdate(std::shared_ptr<T> &target, P process = []() -> void{ })
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-        ImGui::Begin(Super::text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin(Super::Text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
 
         auto &[x, y] = ImGui::GetContentRegionAvail();
 
@@ -39,6 +39,8 @@ public:
             (ImTextureID)(uint64_t)(*target),
             { x, y }
             );
+
+        process();
 
         ImGui::End();
         ImGui::PopStyleVar();

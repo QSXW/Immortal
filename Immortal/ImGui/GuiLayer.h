@@ -25,6 +25,12 @@ static inline bool Begin(const std::string &name, bool *p_open = NULL, ImGuiWind
     return Begin(name.c_str(), p_open, flags);
 }
 
+template <class...  Args>
+static inline bool CollapsingHeader(const std::string &label, Args &&...args)
+{
+    return ImGui::CollapsingHeader(label.c_str(), std::forward<Args>(args)...);
+}
+
 }
 
 namespace Immortal

@@ -2,7 +2,7 @@
 #include "SceneSerializer.h"
 
 #include <fstream>
-#include "Scene/Entity.h"
+#include "Scene/Object.h"
 
 namespace Immortal
 {

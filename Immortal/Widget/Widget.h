@@ -75,13 +75,13 @@ class Super
 {
 public:
     Super() :
-        text{ "Undefined" }
+        Text{ "Undefined" }
     {
 
     }
 
     Super(const std::string &name) :
-        text{ name }
+        Text{ name }
     {
 
     }
@@ -94,7 +94,7 @@ public:
     }
 
 public:
-    std::string text;
+    std::string Text;
 
     ImVec4 Colors[U32(Theme::MaxCount)];
 };

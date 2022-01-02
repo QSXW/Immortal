@@ -145,7 +145,7 @@ Vector2 EditorCamera::PanSpeed() const
 
 float EditorCamera::ZoomSpeed() const
 {
-    float speed = distance * 0.2f;
+    float speed = distance * 0.3f;
     speed = std::max(speed, 0.0f);
     return std::min(speed * speed, 100.0f);
 }

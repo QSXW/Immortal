@@ -90,7 +90,7 @@ struct LightEnvironment
     Light lights[LightNumbers];
 };
 
-class Entity;
+class Object;
 class IMMORTAL_API Scene
 {
 public:
@@ -106,13 +106,13 @@ public:
 
     void OnRenderEditor(const EditorCamera &editorCamera);
 
-    Entity CreateEntity(const std::string &name = "");
+    Object CreateObject(const std::string &name = "");
 
-    void DestroyEntity(Entity &e);
+    void DestroyObject(Object &e);
 
     void SetViewportSize(const Vector::Vector2 &size);
 
-    Entity PrimaryCameraEntity();
+    Object PrimaryCameraObject();
 
     auto &Registry()
     {
@@ -129,17 +129,12 @@ public:
         return observerCamera;
     }
 
-public:
-    using EntityMap = std::unordered_map<uint64_t, Entity>;
-
 private:
     std::string debugName;
 
     entt::registry registry;
 
     entt::entity entity;
-
-    EntityMap entityMap;
 
     struct {
         std::shared_ptr<Mesh> skybox;

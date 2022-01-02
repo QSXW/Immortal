@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Framework/Object.h"
 
 #include "Texture.h"
 #include "Shader.h"
@@ -9,7 +8,7 @@
 namespace Immortal
 {
 
-class IMMORTAL_API Material : public Object
+class IMMORTAL_API Material
 {
 public:
     enum class Flag

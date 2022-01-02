@@ -6,9 +6,9 @@
 #include "Render/Render.h"
 #include "Render/Render2D.h"
 
-#include "Entity.h"
+#include "Object.h"
 #include "Component.h"
-#include "ScriptableObject.h"
+#include "GameObject.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -74,7 +74,7 @@ void Scene::OnRenderRuntime()
 {
     // Update Script
     {
-        registry.view<NativeScriptComponent>().each([=](auto e, NativeScriptComponent &script)
+        registry.view<NativeScriptComponent>().each([=](auto o, NativeScriptComponent &script)
             {
                 if (script.Status == NativeScriptComponent::Status::Ready)
                 {
@@ -87,9 +87,9 @@ void Scene::OnRenderRuntime()
     Matrix4 cameraTransform;
     {
         auto view = registry.view<TransformComponent, CameraComponent>();
-        for (auto &e : view)
+        for (auto &o : view)
         {
-            auto [transform, camera] = view.get<TransformComponent, CameraComponent>(e);
+            auto [transform, camera] = view.get<TransformComponent, CameraComponent>(o);
             if (camera.Primary)
             {
                 primaryCamera = &camera.Camera;
@@ -117,10 +117,10 @@ void Scene::OnRenderRuntime()
         {
             Render2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
             auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-            for (auto e : group)
+            for (auto o : group)
             {
-                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
-                Render2D::DrawSprite(transform.Transform(), sprite, (int)e);
+                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(o);
+                Render2D::DrawSprite(transform.Transform(), sprite, (int)o);
             }
 
             Render2D::EndScene();
@@ -154,9 +154,9 @@ void Scene::OnRenderRuntime()
 
         {
             auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-            for (auto e : view)
+            for (auto o : view)
             {
-                auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
+                auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
                 auto &shader = Render::Get<Shader, ShaderName::PBR>();
                 Render::Submit(shader, mesh.Mesh, transform.Transform());
             }
@@ -174,10 +174,10 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     {
         Render2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
         auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-        for (auto e : group)
+        for (auto o : group)
         {
-            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(e);
-            Render2D::DrawSprite(transform.Transform(), sprite, (int)e);
+            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(o);
+            Render2D::DrawSprite(transform.Transform(), sprite, (int)o);
         }
 
         Render2D::EndScene();
@@ -211,9 +211,9 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     }
 
     auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-    for (auto e : view)
+    for (auto o : view)
     {
-        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(e);
+        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
         auto &shader = Render::Get<Shader, ShaderName::PBR>();
         Render::Submit(shader, mesh.Mesh, transform.Transform());
     }
@@ -221,39 +221,39 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     Render::End();
 }
 
-Entity Scene::CreateEntity(const std::string & name)
+Object Scene::CreateObject(const std::string &name)
 {
-    auto e = Entity{ registry.create(), this };
+    auto o = Object{ registry.create(), this };
 
-    e.AddComponent<TransformComponent>();
-    auto &idComponent = e.AddComponent<IDComponent>();
-    entityMap[idComponent.uid] = e;
-    e.AddComponent<TagComponent>(name);
+    o.AddComponent<TransformComponent>();
+    auto &idComponent = o.AddComponent<IDComponent>();
+    o.AddComponent<TagComponent>(name);
 
-    return e;
+    return o;
 }
 
-void Scene::DestroyEntity(Entity & e)
+void Scene::DestroyObject(Object & o)
 {
-    registry.destroy(e);
+    registry.destroy(o);
 }
 
-void Scene::SetViewportSize(const Vector::Vector2 &size)
+void Scene::SetViewportSize(const Vector2 &size)
 {
     viewportSize = size;
 }
 
-Entity Scene::PrimaryCameraEntity()
+Object Scene::PrimaryCameraObject()
 {
     auto view = registry.view<CameraComponent>();
-    for (auto e : view)
+    for (auto o : view)
     {
-        const auto &camera = view.get<CameraComponent>(e);
+        const auto &camera = view.get<CameraComponent>(o);
         if (camera.Primary)
         {
-            return Entity{ e, this };
+            return Object{ o, this };
         }
     }
-    return Entity{};
+    return Object{};
 }
+
 }

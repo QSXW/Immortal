@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Framework/Object.h"
 
 #include "Buffer.h"
 #include "Shader.h"
@@ -17,7 +16,7 @@ namespace Immortal
 
 #define IM_DEFAULT_MESH_PATH(x) "Assets/Meshes/Default/"#x".fbx"
 
-class IMMORTAL_API Mesh : public Object
+class IMMORTAL_API Mesh
 {
 public:
     enum class Primitive

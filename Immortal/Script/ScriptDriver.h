@@ -2,12 +2,11 @@
 
 #include "ImmortalCore.h"
 #include "Framework/Application.h"
-#include "Framework/Object.h"
-#include "Scene/ScriptableObject.h"
+#include "Scene/GameObject.h"
 
 namespace Immortal
 {
-class ScriptDriver : public Object
+class ScriptDriver
 {
 public:
     static std::string AssemblyPath;
@@ -54,7 +53,7 @@ public:
     static int Status;
 };
 
-class NativeScriptDriver : public Object
+class NativeScriptDriver
 {
 public:
     using Getter = void*(__cdecl *)();
@@ -80,9 +79,9 @@ public:
         }
     }
 
-    static std::vector<ScriptableObject *> LoadObject()
+    static std::vector<GameObject *> LoadObject()
     {
-        std::vector<ScriptableObject *> objects;
+        std::vector<GameObject *> objects;
 
         _M_moudle = LoadLibraryA("ScriptsCore/bin/Runtime.dll");
         if (!_M_moudle)
@@ -92,7 +91,7 @@ public:
         }
 
         Getter proc = (Getter)GetProcAddress(_M_moudle, "GetCubeController");
-        objects.push_back(reinterpret_cast<ScriptableObject*>(proc()));
+        objects.push_back(reinterpret_cast<GameObject*>(proc()));
 
         proc = (Getter)GetProcAddress(_M_moudle, "GetApplication");
         auto app = proc();

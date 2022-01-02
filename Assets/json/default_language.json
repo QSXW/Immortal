@@ -18,7 +18,12 @@
             "offlineRender": "离线渲染",
             "preview": "预览",
             "viewport": "视口",
-            "loadObject": "加载对象"
+            "loadObject": "加载对象",
+            "position": "位置",
+            "rotation": "旋转",
+            "scale": "缩放",
+            "navigator": "导航器",
+            "preset": "预设"
         }
     }
 }

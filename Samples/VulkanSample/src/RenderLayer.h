@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Immortal.h>
+#include "Panel/Navigator.h"
 
 namespace Immortal
 {
@@ -10,7 +11,8 @@ class RenderLayer : public Layer
 public:
     RenderLayer(Vector2 viewport, const std::string &label) :
         Layer{ label },
-        eventSink{ this }
+        eventSink{ this },
+        editorCamera{ Vector::PerspectiveFOV(Vector::Radians(90.0f), viewport.x, viewport.y, 0.1f, 1000.0f) }
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
 
@@ -40,6 +42,11 @@ public:
         renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 
         Render2D::Setup(renderTarget);
+
+        selectedObject = scene.CreateObject("Texture");
+        selectedObject.Add<SpriteRendererComponent>();
+        auto &transform = selectedObject.GetComponent<TransformComponent>();
+        transform.Scale = Vector3{ 8.0f, 8.0f, 8.0f };
     }
 
     virtual void OnDetach() override
@@ -51,44 +58,77 @@ public:
     {
         auto pos = Input::GetMousePosition();
 
-        Vector2 viewportSize = offline.Size();
+        Vector2 viewportSize = editableArea.Size();
         if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
             (viewportSize.x != 0 && viewportSize.y != 0))
         {
             renderTarget->Resize(viewportSize);
+            editorCamera.SetViewportSize(viewportSize);
             camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
         }
+        editorCamera.OnUpdate();
 
-        ubo.viewProjection = camera.primaryCamera.ViewProjection();
-        ubo.modeTransform  = camera.transform;
+        auto &transform = selectedObject.GetComponent<TransformComponent>();
+
+        ubo.viewProjection = editorCamera.ViewProjection();
+        ubo.modeTransform  = transform;
         uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        camera.transform.Scale = { image->Ratio(), 1.0, 0.0 };
-
-        Render::Begin(renderTarget, camera.primaryCamera);
+        Render::Begin(renderTarget, editorCamera);
         {
-            Render::Draw(pipeline);
-            Render2D::BeginScene(camera.primaryCamera);
-            Render2D::DrawQuad(camera.transform, image);
+            // Render::Draw(pipeline);
+            Render2D::BeginScene(editorCamera);
+            Render2D::DrawQuad(transform, image);
             Render2D::EndScene();
         }
         Render::End();
     }
 
-    virtual void OnGuiRender() override
+    void UpdateEditableArea()
     {
-        ImGui::Begin("Render Target");
-        ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
-        UI::DrawVec3Control("Position", camera.transform.Position);
-        UI::DrawVec3Control("Rotation", camera.transform.Rotation);
-        UI::DrawVec3Control("Scale", camera.transform.Scale);
-        if (ImGui::DragFloat("Orthographic Size", &camera.primaryCamera.OrthographicSize(), 0.1f, 0.000001f, 90.0f))
-        {
-            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
-        }
-        ImGui::End();
-        offline.OnUpdate(renderTarget);
+        editableArea.OnUpdate(renderTarget, [&]() -> void {
+            if (guizmoType != ImGuizmo::OPERATION::INVALID)
+            {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
+                Matrix4 cameraProjectionMatrix = editorCamera.Projection();
+                Matrix4 cameraViewMatrix = editorCamera.View();
+
+                TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
+                Matrix4 munipulatedTransform = transform.Transform();
+
+                bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
+                float snapValues[][3] = {
+                    {  0.5f,  0.5f,  0.5f },
+                    { 45.0f, 45.0f, 45.0f },
+                    {  0.5f,  0.5f,  0.5f }
+                };
+
+                ImGuizmo::Manipulate(
+                    &cameraViewMatrix[0].x,
+                    &cameraProjectionMatrix[0].x,
+                    static_cast<ImGuizmo::OPERATION>(guizmoType),
+                    ImGuizmo::LOCAL,
+                    &munipulatedTransform[0].x,
+                    nullptr,
+                    snap ? snapValues[guizmoType] : nullptr);
+
+                if (ImGuizmo::IsUsing())
+                {
+                    Vector3 rotation;
+                    Vector::DecomposeTransform(munipulatedTransform, transform.Position, rotation, transform.Scale);
+
+                    Vector3 deltaRotation = rotation - transform.Rotation;
+                    transform.Rotation += deltaRotation;
+                }
+            }
+        });
+    }
+
+    void UpdateMenuBar()
+    {
         auto *gui = Application::App()->GetGuiLayer();
         gui->UpdateTheme();
 
@@ -144,6 +184,25 @@ public:
             }
             });
         ImGui::PopFont();
+    }
+
+    virtual void OnGuiRender() override
+    {
+        auto &transform = selectedObject.GetComponent<TransformComponent>();
+        ImGui::Begin("Render Target");
+        ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
+        UI::DrawVec3Control("Position", transform.Position);
+        UI::DrawVec3Control("Rotation", transform.Rotation);
+        UI::DrawVec3Control("Scale", transform.Scale);
+        if (ImGui::DragFloat("Orthographic Size", &camera.primaryCamera.OrthographicSize(), 0.1f, 0.000001f, 90.0f))
+        {
+            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+        }
+        ImGui::End();
+
+        UpdateEditableArea();
+        UpdateMenuBar();
+        panels.navigator.OnUpdate(selectedObject, [&]() -> void { LoadObject(); });
 
         if (Settings.showDemoWindow)
         {
@@ -156,6 +215,9 @@ public:
     void OnTextureLoaded(const std::string &path)
     {
         image.reset(Render::Create<Texture>(path));
+        auto &transform = selectedObject.GetComponent<TransformComponent>();
+        transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
+        selectedObject.Get<SpriteRendererComponent>().Texture = image;
     }
 
     bool LoadObject()
@@ -164,6 +226,9 @@ public:
         if (res.has_value())
         {
             image.reset(Render::Create<Texture>(res.value()));
+            auto &transform = selectedObject.GetComponent<TransformComponent>();
+            transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
+            selectedObject.Get<SpriteRendererComponent>().Texture = image;
             return true;
         }
 
@@ -188,11 +253,28 @@ public:
             }
             break;
 
+        case KeyCode::F:
+            editorCamera.Focus(selectedObject.GetComponent<TransformComponent>().Position);
+            break;
+
+        case KeyCode::Q:
+            guizmoType = ImGuizmo::OPERATION::INVALID;
+            break;
+
         case KeyCode::W:
+            guizmoType = ImGuizmo::OPERATION::TRANSLATE;
             if (control || shift)
             {
                 Application::App()->Close();
             }
+            break;
+
+        case KeyCode::E:
+            guizmoType = ImGuizmo::OPERATION::ROTATE;
+            break;
+
+        case KeyCode::R:
+            guizmoType = ImGuizmo::OPERATION::SCALE;
             break;
 
         case KeyCode::N:
@@ -221,10 +303,14 @@ private:
     } camera;
 
     struct {
+        Navigator navigator;
+    } panels;
+
+    struct {
         bool showDemoWindow{ true };
     } Settings;
 
-    Widget::Viewport offline{ WordsMap::Get("offlineRender")};
+    Widget::Viewport editableArea{ WordsMap::Get("offlineRender") };
     Widget::MenuBar menuBar;
 
     struct
@@ -235,7 +321,7 @@ private:
 
     std::shared_ptr<Buffer> uniformBuffer;
 
-    Entity cameraObject;
+    Object cameraObject;
 
     std::shared_ptr<Texture> image{ Render::Preset()->WhiteTexture };
 
@@ -243,7 +329,13 @@ private:
 
     Scene scene{ "Viewport", true };
 
-    GameObject textureObject;
+    Object selectedObject;
+
+    Object triangle;
+
+    EditorCamera editorCamera;
+
+    int guizmoType = ImGuizmo::OPERATION::INVALID;
 };
 
 }

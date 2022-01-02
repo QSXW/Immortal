@@ -196,7 +196,7 @@ struct SpriteRendererComponent : public Component
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    std::shared_ptr<Texture> Texture;
+    std::shared_ptr<Texture> Texture = Render::Preset()->WhiteTexture;;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 

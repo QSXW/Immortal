@@ -9,26 +9,26 @@
 namespace Immortal
 {
 
-class IMMORTAL_API Entity
+class IMMORTAL_API Object
 {
 public:
-    Entity() = default;
+    Object() = default;
 
-    Entity(entt::entity handle, Scene *scene) :
+    Object(entt::entity handle, Scene *scene) :
         handle{ handle },
         scene{ scene }
     {
 
     }
 
-    Entity(int handle, Scene *scene) :
+    Object(int handle, Scene *scene) :
         handle{ entt::entity(handle) },
         scene{ scene }
     {
 
     }
 
-    ~Entity()
+    ~Object()
     {
     
     }
@@ -62,6 +62,30 @@ public:
         return scene->Registry().has<T>(handle);
     }
 
+    template <class T>
+    void Remove()
+    {
+        RemoveComponent<T>();
+    }
+
+    template <class T, class... Args>
+    T &Add(Args&&... args)
+    {
+        return AddComponent<T>(std::forward<Args>(args)...);
+    }
+
+    template <class T>
+    T &Get() const
+    {
+        return GetComponent<T>();
+    }
+
+    template <class T>
+    bool Has()
+    {
+        return HasComponent<T>();
+    }
+
     TransformComponent &Transform() 
     {
         return GetComponent<TransformComponent>();
@@ -87,20 +111,30 @@ public:
         return uint64_t(handle) && scene;
     }
 
-    bool operator==(const Entity &other) const
+    bool operator==(const Object &other) const
     {
         return handle == other.handle && scene == other.scene;
     }
 
-    bool operator!=(const Entity &other) const
+    bool operator!=(const Object &other) const
     {
         return !(*this == other);
     }
 
-private:
-    entt::entity handle{ entt::null };
+    Object &operator=(const Object &o)
+    {
+        THROWIF(&o == this, SError::SelfAssignment);
 
+        scene  = o.scene;
+        handle = o.handle;
+
+        return *this;
+    }
+
+private:
     Scene *scene{ nullptr };
+
+    entt::entity handle{ entt::null };
 };
 
 }

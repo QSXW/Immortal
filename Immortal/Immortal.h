@@ -44,9 +44,9 @@
 
 #include "Editor/EditorCamera.h"
 
-#include "Scene/Entity.h"
+#include "Scene/Object.h"
 #include "Scene/Scene.h"
-#include "Scene/ScriptableObject.h"
+#include "Scene/GameObject.h"
 #include "Scene/ObserverCamera.h"
 
 #include "Serializer/SceneSerializer.h"

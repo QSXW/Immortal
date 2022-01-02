@@ -1,49 +1,54 @@
 #pragma once
 
 #include "ImmortalCore.h"
-#include "Entity.h"
+#include "Object.h"
 #include "Interface/Delegate.h"
 
 namespace Immortal
 {
 
-class IMMORTAL_API ScriptableObject
+class IMMORTAL_API GameObject : public Object
 {
 public:
-    virtual ~ScriptableObject() { }
+    virtual ~GameObject()
+    {
+    
+    }
 
     template <class T>
     T &GetComponent()
     {
-        return entity.GetComponent<T>();
+        return Object::Get<T>();
     }
 
     template <class T, class... Args>
     T &AddComponent(Args&&... args)
     {
-        return entity.AddComponent<T>(std::forward<Args>(args)...);
+        return Object::Add<T>(std::forward<Args>(args)...);
     }
 
     virtual void OnStart()
     {
-    
+
     }
 
     virtual void OnDestroy()
     {
-    
+
     }
 
     virtual void OnUpdate()
     {
-    
+
     }
 
-public:
-    Entity entity;
-};
+    GameObject &operator=(const Object &o)
+    {
+        *dynamic_cast<Object *>(this) = o;
 
-using GameObject = ScriptableObject;
+        return *this;
+    }
+};
 
 struct NativeScriptComponent : public Component
 {
@@ -62,11 +67,11 @@ struct NativeScriptComponent : public Component
         delegate = std::make_shared<Delegate<void()>>();
     }
 
-    void Map(Entity e, ScriptableObject *script)
+    void Map(Object o, GameObject *script)
     {
-        script->entity = e;
+        *script = o;
         script->OnStart();
-        delegate->Map<ScriptableObject, &ScriptableObject::OnUpdate>(script);
+        delegate->Map<GameObject, &GameObject::OnUpdate>(script);
     }
 
     void OnRuntime()

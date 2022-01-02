@@ -27,4 +27,7 @@ void main()
 	outEntityID     = inEntityID;
 
 	gl_Position = ubo.viewProjection * vec4(inPosition, 1.0);
+#if VULKAN
+	gl_Position.y = -gl_Position.y;
+#endif
 }

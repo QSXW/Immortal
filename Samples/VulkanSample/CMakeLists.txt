@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.21)
 
 project(VulkanSample LANGUAGES CXX)
 
+set(PANEL_FILES
+    Panel/Navigator.h)
+
 set(SRC_FILES
     src/VulkanSample.cpp
     src/VulkanSample.h
@@ -10,11 +13,14 @@ set(SRC_FILES
     )
 
 add_executable(${PROJECT_NAME}
-    ${SRC_FILES})
+    ${SRC_FILES}
+    ${PANEL_FILES}
+)
 
+source_group("\\Panel\\" FILES ${PANEL_FILES})
 source_group("\\" FILES ${SRC_FILES})
 
-target_include_directories(${PROJECT_NAME} INTERFACE
+target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME}

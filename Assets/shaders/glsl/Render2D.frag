@@ -13,7 +13,7 @@ layout(binding = 1) uniform sampler2D uTextures[32];
 
 void main()
 {
-	outColor =  texture(uTextures[int(inTexIndex)], inTexCoord * inTilingFactor) * inColor;
+	outColor =  texture(uTextures[int(inTexIndex)], vec2(inTexCoord.x, 1.0 - inTexCoord.y) * inTilingFactor) * inColor;
 
 	// outID = int(inEntityID);
 }

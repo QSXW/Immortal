@@ -25,7 +25,8 @@ public:
 
     static const std::string &Get(const std::string &key)
     {
-        return That.words[key];
+        auto &it = That.words.find(key);
+        return it == That.words.end() ? key : it->second;
     }
 
 private:
