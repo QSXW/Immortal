@@ -30,8 +30,8 @@ set(FRAMEWORK_FILES
     Framework/Window.cpp
     Framework/Window.h
     Framework/Device.h
-    Framework/ThreadManager.cpp
-    Framework/ThreadManager.h)
+    Framework/Async.cpp
+    Framework/Async.h)
 
 set(EDITOR_FILES
     Editor/EditorCamera.cpp
