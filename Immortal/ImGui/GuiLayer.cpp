@@ -15,6 +15,10 @@
 namespace Immortal
 {
 
+#ifdef WINDOWS
+    static const std::string SystemFontPath = { "C:\\Windows\\Fonts\\" };
+#endif
+
 GuiLayer *GuiLayer::Create(RenderContext *context)
 {
     if (Render::API == Render::Type::OpenGL)
@@ -31,6 +35,9 @@ GuiLayer *GuiLayer::Create(RenderContext *context)
     }
     return new GuiLayer();
 }
+
+FontContext GuiLayer::NotoSans;
+FontContext GuiLayer::SimSun;
 
 GuiLayer::GuiLayer()
     : Layer("GuiLayer")
@@ -67,19 +74,30 @@ void GuiLayer::OnAttach()
     }
 
     Profiler p{ "Loading DemiLight File" };
-    fonts.demilight = io.Fonts->AddFontFromFileTTF(
+    NotoSans.Demilight = io.Fonts->AddFontFromFileTTF(
         "Assets/fonts/NotoSansCJKsc-Light.otf",
         18,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 
-    fonts.bold = io.Fonts->AddFontFromFileTTF(
+    NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
         "Assets/fonts/NotoSansCJKsc-Bold.otf",
         18,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
+
+#ifdef WINDOWS
+    SimSun.Regular = io.Fonts->AddFontFromFileTTF(
+        std::string{ SystemFontPath + std::string{ "Simsun.ttc" } }.c_str(),
+        18,
+        nullptr,
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+        );
+#else
+    SimSun.Regular = NotoSans.Demilight;
+#endif
 }
 
 void GuiLayer::SetTheme()

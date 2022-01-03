@@ -33,6 +33,16 @@ static inline bool CollapsingHeader(const std::string &label, Args &&...args)
 
 }
 
+struct FontContext
+{
+    ImFont *Regular{ nullptr };
+    ImFont *Medium{ nullptr };
+    ImFont *Light{ nullptr };
+    ImFont *Demilight{ nullptr };
+    ImFont *Bold{ nullptr };
+    ImFont *Black{ nullptr };
+};
+
 namespace Immortal
 {
 
@@ -41,6 +51,10 @@ class IMMORTAL_API GuiLayer : public Layer
 {
 public:
     static GuiLayer *Create(RenderContext *context);
+
+    static FontContext NotoSans;
+
+    static FontContext SimSun;
 
 public:
     GuiLayer();
@@ -134,12 +148,12 @@ public:
 
     ImFont *DemiLight()
     {
-        return fonts.demilight;
+        return NotoSans.Demilight;
     }
 
     ImFont *Bold()
     {
-        return fonts.bold;
+        return NotoSans.Bold;
     }
 
     void UpdateTheme();
@@ -148,12 +162,6 @@ private:
     bool blockEvents = true;
     
     float time = 0.0f;
-
-    struct
-    {
-        ImFont *demilight{ nullptr };
-        ImFont *bold{ nullptr };
-    } fonts;
 };
 
 using SuperGuiLayer = GuiLayer;
