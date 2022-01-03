@@ -65,6 +65,7 @@ public:
             renderTarget->Resize(viewportSize);
             editorCamera.SetViewportSize(viewportSize);
             camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+            scene.SetViewportSize(viewportSize);
         }
         editorCamera.OnUpdate();
 
@@ -74,19 +75,12 @@ public:
         ubo.modeTransform  = transform;
         uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        Render::Begin(renderTarget, editorCamera);
-        {
-            // Render::Draw(pipeline);
-            Render2D::BeginScene(editorCamera);
-            Render2D::DrawQuad(transform, image);
-            Render2D::EndScene();
-        }
-        Render::End();
+        scene.OnRenderEditor(editorCamera);
     }
 
     void UpdateEditableArea()
     {
-        editableArea.OnUpdate(renderTarget, [&]() -> void {
+        editableArea.OnUpdate(scene.Target() , [&]() -> void {
             if (guizmoType != ImGuizmo::OPERATION::INVALID)
             {
                 ImGuizmo::SetOrthographic(false);
@@ -296,6 +290,8 @@ private:
 
     std::shared_ptr<Pipeline> pipeline;
 
+    Object selectedObject;
+
     struct {
         SceneCamera primaryCamera;
 
@@ -328,8 +324,6 @@ private:
     EventSink<RenderLayer> eventSink;
 
     Scene scene{ "Viewport", true };
-
-    Object selectedObject;
 
     Object triangle;
 

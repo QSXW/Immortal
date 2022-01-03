@@ -47,8 +47,8 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
         {
-            { Format::RGBA32F },
-            { Format::Depth   }
+            { Format::RGBA8 },
+            { Format::Depth }
         }
     }));
          
@@ -111,7 +111,6 @@ void Scene::OnRenderRuntime()
         primaryCamera->SetTransform(cameraTransform);
     }
     {
-        renderTarget->Resize(viewportSize);
         Render::Begin(renderTarget);
 
         {
@@ -168,7 +167,6 @@ void Scene::OnRenderRuntime()
 
 void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 {
-    renderTarget->Resize(viewportSize);
     Render::Begin(renderTarget);
 
     {
@@ -211,7 +209,7 @@ void Scene::OnRenderEditor(const EditorCamera &editorCamera)
     }
 
     auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-    for (auto o : view)
+    for (auto &o : view)
     {
         auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
         auto &shader = Render::Get<Shader, ShaderName::PBR>();
@@ -240,6 +238,7 @@ void Scene::DestroyObject(Object & o)
 void Scene::SetViewportSize(const Vector2 &size)
 {
     viewportSize = size;
+    renderTarget->Resize(size);
 }
 
 Object Scene::PrimaryCameraObject()

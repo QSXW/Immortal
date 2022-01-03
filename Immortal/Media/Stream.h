@@ -19,6 +19,12 @@ public:
         Write = 0x002b6277
     };
 
+    enum class Type
+    {
+        Binary,
+        Text
+    };
+
 public:
     Stream(Mode mode) :
         mode{ mode }
@@ -82,6 +88,13 @@ public:
         return fread(dst, size, count, fp);
     }
 
+    template <class T>
+    size_t Read(T &contatiner)
+    {
+        contatiner.resize(Size());
+        return Read(contatiner.data(), contatiner.size());
+    }
+
     template <size_t size, size_t count = 1>
     size_t Write(const void *src)
     {
@@ -91,6 +104,11 @@ public:
     size_t Write(const void *src, size_t size, size_t count = 1)
     {
         return fwrite(src, size, count, fp);
+    }
+
+    size_t Write(const std::string &src)
+    {
+        return Write(src.c_str(), src.size());
     }
 
     size_t Pos()

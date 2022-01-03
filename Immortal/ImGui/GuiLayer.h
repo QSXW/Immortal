@@ -7,6 +7,13 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 
+#define DEFINE_CPP_STRING_API(FN_NAME, ...) \
+    template <class...  Args> \
+    static inline bool FN_NAME(const std::string &label, Args &&...args) \
+    { \
+        return ImGui::FN_NAME(label.c_str(), std::forward<Args>(args)...); \
+    }
+
 namespace ImGui
 {
 
@@ -25,11 +32,14 @@ static inline bool Begin(const std::string &name, bool *p_open = NULL, ImGuiWind
     return Begin(name.c_str(), p_open, flags);
 }
 
-template <class...  Args>
-static inline bool CollapsingHeader(const std::string &label, Args &&...args)
-{
-    return ImGui::CollapsingHeader(label.c_str(), std::forward<Args>(args)...);
+DEFINE_CPP_STRING_API(CollapsingHeader)
+
 }
+
+namespace UI
+{
+
+DEFINE_CPP_STRING_API(Button)
 
 }
 
@@ -145,6 +155,10 @@ public:
     void BlockEvent(bool block) { blockEvents = block;  }
 
     void SetTheme();
+
+    bool LoadTheme();
+
+    bool SaveTheme();
 
     ImFont *DemiLight()
     {

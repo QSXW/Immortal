@@ -36,25 +36,31 @@ public:
             ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
             ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
             ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+
             if (ImGui::CollapsingHeader(WordsMap::Get("meta")))
             {
 
             }
+            ImGui::Separator();
+
             if (ImGui::CollapsingHeader(WordsMap::Get("preset")))
             {
 
             }
             ImGui::Separator();
+
             if (ImGui::CollapsingHeader(WordsMap::Get("snapshot")))
             {
 
             }
             ImGui::Separator();
+
             if (ImGui::CollapsingHeader(WordsMap::Get("history")))
             {
 
             }
             ImGui::Separator();
+
             if (ImGui::CollapsingHeader(WordsMap::Get("favorite")))
             {
 

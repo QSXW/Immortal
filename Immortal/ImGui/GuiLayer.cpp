@@ -12,6 +12,10 @@
 #include "Platform/Vulkan/GuiLayer.h"
 #include "Platform/D3D12/GuiLayer.h"
 
+#include "String/LanguageSettings.h"
+#include "Media/Stream.h"
+#include "Framework/Async.h"
+
 namespace Immortal
 {
 
@@ -57,7 +61,10 @@ void GuiLayer::OnAttach()
 #endif
     ImGui::CreateContext();
     
-    SetTheme();
+    if (!LoadTheme())
+    {
+        SetTheme();
+    }
 
     ImGuiIO& io = ImGui::GetIO();
 
@@ -66,7 +73,9 @@ void GuiLayer::OnAttach()
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
     
-    ImGuiStyle& style = ImGui::GetStyle();
+    ImGuiStyle &style = ImGui::GetStyle();
+    style.WindowMinSize.x = 320.0f;
+    style.WindowBorderSize = 0.0f;
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
@@ -105,8 +114,6 @@ void GuiLayer::SetTheme()
     ImGuiStyle *style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
 
-    style->WindowMinSize.x                  = 320.0f;
-    style->WindowBorderSize                 = 0.0f;
     colors[ImGuiCol_Text]                   = ImVec4(0.89f, 0.89f, 0.89f, 1.13f);
     colors[ImGuiCol_TextDisabled]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
     colors[ImGuiCol_WindowBg]               = ImVec4(0.1058f, 0.1058f, 0.1058f, 0.1058f);
@@ -237,6 +244,14 @@ void GuiLayer::UpdateTheme()
     XX(ModalWindowDimBg);      
 #undef XX
 
+    if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
+    {
+        GuiLayer *that = this;
+        Async::Execute([&]() -> void {
+            that->SaveTheme();
+            });
+    }
+
     ImGui::End();
 }
 
@@ -253,6 +268,178 @@ void GuiLayer::OnGuiRender()
         ImGui::GetIO().Framerate
     );
     Application::SetTitle(title);
+}
+
+static inline std::string ThemePath = { "Assets/json/theme.json" };
+
+namespace ns
+{
+
+void to_json(JSON::SuperJSON &j, const ImVec4 &v)
+{
+    j = JSON::SuperJSON{
+        { "r", v.x },
+        { "g", v.y },
+        { "b", v.z },
+        { "a", v.w },
+    };
+}
+
+void from_json(const JSON::SuperJSON &j, ImVec4 &v)
+{
+    j.at("r").get_to(v.x);
+    j.at("g").get_to(v.y);
+    j.at("b").get_to(v.z);
+    j.at("a").get_to(v.w);
+}
+
+}
+
+bool GuiLayer::LoadTheme()
+{
+    auto json = JSON::Parse(ThemePath);
+
+    ImGuiStyle *style = &ImGui::GetStyle();
+    ImVec4 *colors = style->Colors;
+
+#define XX(x) ns::from_json(json[#x], colors[ImGuiCol_##x]);
+    XX(Text);
+    XX(TextDisabled);
+    XX(WindowBg);
+    XX(ChildBg);
+    XX(PopupBg);
+    XX(Border);
+    XX(BorderShadow);
+    XX(FrameBg);
+    XX(FrameBgHovered);
+    XX(FrameBgActive);
+    XX(TitleBg);
+    XX(TitleBgActive);
+    XX(TitleBgCollapsed);
+    XX(MenuBarBg);
+    XX(ScrollbarBg);
+    XX(ScrollbarGrab);
+    XX(ScrollbarGrabHovered);
+    XX(ScrollbarGrabActive);
+    XX(CheckMark);
+    XX(SliderGrab);
+    XX(SliderGrabActive);
+    XX(Button);
+    XX(ButtonHovered);
+    XX(ButtonActive);
+    XX(Header);
+    XX(HeaderHovered);
+    XX(HeaderActive);
+    XX(Separator);
+    XX(SeparatorHovered);
+    XX(SeparatorActive);
+    XX(ResizeGrip);
+    XX(ResizeGripHovered);
+    XX(ResizeGripActive);
+    XX(Tab);
+    XX(TabHovered);
+    XX(TabActive);
+    XX(TabUnfocused);
+    XX(TabUnfocusedActive);
+    XX(DockingEmptyBg);
+    XX(PlotLines);
+    XX(PlotLinesHovered);
+    XX(PlotHistogram);
+    XX(PlotHistogramHovered);
+    XX(TableHeaderBg);
+    XX(TableBorderStrong);
+    XX(TableBorderLight);
+    XX(TableRowBg);
+    XX(TableRowBgAlt);
+    XX(TextSelectedBg);
+    XX(DragDropTarget);
+    XX(NavHighlight);
+    XX(NavWindowingHighlight);
+    XX(NavWindowingDimBg);
+    XX(ModalWindowDimBg);
+#undef XX
+
+    colors[ImGuiCol_Tab]                = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.90f);
+    colors[ImGuiCol_TabHovered]         = colors[ImGuiCol_HeaderHovered];
+    colors[ImGuiCol_TabActive]          = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+    colors[ImGuiCol_TabUnfocused]       = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
+    colors[ImGuiCol_NavHighlight]       = colors[ImGuiCol_HeaderHovered];
+
+    return true;
+}
+
+bool GuiLayer::SaveTheme()
+{
+    ImGuiStyle *style = &ImGui::GetStyle();
+    ImVec4 *colors = style->Colors;
+
+    JSON::SuperJSON json;
+#define XX(x) ns::to_json(json[#x], colors[ImGuiCol_##x]);
+    XX(Text);
+    XX(TextDisabled);
+    XX(WindowBg);
+    XX(ChildBg);
+    XX(PopupBg);
+    XX(Border);
+    XX(BorderShadow);
+    XX(FrameBg);
+    XX(FrameBgHovered);
+    XX(FrameBgActive);
+    XX(TitleBg);
+    XX(TitleBgActive);
+    XX(TitleBgCollapsed);
+    XX(MenuBarBg);
+    XX(ScrollbarBg);
+    XX(ScrollbarGrab);
+    XX(ScrollbarGrabHovered);
+    XX(ScrollbarGrabActive);
+    XX(CheckMark);
+    XX(SliderGrab);
+    XX(SliderGrabActive);
+    XX(Button);
+    XX(ButtonHovered);
+    XX(ButtonActive);
+    XX(Header);
+    XX(HeaderHovered);
+    XX(HeaderActive);
+    XX(Separator);
+    XX(SeparatorHovered);
+    XX(SeparatorActive);
+    XX(ResizeGrip);
+    XX(ResizeGripHovered);
+    XX(ResizeGripActive);
+    XX(Tab);
+    XX(TabHovered);
+    XX(TabActive);
+    XX(TabUnfocused);
+    XX(TabUnfocusedActive);
+    XX(DockingEmptyBg);
+    XX(PlotLines);
+    XX(PlotLinesHovered);
+    XX(PlotHistogram);
+    XX(PlotHistogramHovered);
+    XX(TableHeaderBg);
+    XX(TableBorderStrong);
+    XX(TableBorderLight);
+    XX(TableRowBg);
+    XX(TableRowBgAlt);
+    XX(TextSelectedBg);
+    XX(DragDropTarget);
+    XX(NavHighlight);
+    XX(NavWindowingHighlight);
+    XX(NavWindowingDimBg);
+    XX(ModalWindowDimBg);
+#undef XX
+
+    Stream stream{ ThemePath, Stream::Mode::Write };
+    if (!stream.Writable())
+    {
+        return false;
+    }
+    stream.Write(json.dump(4));
+
+    return true;
 }
 
 }

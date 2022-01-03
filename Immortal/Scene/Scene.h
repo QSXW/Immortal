@@ -129,6 +129,11 @@ public:
         return observerCamera;
     }
 
+    std::shared_ptr<RenderTarget> Target() const
+    {
+        return renderTarget;
+    }
+
 private:
     std::string debugName;
 
