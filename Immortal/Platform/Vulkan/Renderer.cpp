@@ -153,9 +153,8 @@ void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
 
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(*cmdbuf, 0, 1, &pl->Get<Buffer::Type::Vertex>()->Handle(), offsets);
-        vkCmdDraw(*cmdbuf, pl->Get<Buffer::Type::Vertex>()->Size(), 1, 0, 0);
         vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(*cmdbuf, pl->Get<Buffer::Type::Index>()->Count(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(*cmdbuf, pl->ElementCount, 1, 0, 0, 0);
     });
 }
 

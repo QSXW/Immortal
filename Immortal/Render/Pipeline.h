@@ -67,6 +67,7 @@ public:
         if (buffer->GetType() == Buffer::Type::Index)
         {
             desc.indexBuffer = buffer;
+            ElementCount = buffer->Count();
         }
     }
 
@@ -118,6 +119,9 @@ protected:
 
         PrimitiveType PrimitiveType = PrimitiveType::Triangles;
     } desc;
+
+public:
+    uint32_t ElementCount;
 };
 
 using SuperPipeline = Pipeline;

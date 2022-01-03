@@ -68,6 +68,8 @@ void Render2D::Setup()
     data.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
     data.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
     data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
+
+    data.QuadVertexBufferPtr = data.QuadVertexBufferBase.get();
 }
 
 void Render2D::Shutdown()
@@ -77,22 +79,25 @@ void Render2D::Shutdown()
 
 void Render2D::Flush()
 {
-    /* Nothing to draw */
     if (!data.QuadIndexCount)
     {
         return;
     }
 
-    /* Calculate Vertex data size and submit */
     uint32_t dataSize = data.QuadVertexBufferPtr - data.QuadVertexBufferBase.get();
     pipeline->Update(dataSize, data.QuadVertexBufferBase.get());
 
     if (isTextureChanged)
     {
         pipeline->Bind(data.textureDescriptors.get(), 1);
+        isTextureChanged = false;
     }
 
+    pipeline->ElementCount = data.QuadIndexCount;
     Render::Draw(pipeline);
+
+    data.QuadIndexCount = 0;
+    data.QuadVertexBufferPtr = data.QuadVertexBufferBase.get();
     data.Stats.DrawCalls++;
 }
 
@@ -147,20 +152,27 @@ void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture>
         NextBatch();
     }
 
-    float textureIndex = static_cast<float>(data.TextureSlotIndex);
-
-    if (*data.ActiveTextures[data.TextureSlotIndex] == *texture)
+    float textureIndex = 0.0f;
+    size_t i = 0;
+    for (i = 0; i < SL_ARRAY_LENGTH(data.ActiveTextures); i++)
     {
-        isTextureChanged = false;
+        if (*data.ActiveTextures[i] == *texture)
+        {
+            break;
+        }
     }
-    else
+    if (i == SL_ARRAY_LENGTH(data.ActiveTextures))
     {
         data.ActiveTextures[data.TextureSlotIndex] = texture;
         texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
         isTextureChanged = true;
+        data.TextureSlotIndex++;
+        textureIndex = static_cast<float>(data.TextureSlotIndex);
     }
-
-    data.TextureSlotIndex++;
+    else
+    {
+        textureIndex = static_cast<float>(i);
+    }
 
     for (size_t i = 0; i < quadVertexCount; i++)
     {
