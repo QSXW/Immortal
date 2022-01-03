@@ -39,7 +39,7 @@ Application::Application(const Window::Description &description) :
 
     Render::Setup(context.get());
 
-    Async::Join();
+    Async::Wait();
 
     window->Show();
 
@@ -113,6 +113,9 @@ void Application::OnEvent(Event &e)
 
 bool Application::OnWindowClosed(WindowCloseEvent &e)
 {
+    /* Wait all threads to finish before closing */
+    Async::Wait(); 
+
     runtime.running = false;
     return !runtime.running;
 }

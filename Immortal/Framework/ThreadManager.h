@@ -129,7 +129,7 @@ public:
         return threadPool->Enqueue(task);
     }
 
-    static void Join()
+    static void Wait()
     {
         threadPool->Join();
     }
