@@ -51,7 +51,8 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
             { Format::Depth }
         }
     }));
-         
+    renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
+
     pipelines.tonemap = nullptr;
 }
 

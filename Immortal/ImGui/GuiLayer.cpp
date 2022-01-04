@@ -361,7 +361,7 @@ bool GuiLayer::LoadTheme()
 
     colors[ImGuiCol_Tab]                = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.90f);
     colors[ImGuiCol_TabHovered]         = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_TabActive]          = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+    // colors[ImGuiCol_TabActive]          = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
     colors[ImGuiCol_TabUnfocused]       = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
     colors[ImGuiCol_TabUnfocusedActive] = ImLerp(colors[ImGuiCol_TabActive], colors[ImGuiCol_TitleBg], 0.40f);
     colors[ImGuiCol_NavHighlight]       = colors[ImGuiCol_HeaderHovered];

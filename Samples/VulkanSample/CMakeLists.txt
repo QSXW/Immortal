@@ -3,7 +3,9 @@ cmake_minimum_required(VERSION 3.21)
 project(VulkanSample LANGUAGES CXX)
 
 set(PANEL_FILES
-    Panel/Navigator.h)
+    Panel/HierarchyGraphics.h
+    Panel/Navigator.h
+    Panel/PropertyManager.h)
 
 set(SRC_FILES
     src/VulkanSample.cpp

@@ -2,6 +2,8 @@
 
 #include <Immortal.h>
 #include "Panel/Navigator.h"
+#include "Panel/HierarchyGraphics.h"
+#include "Panel/PropertyManager.h"
 
 namespace Immortal
 {
@@ -39,8 +41,6 @@ public:
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
-        renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
-
         Render2D::Setup(renderTarget);
 
         selectedObject = scene.CreateObject("Texture");
@@ -69,19 +69,13 @@ public:
         }
         editorCamera.OnUpdate();
 
-        auto &transform = selectedObject.GetComponent<TransformComponent>();
-
-        ubo.viewProjection = editorCamera.ViewProjection();
-        ubo.modeTransform  = transform;
-        uniformBuffer->Update(sizeof(ubo), &ubo);
-
         scene.OnRenderEditor(editorCamera);
     }
 
     void UpdateEditableArea()
     {
         editableArea.OnUpdate(scene.Target() , [&]() -> void {
-            if (guizmoType != ImGuizmo::OPERATION::INVALID)
+            if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
                 ImGuizmo::SetOrthographic(false);
                 ImGuizmo::SetDrawlist();
@@ -132,7 +126,7 @@ public:
             {
                 if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + O"))
                 {
-                    this->LoadObject();
+                    LoadObject();
                 }
                 if (ImGui::MenuItem(WordsMap::Get("save"), "Ctrl + S"))
                 {
@@ -152,11 +146,7 @@ public:
                 }
                 if (ImGui::MenuItem(WordsMap::Get("loadObject"), "Ctrl + L"))
                 {
-                    auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
-                    if (res.has_value())
-                    {
-                        OnTextureLoaded(res.value());
-                    }
+                    OnTextureLoaded();
                 }
                 ImGui::EndMenu();
             }
@@ -182,22 +172,19 @@ public:
 
     virtual void OnGuiRender() override
     {
-        auto &transform = selectedObject.GetComponent<TransformComponent>();
-        ImGui::Begin("Render Target");
-        ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
-        UI::DrawVec3Control("Position", transform.Position);
-        UI::DrawVec3Control("Rotation", transform.Rotation);
-        UI::DrawVec3Control("Scale", transform.Scale);
-        if (ImGui::DragFloat("Orthographic Size", &camera.primaryCamera.OrthographicSize(), 0.1f, 0.000001f, 90.0f))
-        {
-            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
-        }
-        ImGui::End();
-
         UpdateEditableArea();
         UpdateMenuBar();
-        panels.navigator.OnUpdate(selectedObject, [&]() -> void { LoadObject(); });
 
+        panels.hierarchyGraphics.OnUpdate(&scene, [&](Object &o) -> void {
+            selectedObject = o;
+            });
+
+        panels.navigator.OnUpdate(selectedObject, [&]() -> void {
+            OnTextureLoaded();
+            });
+        panels.propertyManager.OnUpdate(selectedObject, [&]() -> void {
+
+            });
         if (Settings.showDemoWindow)
         {
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
@@ -206,15 +193,7 @@ public:
         Application::App()->GetGuiLayer()->BlockEvent(false);
     }
 
-    void OnTextureLoaded(const std::string &path)
-    {
-        image.reset(Render::Create<Texture>(path));
-        auto &transform = selectedObject.GetComponent<TransformComponent>();
-        transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
-        selectedObject.Get<SpriteRendererComponent>().Texture = image;
-    }
-
-    bool LoadObject()
+    void OnTextureLoaded()
     {
         auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
         if (res.has_value())
@@ -223,6 +202,23 @@ public:
             auto &transform = selectedObject.GetComponent<TransformComponent>();
             transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
             selectedObject.Get<SpriteRendererComponent>().Texture = image;
+        }        
+    }
+
+    bool LoadObject()
+    {
+        auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+        if (res.has_value())
+        {
+            std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
+
+            auto o = scene.CreateObject(res.value());
+            auto &sprite = o.AddComponent<SpriteRendererComponent>();
+            sprite.Texture = texture;
+
+            auto &transform = o.GetComponent<TransformComponent>();
+            transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
+
             return true;
         }
 
@@ -300,6 +296,8 @@ private:
 
     struct {
         Navigator navigator;
+        HierarchyGraphics hierarchyGraphics;
+        PropertyManager propertyManager;
     } panels;
 
     struct {
