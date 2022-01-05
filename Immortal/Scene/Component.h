@@ -15,10 +15,13 @@ struct Component
     enum class Type
     {
         None,
+        ColorMixing,
         ID,
+        Filter,
         Tag,
         Transform,
         Mesh,
+        Meta,
         Light,
         Script,
         Scene,
@@ -262,6 +265,64 @@ struct ScriptComponent : public Component
     }
 
     std::string Name;
+};
+
+struct MetaComponent : public Component
+{
+    MetaComponent() :
+        Component{ Type::Meta }
+    {
+
+    }
+
+    void *Meta = nullptr;
+};
+
+struct ColorMixingComponent : public Component
+{
+    ColorMixingComponent() :
+        Component{ Type::ColorMixing }
+    {
+
+    }
+
+    Vector4 RGBA;
+    Vector3 HSL;
+    
+    struct {
+        float ColorTemperature;
+        float Hue;
+    } WhiteBalance{ 0, 0 };
+
+    struct {
+        float White;
+        float Black;
+    } Gradation{ 0, 0 };
+
+    float Exposure    = 0;
+    float Contrast    = 0;
+    float Hightlights = 0;
+    float Shadow      = 0;
+    float Vividness   = 0;
+};
+
+enum class FilterType
+{
+    None,
+    GaussianBlur,
+    AverageBlur,
+    DCT
+};
+
+struct FilterComponent : public Component
+{
+    FilterComponent() :
+        Component{ Type::Filter }
+    {
+
+    }
+
+    std::vector<FilterType> Filter;
 };
 
 }
