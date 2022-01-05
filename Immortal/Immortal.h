@@ -46,12 +46,12 @@
 
 #include "Scene/Object.h"
 #include "Scene/Scene.h"
+#include "Scene/Component.h"
 #include "Scene/GameObject.h"
 #include "Scene/ObserverCamera.h"
 
 #include "Serializer/SceneSerializer.h"
 
-#include "String/ChineseString.h"
 #include "String/LanguageSettings.h"
 
 #include "Widget/Widget.h"
