@@ -18,7 +18,7 @@ public:
         }
         
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
-        ImGui::Begin(WordsMap::Get("navigator"));
+        ImGui::Begin(WordsMap::Get("Navigator"));
         
         {
             if (o)
@@ -26,7 +26,7 @@ public:
                 std::string &tag = o.Get<TagComponent>().Tag;
                 char buf[64] = { 0 };
                 strcat(buf, tag.c_str());
-                if (ImGui::InputText(WordsMap::Get(" Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
+                if (ImGui::InputText(WordsMap::Get("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
                 {
                     tag = std::string{ buf };
                 }
@@ -57,31 +57,31 @@ public:
             ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
             ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
 
-            if (ImGui::CollapsingHeader(WordsMap::Get("meta")))
+            if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
             {
 
             }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader(WordsMap::Get("preset")))
+            if (ImGui::CollapsingHeader(WordsMap::Get("Preset")))
             {
 
             }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader(WordsMap::Get("snapshot")))
+            if (ImGui::CollapsingHeader(WordsMap::Get("Snapshot")))
             {
 
             }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader(WordsMap::Get("history")))
+            if (ImGui::CollapsingHeader(WordsMap::Get("History")))
             {
 
             }
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader(WordsMap::Get("favorite")))
+            if (ImGui::CollapsingHeader(WordsMap::Get("Favorite")))
             {
 
             }

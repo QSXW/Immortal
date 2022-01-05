@@ -10,44 +10,44 @@ class HierarchyGraphics : public Layer
 public:
     void DrawObjectNode(Scene *scene, Object &o)
     {
-		auto &tag = o.Get<TagComponent>().Tag;
+        auto &tag = o.Get<TagComponent>().Tag;
 
-		ImGuiTreeNodeFlags flags = (selectedObject == o ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+        ImGuiTreeNodeFlags flags = (selectedObject == o ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+        flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-		bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)o, flags, tag.c_str());
-		ImGui::SameLine(64.0f);
-		ImGui::NewLine();
+        bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)o, flags, tag.c_str());
+        ImGui::SameLine(64.0f);
+        ImGui::NewLine();
 
-		if (ImGui::IsItemClicked())
-		{
-			selectedObject = o;
-		}
+        if (ImGui::IsItemClicked())
+        {
+            selectedObject = o;
+        }
 
-		bool isDeleted = false;
-		if (ImGui::BeginPopupContextItem())
-		{
-			if (ImGui::MenuItem(WordsMap::Get("delete")))
-			{
-				isDeleted = true;
-			}
+        bool isDeleted = false;
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem(WordsMap::Get("Delete")))
+            {
+                isDeleted = true;
+            }
 
-			ImGui::EndPopup();
-		}
+            ImGui::EndPopup();
+        }
 
-		if (isExpanded)
-		{
-			ImGui::TreePop();
-		}
+        if (isExpanded)
+        {
+            ImGui::TreePop();
+        }
 
-		if (isDeleted)
-		{
-			scene->DestroyObject(o);
-			if (selectedObject == o)
-			{
-				selectedObject = {};
-			}
-		}
+        if (isDeleted)
+        {
+            scene->DestroyObject(o);
+            if (selectedObject == o)
+            {
+                selectedObject = {};
+            }
+        }
     }
 
     template <class Callback>
@@ -62,7 +62,7 @@ public:
                 Object o{ id, scene };
                 if (o.Has<TagComponent>())
                 {
-					DrawObjectNode(scene, o);
+                    DrawObjectNode(scene, o);
                 }
             });
         }
@@ -70,11 +70,11 @@ public:
         ImGui::End();
         ImGui::PopFont();
 
-		callback(selectedObject);
+        callback(selectedObject);
     }
 
 private:
-	Object selectedObject;
+    Object selectedObject;
 };
 
 }

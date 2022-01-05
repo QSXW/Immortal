@@ -43,10 +43,10 @@ public:
 
         Render2D::Setup(renderTarget);
 
-        selectedObject = scene.CreateObject("Texture");
+        selectedObject = scene.CreateObject("Default Object");
         selectedObject.Add<SpriteRendererComponent>();
         auto &transform = selectedObject.GetComponent<TransformComponent>();
-        transform.Scale = Vector3{ 8.0f, 8.0f, 8.0f };
+        transform.Scale = Vector3{ 1.0f, 1.0f, 1.0f };
     }
 
     virtual void OnDetach() override
@@ -122,47 +122,44 @@ public:
 
         ImGui::PushFont(gui->Bold());
         menuBar.OnUpdate([=]() -> void {
-            if (ImGui::BeginMenu(WordsMap::Get("menu")))
+            if (ImGui::BeginMenu(WordsMap::Get("Menu")))
             {
-                if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + O"))
+                if (ImGui::MenuItem(WordsMap::Get("Open"), "Ctrl + O"))
                 {
                     LoadObject();
                 }
-                if (ImGui::MenuItem(WordsMap::Get("save"), "Ctrl + S"))
+                if (ImGui::MenuItem(WordsMap::Get("Load Object"), "Ctrl + L"))
+                {
+                    LoadObject();
+                }
+                if (ImGui::MenuItem(WordsMap::Get("Save"), "Ctrl + S"))
                 {
 
                 }
-                if (ImGui::MenuItem(WordsMap::Get("saveAs"), "Ctrl+A"))
+                if (ImGui::MenuItem(WordsMap::Get("Save As"), "Ctrl+A"))
                 {
 
                 }
-                if (ImGui::MenuItem(WordsMap::Get("exit"), "Ctrl + W"))
+                if (ImGui::MenuItem(WordsMap::Get("Exit"), "Ctrl + W"))
                 {
                     Application::App()->Close();
                 }
-                if (ImGui::MenuItem(WordsMap::Get("open"), "Ctrl + W"))
-                {
 
-                }
-                if (ImGui::MenuItem(WordsMap::Get("loadObject"), "Ctrl + L"))
-                {
-                    OnTextureLoaded();
-                }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(WordsMap::Get("edit")))
+            if (ImGui::BeginMenu(WordsMap::Get("Edit")))
             {
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(WordsMap::Get("view")))
+            if (ImGui::BeginMenu(WordsMap::Get("View")))
             {
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(WordsMap::Get("graphics")))
+            if (ImGui::BeginMenu(WordsMap::Get("Graphics")))
             {
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu(WordsMap::Get("help")))
+            if (ImGui::BeginMenu(WordsMap::Get("Help")))
             {
                 ImGui::EndMenu();
             }
@@ -201,6 +198,11 @@ public:
             image.reset(Render::Create<Texture>(res.value()));
             auto &transform = selectedObject.GetComponent<TransformComponent>();
             transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
+
+            if (!selectedObject.Has<SpriteRendererComponent>())
+            {
+                selectedObject.Add<SpriteRendererComponent>();
+            }
             selectedObject.Get<SpriteRendererComponent>().Texture = image;
         }        
     }
@@ -210,9 +212,9 @@ public:
         auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
         if (res.has_value())
         {
-            std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
-
             auto o = scene.CreateObject(res.value());
+
+            std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
             auto &sprite = o.AddComponent<SpriteRendererComponent>();
             sprite.Texture = texture;
 
@@ -304,7 +306,7 @@ private:
         bool showDemoWindow{ true };
     } Settings;
 
-    Widget::Viewport editableArea{ WordsMap::Get("offlineRender") };
+    Widget::Viewport editableArea{ WordsMap::Get("Offline Render") };
     Widget::MenuBar menuBar;
 
     struct
