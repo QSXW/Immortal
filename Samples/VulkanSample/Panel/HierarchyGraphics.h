@@ -25,6 +25,11 @@ public:
         }
 
         bool isDeleted = false;
+        if (Input::IsKeyPressed(KeyCode::Delete))
+        {
+            isDeleted = true;
+        }
+
         if (ImGui::BeginPopupContextItem())
         {
             if (ImGui::MenuItem(WordsMap::Get("Delete")))

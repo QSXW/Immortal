@@ -60,6 +60,8 @@ class RenderContext;
 class IMMORTAL_API GuiLayer : public Layer
 {
 public:
+    static inline constexpr float MinWindowSize = 320.0f;
+
     static GuiLayer *Create(RenderContext *context);
 
     static FontContext NotoSans;

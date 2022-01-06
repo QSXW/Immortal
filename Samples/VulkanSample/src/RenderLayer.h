@@ -4,6 +4,7 @@
 #include "Panel/Navigator.h"
 #include "Panel/HierarchyGraphics.h"
 #include "Panel/PropertyManager.h"
+#include "Panel/Tools.h"
 
 namespace Immortal
 {
@@ -172,16 +173,26 @@ public:
         UpdateEditableArea();
         UpdateMenuBar();
 
-        panels.hierarchyGraphics.OnUpdate(&scene, [&](Object &o) -> void {
-            selectedObject = o;
+        panels
+            .hierarchyGraphics
+            .OnUpdate(&scene, [&](Object &o) -> void {
+                selectedObject = o;
             });
 
-        panels.navigator.OnUpdate(selectedObject, [&]() -> void {
-            OnTextureLoaded();
+        panels
+            .navigator
+            .OnUpdate(selectedObject, [&]() -> void {
+                OnTextureLoaded();
             });
-        panels.propertyManager.OnUpdate(selectedObject, [&]() -> void {
 
-            });
+        panels
+            .propertyManager
+            .OnUpdate(selectedObject);
+
+        panels
+            .tools
+            .OnUpdate(selectedObject);
+
         if (Settings.showDemoWindow)
         {
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
@@ -300,6 +311,7 @@ private:
         Navigator navigator;
         HierarchyGraphics hierarchyGraphics;
         PropertyManager propertyManager;
+        Tools tools;
     } panels;
 
     struct {

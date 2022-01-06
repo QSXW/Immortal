@@ -16,8 +16,7 @@ public:
             ImGuiTreeNodeFlags_FramePadding;
 
 public:
-    template <class Callback>
-    void OnUpdate(Object &o, Callback callback)
+    void OnUpdate(Object &o)
     {
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Properties"));

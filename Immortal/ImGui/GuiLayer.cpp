@@ -74,8 +74,9 @@ void GuiLayer::OnAttach()
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
     
     ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowMinSize.x = 320.0f;
+    style.WindowMinSize.x = MinWindowSize;
     style.WindowBorderSize = 0.0f;
+
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;

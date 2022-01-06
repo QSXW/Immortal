@@ -5,7 +5,8 @@ project(VulkanSample LANGUAGES CXX)
 set(PANEL_FILES
     Panel/HierarchyGraphics.h
     Panel/Navigator.h
-    Panel/PropertyManager.h)
+    Panel/PropertyManager.h
+    Panel/Tools.h)
 
 set(SRC_FILES
     src/VulkanSample.cpp

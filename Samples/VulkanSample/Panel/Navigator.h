@@ -9,7 +9,7 @@ class Navigator : public Layer
 {
 public:
     template <class Callback>
-    void OnUpdate(Object &o, Callback callback)
+    void OnUpdate(Object &o, Callback callback = [] {})
     {
         SpriteRendererComponent sprite;
         if (o && o.Has<SpriteRendererComponent>())
