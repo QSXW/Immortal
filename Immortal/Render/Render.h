@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImmortalCore.h"
+#include "Core.h"
 #include "Camera.h"
 #include "OrthographicCamera.h"
 #include "RenderContext.h"

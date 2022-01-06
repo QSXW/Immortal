@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImmortalCore.h"
+#include "Core.h"
 #include "Vector.h"
 #include "KeyCodes.h"
 

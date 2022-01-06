@@ -3,7 +3,7 @@
 #ifndef __D3D12_COMMON_H__
 #define __D3D12_COMMON_H__
 
-#include "ImmortalCore.h"
+#include "Core.h"
 
 #ifdef WINDOWS
 

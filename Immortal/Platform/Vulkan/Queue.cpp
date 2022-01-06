@@ -9,7 +9,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Queue::Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index) :
+Queue::Queue(Device &device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index) :
     device{ device },
     familyIndex{ familyIndex },
     index{ index },

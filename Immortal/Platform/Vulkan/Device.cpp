@@ -189,7 +189,7 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
-    commandPool.reset(new CommandPool{ this, FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, 0).Get<Queue::FamilyIndex>() });
+    commandPool.reset(new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() });
 
     fencePool.reset(new FencePool{ this });
 
@@ -272,11 +272,13 @@ Queue &Device::SuitableGraphicsQueue()
         }
     }
 
-    return FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
+    return FindQueueByType(Queue::Type::Graphics, 0);
 }
 
-Queue &Device::FindQueueByFlags(VkQueueFlags flags, uint32_t queueIndex)
+Queue &Device::FindQueueByType(Queue::Type type, uint32_t queueIndex)
 {
+    VkQueueFlags flags = VkQueueFlags(type);
+
     for (uint32_t familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
     {
         Queue& firstQueue = queues[familyIndex][0];

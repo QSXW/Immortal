@@ -1,39 +1,28 @@
 #pragma once
 
 #include "Common.h"
+#include "Render/Queue.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
+
 class Device;
-class Queue
+class Queue : public SuperQueue
 {
 public:
-    using FamilyIndex = UINT32;
-public:
-    enum Type : int
-    {
-        Graphics      = VK_QUEUE_GRAPHICS_BIT,
-        Compute       = VK_QUEUE_COMPUTE_BIT,
-        Transfer      = VK_QUEUE_TRANSFER_BIT,
-        SparseBinding = VK_QUEUE_SPARSE_BINDING_BIT,
-        Protected     = VK_QUEUE_PROTECTED_BIT,
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-        VideoDeCode   = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
-        VideoEncode   = VK_QUEUE_VIDEO_ENCODE_BIT_KHR,
-#endif
-        None
-    };
+    using FamilyIndex = uint32_t;
+    using Super = SuperQueue;
 
 public:
-    Queue(Device &device, UINT32 familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, UINT32 index);
+    Queue(Device &device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
 
     Queue(const Queue &) = default;
 
     Queue(Queue &&other);
 
-    ~Queue();
+    virtual ~Queue();
 
     VkResult Submit(VkSubmitInfo &submitInfo, VkFence fence)
     {
@@ -48,7 +37,7 @@ public:
     template <class T>
     T &Get()
     {
-        if constexpr (std::is_same_v<T, FamilyIndex>)
+        if constexpr (IsPrimitiveOf<FamilyIndex, T>())
         {
             return familyIndex;
         }
@@ -94,9 +83,9 @@ private:
 
     VkQueue handle{ VK_NULL_HANDLE };
 
-    UINT32 familyIndex{ 0 };
+    uint32_t familyIndex{ 0 };
 
-    UINT32 index{ 0 };
+    uint32_t index{ 0 };
 
     VkBool32 presented{ VK_FALSE };
 

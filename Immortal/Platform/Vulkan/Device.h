@@ -1,5 +1,5 @@
 #pragma once
-#include "ImmortalCore.h"
+#include "Core.h"
 
 #include "Framework/Device.h"
 #include "Common.h"
@@ -37,9 +37,9 @@ public:
 
     ~Device();
 
-    UINT32 QueueFailyIndex(VkQueueFlagBits queueFlag);
+    uint32_t QueueFailyIndex(VkQueueFlagBits queueFlag);
 
-    Queue &FindQueueByFlags(VkQueueFlags flags, UINT32 queueIndex);
+    Queue &FindQueueByType(Queue::Type type, uint32_t queueIndex);
 
     Queue &SuitableGraphicsQueue();
 
@@ -259,7 +259,7 @@ public:
     {
         copyCmd->End();
 
-        auto &queue = FindQueueByFlags(VK_QUEUE_GRAPHICS_BIT, 0);
+        auto &queue = FindQueueByType(Queue::Type::Transfer, 0);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;

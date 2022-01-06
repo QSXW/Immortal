@@ -2,12 +2,10 @@
 
 #include <cstdio>
 
-#include <glad/glad.h>
-
 #include <imgui.h>
 #include "imgui_internal.h"
 
-#include "ImmortalCore.h"
+#include "Core.h"
 
 #include "Framework/Application.h"
 #include "Framework/Async.h"

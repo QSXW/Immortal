@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CORE_FILES
     Immortal.h
-    ImmortalCore.h)
+    Core.h)
 
 set(FRAMEWORK_FILES
     Framework/Application.cpp
@@ -203,8 +203,6 @@ set(RENDER_FILES
     Render/Camera.h
     Render/CommandBuffer.cpp
     Render/CommandBuffer.h
-    Render/CommandQueue.cpp
-    Render/CommandQueue.h
     Render/DataSet.h
     Render/Descriptor.h
     Render/Environment.cpp
@@ -223,6 +221,7 @@ set(RENDER_FILES
     Render/OrthographicCameraController.h
     Render/Pipeline.cpp
     Render/Pipeline.h
+    Render/Queue.h
     Render/Render.cpp
     Render/Render.h
     Render/RenderContext.cpp

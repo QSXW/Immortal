@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImmortalCore.h"
+#include "Core.h"
 #include "Framework/Device.h"
 #include "Framework/Window.h"
 #include "Render/Shader.h"

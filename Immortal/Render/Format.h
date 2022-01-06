@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImmortalCore.h"
+#include "Core.h"
 #include <glad/glad.h>
 #include <vulkan/vulkan_core.h>
 #include <dxgiformat.h>

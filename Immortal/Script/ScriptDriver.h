@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ImmortalCore.h"
+#include "Core.h"
 #include "Framework/Application.h"
 #include "Scene/GameObject.h"
 

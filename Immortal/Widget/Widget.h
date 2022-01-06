@@ -3,7 +3,7 @@
 #include <string>
 #include <imgui.h>
 
-#include "ImmortalCore.h"
+#include "Core.h"
 
 namespace Immortal
 {

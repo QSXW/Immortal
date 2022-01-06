@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sl.h"
-#include "ImmortalCore.h"
+#include "Core.h"
 
 #ifdef WINDOWS
 #include <windows.h>
