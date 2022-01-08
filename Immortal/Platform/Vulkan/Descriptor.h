@@ -94,6 +94,8 @@ struct DescriptorSetUpdater
                 return false;
             }
         }
+
+        LOG::DEBUG("All descriptor set binded");
         return true;
     }
 

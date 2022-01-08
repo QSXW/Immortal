@@ -23,15 +23,7 @@ Pipeline::~Pipeline()
 
 void Pipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
 {
-    if (buffer->GetType() == Buffer::Type::Vertex)
-    {
-        desc.vertexBuffers.emplace_back(buffer);
-        SetupVertex();
-    }
-    if (buffer->GetType() == Buffer::Type::Index)
-    {
-        desc.indexBuffer = buffer;
-    }
+    Super::Set(buffer);
 }
 
 void Pipeline::Set(const InputElementDescription &description)
@@ -55,6 +47,7 @@ void Pipeline::Set(const InputElementDescription &description)
         VK_VERTEX_INPUT_RATE_VERTEX
         });
 
+    SetupVertex();
     SetupLayout();
 }
 

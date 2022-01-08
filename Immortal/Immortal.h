@@ -7,6 +7,8 @@
 
 #include "Core.h"
 
+#include "FileSystem/FileSystem.h"
+
 #include "Framework/Application.h"
 #include "Framework/Async.h"
 #include "Framework/Layer.h"

@@ -72,19 +72,22 @@ struct LightEnvironment
     LightEnvironment()
     {
         lights[0].Direction = Vector::Normalize(Vector3{ -1.0f,  0.0f, 0.0f });
-        lights[1].Direction = Vector::Normalize(Vector3{ 1.0f,  0.0f, 0.0f });
-        lights[2].Direction = Vector::Normalize(Vector3{ 0.0f, -1.0f, 0.0f });
+        lights[1].Direction = Vector::Normalize(Vector3{  1.0f,  0.0f, 0.0f });
+        lights[2].Direction = Vector::Normalize(Vector3{  0.0f, -1.0f, 0.0f });
+        lights[3].Direction = Vector::Normalize(Vector3{  0.0f,  0.0f, 1.0f });
 
-        lights[0].Radiance = Vector3{ 1.0f };;
-        lights[1].Radiance = Vector3{ 1.0f };;
-        lights[2].Radiance = Vector3{ 1.0f };;
+        lights[0].Radiance = Vector3{ 1.0f };
+        lights[1].Radiance = Vector3{ 1.0f };
+        lights[2].Radiance = Vector3{ 1.0f };
+        lights[3].Radiance = Vector3{ 1.0f };
 
         lights[0].Enabled = true;
         lights[1].Enabled = true;
         lights[2].Enabled = true;
+        lights[3].Enabled = true;
     }
 
-    static constexpr int LightNumbers = 3;
+    static constexpr int LightNumbers = 4;
     float pitch = 0.0f;
     float yaw   = 0.0f;
     Light lights[LightNumbers];
@@ -105,6 +108,8 @@ public:
     void OnRenderRuntime();
 
     void OnRenderEditor(const EditorCamera &editorCamera);
+
+    void OnRender(const Camera &camera);
 
     Object CreateObject(const std::string &name = "");
 
@@ -151,11 +156,13 @@ private:
 
     struct {
         std::shared_ptr<Pipeline> tonemap;
+        std::shared_ptr<Pipeline> pbr;
     } pipelines;
 
     struct {
         std::unique_ptr<Buffer> transform;
         std::unique_ptr<Buffer> shading;
+        std::unique_ptr<Buffer> model;
     } uniforms;
     
     struct {

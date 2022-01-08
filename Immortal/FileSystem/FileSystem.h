@@ -7,20 +7,55 @@
 namespace Immortal
 {
 
+constexpr uint64_t MakeIdentifier(
+    uint8_t u0 = 0,
+    uint8_t u1 = 0,
+    uint8_t u2 = 0,
+    uint8_t u3 = 0,
+    uint8_t u4 = 0,
+    uint8_t u5 = 0,
+    uint8_t u6 = 0,
+    uint8_t u7 = 0)
+{
+    return (((uint64_t)u7) << 8 * 7) |
+           (((uint64_t)u6) << 8 * 6) |
+           (((uint64_t)u5) << 8 * 5) |
+           (((uint64_t)u4) << 8 * 4) |
+           (((uint64_t)u3) << 8 * 3) |
+           (((uint64_t)u2) << 8 * 2) |
+           (((uint64_t)u1) << 8 * 1) |
+           (((uint64_t)u0) << 8 * 0);
+}
+
 enum class FileType
 {
     Binary,
     Text
 };
 
+enum class FileFormat : uint64_t
+{
+    FBX  = MakeIdentifier('.', 'f', 'b', 'x'),
+    OBJ  = MakeIdentifier('.', 'o', 'b', 'j'),
+    JPG  = MakeIdentifier('.', 'j', 'p', 'g'),
+    JPEG = MakeIdentifier('.', 'j', 'p', 'e', 'g')
+};
+
 namespace FileSystem
 {
+
+template <FileFormat T>
+bool IsFormat(const std::string &path)
+{
+    auto p = path.c_str() + path.size();
+    return U64(T) == (uint64_t)*(uint32_t *)(p - 4);
+}
 
 template <class T>
 static T Read(const std::string &filename)
 {
     T buffer{};
-    Stream stream{ filename.c_str(), Stream::Mode::Read };
+    sl::Stream stream{ filename.c_str(), sl::Stream::Mode::Read };
     if (!stream.Readable())
     {
         LOG::WARN("Unable to open {0}", filename.c_str());

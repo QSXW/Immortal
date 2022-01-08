@@ -33,9 +33,9 @@ public:
                             auto &transform = o.Get<TransformComponent>();
                             auto rotation = Vector::Degrees(transform.Rotation);
 
-                            UI::DrawVec3Control(WordsMap::Get("Position"), transform.Position);
-                            UI::DrawVec3Control(WordsMap::Get("Rotation"), rotation);
-                            UI::DrawVec3Control(WordsMap::Get("Scale"), transform.Scale);
+                            UI::DrawVec3Control(WordsMap::Get("Position"), transform.Position, 0.01f);
+                            UI::DrawVec3Control(WordsMap::Get("Rotation"), rotation, 10.0f);
+                            UI::DrawVec3Control(WordsMap::Get("Scale"), transform.Scale, 0.01f);
 
                             transform.Rotation = Vector::Radians(rotation);
                     });

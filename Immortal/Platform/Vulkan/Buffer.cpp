@@ -8,6 +8,19 @@ namespace Vulkan
 {
 #define ASSERT_ZERO_SIZE_BUFFER(size) SLASSERT(size != 0 && "Unable to Allocate a zero size buffer");
 
+inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
+{
+    if (type == Buffer::Type::Index)
+    {
+        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    }
+    if (type == Buffer::Type::Uniform)
+    {
+        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    }
+    return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+}
+
 Buffer::Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage) :
     Super{ type, size },
     device{ device },

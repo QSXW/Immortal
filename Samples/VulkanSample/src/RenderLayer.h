@@ -15,6 +15,7 @@ public:
     RenderLayer(Vector2 viewport, const std::string &label) :
         Layer{ label },
         eventSink{ this },
+        selectedObject{},
         editorCamera{ Vector::PerspectiveFOV(Vector::Radians(90.0f), viewport.x, viewport.y, 0.1f, 1000.0f) }
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
@@ -43,11 +44,6 @@ public:
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
         Render2D::Setup(renderTarget);
-
-        selectedObject = scene.CreateObject("Default Object");
-        selectedObject.Add<SpriteRendererComponent>();
-        auto &transform = selectedObject.GetComponent<TransformComponent>();
-        transform.Scale = Vector3{ 1.0f, 1.0f, 1.0f };
     }
 
     virtual void OnDetach() override
@@ -193,6 +189,23 @@ public:
             .tools
             .OnUpdate(selectedObject);
 
+        if (panels.tools.IsToolActive(Tools::Move))
+        {
+            guizmoType = ImGuizmo::OPERATION::TRANSLATE;
+        }
+        else if (panels.tools.IsToolActive(Tools::Rotate))
+        {
+            guizmoType = ImGuizmo::OPERATION::ROTATE;
+        }
+        else if (panels.tools.IsToolActive(Tools::Scale))
+        {
+            guizmoType = ImGuizmo::OPERATION::SCALE;
+        }
+        else
+        {
+            guizmoType = ImGuizmo::OPERATION::INVALID;
+        }
+
         if (Settings.showDemoWindow)
         {
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
@@ -225,12 +238,22 @@ public:
         {
             auto o = scene.CreateObject(res.value());
 
-            std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
-            auto &sprite = o.AddComponent<SpriteRendererComponent>();
-            sprite.Texture = texture;
+            if (FileSystem::IsFormat<FileFormat::OBJ>(res.value()) || FileSystem::IsFormat<FileFormat::FBX>(res.value()))
+            {
+                auto &mesh = o.Add<MeshComponent>();
+                mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
-            auto &transform = o.GetComponent<TransformComponent>();
-            transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
+                auto &matrial = o.Add<MaterialComponent>();
+            }
+            else 
+            {
+                std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
+                auto &sprite = o.Add<SpriteRendererComponent>();
+                sprite.Texture = texture;
+
+                auto &transform = o.Get<TransformComponent>();
+                transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
+            }
 
             return true;
         }
@@ -257,7 +280,10 @@ public:
             break;
 
         case KeyCode::F:
-            editorCamera.Focus(selectedObject.GetComponent<TransformComponent>().Position);
+            if (!!selectedObject)
+            {
+                editorCamera.Focus(selectedObject.GetComponent<TransformComponent>().Position);
+            } 
             break;
 
         case KeyCode::Q:
@@ -266,6 +292,7 @@ public:
 
         case KeyCode::W:
             guizmoType = ImGuizmo::OPERATION::TRANSLATE;
+            panels.tools.Activate(Tools::Move);
             if (control || shift)
             {
                 Application::App()->Close();
@@ -273,10 +300,12 @@ public:
             break;
 
         case KeyCode::E:
+            panels.tools.Activate(Tools::Rotate);
             guizmoType = ImGuizmo::OPERATION::ROTATE;
             break;
 
         case KeyCode::R:
+            panels.tools.Activate(Tools::Scale);
             guizmoType = ImGuizmo::OPERATION::SCALE;
             break;
 

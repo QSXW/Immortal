@@ -120,6 +120,19 @@ public:
         return path;
     }
 
+    template <Buffer::Type T>
+    std::shared_ptr<Buffer> Get()
+    {
+        if constexpr (T == Buffer::Type::Vertex)
+        {
+            return buffer.vertex;
+        }
+        if constexpr (T == Buffer::Type::Index)
+        {
+            return buffer.index;
+        }
+    }
+
 private:
     std::unique_ptr<Assimp::Importer> importer{ nullptr };
 

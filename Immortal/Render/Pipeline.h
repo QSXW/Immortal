@@ -62,7 +62,8 @@ public:
     {
         if (buffer->GetType() == Buffer::Type::Vertex)
         {
-            desc.vertexBuffers.emplace_back(buffer);
+            desc.vertexBuffers.resize(1);
+            desc.vertexBuffers[0] = buffer;
         }
         if (buffer->GetType() == Buffer::Type::Index)
         {
@@ -121,7 +122,7 @@ protected:
     } desc;
 
 public:
-    uint32_t ElementCount;
+    uint32_t ElementCount = 0;
 };
 
 using SuperPipeline = Pipeline;

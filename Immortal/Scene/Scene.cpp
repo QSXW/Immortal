@@ -16,21 +16,35 @@
 namespace Immortal
 {
 
-struct TransformUniformBuffer
+namespace UniformBuffer
 {
-    Matrix4 viewProjectionMatrix;
-    Matrix4 skyProjectionMatrix;
-    Matrix4 sceneRotationMatrix;
+
+struct Transform
+{
+    Matrix4 ViewProjection;
+    Matrix4 SkyboxPorjection;
+    Matrix4 SceneRotation;
+    Matrix4 Model;
 };
 
-struct ShadingUniformBuffer
+struct Shading
 {
     struct {
         Vector4 direction;
         Vector4 radiance;
-    } lights[3];
-    Vector4 eyePosition;
+    } lights[4];
+    Vector3 CameraPosition;
 };
+
+struct Model
+{
+    Matrix4 Transform;
+    Vector3 Color;
+    float   Roughness;
+    float   Metallic;
+};
+
+}
 
 Scene::Scene(const std::string &debugName, bool isEditorScene) :
     debugName{ debugName }
@@ -41,8 +55,9 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
     // textures.skybox.reset(Render::Create<TextureCube>("assets/textures/environment.hdr"));
 
-    uniforms.transform.reset(Render::Create<Buffer>(sizeof(TransformUniformBuffer), 0));
-    uniforms.shading.reset(Render::Create<Buffer>(sizeof(ShadingUniformBuffer), 1));
+    uniforms.transform.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform), 0));
+    uniforms.shading.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Shading), 1));
+    uniforms.model.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Model), 2));
 
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
@@ -54,6 +69,19 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 
     pipelines.tonemap = nullptr;
+    pipelines.pbr.reset(Render::Create<Pipeline>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));
+    pipelines.pbr->Set({
+        { Format::VECTOR3, "POSITION" },
+        { Format::VECTOR3, "NORMAL"   },
+        { Format::VECTOR3, "TAGENT"   },
+        { Format::VECTOR3, "BITAGENT" },
+        { Format::VECTOR2, "TEXCOORD" },
+        });
+    pipelines.pbr->Create(renderTarget);
+
+    pipelines.pbr->Bind("Transform", uniforms.transform.get());
+    pipelines.pbr->Bind("Shading", uniforms.shading.get());
+    pipelines.pbr->Bind("Model", uniforms.model.get());
 }
 
 Scene::~Scene()
@@ -111,110 +139,72 @@ void Scene::OnRenderRuntime()
     {
         primaryCamera->SetTransform(cameraTransform);
     }
-    {
-        Render::Begin(renderTarget);
 
-        {
-            Render2D::BeginScene(dynamic_cast<const Camera&>(*primaryCamera));
-            auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-            for (auto o : group)
-            {
-                auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(o);
-                Render2D::DrawSprite(transform.Transform(), sprite, (int)o);
-            }
-
-            Render2D::EndScene();
-        }
-
-        {
-            TransformUniformBuffer transformUniforms;
-            transformUniforms.viewProjectionMatrix = primaryCamera->ViewProjection();
-            transformUniforms.skyProjectionMatrix  = primaryCamera->Projection() * Matrix4(Vector::Matrix3(primaryCamera->View()));
-            transformUniforms.sceneRotationMatrix  = Matrix4(Vector::Matrix3(primaryCamera->View()));
-            uniforms.transform->Update(sizeof(TransformUniformBuffer), &transformUniforms);
-        }
-
-        {
-            ShadingUniformBuffer shadingUniforms;
-            shadingUniforms.eyePosition = primaryCamera->View()[3];
-            for (int i = 0; i < SL_ARRAY_LENGTH(shadingUniforms.lights); ++i)
-            {
-                const Light &light = environments.light.lights[i];
-                shadingUniforms.lights[i].direction = Vector4{ light.Direction, 0.0f };
-
-                Vector4 finalLight = Vector4{};
-                if (light.Enabled)
-                {
-                    finalLight = Vector4{ light.Radiance, 0.0f };
-                }
-                shadingUniforms.lights[i].radiance = finalLight;
-            }
-            uniforms.shading->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
-        }
-
-        {
-            auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-            for (auto o : view)
-            {
-                auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
-                auto &shader = Render::Get<Shader, ShaderName::PBR>();
-                Render::Submit(shader, mesh.Mesh, transform.Transform());
-            }
-        }
-        Render::End();
-    }
-
+    OnRender(*primaryCamera);
 }
 
 void Scene::OnRenderEditor(const EditorCamera &editorCamera)
 {
+    OnRender(editorCamera);
+}
+
+void Scene::OnRender(const Camera &camera)
+{
     Render::Begin(renderTarget);
 
     {
-        Render2D::BeginScene(dynamic_cast<const Camera&>(editorCamera));
+        UniformBuffer::Transform transform;
+        transform.ViewProjection   = camera.ViewProjection();
+        transform.SkyboxPorjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
+        transform.SceneRotation    = Matrix4{ Matrix3{ camera.View() } };
+        uniforms.transform->Update(sizeof(UniformBuffer::Transform), &transform);
+    }
+
+    {
+        UniformBuffer::Shading shading;
+        for (int i = 0; i < SL_ARRAY_LENGTH(shading.lights); ++i)
+        {
+            const Light &light = environments.light.lights[i];
+            shading.lights[i].direction = Vector4{ light.Direction, 0.0f };
+
+            Vector4 finalLight = Vector4{};
+            if (light.Enabled)
+            {
+                finalLight = Vector4{ light.Radiance, 0.0f };
+            }
+            shading.lights[i].radiance = finalLight;
+        }
+        shading.CameraPosition = camera.View()[3];
+        uniforms.shading->Update(sizeof(UniformBuffer::Shading), &shading);
+    }
+
+    auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
+    for (auto o : view)
+    {
+        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
+
+        UniformBuffer::Model model;
+        model.Transform = transform;
+        model.Color     = material.AlbedoColor;
+        model.Roughness = material.Roughness;
+        model.Metallic  = material.Metallic;
+        uniforms.model->Update(sizeof(UniformBuffer::Model), &model);
+
+        pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Vertex>());
+        pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Index>());
+
+        Render::Draw(pipelines.pbr);
+    }
+
+    {
+        Render2D::BeginScene(camera);
         auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
         for (auto o : group)
         {
             auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(o);
             Render2D::DrawSprite(transform.Transform(), sprite, (int)o);
         }
-
         Render2D::EndScene();
-    }
-
-    {
-        TransformUniformBuffer transformUniforms;
-        transformUniforms.viewProjectionMatrix = editorCamera.ViewProjection();
-        transformUniforms.skyProjectionMatrix  = editorCamera.Projection() * Matrix4(Vector::Matrix3(editorCamera.View()));
-        transformUniforms.sceneRotationMatrix  = Matrix4{ Matrix3{ editorCamera.View() } };
-        uniforms.shading->Update(sizeof(TransformUniformBuffer), &transformUniforms);
-    }
-
-    {
-        ShadingUniformBuffer shadingUniforms;
-        shadingUniforms.eyePosition = editorCamera.View()[3];
-        for (int i = 0; i < SL_ARRAY_LENGTH(shadingUniforms.lights); ++i)
-        {
-            const Light &light = environments.light.lights[i];
-            shadingUniforms.lights[i].direction = Vector4{ light.Direction, 0.0f };
-
-            Vector4 finalLight{};
-            if (light.Enabled)
-            {
-                finalLight = Vector4{ light.Radiance, 0.0f };
-            }
-
-            shadingUniforms.lights[i].radiance = finalLight;
-        }
-        uniforms.shading->Update(sizeof(ShadingUniformBuffer), &shadingUniforms);
-    }
-
-    auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-    for (auto &o : view)
-    {
-        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
-        auto &shader = Render::Get<Shader, ShaderName::PBR>();
-        Render::Submit(shader, mesh.Mesh, transform.Transform());
     }
 
     Render::End();

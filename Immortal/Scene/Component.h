@@ -127,33 +127,38 @@ struct MeshComponent : public Component
     
     }
 
-    operator std::shared_ptr<Immortal::Mesh>() { return Mesh; }
+    operator std::shared_ptr<Immortal::Mesh>()
+    {
+        return Mesh;
+    }
 
     std::shared_ptr<Immortal::Mesh> Mesh;
 };
 
 struct MaterialComponent : public Component
 {
-    Vector3  AlbedoColor;
-    float    Metalness;
-    float    Roughness;
-
     MaterialComponent() :
         Component{ Type::Mesh },
         AlbedoColor{ 0.995f, 0.995f, 0.995f },
-        Metalness(1.0f),
-        Roughness(1.0f)
+        Metallic{ 1.0f },
+        Roughness{ 1.0f }
     {
-        AlbedoMap    = Render::Preset()->WhiteTexture;
-        NormalMap    = AlbedoMap;
-        MetalnessMap = AlbedoMap;
-        RoughnessMap = AlbedoMap;
+        Textures.Albedo    = Render::Preset()->WhiteTexture;
+        Textures.Normal    = Textures.Albedo;
+        Textures.Metallic  = Textures.Albedo;
+        Textures.Roughness = Textures.Albedo;
     }
 
-    std::shared_ptr<Immortal::Texture> AlbedoMap;
-    std::shared_ptr<Immortal::Texture> NormalMap;
-    std::shared_ptr<Immortal::Texture> MetalnessMap;
-    std::shared_ptr<Immortal::Texture> RoughnessMap;
+    struct {
+        std::shared_ptr<Texture> Albedo;
+        std::shared_ptr<Texture> Normal;
+        std::shared_ptr<Texture> Metallic;
+        std::shared_ptr<Texture> Roughness;
+    } Textures;
+
+    Vector3 AlbedoColor;
+    float   Metallic;
+    float   Roughness;
 };
 
 struct LightComponent : public Component

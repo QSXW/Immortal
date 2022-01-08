@@ -15,14 +15,26 @@ public:
         Hovered   = 2
     };
 
-    static constexpr float xOffset = 0.14285714f;
-    static constexpr float yOffset = 0.33333333f;
+    enum
+    {
+        Hand,
+        Move,
+        Rotate,
+        Scale,
+        Crop,
+        Transform,
+        Edit
+    };
+
+    static inline float xOffset = 0.0;
+    static inline float yOffset = 0.0f;
 
 public:
     Tools() :
-        texture{ Render::Create<Texture>("Assets/Icon/Tools2100x200.png") }
+        texture{ Render::Create<Texture>("Assets/Icon/Tools3000x200.png") }
     {
-        
+        xOffset = 300.0f / texture->Width();
+        yOffset = 200.0f / texture->Height();
     }
 
     void OnUpdate(Object &o)
@@ -32,41 +44,37 @@ public:
         {
             sprite = o.Get<SpriteRendererComponent>();
         }
-
-        ImGui::BeginMenuBar();
-        ImGui::Begin(WordsMap::Get("Tools Bar"));
-        
-        auto &style = ImGui::GetStyle();
+    
+        ImGui::Begin(WordsMap::Get("Tools Bar"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+        ImGuiStyle * style = &ImGui::GetStyle();
 
         {
             ImGui::SameLine(0.0f, 12.0f);
             ImVec2 size = { 30.0f, 20.0f };
             int framePadding = 0;
             
-            ImVec2 uv1 = { 1.0f, 1.0f };
             ImVec4 backgroundColor = { 0.0f, 0.0f, 0.0f, 1.0f };
             ImVec4 tintColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-            for (int i = 0; i < SL_ARRAY_LENGTH(vOffset); i++)
+            for (int i = 0; i < SL_ARRAY_LENGTH(vOffset.tool); i++)
             {
-                ImVec2 uv0 = { xOffset * i, yOffset * vOffset[i]};
+                ImVec2 uv0 = { xOffset * i, yOffset * vOffset.tool[i]};
                 ImVec2 uv1 = { uv0.x + xOffset, uv0.y + yOffset };
 
                 ImGui::PushID(i);
                 if (ImGui::ImageButton((ImTextureID)(uint64_t)*texture, size, uv0, uv1, framePadding, backgroundColor, tintColor))
                 {
-                    memset(vOffset, None, sizeof(vOffset));
-                    vOffset[i] = Activated;
+                    Activate(i);
                 }
-                if (ImGui::IsItemHovered() && vOffset[i] != Activated)
+                if (ImGui::IsItemHovered() && vOffset.tool[i] != Activated)
                 {
-                    vOffset[i] = Hovered;
+                    vOffset.tool[i] = Hovered;
                 }
                 else
                 {
-                    if (vOffset[i] == Hovered)
+                    if (vOffset.tool[i] == Hovered)
                     {
-                        vOffset[i] = None;
+                        vOffset.tool[i] = None;
                     }
                 }
 
@@ -74,29 +82,72 @@ public:
                 ImGui::SameLine(0.0f, 1.0f);
             }
 
-            ImGui::SameLine(0.0f, 24.0f);
-            size.x *= 2.4f;
             ImGui::PushFont(GuiLayer::NotoSans.Bold);
-            if (ImGui::Button(WordsMap::Get("Local").c_str(), size))
             {
+                ImGui::SameLine(0.0f, 24.0f);
+                if (ImGui::Button(WordsMap::Get("").c_str(), ImVec2{ size.x * 2.4f, size.y }))
+                {
 
-            }
-            ImGui::SameLine(0.0f, 1.0);
-            if (ImGui::Button(WordsMap::Get("World").c_str(), size))
-            {
+                }
+                ImGui::SameLine(0.0f, 1.0);
+                if (ImGui::Button(WordsMap::Get("").c_str(), ImVec2{ size.x * 2.4f, size.y }))
+                {
 
+                }
             }
             ImGui::PopFont();
+
+            auto [x, y] = ImGui::GetContentRegionAvail();
+            ImGui::SameLine(0.1f, x / 2 - size.x * 3 / 2);
+            for (int i = 0; i < SL_ARRAY_LENGTH(vOffset.control); i++)
+            {
+                ImVec2 uv0 = { xOffset * (i + SL_ARRAY_LENGTH(vOffset.tool)), yOffset * vOffset.control[i]};
+                ImVec2 uv1 = { uv0.x + xOffset, uv0.y + yOffset };
+
+                ImGui::PushID(i + SL_ARRAY_LENGTH(vOffset.tool));
+                if (ImGui::ImageButton((ImTextureID)(uint64_t)*texture, size, uv0, uv1, framePadding, backgroundColor, tintColor))
+                {
+                    vOffset.control[i] =  vOffset.control[i] == Activated ? None : Activated;
+                }
+                if (ImGui::IsItemHovered() && vOffset.control[i] != Activated)
+                {
+                    vOffset.control[i] = Hovered;
+                }
+                else
+                {
+                    if (vOffset.control[i] == Hovered)
+                    {
+                        vOffset.control[i] = None;
+                    }
+                }
+
+                ImGui::SameLine(0, 1.0f);
+                ImGui::PopID();
+            }
         }
 
         ImGui::End();
-        ImGui::EndMenuBar();
+    }
+
+    bool IsToolActive(size_t index)
+    {
+        return vOffset.tool[index] == Activated;
+    }
+
+    void Activate(size_t index)
+    {
+        memset(vOffset.tool, None, sizeof(vOffset.tool));
+        vOffset.tool[index] = Activated;
     }
 
 private:
     std::shared_ptr<Texture> texture;
 
-    float vOffset[7] = { None };
+    struct
+    {
+        float tool[7]    = { None };
+        float control[3] = { None };
+    } vOffset;
 };
 
 }

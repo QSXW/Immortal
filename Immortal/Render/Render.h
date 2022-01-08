@@ -58,7 +58,7 @@ public:
         Basic,
         Texture,
         Render2D,
-        PBR,
+        PhysicalBasedRendering,
         Skybox,
         Tonemap,
         Test,
