@@ -154,9 +154,10 @@ Swapchain *RenderContext::UpdateSurface()
 
     VkSurfaceCapabilitiesKHR properties;
     Check(device->GetSurfaceCapabilities(swapchain->Get<Surface>(), &properties));
-    
-    if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.height <= 0 && properties.currentExtent.width <= 0))
+
+    if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.width <= 0 || properties.currentExtent.height <= 0))
     {
+        surfaceExtent = properties.currentExtent;
         goto end;
     }
     if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
