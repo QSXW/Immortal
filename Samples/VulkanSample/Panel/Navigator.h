@@ -24,7 +24,7 @@ public:
             if (o)
             {
                 std::string &tag = o.Get<TagComponent>().Tag;
-                char buf[64] = { 0 };
+                char buf[128] = { 0 };
                 strcat(buf, tag.c_str());
                 if (ImGui::InputText(WordsMap::Get("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
                 {
