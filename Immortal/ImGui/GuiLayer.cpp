@@ -74,7 +74,8 @@ void GuiLayer::OnAttach()
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
     
     ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowMinSize.x = MinWindowSize;
+    style.WindowMinSize.x = MinWindowSizeX;
+    style.WindowMinSize.y = MinWindowSizeY;
     style.WindowBorderSize = 0.0f;
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
