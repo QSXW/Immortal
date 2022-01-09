@@ -25,7 +25,7 @@ public:
         }
 
         bool isDeleted = false;
-        if (Input::IsKeyPressed(KeyCode::Delete))
+        if (Input::IsKeyPressed(KeyCode::Delete) && selectedObject == o)
         {
             isDeleted = true;
         }
