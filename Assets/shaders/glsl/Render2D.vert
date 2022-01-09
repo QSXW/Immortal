@@ -5,7 +5,7 @@ layout(location = 1) in vec4  inColor;
 layout(location = 2) in vec2  inTexCoord;
 layout(location = 3) in float inTexIndex;
 layout(location = 4) in float inTilingFactor;
-layout(location = 5) in int   inEntityID;
+layout(location = 5) in int   inObjectID;
 
 layout (binding = 0) uniform UBO
 {
@@ -16,7 +16,7 @@ layout(location = 0) out vec4       outColor;
 layout(location = 1) out vec2       outTexCoord;
 layout(location = 2) out flat float outTexIndex;
 layout(location = 3) out float      outTilingFactor;
-layout(location = 4) out flat int   outEntityID;
+layout(location = 4) out flat int   outObjectID;
 
 void main()
 {
@@ -24,7 +24,7 @@ void main()
 	outTexCoord     = inTexCoord;
 	outTexIndex     = inTexIndex;
 	outTilingFactor = inTilingFactor;
-	outEntityID     = inEntityID;
+	outObjectID     = inObjectID;
 
 	gl_Position = ubo.viewProjection * vec4(inPosition, 1.0);
 #if VULKAN

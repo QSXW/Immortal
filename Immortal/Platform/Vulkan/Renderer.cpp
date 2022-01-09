@@ -113,20 +113,20 @@ void Renderer::SwapBuffers()
     sync = (sync + 1) % context->FrameSize();
 }
 
-void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &renderTarget)
+void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 {
-    auto nativeRenderTarget = std::dynamic_pointer_cast<RenderTarget>(renderTarget);
+    auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
 
     context->Begin([&](CommandBuffer *cmdbuf) {
-        auto &desc = nativeRenderTarget->Desc();
+        auto &desc = renderTarget->Desc();
 
         VkRenderPassBeginInfo beginInfo{};
         beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         beginInfo.pNext                    = nullptr;
-        beginInfo.framebuffer              = nativeRenderTarget->GetFramebuffer();
-        beginInfo.clearValueCount          = 2;
-        beginInfo.pClearValues             = rcast<VkClearValue*>(&nativeRenderTarget->clearValues);
-        beginInfo.renderPass               = nativeRenderTarget->GetRenderPass();
+        beginInfo.framebuffer              = renderTarget->GetFramebuffer();
+        beginInfo.clearValueCount          = renderTarget->ColorAttachmentCount() + 1;
+        beginInfo.pClearValues             = rcast<VkClearValue*>(&renderTarget->clearValues);
+        beginInfo.renderPass               = renderTarget->GetRenderPass();
         beginInfo.renderArea.extent.width  = desc.Width;
         beginInfo.renderArea.extent.height = desc.Height;
         beginInfo.renderArea.offset        = { 0, 0 };

@@ -82,7 +82,7 @@ public:
     RenderTarget(const Description &description) :
         desc{ description }
     {
-    
+
     }
 
     virtual ~RenderTarget() = default;
@@ -140,12 +140,12 @@ public:
 
     void Set(Colour colour)
     {
-        clearValues.color = colour;
+        clearValues[0] = colour;
     }
     
     Colour *ClearColor()
     {
-        return &clearValues.color;
+        return &clearValues[0];
     }
 
     Vector2 ViewportSize()
@@ -166,11 +166,7 @@ public:
 public:
     Description desc{};
 
-    struct
-    {
-        Colour color{ 0.0f, 0.0f, 0.0f, 1.0f };
-        DepthStencilValue depthStencil{ 1.0f, 0 };
-    } clearValues;
+    Colour clearValues[8];
 };
 
 using SuperRenderTarget = RenderTarget;

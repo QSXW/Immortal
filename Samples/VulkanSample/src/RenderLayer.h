@@ -42,8 +42,6 @@ public:
         pipeline->Bind("UBO", uniformBuffer.get());
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
-
-        Render2D::Setup(renderTarget);
     }
 
     virtual void OnDetach() override

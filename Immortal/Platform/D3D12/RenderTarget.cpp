@@ -196,6 +196,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
     Super{ descrition }
 {
     D3D12_CLEAR_VALUE clearValue{};
+    size_t index = 0;
     for (auto &attachment : descrition.Attachments)
     {
         D3D12_RESOURCE_FLAGS flags = attachment.IsDepth() ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL :
@@ -209,21 +210,22 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
         clearValue.Format = resourceDesc.Format;
         if (attachment.IsDepth())
         {
-            clearValue.DepthStencil.Depth   = Super::clearValues.depthStencil.depth;
-            clearValue.DepthStencil.Stencil = Super::clearValues.depthStencil.stencil;
+            clearValue.DepthStencil.Depth   = 1.0f;
+            clearValue.DepthStencil.Stencil = 0.0f;
             attachments.depth.Create(device, resourceDesc, clearValue);
         }
         else
         {
-            clearValue.Color[0] = Super::clearValues.color.r;
-            clearValue.Color[1] = Super::clearValues.color.g;
-            clearValue.Color[2] = Super::clearValues.color.b;
-            clearValue.Color[3] = Super::clearValues.color.a;
+            clearValue.Color[0] = Super::clearValues[index].r;
+            clearValue.Color[1] = Super::clearValues[index].g;
+            clearValue.Color[2] = Super::clearValues[index].b;
+            clearValue.Color[3] = Super::clearValues[index].a;
 
             attachments.color.emplace_back(ColorBuffer{});
             auto &colorBuffer = attachments.color.back();
             colorBuffer.Create(device, resourceDesc, clearValue);
         }
+        index++;
     }
 
 #ifdef SLDEBUG

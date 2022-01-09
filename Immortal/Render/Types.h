@@ -13,6 +13,12 @@ union Colour
     int32_t     int32[4];
     uint32_t    uint32[4];
 
+    Colour() :
+        v4{ 0.0f, 0.0f, 0.0f, 1.0f }
+    {
+      
+    }
+
     Colour(Vector4 v) :
         v4{ v }
     {

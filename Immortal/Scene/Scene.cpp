@@ -63,6 +63,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
         Resolutions::FHD.Width, Resolutions::FHD.Height,
         {
             { Format::RGBA8 },
+            { Format::R32   },
             { Format::Depth }
         }
     }));
@@ -82,6 +83,8 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     pipelines.pbr->Bind("Transform", uniforms.transform.get());
     pipelines.pbr->Bind("Shading", uniforms.shading.get());
     pipelines.pbr->Bind("Model", uniforms.model.get());
+
+    Render2D::Setup(renderTarget);
 }
 
 Scene::~Scene()

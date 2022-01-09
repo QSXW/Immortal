@@ -39,7 +39,15 @@ void Render::Setup(RenderContext *context)
         }
     }
 
-    data.Target.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8 }, { Format::Depth } } }));
+    data.Target.reset(Render::CreateRenderTarget({
+        viewport,
+        {
+            { Format::RGBA8 },
+            { Format::R32   },
+            { Format::Depth }
+        }
+        }));
+
     {
         constexpr float fullScreenVertex[5 * 4] = {
              1.0,  1.0, 0.0, 1.0, 1.0,

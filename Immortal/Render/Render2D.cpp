@@ -27,7 +27,7 @@ void Render2D::Setup()
         { Format::VECTOR2, "TEXCOORD"      },
         { Format::FLOAT,   "INDEX"         },
         { Format::FLOAT,   "TILING_FACTOR" },
-        { Format::INT,     "OBJECT_ID"     }
+        { Format::R32,     "OBJECT_ID"     }
     });
 
     pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(data.MaxVertices, Buffer::Type::Vertex) });

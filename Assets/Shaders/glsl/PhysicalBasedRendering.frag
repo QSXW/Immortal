@@ -22,6 +22,7 @@ layout (binding = 1) uniform Shading {
 } shading;
 
 layout (location = 0) out vec4 outColor;
+layout (location = 1) out int  outObjectID;
 
 const float PI = 3.14159265359;
 
@@ -109,4 +110,6 @@ void main()
 	color = pow(color, vec3(0.4545));
 
 	outColor = vec4(color, 1.0);
+
+	outObjectID = 0;
 }
