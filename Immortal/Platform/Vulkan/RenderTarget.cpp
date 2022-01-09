@@ -185,7 +185,7 @@ void RenderTarget::Create()
         VkAttachmentDescription desc{};
         desc.format         = c.image->Format();
         desc.samples        = VK_SAMPLE_COUNT_1_BIT;
-        desc.loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        desc.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         desc.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
         desc.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
