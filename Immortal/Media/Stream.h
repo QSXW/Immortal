@@ -7,7 +7,7 @@
 #include "sl.h"
 #include "Types.h"
 
-namespace sl
+namespace Immortal
 {
 
 class Stream
@@ -52,7 +52,6 @@ public:
         fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
         if (!fp)
         {
-            error = Status::UNABLE_TO_OEPN_FILE;
             return false;
         }
         fileSize = GetFileSize(fp);
@@ -141,8 +140,6 @@ public:
     }
 
 private:
-    Status error{ Status::SUCCEED };
-
     Mode mode{ 0 };
 
     FILE *fp{ nullptr };

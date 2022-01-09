@@ -1,6 +1,8 @@
 #include "ColorSpace.h"
 #include "slintrinsic.h"
 
+namespace Immortal
+{
 namespace Media
 {
 
@@ -44,4 +46,5 @@ void ColorSpace::RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t s
     auto coeffients = ColorSpace::Get<CoefficientType::REC601>();
 }
 
+}
 }

@@ -46,13 +46,13 @@ Texture::Texture(uint32_t width, uint32_t height) :
 Texture::Texture(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter)
 {
     LOG::INFO("{0} Loading: {1}", __func__, path);
-    Frame frame = Frame(path, flip);
+    Frame frame = Frame(path);
 
     width = frame.Width();
     height = frame.Height();
 
     mipLevels = Texture::CalculateMipmapLevels(width, height);
-    type = NativeTypeToOpenGl(frame.Type().Format, wrap, filter);
+    type = NativeTypeToOpenGl(frame.Desc().Format, wrap, filter);
     handle = InternalCreate(GL_TEXTURE_2D, width, height, type, mipLevels);
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, frame.Data());
@@ -68,12 +68,12 @@ Texture::Texture(const std::string &path, bool flip) :
     handle{ 0 }
 {
     LOG::INFO("{0} Loading: {1}", __func__, path);
-    Frame frame = Frame(path, flip);
+    Frame frame = Frame(path);
 
     width  = frame.Width();
     height = frame.Height();
 
-    type = NativeTypeToOpenGl(frame.Type());
+    type = NativeTypeToOpenGl(frame.Desc().Format);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
     glTextureStorage2D(handle, 1, type.InternalFromat, width, height);
@@ -101,7 +101,7 @@ Texture::Texture(const std::string &path, Texture::Wrap wrap, Texture::Filter fi
     width = frame.Width();
     height = frame.Height();
 
-    type = NativeTypeToOpenGl(frame.Type().Format, wrap, filter);
+    type = NativeTypeToOpenGl(frame.Desc().Format, wrap, filter);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
     glTextureStorage2D(handle, 1, type.InternalFromat, width, height);

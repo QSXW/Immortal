@@ -8,7 +8,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Texture::Texture(Device *device, const std::string &filepath) :
+Texture::Texture(Device *device, const std::string &filepath, const Description &description) :
     device{ device }
 {
     Frame frame{ filepath };
@@ -17,7 +17,9 @@ Texture::Texture(Device *device, const std::string &filepath) :
     height    = frame.Height();
     mipLevels = CalculateMipmapLevels(width, height);
 
-    Setup(frame.Type(), frame.Size(), frame.Data());
+    Description desc = description;
+    desc.Format = frame.Desc().Format;
+    Setup(desc, frame.Size(), frame.Data());
 }
 
 Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description) :

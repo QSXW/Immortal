@@ -2,10 +2,8 @@
 #include "Core.h"
 
 #include "Texture.h"
-#include <opencv2/core/core.hpp> 
-
-#include "StillPicture.h"
 #include "Format.h"
+#include "Media/StillPicture.h"
 
 namespace Immortal 
 {
@@ -15,9 +13,7 @@ class IMMORTAL_API Frame
 public:
     Frame() = default;
 
-    Frame(const std::string &path, int channels = 0, Format format = Format::None);
-
-    Frame(const std::string &path, bool flip);
+    Frame(const std::string &path);
 
     Frame(uint32_t width, uint32_t height, int depth = 1, const void *data = nullptr);
 
@@ -25,67 +21,35 @@ public:
 
     virtual uint32_t Width() const
     { 
-        return width;
+        return decoder->Desc().Width;
     }
 
     virtual uint32_t Height() const
     {
-        return height;
+        return decoder->Desc().Height;
     }
 
-    virtual Texture::Description Type() const
+    virtual Media::Description Desc() const
     { 
-        return desc;
+        return decoder->Desc();
     }
 
     virtual UINT8 *Data() const
     { 
-        return data.get();
+        return decoder->Data();
     };
 
     virtual bool Available()
     {
-        return !!data.get();
+        return !!decoder->Data();
     }
 
     virtual size_t Size() const
     {
-        return size;
+        return decoder->Desc().Size;
     }
 
 private:
-    void ReadByOpenCV(const std::string &path);
-
-    void ReadByOpenCV(const std::string &path, bool flip);
-
-    void ReadByInternal(const std::string &path);
-
-    bool Read(const std::string &path, cv::Mat &outputMat);
-
-private:
-    Texture::Description desc;
-
-    uint32_t  width{ 0 };
-
-    uint32_t height{ 0 };
-
-    size_t spatial{ 0 };
-
-    size_t size{ 0 };
-
-    int depth{ 1 };
-
-    std::unique_ptr<uint8_t>  data{ nullptr };
-
-public:
-    static inline std::shared_ptr<Frame> Create(uint32_t width, uint32_t height, int depth = 1, const void *data = nullptr)
-    {
-        return std::make_shared<Frame>(width, height, depth, data);
-    }
-
-    static inline std::shared_ptr<Frame> Create(const std::string &filepath)
-    {
-        return std::make_shared<Frame>(filepath);
-    }
+    std::unique_ptr<Media::Decoder> decoder;
 };
 }

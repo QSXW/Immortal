@@ -8,7 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CORE_FILES
     Immortal.h
-    Core.h)
+    Core.h
+    Format.h)
 
 set(FRAMEWORK_FILES
     Framework/Application.cpp
@@ -209,7 +210,6 @@ set(RENDER_FILES
     Render/Environment.h
     Render/Frame.cpp
     Render/Frame.h
-    Render/Format.h
     Render/RenderTarget.h
     Render/Material.cpp
     Render/Material.h
@@ -280,6 +280,28 @@ set(WIDGET_FILES
 set(NET_FILES
     Net/Socket.h)
 
+# Media
+set(Media_FILES
+    Media/Types.h
+    Media/RF.h
+    Media/BMP.cpp
+    Media/BMP.h
+    Media/ColorSpace.cpp
+    Media/ColorSpace.h
+    Media/Checksum.cpp
+    Media/Checksum.h
+    Media/Decoder.h
+    Media/OpenCVCodec.h
+    Media/Stream.h
+    Media/STBCodec.cpp
+    Media/STBCodec.h
+    Media/StillPicture.h
+    )
+
+set(STB_IMAGE_FILES
+    Media/stb_image/stb_image.cpp
+    Media/stb_image/stb_image.h)
+
 source_group("\\" FILES ${CORE_FILES})
 source_group("Framework\\" FILES ${FRAMEWORK_FILES})
 source_group("Editor\\" FILES ${EDITOR_FILES})
@@ -302,6 +324,8 @@ source_group("Sync\\" FILES ${SYNC_FILES})
 source_group("Utils\\" FILES ${UTILS_FILES})
 source_group("Widget\\" FILES ${WIDGET_FILES})
 source_group("Net\\" FILES ${NET_FILES})
+source_group("Media\\" FILES ${Media_FILES})
+source_group("Media\\stb_image\\" FILES ${STB_IMAGE_FILES})
 
 set(PROJECT_FILES
     ${CORE_FILES}
@@ -325,7 +349,9 @@ set(PROJECT_FILES
     ${SYNC_FILES}
     ${UTILS_FILES}
     ${WIDGET_FILES}
-    ${NET_FILES})
+    ${NET_FILES}
+    ${Media_FILES}
+    ${STB_IMAGE_FILES})
 
 source_group("\\" FILES ${PROJECT_FILES})
 
@@ -338,10 +364,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
 
 add_subdirectory(sl)
-add_subdirectory(Media)
 target_link_libraries(${PROJECT_NAME}
     slapi
-    slMedia
     glm
     glad
     glfw

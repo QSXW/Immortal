@@ -1,10 +1,11 @@
 #include "Shader.h"
 
+#include <stack>
+
 #include "FileSystem/FileSystem.h"
 #include "Render/GLSLCompiler.h"
 #include "Device.h"
-#include <stack>
-#include "RF.h"
+#include "Media/RF.h"
 
 namespace Immortal
 {
@@ -20,7 +21,7 @@ void CacheSpirv(const std::string &path, const std::string &shaderName, const st
         FileSystem::MakeDirectory(path);
     }
 
-    RF rf{ FileSystem::Path::Join(path, filename), sl::Stream::Mode::Write };
+    RF rf{ FileSystem::Path::Join(path, filename), Stream::Mode::Write };
 
     if (!rf.Writable())
     {
@@ -42,7 +43,7 @@ bool ReadSpirv(const std::string &path, const std::string &shaderName, const std
         FileSystem::MakeDirectory(path);
     }
 
-    RF rf{ FileSystem::Path::Join(path, filename), sl::Stream::Mode::Read };
+    RF rf{ FileSystem::Path::Join(path, filename), Stream::Mode::Read };
     if (!rf.Readable())
     {
         return false;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Core.h"
-#include "Stream.h"
 #include <filesystem>
+#include "Core.h"
+#include "Media/Stream.h"
 
 namespace Immortal
 {
@@ -35,6 +35,7 @@ enum class FileType
 
 enum class FileFormat : uint64_t
 {
+    BMP  = MakeIdentifier('.', 'b', 'm', 'p'),
     FBX  = MakeIdentifier('.', 'f', 'b', 'x'),
     OBJ  = MakeIdentifier('.', 'o', 'b', 'j'),
     JPG  = MakeIdentifier('.', 'j', 'p', 'g'),
@@ -51,31 +52,38 @@ bool IsFormat(const std::string &path)
     return U64(T) == (uint64_t)*(uint32_t *)(p - 4);
 }
 
-template <class T>
-static T Read(const std::string &filename)
+static inline std::vector<uint8_t> ReadBinary(const std::string &filename)
 {
-    T buffer{};
-    sl::Stream stream{ filename.c_str(), sl::Stream::Mode::Read };
+    std::vector<uint8_t> buffer{};
+    Stream stream{ filename, Stream::Mode::Read };
     if (!stream.Readable())
     {
-        LOG::WARN("Unable to open {0}", filename.c_str());
+        LOG::WARN("Unable to open {0}", filename);
         return buffer;
     }
-        
+
     buffer.resize(stream.Size());
+
     stream.Read(buffer.data(), buffer.size());
 
     return buffer;
 }
 
-static std::vector<uint8_t> ReadBinary(const std::string &filename)
+static inline std::string ReadString(const std::string &filename)
 {
-    return Read<std::vector<uint8_t>>(filename);
-}
+    std::string buffer{};
+    Stream stream{ filename, Stream::Mode::Read };
+    if (!stream.Readable())
+    {
+        LOG::WARN("Unable to open {0}", filename);
+        return buffer;
+    }
 
-static std::string ReadString(const std::string &filename)
-{
-    return Read<std::string>(filename);
+    buffer.resize(stream.Size());
+
+    stream.Read(buffer.data(), buffer.size());
+
+    return buffer;
 }
 
 static std::string ExtractFileName(const std::string &path)

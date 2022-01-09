@@ -8,7 +8,9 @@
 #include "Types.h"
 #include "Checksum.h"
 #include "Stream.h"
-#include "sl.h"
+
+namespace Immortal
+{
 
 struct Chunk
 {
@@ -19,7 +21,7 @@ struct Chunk
 
     Chunk(uint64_t size, const void *data) :
         size{ size },
-        ptr{ sl::rcast<const void *>(data) }
+        ptr{ reinterpret_cast<const void *>(data) }
     {
 
     }
@@ -33,12 +35,12 @@ class RF
 public:
     RF(const std::string &filename) :
         output{ filename },
-        stream{ sl::Stream::Mode::Write }
+        stream{ Stream::Mode::Write }
     {
         stream.Open(output);
     }
 
-    RF(const std::string &filename, sl::Stream::Mode mode) :
+    RF(const std::string &filename, Stream::Mode mode) :
         output{ filename },
         stream{ mode }
     {
@@ -114,7 +116,7 @@ public:
         while (ptr < end)
         {
             Chunk chunk{};
-            chunk.size = *sl::rcast<const uint64_t *>(ptr);
+            chunk.size = *reinterpret_cast<const uint64_t *>(ptr);
             ptr += sizeof(uint64_t);
             chunk.ptr  = ptr;
 
@@ -145,9 +147,10 @@ private:
 
     std::vector<uint8_t> buffer;
 
-    sl::Stream stream;
+    Stream stream;
 
     std::pair<uint64_t, uint64_t> pair{ 0, 0 };
 
     std::vector<Chunk> chunks;
 };
+}

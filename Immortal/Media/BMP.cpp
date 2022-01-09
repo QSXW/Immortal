@@ -5,22 +5,24 @@
 #include "Stream.h"
 #include "ColorSpace.h"
 
+namespace Immortal
+{ 
 namespace Media
 {
 
-Status BMPDecoder::Read(const std::string &filename, bool alpha)
+bool BMPDecoder::Read(const std::string &filename, bool alpha)
 {
     Stream stream{ filename.c_str(), Stream::Mode::Read };
 
     if (!stream.Readable())
     {
-        return Status::UNABLE_TO_OEPN_FILE;
+        return false;
     }
     stream.Read(&identifer, HeaderSize());
 
     if (bitsPerPixel != 24)
     {
-        return Status::UNSUPPORT_FORMAT;
+        return false;
     }
 
     if (alpha)
@@ -37,7 +39,7 @@ Status BMPDecoder::Read(const std::string &filename, bool alpha)
     data.reset(new uint8_t [size]);
     if (!data)
     {
-        return Status::OUT_OF_MEMORY;
+        return false;
     }
 
     uint8_t *ptr = data.get() + size - linesize - width;
@@ -70,16 +72,19 @@ Status BMPDecoder::Read(const std::string &filename, bool alpha)
         }
     }
 
-    return Status::SUCCEED;
+    desc.Depth  = alpha ? 4 : 3;
+    FillUpDescription();
+
+    return true;
 }
 
-Status BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
+bool BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
 {
     Stream stream{ filepath, Stream::Mode::Write };
 
     if (!stream.Writable())
     {
-        return Status::UNABLE_TO_OEPN_FILE;
+        return false;
     }
 
     auto padding  = w & 3;
@@ -115,7 +120,15 @@ Status BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, u
         }
     }
 
-    return Status::SUCCEED;
+    return true;
 }
 
+void BMPDecoder::FillUpDescription()
+{
+    desc.Width  = width;
+    desc.Height = height;
+    Decoder::FillUpDescription();
+}
+
+}
 }

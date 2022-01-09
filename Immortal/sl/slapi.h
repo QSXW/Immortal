@@ -219,6 +219,7 @@ namespace SError
     DERROR(InvalidSingleton,     "Cannot construct more than one singleton")
     DERROR(SelfAssignment,       "Self-assignment is not permitted"        )
     DERROR(NullPointerReference, "Null pointer reference"                  )
+    DERROR(UnableToOpenFile,     "Unable to open the file specified"       )
 }
 
 #define SL_DEFINE_ENUM_OP_AND(T, U) \

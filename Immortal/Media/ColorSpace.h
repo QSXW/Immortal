@@ -2,8 +2,11 @@
 
 #include <cstdint>
 
+namespace Immortal
+{
 namespace Media
 {
+
 namespace ColorSpace
 {
 
@@ -31,4 +34,7 @@ void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size);
 void RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size);
 
 };
+
 }
+}
+

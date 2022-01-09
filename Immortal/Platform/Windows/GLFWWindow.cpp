@@ -54,7 +54,7 @@ void GLFWWindow::SetTitle(const std::string &title)
 
 void GLFWWindow::SetIcon(const std::string &filepath)
 {
-    Frame frame{ filepath, false };
+    Frame frame{ filepath };
 
     GLFWimage image{};
     image.height = ncast<int>(frame.Height());

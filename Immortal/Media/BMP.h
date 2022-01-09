@@ -9,10 +9,10 @@
 
 #include "Decoder.h"
 
+namespace Immortal
+{
 namespace Media
 {
-
-using namespace sl;
 
 class BMPDecoder : public Decoder
 {
@@ -21,14 +21,14 @@ public:
 
 public:
     BMPDecoder() :
-        Super{ Type::BMP, Format::R8G8B8 }
+        Super{ Type::BMP, Format::BGRA8 }
     {
         memset(&identifer, 0, HeaderSize());
     }
 
     virtual ~BMPDecoder()
     {
-    
+
     }
 
     virtual uint8_t *Data() const override
@@ -46,19 +46,12 @@ public:
         return reinterpret_cast<uint8_t *>(&importantColours) - reinterpret_cast<uint8_t *>(&identifer);
     }
 
-    Status Read(const std::string &filename, bool alpha = true);
+    bool Read(const std::string &filename, bool alpha = true);
 
-    Status Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
+    bool Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
 
-    virtual uint32_t Width() override
-    {
-        return width;
-    }
-
-    virtual uint32_t Height() override
-    {
-        return height;
-    }
+protected:
+    virtual void FillUpDescription() override;
 
 private:
     #pragma pack(push, 1)
@@ -85,4 +78,5 @@ private:
     std::unique_ptr<uint8_t> data;
 };
 
+}
 }

@@ -1,7 +1,21 @@
 #pragma once
 
+#include "Format.h"
+
+namespace Immortal
+{
 namespace Media
 {
+
+struct Description
+{
+    size_t  Size;
+    size_t  Spatial;
+    int32_t Width;
+    int32_t Height;
+    int32_t Depth;
+    Format  Format;
+};
 
 enum class Type
 {
@@ -14,28 +28,6 @@ enum class Type
     HEVC
 };
 
-enum class Format
-{
-    Unknown,
-    yuv420p,
-    YUV422P,
-    YUV444P,
-    R8G8B8
-};
-
 }
-
-namespace sl
-{
-
-enum class Status
-{
-    SUCCEED = 0,
-    CORRUPT_FILE,
-    INCORRECT_FORMAT,
-    UNABLE_TO_OEPN_FILE,
-    UNSUPPORT_FORMAT,
-    OUT_OF_MEMORY
-};
 
 }

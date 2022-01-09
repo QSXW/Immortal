@@ -21,7 +21,7 @@ public:
     using Super = SuperTexture;
 
 public:
-    Texture(Device *device, const std::string &filepath);
+    Texture(Device *device, const std::string &filepath, const Description &description = Description{});
 
     Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
 
