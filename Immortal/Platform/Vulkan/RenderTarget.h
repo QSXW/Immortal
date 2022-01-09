@@ -108,6 +108,8 @@ public:
 
     virtual void Resize(uint32_t x, uint32_t y) override;
 
+    virtual uint64_t PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format);
+
 private:
     Device *device{ nullptr };
 
@@ -127,6 +129,8 @@ private:
 
         std::vector<Attachment> colors;
     } attachments;
+
+    std::vector<std::unique_ptr<Image>> stagingImages;
 };
 
 }

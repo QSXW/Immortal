@@ -137,6 +137,12 @@ void RenderTarget::Create()
         }
         else
         {
+            VkImageUsageFlags flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            if (index > 0)
+            {
+                flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            }
+
             attachments.colors.resize(attachments.colors.size() + 1);
             auto &color = attachments.colors.back();
             colorFormat = attachment.BaseFromat<VkFormat>();
@@ -144,10 +150,29 @@ void RenderTarget::Create()
                 device,
                 extent,
                 colorFormat,
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VMA_MEMORY_USAGE_GPU_ONLY
+                flags,
+                VMA_MEMORY_USAGE_GPU_ONLY,
                 });
             color.view.reset(new ImageView{ color.image.get(), VK_IMAGE_VIEW_TYPE_2D });
+
+            if (index > 0)
+            {
+                auto image = new Image{
+                    device,
+                    extent,
+                    colorFormat,
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VMA_MEMORY_USAGE_GPU_TO_CPU,
+                    VK_SAMPLE_COUNT_1_BIT,
+                    1, 1,
+                    VK_IMAGE_TILING_LINEAR
+                    };
+                uint8_t *dataMapped = nullptr;
+                image->Map((void **)&dataMapped);
+                memset(dataMapped, -1, extent.width * extent.height * extent.depth);
+                image->Unmap();
+                stagingImages.emplace_back(image);
+            }
         }
         index++;
     }
@@ -160,7 +185,7 @@ void RenderTarget::Create()
         VkAttachmentDescription desc{};
         desc.format         = c.image->Format();
         desc.samples        = VK_SAMPLE_COUNT_1_BIT;
-        desc.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        desc.loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         desc.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
         desc.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -261,6 +286,86 @@ void RenderTarget::Resize(uint32_t x, uint32_t y)
     
     device->Wait();
     Create();
+}
+
+/* Not finished yet */
+uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format)
+{
+    THROWIF(index >= attachments.colors.size(), SError::OutOfBound);
+
+    uint64_t pixel = 0;
+    size_t stride  = Map::FormatSize(format);
+
+    uint8_t *ptr   = nullptr;
+    Image *src = attachments.colors[index].image.get();
+    Image *dst = stagingImages[index - 1].get();
+    
+    VkImageSubresourceLayers subresourceLayers{};
+    subresourceLayers.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceLayers.layerCount     = 1;
+    subresourceLayers.baseArrayLayer = 0;
+    subresourceLayers.mipLevel       = 0;
+
+    VkImageCopy region{};
+    region.extent         = src->Extent();
+    region.srcOffset      = VkOffset3D{ 0, 0, 0 };
+    region.srcSubresource = subresourceLayers;
+    region.dstOffset      = VkOffset3D{ 0, 0, 0 };
+    region.dstSubresource = subresourceLayers;
+
+    device->Wait();
+    device->Upload([&](auto copyCmdBuf) -> void {
+        VkImageSubresourceRange subresourceRange{};
+        subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.levelCount   = 1;
+        subresourceRange.layerCount   = 1;
+
+        VkImageMemoryBarrier barriers[2]{};
+        barriers[0].sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barriers[0].image            = *dst;
+        barriers[0].subresourceRange = subresourceRange;
+        barriers[0].srcAccessMask    = 0;
+        barriers[0].dstAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barriers[0].oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+        barriers[0].newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+        barriers[1].sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barriers[1].image            = *src;
+        barriers[1].subresourceRange = subresourceRange;
+        barriers[1].srcAccessMask    = 0;
+        barriers[1].dstAccessMask    = VK_ACCESS_TRANSFER_READ_BIT;
+        barriers[1].oldLayout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barriers[1].newLayout        = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+        copyCmdBuf->PipelineBarrier(
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            SL_ARRAY_LENGTH(barriers), barriers
+            );
+
+        vkCmdCopyImage(
+            *copyCmdBuf,
+            *src,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            *dst,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+            );
+        });
+
+    dst->Map((void **)&ptr);
+    {
+        pixel = *((uint64_t *)ptr + (y * stride * dst->Extent().width + x * stride));
+    }
+    dst->Unmap();
+
+    return pixel;
 }
 
 }

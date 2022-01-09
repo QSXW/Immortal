@@ -160,5 +160,15 @@ Image &Image::operator=(Image &&other)
     return *this;
 }
 
+void Image::Map(void **dataMapped)
+{
+    Check(vmaMapMemory(device->MemoryAllocator(), memory, dataMapped));
+}
+
+void Image::Unmap()
+{
+    vmaUnmapMemory(device->MemoryAllocator(), memory);
+}
+
 }
 }

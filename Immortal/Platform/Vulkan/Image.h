@@ -107,6 +107,10 @@ public:
         return IsDepthOnlyFormat(info.format);
     }
 
+    void Map(void **dataMapped);
+
+    void Unmap();
+
 private:
     Device *device{ nullptr };
 
