@@ -270,11 +270,6 @@ RenderTarget::operator uint64_t() const
     return *descriptorSet;
 }
 
-void RenderTarget::Map(uint32_t slot)
-{
-
-}
-
 void RenderTarget::Resize(uint32_t x, uint32_t y)
 {
     desc.Width  = x;
@@ -289,7 +284,6 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     THROWIF(index >= attachments.colors.size(), SError::OutOfBound);
 
     uint64_t pixel = 0;
-    size_t stride  = Map::FormatSize(format);
 
     uint8_t *ptr   = nullptr;
     Image *src = attachments.colors[index].image.get();
@@ -370,11 +364,27 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
 
     dst->Map((void **)&ptr);
     {
-        pixel = *((uint64_t *)ptr + (y * stride * dst->Extent().width + x * stride));
+        auto &extent = dst->Extent();
+        auto align = SLALIGN(extent.width, 8) - extent.width;
+        size_t stride = Map::FormatSize(format);
+
+        pixel = *(uint64_t *)(ptr + (y * (align + extent.width) * stride) + x * stride);
     }
     dst->Unmap();
 
     return pixel;
+}
+
+void RenderTarget::Map(uint32_t index, uint8_t **ppData)
+{
+    THROWIF(index >= attachments.colors.size(), SError::OutOfBound);
+    stagingImages[index]->Map((void **)ppData);
+}
+
+void RenderTarget::Unmap(uint32_t index)
+{
+    THROWIF(index >= attachments.colors.size(), SError::OutOfBound);
+    stagingImages[index]->Unmap();
 }
 
 }

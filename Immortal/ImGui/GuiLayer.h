@@ -155,7 +155,10 @@ public:
         ImGui::Render();
     }
 
-    void BlockEvent(bool block) { blockEvents = block;  }
+    void BlockEvent(bool block)
+    {
+        blockEvents = block;
+    }
 
     void SetTheme();
 

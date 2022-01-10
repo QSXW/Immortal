@@ -12,9 +12,9 @@ Frame::Frame(const std::string &path)
 {
     if (FileSystem::IsFormat<FileFormat::BMP>(path))
     {
-        auto bmpDecoder = new Media::BMPDecoder{};
-        bmpDecoder->Read(path);
-        decoder.reset(bmpDecoder);
+        auto bmpCodec = new Media::BMPCodec{};
+        bmpCodec->Read(path);
+        decoder.reset(bmpCodec);
     }
     else
     {

@@ -257,11 +257,6 @@ void RenderTarget::Resize(UINT32 width, UINT32 height)
 
 }
 
-void *RenderTarget::ReadPixel(UINT32 attachmentIndex, int x, int y, Format format, int width, int height)
-{
-    return nullptr;
-}
-
 void RenderTarget::ClearAttachment(UINT32 attachmentIndex, int value)
 {
 

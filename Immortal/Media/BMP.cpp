@@ -10,7 +10,7 @@ namespace Immortal
 namespace Media
 {
 
-bool BMPDecoder::Read(const std::string &filename, bool alpha)
+bool BMPCodec::Read(const std::string &filename, bool alpha)
 {
     Stream stream{ filename.c_str(), Stream::Mode::Read };
 
@@ -78,7 +78,7 @@ bool BMPDecoder::Read(const std::string &filename, bool alpha)
     return true;
 }
 
-bool BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uint8_t *data)
+bool BMPCodec::Write(const std::string &filepath, int w, int h, int depth, uint8_t *data, int align)
 {
     Stream stream{ filepath, Stream::Mode::Write };
 
@@ -88,7 +88,7 @@ bool BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uin
     }
 
     auto padding  = w & 3;
-    auto linesize = (w + padding) * 3;
+    auto linesize = w * 3 + padding;
     auto dataSize = linesize * h;
 
     identifer       = 0x4d42;
@@ -105,15 +105,35 @@ bool BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uin
 
     if (depth == 1)
     {
-        for (int y = 0; y < height; y++, data += w + padding)
+        for (int y = 0; y < height; y++, data += w + padding + align)
         {
             stream.Write(data, width, 3);
             stream.Skip(padding);
         }
     }
+    else if (depth == 4)
+    {
+        std::vector<uint8_t> buf;
+        buf.resize(linesize);
+
+        size_t stride = (width * 4 + align);
+        data += stride * height - stride;
+        for (int y = 0; y < height; y++, data -= stride)
+        {
+            auto src = data;
+            auto dst = buf.data();
+            for (int x = 0; x < width; x++, dst += 3, src += 4)
+            {
+                dst[2] = src[0];
+                dst[1] = src[1];
+                dst[0] = src[2];
+            }
+            stream.Write(buf.data(), linesize, 1);
+        }
+    }
     else
     {
-        for (int y = 0; y < height; y++, data += linesize)
+        for (int y = 0; y < height; y++, data += linesize + align)
         {
             stream.Write(data, linesize, 1);
             stream.Skip(padding);
@@ -123,7 +143,7 @@ bool BMPDecoder::Write(const std::string &filepath, int h, int w, int depth, uin
     return true;
 }
 
-void BMPDecoder::FillUpDescription()
+void BMPCodec::FillUpDescription()
 {
     desc.Width  = width;
     desc.Height = height;

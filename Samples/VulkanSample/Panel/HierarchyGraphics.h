@@ -78,6 +78,11 @@ public:
         callback(selectedObject);
     }
 
+    void Select(Object o)
+    {
+        selectedObject = o;
+    }
+
 private:
     Object selectedObject;
 };

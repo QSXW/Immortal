@@ -98,14 +98,19 @@ public:
         Resize(ncast<uint32_t>(size.x), ncast<uint32_t>(size.y));
     }
 
-    virtual void *ReadPixel(uint32_t attachmentIndex, int x, int y, Format format, int width = 1, int height = 1)
-    {
-        return nullptr;
-    }
-
     virtual uint64_t PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format)
     {
         return std::numeric_limits<uint64_t>::max();
+    }
+
+    virtual void Map(uint32_t index, uint8_t **ppData)
+    {
+
+    }
+
+    virtual void Unmap(uint32_t index)
+    {
+        
     }
 
     virtual void ClearAttachment(uint32_t attachmentIndex, int value) { }

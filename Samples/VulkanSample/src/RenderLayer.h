@@ -19,6 +19,7 @@ public:
         editorCamera{ Vector::PerspectiveFOV(Vector::Radians(90.0f), viewport.x, viewport.y, 0.1f, 1000.0f) }
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
+        eventSink.Listen(&RenderLayer::OnMouseDown, Event::Type::MouseButtonPressed);
 
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } }));
 
@@ -62,14 +63,18 @@ public:
             camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
             scene.SetViewportSize(viewportSize);
         }
-        editorCamera.OnUpdate();
+        if (editableArea.IsHovered())
+        {
+            editorCamera.OnUpdate();
+        }
 
         scene.OnRenderEditor(editorCamera);
     }
 
     void UpdateEditableArea()
     {
-        editableArea.OnUpdate(scene.Target() , [&]() -> void {
+        editableArea.OnUpdate(scene.Target(), [&]() -> void {
+
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
                 ImGuizmo::SetOrthographic(false);
@@ -277,6 +282,26 @@ public:
             }
             break;
 
+        case KeyCode::S:
+            if (control)
+            {
+                scene.Target()->PickPixel(0, 0, 0, Format::RGBA8);
+                Async::Execute([&]() -> void {
+                    auto size = editableArea.Size();
+                    uint32_t width = U32(size.x);
+                    uint32_t height = U32(size.y);
+
+                    uint8_t *dataMapped = nullptr;
+                    scene.Target()->Map(0, &dataMapped);
+
+                    Media::BMPCodec bmp{};
+                    bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
+
+                    scene.Target()->Unmap(0);
+                });
+            }
+            break;
+
         case KeyCode::F:
             if (!!selectedObject)
             {
@@ -312,6 +337,29 @@ public:
             return false;
         }
         return true;
+    }
+
+    bool OnMouseDown(MouseButtonPressedEvent &e)
+    {
+        if (editableArea.IsHovered() && !ImGuizmo::IsOver() && e.GetMouseButton() == MouseCode::Left)
+        {
+            if (!Input::IsKeyPressed(KeyCode::Control))
+            {
+                return true;
+            }
+            auto [x, y] = ImGui::GetMousePos();
+            x -= editableArea.MinBound().x;
+            y -= editableArea.MinBound().y;
+
+            uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
+
+            Object o = Object{ *(int *)&pixel, &scene };
+            panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
+
+            return true;
+        }
+
+        return false;
     }
 
     virtual void OnEvent(Event &e) override

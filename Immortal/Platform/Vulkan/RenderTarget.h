@@ -104,11 +104,13 @@ public:
 public:
     virtual operator uint64_t() const override;
 
-    virtual void Map(uint32_t slot = 0) override;
-
     virtual void Resize(uint32_t x, uint32_t y) override;
 
-    virtual uint64_t PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format);
+    virtual uint64_t PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format) override;
+
+    virtual void Map(uint32_t index, uint8_t **ppData) override;
+                 
+    virtual void Unmap(uint32_t index) override;
 
 private:
     Device *device{ nullptr };

@@ -242,8 +242,6 @@ public:
 
     virtual void Resize(UINT32 width, UINT32 height) override;
 
-    virtual void *ReadPixel(UINT32 handle, int x, int y, Format format, int width, int height) override;
-
     virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
 
     D3D12_RESOURCE_DESC SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)

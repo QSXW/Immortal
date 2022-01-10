@@ -14,19 +14,19 @@ namespace Immortal
 namespace Media
 {
 
-class BMPDecoder : public Decoder
+class BMPCodec : public Decoder
 {
 public:
     using Super = Decoder;
 
 public:
-    BMPDecoder() :
+    BMPCodec() :
         Super{ Type::BMP, Format::BGRA8 }
     {
         memset(&identifer, 0, HeaderSize());
     }
 
-    virtual ~BMPDecoder()
+    virtual ~BMPCodec()
     {
 
     }
@@ -48,7 +48,7 @@ public:
 
     bool Read(const std::string &filename, bool alpha = true);
 
-    bool Write(const std::string &filepath, int width, int height, int depth, uint8_t *data);
+    bool Write(const std::string &filepath, int width, int height, int depth, uint8_t *data, int align = 0);
 
 protected:
     virtual void FillUpDescription() override;
