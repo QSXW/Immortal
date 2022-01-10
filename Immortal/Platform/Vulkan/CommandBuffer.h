@@ -89,6 +89,24 @@ public:
         );
     }
 
+    void CopyImage(VkImage srcImage,
+                   VkImageLayout srcImageLayout,
+                   VkImage dstImage,
+                   VkImageLayout dstImageLayout,
+                   uint32_t regionCount,
+                   const VkImageCopy *pRegions)
+    {
+        vkCmdCopyImage(
+            handle,
+            srcImage,
+            srcImageLayout,
+            dstImage,
+            dstImageLayout,
+            regionCount,
+            pRegions
+        );
+    }
+
     void CopyBufferToImage(VkBuffer                 srcBuffer,
                            VkImage                  dstImage,
                            VkImageLayout            dstImageLayout,

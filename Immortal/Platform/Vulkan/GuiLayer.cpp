@@ -85,7 +85,7 @@ void GuiLayer::OnAttach()
         LOG::INFO("Initialized GUI with success");
     }
     
-    device->Upload([&](auto *cmdbuf) -> void {
+    device->Transfer([&](auto *cmdbuf) -> void {
         ImGui_ImplVulkan_CreateFontsTexture(*cmdbuf);
         });
     ImGui_ImplVulkan_DestroyFontUploadObjects();

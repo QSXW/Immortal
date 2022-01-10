@@ -129,7 +129,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     imageMemoryBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
     imageMemoryBarrier.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
-    device->Upload([&](auto copyCmd) -> void {
+    device->Transfer([&](auto copyCmd) -> void {
         copyCmd->PipelineBarrier(
             VK_PIPELINE_STAGE_HOST_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT,

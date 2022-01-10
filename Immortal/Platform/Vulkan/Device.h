@@ -248,18 +248,19 @@ public:
         fencePool->Discard(pFence);
     }
 
-    CommandBuffer *BeginUpload()
+    CommandBuffer *Begin()
     {
         auto *copyCmd = RequestCommandBuffer(Level::Primary);
         copyCmd->Begin();
         return copyCmd;
     }
 
-    void EndUpload(CommandBuffer *copyCmd)
+    template <Queue::Type T>
+    void End(CommandBuffer *copyCmd)
     {
         copyCmd->End();
 
-        auto &queue = FindQueueByType(Queue::Type::Transfer, 0);
+        auto &queue = FindQueueByType(T, 0);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -276,11 +277,23 @@ public:
     }
 
     template <class T>
-    void Upload(T &&process)
+    void Transfer(T &&process)
     {
-        auto *copyCmd = BeginUpload();
+        auto *copyCmd = Begin();
+
         process(copyCmd);
-        EndUpload(copyCmd);
+
+        End<Queue::Type::Transfer>(copyCmd);
+    }
+
+    template <class T>
+    void Compute(T &&process)
+    {
+        auto *copyCmd = Begin();
+
+        process(copyCmd);
+
+        End<Queue::Type::Compute>(copyCmd);
     }
 
 private:

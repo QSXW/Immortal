@@ -110,6 +110,7 @@ set(VULKAN_FILES
    Platform/Vulkan/vk_mem_alloc.h
    Platform/Vulkan/volk.h
    Platform/Vulkan/Attachment.h
+   Platform/Vulkan/Barrier.h
    Platform/Vulkan/Buffer.cpp
    Platform/Vulkan/Buffer.h
    Platform/Vulkan/Common.cpp
