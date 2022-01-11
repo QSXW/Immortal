@@ -20,25 +20,6 @@ class Shader : public SuperShader
 public:
     using Super = SuperShader;
 
-    static VkShaderStageFlags ConvertTo(Stage stage)
-    {
-        static VkShaderStageFlags map[] = {
-            VK_SHADER_STAGE_VERTEX_BIT,
-            VK_SHADER_STAGE_FRAGMENT_BIT,
-            VK_SHADER_STAGE_COMPUTE_BIT,
-            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-            VK_SHADER_STAGE_GEOMETRY_BIT,
-            VK_SHADER_STAGE_RAYGEN_BIT_KHR,
-            VK_SHADER_STAGE_ANY_HIT_BIT_KHR,
-            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
-            VK_SHADER_STAGE_MISS_BIT_KHR,
-            VK_SHADER_STAGE_INTERSECTION_BIT_KHR,
-            VK_SHADER_STAGE_CALLABLE_BIT_KHR
-        };
-        return map[ncast<size_t>(stage)];
-    }
-
 public:
     Shader(Device *device, const std::string &filename, Type type = Type::Graphics);
 

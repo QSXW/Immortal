@@ -1,10 +1,11 @@
 #version 450
 
-struct Matrial
+struct ModelInfo
 {
     vec3  color;
     float roughness;
 	float metallic;
+	int   objectID;
 };
 
 layout (location = 0) in vec3 inPos;
@@ -15,7 +16,7 @@ layout (location = 4) in vec2 inTexCoord;
 
 layout (location = 0) out vec3 outWorldPos;
 layout (location = 1) out vec3 outNormal;
-layout (location = 2) out Matrial outMatrial;
+layout (location = 2) out flat ModelInfo outModel;
 
 layout (binding = 0) uniform Transform
 {
@@ -24,12 +25,13 @@ layout (binding = 0) uniform Transform
     mat4 sceneRotation;
 } ubo;
 
-layout (binding = 2) uniform Model
+layout (push_constant) uniform Model
 {
     mat4  transform;
     vec3  color;
     float roughness;
 	float metallic;
+    int   objectID;
 } model;
 
 out gl_PerVertex
@@ -39,9 +41,10 @@ out gl_PerVertex
 
 void main()
 {
-    outMatrial.color     = model.color;
-    outMatrial.roughness = model.roughness;
-    outMatrial.metallic  = model.metallic;
+    outModel.color     = model.color;
+    outModel.roughness = model.roughness;
+    outModel.metallic  = model.metallic;
+    outModel.objectID  = model.objectID;
 
 	gl_Position =  ubo.viewProjection * model.transform * vec4(inPos, 1.0);
 

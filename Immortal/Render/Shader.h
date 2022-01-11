@@ -19,18 +19,18 @@ public:
 
     enum class Stage
     {
-        Vertex,
-        Fragment,
-        Compute,
-        TesselationControl,
-        TesselationEvaluation,
-        Geometry,
-        RayGen,
-        AnyHit,
-        ClosestHit,
-        Miss,
-        Intersection,
-        Callable,
+        Vertex                = BIT(0),
+        TesselationControl    = BIT(1),
+        TesselationEvaluation = BIT(2),
+        Geometry              = BIT(3),
+        Fragment              = BIT(4),
+        Compute               = BIT(5),
+        RayGen                = BIT(6),
+        AnyHit                = BIT(7),
+        ClosestHit            = BIT(8),
+        Miss                  = BIT(9),
+        Intersection          = BIT(10),
+        Callable              = BIT(11),
         Pixel = Fragment,
     };
 

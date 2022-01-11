@@ -108,7 +108,8 @@ public:
 
 public:
     Socket() :
-        handle{ Status::Invalid }
+        handle{ Status::Invalid },
+        wsaData{ }
     {
 
     }

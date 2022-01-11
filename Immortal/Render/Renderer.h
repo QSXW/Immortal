@@ -81,6 +81,11 @@ public:
         return nullptr;
     }
 
+    virtual void PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+    {
+    
+    }
+
     virtual void Draw(const std::shared_ptr<Pipeline> &pipeline)
     {
     

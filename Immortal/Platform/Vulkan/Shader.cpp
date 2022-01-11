@@ -379,7 +379,7 @@ void Shader::SetupDescriptorSetLayout(Stage stage)
                 LOG::WARN("Using a push constants size exceeded {0} bytes, "
                     "which is not recommended by all vendor devices", Limit::PushConstantMaxSize);
             }
-            pushConstantRanges.emplace_back(VkPushConstantRange{ ConvertTo(stage), 0, resource.size });
+            pushConstantRanges.emplace_back(VkPushConstantRange{ (VkShaderStageFlags)stage, 0, resource.size });
         }
         else if (resource.type & Resource::Type::Uniform)
         {
@@ -387,7 +387,7 @@ void Shader::SetupDescriptorSetLayout(Stage stage)
             bindingInfo.binding            = resource.binding;
             bindingInfo.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             bindingInfo.descriptorCount    = resource.count;
-            bindingInfo.stageFlags         = ConvertTo(stage);
+            bindingInfo.stageFlags         = (VkShaderStageFlags)stage;
             bindingInfo.pImmutableSamplers = nullptr;
 
             VkWriteDescriptorSet writeDescriptor{};

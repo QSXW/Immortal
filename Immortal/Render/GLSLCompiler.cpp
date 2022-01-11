@@ -140,6 +140,16 @@ bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shade
 
         resouces.emplace_back(std::move(resource));
     }
+    for (auto &spirvResource : spirvResources->push_constant_buffers)
+    {
+        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
+        resource.type = Shader::Resource::Type::PushConstant;
+
+        spirv_cross::SPIRType type = glsl->get_type(spirvResource.base_type_id);
+        resource.size = glsl->get_declared_struct_size(type);
+
+        resouces.emplace_back(std::move(resource));
+    }
 
     delete spirvResources;
     delete glsl;

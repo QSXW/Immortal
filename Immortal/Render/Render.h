@@ -277,6 +277,11 @@ public:
         }
     }
 
+    static void PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset = 0)
+    {
+        renderer->PushConstant(pipeline, stage, size, data, offset);
+    }
+
     static void Draw(const std::shared_ptr<Pipeline> &pipeline)
     {
         renderer->Draw(pipeline);

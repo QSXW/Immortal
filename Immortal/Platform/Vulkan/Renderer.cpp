@@ -144,17 +144,59 @@ void Renderer::End()
     });
 }
 
-void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &pipeline)
+void Renderer::PushConstant(Pipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+{
+    auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
+    context->Submit([&](CommandBuffer *cmdbuf) {
+        cmdbuf->PushConstants(
+            *pipeline,
+            stage,
+            offset,
+            size,
+            data
+            );
+        });
+}
+
+void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
 {
     context->Submit([&](CommandBuffer *cmdbuf) {
-        auto pl = std::dynamic_pointer_cast<Pipeline>(pipeline);
-        vkCmdBindDescriptorSets(*cmdbuf, pl->BindPoint(), pl->Layout(), 0, 1, &pl->GetDescriptorSet(), 0, 0);
-        vkCmdBindPipeline(*cmdbuf, pl->BindPoint(), *pl);
+        auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
+        vkCmdBindDescriptorSets(
+            *cmdbuf,
+            pipeline->BindPoint(),
+            pipeline->Layout(),
+            0, 1,
+            &pipeline->GetDescriptorSet(),
+            0, 0
+            );
+
+        vkCmdBindPipeline(
+            *cmdbuf,
+            pipeline->BindPoint(),
+            *pipeline
+            );
 
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(*cmdbuf, 0, 1, &pl->Get<Buffer::Type::Vertex>()->Handle(), offsets);
-        vkCmdBindIndexBuffer(*cmdbuf, pl->Get<Buffer::Type::Index>()->Handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(*cmdbuf, pl->ElementCount, 1, 0, 0, 0);
+        vkCmdBindVertexBuffers(
+            *cmdbuf,
+            0, 1,
+            &pipeline->Get<Buffer::Type::Vertex>()->Handle(),
+            offsets
+            );
+
+        vkCmdBindIndexBuffer(
+            *cmdbuf,
+            pipeline->Get<Buffer::Type::Index>()->Handle(),
+            0,
+            VK_INDEX_TYPE_UINT32
+            );
+
+        vkCmdDrawIndexed(
+            *cmdbuf,
+            pipeline->ElementCount,
+            1, 0, 0, 0
+            );
     });
 }
 

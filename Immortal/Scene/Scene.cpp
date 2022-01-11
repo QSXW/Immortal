@@ -42,6 +42,7 @@ struct Model
     Vector3 Color;
     float   Roughness;
     float   Metallic;
+    int     ObjectID;
 };
 
 }
@@ -191,11 +192,12 @@ void Scene::OnRender(const Camera &camera)
         model.Color     = material.AlbedoColor;
         model.Roughness = material.Roughness;
         model.Metallic  = material.Metallic;
-        uniforms.model->Update(sizeof(UniformBuffer::Model), &model);
+        model.ObjectID  = (int)o;
 
         pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Vertex>());
         pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Index>());
 
+        Render::PushConstant(pipelines.pbr.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
         Render::Draw(pipelines.pbr);
     }
 

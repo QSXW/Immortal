@@ -93,6 +93,8 @@ public:
         return new RenderTarget{ device, description };
     }
 
+    virtual void PushConstant(Pipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+
     virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
 
     virtual Descriptor *CreateBufferDescriptor(uint32_t count) override;

@@ -160,7 +160,7 @@ public:
 
     void PushConstants(const Pipeline &pipeline, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
     {
-        vkCmdPushConstants(handle, pipeline.Layout(), Shader::ConvertTo(stage), offset, size, data);
+        vkCmdPushConstants(handle, pipeline.Layout(), (VkShaderStageFlags)stage, offset, size, data);
     }
 
     void SetViewport(float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)

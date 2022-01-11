@@ -1,15 +1,16 @@
 #version 450
 
-struct Matrial
+struct ModelInfo
 {
     vec3  color;
     float roughness;
 	float metallic;
+	int   objectID;
 };
 
 layout (location = 0) in vec3 inWorldPos;
 layout (location = 1) in vec3 inNormal;
-layout (location = 2) in Matrial inMaterial;
+layout (location = 2) in flat ModelInfo inModel;
 
 struct Light {
     vec3 position;
@@ -48,7 +49,7 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 /* Fresnel function */
 vec3 F_Schlick(float cosTheta, float metallic)
 {
-	vec3 F0 = mix(vec3(0.04), inMaterial.color, metallic); // * material.specular
+	vec3 F0 = mix(vec3(0.04), inModel.color, metallic); // * material.specular
 	vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 	return F;
 }
@@ -91,7 +92,7 @@ void main()
 	vec3 N = normalize(inNormal);
 	vec3 V = normalize(shading.camPos - inWorldPos);
 
-	float roughness = inMaterial.roughness;
+	float roughness = inModel.roughness;
 
 	roughness = max(roughness, step(fract(inWorldPos.y * 2.02), 0.5));
 
@@ -99,11 +100,11 @@ void main()
 	vec3 Lo = vec3(0.0);
 	for (int i = 0; i < 3; i++) {
 		vec3 L = normalize(shading.lights[i].position - inWorldPos);
-		Lo += BRDF(L, V, N, inMaterial.metallic, roughness);
+		Lo += BRDF(L, V, N, inModel.metallic, roughness);
 	};
 
 	// Combine with ambient
-	vec3 color = inMaterial.color * 0.02;
+	vec3 color = inModel.color * 0.02;
 	color += Lo;
 
 	// Gamma correct
@@ -111,5 +112,5 @@ void main()
 
 	outColor = vec4(color, 1.0);
 
-	outObjectID = 0;
+	outObjectID = inModel.objectID;
 }
