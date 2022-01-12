@@ -24,7 +24,6 @@ public:
     struct Data
     {
         std::shared_ptr<RenderTarget> Target;
-        std::shared_ptr<Pipeline>     FullScreenPipeline;
         std::shared_ptr<Texture>      BlackTexture;
         std::shared_ptr<Texture>      TransparentTexture;
         std::shared_ptr<Texture>      WhiteTexture;
@@ -178,8 +177,6 @@ public:
         return renderer->Index();
     }
 
-    static void Submit(const std::shared_ptr<Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform = Matrix4{ 1.0f });
-
     static void SwapBuffers()
     {
         renderer->SwapBuffers();
@@ -203,11 +200,6 @@ public:
     static Shader *CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
     {
         return renderer->CreateShader(filepath, type);
-    }
-
-    static Pipeline *CreatePipeline(std::shared_ptr<Shader> &shader)
-    {
-        return renderer->CreatePipeline(shader);
     }
 
     template <class T>
@@ -256,9 +248,13 @@ public:
         {
             return renderer->CreateTexture(std::forward<Args>(args)...);
         }
-        if constexpr (IsPrimitiveOf<Pipeline, T>())
+        if constexpr (IsPrimitiveOf<GraphicsPipeline, T>())
         {
-            return renderer->CreatePipeline(std::forward<Args>(args)...);
+            return renderer->CreateGraphicsPipeline(std::forward<Args>(args)...);
+        }
+        if constexpr (IsPrimitiveOf<ComputePipeline, T>())
+        {
+            return renderer->CreateComputePipeline(std::forward<Args>(args)...);
         }
         throw RuntimeException("Type not supported yet");
         return nullptr;
@@ -277,14 +273,14 @@ public:
         }
     }
 
-    static void PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset = 0)
+    static void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset = 0)
     {
         renderer->PushConstant(pipeline, stage, size, data, offset);
     }
 
-    static void Draw(const std::shared_ptr<Pipeline> &pipeline)
+    static void Draw(const std::shared_ptr<GraphicsPipeline> &pipeline)
     {
-        renderer->Draw(pipeline);
+        renderer->Draw(pipeline.get());
     }
 
 private:

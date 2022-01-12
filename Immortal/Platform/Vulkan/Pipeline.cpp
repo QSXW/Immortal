@@ -8,7 +8,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> &shader) :
+GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader) :
     device{ device },
     Super{ shader }
 {
@@ -16,17 +16,17 @@ Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> &shader) :
     CleanUpObject(configuration.get());
 }
 
-Pipeline::~Pipeline()
+GraphicsPipeline::~GraphicsPipeline()
 {
-
+    device->Destory(handle);
 }
 
-void Pipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
+void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
 {
     Super::Set(buffer);
 }
 
-void Pipeline::Set(const InputElementDescription &description)
+void GraphicsPipeline::Set(const InputElementDescription &description)
 {
     Super::Set(description);
     auto size                       = desc.layout.Size();
@@ -51,7 +51,7 @@ void Pipeline::Set(const InputElementDescription &description)
     SetupLayout();
 }
 
-void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
+void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
 {
     Reconstruct(superTarget);
 
@@ -66,7 +66,7 @@ void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
     }
 }
 
-void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
+void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
 {
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
@@ -155,13 +155,13 @@ void Pipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
 }
 
-void Pipeline::Bind(const std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
+void GraphicsPipeline::Bind(const std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
 {
     auto texture = std::dynamic_pointer_cast<Texture>(superTexture);
     Bind(rcast<const Descriptor *>(&texture->DescriptorInfo()), slot);
 }
 
-void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+void GraphicsPipeline::Bind(const std::string &name, const Buffer::Super *uniform)
 {
     auto descriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
     descriptorSetUpdater->Set(name, descriptor);
@@ -171,7 +171,7 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
     }
 }
 
-void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
+void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 {
     for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
     {
@@ -186,6 +186,35 @@ void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
     {
         descriptorSetUpdater->Update(*device);
     }
+}
+
+ComputePipeline::ComputePipeline(Device *device, const Shader::Super *shader)
+{
+    VkComputePipelineCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+
+    device->CreatePipelines(nullptr, 1, &createInfo, nullptr, &handle);
+}
+
+ComputePipeline::~ComputePipeline()
+{
+    device->Destory(handle);
+}
+
+void ComputePipeline::Bind(const Texture::Super *texture, uint32_t binding)
+{
+
+}
+
+void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+    device->Compute([&](CommandBuffer *cmdbuf) {
+        cmdbuf->Dispatch(
+            nGroupX,
+            nGroupY,
+            nGroupZ
+            );
+        });
 }
 
 }

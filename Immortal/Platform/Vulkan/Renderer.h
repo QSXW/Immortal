@@ -58,9 +58,14 @@ public:
         return new Shader{ device, filepath, type };
     }
 
-    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> &shader)
     {
-        return new Pipeline{ device, shader };
+        return new GraphicsPipeline{ device, shader };
+    }
+
+    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader)
+    {
+        return new ComputePipeline{ device, shader };
     }
 
     virtual Texture::Super *CreateTexture(const std::string &filepath) override
@@ -93,13 +98,13 @@ public:
         return new RenderTarget{ device, description };
     }
 
-    virtual void PushConstant(Pipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
-
     virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
 
     virtual Descriptor *CreateBufferDescriptor(uint32_t count) override;
 
-    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
+    virtual void PushConstant(GraphicsPipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+
+    virtual void Draw(GraphicsPipeline::Super *pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

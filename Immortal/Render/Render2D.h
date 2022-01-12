@@ -193,7 +193,7 @@ public:
 
     static Statistics Stats();
 
-    static std::shared_ptr<Pipeline> pipeline;
+    static std::shared_ptr<GraphicsPipeline> pipeline;
 
     static std::shared_ptr<Buffer> uniform;
 

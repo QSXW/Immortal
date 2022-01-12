@@ -151,16 +151,16 @@ public:
         }
     }
 
-    void Bind(const std::shared_ptr<Pipeline> &pipeline)
+    void Bind(const std::shared_ptr<GraphicsPipeline> &pipeline)
     {
         const VkDescriptorSet descriptorSet = pipeline->GetDescriptorSet();
         vkCmdBindDescriptorSets(handle, pipeline->BindPoint(), pipeline->Layout(), 0, 1, &descriptorSet, 0, NULL);
         vkCmdBindPipeline(handle, pipeline->BindPoint(), *pipeline);
     }
 
-    void PushConstants(const Pipeline &pipeline, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
+    void PushConstants(VkPipelineLayout pipelineLayout, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
     {
-        vkCmdPushConstants(handle, pipeline.Layout(), (VkShaderStageFlags)stage, offset, size, data);
+        vkCmdPushConstants(handle, pipelineLayout, (VkShaderStageFlags)stage, offset, size, data);
     }
 
     void SetViewport(float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)
@@ -195,11 +195,16 @@ public:
         Draw(buffer->Count());
     }
 
-    void Draw(std::shared_ptr<Pipeline> &pipeline)
+    void Draw(std::shared_ptr<GraphicsPipeline> &pipeline)
     {
         Bind(pipeline);
         BindVertexBuffer(pipeline->Get<Buffer::Type::Vertex>());
         DrawIndexed(pipeline->Get<Buffer::Type::Index>());
+    }
+
+    void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+    {
+        vkCmdDispatch(handle, nGroupX, nGroupY, nGroupZ);
     }
 
 private:

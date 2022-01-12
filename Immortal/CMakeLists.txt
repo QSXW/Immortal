@@ -124,6 +124,7 @@ set(VULKAN_FILES
    Platform/Vulkan/Descriptor.h
    Platform/Vulkan/DescriptorPool.cpp
    Platform/Vulkan/DescriptorPool.h
+   Platform/Vulkan/DescriptorSet.cpp
    Platform/Vulkan/DescriptorSet.h
    Platform/Vulkan/FencePool.cpp
    Platform/Vulkan/FencePool.h
@@ -220,7 +221,6 @@ set(RENDER_FILES
     Render/OrthographicCamera.h
     Render/OrthographicCameraController.cpp
     Render/OrthographicCameraController.h
-    Render/Pipeline.cpp
     Render/Pipeline.h
     Render/Queue.h
     Render/Render.cpp

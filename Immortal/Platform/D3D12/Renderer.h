@@ -72,7 +72,7 @@ public:
         return new Shader{ filepath, type };
     }
 
-    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> &shader)
     {
         return new Pipeline{ context->GetAddress<Device>(), shader };
     }
@@ -96,7 +96,7 @@ public:
 
     virtual Descriptor::Super *CreateBufferDescriptor(uint32_t count) override;
 
-    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
+    virtual void Draw(Pipeline::Super *pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

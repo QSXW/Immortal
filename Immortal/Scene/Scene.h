@@ -155,8 +155,8 @@ private:
     } textures;
 
     struct {
-        std::shared_ptr<Pipeline> tonemap;
-        std::shared_ptr<Pipeline> pbr;
+        std::shared_ptr<GraphicsPipeline> tonemap;
+        std::shared_ptr<GraphicsPipeline> pbr;
     } pipelines;
 
     struct {

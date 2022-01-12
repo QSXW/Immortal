@@ -10,9 +10,16 @@
 namespace Immortal
 {
 
+class GraphicsPipeline;
+class ComputePipeline;
 class IMMORTAL_API Pipeline
 {
 public:
+    virtual ~Pipeline()
+    {
+
+    }
+
     enum class DrawType
     {
         None = 0,
@@ -28,16 +35,27 @@ public:
         Triangles
     };
 
-public:
-    Pipeline() { }
+    using Type = Shader::Type;
 
-    Pipeline(std::shared_ptr<Shader> &shader) :
+    using Graphics = GraphicsPipeline;
+    using Compute  = ComputePipeline;
+};
+
+class IMMORTAL_API GraphicsPipeline : public Pipeline
+{
+public:
+    GraphicsPipeline()
+    {
+    
+    }
+
+    GraphicsPipeline(std::shared_ptr<Shader> &shader) :
         desc{ shader }
     {
         
     }
 
-    virtual ~Pipeline() { }
+    virtual ~GraphicsPipeline() { }
 
     virtual void Map() { }
 
@@ -125,6 +143,15 @@ public:
     uint32_t ElementCount = 0;
 };
 
-using SuperPipeline = Pipeline;
+class IMMORTAL_API ComputePipeline : public Pipeline
+{
+    virtual void Bind(const Texture *texture, uint32_t binding = 0) = 0;
+
+    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
+};
+
+using SuperGraphicsPipeline = GraphicsPipeline;
+
+using SuperComputePipeline = ComputePipeline;
 
 }

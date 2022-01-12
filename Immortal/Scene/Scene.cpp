@@ -71,7 +71,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 
     pipelines.tonemap = nullptr;
-    pipelines.pbr.reset(Render::Create<Pipeline>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));
+    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));
     pipelines.pbr->Set({
         { Format::VECTOR3, "POSITION" },
         { Format::VECTOR3, "NORMAL"   },

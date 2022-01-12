@@ -94,9 +94,9 @@ void Renderer::SwapBuffers()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
+void Renderer::Draw(Pipeline::Super *superPipeline)
 {
-   auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
+   auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
    pipeline->Draw();
 }
 

@@ -10,6 +10,7 @@
 #include "PipelineLayout.h"
 #include "Descriptor.h"
 #include "DescriptorPool.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -17,10 +18,10 @@ namespace Vulkan
 {
 
 class Device;
-class Pipeline : public SuperPipeline
+class GraphicsPipeline : public SuperGraphicsPipeline
 {
 public:
-    using Super = SuperPipeline;
+    using Super = SuperGraphicsPipeline;
 
     struct State
     {
@@ -46,9 +47,9 @@ public:
     };
 
 public:
-    Pipeline(Device *device, std::shared_ptr<Shader::Super> &shader);
+    GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader);
 
-    virtual ~Pipeline();
+    virtual ~GraphicsPipeline();
 
     virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
     
@@ -165,6 +166,28 @@ private:
     VkDescriptorSet descriptorSet;
 
     DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
+};
+
+class ComputePipeline : public SuperComputePipeline
+{
+public:
+    using Super = SuperComputePipeline;
+
+    static constexpr VkPipelineBindPoint BindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+
+public:
+    ComputePipeline(Device *device, const Shader::Super *shader);
+
+    virtual ~ComputePipeline();
+
+    virtual void Bind(const Texture::Super *texture, uint32_t binding) override;
+
+    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+
+private:
+    Device *device{ nullptr };
+
+    VkPipeline handle;
 };
 
 }

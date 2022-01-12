@@ -401,6 +401,11 @@ void Shader::SetupDescriptorSetLayout(Stage stage)
                 bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 writeDescriptor.pImageInfo = nullptr;
             }
+            if (resource.type & Resource::Type::ImageStorage)
+            {
+                bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                writeDescriptor.pImageInfo = nullptr;
+            }
             if (bindingInfo.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
             {
                 writeDescriptor.pBufferInfo = nullptr;

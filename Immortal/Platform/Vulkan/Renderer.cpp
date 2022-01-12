@@ -142,14 +142,16 @@ void Renderer::End()
     context->End([&](CommandBuffer *cmdbuf) {
         cmdbuf->EndRenderPass();
     });
+
+
 }
 
-void Renderer::PushConstant(Pipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+void Renderer::PushConstant(GraphicsPipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
 {
-    auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
+    auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
     context->Submit([&](CommandBuffer *cmdbuf) {
         cmdbuf->PushConstants(
-            *pipeline,
+            pipeline->Layout(),
             stage,
             offset,
             size,
@@ -158,10 +160,10 @@ void Renderer::PushConstant(Pipeline::Super *superPipeline, Shader::Stage stage,
         });
 }
 
-void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
+void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
 {
     context->Submit([&](CommandBuffer *cmdbuf) {
-        auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
+        auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
         vkCmdBindDescriptorSets(
             *cmdbuf,
             pipeline->BindPoint(),

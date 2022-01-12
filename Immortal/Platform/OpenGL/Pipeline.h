@@ -16,10 +16,10 @@ namespace Immortal
 namespace OpenGL
 {
 
-class Pipeline : public SuperPipeline
+class Pipeline : public SuperGraphicsPipeline
 {
 public:
-    using Super = SuperPipeline;
+    using Super = SuperGraphicsPipeline;
 
 public:
     Pipeline(std::shared_ptr<Shader::Super> &shader);

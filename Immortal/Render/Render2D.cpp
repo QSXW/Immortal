@@ -9,7 +9,7 @@ namespace Immortal
 
 Render2D::Data Render2D::data;
 
-std::shared_ptr<Pipeline> Render2D::pipeline{ nullptr };
+std::shared_ptr<GraphicsPipeline> Render2D::pipeline{ nullptr };
 
 std::shared_ptr<Buffer> Render2D::uniform{ nullptr };
 
@@ -18,7 +18,7 @@ void Render2D::Setup()
     data.textureDescriptors.reset(Render::CreateDescriptor<Texture>(Data::MaxTextureSlots));
 
     data.QuadVertexBufferBase.reset(new QuadVertex[data.MaxVertices]);
-    pipeline.reset(Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Render2D>()));
+    pipeline.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::Render2D>()));
     uniform.reset(Render::Create<Buffer>(sizeof(Matrix4), 0));
 
     pipeline->Set({

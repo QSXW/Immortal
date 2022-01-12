@@ -18,6 +18,7 @@ const Shader::Properties Render::ShaderProperties[] = {
     {                "Texture", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     {               "Render2D", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
+    {            "ColorMixing", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
 };
 
 void Render::Setup(RenderContext *context)
@@ -49,30 +50,9 @@ void Render::Setup(RenderContext *context)
         }));
 
     {
-        constexpr float fullScreenVertex[5 * 4] = {
-             1.0,  1.0, 0.0, 1.0, 1.0,
-            -1.0,  1.0, 0.0, 0.0, 1.0,
-            -1.0, -1.0, 0.0, 0.0, 0.0,
-             1.0, -1.0, 0.0, 1.0, 0.0
-        };
-
-        constexpr UINT32 fullScreenIndices[] = {
-            0, 1, 2, 2, 3, 0
-        };
-        data.FullScreenPipeline.reset(Render::Create<Pipeline>(Get<Shader, ShaderName::Texture>()));
-        data.FullScreenPipeline->Set({
-            { Format::VECTOR3, "POSITION" },
-            { Format::VECTOR2, "TEXCOORD" },
-            { Format::VECTOR3, "NORMAL"   }
-        });
-
-        data.FullScreenPipeline->Set(std::shared_ptr<Buffer>{ Create<Buffer>(sizeof(fullScreenVertex), fullScreenVertex, Buffer::Type::Vertex)  });
-        data.FullScreenPipeline->Set(std::shared_ptr<Buffer>{ Create<Buffer>(sizeof(fullScreenIndices), fullScreenIndices, Buffer::Type::Index) });
-        data.FullScreenPipeline->Create(data.Target);
-        
-        constexpr UINT32 white        = 0xffffffff;
-        constexpr UINT32 black        = 0x000000ff;
-        constexpr UINT32 transparency = 0x00000000;
+        constexpr uint32_t white        = 0xffffffff;
+        constexpr uint32_t black        = 0x000000ff;
+        constexpr uint32_t transparency = 0x00000000;
         Texture::Description desc = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
 
         data.WhiteTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
@@ -85,13 +65,6 @@ void Render::Setup(RenderContext *context)
 void Render::Setup(const std::shared_ptr<RenderTarget> &renderTarget)
 {
     Render2D::Setup(renderTarget);
-}
-
-void Render::Submit(const std::shared_ptr<Immortal::Shader> &shader, const std::shared_ptr<Mesh> &mesh, const Matrix4 &transform)
-{
-    shader->Map();
-    shader->Set("uTransform", transform);
-    shader->Unmap(); 
 }
 
 }

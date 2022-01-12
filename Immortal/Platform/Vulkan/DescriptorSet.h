@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Device.h"
 #include "Descriptor.h"
 
 namespace Immortal
@@ -9,35 +8,28 @@ namespace Immortal
 namespace Vulkan
 {
 
+class Device;
 class DescriptorSet
 {
 public:
-    DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout) :
-        device{ device }
-    {
-        Check(device->AllocateDescriptorSet(&descriptorSetLayout, &handle));
-    }
+    DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout);
 
-    DescriptorSet(const VkDescriptorSet other)
-    {
-        handle = other;
-    }
+    DescriptorSet(const VkDescriptorSet other);
 
-    ~DescriptorSet()
-    {
-        
-    }
+    ~DescriptorSet();
+
+    void Update(VkWriteDescriptorSet *desc);
 
     template <class T>
     void Update(T descriptorInfo, VkDescriptorType type, uint32_t slot = 0)
     {
         VkWriteDescriptorSet desc{};
-        desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        desc.pNext           = nullptr;
-        desc.dstBinding      = slot;
-        desc.dstSet          = handle;
+        desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        desc.pNext = nullptr;
+        desc.dstBinding = slot;
+        desc.dstSet = handle;
         desc.descriptorCount = 1;
-        desc.descriptorType  = type;
+        desc.descriptorType = type;
 
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {
@@ -51,7 +43,7 @@ public:
         {
             static_assert(false && "Incorrect Descriptor Type");
         }
-        device->UpdateDescriptorSets(1, &desc, 0, nullptr);
+        Update(&desc);
     }
 
     operator uint64_t() const

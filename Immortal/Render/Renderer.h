@@ -46,7 +46,12 @@ public:
         return nullptr;
     }
 
-    virtual Pipeline *CreatePipeline(std::shared_ptr<Shader> &shader)
+    virtual GraphicsPipeline *CreateGraphicsPipeline(std::shared_ptr<Shader> &shader)
+    {
+        return nullptr;
+    }
+
+    virtual ComputePipeline *CreateComputePipeline(Shader *shader)
     {
         return nullptr;
     }
@@ -81,12 +86,12 @@ public:
         return nullptr;
     }
 
-    virtual void PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
     {
     
     }
 
-    virtual void Draw(const std::shared_ptr<Pipeline> &pipeline)
+    virtual void Draw(GraphicsPipeline *pipeline)
     {
     
     }

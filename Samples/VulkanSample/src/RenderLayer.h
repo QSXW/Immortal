@@ -25,7 +25,7 @@ public:
 
         shader = Render::Get<Shader, ShaderName::Basic>();
 
-        pipeline.reset(Render::Create<Pipeline>(shader));
+        pipeline.reset(Render::Create<Pipeline::Graphics>(shader));
 
         auto &triangle = DataSet::Classic::Triangle;
 
@@ -372,7 +372,7 @@ private:
 
     std::shared_ptr<Shader> shader;
 
-    std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<GraphicsPipeline> pipeline;
 
     Object selectedObject;
 

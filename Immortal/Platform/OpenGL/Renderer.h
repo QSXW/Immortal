@@ -69,7 +69,7 @@ public:
         return new Buffer{ size, type };
     }
 
-    virtual Pipeline::Super *CreatePipeline(std::shared_ptr<SuperShader> &shader)
+    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<SuperShader> &shader)
     {
         return new Pipeline{ shader };
     }
@@ -86,7 +86,7 @@ public:
 
     virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;
 
-    virtual void Draw(const std::shared_ptr<Pipeline::Super> &pipeline) override;
+    virtual void Draw(Pipeline::Super *pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

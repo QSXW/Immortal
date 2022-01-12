@@ -15,10 +15,10 @@ namespace D3D12
 {
 
 class Device;
-class Pipeline : public SuperPipeline
+class Pipeline : public SuperGraphicsPipeline
 {
 public:
-    using Super = SuperPipeline;
+    using Super = SuperGraphicsPipeline;
 
     struct State
     {

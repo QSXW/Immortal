@@ -55,9 +55,9 @@ Descriptor::Super *Renderer::CreateBufferDescriptor(uint32_t count)
     return CreateImageDescriptor(count);
 }
 
-void Renderer::Draw(const std::shared_ptr<Pipeline::Super> &superPipeline)
+void Renderer::Draw(Pipeline::Super *superPipeline)
 {
-    auto pipeline = std::dynamic_pointer_cast<Pipeline>(superPipeline);
+    auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
     auto indexBuffer = pipeline->GetBuffer<Buffer::Type::Index>();
 
     auto descriptorHeap = pipeline->GetAddress<DescriptorPool>();

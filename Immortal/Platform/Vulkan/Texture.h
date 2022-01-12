@@ -3,8 +3,6 @@
 #include "Common.h"
 #include "Render/Texture.h"
 
-#include "RenderContext.h"
-
 #include "Image.h"
 #include "ImageView.h"
 #include "Sampler.h"

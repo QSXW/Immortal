@@ -4,7 +4,6 @@
 #include <map>
 
 #include "Common.h"
-#include "Buffer.h"
 #include "Render/Descriptor.h"
 
 namespace Immortal

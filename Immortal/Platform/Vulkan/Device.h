@@ -97,6 +97,7 @@ public:
     DEFINE_DESTORY_VK_OBJECT(Framebuffer)
     DEFINE_DESTORY_VK_OBJECT(Image)
     DEFINE_DESTORY_VK_OBJECT(ImageView)
+    DEFINE_DESTORY_VK_OBJECT(Pipeline)
     DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
     DEFINE_DESTORY_VK_OBJECT(RenderPass)
     DEFINE_DESTORY_VK_OBJECT(Sampler)
@@ -146,7 +147,10 @@ public:
 
     void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1)
     {
-        descriptorPool->Free(pDescriptorSets, 1);
+        if (pDescriptorSets != nullptr)
+        {
+            descriptorPool->Free(pDescriptorSets, size);
+        }
     }
 
     void UpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet *pDescriptorCopies)
