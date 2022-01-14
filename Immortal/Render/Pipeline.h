@@ -145,7 +145,8 @@ public:
 
 class IMMORTAL_API ComputePipeline : public Pipeline
 {
-    virtual void Bind(const Texture *texture, uint32_t binding = 0) = 0;
+public:
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot) = 0;
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
 };

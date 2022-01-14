@@ -119,39 +119,34 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
 
     std::array<VkDynamicState, 2> dynamic{
         VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
+VK_DYNAMIC_STATE_SCISSOR,
     };
-    state->dynamic.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    state->dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     state->dynamic.dynamicStateCount = dynamic.size();
-    state->dynamic.pDynamicStates    = dynamic.data();
-
-    if (!desc.shader->IsGraphics())
-    {
-        bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-    }
+    state->dynamic.pDynamicStates = dynamic.data();
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
 
     VkGraphicsPipelineCreateInfo createInfo{};
-    createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.pNext               = nullptr;
-    createInfo.renderPass          = target->GetRenderPass();
-    createInfo.flags               = 0;
-    createInfo.layout              = shader->Get<PipelineLayout&>();
+    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    createInfo.pNext = nullptr;
+    createInfo.renderPass = target->GetRenderPass();
+    createInfo.flags = 0;
+    createInfo.layout = shader->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;
-    createInfo.pVertexInputState   = &state->vertexInput;
+    createInfo.pVertexInputState = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;
-    createInfo.pDepthStencilState  = &state->depthStencil;
-    createInfo.pViewportState      = &state->viewport;
-    createInfo.pMultisampleState   = &state->multiSample;
-    createInfo.pDynamicState       = &state->dynamic;
-    createInfo.pColorBlendState    = &state->colorBlend;
+    createInfo.pDepthStencilState = &state->depthStencil;
+    createInfo.pViewportState = &state->viewport;
+    createInfo.pMultisampleState = &state->multiSample;
+    createInfo.pDynamicState = &state->dynamic;
+    createInfo.pColorBlendState = &state->colorBlend;
 
     auto &stages = shader->Stages();
-    createInfo.pStages    = stages.data();
+    createInfo.pStages = stages.data();
     createInfo.stageCount = stages.size();
-  
+
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
 }
 
@@ -188,12 +183,29 @@ void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
     }
 }
 
-ComputePipeline::ComputePipeline(Device *device, const Shader::Super *shader)
+ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
+    device{ device },
+    descriptorPool{ new DescriptorPool{ device, Limit::PoolSize } }
 {
+    auto shader = dynamic_cast<Shader *>(superShader);
+    auto &stage = shader->Stages();
+
+    layout = shader->Get<PipelineLayout&>();
+    descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
+    descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
+
     VkComputePipelineCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    createInfo.pNext = nullptr;
+    createInfo.layout = layout;
+    createInfo.stage = stage[0];
 
-    device->CreatePipelines(nullptr, 1, &createInfo, nullptr, &handle);
+    device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle);
+
+    if (Ready())
+    {
+        descriptorSetUpdater->Update(*device);
+    }
 }
 
 ComputePipeline::~ComputePipeline()
@@ -201,9 +213,27 @@ ComputePipeline::~ComputePipeline()
     device->Destory(handle);
 }
 
-void ComputePipeline::Bind(const Texture::Super *texture, uint32_t binding)
+void ComputePipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 {
-
+    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
+    {
+        if (writeDescriptor.dstBinding == slot)
+        {
+            if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+            {
+                writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
+            }
+            else
+            {
+                writeDescriptor.pBufferInfo = rcast<const VkDescriptorBufferInfo *>(descriptors);
+            }
+            break;
+        }
+    }
+    if (Ready())
+    {
+        descriptorSetUpdater->Update(*device);
+    }
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)

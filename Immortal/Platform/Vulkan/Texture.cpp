@@ -91,6 +91,13 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         bufferCopyRegions.emplace_back(std::move(bufferCopyRegion));
     }
 
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    if (!data)
+    {
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
     VkImageCreateInfo imageCreateInfo{};
     ConvertType(imageCreateInfo, description);
     imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -102,7 +109,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     imageCreateInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.extent        = { width, height, 1 };
-    imageCreateInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageCreateInfo.usage         = usage;
     
     Check(device->Create(&imageCreateInfo, nullptr, &image));
     device->GetRequirements(image, &memoryRequirements);
@@ -150,7 +157,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageMemoryBarrier.newLayout = layout;
 
         copyCmd->PipelineBarrier(
             VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -162,7 +169,6 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         );
         });
 
-    layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     device->Destory(stagingBuffer);
     device->FreeMemory(stagingMemory);
 

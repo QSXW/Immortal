@@ -176,18 +176,41 @@ public:
     static constexpr VkPipelineBindPoint BindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 
 public:
-    ComputePipeline(Device *device, const Shader::Super *shader);
+    ComputePipeline(Device *device, Shader::Super *shader);
 
     virtual ~ComputePipeline();
 
-    virtual void Bind(const Texture::Super *texture, uint32_t binding) override;
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+
+    bool Ready()
+    {
+        bool ready = descriptorSetUpdater->Ready();
+        if (ready)
+        {
+            Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
+            descriptorSetUpdater->Set(descriptorSet);
+        }
+        return ready;
+    }
 
 private:
     Device *device{ nullptr };
 
-    VkPipeline handle;
+    VkPipeline handle{ VK_NULL_HANDLE };
+
+    VkPipelineCache cache{ VK_NULL_HANDLE };
+
+    VkPipelineLayout layout{ VK_NULL_HANDLE };
+
+    DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
+
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+
+    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
+
+    std::unique_ptr<DescriptorPool> descriptorPool;
 };
 
 }
