@@ -2,6 +2,7 @@
 #include "Device.h"
 #include "RenderTarget.h"
 #include "Texture.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -150,9 +151,9 @@ VK_DYNAMIC_STATE_SCISSOR,
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
 }
 
-void GraphicsPipeline::Bind(const std::shared_ptr<SuperTexture> &superTexture, uint32_t slot)
+void GraphicsPipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
-    auto texture = std::dynamic_pointer_cast<Texture>(superTexture);
+    auto texture = dynamic_cast<Texture *>(superTexture);
     Bind(rcast<const Descriptor *>(&texture->DescriptorInfo()), slot);
 }
 
@@ -185,7 +186,7 @@ void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 
 ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
     device{ device },
-    descriptorPool{ new DescriptorPool{ device, Limit::PoolSize } }
+    descriptorPool{ new DescriptorPool{ device, Limit::PoolSize} }
 {
     auto shader = dynamic_cast<Shader *>(superShader);
     auto &stage = shader->Stages();
@@ -213,6 +214,65 @@ ComputePipeline::~ComputePipeline()
     device->Destory(handle);
 }
 
+void ComputePipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+{
+    auto descriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
+    descriptorSetUpdater->Set(name, descriptor);
+    if (Ready())
+    {
+        descriptorSetUpdater->Update(*device);
+    }
+}
+
+void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
+{
+    barriers.clear();
+    auto texture = dynamic_cast<Texture *>(superTexture);
+
+    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
+    {
+        if (writeDescriptor.dstBinding == slot)
+        {
+            ImageDescriptor descriptorInfo = texture->DescriptorInfo();
+            if (writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+            {
+                VkImageSubresourceRange subresourceRange{};
+                subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+                subresourceRange.baseMipLevel = 0;
+                subresourceRange.levelCount   = texture->MipLevels();
+                subresourceRange.layerCount   = 1;
+
+                barriers.emplace_back(
+                    texture->Get<VkImage>(),
+                    subresourceRange,
+                    texture->Layout,
+                    VK_IMAGE_LAYOUT_GENERAL,
+                    0, VK_ACCESS_SHADER_WRITE_BIT
+                );
+                descriptorInfo.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            }
+            writeDescriptor.pImageInfo = rcast<VkDescriptorImageInfo *>(&descriptorInfo);
+            break;
+        }
+    }
+
+    if (Ready())
+    {
+        device->Compute([&](CommandBuffer *cmdbuf) -> void {
+            cmdbuf->PipelineBarrier(
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                U32(barriers.size()), barriers.data()
+                );
+            });
+
+        descriptorSetUpdater->Update(*device);
+    }
+}
+
 void ComputePipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 {
     for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
@@ -230,20 +290,69 @@ void ComputePipeline::Bind(const Descriptor *descriptors, uint32_t slot)
             break;
         }
     }
+
     if (Ready())
     {
         descriptorSetUpdater->Update(*device);
     }
 }
 
+void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+    vkCmdBindDescriptorSets(
+        *cmdbuf,
+        BindPoint,
+        layout,
+        0, 1,
+        &descriptorSet,
+        0, NULL
+    );
+    vkCmdBindPipeline(*cmdbuf, BindPoint, handle);
+
+    cmdbuf->Dispatch(
+        nGroupX,
+        nGroupY,
+        nGroupZ
+    );
+
+    for (auto &b : barriers)
+    {
+        b.Swap();
+    }
+
+    cmdbuf->PipelineBarrier(
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        U32(barriers.size()), barriers.data()
+    );
+
+    for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
+    {
+        writeDesc.pBufferInfo = nullptr;
+        writeDesc.pImageInfo  = nullptr;
+    }
+}
+
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
     device->Compute([&](CommandBuffer *cmdbuf) {
-        cmdbuf->Dispatch(
-            nGroupX,
-            nGroupY,
-            nGroupZ
-            );
+        Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
+        });
+}
+
+void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
+{
+    device->Compute([&](CommandBuffer *cmdbuf) {
+        cmdbuf->PushConstants(
+            layout,
+            Shader::Stage::Compute,
+            offset,
+            size,
+            data
+        );
         });
 }
 

@@ -91,9 +91,19 @@ public:
     
     }
 
+    virtual void PushConstant(ComputePipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+    {
+
+    }
+
     virtual void Draw(GraphicsPipeline *pipeline)
     {
     
+    }
+
+    virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+    {
+
     }
 
     virtual void Begin(std::shared_ptr<RenderTarget> &renderTarget)

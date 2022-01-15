@@ -160,6 +160,20 @@ void Renderer::PushConstant(GraphicsPipeline::Super *superPipeline, Shader::Stag
         });
 }
 
+void Renderer::PushConstant(ComputePipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+{
+    auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+    context->Submit([&](CommandBuffer *cmdbuf) {
+        cmdbuf->PushConstants(
+            pipeline->Layout(),
+            stage,
+            offset,
+            size,
+            data
+        );
+        });
+}
+
 void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
 {
     context->Submit([&](CommandBuffer *cmdbuf) {
@@ -200,6 +214,14 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
             1, 0, 0, 0
             );
     });
+}
+
+void Renderer::Dispatch(ComputePipeline::Super *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+    context->Submit([&](CommandBuffer *cmdbuf) {
+        auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+        pipeline->Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
+        });
 }
 
 Descriptor *Renderer::CreateImageDescriptor(uint32_t count)

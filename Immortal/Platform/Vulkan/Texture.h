@@ -28,7 +28,16 @@ public:
     template <class T>
     T Get()
     {
-        if (is_same<T, ImageView*>())
+        if constexpr (IsPrimitiveOf<VkImage, T>())
+        {
+            return image;
+        }
+    }
+
+    template <class T>
+    T *GetAddress()
+    {
+        if (IsPrimitiveOf<ImageView, T>())
         {
             return view.get();
         }
@@ -92,13 +101,14 @@ private:
 
     VkImage image{ VK_NULL_HANDLE };
 
-    VkImageLayout layout{ VK_IMAGE_LAYOUT_UNDEFINED };
-
     VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
 
     std::unique_ptr<DescriptorSet> descriptorSet;
 
     ImageDescriptor descriptor{};
+
+public:
+    VkImageLayout Layout{ VK_IMAGE_LAYOUT_UNDEFINED };
 };
 
 }

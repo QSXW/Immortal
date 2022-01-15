@@ -181,6 +181,12 @@ struct SceneComponent : public Component
 
 struct SpriteRendererComponent : public Component
 {
+    static inline Texture::Description Desc = {
+        Format::RGBA8,
+        Texture::Wrap::Repeat,
+        Texture::Filter::Linear
+    };
+
     SpriteRendererComponent() :
         Component{ Type::SpriteRenderer }
     {
@@ -199,12 +205,14 @@ struct SpriteRendererComponent : public Component
         Texture{ texture },
         Color{ color }
     {
-    
+
     }
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    std::shared_ptr<Texture> Texture = Render::Preset()->WhiteTexture;;
+    std::shared_ptr<Immortal::Texture> Texture = Render::Preset()->WhiteTexture;
+
+    std::shared_ptr<Immortal::Texture> Final   = nullptr;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -291,8 +299,8 @@ struct ColorMixingComponent : public Component
 
     }
 
-    Vector4 RGBA;
-    Vector3 HSL;
+    Vector4 RGBA = Vector4{ 0, 0, 0, 1.0f };
+    Vector4 HSL;
     
     struct {
         float ColorTemperature;

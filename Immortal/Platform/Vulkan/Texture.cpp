@@ -92,7 +92,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     }
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     if (!data)
     {
         usage |= VK_IMAGE_USAGE_STORAGE_BIT;
@@ -157,7 +157,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.newLayout = layout;
+        imageMemoryBarrier.newLayout = Layout;
 
         copyCmd->PipelineBarrier(
             VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -175,7 +175,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     SetupSampler(description);
     SetupImageView(imageCreateInfo.format);
 
-    descriptor.Update(sampler, *view, layout);
+    descriptor.Update(sampler, *view, Layout);
 
     descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
     descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);

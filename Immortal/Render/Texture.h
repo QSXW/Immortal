@@ -153,9 +153,9 @@ public:
 
     }
 
-    virtual uint32_t MipLevelCount() const
+    virtual uint32_t MipLevels() const
     {
-        return 0;
+        return mipLevels;
     }
 
     virtual void SetData(void *data, uint32_t size) { }

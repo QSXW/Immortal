@@ -32,7 +32,7 @@ public:
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
-    virtual void Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
+    virtual void Bind(Texture *texture, uint32_t slot);
 
     virtual void Bind(const Descriptor::Super *descriptors, uint32_t slot) override;
 

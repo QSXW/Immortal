@@ -175,11 +175,6 @@ void Texture::Map(uint32_t slot)
     glBindTextureUnit(slot, handle);
 }
 
-uint32_t Texture::MipLevelCount() const
-{
-    return uint32_t();
-}
-
 void Texture::BindImageTexture(bool layered)
 {
     glBindImageTexture(0, handle, 0, layered ? GL_TRUE : GL_FALSE, 0, GL_WRITE_ONLY, type.InternalFromat);
@@ -272,11 +267,6 @@ void TextureCube::BindImageTexture(bool layered)
 void TextureCube::Map(uint32_t slot) const
 {
     glBindTextureUnit(slot, handle);
-}
-
-uint32_t TextureCube::MipLevelCount() const
-{
-    return uint32_t();
 }
 
 void TextureCube::SetData(void * data, uint32_t size)

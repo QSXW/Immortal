@@ -86,7 +86,7 @@ struct DescriptorSetUpdater
         {
             if (!writeDescriptor.pImageInfo && !writeDescriptor.pBufferInfo)
             {
-                LOG::WARN("There is a(n) \"{0}\" binding on slot \"{1}\" but no input yet", 
+                LOG::WARN<false>("There is a(n) \"{0}\" binding on slot \"{1}\" but no input yet",
                     writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? 
                     "Image(Sampler)" : "(Uniform) Buffer",
                     writeDescriptor.dstBinding);
@@ -94,7 +94,7 @@ struct DescriptorSetUpdater
             }
         }
 
-        LOG::DEBUG("All descriptor set binded");
+        LOG::DEBUG<false>("All descriptor set binded");
         return true;
     }
 

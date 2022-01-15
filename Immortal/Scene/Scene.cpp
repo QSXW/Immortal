@@ -58,7 +58,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 
     uniforms.transform.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform), 0));
     uniforms.shading.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Shading), 1));
-    uniforms.model.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Model), 2));
+    uniforms.properties.reset(Render::Create<Buffer>(sizeof(ColorMixingComponent) - sizeof(Component::Type), 2));
 
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
@@ -83,7 +83,9 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 
     pipelines.pbr->Bind("Transform", uniforms.transform.get());
     pipelines.pbr->Bind("Shading", uniforms.shading.get());
-    pipelines.pbr->Bind("Model", uniforms.model.get());
+
+    pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::Get<Shader, ShaderName::ColorMixing>().get()));
+    // pipelines.colorMixing->Bind("Properties", uniforms.properties.get());
 
     Render2D::Setup(renderTarget);
 }
@@ -203,11 +205,26 @@ void Scene::OnRender(const Camera &camera)
 
     {
         Render2D::BeginScene(camera);
-        auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+        auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent, ColorMixingComponent>);
         for (auto o : group)
         {
-            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(o);
-            Render2D::DrawSprite(transform.Transform(), sprite, (int)o);
+            auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
+
+            auto width = sprite.Final->Width();
+            auto height = sprite.Final->Height();
+
+            pipelines.colorMixing->PushConstant(
+                sizeof(ColorMixingComponent) - sizeof(Component::Type),
+                &colorMixing.RGBA,
+                0
+            );
+
+            pipelines.colorMixing->Bind(sprite.Texture.get(), 0);
+            pipelines.colorMixing->Bind(sprite.Final.get(), 1);
+
+            pipelines.colorMixing->Dispatch(SLALIGN(width, 32) / 32, SLALIGN(height, 32) / 32, 1);
+
+            Render2D::DrawQuad(transform, sprite.Final, sprite.TilingFactor, sprite.Color, (int)o);
         }
         Render2D::EndScene();
     }

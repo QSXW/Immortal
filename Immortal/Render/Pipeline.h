@@ -20,6 +20,8 @@ public:
 
     }
 
+    virtual void Bind(const std::string &name, const Buffer *uniform) = 0;
+
     enum class DrawType
     {
         None = 0,
@@ -61,17 +63,17 @@ public:
 
     virtual void Unmap() { }
 
-    virtual void Bind(const std::shared_ptr<Texture> &texture, uint32_t slot = 0)
-    {
-
-    }
-
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
+    virtual void Bind(Texture *texture, uint32_t slot = 0)
     {
 
     }
 
     virtual void Bind(const std::string &name, const Buffer *uniform)
+    {
+
+    }
+
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
     {
 
     }
@@ -146,9 +148,18 @@ public:
 class IMMORTAL_API ComputePipeline : public Pipeline
 {
 public:
+    virtual void Bind(const std::string &name, const Buffer *uniform) = 0;
+
+    virtual void Bind(Texture *texture, uint32_t slot) = 0;
+
     virtual void Bind(const Descriptor *descriptors, uint32_t slot) = 0;
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
+
+    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0)
+    {
+
+    }
 };
 
 using SuperGraphicsPipeline = GraphicsPipeline;

@@ -24,12 +24,12 @@ public:
     void Update(T descriptorInfo, VkDescriptorType type, uint32_t slot = 0)
     {
         VkWriteDescriptorSet desc{};
-        desc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        desc.pNext = nullptr;
-        desc.dstBinding = slot;
-        desc.dstSet = handle;
+        desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        desc.pNext           = nullptr;
+        desc.dstBinding      = slot;
+        desc.dstSet          = handle;
         desc.descriptorCount = 1;
-        desc.descriptorType = type;
+        desc.descriptorType  = type;
 
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {

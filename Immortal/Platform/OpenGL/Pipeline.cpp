@@ -34,7 +34,7 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *superUniform)
 
 }
 
-void Pipeline::Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot)
+void Pipeline::Bind(Texture *texture, uint32_t slot)
 {
 
 }

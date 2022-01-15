@@ -104,7 +104,11 @@ public:
 
     virtual void PushConstant(GraphicsPipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
+    virtual void PushConstant(ComputePipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+
     virtual void Draw(GraphicsPipeline::Super *pipeline) override;
+
+    virtual void Dispatch(ComputePipeline::Super *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

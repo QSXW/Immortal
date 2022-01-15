@@ -8,10 +8,10 @@ namespace Immortal
 {
 void ObserverCamera::UpdateViewMatrix()
 {
-    Matrix4 rotationMatrix    = Vector::Rotate(mRotation);
-    Matrix4 translationMatrix = Vector::Translate(mPosition);
+    Matrix4 rotationMatrix    = Vector::Rotate(rotation);
+    Matrix4 translationMatrix = Vector::Translate(position);
 
-    if (mType == Type::FirstPerson)
+    if (type == Type::FirstPerson)
     {
         Camera::view = rotationMatrix * translationMatrix;
     }
@@ -20,103 +20,103 @@ void ObserverCamera::UpdateViewMatrix()
         Camera::view = translationMatrix * rotationMatrix;
     }
 
-    mUpdated = true;
+    updated = true;
 }
 
 void ObserverCamera::OnUpdate(float deltaTime)
 {
     if (Input::IsKeyPressed(KeyCode::A))
     {
-        mKeys.Left = true;
+        keys.Left = true;
     }
     if (Input::IsKeyPressed(KeyCode::D))
     {
-        mKeys.Right = true;
+        keys.Right = true;
     }
     if (Input::IsKeyPressed(KeyCode::W))
     {
-        mKeys.Up = true;
+        keys.Up = true;
     }
     if (Input::IsKeyPressed(KeyCode::S))
     {
-        mKeys.Down = true;
+        keys.Down = true;
     }
 
     if (Input::IsMouseButtonPressed(MouseCode::Left))
     {
-        mMouseButtons.Left = true;
+        mouseButtons.Left = true;
     }
     if (Input::IsMouseButtonPressed(MouseCode::Right))
     {
-        mMouseButtons.Right = true;
+        mouseButtons.Right = true;
     }
     if (Input::IsMouseButtonPressed(MouseCode::Middle))
     {
-        mMouseButtons.Middle = true;
+        mouseButtons.Middle = true;
     }
 
-    Vector::Vector2 mousePos = Input::GetMousePosition();
-    INT32 dx = (INT32)(mMousePos.x - mousePos.x);
-    INT32 dy = (INT32)(mMousePos.y - mousePos.y);
+    Vector2 currentPos = Input::GetMousePosition();
+    INT32 dx = (INT32)(mousePos.x - currentPos.x);
+    INT32 dy = (INT32)(mousePos.y - currentPos.y);
 
-    if (mMouseButtons.Left)
+    if (mouseButtons.Left)
     {
-        mRotation += Vector3(dy * mRotationSpeed * deltaTime, -dx * mRotationSpeed * deltaTime, 0.0f);
+        rotation += Vector3(dy * rotationSpeed * deltaTime, -dx * rotationSpeed * deltaTime, 0.0f);
     }
-    if (mMouseButtons.Right)
+    if (mouseButtons.Right)
     {
-        mZoom += dy * .005f * mZoomSpeed * deltaTime;
-        mPosition += Vector3(-0.0f, 0.0f, mZoom);
+        zoom += dy * .005f * zoomSpeed * deltaTime;
+        position += Vector3(-0.0f, 0.0f, zoom);
     }
-    if (mMouseButtons.Middle)
+    if (mouseButtons.Middle)
     {
-        mPosition += Vector3(-dx * 0.01f, -dy * 0.01f, 0.0f);
+        position += Vector3(-dx * 0.01f, -dy * 0.01f, 0.0f);
     }
 
-    mMouseButtons.Left   = false;
-    mMouseButtons.Right  = false;
-    mMouseButtons.Middle = false;
-    mMousePos.x = mousePos.x;
-    mMousePos.y = mousePos.y;
+    mouseButtons.Left   = false;
+    mouseButtons.Right  = false;
+    mouseButtons.Middle = false;
+    mousePos.x = currentPos.x;
+    mousePos.y = currentPos.y;
 
     this->Update(deltaTime);
 
-    mKeys.Left  = false;
-    mKeys.Right = false;
-    mKeys.Up    = false;
-    mKeys.Down  = false;
+    keys.Left  = false;
+    keys.Right = false;
+    keys.Up    = false;
+    keys.Down  = false;
 }
 
 void ObserverCamera::Update(float deltaTime)
 {
-    mUpdated = false;
-    if (mType == Type::FirstPerson)
+    updated = false;
+    if (type == Type::FirstPerson)
     {
         if (Moving())
         {
             Vector3 front = Vector::Normalize(Vector3 {
-                -Math::Cos(Vector::Radians(mRotation.x)) * Math::Sin(Vector::Radians(mRotation.y)),
-                    Math::Sin(Vector::Radians(mRotation.x)),
-                    Math::Cos(Vector::Radians(mRotation.x)) * Math::Cos(Vector::Radians(mRotation.y))
+                -Math::Cos(Vector::Radians(rotation.x)) * Math::Sin(Vector::Radians(rotation.y)),
+                    Math::Sin(Vector::Radians(rotation.x)),
+                    Math::Cos(Vector::Radians(rotation.x)) * Math::Cos(Vector::Radians(rotation.y))
             });
 
-            float moveSpeed = deltaTime * mTranslationSpeed;
+            float moveSpeed = deltaTime * translationSpeed;
 
-            if (mKeys.Up)
+            if (keys.Up)
             {
-                mPosition += front * moveSpeed;
+                position += front * moveSpeed;
             }
-            if (mKeys.Down)
+            if (keys.Down)
             {
-                mPosition -= front * moveSpeed;
+                position -= front * moveSpeed;
             }
-            if (mKeys.Left)
+            if (keys.Left)
             {
-                mPosition -= Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+                position -= Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
             }
-            if (mKeys.Right)
+            if (keys.Right)
             {
-                mPosition += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
+                position += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * moveSpeed;
             }
         }
     }
@@ -124,11 +124,11 @@ void ObserverCamera::Update(float deltaTime)
     UpdateViewMatrix();
 }
 
-bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axisRight, float deltaTime)
+bool ObserverCamera::UpdateGamepad(Vector2 axisLeft, Vector2 axisRight, float deltaTime)
 {
     bool changed = false;
 
-    if (mType == Type::FirstPerson)
+    if (type == Type::FirstPerson)
     {
         // Use the common console thumbstick layout
         // Left = view, right = move
@@ -136,25 +136,25 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
         const float range = 1.0f - deadZone;
 
         Vector3 front = Vector::Normalize(Vector3{
-                -Math::Cos(Vector::Radians(mRotation.x)) * Math::Sin(Vector::Radians(mRotation.y)),
-                    Math::Sin(Vector::Radians(mRotation.x)),
-                    Math::Cos(Vector::Radians(mRotation.x)) * Math::Cos(Vector::Radians(mRotation.y))
+                -Math::Cos(Vector::Radians(rotation.x)) * Math::Sin(Vector::Radians(rotation.y)),
+                    Math::Sin(Vector::Radians(rotation.x)),
+                    Math::Cos(Vector::Radians(rotation.x)) * Math::Cos(Vector::Radians(rotation.y))
             });
 
-        float moveSpeed = deltaTime * mTranslationSpeed * 2.0f;
-        float newRotationSpeed = deltaTime * mRotationSpeed * 50.0f;
+        float moveSpeed = deltaTime * translationSpeed * 2.0f;
+        float newRotationSpeed = deltaTime * rotationSpeed * 50.0f;
 
         // Move
         if (fabsf(axisLeft.y) > deadZone)
         {
             float pos = (fabsf(axisLeft.y) - deadZone) / range;
-            mPosition -= front * pos * ((axisLeft.y < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
+            position -= front * pos * ((axisLeft.y < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
             changed = true;
         }
         if (fabsf(axisLeft.x) > deadZone)
         {
             float pos = (fabsf(axisLeft.x) - deadZone) / range;
-            mPosition += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * pos * ((axisLeft.x < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
+            position += Vector::Normalize(Vector::Cross(front, Vector3(0.0f, 1.0f, 0.0f))) * pos * ((axisLeft.x < 0.0f) ? -1.0f : 1.0f) * moveSpeed;
             changed = true;
         }
 
@@ -162,13 +162,13 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
         if (fabsf(axisRight.x) > deadZone)
         {
             float pos = (fabsf(axisRight.x) - deadZone) / range;
-            mRotation.y += pos * ((axisRight.x < 0.0f) ? -1.0f : 1.0f) * newRotationSpeed;
+            rotation.y += pos * ((axisRight.x < 0.0f) ? -1.0f : 1.0f) * newRotationSpeed;
             changed = true;
         }
         if (fabsf(axisRight.y) > deadZone)
         {
             float pos = (fabsf(axisRight.y) - deadZone) / range;
-            mRotation.x -= pos * ((axisRight.y < 0.0f) ? -1.0f : 1.0f) * newRotationSpeed;
+            rotation.x -= pos * ((axisRight.y < 0.0f) ? -1.0f : 1.0f) * newRotationSpeed;
             changed = true;
         }
     }
@@ -187,7 +187,7 @@ bool ObserverCamera::UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axi
 
 inline bool ObserverCamera::Moving() const
 {
-    return mKeys.Left || mKeys.Right || mKeys.Up || mKeys.Down;
+    return keys.Left || keys.Right || keys.Up || keys.Down;
 }
 
 }

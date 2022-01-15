@@ -23,7 +23,9 @@ public:
         Scale,
         Crop,
         Transform,
-        Edit
+        Edit,
+        Start = 0,
+        Pause = 1
     };
 
     static inline float xOffset = 0.0;
@@ -134,6 +136,11 @@ public:
         return vOffset.tool[index] == Activated;
     }
 
+    bool IsControlActive(size_t index)
+    {
+        return vOffset.control[index] == Activated;
+    }
+    
     void Activate(size_t index)
     {
         memset(vOffset.tool, None, sizeof(vOffset.tool));

@@ -157,12 +157,13 @@ private:
     struct {
         std::shared_ptr<GraphicsPipeline> tonemap;
         std::shared_ptr<GraphicsPipeline> pbr;
+        std::shared_ptr<ComputePipeline>  colorMixing;
     } pipelines;
 
     struct {
         std::unique_ptr<Buffer> transform;
         std::unique_ptr<Buffer> shading;
-        std::unique_ptr<Buffer> model;
+        std::unique_ptr<Buffer> properties;
     } uniforms;
     
     struct {

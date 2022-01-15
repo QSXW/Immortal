@@ -5,11 +5,30 @@ layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 layout (set = 0, binding = 0) uniform sampler2D src;
 layout (set = 0, binding = 1, rgba8) uniform writeonly image2D dst;
 
+layout (push_constant) uniform Properties
+{
+    vec4 Color;
+    vec4 HSL;
+
+    float ColorTemperature;
+    float Hue;
+
+    float White;
+    float Black;
+
+    float Exposure;
+    float Contrast;
+    float Hightlights;
+    float Shadow;
+    float Vividness;
+} properties;
+
 void main()
 {
+    ivec2 size = imageSize(dst);
     const ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
     vec4 pixel = texture(src, pos);
-    pixel += 0.2;
 
+    pixel = properties.Color;
     imageStore(dst, pos, pixel);
 }

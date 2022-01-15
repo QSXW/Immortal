@@ -130,8 +130,6 @@ public:
 
     virtual void BindImageTexture(bool layered = false) override;
 
-    virtual uint32_t MipLevelCount() const override;
-
     virtual bool operator==(const Super &super) const override
     {
         auto other = dcast<const Texture *>(&super);
@@ -183,8 +181,6 @@ public:
     { 
         return (float)width / (float)height;
     }
-
-    virtual uint32_t MipLevelCount() const override;
 
     virtual void SetData(void *data, uint32_t size) override;
 

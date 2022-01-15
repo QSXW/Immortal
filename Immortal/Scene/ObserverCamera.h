@@ -23,19 +23,20 @@ namespace Immortal
 
 	private:
 		void Update(float deltaTime);
-		bool UpdateGamepad(Vector::Vector2 axisLeft, Vector::Vector2 axisRight, float deltaTime);
-	private:
-		ObserverCamera::Type mType = ObserverCamera::Type::FirstPerson;
-		
-		Vector3 mRotation{ 0.0f };
-		Vector3 mPosition{ 0.0f };
-		Vector::Vector2 mMousePos{ 0.0f };
+		bool UpdateGamepad(Vector2 axisLeft, Vector2 axisRight, float deltaTime);
 
-		float mRotationSpeed = 1.0f;
-		float mTranslationSpeed = 2.0f;
-		float mZoomSpeed = 1.0f;
-		float mZoom = 0.0f;
-		bool mUpdated = false;
+	private:
+		ObserverCamera::Type type = ObserverCamera::Type::FirstPerson;
+		
+		Vector3 rotation{ 0.0f };
+		Vector3 position{ 0.0f };
+		Vector2 mousePos{ 0.0f };
+
+		float rotationSpeed = 1.0f;
+		float translationSpeed = 8.0f;
+		float zoomSpeed = 1.0f;
+		float zoom = 0.0f;
+		bool updated = false;
 		
 		struct
 		{
@@ -43,26 +44,26 @@ namespace Immortal
 			bool Right = false;
 			bool Up    = false;
 			bool Down  = false;
-		} mKeys;
+		} keys;
 
 		struct
 		{
 			bool Left   = false;
 			bool Right  = false;
 			bool Middle = false;
-		} mMouseButtons;
+		} mouseButtons;
 
 		struct
 		{
-			Vector::Vector2 AxisLeft  = Vector::Vector2(0.0f);
-			Vector::Vector2 AxisRight = Vector::Vector2(0.0f);
-		} mGamepadState;
+			Vector2 AxisLeft  = Vector2(0.0f);
+			Vector2 AxisRight = Vector2(0.0f);
+		} gamepadState;
 
 		struct TouchPos
 		{
 			UINT32 x = 0;
 			UINT32 y = 0;
-		} mTouchPos;
+		} touchPos;
 
 	private:
 		bool Moving() const;

@@ -11,6 +11,7 @@
 #include "Descriptor.h"
 #include "DescriptorPool.h"
 #include "Texture.h"
+#include "Barrier.h"
 
 namespace Immortal
 {
@@ -18,6 +19,7 @@ namespace Vulkan
 {
 
 class Device;
+class CommandBuffer;
 class GraphicsPipeline : public SuperGraphicsPipeline
 {
 public:
@@ -61,7 +63,7 @@ public:
 
     virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
 
-    virtual void Bind(const std::shared_ptr<SuperTexture> &texture, uint32_t slot) override;
+    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
@@ -180,19 +182,37 @@ public:
 
     virtual ~ComputePipeline();
 
+    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+
+    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
+
     virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
 
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset) override;
+
+    void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 
     bool Ready()
     {
         bool ready = descriptorSetUpdater->Ready();
-        if (ready)
+        if (ready && !descriptorSet)
         {
             Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
             descriptorSetUpdater->Set(descriptorSet);
         }
         return ready;
+    }
+
+    const VkPipelineLayout &Layout() const
+    {
+        return layout;
+    }
+
+    const VkDescriptorSet &GetDescriptorSet() const
+    {
+        return descriptorSet;
     }
 
 private:
@@ -211,6 +231,8 @@ private:
     VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
 
     std::unique_ptr<DescriptorPool> descriptorPool;
+
+    std::vector<ImageBarrier> barriers;
 };
 
 }

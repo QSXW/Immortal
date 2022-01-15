@@ -32,7 +32,24 @@
             "Properties": "属性",
             "Transform": "变换",
             "Remove": "移除",
-            "Theme Editor": "主题设置"
+            "Theme Editor": "主题设置",
+            "ColorMixing": "调色",
+            "Red": "红色",
+            "Green": "绿色",
+            "Blue": "蓝色",
+            "Alpha": "透明度",
+            "Channels": "通道",
+            "HSL": "色彩模式",
+            "Luminance": "明度",
+            "Hue": "色相",
+            "Saturation": "饱和度",
+            "White Gradation": "白色色阶",
+            "Black Gradation": "黑色色阶",
+            "Exposure": "亮度",
+            "Contrast": "对比度",
+            "Hightlights": "高光",
+            "Shadow": "阴影",
+            "Vividness": "鲜明度"
         }
     }
 }

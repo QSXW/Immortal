@@ -25,22 +25,20 @@ public:
 
         shader = Render::Get<Shader, ShaderName::Basic>();
 
-        pipeline.reset(Render::Create<Pipeline::Graphics>(shader));
+        uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
+
+        pipelines.graphics.reset(Render::Create<Pipeline::Graphics>(shader));
 
         auto &triangle = DataSet::Classic::Triangle;
+        pipelines.graphics->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) });
+        pipelines.graphics->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index)   });
+        pipelines.graphics->Set(triangle.Description());
+        pipelines.graphics->Create(renderTarget);
+        pipelines.graphics->Bind(Render::Preset()->WhiteTexture.get(), 1);
+        pipelines.graphics->Bind("UBO", uniformBuffer.get());
 
-        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) });
-        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index)   });
-        pipeline->Set(triangle.Description());
-        pipeline->Create(renderTarget);
-        pipeline->Bind(Render::Preset()->WhiteTexture, 1);
-
-        // camera.primaryCamera.SetPerspective(90.0f);
         camera.primaryCamera.SetOrthographic(1.2f);
         camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
-
-        uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
-        pipeline->Bind("UBO", uniformBuffer.get());
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
     }
@@ -63,12 +61,19 @@ public:
             camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
             scene.SetViewportSize(viewportSize);
         }
-        if (editableArea.IsHovered())
-        {
-            editorCamera.OnUpdate();
-        }
 
-        scene.OnRenderEditor(editorCamera);
+        if (panels.tools.IsControlActive(Tools::Start))
+        {
+            scene.OnRenderRuntime();
+        }
+        else
+        {
+            if (editableArea.IsHovered())
+            {
+                editorCamera.OnUpdate();
+            }
+            scene.OnRenderEditor(editorCamera);
+        }
     }
 
     void UpdateEditableArea()
@@ -241,6 +246,8 @@ public:
         {
             auto o = scene.CreateObject(res.value());
 
+            panels.hierarchyGraphics.Select(o);
+
             if (FileSystem::IsFormat<FileFormat::OBJ>(res.value()) || FileSystem::IsFormat<FileFormat::FBX>(res.value()))
             {
                 auto &mesh = o.Add<MeshComponent>();
@@ -253,7 +260,17 @@ public:
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = o.Add<SpriteRendererComponent>();
                 sprite.Texture = texture;
-
+                sprite.Final.reset(Render::Create<Texture>(
+                    sprite.Texture->Width(),
+                    sprite.Texture->Height(),
+                    nullptr,
+                    Texture::Description{
+                    Format::RGBA8,
+                    Texture::Wrap::Repeat,
+                    Texture::Filter::Linear
+                    }));
+                o.Add<ColorMixingComponent>();
+     
                 auto &transform = o.Get<TransformComponent>();
                 transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
             }
@@ -372,9 +389,12 @@ private:
 
     std::shared_ptr<Shader> shader;
 
-    std::shared_ptr<GraphicsPipeline> pipeline;
 
     Object selectedObject;
+
+    struct {
+        std::shared_ptr<GraphicsPipeline> graphics;
+    } pipelines;
 
     struct {
         SceneCamera primaryCamera;
