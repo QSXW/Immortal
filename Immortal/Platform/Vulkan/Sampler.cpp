@@ -63,7 +63,7 @@ Sampler::~Sampler()
     {
         return;
     }
-    device->Destory(handle);
+    device->Destroy(handle);
 }
 
 Sampler::Sampler(Sampler &&other) :

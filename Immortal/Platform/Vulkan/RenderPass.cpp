@@ -88,5 +88,13 @@ RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo * pCreateInfo)
     Check(device->Create(pCreateInfo, nullptr, &handle));
 }
 
+RenderPass::~RenderPass()
+{
+    if (device)
+    {
+        device->Destroy(handle);
+    }
+}
+
 }
 }

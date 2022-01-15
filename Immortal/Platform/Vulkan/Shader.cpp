@@ -107,9 +107,9 @@ Shader::~Shader()
 {
     for (auto &m : modules)
     {
-        device->Destory(m);
+        device->Destroy(m);
     }
-    device->Destory(descriptorSetLayout);
+    device->Destroy(descriptorSetLayout);
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)

@@ -95,7 +95,7 @@ RenderTarget::RenderTarget(RenderTarget &&other) :
 
 RenderTarget::~RenderTarget()
 {
-
+    
 }
 
 RenderTarget &RenderTarget::operator=(RenderTarget &&other)
@@ -173,7 +173,7 @@ void RenderTarget::Create()
         index++;
     }
 
-	std::vector<VkAttachmentDescription> attchmentDescriptions{};
+    std::vector<VkAttachmentDescription> attchmentDescriptions{};
     std::vector<VkAttachmentReference> colorRefs{};
 
     for (auto &c : attachments.colors)
@@ -195,54 +195,54 @@ void RenderTarget::Create()
         colorRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorRefs.emplace_back(std::move(colorRef));
     }
-	
+    
     VkAttachmentDescription depthAttachmentDesc{};
-	depthAttachmentDesc.format         = depthFormat;
-	depthAttachmentDesc.samples        = VK_SAMPLE_COUNT_1_BIT;
-	depthAttachmentDesc.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	depthAttachmentDesc.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachmentDesc.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	depthAttachmentDesc.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-	depthAttachmentDesc.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachmentDesc.format         = depthFormat;
+    depthAttachmentDesc.samples        = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachmentDesc.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachmentDesc.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDesc.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDesc.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDesc.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attchmentDescriptions.emplace_back(std::move(depthAttachmentDesc));
 
     VkAttachmentReference depthRef{};
     depthRef.attachment = attchmentDescriptions.size() - 1;
     depthRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	VkSubpassDescription subpassDescription{};
-	subpassDescription.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescription.colorAttachmentCount    = U32(colorRefs.size());
-	subpassDescription.pColorAttachments       = colorRefs.data();
-	subpassDescription.pDepthStencilAttachment = &depthRef;
+    VkSubpassDescription subpassDescription{};
+    subpassDescription.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpassDescription.colorAttachmentCount    = U32(colorRefs.size());
+    subpassDescription.pColorAttachments       = colorRefs.data();
+    subpassDescription.pDepthStencilAttachment = &depthRef;
 
-	std::array<VkSubpassDependency, 2> dependencies{};
-								  
-	dependencies[0].srcSubpass      = VK_SUBPASS_EXTERNAL;
-	dependencies[0].dstSubpass      = 0;
-	dependencies[0].srcStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[0].dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].srcAccessMask   = VK_ACCESS_SHADER_READ_BIT;
-	dependencies[0].dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    std::array<VkSubpassDependency, 2> dependencies{};
+                                  
+    dependencies[0].srcSubpass      = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass      = 0;
+    dependencies[0].srcStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[0].dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	dependencies[1].srcSubpass      = 0;
-	dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
-	dependencies[1].srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	dependencies[1].srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
-	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependencies[1].srcSubpass      = 0;
+    dependencies[1].dstSubpass      = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = U32(attchmentDescriptions.size());
-	renderPassInfo.pAttachments    = attchmentDescriptions.data();
-	renderPassInfo.subpassCount    = 1;
-	renderPassInfo.pSubpasses      = &subpassDescription;
-	renderPassInfo.dependencyCount = U32(dependencies.size());
-	renderPassInfo.pDependencies   = dependencies.data();
+    VkRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = U32(attchmentDescriptions.size());
+    renderPassInfo.pAttachments    = attchmentDescriptions.data();
+    renderPassInfo.subpassCount    = 1;
+    renderPassInfo.pSubpasses      = &subpassDescription;
+    renderPassInfo.dependencyCount = U32(dependencies.size());
+    renderPassInfo.pDependencies   = dependencies.data();
 
     renderPass.reset(new RenderPass(device, &renderPassInfo));
 

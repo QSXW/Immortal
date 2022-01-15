@@ -64,6 +64,7 @@ void Renderer::PrepareFrame()
         Check(error);
     }
     context->GetCommandBuffer()->Begin();
+    device->BeginComputeThread();
 }
 
 void Renderer::Resize()
@@ -97,6 +98,9 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
+    device->DestroyObjects();
+    device->ExecuteComputeThread();
+
     context->GetCommandBuffer()->End();
 
     submitInfo.waitSemaphoreCount   = 1;

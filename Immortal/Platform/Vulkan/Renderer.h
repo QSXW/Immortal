@@ -10,6 +10,7 @@
 #include "Pipeline.h"
 #include "Buffer.h"
 #include "Framebuffer.h"
+#include "SemaphorePool.h"
 
 namespace Immortal
 {

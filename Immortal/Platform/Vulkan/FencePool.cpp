@@ -21,7 +21,7 @@ FencePool::~FencePool()
 
     for (VkFence fence : handles)
     {
-        IfNotNullThen<VkFence>(vkDestroyFence, *device, fence, nullptr);
+        device->Destroy(fence);
     }
     handles.clear();
 }

@@ -6,7 +6,6 @@
 #include "Instance.h"
 #include "Swapchain.h"
 #include "RenderTarget.h"
-#include "RenderFrame.h"
 #include "RenderPass.h"
 #include "Framebuffer.h"
 #include "CommandBuffer.h"
@@ -43,11 +42,6 @@ public:
     RenderContext(const Description &desc);
 
     ~RenderContext();
-
-    virtual Device *GetDevice() override
-    {
-        return device.get();
-    }
 
     virtual bool HasSwapchain()
     {

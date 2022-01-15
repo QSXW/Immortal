@@ -29,7 +29,10 @@ Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vec
 
 Framebuffer::~Framebuffer()
 {
-    device->Destory(handle);
+    if (device)
+    {
+        device->Destroy(handle);
+    }
 }
 
 }

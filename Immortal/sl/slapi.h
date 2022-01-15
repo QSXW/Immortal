@@ -72,6 +72,7 @@ elif defined(__linux__)
 #define BIT(x) (1 << (x))
 #define CAT1(p, s) #p##s
 #define SLALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
+#define SLROTATE(a, b) (a) = ((a) + 1) % b
 #define SL_ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
 
 /*

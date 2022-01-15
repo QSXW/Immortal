@@ -96,7 +96,10 @@ CommandPool::~CommandPool()
 {
     primaryCommandBuffers.clear();
     secondaryCommandBuffers.clear();
-    IfNotNullThen<VkCommandPool>(vkDestroyCommandPool, *device, handle, nullptr);
+    if (device)
+    {
+        device->Destroy(handle);
+    }
 }
 
 CommandBuffer *CommandPool::RequestBuffer(Level level)

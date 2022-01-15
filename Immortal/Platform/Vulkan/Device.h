@@ -9,6 +9,7 @@
 #include "CommandPool.h"
 #include "FencePool.h"
 #include "DescriptorPool.h"
+#include <queue>
 
 namespace Immortal
 {
@@ -44,6 +45,8 @@ public:
     Queue &SuitableGraphicsQueue();
 
     uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
+
+    void DestroyObjects();
 
 public:
     Queue *SuitableGraphicsQueuePtr()
@@ -87,13 +90,20 @@ public:
     DEFINE_CREATE_VK_OBJECT(ShaderModule)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
-    void Destory(Vk##T object, const VkAllocationCallbacks* pAllocator = nullptr) \
+    void Destroy(Vk##T object, const VkAllocationCallbacks *pAllocator = nullptr) \
     { \
-        IfNotNullThen(vkDestroy##T, handle, object, pAllocator); \
+        if (object != VK_NULL_HANDLE) \
+        { \
+            destroyCoroutine.queues[destroyCoroutine.working].push([=]{ \
+                vkDestroy##T(handle, object, pAllocator); \
+            }); \
+        } \
     }
 
     DEFINE_DESTORY_VK_OBJECT(Buffer)
+    DEFINE_DESTORY_VK_OBJECT(CommandPool)
     DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_DESTORY_VK_OBJECT(Fence)
     DEFINE_DESTORY_VK_OBJECT(Framebuffer)
     DEFINE_DESTORY_VK_OBJECT(Image)
     DEFINE_DESTORY_VK_OBJECT(ImageView)
@@ -137,7 +147,9 @@ public:
 
     void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator = nullptr)
     {
-        vkFreeMemory(handle, memory, pAllocator);
+        destroyCoroutine.queues[destroyCoroutine.working].push([=] {
+            vkFreeMemory(handle, memory, pAllocator);
+            }); 
     }
 
     VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
@@ -260,16 +272,16 @@ public:
     }
 
     template <Queue::Type T>
-    void End(CommandBuffer *copyCmd)
+    void End(CommandBuffer *cmdbuf)
     {
-        copyCmd->End();
+        cmdbuf->End();
 
         auto &queue = FindQueueByType(T, 0);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &copyCmd->Handle();
+        submitInfo.pCommandBuffers    = &cmdbuf->Handle();
 
         auto fence = RequestFence();
 
@@ -277,7 +289,6 @@ public:
         Check(Wait(&fence, 1, VK_TRUE, FencePool::Timeout));
 
         Discard(&fence);
-        Discard(copyCmd);
     }
 
     template <class T>
@@ -288,16 +299,25 @@ public:
         process(copyCmd);
 
         End<Queue::Type::Transfer>(copyCmd);
+        Discard(copyCmd);
     }
 
     template <class T>
     void Compute(T &&process)
     {
-        auto *copyCmd = Begin();
+        process(compute.commandBuffer);
+    }
 
-        process(copyCmd);
+    void BeginComputeThread()
+    {
+        compute.commandBuffer = compute.commandPool->RequestBuffer(Level::Primary);
+        compute.commandBuffer->Begin();
+    }
 
-        End<Queue::Type::Compute>(copyCmd);
+    void ExecuteComputeThread()
+    {
+        End<Queue::Type::Compute>(compute.commandBuffer);
+        compute.commandPool->DiscardBuffer(compute.commandBuffer);
     }
 
 private:
@@ -320,6 +340,22 @@ private:
     std::unique_ptr<FencePool> fencePool;
 
     std::unique_ptr<DescriptorPool> descriptorPool;
+
+    struct {
+        std::unique_ptr<CommandPool> commandPool;
+
+        CommandBuffer *commandBuffer;
+    } compute;
+
+    struct {
+        std::queue<std::function<void()>> queues[3];
+        std::mutex mutex;
+        uint32_t working = 0;
+        uint32_t freeing = 1;
+    } destroyCoroutine;
+
+
+    
 };
 }
 }

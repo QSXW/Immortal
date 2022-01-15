@@ -19,7 +19,10 @@ GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    device->Destory(handle);
+    if (device)
+    {
+        device->Destroy(handle);
+    }
 }
 
 void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
@@ -211,7 +214,10 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
 
 ComputePipeline::~ComputePipeline()
 {
-    device->Destory(handle);
+    if (device)
+    {
+        device->Destroy(handle);
+    }
 }
 
 void ComputePipeline::Bind(const std::string &name, const Buffer::Super *uniform)
@@ -226,8 +232,9 @@ void ComputePipeline::Bind(const std::string &name, const Buffer::Super *uniform
 
 void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
-    barriers.clear();
     auto texture = dynamic_cast<Texture *>(superTexture);
+
+    bool isChanged = false;
 
     for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
     {
@@ -251,16 +258,20 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
                 );
                 descriptorInfo.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
-            writeDescriptor.pImageInfo = rcast<VkDescriptorImageInfo *>(&descriptorInfo);
+            if (descriptorInfo != writeDescriptor.pImageInfo)
+            {
+                isChanged = true;
+                writeDescriptor.pImageInfo = rcast<VkDescriptorImageInfo *>(&descriptorInfo);
+            }
             break;
         }
     }
 
-    if (Ready())
+    if (isChanged && Ready())
     {
         device->Compute([&](CommandBuffer *cmdbuf) -> void {
             cmdbuf->PipelineBarrier(
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                 0,
                 0, nullptr,
@@ -270,6 +281,12 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
             });
 
         descriptorSetUpdater->Update(*device);
+
+        for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
+        {
+            writeDesc.pBufferInfo = nullptr;
+            writeDesc.pImageInfo  = nullptr;
+        }
     }
 }
 
@@ -305,7 +322,7 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         layout,
         0, 1,
         &descriptorSet,
-        0, NULL
+        0, nullptr
     );
     vkCmdBindPipeline(*cmdbuf, BindPoint, handle);
 
@@ -329,11 +346,7 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         U32(barriers.size()), barriers.data()
     );
 
-    for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
-    {
-        writeDesc.pBufferInfo = nullptr;
-        writeDesc.pImageInfo  = nullptr;
-    }
+    barriers.clear();
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)

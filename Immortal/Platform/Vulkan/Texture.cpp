@@ -35,9 +35,8 @@ Texture::~Texture()
     {
         return;
     }
-    device->Wait();
     view.reset();
-    device->Destory(image);
+    device->Destroy(image);
     device->FreeMemory(deviceMemory);
 }
 
@@ -169,7 +168,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         );
         });
 
-    device->Destory(stagingBuffer);
+    device->Destroy(stagingBuffer);
     device->FreeMemory(stagingMemory);
 
     SetupSampler(description);

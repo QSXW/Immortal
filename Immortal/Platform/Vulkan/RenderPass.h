@@ -15,6 +15,8 @@ public:
 
     RenderPass(Device *device, VkRenderPassCreateInfo *pCreateInfo);
 
+    ~RenderPass();
+
     VkRenderPass &Handle()
     {
         return handle;

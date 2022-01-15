@@ -53,7 +53,10 @@ ImageView::ImageView(ImageView&& other) :
 
 ImageView::~ImageView()
 {
-    device->Destory(handle);
+    if (device)
+    {
+        device->Destroy(handle);
+    }
 }
 
 void ImageView::Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)

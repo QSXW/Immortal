@@ -149,8 +149,6 @@ set(VULKAN_FILES
    Platform/Vulkan/RenderContext.h
    Platform/Vulkan/Renderer.cpp
    Platform/Vulkan/Renderer.h
-   Platform/Vulkan/RenderFrame.cpp
-   Platform/Vulkan/RenderFrame.h
    Platform/Vulkan/RenderTarget.cpp
    Platform/Vulkan/RenderTarget.h
    Platform/Vulkan/SemaphorePool.cpp

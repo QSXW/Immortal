@@ -9,7 +9,6 @@
 #include "Framework/Application.h"
 #include "Renderer.h"
 #include "Image.h"
-#include "RenderFrame.h"
 #include "Framebuffer.h"
 
 namespace Immortal
