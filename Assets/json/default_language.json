@@ -49,7 +49,9 @@
             "Contrast": "对比度",
             "Hightlights": "高光",
             "Shadow": "阴影",
-            "Vividness": "鲜明度"
+            "Vividness": "鲜明度",
+            "Color": "颜色",
+            "Material": "材质"
         }
     }
 }

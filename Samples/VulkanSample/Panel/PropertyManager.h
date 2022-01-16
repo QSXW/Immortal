@@ -41,6 +41,27 @@ public:
                     });
                 }
                 
+                if (o.Has<MaterialComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("Material"),
+                        [&]() -> void {
+                            auto &material = o.Get<MaterialComponent>();
+
+                            auto id = WordsMap::Get("Color").c_str();
+                            ImGui::PushID(id);
+                            ImGui::Columns(2);
+                            ImGui::Text(id);
+                            ImGui::SetColumnWidth(0, 64);
+                            ImGui::NextColumn();
+                            ImGui::PushItemWidth(-1);
+                            ImGui::SetColorEditOptions(ImGuiColorEditFlags_DefaultOptions_);
+                            ImGui::ColorEdit4("##C", (float *)&material.AlbedoColor);
+                            ImGui::NextColumn();
+                            ImGui::PopID();
+                        });
+                }
+
                 if (o.Has<ColorMixingComponent>())
                 {
                     DrawComponent(
