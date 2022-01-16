@@ -30,7 +30,7 @@ public:
     {
         if constexpr (IsPrimitiveOf<VkImage, T>())
         {
-            return image;
+            return *image;
         }
     }
 
@@ -57,16 +57,10 @@ public:
 
     void SetupImageView(VkFormat format)
     {
-        view = std::make_unique<ImageView>(
-            device,
-            image,
-            VK_IMAGE_VIEW_TYPE_2D,
-            format,
-            0,
-            0,
-            mipLevels,
-            1
-            );
+        view.reset(new ImageView{
+            image.get(),
+            VK_IMAGE_VIEW_TYPE_2D
+            });
     }
 
     virtual operator uint64_t() const override
@@ -97,11 +91,9 @@ private:
 
     Sampler sampler;
 
+    std::unique_ptr<Image> image;
+    
     std::unique_ptr<ImageView> view;
-
-    VkImage image{ VK_NULL_HANDLE };
-
-    VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
 
     std::unique_ptr<DescriptorSet> descriptorSet;
 

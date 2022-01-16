@@ -26,18 +26,17 @@ Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *da
     device{ device },
     Super{ width, height }
 {
+    if (!data)
+    {
+        mipLevels = 1;
+    }
     Setup(description, width * height * description.FormatSize(), data);
 }
 
 Texture::~Texture()
 {
-    if (!device)
-    {
-        return;
-    }
+    image.reset();
     view.reset();
-    device->Destroy(image);
-    device->FreeMemory(deviceMemory);
 }
 
 void Texture::Setup(const Description &description, uint32_t size, const void *data)
@@ -90,12 +89,8 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         bufferCopyRegions.emplace_back(std::move(bufferCopyRegion));
     }
 
-    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    Layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    if (!data)
-    {
-        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-    }
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    Layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkImageCreateInfo imageCreateInfo{};
     ConvertType(imageCreateInfo, description);
@@ -110,14 +105,11 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     imageCreateInfo.extent        = { width, height, 1 };
     imageCreateInfo.usage         = usage;
     
-    Check(device->Create(&imageCreateInfo, nullptr, &image));
-    device->GetRequirements(image, &memoryRequirements);
-
-    allocateInfo.allocationSize = memoryRequirements.size;
-    allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    Check(device->AllocateMemory(&allocateInfo, nullptr, &deviceMemory));
-    Check(device->BindMemory(image, deviceMemory, 0));
+    image.reset(new Image{
+        device,
+        imageCreateInfo,
+        VMA_MEMORY_USAGE_GPU_ONLY
+        });;
 
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -125,15 +117,14 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     subresourceRange.levelCount   = mipLevels;
     subresourceRange.layerCount   = 1;
 
-    // Transition the texture image layout to transfer target, so we can safely copy our buffer data to it.
-    VkImageMemoryBarrier imageMemoryBarrier{};
-    imageMemoryBarrier.sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    imageMemoryBarrier.image            = image;
-    imageMemoryBarrier.subresourceRange = subresourceRange;
-    imageMemoryBarrier.srcAccessMask    = 0;
-    imageMemoryBarrier.dstAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT;
-    imageMemoryBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageMemoryBarrier.newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    ImageBarrier barrier{
+        *image,
+        subresourceRange,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        0,
+        VK_ACCESS_TRANSFER_WRITE_BIT
+    }; 
 
     device->Transfer([&](auto copyCmd) -> void {
         copyCmd->PipelineBarrier(
@@ -142,21 +133,19 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
             0,
             0, nullptr,
             0, nullptr,
-            1, &imageMemoryBarrier
+            1, &barrier
         );
 
         copyCmd->CopyBufferToImage(
             stagingBuffer,
-            image,
+            *image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             static_cast<uint32_t>(bufferCopyRegions.size()),
             bufferCopyRegions.data()
         );
 
-        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageMemoryBarrier.newLayout = Layout;
+        barrier.Swap();
+        barrier.To(Layout);
 
         copyCmd->PipelineBarrier(
             VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -164,7 +153,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
             0,
             0, nullptr,
             0, nullptr,
-            1, &imageMemoryBarrier
+            1, &barrier
         );
         });
 

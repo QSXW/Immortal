@@ -37,9 +37,13 @@ public:
           VkImageCreateInfo &createInfo,
           VmaMemoryUsage     memoryUsage);
 
+    Image(const Image &other);
+
     Image(Image &&other);
 
     ~Image();
+
+    Image &operator=(const Image &other);
 
     Image &operator=(Image &&other);
 
@@ -60,9 +64,9 @@ public:
     }
 
     template <class T>
-    T Get()
+    T *GetAddress()
     {
-        if constexpr (std::is_same_v<T, Device *>)
+        if constexpr (IsPrimitiveOf<Device, T>())
         {
             return device;
         }

@@ -10,6 +10,7 @@
 #include "FencePool.h"
 #include "DescriptorPool.h"
 #include <queue>
+#include <future>
 
 namespace Immortal
 {
@@ -40,6 +41,11 @@ public:
 
     uint32_t QueueFailyIndex(VkQueueFlagBits queueFlag);
 
+    uint32_t QueueFailyIndex(Queue::Type type)
+    {
+        return QueueFailyIndex(VkQueueFlagBits(type));
+    }
+
     Queue &FindQueueByType(Queue::Type type, uint32_t queueIndex);
 
     Queue &SuitableGraphicsQueue();
@@ -49,6 +55,18 @@ public:
     void DestroyObjects();
 
 public:
+    template <class T>
+    void Destroy(T task)
+    {
+        auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
+        {
+            std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex };
+            destroyCoroutine.queues[destroyCoroutine.working].push([=]() -> void {
+                (*wrapper)();
+                });
+        }
+    }
+
     Queue *SuitableGraphicsQueuePtr()
     {
         auto &queue = SuitableGraphicsQueue();
@@ -94,6 +112,7 @@ public:
     { \
         if (object != VK_NULL_HANDLE) \
         { \
+            std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex }; \
             destroyCoroutine.queues[destroyCoroutine.working].push([=]{ \
                 vkDestroy##T(handle, object, pAllocator); \
             }); \
@@ -276,7 +295,7 @@ public:
     {
         cmdbuf->End();
 
-        auto &queue = FindQueueByType(T, 0);
+        auto &queue = FindQueueByType(T, QueueFailyIndex(T));
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -305,19 +324,17 @@ public:
     template <class T>
     void Compute(T &&process)
     {
-        process(compute.commandBuffer);
+        process(compute.commandBuffers[compute.sync]);
     }
 
     void BeginComputeThread()
     {
-        compute.commandBuffer = compute.commandPool->RequestBuffer(Level::Primary);
-        compute.commandBuffer->Begin();
+        compute.commandBuffers[compute.sync]->Begin();
     }
 
     void ExecuteComputeThread()
     {
-        End<Queue::Type::Compute>(compute.commandBuffer);
-        compute.commandPool->DiscardBuffer(compute.commandBuffer);
+        compute.sync = (compute.sync + 1) % 3;
     }
 
 private:
@@ -344,7 +361,9 @@ private:
     struct {
         std::unique_ptr<CommandPool> commandPool;
 
-        CommandBuffer *commandBuffer;
+        CommandBuffer *commandBuffers[3];
+
+        uint32_t sync = 0;
     } compute;
 
     struct {
@@ -353,9 +372,6 @@ private:
         uint32_t working = 0;
         uint32_t freeing = 1;
     } destroyCoroutine;
-
-
-    
 };
 }
 }

@@ -99,9 +99,14 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
     Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
 }
 
-Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage)
+Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage) :
+    device{ device }
 {
     CopyProps(&this->info, &createInfo);
+
+    subresource.mipLevel = createInfo.mipLevels;
+    subresource.arrayLayer = createInfo.arrayLayers;
+
     VmaAllocationCreateInfo memoryInfo{};
     memoryInfo.usage = memoryUsage;
 
@@ -118,7 +123,8 @@ Image::Image(Image &&other) :
     memory{ other.memory },
     subresource{ other.subresource },
     mappedData{ other.mappedData },
-    mapped{ other.mapped }
+    mapped{ other.mapped },
+    views{ std::move(other.views) }
 {
     CopyProps(&this->info, &other.info);
 
@@ -133,11 +139,35 @@ Image::Image(Image &&other) :
     }
 }
 
+Image::Image(const Image &other) :
+    device{ other.device },
+    handle{ other.handle },
+    memory{ other.memory },
+    subresource{ other.subresource },
+    mappedData{ other.mappedData },
+    mapped{ other.mapped },
+    views{ other.views }
+{
+    CopyProps(&this->info, &other.info);
+
+    for (auto& v : views)
+    {
+        v->Set(this);
+    }
+}
+
+void Destory(Device *device, VkImage image, VmaAllocation memory)
+{
+    vmaDestroyImage(device->MemoryAllocator(), image, memory);
+}
+
 Image::~Image()
 {
-    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
+    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != VK_NULL_HANDLE)
     {
-        vmaDestroyImage(device->MemoryAllocator(), handle, memory);
+        device->Destroy([=] () {
+            // Destory(device, handle, memory);
+            });
     }
 }
 
@@ -153,9 +183,34 @@ Image &Image::operator=(Image &&other)
     mapped          = other.mapped;
     CopyProps(&this->info, &other.info);
 
+    for (auto& v : views)
+    {
+        v->Set(this);
+    }
+
     other.device = nullptr;
     other.handle = VK_NULL_HANDLE;
     other.memory = VK_NULL_HANDLE;
+
+    return *this;
+}
+
+Image &Image::operator=(const Image &other)
+{
+    SLASSERT(&other != this && "You are trying to self-assignments, which is not acceptable.");
+
+    device          = other.device;
+    handle          = other.handle;
+    memory          = other.memory;
+    views           = other.views;
+    mappedData      = other.mappedData;
+    mapped          = other.mapped;
+    CopyProps(&this->info, &other.info);
+
+    for (auto& v : views)
+    {
+        v->Set(this);
+    }
 
     return *this;
 }

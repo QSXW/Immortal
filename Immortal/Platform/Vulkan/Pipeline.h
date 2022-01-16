@@ -233,6 +233,8 @@ private:
     std::unique_ptr<DescriptorPool> descriptorPool;
 
     std::vector<ImageBarrier> barriers;
+
+    uint32_t isChanged = 0;
 };
 
 }

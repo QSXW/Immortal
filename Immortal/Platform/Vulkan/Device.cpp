@@ -196,6 +196,11 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     descriptorPool.reset(new DescriptorPool{ this, Limit::PoolSize });
 
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(compute.commandBuffers); i++)
+    {
+        compute.commandBuffers[i] = compute.commandPool->RequestBuffer(Level::Primary);
+    }
+
     EnableGlobal();
 }
 
@@ -336,18 +341,28 @@ void Device::DestroyObjects()
     SLROTATE(destroyCoroutine.freeing, 3);
 
     /* all objects in queue is safe to destory now */
-    Async::Execute([&] {
-        while (!queue.empty())
+    //Async::Execute([&] {
+    //    while (!queue.empty())
+    //    {
+    //        std::function<void()> func;
+    //        {
+    //            std::unique_lock<std::mutex> lock{ mutex };
+    //            func = queue.front();
+    //            queue.pop();
+    //        }
+    //        func();
+    //    }
+    //    });
+    while (!queue.empty())
+    {
+        std::function<void()> func;
         {
-            std::function<void()> func;
-            {
-                std::unique_lock<std::mutex> lock{ mutex };
-                func = queue.front();
-                queue.pop();
-            }
-            func();
+            std::unique_lock<std::mutex> lock{ mutex };
+            func = queue.front();
+            queue.pop();
         }
-        });
+        func();
+    }
 }
 
 }

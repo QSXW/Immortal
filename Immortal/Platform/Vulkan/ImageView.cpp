@@ -9,7 +9,7 @@ namespace Vulkan
 {
 
 ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
-    device{ image->Get<Device *>() },
+    device{ image->GetAddress<Device>() },
     refImage{ image },
     format{ format }
 {
@@ -73,7 +73,7 @@ void ImageView::Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLev
     viewInfo.format           = format;
     viewInfo.subresourceRange = subresourceRange;
     viewInfo.image            = image;
-
+    viewInfo.components       = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
     Check(vkCreateImageView(*device, &viewInfo, nullptr, &handle));
 }
 

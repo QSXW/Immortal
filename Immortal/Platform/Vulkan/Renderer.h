@@ -24,8 +24,6 @@ public:
 
     static inline VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
-    static inline VkPipelineStageFlags submitPipelineStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-
 public:
     Renderer(RenderContext::Super *context);
 

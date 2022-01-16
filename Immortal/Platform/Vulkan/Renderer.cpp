@@ -99,15 +99,42 @@ void Renderer::SubmitFrame()
 void Renderer::SwapBuffers()
 {
     device->DestroyObjects();
-    device->ExecuteComputeThread();
+
+    VkSemaphore computeSemaphore = semaphorePool.Request();
+    VkPipelineStageFlags computeWaitDstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+    VkSubmitInfo computeSubmitInfo{};
+    computeSubmitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    computeSubmitInfo.pSignalSemaphores    = &computeSemaphore;
+    computeSubmitInfo.signalSemaphoreCount = 1;
+    computeSubmitInfo.pWaitDstStageMask    = &computeWaitDstStageMask;
+
+    auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
+    device->Compute([&](CommandBuffer *cmdbuf) {
+        cmdbuf->End();
+        computeSubmitInfo.commandBufferCount = 1;
+        computeSubmitInfo.pCommandBuffers = &cmdbuf->Handle();
+        });
+
+    computeQueue.Submit(computeSubmitInfo, nullptr);
 
     context->GetCommandBuffer()->End();
 
-    submitInfo.waitSemaphoreCount   = 1;
-    submitInfo.pWaitSemaphores      = &semaphores[sync].acquiredImageReady;
+    VkSemaphore waitSemaphores[] = {
+        computeSemaphore,
+        semaphores[sync].acquiredImageReady
+    };
+
+    static VkPipelineStageFlags graphicsWaitDstStageMask[] = {
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    };
+
+    submitInfo.waitSemaphoreCount   = SL_ARRAY_LENGTH(waitSemaphores);
+    submitInfo.pWaitSemaphores      = waitSemaphores;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
-    submitInfo.pWaitDstStageMask    = &submitPipelineStages;
+    submitInfo.pWaitDstStageMask    = graphicsWaitDstStageMask;
     submitInfo.commandBufferCount   = 1;
     submitInfo.pCommandBuffers      = &context->GetCommandBuffer()->Handle();
 
@@ -115,6 +142,9 @@ void Renderer::SwapBuffers()
     SubmitFrame();
 
     sync = (sync + 1) % context->FrameSize();
+
+    computeQueue.Wait();
+    device->ExecuteComputeThread();
 }
 
 void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
@@ -146,8 +176,6 @@ void Renderer::End()
     context->End([&](CommandBuffer *cmdbuf) {
         cmdbuf->EndRenderPass();
     });
-
-
 }
 
 void Renderer::PushConstant(GraphicsPipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)

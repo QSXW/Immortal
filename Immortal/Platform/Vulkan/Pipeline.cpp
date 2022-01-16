@@ -234,13 +234,16 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
     auto texture = dynamic_cast<Texture *>(superTexture);
 
-    bool isChanged = false;
-
     for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
     {
         if (writeDescriptor.dstBinding == slot)
         {
-            ImageDescriptor descriptorInfo = texture->DescriptorInfo();
+            VkDescriptorImageInfo *descriptorInfo = rcast<VkDescriptorImageInfo *>(&texture->DescriptorInfo());
+            if (descriptorInfo != writeDescriptor.pImageInfo)
+            {
+                isChanged++;
+                writeDescriptor.pImageInfo = descriptorInfo;
+            }
             if (writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
             {
                 VkImageSubresourceRange subresourceRange{};
@@ -254,39 +257,29 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
                     subresourceRange,
                     texture->Layout,
                     VK_IMAGE_LAYOUT_GENERAL,
-                    0, VK_ACCESS_SHADER_WRITE_BIT
+                    VK_ACCESS_SHADER_READ_BIT,
+                    VK_ACCESS_SHADER_WRITE_BIT
                 );
-                descriptorInfo.info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-            }
-            if (descriptorInfo != writeDescriptor.pImageInfo)
-            {
-                isChanged = true;
-                writeDescriptor.pImageInfo = rcast<VkDescriptorImageInfo *>(&descriptorInfo);
+                descriptorInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
             break;
         }
     }
 
-    if (isChanged && Ready())
+    device->Compute([&](CommandBuffer *cmdbuf) -> void {
+        cmdbuf->PipelineBarrier(
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            U32(barriers.size()), barriers.data()
+        );
+        });
+
+    if (isChanged == descriptorSetUpdater->WriteDescriptorSets.size() && Ready())
     {
-        device->Compute([&](CommandBuffer *cmdbuf) -> void {
-            cmdbuf->PipelineBarrier(
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                U32(barriers.size()), barriers.data()
-                );
-            });
-
         descriptorSetUpdater->Update(*device);
-
-        for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
-        {
-            writeDesc.pBufferInfo = nullptr;
-            writeDesc.pImageInfo  = nullptr;
-        }
     }
 }
 
@@ -316,6 +309,8 @@ void ComputePipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 
 void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
+    isChanged = 0;
+
     vkCmdBindDescriptorSets(
         *cmdbuf,
         BindPoint,
@@ -332,21 +327,30 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         nGroupZ
     );
 
-    for (auto &b : barriers)
-    {
-        b.Swap();
-    }
+    RenderContext::That->Submit([&](CommandBuffer *drawCmdbuf) {
+        VkImageLayout layouts[] = {
+            VK_IMAGE_LAYOUT_GENERAL
+        };
 
-    cmdbuf->PipelineBarrier(
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        0,
-        0, nullptr,
-        0, nullptr,
-        U32(barriers.size()), barriers.data()
-    );
+        for (size_t i = 0; i < SL_ARRAY_LENGTH(layouts); i++)
+        {
+            for (auto &b : barriers)
+            {
+                b.Swap();
+                b.To(layouts[i]);
+            }
 
-    barriers.clear();
+            drawCmdbuf->PipelineBarrier(
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                U32(barriers.size()), barriers.data()
+            );
+        }
+        barriers.clear();
+        });
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)

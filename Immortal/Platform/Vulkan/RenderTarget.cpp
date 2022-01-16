@@ -15,7 +15,7 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colo
 {
     std::vector<std::unique_ptr<Image>> images;
 
-    auto device = colorImage->Get<Device *>();
+    auto device = colorImage->GetAddress<Device>();
 
     VkFormat depthFormat = SuitableDepthFormat(device->Get<PhysicalDevice>());
 
@@ -42,7 +42,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
 }
 
 RenderTarget::RenderTarget(std::vector<std::unique_ptr<Image>> images) :
-    device{ images.back()->Get<Device *>() }
+    device{ images.back()->GetAddress<Device>() }
 {
     SLASSERT(!images.empty() && "Should specify at least 1 image");
     std::set<VkExtent2D, CompareExtent2D> uniqueExtent;
