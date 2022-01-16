@@ -132,6 +132,15 @@ public:
     DEFINE_DESTORY_VK_OBJECT(Sampler)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
 
+#define DEFINE_RESET_OBJECT(T) \
+    void Reset(Vk##T object, Vk##T##ResetFlags flags) \
+    { \
+        Check(vkReset##T(handle, object, flags)); \
+    }
+
+    DEFINE_RESET_OBJECT(CommandPool)
+    DEFINE_RESET_OBJECT(DescriptorPool)
+
 #define DEFINE_CREATE_PIPELINES(T) \
     VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
     { \

@@ -26,6 +26,8 @@ public:
 
     void Free(VkDescriptorSet *pDescriptorSet, uint32_t size = 1);
 
+    void Reset();
+
 private:
     Device *device{ nullptr };
         

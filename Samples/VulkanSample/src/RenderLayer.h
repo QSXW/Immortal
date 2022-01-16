@@ -227,15 +227,20 @@ public:
         auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
         if (res.has_value())
         {
-            image.reset(Render::Create<Texture>(res.value()));
+            std::shared_ptr<Texture> newTexture{ Render::Create<Texture>(res.value()) };
             auto &transform = selectedObject.GetComponent<TransformComponent>();
-            transform.Scale = transform.Scale.z * Vector3{ image->Ratio(), 1.0f, 1.0f };
+            transform.Scale = transform.Scale.z * Vector3{ newTexture->Ratio(), 1.0f, 1.0f };
 
             if (!selectedObject.Has<SpriteRendererComponent>())
             {
                 selectedObject.Add<SpriteRendererComponent>();
             }
-            selectedObject.Get<SpriteRendererComponent>().Texture = image;
+            auto &sprite = selectedObject.Get<SpriteRendererComponent>();
+            sprite.Texture = newTexture;
+            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr, Texture::Description{
+                Format::RGBA8,
+                Texture::Wrap::Clamp
+                }));
         }        
     }
 
@@ -260,15 +265,11 @@ public:
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = o.Add<SpriteRendererComponent>();
                 sprite.Texture = texture;
-                sprite.Final.reset(Render::Create<Texture>(
-                    sprite.Texture->Width(),
-                    sprite.Texture->Height(),
-                    nullptr,
-                    Texture::Description{
+                sprite.Final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
                     Format::RGBA8,
-                    Texture::Wrap::Repeat,
-                    Texture::Filter::Linear
+                    Texture::Wrap::Clamp
                     }));
+
                 o.Add<ColorMixingComponent>();
      
                 auto &transform = o.Get<TransformComponent>();
@@ -425,8 +426,6 @@ private:
     std::shared_ptr<Buffer> uniformBuffer;
 
     Object cameraObject;
-
-    std::shared_ptr<Texture> image{ Render::Preset()->WhiteTexture };
 
     EventSink<RenderLayer> eventSink;
 

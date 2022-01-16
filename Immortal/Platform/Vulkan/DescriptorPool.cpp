@@ -48,5 +48,10 @@ void DescriptorPool::Free(VkDescriptorSet *pDescriptorSet, uint32_t size)
     vkFreeDescriptorSets(*device, handle, size, pDescriptorSet);
 }
 
+void DescriptorPool::Reset()
+{
+    device->Reset(handle, 0);
+}
+
 }
 }

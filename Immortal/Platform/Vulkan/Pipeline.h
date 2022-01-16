@@ -192,12 +192,14 @@ public:
 
     virtual void PushConstant(uint32_t size, const void *data, uint32_t offset) override;
 
+    virtual void ResetResource() override;
+
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 
     bool Ready()
     {
         bool ready = descriptorSetUpdater->Ready();
-        if (ready && !descriptorSet)
+        if (ready)
         {
             Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
             descriptorSetUpdater->Set(descriptorSet);

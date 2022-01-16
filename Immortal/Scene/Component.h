@@ -299,6 +299,9 @@ struct ColorMixingComponent : public Component
 
     }
 
+    bool Modified    = false;
+    bool Initialized = false;
+
     Vector4 RGBA = Vector4{ 0, 0, 0, 1.0f };
     Vector4 HSL;
     

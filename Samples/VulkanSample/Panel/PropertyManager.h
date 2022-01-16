@@ -46,9 +46,8 @@ public:
                     DrawComponent(
                         WordsMap::Get("ColorMixing"),
                         [&]() -> void {    
-                            bool modified = false;
-
                             auto &c = o.Get<ColorMixingComponent>();
+                            c.Modified = false;
 
                             auto drawFloat = [&](const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f) {
                                 bool modified = false;
@@ -68,10 +67,10 @@ public:
                                 return modified;
                             };
                             
-                            drawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);
-                            drawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
-                            drawFloat(WordsMap::Get("Blue").c_str(),  &c.RGBA.b);
-                            drawFloat(WordsMap::Get("Alpha").c_str(), &c.RGBA.a);
+                            c.Modified |= drawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);
+                            c.Modified |= drawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
+                            c.Modified |= drawFloat(WordsMap::Get("Blue").c_str(),  &c.RGBA.b);
+                            c.Modified |= drawFloat(WordsMap::Get("Alpha").c_str(), &c.RGBA.a);
 
                             auto channels = WordsMap::Get("Channels").c_str();
                             ImGui::PushID(channels);
@@ -81,13 +80,13 @@ public:
                             ImGui::NextColumn();
                             ImGui::PushItemWidth(-1);
                             ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_PickerHueBar);
-                            modified |= ImGui::ColorEdit4("##C", (float *)&c.RGBA);
+                            c.Modified |= ImGui::ColorEdit4("##C", (float *)&c.RGBA);
                             ImGui::NextColumn();
                             ImGui::PopID();
 
-                            drawFloat(WordsMap::Get("Hue").c_str(),        &c.HSL.x);
-                            drawFloat(WordsMap::Get("Saturation").c_str(), &c.HSL.y);
-                            drawFloat(WordsMap::Get("Luminance").c_str(),  &c.HSL.z);
+                            c.Modified |= drawFloat(WordsMap::Get("Hue").c_str(),        &c.HSL.x);
+                            c.Modified |= drawFloat(WordsMap::Get("Saturation").c_str(), &c.HSL.y);
+                            c.Modified |= drawFloat(WordsMap::Get("Luminance").c_str(),  &c.HSL.z);
 
                             auto hsl = WordsMap::Get("HSL").c_str();
                             ImGui::PushID(hsl);
@@ -97,19 +96,19 @@ public:
                             ImGui::NextColumn();
                             ImGui::PushItemWidth(-1);
                             ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
-                            modified |= ImGui::ColorEdit4("##C", (float *)&c.HSL, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_InputHSV | ImGuiColorEditFlags_Float);
+                            c.Modified |= ImGui::ColorEdit4("##C", (float *)&c.HSL, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_InputHSV | ImGuiColorEditFlags_Float);
 
                             ImGui::NextColumn();
                             ImGui::Columns(1);
                             ImGui::PopID();
 
-                            drawFloat(WordsMap::Get("White Gradation").c_str(), &c.Gradation.White);
-                            drawFloat(WordsMap::Get("Black Gradation").c_str(), &c.Gradation.Black);
-                            drawFloat(WordsMap::Get("Exposure"       ).c_str(), &c.Exposure       );
-                            drawFloat(WordsMap::Get("Contrast"       ).c_str(), &c.Contrast       );
-                            drawFloat(WordsMap::Get("Hightlights"    ).c_str(), &c.Hightlights    );
-                            drawFloat(WordsMap::Get("Shadow"         ).c_str(), &c.Shadow         );
-                            drawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
+                            c.Modified |= drawFloat(WordsMap::Get("White Gradation").c_str(), &c.Gradation.White);
+                            c.Modified |= drawFloat(WordsMap::Get("Black Gradation").c_str(), &c.Gradation.Black);
+                            c.Modified |= drawFloat(WordsMap::Get("Exposure"       ).c_str(), &c.Exposure       );
+                            c.Modified |= drawFloat(WordsMap::Get("Contrast"       ).c_str(), &c.Contrast       );
+                            c.Modified |= drawFloat(WordsMap::Get("Hightlights"    ).c_str(), &c.Hightlights    );
+                            c.Modified |= drawFloat(WordsMap::Get("Shadow"         ).c_str(), &c.Shadow         );
+                            c.Modified |= drawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
                         });
                 }
             }

@@ -156,6 +156,18 @@ public:
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
 
+    virtual void ResetResource()
+    {
+
+    }
+
+    template <class T>
+    void Sumbmit(T &&func)
+    {
+        ResetResource();
+        func();
+    }
+
     virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0)
     {
 

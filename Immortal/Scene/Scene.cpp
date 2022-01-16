@@ -160,23 +160,25 @@ void Scene::OnRender(const Camera &camera)
     {
         for (auto o : group)
         {
-            auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
+            auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
 
             auto width = sprite.Final->Width();
             auto height = sprite.Final->Height();
 
-            pipelines.colorMixing->PushConstant(
-                sizeof(ColorMixingComponent) - sizeof(Component::Type),
-                &colorMixing.RGBA,
-                0
-            );
+            if (color.Modified || !color.Initialized)
+            {
+                pipelines.colorMixing->ResetResource();
+                pipelines.colorMixing->PushConstant(
+                    sizeof(ColorMixingComponent) - offsetof(ColorMixingComponent, RGBA),
+                    &color.RGBA,
+                    0
+                );
+                pipelines.colorMixing->Bind(sprite.Texture.get(), 0);
+                pipelines.colorMixing->Bind(sprite.Final.get(), 1);
+                pipelines.colorMixing->Dispatch(width / 16, height / 16, 1);
 
-            LOG::DEBUG("Binding #0 {0}", (void *)sprite.Texture.get());
-            LOG::DEBUG("Binding #1 {0}", (void *)sprite.Final.get());
-            pipelines.colorMixing->Bind(sprite.Texture.get(), 0);
-            pipelines.colorMixing->Bind(sprite.Final.get(), 1);
-
-            pipelines.colorMixing->Dispatch(width / 16, height / 16, 1);
+                color.Initialized = true;
+            }
         }
     }
 
@@ -231,7 +233,7 @@ void Scene::OnRender(const Camera &camera)
     for (auto o : group)
     {
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
-        Render2D::DrawQuad(transform, sprite.Texture, sprite.TilingFactor, sprite.Color, (int)o);
+        Render2D::DrawQuad(transform, sprite.Final, sprite.TilingFactor, sprite.Color, (int)o);
     }
     Render2D::EndScene();
 

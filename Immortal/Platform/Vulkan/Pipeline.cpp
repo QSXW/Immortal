@@ -123,7 +123,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
 
     std::array<VkDynamicState, 2> dynamic{
         VK_DYNAMIC_STATE_VIEWPORT,
-VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_SCISSOR,
     };
     state->dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     state->dynamic.dynamicStateCount = dynamic.size();
@@ -371,6 +371,11 @@ void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t off
             data
         );
         });
+}
+
+void ComputePipeline::ResetResource()
+{
+    // descriptorPool->Reset();
 }
 
 }
