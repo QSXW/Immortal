@@ -183,8 +183,8 @@ struct SpriteRendererComponent : public Component
 {
     static inline Texture::Description Desc = {
         Format::RGBA8,
-        Texture::Wrap::Repeat,
-        Texture::Filter::Linear
+        Wrap::Repeat,
+        Filter::Linear
     };
 
     SpriteRendererComponent() :

@@ -99,7 +99,8 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, float metallic, float roughness)
 
 void main()
 {
-	vec3 albedo = texture(AlbedoMap, fsInput.TexCoord).rgb;
+	vec2 uv = fsInput.TexCoord;
+	vec3 color = texture(AlbedoMap, vec2(uv.x, 1.0f - uv.y) ).rgb * inModel.color;
 
 	vec3 N = normalize(fsInput.Normal);
 	vec3 V = normalize(shading.camPos - fsInput.WorldPos);
@@ -116,11 +117,10 @@ void main()
 	};
 
 	// Combine with ambient
-	vec3 color = albedo * inModel.color * 0.02;
 	color += Lo;
 
 	// Gamma correct
-	color = pow(color, vec3(0.4545));
+	// color = pow(color, vec3(0.4545));
 
 	outColor = vec4(color, 1.0);
 

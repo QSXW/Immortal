@@ -7,6 +7,25 @@
 namespace Immortal
 {
 
+enum class Wrap
+{
+    None = 0,
+    Clamp,
+    Repeat,
+    Wrap = Repeat,
+    Mirror,
+    BorderColor
+};
+
+enum class Filter
+{
+    None = 0,
+    Linear,
+    Bilinear,
+    Nearest,
+    Anisotropic
+};
+
 class IMMORTAL_API Texture
 {
 public:
@@ -41,25 +60,6 @@ public:
         int Wrap;
     };
 
-    enum class Wrap
-    {
-        None = 0,
-        Clamp,
-        Repeat,
-        Wrap = Repeat,
-        Mirror,
-        BorderColor
-    };
-
-    enum class Filter
-    {
-        None = 0,
-        Linear,
-        Bilinear,
-        Nearest,
-        Anisotropic
-    };
-
     enum class Type
     {
         None = 0,
@@ -71,7 +71,7 @@ public:
     {
         Description() = default;
 
-        Description(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
+        Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
             Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type }
         {
         }

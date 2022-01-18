@@ -43,9 +43,8 @@ Texture::Texture(uint32_t width, uint32_t height) :
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-Texture::Texture(const std::string &path, bool flip, Texture::Wrap wrap, Texture::Filter filter)
+Texture::Texture(const std::string &path, bool flip, Wrap wrap, Filter filter)
 {
-    LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path);
 
     width = frame.Width();
@@ -63,11 +62,10 @@ Texture::Texture(const std::string &path, bool flip, Texture::Wrap wrap, Texture
     }
 }
 
-Texture::Texture(const std::string &path, bool flip) :
+Texture::Texture(const std::string &path, const Description &description) :
     filepath{ path },
     handle{ 0 }
 {
-    LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path);
 
     width  = frame.Width();
@@ -90,12 +88,10 @@ Texture::Texture(const std::string &path, bool flip) :
     {
         glGenerateTextureMipmap(handle);
     }
-    LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
-Texture::Texture(const std::string &path, Texture::Wrap wrap, Texture::Filter filter)
+Texture::Texture(const std::string &path, Wrap wrap, Filter filter)
 {
-    LOG::INFO("{0} Loading: {1}", __func__, path);
     Frame frame = Frame(path);
 
     width = frame.Width();
@@ -118,7 +114,6 @@ Texture::Texture(const std::string &path, Texture::Wrap wrap, Texture::Filter fi
     {
         glGenerateTextureMipmap(handle);
     }
-    LOG::INFO("{0} Completed: {1}", __func__, path);
 }
 
 Texture::Texture(const uint32_t width, const uint32_t height, Texture::Description &description, int levels) :
@@ -216,11 +211,11 @@ TextureCube::TextureCube(const std::string &path)
     static constexpr uint32_t cubemapSize = 1024;
 
     // Unfiltered environment cube map (temporary).
-    TextureCube envCubeUnfiltered(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear });
+    TextureCube envCubeUnfiltered(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Linear });
     // Load & convert Equirectangular Environment Map to a Cubemap texture.
     {
         OpenGL::Shader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl", Shader::Type::Compute);
-        OpenGL::Texture envEquirect(path, false, Texture::Wrap::Clamp, Texture::Filter::Linear);
+        OpenGL::Texture envEquirect(path, false, Wrap::Clamp, Filter::Linear);
 
         equirectangleToCubeShader.Map();
         envEquirect.Map(1);
@@ -232,7 +227,7 @@ TextureCube::TextureCube(const std::string &path)
     // Compute pre-filtered specular environment map.
     {
         OpenGL::Shader spmapShader("assets/shaders/spmap_cs.glsl", Shader::Type::Compute);
-        this->Create(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Texture::Wrap::Clamp, Texture::Filter::Linear });
+        this->Create(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Linear });
 
         // Copy unfiltered texture to the current
         glCopyImageSubData(envCubeUnfiltered.Handle(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,

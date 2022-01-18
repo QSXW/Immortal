@@ -44,9 +44,9 @@ public:
         return context->GraphicsRenderer();
     }
 
-    virtual Texture::Super *CreateTexture(const std::string &filepath) override
+    virtual Texture::Super *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override
     {
-        return new Texture{ filepath };
+        return new Texture{ filepath, description };
     }
 
     virtual Texture::Super *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override

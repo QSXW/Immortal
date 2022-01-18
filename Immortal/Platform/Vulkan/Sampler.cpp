@@ -26,7 +26,7 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
     createInfo.addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     createInfo.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-    if (desc.Filter == Texture::Filter::Bilinear)
+    if (desc.Filter == Filter::Bilinear || desc.Filter == Filter::Linear)
     {
         createInfo.magFilter = VK_FILTER_LINEAR;;
         createInfo.minFilter = VK_FILTER_LINEAR;
@@ -36,19 +36,19 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
         createInfo.anisotropyEnable = VK_TRUE;
         createInfo.maxAnisotropy = device->Get<PhysicalDevice>().Properties.limits.maxSamplerAnisotropy;
     }
-    if (desc.Wrap == Texture::Wrap::Clamp)
+    if (desc.Wrap == Wrap::Clamp)
     {
         createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
-    if (desc.Wrap == Texture::Wrap::Mirror)
+    if (desc.Wrap == Wrap::Mirror || desc.Wrap == Wrap::Repeat)
     {
         createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
         createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
         createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
     }
-    if (desc.Wrap == Texture::Wrap::BorderColor)
+    if (desc.Wrap == Wrap::BorderColor)
     {
         createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;

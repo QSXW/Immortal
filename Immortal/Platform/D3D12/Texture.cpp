@@ -10,7 +10,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Texture::Texture(RenderContext *context, const std::string &filepath, bool flip)
+Texture::Texture(RenderContext *context, const std::string &filepath, const Description &description)
 {
     Frame frame{ filepath };
 

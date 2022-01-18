@@ -26,12 +26,12 @@ static inline void BindTexture(bool multisampled, uint32_t id)
     glBindTexture(TextureTarget(multisampled), id);
 }
 
-static Texture::DataType NativeTypeToOpenGl(Format format, Texture::Wrap wrap = Texture::Wrap::Clamp, Texture::Filter filter = Texture::Filter::Linear)
+static Texture::DataType NativeTypeToOpenGl(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Linear)
 {
     Texture::DataType data{};
 
-    data.Wrap = wrap == Texture::Wrap::Clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
-    data.Filter = filter == Texture::Filter::Linear ? GL_LINEAR : GL_NEAREST;
+    data.Wrap = wrap == Wrap::Clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+    data.Filter = filter == Filter::Linear ? GL_LINEAR : GL_NEAREST;
     switch (format)
     {
     case Format::R32:
@@ -107,13 +107,13 @@ public:
 public:
     Texture(uint32_t width, uint32_t height);
 
-    Texture(const std::string& path, bool flip = false);
+    Texture(const std::string &path, const Description &description);
 
-    Texture(const uint32_t width, const uint32_t height, Texture::Description &description, int levels);
+    Texture(const uint32_t width, const uint32_t height, Description &description, int levels);
 
-    Texture(const std::string & path, bool flip, Texture::Wrap wrap, Texture::Filter filter);
+    Texture(const std::string & path, bool flip, Wrap wrap, Filter filter);
 
-    Texture(const std::string & path, Texture::Wrap wrap, Texture::Filter filter);
+    Texture(const std::string & path, Wrap wrap, Filter filter);
 
     Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level = 0);
 

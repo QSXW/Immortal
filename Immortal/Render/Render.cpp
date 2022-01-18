@@ -53,7 +53,7 @@ void Render::Setup(RenderContext *context)
         constexpr uint32_t white        = 0xffffffff;
         constexpr uint32_t black        = 0x000000ff;
         constexpr uint32_t transparency = 0x00000000;
-        Texture::Description desc = { Format::RGBA8, Texture::Wrap::Repeat, Texture::Filter::Linear };
+        Texture::Description desc = { Format::RGBA8, Wrap::Repeat, Filter::Linear };
 
         data.WhiteTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
         data.BlackTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };

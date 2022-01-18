@@ -21,7 +21,7 @@ public:
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         eventSink.Listen(&RenderLayer::OnMouseDown, Event::Type::MouseButtonPressed);
 
-        renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Texture::Wrap::Clamp, Texture::Filter::Bilinear }, { Format::Depth } } }));
+        renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } }));
 
         shader = Render::Get<Shader, ShaderName::Basic>();
 
@@ -238,7 +238,7 @@ public:
             sprite.Texture = newTexture;
             sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr, Texture::Description{
                 Format::RGBA8,
-                Texture::Wrap::Clamp
+                Wrap::Clamp
                 }));
         }        
     }
@@ -258,6 +258,8 @@ public:
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
                 auto &matrial = o.Add<MaterialComponent>();
+                auto &transform = o.Get<TransformComponent>();
+                transform.Scale = { 0.01f, 0.01f, 0.01f };
             }
             else 
             {
@@ -266,7 +268,7 @@ public:
                 sprite.Texture = texture;
                 sprite.Final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
                     Format::RGBA8,
-                    Texture::Wrap::Clamp
+                    Wrap::Clamp
                     }));
 
                 o.Add<ColorMixingComponent>();

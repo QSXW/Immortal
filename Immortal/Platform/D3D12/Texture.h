@@ -19,7 +19,7 @@ public:
     using Super = SuperTexture;
 
 public:
-    Texture(RenderContext *context, const std::string &filepath, bool flip = false);
+    Texture(RenderContext *context, const std::string &filepath, const Description &description);
 
     Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description);
 

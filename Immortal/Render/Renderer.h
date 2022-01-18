@@ -56,7 +56,7 @@ public:
         return nullptr;
     }
 
-    virtual Texture *CreateTexture(const std::string &filepath)
+    virtual Texture *CreateTexture(const std::string &filepath, const Texture::Description &description = {})
     {
         return nullptr;
     }

@@ -59,6 +59,24 @@ public:
                             ImGui::ColorEdit4("##C", (float *)&material.AlbedoColor);
                             ImGui::NextColumn();
                             ImGui::PopID();
+
+                            ImGui::Columns(1);
+                            auto &textures = material.Textures;
+                            ImVec2 size = { 64.0f, 64.0f };
+                            if (ImGui::ImageButton((ImTextureID)(uint64_t)*textures.Albedo, size))
+                            {
+                                auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+                                if (res.has_value())
+                                {
+                                    textures.Albedo.reset(Render::Create<Texture>(
+                                        res.value(),
+                                        Texture::Description{
+                                            Format::UNDEFINED,
+                                            Wrap::Mirror,
+                                            Filter::Linear
+                                        }));
+                                }
+                            }
                         });
                 }
 
