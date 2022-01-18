@@ -8,9 +8,17 @@ struct ModelInfo
 	int   objectID;
 };
 
-layout (location = 0) in vec3 inWorldPos;
-layout (location = 1) in vec3 inNormal;
-layout (location = 2) in flat ModelInfo inModel;
+struct FSInput
+{
+    vec3 WorldPos;
+    vec3 Normal;
+    vec3 Tagent;
+    vec3 Bitagent;
+    vec2 TexCoord;
+};
+
+layout (location = 0) in FSInput fsInput;
+layout (location = 5) in flat ModelInfo inModel;
 
 struct Light {
     vec3 position;
@@ -21,6 +29,8 @@ layout (binding = 1) uniform Shading {
     Light lights[4];
     vec3 camPos;
 } shading;
+
+layout (binding = 2) uniform sampler2D AlbedoMap;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out int  outObjectID;
@@ -89,22 +99,24 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, float metallic, float roughness)
 
 void main()
 {
-	vec3 N = normalize(inNormal);
-	vec3 V = normalize(shading.camPos - inWorldPos);
+	vec3 albedo = texture(AlbedoMap, fsInput.TexCoord).rgb;
+
+	vec3 N = normalize(fsInput.Normal);
+	vec3 V = normalize(shading.camPos - fsInput.WorldPos);
 
 	float roughness = inModel.roughness;
 
-	roughness = max(roughness, step(fract(inWorldPos.y * 2.02), 0.5));
+	roughness = max(roughness, step(fract(fsInput.WorldPos.y * 2.02), 0.5));
 
 	// Specular contribution
 	vec3 Lo = vec3(0.0);
 	for (int i = 0; i < 3; i++) {
-		vec3 L = normalize(shading.lights[i].position - inWorldPos);
+		vec3 L = normalize(shading.lights[i].position - fsInput.WorldPos);
 		Lo += BRDF(L, V, N, inModel.metallic, roughness);
 	};
 
 	// Combine with ambient
-	vec3 color = inModel.color * 0.02;
+	vec3 color = albedo * inModel.color * 0.02;
 	color += Lo;
 
 	// Gamma correct

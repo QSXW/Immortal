@@ -34,7 +34,6 @@ public:
         pipelines.graphics->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index)   });
         pipelines.graphics->Set(triangle.Description());
         pipelines.graphics->Create(renderTarget);
-        pipelines.graphics->Bind(Render::Preset()->WhiteTexture.get(), 1);
         pipelines.graphics->Bind("UBO", uniformBuffer.get());
 
         camera.primaryCamera.SetOrthographic(1.2f);

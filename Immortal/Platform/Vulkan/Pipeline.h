@@ -137,16 +137,8 @@ private:
         state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
     }
 
-    bool Ready()
-    {
-        bool ready = descriptorSetUpdater->Ready();
-        if (ready)
-        {
-            Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
-            descriptorSetUpdater->Set(descriptorSet);
-        }
-        return ready;
-    }
+private:
+    bool Ready();
 
 private:
     Device *device{ nullptr };
@@ -165,7 +157,7 @@ private:
 
     VkDescriptorSetLayout descriptorSetLayout;
 
-    VkDescriptorSet descriptorSet;
+    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
     DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
 };
@@ -196,17 +188,6 @@ public:
 
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 
-    bool Ready()
-    {
-        bool ready = descriptorSetUpdater->Ready();
-        if (ready)
-        {
-            Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
-            descriptorSetUpdater->Set(descriptorSet);
-        }
-        return ready;
-    }
-
     const VkPipelineLayout &Layout() const
     {
         return layout;
@@ -216,6 +197,9 @@ public:
     {
         return descriptorSet;
     }
+
+private:
+    bool Ready();
 
 private:
     Device *device{ nullptr };

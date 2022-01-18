@@ -154,10 +154,32 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
 }
 
+bool GraphicsPipeline::Ready()
+{
+    bool ready = descriptorSetUpdater->Ready();
+    if (ready)
+    {
+        Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
+        descriptorSetUpdater->Set(descriptorSet);
+    }
+    return ready;
+}
+
 void GraphicsPipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
     auto texture = dynamic_cast<Texture *>(superTexture);
-    Bind(rcast<const Descriptor *>(&texture->DescriptorInfo()), slot);
+    auto descriptor = rcast<const Descriptor *>(&texture->DescriptorInfo());
+    
+    for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
+    {
+        if (writeDesc.dstBinding == slot &&
+            Equals(writeDesc.pImageInfo, descriptor))
+        {
+            return;
+        }
+    }
+
+    Bind(descriptor, slot);
 }
 
 void GraphicsPipeline::Bind(const std::string &name, const Buffer::Super *uniform)
@@ -371,6 +393,17 @@ void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t off
             data
         );
         });
+}
+
+bool ComputePipeline::Ready()
+{
+    bool ready = descriptorSetUpdater->Ready();
+    if (ready)
+    {
+        Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
+        descriptorSetUpdater->Set(descriptorSet);
+    }
+    return ready;
 }
 
 void ComputePipeline::ResetResource()

@@ -6,6 +6,12 @@ namespace sl
 {
 
 template <class T, class O>
+inline constexpr T CAST(O o)
+{
+    return (T)o;
+}
+
+template <class T, class O>
 inline constexpr T rcast(O o)
 {
     return reinterpret_cast<T>(o);
@@ -92,6 +98,11 @@ template <class T>
 inline constexpr T RemoveConst(const T o)
 {
     return const_cast<T>(o);
+}
+
+inline bool Equals(const void *lhs, const void *rhs)
+{
+    return CAST<size_t>(lhs) == CAST<size_t>(rhs);
 }
 
 }
