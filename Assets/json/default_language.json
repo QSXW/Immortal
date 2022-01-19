@@ -51,7 +51,10 @@
             "Shadow": "阴影",
             "Vividness": "鲜明度",
             "Color": "颜色",
-            "Material": "材质"
+            "Material": "材质",
+            "Metallic": "金属",
+            "Roughness": "粗糙度",
+            "Smoothness": "平滑"
         }
     }
 }

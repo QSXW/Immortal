@@ -53,7 +53,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     entity = registry.create();
     registry.emplace<TransformComponent>(entity);
 
-    meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
+    // meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
     // textures.skybox.reset(Render::Create<TextureCube>("assets/textures/environment.hdr"));
 
     uniforms.transform.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform), 0));

@@ -12,6 +12,10 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
     device{ device }
 {
     Frame frame{ filepath };
+    if (!frame.Available())
+    {
+        return;
+    }
 
     width     = frame.Width();
     height    = frame.Height();

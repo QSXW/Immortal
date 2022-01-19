@@ -13,7 +13,7 @@ public:
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->WhiteTexture;
 
-        pipeline.reset(Render::Create<Pipeline>(Render::Get<Shader, ShaderName::Basic>()));
+        pipeline.reset(Render::Create<GraphicsPipeline>(Render::Get<Shader, ShaderName::Basic>()));
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }}));
 
         auto &triangle = DataSet::Classic::Triangle;
@@ -56,14 +56,14 @@ public:
         ubo.viewProjection = camera.ViewProjection();
         uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        renderViewport.OnUpdate(renderTarget);
-        viewport.OnUpdate(texture);
+        renderViewport.OnUpdate(renderTarget, [] {});
+        viewport.OnUpdate(texture, [] {});
 
         ImGui::Begin("Control Panel");
         ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
-        UI::DrawVec3Control("Position", transformComponent.Position);
-        UI::DrawVec3Control("Rotation", transformComponent.Rotation);
-        UI::DrawVec3Control("Scale", transformComponent.Scale);
+        Immortal::UI::DrawVec3Control("Position", transformComponent.Position);
+        Immortal::UI::DrawVec3Control("Rotation", transformComponent.Rotation);
+        Immortal::UI::DrawVec3Control("Scale", transformComponent.Scale);
         ImGui::End();
 
         auto gui = Application::App()->GetGuiLayer();
@@ -130,7 +130,7 @@ private:
     EventSink<RenderLayer> eventSink;
 
     std::shared_ptr<RenderTarget> renderTarget;
-    std::shared_ptr<Pipeline> pipeline;
+    std::shared_ptr<GraphicsPipeline> pipeline;
 
     SceneCamera camera;
     TransformComponent transformComponent;

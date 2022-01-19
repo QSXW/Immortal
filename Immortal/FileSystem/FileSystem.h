@@ -112,7 +112,12 @@ static bool Exsits(const std::string &path)
 static std::string Join(const std::string &lpath, const std::string &rpath)
 {
     /* Temporary */
-    return lpath + rpath;
+    THROWIF(rpath[0] == '/', "Illegal sub-directory.");
+    if (lpath.back() == '/' || lpath.back() == '\\')
+    {
+        return lpath + rpath;
+    }
+    return lpath + std::string{ '/' } + rpath;
 }
 
 }
@@ -120,3 +125,4 @@ static std::string Join(const std::string &lpath, const std::string &rpath)
 };
 
 }
+

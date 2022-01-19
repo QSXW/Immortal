@@ -71,6 +71,14 @@ public:
     {
         Description() = default;
 
+        Description(Wrap wrap, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
+            Wrap{ wrap },
+            Filter{ filter },
+            Type{ type }
+        {
+
+        }
+
         Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
             Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type }
         {

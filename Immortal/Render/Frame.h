@@ -41,7 +41,7 @@ public:
 
     virtual bool Available()
     {
-        return !!decoder->Data();
+        return !!decoder && !!decoder->Data();
     }
 
     virtual size_t Size() const

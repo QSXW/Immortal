@@ -4,6 +4,7 @@
 
 #include "Buffer.h"
 #include "Shader.h"
+#include "Texture.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -156,6 +157,10 @@ private:
         bool playing = true;
     } animation;
 
+public:
+    struct {
+        std::shared_ptr<Texture> Albedo;
+    } Textures[8];
 };
 
 }

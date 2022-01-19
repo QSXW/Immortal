@@ -15,6 +15,25 @@ public:
             ImGuiTreeNodeFlags_AllowItemOverlap |
             ImGuiTreeNodeFlags_FramePadding;
 
+    static inline bool DrawFloat(const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f)
+    {
+        bool modified = false;
+
+        ImGui::PushID(label.c_str());
+
+        ImGui::Columns(2);
+        ImGui::Text(label.c_str());
+        ImGui::SetColumnWidth(0, 64);
+        ImGui::NextColumn();
+        ImGui::PushItemWidth(-1);
+        modified |= ImGui::SliderFloat("##C", values, min, max);
+
+        ImGui::Columns(1);
+        ImGui::PopID();
+
+        return modified;
+    };
+
 public:
     void OnUpdate(Object &o)
     {
@@ -60,6 +79,11 @@ public:
                             ImGui::NextColumn();
                             ImGui::PopID();
 
+                            float smoothness = 1.0f - material.Roughness;
+                            DrawFloat(WordsMap::Get("Metallic"),   &material.Metallic, 0.001, 0, 1.0f);
+                            DrawFloat(WordsMap::Get("Smoothness"), &smoothness,        0.001, 0, 1.0f);
+                            material.Roughness = 1.0f - smoothness;
+
                             ImGui::Columns(1);
                             auto &textures = material.Textures;
                             ImVec2 size = { 64.0f, 64.0f };
@@ -87,29 +111,11 @@ public:
                         [&]() -> void {    
                             auto &c = o.Get<ColorMixingComponent>();
                             c.Modified = false;
-
-                            auto drawFloat = [&](const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f) {
-                                bool modified = false;
-
-                                ImGui::PushID(label.c_str());
-
-                                ImGui::Columns(2);
-                                ImGui::Text(label.c_str());
-                                ImGui::SetColumnWidth(0, 64);
-                                ImGui::NextColumn();
-                                ImGui::PushItemWidth(-1);
-                                modified |= ImGui::SliderFloat("##C", values, min, max);
-
-                                ImGui::Columns(1);
-                                ImGui::PopID();
-
-                                return modified;
-                            };
                             
-                            c.Modified |= drawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);
-                            c.Modified |= drawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
-                            c.Modified |= drawFloat(WordsMap::Get("Blue").c_str(),  &c.RGBA.b);
-                            c.Modified |= drawFloat(WordsMap::Get("Alpha").c_str(), &c.RGBA.a);
+                            c.Modified |= DrawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);
+                            c.Modified |= DrawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
+                            c.Modified |= DrawFloat(WordsMap::Get("Blue").c_str(),  &c.RGBA.b);
+                            c.Modified |= DrawFloat(WordsMap::Get("Alpha").c_str(), &c.RGBA.a);
 
                             auto channels = WordsMap::Get("Channels").c_str();
                             ImGui::PushID(channels);
@@ -123,9 +129,9 @@ public:
                             ImGui::NextColumn();
                             ImGui::PopID();
 
-                            c.Modified |= drawFloat(WordsMap::Get("Hue").c_str(),        &c.HSL.x);
-                            c.Modified |= drawFloat(WordsMap::Get("Saturation").c_str(), &c.HSL.y);
-                            c.Modified |= drawFloat(WordsMap::Get("Luminance").c_str(),  &c.HSL.z);
+                            c.Modified |= DrawFloat(WordsMap::Get("Hue").c_str(),        &c.HSL.x);
+                            c.Modified |= DrawFloat(WordsMap::Get("Saturation").c_str(), &c.HSL.y);
+                            c.Modified |= DrawFloat(WordsMap::Get("Luminance").c_str(),  &c.HSL.z);
 
                             auto hsl = WordsMap::Get("HSL").c_str();
                             ImGui::PushID(hsl);
@@ -141,13 +147,13 @@ public:
                             ImGui::Columns(1);
                             ImGui::PopID();
 
-                            c.Modified |= drawFloat(WordsMap::Get("White Gradation").c_str(), &c.Gradation.White);
-                            c.Modified |= drawFloat(WordsMap::Get("Black Gradation").c_str(), &c.Gradation.Black);
-                            c.Modified |= drawFloat(WordsMap::Get("Exposure"       ).c_str(), &c.Exposure       );
-                            c.Modified |= drawFloat(WordsMap::Get("Contrast"       ).c_str(), &c.Contrast       );
-                            c.Modified |= drawFloat(WordsMap::Get("Hightlights"    ).c_str(), &c.Hightlights    );
-                            c.Modified |= drawFloat(WordsMap::Get("Shadow"         ).c_str(), &c.Shadow         );
-                            c.Modified |= drawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
+                            c.Modified |= DrawFloat(WordsMap::Get("White Gradation").c_str(), &c.Gradation.White);
+                            c.Modified |= DrawFloat(WordsMap::Get("Black Gradation").c_str(), &c.Gradation.Black);
+                            c.Modified |= DrawFloat(WordsMap::Get("Exposure"       ).c_str(), &c.Exposure       );
+                            c.Modified |= DrawFloat(WordsMap::Get("Contrast"       ).c_str(), &c.Contrast       );
+                            c.Modified |= DrawFloat(WordsMap::Get("Hightlights"    ).c_str(), &c.Hightlights    );
+                            c.Modified |= DrawFloat(WordsMap::Get("Shadow"         ).c_str(), &c.Shadow         );
+                            c.Modified |= DrawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
                         });
                 }
             }

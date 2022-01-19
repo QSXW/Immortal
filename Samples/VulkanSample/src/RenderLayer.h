@@ -257,7 +257,9 @@ public:
                 auto &mesh = o.Add<MeshComponent>();
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
-                auto &matrial = o.Add<MaterialComponent>();
+                auto &material = o.Add<MaterialComponent>();
+                material.Textures.Albedo = mesh.Mesh->Textures->Albedo;
+
                 auto &transform = o.Get<TransformComponent>();
                 transform.Scale = { 0.01f, 0.01f, 0.01f };
             }
