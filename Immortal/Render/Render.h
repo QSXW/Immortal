@@ -7,7 +7,6 @@
 #include "Renderer.h"
 #include "Texture.h"
 #include "Shader.h"
-#include "Mesh.h"
 #include "Descriptor.h"
 
 namespace Immortal

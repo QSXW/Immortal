@@ -27,6 +27,21 @@ constexpr uint64_t MakeIdentifier(
            (((uint64_t)u0) << 8 * 0);
 }
 
+static inline uint64_t MakeIdentifier(const std::string &path)
+{
+    uint64_t id = 0;
+
+    size_t i = path.size() - 1;
+
+    id |= std::toupper(path[i--]);
+    while (i && path[i] != '.')
+    {
+        id = (id << 8) | std::toupper(path[i--]);
+    }
+
+    return path[i] == '.' ? id : 0;
+}
+
 enum class FileType
 {
     Binary,
@@ -35,21 +50,38 @@ enum class FileType
 
 enum class FileFormat : uint64_t
 {
-    BMP  = MakeIdentifier('.', 'b', 'm', 'p'),
-    FBX  = MakeIdentifier('.', 'f', 'b', 'x'),
-    OBJ  = MakeIdentifier('.', 'o', 'b', 'j'),
-    JPG  = MakeIdentifier('.', 'j', 'p', 'g'),
-    JPEG = MakeIdentifier('.', 'j', 'p', 'e', 'g')
+    BLEND = MakeIdentifier('B', 'L', 'E', 'N', 'D'),
+    BMP   = MakeIdentifier('B', 'M', 'P'),
+    FBX   = MakeIdentifier('F', 'B', 'X'),
+    OBJ   = MakeIdentifier('O', 'B', 'J'),
+    PNG   = MakeIdentifier('P', 'N', 'G'),
+    JPG   = MakeIdentifier('J', 'P', 'G'),
+    JPEG  = MakeIdentifier('J', 'P', 'E', 'G')
 };
 
 namespace FileSystem
 {
 
 template <FileFormat T>
-bool IsFormat(const std::string &path)
+inline constexpr bool IsFormat(const std::string &path)
 {
-    auto p = path.c_str() + path.size();
-    return U64(T) == (uint64_t)*(uint32_t *)(p - 4);
+    auto id = MakeIdentifier(path);
+    return id == U64(T);
+}
+
+template <FileFormat T>
+inline constexpr bool IsFormat(uint64_t id)
+{
+    return id == U64(T);
+}
+
+static inline bool Is3DModel(const std::string &path)
+{
+    auto id = MakeIdentifier(path);
+
+    return IsFormat<FileFormat::OBJ>(id) ||
+           IsFormat<FileFormat::FBX>(id) ||
+           IsFormat<FileFormat::BLEND>(id);
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename)

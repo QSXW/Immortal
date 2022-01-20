@@ -8,11 +8,6 @@
 namespace Immortal
 {
 
-char FileDialogs::ImageFilter[] = {
-    ""
-//"Image File(*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif)\0(*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif)\0";
-};
-
 std::optional<std::string> FileDialogs::OpenFile(const char *filter)
 {
     OPENFILENAMEA ofn;

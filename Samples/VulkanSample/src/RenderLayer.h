@@ -223,7 +223,7 @@ public:
 
     void OnTextureLoaded()
     {
-        auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+        auto res = FileDialogs::OpenFile(FileFilter::Image);
         if (res.has_value())
         {
             std::shared_ptr<Texture> newTexture{ Render::Create<Texture>(res.value()) };
@@ -245,25 +245,25 @@ public:
 
     bool LoadObject()
     {
-        auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+        auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())
         {
             auto o = scene.CreateObject(res.value());
 
             panels.hierarchyGraphics.Select(o);
 
-            if (FileSystem::IsFormat<FileFormat::OBJ>(res.value()) || FileSystem::IsFormat<FileFormat::FBX>(res.value()))
+            if (FileSystem::Is3DModel(res.value()))
             {
                 auto &mesh = o.Add<MeshComponent>();
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
                 auto &material = o.Add<MaterialComponent>();
-                material.Textures.Albedo = mesh.Mesh->Textures->Albedo;
+                material.Textures.Albedo = mesh.Mesh->Textures[0].Albedo;
 
                 auto &transform = o.Get<TransformComponent>();
                 transform.Scale = { 0.01f, 0.01f, 0.01f };
             }
-            else 
+            else
             {
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = o.Add<SpriteRendererComponent>();

@@ -89,7 +89,7 @@ public:
                             ImVec2 size = { 64.0f, 64.0f };
                             if (ImGui::ImageButton((ImTextureID)(uint64_t)*textures.Albedo, size))
                             {
-                                auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+                                auto res = FileDialogs::OpenFile(FileFilter::Image);
                                 if (res.has_value())
                                 {
                                     textures.Albedo.reset(Render::Create<Texture>(
