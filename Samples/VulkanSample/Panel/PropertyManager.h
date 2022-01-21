@@ -80,27 +80,48 @@ public:
                             ImGui::PopID();
 
                             float smoothness = 1.0f - material.Roughness;
-                            DrawFloat(WordsMap::Get("Metallic"),   &material.Metallic, 0.001, 0, 1.0f);
-                            DrawFloat(WordsMap::Get("Smoothness"), &smoothness,        0.001, 0, 1.0f);
+                            DrawFloat(WordsMap::Get("Metallic"), &material.Metallic, 0.001, 0, 1.0f);
+                            DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
                             material.Roughness = 1.0f - smoothness;
 
                             ImGui::Columns(1);
                             auto &textures = material.Textures;
                             ImVec2 size = { 64.0f, 64.0f };
-                            if (ImGui::ImageButton((ImTextureID)(uint64_t)*textures.Albedo, size))
-                            {
-                                auto res = FileDialogs::OpenFile(FileFilter::Image);
-                                if (res.has_value())
-                                {
-                                    textures.Albedo.reset(Render::Create<Texture>(
-                                        res.value(),
-                                        Texture::Description{
-                                            Format::UNDEFINED,
-                                            Wrap::Mirror,
-                                            Filter::Linear
-                                        }));
-                                }
-                            }
+
+                            auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
+                                    ImGui::PushID(label.c_str());
+                                    ImGui::Columns(2);
+                                    ImGui::Text(label.c_str());
+                                    ImGui::SetColumnWidth(0, 64);
+                                    ImGui::NextColumn();
+                                    ImGui::PushItemWidth(-1);
+                                    if (ImGui::ImageButton((ImTextureID)(uint64_t)*texture, size))
+                                    {
+                                        auto res = FileDialogs::OpenFile(FileFilter::Image);
+                                        if (res.has_value())
+                                        {
+                                            texture.reset(Render::Create<Texture>(
+                                                res.value(),
+                                                Texture::Description{
+                                                    Format::UNDEFINED,
+                                                    Wrap::Mirror,
+                                                    Filter::Linear
+                                                }));
+                                        }
+                                    }
+                                    ImGui::Columns(1);
+                                    ImGui::PopID();
+                            };
+                            ImGui::PushStyleColor(ImGuiCol_Header,        ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
+                            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+                            ImGui::PushStyleColor(ImGuiCol_HeaderActive,  ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+
+                            drawTexture(textures.Albedo,    WordsMap::Get("Albedo"));
+                            drawTexture(textures.Normal,    WordsMap::Get("Normal"));
+                            drawTexture(textures.Metallic,  WordsMap::Get("Metallic"));
+                            drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
+
+                            ImGui::PopStyleColor(3);
                         });
                 }
 

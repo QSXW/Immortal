@@ -1,7 +1,6 @@
 #include "impch.h"
 #include "Renderer.h"
 #include <array>
-#include "..\D3D12\Renderer.h"
 
 namespace Immortal
 {
@@ -32,6 +31,7 @@ void Renderer::Setup()
     {
         semaphores[i].acquiredImageReady = semaphorePool.Request();
         semaphores[i].renderComplete     = semaphorePool.Request();
+        semaphores[i].compute            = semaphorePool.Request();
     }
 
     queue = context->Get<Queue*>();
@@ -100,12 +100,11 @@ void Renderer::SwapBuffers()
 {
     device->DestroyObjects();
 
-    VkSemaphore computeSemaphore = semaphorePool.Request();
     VkPipelineStageFlags computeWaitDstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
     VkSubmitInfo computeSubmitInfo{};
     computeSubmitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    computeSubmitInfo.pSignalSemaphores    = &computeSemaphore;
+    computeSubmitInfo.pSignalSemaphores    = &semaphores[sync].compute;
     computeSubmitInfo.signalSemaphoreCount = 1;
     computeSubmitInfo.pWaitDstStageMask    = &computeWaitDstStageMask;
 
@@ -121,7 +120,7 @@ void Renderer::SwapBuffers()
     context->GetCommandBuffer()->End();
 
     VkSemaphore waitSemaphores[] = {
-        computeSemaphore,
+        semaphores[sync].compute,
         semaphores[sync].acquiredImageReady
     };
 

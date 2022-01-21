@@ -19,6 +19,7 @@ struct Semaphores
 {
     VkSemaphore acquiredImageReady;
     VkSemaphore renderComplete;
+    VkSemaphore compute;
 };
 
 using ThreadIndex = UINT32;
