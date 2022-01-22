@@ -24,10 +24,10 @@ Frame::Frame(const std::string &path)
             return;
         }
 
-        decoder.reset(new Media::OpenCVCodec());
+        decoder.reset(new Media::STBCodec());
         if (decoder->Decode(buf) != Media::CodecError::Succeed)
         {
-            decoder.reset(new Media::STBCodec());
+            decoder.reset(new Media::OpenCVCodec());
             {
                 decoder->Decode(buf);
             }

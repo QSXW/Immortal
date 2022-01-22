@@ -42,6 +42,8 @@ public:
             return CodecError::CorruptedBitstream;
         }
 
+        desc.Depth = 4;
+        desc.Format = Format::RGBA8;
         FillUpDescription();
 
         return CodecError::Succeed;
