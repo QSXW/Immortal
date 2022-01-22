@@ -41,26 +41,30 @@ public:
         for (int i = 0; i < num; i++)
         {
             semaphores[i] = Thread::State::Idle;
-            threads.emplace_back([=]() -> void {  while (true) {
-                static Thread::Semaphore *semaphore = semaphores + i;
-                Task task;
+            threads.emplace_back([=]() -> void {
+                while (true)
                 {
-                    std::unique_lock<std::mutex> lock{ mutex };
-                    condition.wait(lock, [=] { return stopping || !tasks.empty(); });
-                    if (stopping)
+                    static Thread::Semaphore *semaphore = semaphores + i;
+                    Task task;
                     {
-                        LOG::INFO("Stopping Thread -> \tid => {0}\thandle => {1}",
-                                  threads[i].get_id(), threads[i].native_handle());
-                        break;
+                        std::unique_lock<std::mutex> lock{ mutex };
+                        condition.wait(lock, [=] { return stopping || !tasks.empty(); });
+
+                        if (stopping)
+                        {
+                            LOG::DEBUG("Stopping Thread -> \tid => {0}\thandle => {1}",
+                                      threads[i].get_id(), threads[i].native_handle());
+                            break;
+                        }
+                        *semaphore = Thread::State::Block;
+                        task = std::move(tasks.front());
+                        tasks.pop();
                     }
-                    *semaphore = Thread::State::Block;
-                    task = std::move(tasks.front());
-                    tasks.pop();
+                    task();
+                    *semaphore = Thread::State::Idle;
                 }
-                task();
-                *semaphore = Thread::State::Idle;
-            }});
-            LOG::INFO("\tid => {0}\thandle => {1}", threads[i].get_id(), threads[i].native_handle());
+            });
+            LOG::DEBUG("\tid => {0}\thandle => {1}", threads[i].get_id(), threads[i].native_handle());
         }
     }
 

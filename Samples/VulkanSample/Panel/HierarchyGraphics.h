@@ -59,7 +59,7 @@ public:
     void OnUpdate(Scene *scene, Callback callback)
     {
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
-        ImGui::Begin(WordsMap::Get("Hierarchy Graphics"));
+        ImGui::Begin(WordsMap::Get("Project"));
 
         {
             scene->Registry().each([&](auto id)

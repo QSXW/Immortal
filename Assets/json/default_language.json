@@ -54,7 +54,8 @@
             "Material": "材质",
             "Metallic": "金属",
             "Roughness": "粗糙度",
-            "Smoothness": "平滑"
+            "Smoothness": "平滑",
+            "Project": "项目"
         }
     }
 }
