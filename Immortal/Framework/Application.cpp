@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Async.h"
 #include "Render/Render.h"
+#include "Render/RenderContext.h"
 
 namespace Immortal
 {

@@ -61,7 +61,7 @@ public:
         return nullptr;
     }
 
-    virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
+    virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {})
     {
         return nullptr;
     }

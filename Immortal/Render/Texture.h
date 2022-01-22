@@ -69,7 +69,15 @@ public:
 
     struct Description
     {
-        Description() = default;
+        Description()
+        {
+
+        }
+
+        Description(std::initializer_list<Description> &list)
+        {
+            
+        }
 
         Description(Wrap wrap, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
             Wrap{ wrap },
@@ -82,6 +90,7 @@ public:
         Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
             Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type }
         {
+
         }
 
         template <class T>

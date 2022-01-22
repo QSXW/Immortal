@@ -232,14 +232,14 @@ public:
 
             if (!selectedObject.Has<SpriteRendererComponent>())
             {
-                selectedObject.Add<SpriteRendererComponent>();
+                selectedObject.AddComponent<SpriteRendererComponent>();
             }
-            auto &sprite = selectedObject.Get<SpriteRendererComponent>();
+            auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
             sprite.Texture = newTexture;
-            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr, Texture::Description{
-                Format::RGBA8,
-                Wrap::Clamp
-                }));
+            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr));
+
+            auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
+            colorMixing.Initialized = false;
         }        
     }
 

@@ -26,6 +26,8 @@ void PixelBuffer::Create(const Device *device, const D3D12_RESOURCE_DESC &desc, 
         &clearValue,
         &resource
     );
+
+    LOG::INFO("Create Resource: {0}", (void *)resource);
 }
 
 void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
@@ -221,13 +223,13 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
             clearValue.Color[2] = Super::clearValues[index].b;
             clearValue.Color[3] = Super::clearValues[index].a;
 
-            attachments.color.emplace_back(ColorBuffer{});
-            auto &colorBuffer = attachments.color.back();
+            ColorBuffer colorBuffer{};
             colorBuffer.Create(device, resourceDesc, clearValue);
+            attachments.color.emplace_back(std::move(colorBuffer));
         }
         index++;
     }
-
+    
 #ifdef SLDEBUG
     attachments.depth.Set(L"RenderTarget::DepthStencilAttachment");
     for (size_t i = 0; i < attachments.color.size(); i++)
@@ -239,7 +241,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
 
 RenderTarget::~RenderTarget()
 {
-
+    attachments.color.clear();
 }
 
 void RenderTarget::Map(uint32_t slot)

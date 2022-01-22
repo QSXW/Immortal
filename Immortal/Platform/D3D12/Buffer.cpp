@@ -62,7 +62,7 @@ void Buffer::InternelCreate(const Device *device)
         &resource
     );
 
-    gpuVirtualAddress = resource->GetGPUVirtualAddress();
+    virtualAddress = resource->GetGPUVirtualAddress();
 }
 
 void Buffer::Update(uint32_t updateSize, const void *data)

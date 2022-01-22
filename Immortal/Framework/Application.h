@@ -8,7 +8,6 @@
 #include "LayerStack.h"
 
 #include "ImGui/GuiLayer.h"
-#include "Render/RenderContext.h"
 
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
@@ -16,6 +15,8 @@
 
 namespace Immortal
 {
+
+class RenderContext;
 
 struct Configuration
 {

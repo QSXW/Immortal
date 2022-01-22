@@ -16,8 +16,6 @@ class Buffer : public SuperBuffer, public Resource
 public:
     using Super = SuperBuffer;
 
-    using HandleType = ID3D12Resource*;
-
     struct VertexView : public D3D12_VERTEX_BUFFER_VIEW
     {
         using Primitive = D3D12_VERTEX_BUFFER_VIEW;
@@ -65,11 +63,6 @@ public:
 
     virtual ~Buffer() override;
 
-    operator const HandleType() const
-    {
-        return resource;
-    }
-
     virtual void Update(uint32_t size, const void *data) override;
 
     void Map(void **data)
@@ -86,15 +79,12 @@ public:
 
     operator D3D12_GPU_VIRTUAL_ADDRESS() const
     {
-        return gpuVirtualAddress;
+        return virtualAddress;
     }
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC Desc() const
     {
-        return D3D12_CONSTANT_BUFFER_VIEW_DESC{
-            gpuVirtualAddress,
-            size
-        };
+        return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, size };
     }
 
     uint32_t Binding() const

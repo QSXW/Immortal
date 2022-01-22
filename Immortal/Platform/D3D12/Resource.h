@@ -10,15 +10,43 @@ namespace D3D12
 class Resource
 {
 public:
-    virtual ~Resource()
+    Resource() :
+        resource{ nullptr },
+        virtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL },
+        state{ D3D12_RESOURCE_STATE_COMMON, (D3D12_RESOURCE_STATES)-1 }
+    {
+
+    }
+
+    ~Resource()
     {
         Destory();
+    }
+
+    Resource(Resource &&other) :
+        resource{ other.resource },
+        virtualAddress{ other.virtualAddress },
+        state{ other.state }
+    {
+        other.resource = nullptr;
+        other.virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
+    }
+
+    Resource &operator=(Resource &&other)
+    {
+        resource       = other.resource;
+        virtualAddress = other.virtualAddress;
+        state          = other.state;
+
+        other.resource = nullptr;
+        other.virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 
     virtual void Destory()
     {
         IfNotNullThenRelease(resource);
-        gpuVirtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
+        resource = nullptr;
+        virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 
     void Set(const std::wstring &name)
@@ -37,15 +65,15 @@ public:
     }
 
 protected:
-    ID3D12Resource *resource{ nullptr };
+    ID3D12Resource *resource;
+
+    D3D12_GPU_VIRTUAL_ADDRESS virtualAddress;
 
     struct
     {
-        D3D12_RESOURCE_STATES usage{ D3D12_RESOURCE_STATE_COMMON };
-        D3D12_RESOURCE_STATES transition{ (D3D12_RESOURCE_STATES)-1 };
+        D3D12_RESOURCE_STATES usage;
+        D3D12_RESOURCE_STATES transition;
     } state;
-
-    D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL };
 };
 
 }

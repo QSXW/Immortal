@@ -72,7 +72,7 @@ public:
     
     bool LoadObject()
     {
-        auto res = FileDialogs::OpenFile(FileDialogs::ImageFilter);
+        auto res = FileDialogs::OpenFile(FileFilter::Image);
         if (res.has_value())
         {
             texture.reset(Render::Create<Texture>(res.value()));
