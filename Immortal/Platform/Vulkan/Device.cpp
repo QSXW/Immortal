@@ -341,28 +341,18 @@ void Device::DestroyObjects()
     SLROTATE(destroyCoroutine.freeing, 3);
 
     /* all objects in queue is safe to destory now */
-    //Async::Execute([&] {
-    //    while (!queue.empty())
-    //    {
-    //        std::function<void()> func;
-    //        {
-    //            std::unique_lock<std::mutex> lock{ mutex };
-    //            func = queue.front();
-    //            queue.pop();
-    //        }
-    //        func();
-    //    }
-    //    });
-    while (!queue.empty())
-    {
-        std::function<void()> func;
+    Async::Execute([&] {
+        while (!queue.empty())
         {
-            std::unique_lock<std::mutex> lock{ mutex };
-            func = queue.front();
-            queue.pop();
+            std::function<void()> func;
+            {
+                std::unique_lock<std::mutex> lock{ mutex };
+                func = queue.front();
+                queue.pop();
+            }
+            func();
         }
-        func();
-    }
+        });
 }
 
 }
