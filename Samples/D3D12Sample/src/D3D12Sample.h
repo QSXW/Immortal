@@ -26,6 +26,8 @@ public:
         uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
         pipeline->Bind("ubo", uniformBuffer.get());
         camera.SetPerspective(90.0f);
+
+        transformComponent.Position.z = -0.5f;
     }
 
     ~RenderLayer()

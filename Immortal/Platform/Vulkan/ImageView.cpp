@@ -55,6 +55,7 @@ ImageView::~ImageView()
 {
     if (device)
     {
+        device->Wait();
         device->Destroy(handle);
     }
 }

@@ -236,7 +236,7 @@ public:
             }
             auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
             sprite.Texture = newTexture;
-            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr));
+            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr, Texture::Description{ Format::RGBA8 }));
 
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;

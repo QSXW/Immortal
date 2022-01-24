@@ -414,6 +414,7 @@ void Shader::SetupDescriptorSetLayout(Stage stage)
             }
             writeDescriptor.descriptorType = bindingInfo.descriptorType;
 
+            poolSizes.emplace_back(VkDescriptorPoolSize{ bindingInfo.descriptorType, U32(resource.count) * 1000 });
             descriptorSetLayoutBindings.emplace_back(std::move(bindingInfo));
             descriptorSetUpdater.Emplace(resource.name, std::move(writeDescriptor));
         }

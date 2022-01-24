@@ -59,10 +59,9 @@ void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superT
 {
     Reconstruct(superTarget);
 
-    descriptorPool.reset(new DescriptorPool{ device, Limit::PoolSize  });
-
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
+    descriptorPool.reset(new DescriptorPool{ device, shader->PoolSize() });
 
     if (Ready())
     {
@@ -210,8 +209,7 @@ void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 }
 
 ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
-    device{ device },
-    descriptorPool{ new DescriptorPool{ device, Limit::PoolSize} }
+    device{ device }
 {
     auto shader = dynamic_cast<Shader *>(superShader);
     auto &stage = shader->Stages();
@@ -219,6 +217,8 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
     layout = shader->Get<PipelineLayout&>();
     descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
     descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
+
+    descriptorPool.reset(new DescriptorPool{ device , shader->PoolSize() });
 
     VkComputePipelineCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

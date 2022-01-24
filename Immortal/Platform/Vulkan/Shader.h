@@ -54,6 +54,11 @@ public:
         }
     }
 
+    const std::vector<VkDescriptorPoolSize> &PoolSize() const
+    {
+        return poolSizes;
+    }
+ 
 private:
     void Reflect(const std::string &source);
 
@@ -75,6 +80,8 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
 
     DescriptorSetUpdater descriptorSetUpdater;
+
+    std::vector<VkDescriptorPoolSize> poolSizes;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
 
