@@ -187,8 +187,6 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
 Swapchain::Swapchain(Swapchain &oldSwapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform) :
     Swapchain{ oldSwapchain, oldSwapchain.device, oldSwapchain.surface, extent, oldSwapchain.properties.ImageCount, transform, oldSwapchain.properties.PresentMode, oldSwapchain.properties.ImageUsage }
 {
-    presentModePriorities = oldSwapchain.presentModePriorities;
-    surfaceFormatPriorities = oldSwapchain.surfaceFormatPriorities;
     Create();
 }
 
@@ -215,9 +213,6 @@ Swapchain::Swapchain(Swapchain                           &oldSwapchain,
     device{ device },
     surface{ surface }
 {
-    presentModePriorities  = oldSwapchain.presentModePriorities;
-    surfaceFormatPriorities = oldSwapchain.surfaceFormatPriorities;
-
     VkPhysicalDevice &physicalDevice = device->Get<PhysicalDevice>();
     VkSurfaceCapabilitiesKHR surfaceCapabilities{};
     Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities));
@@ -247,7 +242,7 @@ Swapchain::Swapchain(Swapchain                           &oldSwapchain,
     this->properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
     this->properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
     this->properties.ArrayLayers   = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
-    this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, surfaceFormatPriorities);
+    this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, Priorities.SurfaceFormat);
 
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, this->properties.SurfaceFormat.format, &formatProperties);
@@ -267,8 +262,8 @@ Swapchain::~Swapchain()
 void Swapchain::Create()
 {
     // Revalidate the present mode and surface format
-    properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, presentModePriorities);
-    properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, surfaceFormatPriorities);
+    properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, Priorities.PresentMode);
+    properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, Priorities.SurfaceFormat);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

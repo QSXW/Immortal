@@ -184,7 +184,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
     }
     regisry.preTransform = transform;
 
-    for (auto &handle : swapchain->Get<Swapchain::Images>())
+    for (auto &handle : swapchain->Get<Swapchain::Images&>())
     {
         auto image = std::make_unique<Image>(
             device.get(),
