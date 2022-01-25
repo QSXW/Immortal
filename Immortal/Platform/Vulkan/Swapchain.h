@@ -16,10 +16,10 @@ public:
     struct Properties
     {
         VkSwapchainKHR                OldSwapchain;
-        UINT32                        ImageCount{ 3 };
+        uint32_t                      ImageCount{ 3 };
         VkExtent2D                    Extent{};
         VkSurfaceFormatKHR            SurfaceFormat{};
-        UINT32                        ArrayLayers{ 1 };
+        uint32_t                      ArrayLayers{ 1 };
         VkImageUsageFlags		      ImageUsage;
         VkSurfaceTransformFlagBitsKHR PreTransform;
         VkCompositeAlphaFlagBitsKHR   CompositeAlpha;
@@ -28,27 +28,25 @@ public:
 
     static constexpr uint32_t MaxFrameCount{ 3 };
 
-    static inline constexpr bool IsOutputNeed = false;
-
 public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
-    Swapchain(Device                              &device,
+    Swapchain(Device                              *device,
               VkSurfaceKHR                         surface,
-              const VkExtent2D                    &extent = {},
-              const UINT32                         imageCount       = 3,
-              const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-              const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
-              const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
+              const VkExtent2D                    &extent      = {},
+              const uint32_t                       imageCount  = 3,
+              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
+              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     Swapchain(Swapchain                           &oldSwapchain,
-              Device                              &device,
+              Device                              *device,
               VkSurfaceKHR                         surface,
-              const VkExtent2D                    &extent = {},
-              const uint32_t                       imageCount       = 3,
-              const VkSurfaceTransformFlagBitsKHR  transform        = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-              const VkPresentModeKHR               presentMode      = VK_PRESENT_MODE_FIFO_KHR,
-              const std::set<VkImageUsageFlagBits> &imageUsageFlags = { VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT });
+              const VkExtent2D                    &extent      = {},
+              const uint32_t                       imageCount  = 3,
+              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
+              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
     ~Swapchain();
 
@@ -97,10 +95,6 @@ public:
         {
             return images;
         }
-        if constexpr (IsPrimitiveOf<FrameIndex, T>())
-        {
-            return frameIndex;
-        }
         if constexpr (IsPrimitiveOf<Surface, T>())
         {
             return surface;
@@ -127,19 +121,17 @@ public:
         surfaceFormatPriorities = surfaceFormatPriorities;
     }
 
-    VkResult AcquireNextImage(UINT32 *index, VkSemaphore semaphore, VkFence fence)
+    VkResult AcquireNextImage(uint32_t *index, VkSemaphore semaphore, VkFence fence)
     {
-        return vkAcquireNextImageKHR(device.Handle(), handle, std::numeric_limits<uint64_t>::max(), semaphore, fence, index);
+        return vkAcquireNextImageKHR(*device, handle, std::numeric_limits<uint64_t>::max(), semaphore, fence, index);
     }
 
 private:
-    Device &device;
+    Device *device{ nullptr };
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
     VkSwapchainKHR handle{ VK_NULL_HANDLE };
-
-    FrameIndex frameIndex{ 0 };
 
     std::vector<VkImage> images;
 
@@ -162,8 +154,6 @@ private:
     };
 
     VkPresentModeKHR presentMode{};
-
-    std::set<VkImageUsageFlagBits> imageUsageFlags;
 };
 
 }

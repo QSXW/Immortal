@@ -98,6 +98,12 @@ public:
         return vkCreate##T(handle, pCreateInfo, pAllocator, pObject); \
     }
 
+#define DEFINE_CREATE_VK_KHR_OBJECT(T) \
+    VkResult Create(const Vk##T##CreateInfoKHR *pCreateInfo, VkAllocationCallbacks *pAllocator, Vk##T##KHR *pObject) \
+    { \
+        return vkCreate##T##KHR(handle, pCreateInfo, pAllocator, pObject); \
+    }
+
     DEFINE_CREATE_VK_OBJECT(Buffer)
     DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
     DEFINE_CREATE_VK_OBJECT(Framebuffer)
@@ -106,6 +112,7 @@ public:
     DEFINE_CREATE_VK_OBJECT(RenderPass)
     DEFINE_CREATE_VK_OBJECT(Sampler)
     DEFINE_CREATE_VK_OBJECT(ShaderModule)
+    DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destroy(Vk##T object, const VkAllocationCallbacks *pAllocator = nullptr) \
@@ -131,6 +138,7 @@ public:
     DEFINE_DESTORY_VK_OBJECT(RenderPass)
     DEFINE_DESTORY_VK_OBJECT(Sampler)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
+    DEFINE_DESTORY_VK_OBJECT(SwapchainKHR)
 
 #define DEFINE_RESET_OBJECT(T) \
     void Reset(Vk##T object, Vk##T##ResetFlags flags) \

@@ -72,15 +72,15 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
     if (surface != VK_NULL_HANDLE)
     {
         VkSurfaceCapabilitiesKHR surfaceProperties{};
-        Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, &surfaceProperties));
+        Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceProperties));
 
         if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
         {
-            swapchain = std::make_unique<Swapchain>(*device, surface, surfaceExtent);
+            swapchain = std::make_unique<Swapchain>(device.get(), surface, surfaceExtent);
         }
         else
         {
-            swapchain = std::make_unique<Swapchain>(*device, surface);
+            swapchain = std::make_unique<Swapchain>(device.get(), surface);
         }
     }
     Prepare();

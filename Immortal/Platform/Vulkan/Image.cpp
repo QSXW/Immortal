@@ -156,17 +156,26 @@ Image::Image(const Image &other) :
     }
 }
 
-void Destory(Device *device, VkImage image, VmaAllocation memory)
-{
-    vmaDestroyImage(device->MemoryAllocator(), image, memory);
-}
-
 Image::~Image()
 {
-    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != VK_NULL_HANDLE)
+    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != nullptr)
     {
-        device->Destroy([=] () {
-            // Destory(device, handle, memory);
+        struct {
+            Device *device = nullptr;
+            VmaAllocation memory = nullptr;
+            VkImage image = VK_NULL_HANDLE;
+        } dpack {
+            device,
+            memory,
+            handle
+        };
+
+        device->Destroy([dpack] () {
+            vmaDestroyImage(
+                dpack.device->MemoryAllocator(),
+                dpack.image,
+                dpack.memory
+                );
             });
     }
 }
