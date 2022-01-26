@@ -142,7 +142,6 @@ void Renderer::SwapBuffers()
 
     sync = (sync + 1) % context->FrameSize();
 
-    computeQueue.Wait();
     device->ExecuteComputeThread();
 }
 

@@ -12,6 +12,11 @@ namespace Immortal
 class IMMORTAL_API Object
 {
 public:
+    using Primitive = entt::entity;
+    
+    static inline Primitive NullRef = entt::null;
+
+public:
     Object() = default;
 
     Object(entt::entity handle, Scene *scene) :
@@ -91,7 +96,7 @@ public:
         return GetComponent<TransformComponent>();
     }
 
-    const Vector::mat4 &Transform() const
+    const Matrix4 &Transform() const
     {
         return GetComponent<TransformComponent>().Transform();
     }
@@ -101,7 +106,7 @@ public:
         return (uint64_t)handle;
     }
 
-    operator entt::entity() const
+    operator Primitive() const
     {
         return handle;
     }
@@ -121,20 +126,32 @@ public:
         return !(*this == other);
     }
 
-    Object &operator=(const Object &o)
+    Object &operator=(const Object &other)
     {
-        THROWIF(&o == this, SError::SelfAssignment);
+        THROWIF(&other == this, SError::SelfAssignment);
 
-        scene  = o.scene;
-        handle = o.handle;
+        scene  = other.scene;
+        handle = other.handle;
 
+        return *this;
+    }
+
+    Object &operator==(Object &&other)
+    {
+        THROWIF(&other == this, SError::SelfAssignment);
+
+        scene  = other.scene;
+        handle = other.handle;
+
+        other.scene  = nullptr;
+        other.handle = NullRef;
         return *this;
     }
 
 private:
     Scene *scene{ nullptr };
 
-    entt::entity handle{ entt::null };
+    Primitive handle{ NullRef };
 };
 
 }
