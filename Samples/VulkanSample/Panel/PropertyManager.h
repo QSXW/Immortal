@@ -35,21 +35,21 @@ public:
     };
 
 public:
-    void OnUpdate(Object &o)
+    void OnUpdate(Object &object)
     {
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Properties"));
         {
-            if (o)
+            if (object)
             {
-                if (o.Has<TransformComponent>())
+                if (object.HasComponent<TransformComponent>())
                 {
                     DrawComponent(
                         WordsMap::Get("Transform"),
                         [&]() -> void {
                             // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing() - 8.0f);
 
-                            auto &transform = o.Get<TransformComponent>();
+                            auto &transform = object.GetComponent<TransformComponent>();
                             auto rotation = Vector::Degrees(transform.Rotation);
 
                             UI::DrawVec3Control(WordsMap::Get("Position"), transform.Position, 0.01f);
@@ -60,12 +60,12 @@ public:
                     });
                 }
                 
-                if (o.Has<MaterialComponent>())
+                if (object.HasComponent<MaterialComponent>())
                 {
                     DrawComponent(
                         WordsMap::Get("Material"),
                         [&]() -> void {
-                            auto &material = o.Get<MaterialComponent>();
+                            auto &material = object.GetComponent<MaterialComponent>();
 
                             auto id = WordsMap::Get("Color").c_str();
                             ImGui::PushID(id);
@@ -125,12 +125,12 @@ public:
                         });
                 }
 
-                if (o.Has<ColorMixingComponent>())
+                if (object.HasComponent<ColorMixingComponent>())
                 {
                     DrawComponent(
                         WordsMap::Get("ColorMixing"),
                         [&]() -> void {    
-                            auto &c = o.Get<ColorMixingComponent>();
+                            auto &c = object.GetComponent<ColorMixingComponent>();
                             c.Modified = false;
                             
                             c.Modified |= DrawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);

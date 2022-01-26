@@ -39,14 +39,8 @@ public:
         yOffset = 200.0f / texture->Height();
     }
 
-    void OnUpdate(Object &o)
+    void OnUpdate(Object &object)
     {
-        SpriteRendererComponent sprite;
-        if (o && o.Has<SpriteRendererComponent>())
-        {
-            sprite = o.Get<SpriteRendererComponent>();
-        }
-    
         ImGui::Begin(WordsMap::Get("Tools Bar"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
         ImGuiStyle * style = &ImGui::GetStyle();
 

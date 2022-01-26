@@ -9,21 +9,21 @@ class Navigator : public Layer
 {
 public:
     template <class Callback>
-    void OnUpdate(Object &o, Callback callback = [] {})
+    void OnUpdate(Object &object, Callback callback = [] {})
     {
         SpriteRendererComponent sprite;
-        if (o && o.Has<SpriteRendererComponent>())
+        if (object && object.HasComponent<SpriteRendererComponent>())
         {
-            sprite = o.Get<SpriteRendererComponent>();
+            sprite = object.GetComponent<SpriteRendererComponent>();
         }
         
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Navigator"));
         
         {
-            if (o)
+            if (object)
             {
-                std::string &tag = o.Get<TagComponent>().Tag;
+                std::string &tag = object.GetComponent<TagComponent>().Tag;
                 char buf[128] = { 0 };
                 strcat(buf, tag.c_str());
                 if (ImGui::InputText(WordsMap::Get("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
@@ -44,7 +44,7 @@ public:
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 20.0f, 20.0f });
             if (ImGui::ImageButton((ImTextureID)(uint64_t)*sprite.Texture, size))
             {
-                if (o)
+                if (object)
                 {
                     callback();
                 }

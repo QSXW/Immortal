@@ -8,24 +8,24 @@ namespace Immortal
 class HierarchyGraphics : public Layer
 {
 public:
-    void DrawObjectNode(Scene *scene, Object &o)
+    void DrawObjectNode(Scene *scene, Object &object)
     {
-        auto &tag = o.Get<TagComponent>().Tag;
+        auto &tag = object.GetComponent<TagComponent>().Tag;
 
-        ImGuiTreeNodeFlags flags = (selectedObject == o ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+        ImGuiTreeNodeFlags flags = (selectedObject == object ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-        bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)o, flags, tag.c_str());
+        bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)object, flags, tag.c_str());
         ImGui::SameLine(64.0f);
         ImGui::NewLine();
 
         if (ImGui::IsItemClicked())
         {
-            selectedObject = o;
+            selectedObject = object;
         }
 
         bool isDeleted = false;
-        if (Input::IsKeyPressed(KeyCode::Delete) && selectedObject == o)
+        if (Input::IsKeyPressed(KeyCode::Delete) && selectedObject == object)
         {
             isDeleted = true;
         }
@@ -47,8 +47,8 @@ public:
 
         if (isDeleted)
         {
-            scene->DestroyObject(o);
-            if (selectedObject == o)
+            scene->DestroyObject(object);
+            if (selectedObject == object)
             {
                 selectedObject = {};
             }
@@ -64,10 +64,10 @@ public:
         {
             scene->Registry().each([&](auto id)
             {
-                Object o{ id, scene };
-                if (o.Has<TagComponent>())
+                Object object{ id, scene };
+                if (object.HasComponent<TagComponent>())
                 {
-                    DrawObjectNode(scene, o);
+                    DrawObjectNode(scene, object);
                 }
             });
         }
@@ -78,9 +78,9 @@ public:
         callback(selectedObject);
     }
 
-    void Select(Object o)
+    void Select(Object object)
     {
-        selectedObject = o;
+        selectedObject = object;
     }
 
 private:
