@@ -33,26 +33,26 @@ struct ImageDescriptor : public Descriptor
     VkDescriptorImageInfo info{};
 };
 
-struct BufferDescriptor : public Descriptor
+struct BufferDescriptor : public Descriptor, public VkDescriptorBufferInfo
 {
     BufferDescriptor() 
     {
-
+        buffer = VK_NULL_HANDLE;
+        offset = 0;
+        range  = VK_WHOLE_SIZE;
     }
 
     void Update(VkBuffer buffer, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE)
     {
-        info.buffer = buffer;
-        info.offset = offset;
-        info.range  = range;
+        buffer = buffer;
+        offset = offset;
+        range  = range;
     }
 
     operator const VkDescriptorBufferInfo*() const
     {
-        return &info;
+        return this;
     }
-
-    VkDescriptorBufferInfo info{};
 };
 
 using WriteDescriptorSetMap = std::map<std::string, size_t>;
@@ -108,7 +108,7 @@ struct DescriptorSetUpdater
         }
         auto index = it->second;
 
-        WriteDescriptorSets[index].pBufferInfo = &descriptor->info;
+        WriteDescriptorSets[index].pBufferInfo = descriptor;
         return true;
     }
 

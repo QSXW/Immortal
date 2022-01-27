@@ -54,9 +54,9 @@ Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
 Buffer::~Buffer()
 {
     device->Wait();
-    if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
+    if (descriptor.buffer != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(device->MemoryAllocator(), handle, memory);
+        vmaDestroyBuffer(device->MemoryAllocator(), descriptor.buffer, memory);
     }
 }
 
@@ -76,7 +76,7 @@ void Buffer::Create(size_t size)
     {
         allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
-    Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &handle, &memory, &allocInfo));
+    Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &descriptor.buffer, &memory, &allocInfo));
 
     // offset = allocInfo.offset;
 
@@ -84,7 +84,6 @@ void Buffer::Create(size_t size)
 	{
 		mappedData = static_cast<uint8_t *>(allocInfo.pMappedData);
 	}
-    descriptor.Update(handle, offset, VK_WHOLE_SIZE);
 }
 
 void Buffer::Map()

@@ -30,22 +30,17 @@ public:
 
     VkDeviceSize &Offset()
     {
-        return offset;
+        return descriptor.offset;
     }
 
     VkBuffer &Handle()
     {
-        return handle;
-    }
-
-    operator VkBuffer&()
-    {
-        return handle;
+        return descriptor.buffer;
     }
 
     operator VkBuffer() const
     {
-        return handle;
+        return descriptor.buffer;
     }
 
     void Create(size_t size = 0);
@@ -59,11 +54,7 @@ public:
 private:
     Device *device{ nullptr };
 
-    VkBuffer handle{ VK_NULL_HANDLE };
-
     VmaAllocation memory{ VK_NULL_HANDLE };
-
-    VkDeviceSize offset{ 0 };
 
     BufferDescriptor descriptor;
 
