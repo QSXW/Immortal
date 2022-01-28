@@ -224,7 +224,7 @@ VkFormat SuitableDepthFormat(VkPhysicalDevice             physicalDevice,
 
 static inline bool IsDepthOnlyFormat(VkFormat format)
 {
-    return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT;
+    return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 }
 }

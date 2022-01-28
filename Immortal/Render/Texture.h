@@ -111,7 +111,7 @@ public:
 
         bool IsDepth() const 
         {
-            return Format == Format::Depth;
+            return Format == Format::Depth || Format == Format::Depth24Stencil8;
         }
 
         Format Format = Format::R8G8B8A8_UNORM;

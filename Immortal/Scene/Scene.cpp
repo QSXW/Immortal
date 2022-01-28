@@ -63,9 +63,9 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
         {
-            { Format::RGBA8 },
-            { Format::R32   },
-            { Format::Depth }
+            { Format::RGBA8           },
+            { Format::R32             },
+            { Format::Depth24Stencil8 }
         }
     }));
     renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
