@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#define IMMORTAL_CSTD ::
-
 namespace Immortal
 {
 namespace Math
@@ -11,30 +9,20 @@ namespace Math
 
 constexpr const double PI = 3.14159265358979323846;
 
-static inline double Cos(double x) noexcept
-{
-    return IMMORTAL_CSTD cos(x);
+#define FW(N, F) \
+static inline double N(double x) noexcept \
+{ \
+    return std::F(x); \
+} \
+static inline float N(float x) noexcept \
+{ \
+    return std::F(x); \
 }
 
-static inline float Cos(float x) noexcept
-{
-    return IMMORTAL_CSTD cos(x);
-}
-
-static inline double Sin(double x) noexcept
-{
-    return IMMORTAL_CSTD sin(x);
-}
-
-static inline float Sin(float x) noexcept
-{
-    return IMMORTAL_CSTD sin(x);
-}
-
-static inline float Absolute(float x) noexcept
-{
-    return IMMORTAL_CSTD fabsf(x);
-}
+FW(Cos, cos)
+FW(Sin, sin)
+FW(Tan, tan)
+FW(Absolute, fabsf)
 
 }
 }
