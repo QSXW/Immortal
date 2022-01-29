@@ -129,5 +129,4 @@ public:
     Configuration configuration{};
 };
 
-Application* CreateApplication();
 }
