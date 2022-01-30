@@ -170,7 +170,7 @@ Image::~Image()
             handle
         };
 
-        device->Destroy([dpack] () {
+        device->DestroyAsync([dpack] () {
             vmaDestroyImage(
                 dpack.device->MemoryAllocator(),
                 dpack.image,

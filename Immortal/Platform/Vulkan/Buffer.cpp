@@ -52,10 +52,25 @@ Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
 
 Buffer::~Buffer()
 {
-    device->Wait();
     if (descriptor.buffer != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(device->MemoryAllocator(), descriptor.buffer, memory);
+        struct {
+            Device *device = nullptr;
+            VmaAllocation memory = nullptr;
+            VkBuffer buffer = VK_NULL_HANDLE;
+        } dpack{
+            device,
+            memory,
+            descriptor.buffer
+        };
+
+        device->DestroyAsync([dpack]() {
+            vmaDestroyBuffer(
+                dpack.device->MemoryAllocator(),
+                dpack.buffer,
+                dpack.memory
+                );
+            });
     }
 }
 

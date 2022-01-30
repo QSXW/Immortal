@@ -337,8 +337,8 @@ void Device::DestroyObjects()
     auto &queue = destroyCoroutine.queues[destroyCoroutine.freeing];
     auto &mutex = destroyCoroutine.mutex;
 
-    SLROTATE(destroyCoroutine.working, 3);
-    SLROTATE(destroyCoroutine.freeing, 3);
+    SLROTATE(destroyCoroutine.working, destroyCoroutine.queues.size());
+    SLROTATE(destroyCoroutine.freeing, destroyCoroutine.queues.size());
 
     /* all objects in queue is safe to destory now */
     Async::Execute([&] {

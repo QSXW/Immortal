@@ -98,8 +98,6 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
-    device->DestroyObjects();
-
     VkPipelineStageFlags computeWaitDstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
     VkSubmitInfo computeSubmitInfo{};
@@ -143,6 +141,7 @@ void Renderer::SwapBuffers()
     sync = (sync + 1) % context->FrameSize();
 
     device->ExecuteComputeThread();
+    device->DestroyObjects();
 }
 
 void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)

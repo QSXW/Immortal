@@ -59,11 +59,10 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
 
 Sampler::~Sampler()
 {
-    if (!device)
+    if (device)
     {
-        return;
+        device->DestroyAsync(handle);
     }
-    device->Destroy(handle);
 }
 
 Sampler::Sampler(Sampler &&other) :

@@ -29,6 +29,7 @@ void Render::Setup(RenderContext *context)
     renderer->Setup();
 
     {
+        Profiler profiler{ "Loading Shader" };
         auto asset = API == Type::D3D12 ? 1 : 0;
         ShaderContainer.reserve(SL_ARRAY_LENGTH(ShaderProperties));
         for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)

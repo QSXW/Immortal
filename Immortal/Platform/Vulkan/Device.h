@@ -56,7 +56,7 @@ public:
 
 public:
     template <class T>
-    void Destroy(T task)
+    void DestroyAsync(T task)
     {
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
         {
@@ -116,6 +116,14 @@ public:
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destroy(Vk##T object, const VkAllocationCallbacks *pAllocator = nullptr) \
+    { \
+        if (object != VK_NULL_HANDLE) \
+        { \
+            vkDeviceWaitIdle(handle); \
+            vkDestroy##T(handle, object, pAllocator); \
+        } \
+    } \
+    void DestroyAsync(Vk##T object, const VkAllocationCallbacks *pAllocator = nullptr) \
     { \
         if (object != VK_NULL_HANDLE) \
         { \
@@ -388,7 +396,7 @@ private:
     } compute;
 
     struct {
-        std::queue<std::function<void()>> queues[3];
+        std::array<std::queue<std::function<void()>>, 6> queues;
         std::mutex mutex;
         uint32_t working = 0;
         uint32_t freeing = 1;
