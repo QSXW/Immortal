@@ -168,9 +168,13 @@ public:
     DEFINE_GET_REQUIREMENTS(Image)
 
 #define DEFINE_BIND_MEMORY(T) \
-    VkResult BindMemory(Vk##T buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) \
+    void BindMemory(Vk##T buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) \
     { \
-        return vkBind##T##Memory(handle, buffer, memory, memoryOffset); \
+        Check(vkBind##T##Memory(handle, buffer, memory, memoryOffset)); \
+    } \
+    void BindMemory(const VkBind##T##MemoryInfo *bindInfos, uint32_t count = 1) \
+    { \
+        Check(vkBind##T##Memory2(handle, count, bindInfos)); \
     }
 
     DEFINE_BIND_MEMORY(Buffer)

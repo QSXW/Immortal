@@ -56,43 +56,55 @@ Mesh::Mesh(const std::string & filepath) :
     const aiScene *scene = importer->ReadFile(filepath, ImportFlags);
     SLASSERT(scene && scene->HasMeshes() && "Failed to load Mesh file: {0}" && filepath.c_str());
 
-    const aiMesh *mesh = scene->mMeshes[0];
-    SLASSERT(mesh->HasPositions() && mesh->HasNormals() && "No Position and Normals in the mesh object");
 
     {
         std::vector<Vertex> vertices;
-        vertices.reserve(mesh->mNumVertices);
-        for (size_t i = 0; i < mesh->mNumVertices; i++)
-        {
-            Vertex vertex;
-            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-            vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
-
-            if (mesh->HasTangentsAndBitangents())
-            {
-                vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
-                vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
-            }
-            if (mesh->HasTextureCoords(0))
-            {
-                vertex.Texcoord = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
-            }
-            vertices.push_back(vertex);
-        }
-        buffer.vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
-    }
-    
-    {
         std::vector<Face> faces;
 
-        faces.reserve(mesh->mNumFaces);
-        for (size_t i = 0; i < mesh->mNumFaces; i++)
+        for (size_t i = 0; i < scene->mNumMeshes; i++)
         {
-            SLASSERT(mesh->mFaces[i].mNumIndices == 3 && "Must have three indices per face.");
-            Face face = { mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2] };
-            faces.push_back(face);
+            auto mesh = scene->mMeshes[i];
+            Node node{ mesh->mName.C_Str() };
+
+            vertices.reserve(mesh->mNumVertices);
+            THROWIF(!mesh->HasPositions() || !mesh->HasNormals(), "No Position and Normals in the mesh object");
+
+            vertices.clear();
+            vertices.reserve(mesh->mNumVertices);
+            for (size_t i = 0; i < mesh->mNumVertices; i++)
+            {
+                Vertex vertex;
+                vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+                vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+
+                if (mesh->HasTangentsAndBitangents())
+                {
+                    vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
+                    vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
+                }
+                if (mesh->HasTextureCoords(0))
+                {
+                    vertex.Texcoord = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+                }
+                vertices.push_back(vertex);
+            }
+
+            faces.clear();
+            faces.reserve(mesh->mNumFaces);
+            for (size_t i = 0; i < mesh->mNumFaces; i++)
+            {
+                Face face{ 
+                    mesh->mFaces[i].mIndices[0],
+                    mesh->mFaces[i].mIndices[1],
+                    mesh->mFaces[i].mIndices[2]
+                };
+                faces.push_back(face);
+            }
+
+            node.Vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
+            node.Index.reset(Render::Create<Buffer>(faces, Buffer::Type::Index));
+            nodes.emplace_back(node);
         }
-        buffer.index.reset(Render::Create<Buffer>(faces, Buffer::Type::Index));
     }
     
     if (scene->HasMaterials())
@@ -119,8 +131,12 @@ Mesh::Mesh(const std::string & filepath) :
 
 Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indicies)
 {
-    buffer.vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
-    buffer.index.reset(Render::Create<Buffer>(indicies, Buffer::Type::Index));
+    Node head{ "Undefined" };
+
+    head.Vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
+    head.Index.reset(Render::Create<Buffer>(indicies, Buffer::Type::Index));
+
+    nodes.emplace_back(head);
 }
 
 std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)

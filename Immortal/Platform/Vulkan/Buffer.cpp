@@ -1,6 +1,5 @@
 #include "Buffer.h"
 #include "Device.h"
-#include "..\OpenGL\Buffer.h"
 
 namespace Immortal
 {

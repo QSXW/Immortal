@@ -67,20 +67,47 @@ public:
         uint32_t v1, v2, v3;
     };
 
-    using Index = Face;
-
-    struct SubMesh
+    struct Node
     {
-        uint32_t BaseVertex;
-        uint32_t BaseIndex;
-        uint32_t MaterialIndex;
-        uint32_t IndexCount;
-        uint32_t VertexCount;
+        Node()
+        {
 
-        Matrix4 Transform{ 1.0f };
-        std::string NodeName;
-        std::string MeshName;
+        }
+
+        Node(const std::string &name) :
+            Name{ name }
+        {
+
+        }
+
+        Node(const char *name) :
+            Name{ name }
+        {
+
+        }
+
+        Node(const Node &other) :
+            Name{ other.Name },
+            Vertex{ other.Vertex },
+            Index{ other.Index }
+        {
+
+        }
+
+        Node(Node &&other) :
+            Name{ std::move(other.Name) },
+            Vertex{ std::move(other.Vertex) },
+            Index{ std::move(other.Index) }
+        {
+
+        }
+
+        std::string Name;
+        std::shared_ptr<Buffer> Vertex;
+        std::shared_ptr<Buffer> Index;
     };
+
+    using Index = Face;
 
     static constexpr uint32_t ImportFlags =
         aiProcess_CalcTangentSpace |
@@ -134,15 +161,17 @@ public:
         }
     }
 
+    std::list<Node> &NodeList()
+    {
+        return nodes;
+    }
+
 private:
     std::unique_ptr<Assimp::Importer> importer{ nullptr };
 
     std::string path;
 
-    struct {
-        std::shared_ptr<Buffer> vertex;
-        std::shared_ptr<Buffer> index;
-    } buffer;
+    std::list<Node> nodes;
 
     struct
     {

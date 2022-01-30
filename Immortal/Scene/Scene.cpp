@@ -222,11 +222,15 @@ void Scene::OnRender(const Camera &camera)
         model.Metallic  = material.Metallic;
         model.ObjectID  = (int)o;
 
-        pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Vertex>());
-        pipelines.pbr->Set(mesh.Mesh->Get<Buffer::Type::Index>());
-        pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);
-        Render::PushConstant(pipelines.pbr.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
-        Render::Draw(pipelines.pbr);
+        auto &nodeList = mesh.Mesh->NodeList();
+        for (auto &node : nodeList)
+        {
+            pipelines.pbr->Set(node.Vertex);
+            pipelines.pbr->Set(node.Index);
+            pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);
+            Render::PushConstant(pipelines.pbr.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
+            Render::Draw(pipelines.pbr);
+        }
     }
 
     Render2D::BeginScene(camera);

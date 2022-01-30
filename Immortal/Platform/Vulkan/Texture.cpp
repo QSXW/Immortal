@@ -65,7 +65,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     allocateInfo.allocationSize  = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     Check(device->AllocateMemory(&allocateInfo, nullptr, &stagingMemory));
-    Check(device->BindMemory(stagingBuffer, stagingMemory, 0));
+    device->BindMemory(stagingBuffer, stagingMemory, 0);
 
     // Copy texture data into host local staging buffer
     if (data)
