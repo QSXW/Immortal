@@ -51,6 +51,7 @@ enum class FileType
 enum class FileFormat : uint64_t
 {
     BLEND = MakeIdentifier('B', 'L', 'E', 'N', 'D'),
+    GLTF  = MakeIdentifier('G', 'L', 'T', 'F'),
     BMP   = MakeIdentifier('B', 'M', 'P'),
     FBX   = MakeIdentifier('F', 'B', 'X'),
     OBJ   = MakeIdentifier('O', 'B', 'J'),
@@ -81,7 +82,8 @@ static inline bool Is3DModel(const std::string &path)
 
     return IsFormat<FileFormat::OBJ>(id) ||
            IsFormat<FileFormat::FBX>(id) ||
-           IsFormat<FileFormat::BLEND>(id);
+           IsFormat<FileFormat::BLEND>(id) || 
+           IsFormat<FileFormat::GLTF>(id);
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename)
