@@ -234,11 +234,6 @@ public:
         return handle;
     }
 
-    operator VkDevice&()
-    {
-        return handle;
-    }
-
     operator VkDevice() const
     {
         return handle;

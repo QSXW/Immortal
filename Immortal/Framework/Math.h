@@ -24,5 +24,11 @@ FW(Sin, sin)
 FW(Tan, tan)
 FW(Absolute, fabsf)
 
+template <class T>
+T Lerp(T a, T b, T w)
+{
+    return a + (b - a) * w;
+}
+
 }
 }
