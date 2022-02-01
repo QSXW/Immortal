@@ -71,10 +71,10 @@ struct LightEnvironment
 {
     LightEnvironment()
     {
-        lights[0].Direction = Vector::Normalize(Vector3{ -1.0f,  0.0f, 0.0f });
-        lights[1].Direction = Vector::Normalize(Vector3{  1.0f,  0.0f, 0.0f });
-        lights[2].Direction = Vector::Normalize(Vector3{  0.0f, -1.0f, 0.0f });
-        lights[3].Direction = Vector::Normalize(Vector3{  0.0f,  0.0f, 1.0f });
+        lights[0].Direction = Vector::Normalize(Vector3{  0.0f,  -1.0f,  0.0f });
+        lights[1].Direction = Vector::Normalize(Vector3{  0.0f,   0.0f, -1.0f });
+        lights[2].Direction = Vector::Normalize(Vector3{  0.0f,   1.0f,  0.0f });
+        lights[3].Direction = Vector::Normalize(Vector3{  0.0f,   0.0f,  1.0f });
 
         lights[0].Radiance = Vector3{ 1.0f };
         lights[1].Radiance = Vector3{ 1.0f };

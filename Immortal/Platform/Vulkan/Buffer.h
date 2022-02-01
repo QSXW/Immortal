@@ -22,11 +22,15 @@ public:
 
     Buffer(Device *device, const size_t size, uint32_t binding);
 
+    Buffer(const Buffer *host, const BindInfo &bindInfo);
+
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *src) override;
+    virtual void Update(uint32_t size, const void *src, uint32_t offset = 0) override;
 
     virtual Anonymous Descriptor() const override;
+
+    virtual Buffer::Super *Bind(const BindInfo &bindInfo) const override;
 
     VkDeviceSize &Offset()
     {

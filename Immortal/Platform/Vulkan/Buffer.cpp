@@ -9,15 +9,21 @@ namespace Vulkan
 
 inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
 {
-    if (type == Buffer::Type::Index)
+    VkBufferUsageFlags flags = 0;
+    if (type & Buffer::Type::Index)
     {
-        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     }
-    if (type == Buffer::Type::Uniform)
+    if (type & Buffer::Type::Uniform)
     {
-        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     }
-    return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    if (type & Buffer::Type::Vertex)
+    {
+        flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
+
+    return flags;
 }
 
 Buffer::Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage) :
@@ -28,7 +34,10 @@ Buffer::Buffer(Device *device, const size_t size, const void *data, Type type, U
     ASSERT_ZERO_SIZE_BUFFER(size);
 
     Create(size);
-    Update(size, data);
+    if (data)
+    {
+        Update(size, data);
+    }
 }
 
 Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
@@ -48,6 +57,14 @@ Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
 {
     ASSERT_ZERO_SIZE_BUFFER(size);
     Create(size);
+}
+
+Buffer::Buffer(const Buffer *host, const BindInfo &bindInfo) :
+    Super{ bindInfo.type, bindInfo.size }
+{
+    THROWIF(!(bindInfo.type & host->type), "The type requested is not one of host buffer")
+    descriptor.buffer = host->descriptor.buffer;
+    descriptor.offset = bindInfo.offset;
 }
 
 Buffer::~Buffer()
@@ -122,17 +139,17 @@ void Buffer::Flush()
     vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
 }
 
-void Buffer::Update(uint32_t size, const void *src)
+void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
 {
     if (persistent)
     {
-        memcpy(mappedData, src, size);
+        memcpy(rcast<uint8_t *>(mappedData) + offset, data, size);
         Flush();
     }
     else
     {
         Map();
-        memcpy(mappedData, src, size);
+        memcpy(rcast<uint8_t *>(mappedData) + offset, data, size);
         Flush();
         Unmap();
     }
@@ -141,6 +158,11 @@ void Buffer::Update(uint32_t size, const void *src)
 Anonymous Buffer::Descriptor() const
 {
     return Anonymize(descriptor);
+}
+
+Buffer::Super *Buffer::Bind(const BindInfo &bindInfo) const
+{
+    return new Buffer{ this, bindInfo };
 }
 
 }

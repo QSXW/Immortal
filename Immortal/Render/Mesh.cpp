@@ -15,7 +15,7 @@ std::vector<std::shared_ptr<Mesh>> Mesh::Primitives;
 static inline std::string ExtractModelFileWorkspace(const std::string &modelpath)
 {
     std::filesystem::path path{ modelpath };
-    return path.parent_path().parent_path().string();
+    return path.parent_path().string();
 }
 
 void Mesh::LoadPrimitives()
@@ -61,16 +61,38 @@ Mesh::Mesh(const std::string & filepath) :
         std::vector<Vertex> vertices;
         std::vector<Face> faces;
 
+        uint32_t totalVertexSize = 0;
+        uint32_t totalFaceSize = 0;
+        std::vector<Buffer::BindInfo> bindInfos;
+
+        bindInfos.resize(scene->mNumMeshes * 2);
+        for (size_t i = 0; i < scene->mNumMeshes; i++)
+        {
+            bindInfos[i].size   = scene->mMeshes[i]->mNumVertices * sizeof(Vertex);
+            bindInfos[i].offset = totalVertexSize;
+            bindInfos[i].type   = Buffer::Type::Vertex;
+
+            totalVertexSize += bindInfos[i].size;
+            totalFaceSize   += scene->mMeshes[i]->mNumFaces;
+        }
+        for (size_t i = 0, j = scene->mNumMeshes; i < scene->mNumMeshes; i++, j++)
+        {
+            bindInfos[j].type = Buffer::Type::Index;
+            bindInfos[j].size = scene->mMeshes[i]->mNumFaces * sizeof(Face);
+            bindInfos[j].offset = bindInfos[j - 1].size + bindInfos[j - 1].offset;
+        }
+        vertices.reserve(totalVertexSize);
+        faces.reserve(totalFaceSize);
+
+        buffer.reset(Render::CreateBuffer(totalVertexSize * sizeof(Vertex) + totalFaceSize * sizeof(Face), Buffer::Type{ Buffer::Type::Vertex | Buffer::Type::Index }));
+
         for (size_t i = 0; i < scene->mNumMeshes; i++)
         {
             auto mesh = scene->mMeshes[i];
             Node node{ mesh->mName.C_Str() };
 
-            vertices.reserve(mesh->mNumVertices);
             THROWIF(!mesh->HasPositions() || !mesh->HasNormals(), "No Position and Normals in the mesh object");
 
-            vertices.clear();
-            vertices.reserve(mesh->mNumVertices);
             for (size_t i = 0; i < mesh->mNumVertices; i++)
             {
                 Vertex vertex;
@@ -89,8 +111,6 @@ Mesh::Mesh(const std::string & filepath) :
                 vertices.push_back(vertex);
             }
 
-            faces.clear();
-            faces.reserve(mesh->mNumFaces);
             for (size_t i = 0; i < mesh->mNumFaces; i++)
             {
                 Face face{ 
@@ -101,10 +121,12 @@ Mesh::Mesh(const std::string & filepath) :
                 faces.push_back(face);
             }
 
-            node.Vertex.reset(Render::Create<Buffer>(vertices, Buffer::Type::Vertex));
-            node.Index.reset(Render::Create<Buffer>(faces, Buffer::Type::Index));
+            node.Vertex.reset(buffer->Bind(bindInfos[i]));
+            node.Index.reset(buffer->Bind(bindInfos[scene->mNumMeshes + i]));
             nodes.emplace_back(node);
         }
+        buffer->Update(vertices);
+        buffer->Update(faces, vertices.size() * sizeof(Vertex));
     }
     
     if (scene->HasMaterials())

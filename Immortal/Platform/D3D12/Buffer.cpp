@@ -65,12 +65,15 @@ void Buffer::InternelCreate(const Device *device)
     virtualAddress = resource->GetGPUVirtualAddress();
 }
 
-void Buffer::Update(uint32_t updateSize, const void *data)
+void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
 {
     THROWIF(updateSize > size, SError::OutOfBound);
+
     uint8_t *memory = nullptr;
     Map(rcast<void **>(&memory));
-    memcpy(memory, data, updateSize);
+    {
+        memcpy(memory + offset, data, updateSize);
+    }
     Unmap();
 }
 

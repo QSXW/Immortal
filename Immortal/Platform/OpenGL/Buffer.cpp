@@ -47,10 +47,10 @@ Buffer::~Buffer()
     glDeleteBuffers(1, &handle);
 }
 
-void Buffer::Update(uint32_t size, const void *data)
+void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
 {
     glBindBuffer(bindPoint, handle);
-    glBufferSubData(bindPoint, 0, size, data);
+    glBufferSubData(bindPoint, offset, size, data);
 }
 
 UniformBuffer::UniformBuffer(size_t size, uint32_t binding) :
@@ -60,10 +60,10 @@ UniformBuffer::UniformBuffer(size_t size, uint32_t binding) :
 
 }
 
-void UniformBuffer::Update(uint32_t size, const void *data)
+void UniformBuffer::Update(uint32_t size, const void *data, uint32_t offset)
 {
     glBindBuffer(bindPoint, handle);
-    glBufferSubData(bindPoint, 0, size, data);
+    glBufferSubData(bindPoint, offset, size, data);
 }
 
 }

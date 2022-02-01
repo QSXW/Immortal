@@ -198,16 +198,23 @@ public:
     enum class Type
     {
         Layout,
-        Vertex,
-        Index,
-        Uniform,
-        PushConstant,
-        Unspecified
+        Vertex       = BIT(1),
+        Index        = BIT(2),
+        Uniform      = BIT(3),
+        PushConstant = BIT(4),
+        Unspecified  = BIT(31)
     };
 
     enum class Usage
     {
         Persistent
+    };
+
+    struct BindInfo
+    {
+        Buffer::Type type;
+        uint32_t size;
+        uint32_t offset;
     };
 
 public:
@@ -238,7 +245,7 @@ public:
         return type;
     }
 
-    virtual void Update(uint32_t size, const void *data)
+    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0)
     {
         
     }
@@ -246,6 +253,17 @@ public:
     virtual Anonymous Descriptor() const
     {
         return nullptr;
+    }
+
+    virtual Buffer *Bind(const BindInfo &bindInfo) const
+    {
+        return nullptr;
+    }
+
+    template <class T>
+    void Update(const std::vector<T> &data, uint32_t offset = 0)
+    {
+        Update(U32(data.size() * sizeof(T)), data.data(), offset);
     }
 
     uint32_t Size() const 
@@ -267,5 +285,7 @@ protected:
 };
 
 using SuperBuffer = Buffer;
+
+SL_DEFINE_BITWISE_OPERATION(Buffer::Type, uint32_t)
 
 }

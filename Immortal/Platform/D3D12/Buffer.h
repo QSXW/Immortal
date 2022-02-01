@@ -63,7 +63,7 @@ public:
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *data) override;
+    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
 
     void Map(void **data)
     {

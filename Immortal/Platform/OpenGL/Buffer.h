@@ -32,7 +32,7 @@ public:
         return handle;
     }
 
-    virtual void Update(uint32_t size, const void *data) override;
+    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
 
     void Bind() const
     {
@@ -81,7 +81,7 @@ public:
         return binding;
     }
 
-    virtual void Update(uint32_t size, const void *data) override;
+    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
 
 private:
     uint32_t binding{ 0 };

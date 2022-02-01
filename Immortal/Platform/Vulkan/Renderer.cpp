@@ -222,18 +222,19 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
             *pipeline
             );
 
-        VkDeviceSize offsets[] = { 0 };
+        auto &buffer = pipeline->Get<Buffer::Type::Vertex>();
         vkCmdBindVertexBuffers(
             *cmdbuf,
             0, 1,
-            &pipeline->Get<Buffer::Type::Vertex>()->Handle(),
-            offsets
+            &buffer->Handle(),
+            &buffer->Offset()
             );
 
+        buffer = pipeline->Get<Buffer::Type::Index>();
         vkCmdBindIndexBuffer(
             *cmdbuf,
-            pipeline->Get<Buffer::Type::Index>()->Handle(),
-            0,
+            buffer->Handle(),
+            buffer->Offset(),
             VK_INDEX_TYPE_UINT32
             );
 

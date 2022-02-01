@@ -228,6 +228,10 @@ void Scene::OnRender(const Camera &camera)
             pipelines.pbr->Set(node.Vertex);
             pipelines.pbr->Set(node.Index);
             pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);
+            pipelines.pbr->Bind(material.Textures.Normal.get(), 3);
+            pipelines.pbr->Bind(material.Textures.Metallic.get(), 4);
+            pipelines.pbr->Bind(material.Textures.Roughness.get(), 5);
+            pipelines.pbr->Bind(material.Textures.AO.get(), 6);
             Render::PushConstant(pipelines.pbr.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
             Render::Draw(pipelines.pbr);
         }

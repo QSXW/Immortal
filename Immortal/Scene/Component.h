@@ -147,6 +147,7 @@ struct MaterialComponent : public Component
         Textures.Normal    = Textures.Albedo;
         Textures.Metallic  = Textures.Albedo;
         Textures.Roughness = Textures.Albedo;
+        Textures.AO        = Textures.Albedo;
     }
 
     struct {
@@ -154,6 +155,7 @@ struct MaterialComponent : public Component
         std::shared_ptr<Texture> Normal;
         std::shared_ptr<Texture> Metallic;
         std::shared_ptr<Texture> Roughness;
+        std::shared_ptr<Texture> AO;
     } Textures;
 
     Vector3 AlbedoColor;

@@ -169,6 +169,8 @@ public:
 private:
     std::unique_ptr<Assimp::Importer> importer{ nullptr };
 
+    std::unique_ptr<Buffer> buffer;
+
     std::string path;
 
     std::list<Node> nodes;
@@ -189,6 +191,10 @@ private:
 public:
     struct {
         std::shared_ptr<Texture> Albedo;
+        std::shared_ptr<Texture> Normal;
+        std::shared_ptr<Texture> Metallic;
+        std::shared_ptr<Texture> Roughness;
+        std::shared_ptr<Texture> AO;
     } Textures[8];
 };
 
