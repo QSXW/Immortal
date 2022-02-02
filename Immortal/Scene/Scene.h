@@ -161,9 +161,9 @@ private:
     } pipelines;
 
     struct {
+        std::unique_ptr<Buffer> host;
         std::unique_ptr<Buffer> transform;
         std::unique_ptr<Buffer> shading;
-        std::unique_ptr<Buffer> properties;
     } uniforms;
     
     struct {

@@ -31,7 +31,7 @@ Framebuffer::~Framebuffer()
 {
     if (device)
     {
-        device->Destroy(handle);
+        device->DestroyAsync(handle);
     }
 }
 

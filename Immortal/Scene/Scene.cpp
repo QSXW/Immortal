@@ -34,6 +34,8 @@ struct Shading
         Vector4 radiance;
     } lights[4];
     Vector3 CameraPosition;
+    float Exposure;
+    float Gamma;
 };
 
 struct Model
@@ -56,9 +58,18 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     // meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
     // textures.skybox.reset(Render::Create<TextureCube>("assets/textures/environment.hdr"));
 
-    uniforms.transform.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform), 0));
-    uniforms.shading.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Shading), 1));
-    uniforms.properties.reset(Render::Create<Buffer>(sizeof(ColorMixingComponent) - sizeof(Component::Type), 2));
+    uniforms.host.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform) + sizeof(UniformBuffer::Shading), 0));
+
+    Buffer::BindInfo bindInfo{};
+    bindInfo.type   = Buffer::Type::Uniform;
+
+    bindInfo.size   = sizeof(UniformBuffer::Transform);
+    bindInfo.offset = 0;
+    uniforms.transform.reset(uniforms.host->Bind(bindInfo));
+
+    bindInfo.offset += bindInfo.size;
+    bindInfo.size = sizeof(UniformBuffer::Shading);
+    uniforms.shading.reset(uniforms.host->Bind(bindInfo));
 
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
@@ -183,31 +194,35 @@ void Scene::OnRender(const Camera &camera)
     }
 
     Render::Begin(renderTarget);
-
     {
-        UniformBuffer::Transform transform;
-        transform.ViewProjection   = camera.ViewProjection();
-        transform.SkyboxPorjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
-        transform.SceneRotation    = Matrix4{ Matrix3{ camera.View() } };
-        uniforms.transform->Update(sizeof(UniformBuffer::Transform), &transform);
-    }
+        struct {
+            UniformBuffer::Transform transform;
+            UniformBuffer::Shading shading;
+        } buffers;
 
-    {
-        UniformBuffer::Shading shading;
-        for (int i = 0; i < SL_ARRAY_LENGTH(shading.lights); ++i)
+        auto transform = &buffers.transform;
+        transform->ViewProjection   = camera.ViewProjection();
+        transform->SkyboxPorjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
+        transform->SceneRotation    = Matrix4{ Matrix3{ camera.View() } };
+
+        auto shading = &buffers.shading;
+        for (int i = 0; i < SL_ARRAY_LENGTH(shading->lights); ++i)
         {
             const Light &light = environments.light.lights[i];
-            shading.lights[i].direction = Vector4{ light.Direction, 0.0f };
+            shading->lights[i].direction = Vector4{ light.Direction, 0.0f };
 
             Vector4 finalLight = Vector4{};
             if (light.Enabled)
             {
                 finalLight = Vector4{ light.Radiance, 0.0f };
             }
-            shading.lights[i].radiance = finalLight;
+            shading->lights[i].radiance = finalLight;
         }
-        shading.CameraPosition = camera.View()[3];
-        uniforms.shading->Update(sizeof(UniformBuffer::Shading), &shading);
+        shading->CameraPosition = camera.View()[3];
+        shading->Exposure = 4.5f;
+        shading->Gamma = 2.2f;
+
+        uniforms.host->Update(sizeof(buffers), &buffers);
     }
 
     auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();

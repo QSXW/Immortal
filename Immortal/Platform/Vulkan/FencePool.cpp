@@ -16,12 +16,9 @@ FencePool::FencePool(Device *device) :
 
 FencePool::~FencePool()
 {
-    Wait();
-    Reset();
-
     for (VkFence fence : handles)
     {
-        device->Destroy(fence);
+        device->DestroyAsync(fence);
     }
     handles.clear();
 }

@@ -28,6 +28,8 @@ struct Light {
 layout (binding = 1) uniform Shading {
     Light lights[4];
     vec3 camPos;
+	float exposure;
+	float gamma;
 } shading;
 
 layout (binding = 2) uniform sampler2D AlbedoMap;
@@ -151,6 +153,18 @@ vec3 calculateNormal()
 	return normalize(TBN * tangentNormal);
 }
 
+// From http://filmicgames.com/archives/75
+vec3 Uncharted2Tonemap(vec3 x)
+{
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
 void main()
 {
 	vec2 uv = vec2(fsInput.TexCoord.x, 1.0f - fsInput.TexCoord.y);
@@ -176,8 +190,10 @@ void main()
 	// Combine with ambient
 	vec3 color = Lo;
 
-	// Gamma correct
-	color = pow(color, vec3(0.4545));
+	color = Uncharted2Tonemap(color * shading.exposure);
+	color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+	// Gamma correction
+	color = pow(color, vec3(1.0f / shading.gamma));
 
 	outColor = vec4(color, 1.0);
 
