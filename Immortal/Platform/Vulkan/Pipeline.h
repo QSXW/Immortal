@@ -80,11 +80,6 @@ public:
         }
     }
 
-    operator VkPipeline&()
-    {
-        return handle;
-    }
-
     operator VkPipeline() const
     {
         return handle;

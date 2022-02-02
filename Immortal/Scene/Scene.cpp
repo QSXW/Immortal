@@ -79,24 +79,30 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
             { Format::Depth24Stencil8 }
         }
     }));
-    renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
+    // renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
+    renderTarget->Set(Color{ 0.0f, 0.0f, 0.0f, 1 });
 
     pipelines.tonemap = nullptr;
     pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));
-    pipelines.pbr->Set({
-        { Format::VECTOR3, "POSITION" },
-        { Format::VECTOR3, "NORMAL"   },
-        { Format::VECTOR3, "TAGENT"   },
-        { Format::VECTOR3, "BITAGENT" },
-        { Format::VECTOR2, "TEXCOORD" },
-        });
+    pipelines.pbr->Set(StandardInputElementDescription);
     pipelines.pbr->Create(renderTarget);
-
     pipelines.pbr->Bind("Transform", uniforms.transform.get());
     pipelines.pbr->Bind("Shading", uniforms.shading.get());
 
+    pipelines.basic.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::Basic3D>()));
+    pipelines.basic->Set(StandardInputElementDescription);
+    pipelines.basic->Create(renderTarget);
+    pipelines.basic->Bind("Transform", uniforms.transform.get());
+    pipelines.basic->Bind("Shading", uniforms.shading.get());
+
     pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::Get<Shader, ShaderName::ColorMixing>().get()));
     // pipelines.colorMixing->Bind("Properties", uniforms.properties.get());
+
+    for (size_t i = 0; i < Limit::MaxLightNumber; i++)
+    {
+        auto &light = CreateObject(std::string{ "Light#" } + std::to_string(i));
+        light.AddComponent<LightComponent>();
+    }
 
     Render2D::Setup(renderTarget);
 }
@@ -206,17 +212,19 @@ void Scene::OnRender(const Camera &camera)
         transform->SceneRotation    = Matrix4{ Matrix3{ camera.View() } };
 
         auto shading = &buffers.shading;
-        for (int i = 0; i < SL_ARRAY_LENGTH(shading->lights); ++i)
-        {
-            const Light &light = environments.light.lights[i];
-            shading->lights[i].direction = Vector4{ light.Direction, 0.0f };
 
-            Vector4 finalLight = Vector4{};
+        auto &lightObjects = registry.view<TransformComponent, LightComponent>();
+        size_t i = 0;
+        for (auto &lightObject : lightObjects)
+        {
+            auto &[transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
+            shading->lights[i].direction = Vector4{ transform.Position, 0.0f };
+
             if (light.Enabled)
             {
-                finalLight = Vector4{ light.Radiance, 0.0f };
+                shading->lights[i].radiance = light.Radiance;
             }
-            shading->lights[i].radiance = finalLight;
+            i++;
         }
         shading->CameraPosition = camera.View()[3];
         shading->Exposure = 4.5f;

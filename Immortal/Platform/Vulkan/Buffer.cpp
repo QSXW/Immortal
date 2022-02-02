@@ -109,8 +109,6 @@ void Buffer::Create(size_t size)
     }
     Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &descriptor.buffer, &memory, &allocInfo));
 
-    // offset = allocInfo.offset;
-
     if (persistent)
 	{
 		mappedData = static_cast<uint8_t *>(allocInfo.pMappedData);

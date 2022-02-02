@@ -174,7 +174,7 @@ void main()
 	vec3 V = normalize(shading.camPos - fsInput.WorldPos);
 	vec3 R = reflect(-V, N);
 
-	float metallic = texture(MetallicMap, uv).r;
+	float metallic = texture(MetallicMap, uv).r * inModel.metallic;
 	float roughness = texture(RoughnessMap, uv).r * inModel.roughness;
 
 	vec3 F0 = vec3(0.04);
@@ -195,7 +195,6 @@ void main()
 	// Gamma correction
 	color = pow(color, vec3(1.0f / shading.gamma));
 
-	outColor = vec4(color, 1.0);
-
+	outColor    = vec4(color, 1.0);
 	outObjectID = inModel.objectID;
 }

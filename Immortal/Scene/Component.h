@@ -170,6 +170,9 @@ struct LightComponent : public Component
     {
         
     }
+
+    Vector4 Radiance{ 1.0f };
+    bool Enabled = true;
 };
 
 struct SceneComponent : public Component

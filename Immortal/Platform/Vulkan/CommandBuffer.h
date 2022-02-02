@@ -126,14 +126,34 @@ public:
         vkCmdEndRenderPass(handle);
     }
 
-    void BindVertexBuffer(std::shared_ptr<Buffer> &buffer)
+    void BindDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets)
     {
-        vkCmdBindVertexBuffers(handle, 0, 1, &buffer->Handle(), &buffer->Offset());
+        vkCmdBindDescriptorSets(handle, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
     }
 
-    void BindIndexBuffer(std::shared_ptr<Buffer> &buffer)
+    void BindPipeline(VkPipeline pipeline, VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS)
     {
-        vkCmdBindIndexBuffer(handle, *buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindPipeline(handle, pipelineBindPoint, pipeline);
+    }
+
+    void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets)
+    {
+        vkCmdBindVertexBuffers(handle, firstBinding, bindingCount, pBuffers, pOffsets);
+    }
+
+    void BindVertexBuffers(Buffer *buffer)
+    {
+        BindVertexBuffers(0, 1, &buffer->Handle(), &buffer->Offset());
+    }
+
+    void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType = VK_INDEX_TYPE_UINT32)
+    {
+        vkCmdBindIndexBuffer(handle, buffer, offset, indexType);
+    }
+
+    void BindIndexBuffer(Buffer *buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32)
+    {
+        BindIndexBuffer(*buffer, 0, indexType);
     }
 
     template <Buffer::Type type>
@@ -149,13 +169,6 @@ public:
             BindIndexBuffer(buffer);
             return;
         }
-    }
-
-    void Bind(const std::shared_ptr<GraphicsPipeline> &pipeline)
-    {
-        const VkDescriptorSet descriptorSet = pipeline->GetDescriptorSet();
-        vkCmdBindDescriptorSets(handle, pipeline->BindPoint(), pipeline->Layout(), 0, 1, &descriptorSet, 0, NULL);
-        vkCmdBindPipeline(handle, pipeline->BindPoint(), *pipeline);
     }
 
     void PushConstants(VkPipelineLayout pipelineLayout, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
@@ -189,22 +202,14 @@ public:
         vkCmdDrawIndexed(handle, indexCount, 1, 0, 0, 0);
     }
 
-    void DrawIndexed(std::shared_ptr<Buffer> &buffer)
-    {
-        BindIndexBuffer(buffer);
-        Draw(buffer->Count());
-    }
-
-    void Draw(std::shared_ptr<GraphicsPipeline> &pipeline)
-    {
-        Bind(pipeline);
-        BindVertexBuffer(pipeline->Get<Buffer::Type::Vertex>());
-        DrawIndexed(pipeline->Get<Buffer::Type::Index>());
-    }
-
     void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
     {
         vkCmdDispatch(handle, nGroupX, nGroupY, nGroupZ);
+    }
+
+    void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+    {
+        vkCmdDrawIndexed(handle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
 private:

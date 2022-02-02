@@ -59,6 +59,7 @@ public:
         PhysicalBasedRendering,
         ColorMixing,
         SimpleBlur,
+        Basic3D,
         Skybox,
         Tonemap,
         Test,

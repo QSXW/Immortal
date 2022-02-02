@@ -199,7 +199,7 @@ void Renderer::PushConstant(ComputePipeline::Super *superPipeline, Shader::Stage
             offset,
             size,
             data
-        );
+            );
         });
 }
 
@@ -207,8 +207,7 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
 {
     context->Submit([&](CommandBuffer *cmdbuf) {
         auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
-        vkCmdBindDescriptorSets(
-            *cmdbuf,
+        cmdbuf->BindDescriptorSets(
             pipeline->BindPoint(),
             pipeline->Layout(),
             0, 1,
@@ -216,30 +215,25 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
             0, 0
             );
 
-        vkCmdBindPipeline(
-            *cmdbuf,
-            pipeline->BindPoint(),
-            *pipeline
+        cmdbuf->BindPipeline(
+            *pipeline,
+             pipeline->BindPoint()
             );
 
         auto &buffer = pipeline->Get<Buffer::Type::Vertex>();
-        vkCmdBindVertexBuffers(
-            *cmdbuf,
+        cmdbuf->BindVertexBuffers(
             0, 1,
             &buffer->Handle(),
             &buffer->Offset()
             );
 
         buffer = pipeline->Get<Buffer::Type::Index>();
-        vkCmdBindIndexBuffer(
-            *cmdbuf,
-            buffer->Handle(),
-            buffer->Offset(),
-            VK_INDEX_TYPE_UINT32
+        cmdbuf->BindIndexBuffer(
+            *buffer,
+             buffer->Offset()
             );
 
-        vkCmdDrawIndexed(
-            *cmdbuf,
+        cmdbuf->DrawIndexed(
             pipeline->ElementCount,
             1, 0, 0, 0
             );

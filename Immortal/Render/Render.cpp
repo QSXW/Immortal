@@ -20,6 +20,7 @@ const Shader::Properties Render::ShaderProperties[] = {
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
     {            "ColorMixing", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     {             "SimpleBlur", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    {                "Basic3D", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
 };
 
 void Render::Setup(RenderContext *context)

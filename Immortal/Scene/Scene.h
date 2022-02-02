@@ -38,64 +38,23 @@ namespace Resolutions
     static Resolution HD  = { 1280, 720  };
 }
 
-struct Light
-{
-    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
-
-    bool Enabled = false;
-};
-
-struct PointLight
-{
-    Vector3 Position{ 0.0f, 0.0f, 0.0f };
-    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
-};
-
-struct DirectionalLight
-{
-    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-    Vector3 Radiance{ 0.0f, 0.0f, 0.0f };
-};
-
-// This type of light needs the most time to calculate
-struct SpotLight
-{
-    Vector3 Direction{ 0.0f, 0.0f, 0.0f };
-    float Falloff{ 1.0 };
-    float Theta; // the radian angle of the spotlight's inner cone
-    float Phi;   // the angle for the outer cone of light.
-};
-
-struct LightEnvironment
-{
-    LightEnvironment()
-    {
-        lights[0].Direction = Vector::Normalize(Vector3{  0.0f,  -1.0f,  0.0f });
-        lights[1].Direction = Vector::Normalize(Vector3{  0.0f,   0.0f, -1.0f });
-        lights[2].Direction = Vector::Normalize(Vector3{  0.0f,   1.0f,  0.0f });
-        lights[3].Direction = Vector::Normalize(Vector3{  0.0f,   0.0f,  1.0f });
-
-        lights[0].Radiance = Vector3{ 1.0f };
-        lights[1].Radiance = Vector3{ 1.0f };
-        lights[2].Radiance = Vector3{ 1.0f };
-        lights[3].Radiance = Vector3{ 1.0f };
-
-        lights[0].Enabled = true;
-        lights[1].Enabled = true;
-        lights[2].Enabled = true;
-        lights[3].Enabled = true;
-    }
-
-    static constexpr int LightNumbers = 4;
-    float pitch = 0.0f;
-    float yaw   = 0.0f;
-    Light lights[LightNumbers];
-};
-
 class Object;
 class IMMORTAL_API Scene
 {
+public:
+    struct Limit
+    {
+        static constexpr int MaxLightNumber = 4;
+    };
+
+    static inline InputElementDescription StandardInputElementDescription {
+        { Format::VECTOR3, "POSITION" },
+        { Format::VECTOR3, "NORMAL"   },
+        { Format::VECTOR3, "TAGENT"   },
+        { Format::VECTOR3, "BITAGENT" },
+        { Format::VECTOR2, "TEXCOORD" },
+    };
+
 public:
     Scene(const std::string &debugName="Untitled", bool isEditorScene = false);
 
@@ -157,6 +116,7 @@ private:
     struct {
         std::shared_ptr<GraphicsPipeline> tonemap;
         std::shared_ptr<GraphicsPipeline> pbr;
+        std::shared_ptr<GraphicsPipeline> basic;
         std::shared_ptr<ComputePipeline>  colorMixing;
     } pipelines;
 
@@ -168,7 +128,6 @@ private:
     
     struct {
         std::unique_ptr<Environment> global;
-        LightEnvironment light;
     } environments;
 
     std::shared_ptr<RenderTarget> renderTarget;
