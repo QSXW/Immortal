@@ -52,14 +52,8 @@ void main()
 
     res += properties.Color;
 
-    if (res.x > 0.89f && res.y > 0.89f, res.z > 0.89f)
-    {
-        res.xyz += properties.White * res.xyz * 0.5;
-    }
-    if (res.x < 0.1f && res.y < 0.1f, res.z < 0.1f)
-    {
-        res.xyz += properties.Black / res.xyz * 0.5;
-    }
+    res.xyz = clamp(res.xyz + properties.White * res.xyz, 0.0f, 1.0f);
+    res.xyz = clamp(res.xyz + properties.Black * (1.0f - res.xyz), 0.0f, 1.0f);
 
     float factor = 1.0;
     if (properties.Exposure > 0.0)
