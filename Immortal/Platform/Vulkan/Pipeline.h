@@ -48,6 +48,13 @@ public:
         Attachment attament;
     };
 
+    struct DescriptorSetPack
+    {
+        uint32_t Sync = 0;
+
+        VkDescriptorSet DescriptorSets[6];
+    };
+
 public:
     GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader);
 
@@ -66,6 +73,8 @@ public:
     virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+
+    virtual void AllocateDescriptorSet(uint64_t uuid) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
@@ -153,6 +162,8 @@ private:
     VkDescriptorSetLayout descriptorSetLayout;
 
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
+
+    std::unordered_map<uint64_t, DescriptorSetPack> descriptorSets;
 
     DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
 };

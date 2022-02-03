@@ -156,7 +156,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
 bool GraphicsPipeline::Ready()
 {
     bool ready = descriptorSetUpdater->Ready();
-    if (ready)
+    if (ready && !descriptorSet)
     {
         Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
         descriptorSetUpdater->Set(descriptorSet);
@@ -169,14 +169,14 @@ void GraphicsPipeline::Bind(Texture::Super *superTexture, uint32_t slot)
     auto texture = dynamic_cast<Texture *>(superTexture);
     auto descriptor = rcast<const Descriptor *>(&texture->DescriptorInfo());
     
-    for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
-    {
-        if (writeDesc.dstBinding == slot &&
-            Equals(writeDesc.pImageInfo, descriptor))
-        {
-            return;
-        }
-    }
+    //for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
+    //{
+    //    if (writeDesc.dstBinding == slot &&
+    //        Equals(writeDesc.pImageInfo, descriptor))
+    //    {
+    //        return;
+    //    }
+    //}
 
     Bind(descriptor, slot);
 }
@@ -199,6 +199,7 @@ void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
             writeDescriptor.dstBinding == slot)
         {
             writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
+            writeDescriptor.dstSet = descriptorSet;
             break;
         }
     }
@@ -206,6 +207,31 @@ void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
     {
         descriptorSetUpdater->Update(*device);
     }
+}
+
+void GraphicsPipeline::AllocateDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptorSets.find(uuid);
+    if (it != descriptorSets.end())
+    {
+        DescriptorSetPack &pack = it->second;
+        descriptorSet = pack.DescriptorSets[pack.Sync];
+        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+    }
+    else
+    {
+        DescriptorSetPack pack{};
+        for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
+        {
+            Check(descriptorPool->Allocate(&descriptorSetLayout, &pack.DescriptorSets[i]));
+        }
+        descriptorSet = pack.DescriptorSets[pack.Sync];
+        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+
+        descriptorSets[uuid] = pack;
+    }
+
+    descriptorSetUpdater->Set(descriptorSet);
 }
 
 ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :

@@ -80,6 +80,14 @@ struct DescriptorSetUpdater
         }
     }
 
+    void Clear()
+    {
+        for (auto &w : WriteDescriptorSets)
+        {
+            w.pImageInfo = nullptr;
+        }
+    }
+
     bool Ready()
     {
         for (auto &writeDescriptor : WriteDescriptorSets)

@@ -22,7 +22,7 @@ public:
 
     ~DescriptorPool();
 
-    VkResult Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet);
+    VkResult Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count = 1);
 
     void Free(VkDescriptorSet *pDescriptorSet, uint32_t size = 1);
 

@@ -234,20 +234,21 @@ void Scene::OnRender(const Camera &camera)
     }
 
     auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
-    for (auto o : view)
+    for (auto object : view)
     {
-        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(o);
+        auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
 
         UniformBuffer::Model model;
         model.Transform = transform;
         model.Color     = material.AlbedoColor;
         model.Roughness = material.Roughness;
         model.Metallic  = material.Metallic;
-        model.ObjectID  = (int)o;
+        model.ObjectID  = (int)object;
 
         auto &nodeList = mesh.Mesh->NodeList();
         for (auto &node : nodeList)
         {
+            pipelines.pbr->AllocateDescriptorSet((uint64_t)object);
             pipelines.pbr->Set(node.Vertex);
             pipelines.pbr->Set(node.Index);
             pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);

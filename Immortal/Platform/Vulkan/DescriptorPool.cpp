@@ -32,12 +32,12 @@ DescriptorPool::~DescriptorPool()
     IfNotNullThen(vkDestroyDescriptorPool, *device, handle, nullptr);
 }
 
-VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet)
+VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count)
 {
     VkDescriptorSetAllocateInfo createInfo{};
     createInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     createInfo.descriptorPool     = handle;
-    createInfo.descriptorSetCount = 1;
+    createInfo.descriptorSetCount = count;
     createInfo.pSetLayouts        = pDescriptorSetLayout;
 
     return vkAllocateDescriptorSets(*device, &createInfo, pDescriptorSet);

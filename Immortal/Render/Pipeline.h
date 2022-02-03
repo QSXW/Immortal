@@ -107,6 +107,11 @@ public:
 
     }
 
+    virtual void AllocateDescriptorSet(uint64_t uuid)
+    {
+
+    }
+
     template <class T>
     void Update(size_t size, const T *data, int slot = 0)
     {
