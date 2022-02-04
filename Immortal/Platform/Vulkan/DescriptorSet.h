@@ -33,11 +33,11 @@ public:
 
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {
-            desc.pImageInfo = descriptorInfo;
+            desc.pImageInfo = &descriptorInfo;
         }
         else if constexpr (IsPrimitiveOf<BufferDescriptor, T>())
         {
-            desc.pBufferInfo = descriptorInfo;
+            desc.pBufferInfo = &descriptorInfo;
         }
         else
         {

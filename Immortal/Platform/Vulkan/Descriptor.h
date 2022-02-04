@@ -11,8 +11,10 @@ namespace Immortal
 namespace Vulkan
 {
 
-struct ImageDescriptor : public Descriptor
+struct ImageDescriptor : public Descriptor, public VkDescriptorImageInfo
 {
+    using Primitive = VkDescriptorImageInfo;
+
     ImageDescriptor()
     {
 
@@ -20,21 +22,16 @@ struct ImageDescriptor : public Descriptor
 
     void Update(VkSampler sampler, VkImageView imageView, VkImageLayout imageLayout)
     {
-        info.sampler = sampler;
-        info.imageView = imageView;
-        info.imageLayout = imageLayout;
+        Primitive::sampler     = sampler;
+        Primitive::imageView   = imageView;
+        Primitive::imageLayout = imageLayout;
     }
-
-    operator const VkDescriptorImageInfo*() const
-    {
-        return &info;
-    }
-
-    VkDescriptorImageInfo info{};
 };
 
 struct BufferDescriptor : public Descriptor, public VkDescriptorBufferInfo
 {
+    using Primitive = VkDescriptorBufferInfo;
+
     BufferDescriptor() 
     {
         buffer = VK_NULL_HANDLE;
@@ -44,14 +41,9 @@ struct BufferDescriptor : public Descriptor, public VkDescriptorBufferInfo
 
     void Update(VkBuffer buffer, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE)
     {
-        buffer = buffer;
-        offset = offset;
-        range  = range;
-    }
-
-    operator const VkDescriptorBufferInfo*() const
-    {
-        return this;
+        Primitive::buffer = buffer;
+        Primitive::offset = offset;
+        Primitive::range  = range;
     }
 };
 
