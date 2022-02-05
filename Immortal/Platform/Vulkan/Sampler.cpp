@@ -10,7 +10,7 @@ namespace Vulkan
 Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     device{ device }
 {
-    Check(device->Create(&info, nullptr, &handle));
+    Check(device->Create(&info, &handle));
 }
 
 Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
@@ -54,7 +54,7 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
         createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
         createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
-    Check(device->Create(&createInfo, nullptr, &handle));
+    Check(device->Create(&createInfo, &handle));
 }
 
 Sampler::~Sampler()
@@ -75,10 +75,7 @@ Sampler::Sampler(Sampler &&other) :
 
 Sampler &Sampler::operator =(Sampler &&other)
 {
-    if (this == &other)
-    {
-        return *this;
-    }
+    THROWIF(&other == this, SError::SelfAssignment);
 
     device = other.device;
     handle = other.handle;

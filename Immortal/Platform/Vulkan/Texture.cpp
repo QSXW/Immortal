@@ -55,7 +55,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     createInfo.usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    Check(device->Create(&createInfo, nullptr, &stagingBuffer));
+    Check(device->Create(&createInfo, &stagingBuffer));
 
     VkMemoryRequirements memoryRequirements{};
     device->GetRequirements(stagingBuffer, &memoryRequirements);

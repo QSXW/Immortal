@@ -281,7 +281,7 @@ void Swapchain::Create()
     createInfo.surface          = surface;
     createInfo.clipped          = VK_TRUE; // Get the best performance by enabling clipping.
 
-    device->Create(&createInfo, nullptr, &handle);
+    device->Create(&createInfo, &handle);
 
     uint32_t count = 0;
     Check(vkGetSwapchainImagesKHR(*device, handle, &count, nullptr));

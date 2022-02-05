@@ -80,19 +80,19 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     createInfo.dependencyCount = U32(dependencies.size());
     createInfo.pDependencies   = dependencies.data();
 
-    Check(device->Create(&createInfo, nullptr, &handle));
+    Check(device->Create(&createInfo, &handle));
 }
 
 RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo * pCreateInfo)
 {
-    Check(device->Create(pCreateInfo, nullptr, &handle));
+    Check(device->Create(pCreateInfo, &handle));
 }
 
 RenderPass::~RenderPass()
 {
     if (device)
     {
-        device->Destroy(handle);
+        device->DestroyAsync(handle);
     }
 }
 

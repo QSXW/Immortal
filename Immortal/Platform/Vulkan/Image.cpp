@@ -182,7 +182,7 @@ Image::~Image()
 
 Image &Image::operator=(Image &&other)
 {
-    SLASSERT(&other != this && "You are trying to self-assignments, which is not acceptable.");
+    SLASSERT(&other != this && SError::SelfAssignment);
 
     device          = other.device;
     handle          = other.handle;
@@ -206,7 +206,7 @@ Image &Image::operator=(Image &&other)
 
 Image &Image::operator=(const Image &other)
 {
-    SLASSERT(&other != this && "You are trying to self-assignments, which is not acceptable.");
+    SLASSERT(&other != this && SError::SelfAssignment);
 
     device          = other.device;
     handle          = other.handle;

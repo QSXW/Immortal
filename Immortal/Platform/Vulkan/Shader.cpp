@@ -107,9 +107,9 @@ Shader::~Shader()
 {
     for (auto &m : modules)
     {
-        device->Destroy(m);
+        device->DestroyAsync(m);
     }
-    device->Destroy(descriptorSetLayout);
+    device->DestroyAsync(descriptorSetLayout);
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
@@ -143,7 +143,7 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
     createInfo.codeSize = spirv.size() * sizeof(uint32_t);
     createInfo.pCode    = spirv.data();
 
-    Check(vkCreateShaderModule(*device, &createInfo, nullptr, &shaderModule));
+    Check(device->Create(&createInfo, &shaderModule));
 
     // Reflect(src);
     SetupDescriptorSetLayout(stage);
@@ -428,7 +428,7 @@ void Shader::Setup()
     layoutInfo.bindingCount = U32(descriptorSetLayoutBindings.size());
     layoutInfo.pBindings    = descriptorSetLayoutBindings.data();
 
-    Check(device->Create(&layoutInfo, nullptr, &descriptorSetLayout));
+    Check(device->Create(&layoutInfo, &descriptorSetLayout));
     pipelineLayout = PipelineLayout{
         *device, 1, &descriptorSetLayout,
         pushConstantRanges.empty() ? nullptr : pushConstantRanges.data(),

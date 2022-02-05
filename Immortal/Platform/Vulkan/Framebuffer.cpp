@@ -24,7 +24,7 @@ Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vec
     createInfo.height          = extent.height;
     createInfo.layers          = 1;
 
-    Check(device->Create(&createInfo, nullptr, &handle));
+    Check(device->Create(&createInfo, &handle));
 }
 
 Framebuffer::~Framebuffer()

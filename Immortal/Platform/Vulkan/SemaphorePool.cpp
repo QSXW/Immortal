@@ -19,7 +19,7 @@ SemaphorePool::~SemaphorePool()
     Reset();
     for (auto &h : handles)
     {
-        IfNotNullThen(vkDestroySemaphore, *device, h, nullptr);
+        device->DestroyAsync(h);
     }
     handles.clear();
 }
@@ -34,7 +34,7 @@ VkSemaphore SemaphorePool::Request()
     VkSemaphore semaphore{ VK_NULL_HANDLE };
     VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    Check(vkCreateSemaphore(*device, &createInfo, nullptr, &semaphore));
+    Check(device->Create(&createInfo, &semaphore));
 
     handles.push_back(semaphore);
     activeCount++;

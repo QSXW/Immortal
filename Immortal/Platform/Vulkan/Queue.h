@@ -16,7 +16,7 @@ public:
     using Super = SuperQueue;
 
 public:
-    Queue(Device &device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
+    Queue(Device *device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
 
     Queue(const Queue &) = default;
 
@@ -79,7 +79,7 @@ public:
     }
 
 private:
-    Device &device;
+    Device *device;
 
     VkQueue handle{ VK_NULL_HANDLE };
 

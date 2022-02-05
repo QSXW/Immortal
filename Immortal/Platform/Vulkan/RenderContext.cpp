@@ -213,7 +213,7 @@ void RenderContext::SetupDescriptorSetLayout()
     info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     info.bindingCount = U32(bindings.size());
     info.pBindings    = bindings.data();
-    Check(device->Create(&info, nullptr, &DescriptorSetLayout));
+    Check(device->Create(&info, &DescriptorSetLayout));
 }
 
 }

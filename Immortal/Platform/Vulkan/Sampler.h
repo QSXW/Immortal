@@ -29,11 +29,6 @@ public:
         return handle;
     }
 
-    operator VkSampler&()
-    {
-        return handle;
-    }
-
     operator VkSampler() const
     {
         return handle;

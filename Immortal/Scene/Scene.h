@@ -72,9 +72,9 @@ public:
 
     Object CreateObject(const std::string &name = "");
 
-    void DestroyObject(Object &e);
+    void DestroyObject(Object &object);
 
-    void SetViewportSize(const Vector::Vector2 &size);
+    void SetViewportSize(const Vector2 &size);
 
     Object PrimaryCameraObject();
 

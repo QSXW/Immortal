@@ -93,13 +93,13 @@ public:
 
 public:
 #define DEFINE_CREATE_VK_OBJECT(T) \
-    VkResult Create(const Vk##T##CreateInfo *pCreateInfo, VkAllocationCallbacks *pAllocator, Vk##T *pObject) \
+    VkResult Create(const Vk##T##CreateInfo *pCreateInfo, Vk##T *pObject, VkAllocationCallbacks *pAllocator = nullptr) \
     { \
         return vkCreate##T(handle, pCreateInfo, pAllocator, pObject); \
     }
 
 #define DEFINE_CREATE_VK_KHR_OBJECT(T) \
-    VkResult Create(const Vk##T##CreateInfoKHR *pCreateInfo, VkAllocationCallbacks *pAllocator, Vk##T##KHR *pObject) \
+    VkResult Create(const Vk##T##CreateInfoKHR *pCreateInfo, Vk##T##KHR *pObject, VkAllocationCallbacks *pAllocator = nullptr) \
     { \
         return vkCreate##T##KHR(handle, pCreateInfo, pAllocator, pObject); \
     }
@@ -111,7 +111,9 @@ public:
     DEFINE_CREATE_VK_OBJECT(PipelineLayout)
     DEFINE_CREATE_VK_OBJECT(RenderPass)
     DEFINE_CREATE_VK_OBJECT(Sampler)
+    DEFINE_CREATE_VK_OBJECT(Semaphore)
     DEFINE_CREATE_VK_OBJECT(ShaderModule)
+
     DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
@@ -145,6 +147,7 @@ public:
     DEFINE_DESTORY_VK_OBJECT(PipelineLayout)
     DEFINE_DESTORY_VK_OBJECT(RenderPass)
     DEFINE_DESTORY_VK_OBJECT(Sampler)
+    DEFINE_DESTORY_VK_OBJECT(Semaphore)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
     DEFINE_DESTORY_VK_OBJECT(SwapchainKHR)
 
@@ -226,6 +229,11 @@ public:
     void UnmapMemory(VkDeviceMemory memory)
     {
         vkUnmapMemory(handle, memory);
+    }
+
+    void GetQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue)
+    {
+        vkGetDeviceQueue(handle, queueFamilyIndex, queueIndex, pQueue);
     }
 
 public:
