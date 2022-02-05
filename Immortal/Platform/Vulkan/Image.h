@@ -26,12 +26,12 @@ public:
           VkImageUsageFlags     imageUsage,
           VmaMemoryUsage        memoryUsage,
           VkSampleCountFlagBits sampleCount       = VK_SAMPLE_COUNT_1_BIT,
-          UINT32                mipLevels         = 1,
-          UINT32                arrayLayers       = 1,
+          uint32_t                mipLevels         = 1,
+          uint32_t                arrayLayers       = 1,
           VkImageTiling         tiling            = VK_IMAGE_TILING_OPTIMAL,
           VkImageCreateFlags    flags             = 0,
-          UINT32                numQueueFamilies  = 0,
-          const UINT32*         queueFamilies     = nullptr);
+          uint32_t                numQueueFamilies  = 0,
+          const uint32_t*         queueFamilies     = nullptr);
 
     Image(Device            *device, 
           VkImageCreateInfo &createInfo,
@@ -53,12 +53,7 @@ public:
         return handle;
     }
 
-    operator VkImage&()
-    {
-        return handle;
-    }
-
-    operator const VkImage&() const
+    operator VkImage() const
     {
         return handle;
     }

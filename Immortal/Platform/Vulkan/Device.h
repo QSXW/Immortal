@@ -54,7 +54,6 @@ public:
 
     void DestroyObjects();
 
-public:
     template <class T>
     void DestroyAsync(T task)
     {
@@ -78,7 +77,7 @@ public:
         return physicalDevice.DepthFormat(depthOnly);
     }
 
-    bool Device::IsEnabled(const std::string &extension) const
+    bool IsEnabled(const std::string &extension) const
     {
         return std::find_if(enabledExtensions.begin(), enabledExtensions.end(), [extension](const std::string &enabledExtension)
         {
@@ -86,7 +85,7 @@ public:
         }) != enabledExtensions.end();
     }
 
-    bool Device::IsExtensionSupport(const std::string &extension) const
+    bool IsExtensionSupport(const std::string &extension) const
     {
         return availableExtensions.find(extension) != availableExtensions.end();
     }
@@ -103,18 +102,6 @@ public:
     { \
         return vkCreate##T##KHR(handle, pCreateInfo, pAllocator, pObject); \
     }
-
-    DEFINE_CREATE_VK_OBJECT(Buffer)
-    DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
-    DEFINE_CREATE_VK_OBJECT(Framebuffer)
-    DEFINE_CREATE_VK_OBJECT(Image)
-    DEFINE_CREATE_VK_OBJECT(PipelineLayout)
-    DEFINE_CREATE_VK_OBJECT(RenderPass)
-    DEFINE_CREATE_VK_OBJECT(Sampler)
-    DEFINE_CREATE_VK_OBJECT(Semaphore)
-    DEFINE_CREATE_VK_OBJECT(ShaderModule)
-
-    DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
 
 #define DEFINE_DESTORY_VK_OBJECT(T) \
     void Destroy(Vk##T object, const VkAllocationCallbacks *pAllocator = nullptr) \
@@ -136,6 +123,47 @@ public:
         } \
     }
 
+#define DEFINE_RESET_OBJECT(T) \
+    void Reset(Vk##T object, Vk##T##ResetFlags flags) \
+    { \
+        Check(vkReset##T(handle, object, flags)); \
+    }
+
+#define DEFINE_CREATE_PIPELINES(T) \
+    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
+    { \
+        return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
+    }
+
+#define DEFINE_GET_REQUIREMENTS(T) \
+    void GetRequirements(Vk##T object, VkMemoryRequirements *pMemoryRequirements) \
+    { \
+        vkGet##T##MemoryRequirements(handle, object, pMemoryRequirements); \
+    }
+
+#define DEFINE_BIND_MEMORY(T) \
+    void BindMemory(Vk##T buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) \
+    { \
+        Check(vkBind##T##Memory(handle, buffer, memory, memoryOffset)); \
+    } \
+    void BindMemory(const VkBind##T##MemoryInfo *bindInfos, uint32_t count = 1) \
+    { \
+        Check(vkBind##T##Memory2(handle, count, bindInfos)); \
+    }
+
+    DEFINE_CREATE_VK_OBJECT(Buffer)
+    DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_CREATE_VK_OBJECT(Framebuffer)
+    DEFINE_CREATE_VK_OBJECT(Image)
+    DEFINE_CREATE_VK_OBJECT(ImageView)
+    DEFINE_CREATE_VK_OBJECT(PipelineLayout)
+    DEFINE_CREATE_VK_OBJECT(RenderPass)
+    DEFINE_CREATE_VK_OBJECT(Sampler)
+    DEFINE_CREATE_VK_OBJECT(Semaphore)
+    DEFINE_CREATE_VK_OBJECT(ShaderModule)
+
+    DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
+
     DEFINE_DESTORY_VK_OBJECT(Buffer)
     DEFINE_DESTORY_VK_OBJECT(CommandPool)
     DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
@@ -151,42 +179,14 @@ public:
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
     DEFINE_DESTORY_VK_OBJECT(SwapchainKHR)
 
-#define DEFINE_RESET_OBJECT(T) \
-    void Reset(Vk##T object, Vk##T##ResetFlags flags) \
-    { \
-        Check(vkReset##T(handle, object, flags)); \
-    }
-
     DEFINE_RESET_OBJECT(CommandPool)
     DEFINE_RESET_OBJECT(DescriptorPool)
-
-#define DEFINE_CREATE_PIPELINES(T) \
-    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
-    { \
-        return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
-    }
 
     DEFINE_CREATE_PIPELINES(Graphics)
     DEFINE_CREATE_PIPELINES(Compute)
 
-#define DEFINE_GET_REQUIREMENTS(T) \
-    void GetRequirements(Vk##T object, VkMemoryRequirements *pMemoryRequirements) \
-    { \
-        vkGet##T##MemoryRequirements(handle, object, pMemoryRequirements); \
-    }
-
     DEFINE_GET_REQUIREMENTS(Buffer)
     DEFINE_GET_REQUIREMENTS(Image)
-
-#define DEFINE_BIND_MEMORY(T) \
-    void BindMemory(Vk##T buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) \
-    { \
-        Check(vkBind##T##Memory(handle, buffer, memory, memoryOffset)); \
-    } \
-    void BindMemory(const VkBind##T##MemoryInfo *bindInfos, uint32_t count = 1) \
-    { \
-        Check(vkBind##T##Memory2(handle, count, bindInfos)); \
-    }
 
     DEFINE_BIND_MEMORY(Buffer)
     DEFINE_BIND_MEMORY(Image)

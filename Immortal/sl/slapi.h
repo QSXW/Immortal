@@ -212,6 +212,12 @@ public:
 #define THROWIF
 #endif
 
+#define ThrowIf(expr, what) \
+    if (!!(expr)) \
+    { \
+        throw RuntimeException(what); \
+    }
+
 #define DERROR(name, str) static constexpr const char name[] = str;
 namespace SError
 {

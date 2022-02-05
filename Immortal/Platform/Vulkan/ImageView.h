@@ -15,19 +15,19 @@ public:
     ImageView(Image          *image,
               VkImageViewType viewType,
               VkFormat        format         = VK_FORMAT_UNDEFINED,
-              UINT32          baseMipLevel   = 0,
-              UINT32          baseArrayLevel = 0,
-              UINT32          nMipLevels     = 0,
-              UINT32          nArrayLayers   = 0);
+              uint32_t          baseMipLevel   = 0,
+              uint32_t          baseArrayLevel = 0,
+              uint32_t          nMipLevels     = 0,
+              uint32_t          nArrayLayers   = 0);
 
     ImageView(Device          *device,
               VkImage          image,
               VkImageViewType  viewType,
               VkFormat         format,
-              UINT32           baseMipLevel,
-              UINT32           baseArrayLevel,
-              UINT32           nMipLevels,
-              UINT32           nArrayLayers
+              uint32_t           baseMipLevel,
+              uint32_t           baseArrayLevel,
+              uint32_t           nMipLevels,
+              uint32_t           nArrayLayers
               );
 
     ImageView(ImageView &&other);
@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    void Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers);
+    void Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers);
 
 private:
     VkImageView handle{ VK_NULL_HANDLE };

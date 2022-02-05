@@ -130,11 +130,11 @@ Instance::Instance(const char                                   *applicationName
             enabledExtensions.emplace_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
         }
 
-        /*if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+        if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
         {
             VkEnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
             enabledExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        }*/
+        }
     }
     if (headless && !headlessExtension)
     {
@@ -300,13 +300,13 @@ void Instance::QueryPhysicalDevice()
 
 PhysicalDevice &Instance::SuitablePhysicalDevice()
 {
-    SLASSERT(!physicalDevices.empty() && "There is no GPU on this device.");
+    ThrowIf(physicalDevices.empty(), "There is no GPU on this device.");
 
-    for (auto &pd : physicalDevices)
+    for (auto &physicalDevice : physicalDevices)
     {
-        if (pd->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        if (physicalDevice->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
-            return *pd;
+            return *physicalDevice;
         }
     }
 

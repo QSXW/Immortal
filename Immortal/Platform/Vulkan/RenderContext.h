@@ -223,34 +223,6 @@ private:
 
     struct
     {
-        std::vector<VkPresentModeKHR> presentMode = {
-            VK_PRESENT_MODE_MAILBOX_KHR,
-            VK_PRESENT_MODE_FIFO_KHR,
-            VK_PRESENT_MODE_IMMEDIATE_KHR
-        };
-
-        std::vector<VkSurfaceFormatKHR> surfaceFormat = {
-            { 
-                VK_FORMAT_R8G8B8A8_UNORM,
-                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-            },
-            { 
-                VK_FORMAT_B8G8R8A8_UNORM,
-                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-            },
-            { 
-                VK_FORMAT_R8G8B8A8_SRGB,
-                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-            },
-            {
-                VK_FORMAT_B8G8R8A8_SRGB,
-                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-            }
-        };
-    } priorities;
-
-    struct
-    {
         VkSurfaceTransformFlagBitsKHR preTransform{ VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR };
     } regisry;
 

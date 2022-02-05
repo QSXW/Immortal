@@ -26,7 +26,7 @@ private:
         
     std::vector<VkSemaphore> handles;
 
-    UINT32 activeCount{ 0 };
+    uint32_t activeCount{ 0 };
 };
 
 }

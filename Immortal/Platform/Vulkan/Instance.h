@@ -46,14 +46,14 @@ public:
         return handle;
     }
 
-    operator VkInstance&()
+    operator VkInstance() const
     {
         return handle;
     }
 
-    operator VkInstance() const
+    bool Ready() const
     {
-        return handle;
+        return !!handle;
     }
 
 private:

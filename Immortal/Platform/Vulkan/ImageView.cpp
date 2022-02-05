@@ -8,7 +8,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
+ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers) :
     device{ image->GetAddress<Device>() },
     refImage{ image },
     format{ format }
@@ -30,7 +30,7 @@ ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, UI
     refImage->Views().emplace(this);
 }
 
-ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers) :
+ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers) :
     device{ device },
     format{ format }
 {
@@ -59,7 +59,7 @@ ImageView::~ImageView()
     }
 }
 
-void ImageView::Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLevel, UINT32 baseArrayLevel, UINT32 nMipLevels, UINT32 nArrayLayers)
+void ImageView::Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers)
 {
     subresourceRange.baseMipLevel   = baseMipLevel;
     subresourceRange.baseArrayLayer = baseArrayLevel;
@@ -74,7 +74,7 @@ void ImageView::Setup(VkImage image, VkImageViewType viewType, UINT32 baseMipLev
     viewInfo.subresourceRange = subresourceRange;
     viewInfo.image            = image;
     viewInfo.components       = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
-    Check(vkCreateImageView(*device, &viewInfo, nullptr, &handle));
+    Check(device->Create(&viewInfo, &handle));
 }
 
 }

@@ -37,11 +37,11 @@ static std::vector<const char *> ValidationLayers = {
     // "VK_LAYER_RENDERDOC_Capture",
 };
 
-RenderContext::RenderContext(const RenderContext::Description &desc)
-    : handle{ desc.WindowHandle->GetNativeWindow() }
+RenderContext::RenderContext(const RenderContext::Description &desc) :
+    handle{ desc.WindowHandle->GetNativeWindow() }
 {
     instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
-    if (!instance)
+    if (!instance->Ready())
     {
         LOG::ERR("Vulkan Not Supported!");
         return;
@@ -91,19 +91,19 @@ RenderContext::RenderContext(const RenderContext::Description &desc)
 
 RenderContext::~RenderContext()
 {
-    vkDestroySurfaceKHR(instance->Handle(), surface, nullptr);
+    vkDestroySurfaceKHR(*instance, surface, nullptr);
     instance.release();
 }
 
 void RenderContext::CreateSurface()
 {
-    if (instance->Handle() == VK_NULL_HANDLE && !handle)
+    if (!handle)
     {
         surface = VK_NULL_HANDLE;
         return;
     }
 
-    Check(glfwCreateWindowSurface(instance->Handle(), static_cast<GLFWwindow *>(handle), nullptr, &surface));
+    Check(glfwCreateWindowSurface(*instance, static_cast<GLFWwindow *>(handle), nullptr, &surface));
 }
 
 void RenderContext::Prepare(size_t threadCount)
@@ -174,7 +174,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
 {
     present.renderTargets.clear();
 
-    if (transform == VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform == VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
+    if (transform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
     {
         swapchain = std::make_unique<Swapchain>(*swapchain, VkExtent2D{ extent.height, extent.width }, transform);
     }

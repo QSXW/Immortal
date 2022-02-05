@@ -23,11 +23,6 @@ public:
         return handle;
     }
 
-    operator VkFramebuffer&()
-    {
-        return handle;
-    }
-
     operator VkFramebuffer() const
     {
         return handle;
