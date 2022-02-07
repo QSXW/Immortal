@@ -221,9 +221,17 @@ void GraphicsPipeline::AllocateDescriptorSet(uint64_t uuid)
     else
     {
         DescriptorSetPack pack{};
-        for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
+        if (!freeDescriptorSetPacks.empty())
         {
-            Check(descriptorPool->Allocate(&descriptorSetLayout, &pack.DescriptorSets[i]));
+            pack = freeDescriptorSetPacks.front();
+            freeDescriptorSetPacks.pop();
+        }
+        else
+        {
+            for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
+            {
+                Check(descriptorPool->Allocate(&descriptorSetLayout, &pack.DescriptorSets[i]));
+            }
         }
         descriptorSet = pack.DescriptorSets[pack.Sync];
         SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
@@ -232,6 +240,17 @@ void GraphicsPipeline::AllocateDescriptorSet(uint64_t uuid)
     }
 
     descriptorSetUpdater->Set(descriptorSet);
+}
+
+void GraphicsPipeline::FreeDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptorSets.find(uuid);
+    if (it != descriptorSets.end())
+    {
+        DescriptorSetPack &pack = it->second;
+        freeDescriptorSetPacks.push(std::move(pack));
+        descriptorSets.erase(it);
+    }
 }
 
 ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :

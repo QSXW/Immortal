@@ -13,6 +13,8 @@
 #include "Texture.h"
 #include "Barrier.h"
 
+#include <queue>
+
 namespace Immortal
 {
 namespace Vulkan
@@ -75,6 +77,8 @@ public:
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
     virtual void AllocateDescriptorSet(uint64_t uuid) override;
+
+    virtual void FreeDescriptorSet(uint64_t uuid) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
@@ -164,6 +168,8 @@ private:
     VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
 
     std::unordered_map<uint64_t, DescriptorSetPack> descriptorSets;
+
+    std::queue<DescriptorSetPack> freeDescriptorSetPacks;
 
     DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
 };

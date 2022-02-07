@@ -218,7 +218,7 @@ void Scene::OnRender(const Camera &camera)
         for (auto &lightObject : lightObjects)
         {
             auto &[transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
-            shading->lights[i].direction = Vector4{ transform.Position, 0.0f };
+            shading->lights[i].direction = Vector4{ transform.Position, 1.0f };
 
             if (light.Enabled)
             {
@@ -283,9 +283,10 @@ Object Scene::CreateObject(const std::string &name)
     return o;
 }
 
-void Scene::DestroyObject(Object & o)
+void Scene::DestroyObject(Object &object)
 {
-    registry.destroy(o);
+    pipelines.pbr->FreeDescriptorSet(object);
+    registry.destroy(object);
 }
 
 void Scene::SetViewportSize(const Vector2 &size)

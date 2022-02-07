@@ -137,6 +137,8 @@ public:
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
+    virtual void Bind(const Descriptor::Super *descriptors, uint32_t binding = 0) override;
+
     template <class T, Buffer::Type type = Buffer::Type::Index>
     T Get()
     {

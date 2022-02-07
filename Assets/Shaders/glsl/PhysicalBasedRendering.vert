@@ -60,7 +60,7 @@ void main()
 	gl_Position.y = -gl_Position.y;
 #endif
 
-    fsInput.WorldPos = vec3(gl_Position);
+    fsInput.WorldPos = vec3(model.transform * vec4(inPos, 1.0));
     fsInput.Normal   = mat3(model.transform) * inNormal;
     fsInput.Tagent   = inTagent;
     fsInput.Bitagent = inBitagent;

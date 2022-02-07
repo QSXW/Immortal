@@ -30,7 +30,7 @@ public:
 
     virtual Anonymous Descriptor() const override;
 
-    virtual Buffer::Super *Bind(const BindInfo &bindInfo) const override;
+    virtual Super *Bind(const BindInfo &bindInfo) const override;
 
     VkDeviceSize &Offset()
     {

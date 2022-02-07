@@ -169,8 +169,8 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
 
 void Texture::As(Descriptor::Super *descriptors, size_t index)
 {
-    GPUDescriptor *gpuDescriptors = rcast<GPUDescriptor *>(descriptors);
-    gpuDescriptors[index] = descriptor.gpu;
+    CPUDescriptor *cpuDescriptors = rcast<CPUDescriptor *>(descriptors);
+    cpuDescriptors[index] = descriptor.cpu;
 }
 
 }

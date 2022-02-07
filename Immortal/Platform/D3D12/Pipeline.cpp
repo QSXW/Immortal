@@ -169,5 +169,12 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *superConstantB
     device->CreateView(&constantBuffer->Desc(), cbvDescriptor.cpu);
 }
 
+void Pipeline::Bind(const Descriptor::Super *superDescriptors, uint32_t binding)
+{
+    const CPUDescriptor *descriptor = rcast<const CPUDescriptor *>(superDescriptors);
+
+    //device->CopyDescriptors(32, *descriptor, descriptorAllocator.FreeStartOfHeap(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
+
 }
 }

@@ -182,7 +182,7 @@ void main()
 
 	// Specular contribution
 	vec3 Lo = vec3(0.0);
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < shading.lights.length(); i++) {
 		vec3 L = normalize(shading.lights[i].position - fsInput.WorldPos);
 		Lo += specularContribution(L, V, N, F0, metallic, roughness);
 	};
