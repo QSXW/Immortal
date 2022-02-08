@@ -32,7 +32,8 @@ public:
     {
         std::vector<VkPresentModeKHR> PresentMode = {
             VK_PRESENT_MODE_FIFO_KHR,
-            VK_PRESENT_MODE_MAILBOX_KHR
+            VK_PRESENT_MODE_MAILBOX_KHR,
+            VK_PRESENT_MODE_IMMEDIATE_KHR
         };
 
         std::vector<VkSurfaceFormatKHR> SurfaceFormat = {

@@ -1,7 +1,6 @@
 #pragma once
 #include "Core.h"
 
-#include "Framework/Device.h"
 #include "Common.h"
 #include "Instance.h"
 #include "PhysicalDevice.h"
@@ -18,7 +17,7 @@ namespace Vulkan
 {
 
 class Swapchain;
-class Device : public SuperDevice
+class Device
 {
 public:
     using UploadProcess = void (*)(CommandBuffer *);

@@ -248,7 +248,7 @@ void Scene::OnRender(const Camera &camera)
         auto &nodeList = mesh.Mesh->NodeList();
         for (auto &node : nodeList)
         {
-            pipelines.pbr->AllocateDescriptorSet((uint64_t)object);
+            pipelines.pbr->AllocateDescriptorSet((uint64_t)&node);
             pipelines.pbr->Set(node.Vertex);
             pipelines.pbr->Set(node.Index);
             pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);

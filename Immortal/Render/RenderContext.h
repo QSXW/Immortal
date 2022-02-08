@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core.h"
-#include "Framework/Device.h"
 #include "Framework/Window.h"
 #include "Render/Shader.h"
 #include "Render/Buffer.h"
@@ -61,8 +60,6 @@ public:
     RenderContext() { }
 
     virtual void SwapBuffers() { }
-
-    virtual Device *GetDevice() { return nullptr; }
 
     virtual bool HasSwapchain() { return false;  }
 

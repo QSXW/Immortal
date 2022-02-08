@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Framework/Utils.h"
-#include "Framework/Device.h"
 #include "Common.h"
 
 #include "Queue.h"
@@ -12,11 +11,8 @@ namespace Immortal
 namespace D3D12
 {
 
-class Device : SuperDevice
+class Device
 {
-public:
-    using Super = SuperDevice;
-
 public:
     Device(ComPtr<IDXGIFactory4> factory);
 

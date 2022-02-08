@@ -73,18 +73,19 @@ Mesh::Mesh(const std::string & filepath) :
             bindInfos[i].type   = Buffer::Type::Vertex;
 
             totalVertexSize += bindInfos[i].size;
-            totalFaceSize   += scene->mMeshes[i]->mNumFaces;
         }
         for (size_t i = 0, j = scene->mNumMeshes; i < scene->mNumMeshes; i++, j++)
         {
             bindInfos[j].type = Buffer::Type::Index;
             bindInfos[j].size = scene->mMeshes[i]->mNumFaces * sizeof(Face);
             bindInfos[j].offset = bindInfos[j - 1].size + bindInfos[j - 1].offset;
+
+            totalFaceSize += bindInfos[j].size;
         }
         vertices.reserve(totalVertexSize);
         faces.reserve(totalFaceSize);
 
-        buffer.reset(Render::CreateBuffer(totalVertexSize * sizeof(Vertex) + totalFaceSize * sizeof(Face), Buffer::Type{ Buffer::Type::Vertex | Buffer::Type::Index }));
+        buffer.reset(Render::CreateBuffer(totalVertexSize + totalFaceSize, Buffer::Type{ Buffer::Type::Vertex | Buffer::Type::Index }));
 
         for (size_t i = 0; i < scene->mNumMeshes; i++)
         {

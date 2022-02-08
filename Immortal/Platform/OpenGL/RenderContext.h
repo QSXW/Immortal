@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Render/RenderContext.h"
-#include "Framework/Device.h"
 
 struct GLFWwindow;
 namespace Immortal
@@ -17,11 +16,6 @@ public:
 
 public:
     RenderContext(SuperRenderContext::Description &desc);
-
-    Device *GetDevice() override
-    {
-        return nullptr;
-    }
 
     void Setup();
 
