@@ -4,7 +4,7 @@
 #include "Render.h"
 #include "Math.h"
 
-#include "Framework/Math.h"
+#include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
 
 namespace Immortal

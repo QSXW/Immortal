@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Render/Shader.h"
 #include "Common.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {
@@ -25,19 +26,19 @@ public:
 
     void Unmap() const override;
 
-    void Set(const std::string &name, int value) override;
+    void Set(const std::string &name, int value);
 
-    void Set(const std::string &name, int *values, uint32_t count) override;
+    void Set(const std::string &name, int *values, uint32_t count);
 
-    void Set(const std::string &name, float value) override;
+    void Set(const std::string &name, float value);
 
-    void Set(const std::string &name, const Vector2 &value) override;
+    void Set(const std::string &name, const Vector2 &value);
 
-    void Set(const std::string &name, const Vector3 &value) override;
+    void Set(const std::string &name, const Vector3 &value);
 
-    void Set(const std::string &name, const Vector4 &value) override;
+    void Set(const std::string &name, const Vector4 &value);
 
-    void Set(const std::string &name, const Matrix4 &value) override;
+    void Set(const std::string &name, const Matrix4 &value);
 
     virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ);
 

@@ -4,6 +4,7 @@
 
 #include "Texture.h"
 #include "Types.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

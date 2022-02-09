@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Math/Vector.h"
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

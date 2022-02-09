@@ -11,7 +11,7 @@ public:
         eventSink{ this }
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
-        texture = Render::Preset()->WhiteTexture;
+        texture = Render::Preset()->Textures.White;
 
         pipeline.reset(Render::Create<GraphicsPipeline>(Render::Get<Shader, ShaderName::Basic>()));
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }}));

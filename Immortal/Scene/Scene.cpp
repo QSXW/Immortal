@@ -80,7 +80,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
         }
     }));
     // renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
-    renderTarget->Set(Color{ 0.0f, 0.0f, 0.0f, 1 });
+    renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
 
     pipelines.tonemap = nullptr;
     pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Math/Vector.h"
 
 #include "entt.hpp"
 #include "Scene.h"

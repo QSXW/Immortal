@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Core.h"
+#include "Math/Vector.h"
 
 #include "entt.hpp"
 
 #include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
-
 #include "Render/Texture.h"
 #include "Render/Environment.h"
 #include "Render/Mesh.h"

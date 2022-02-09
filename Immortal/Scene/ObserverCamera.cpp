@@ -1,7 +1,7 @@
 #include "impch.h"
 #include "ObserverCamera.h"
 
-#include "Framework/Math.h"
+#include "Math/Math.h"
 #include "Framework/Input.h"
 
 namespace Immortal

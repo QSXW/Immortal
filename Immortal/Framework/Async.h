@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Log.h"
 
 #include <thread>
 #include <queue>

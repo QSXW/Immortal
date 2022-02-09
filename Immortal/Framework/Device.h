@@ -6,9 +6,7 @@ namespace Immortal
 class Device
 {
 public:
-    Device() { }
-
-    virtual ~Device() { }
+    virtual ~Device() = 0;;
 };
 
 using SuperDevice = Device;

@@ -23,11 +23,8 @@ set(FRAMEWORK_FILES
     Framework/LayerStack.h
     Framework/Log.cpp
     Framework/Log.h
-    Framework/Math.h
     Framework/Timer.h
     Framework/Utils.h
-    Framework/Vector.cpp
-    Framework/Vector.h
     Framework/Window.cpp
     Framework/Window.h
     Framework/Device.h
@@ -58,6 +55,11 @@ set(GUI_FILES
 set(INTERFACE_FILES
    Interface/Delegate.cpp
    Interface/Delegate.h)
+
+set(MATH_FILES
+   Math/Math.h
+   Math/Vector.cpp
+   Math/Vector.h)
 
 set(FS_FILES
     FileSystem/FileSystem.cpp
@@ -286,6 +288,7 @@ source_group("Event\\" FILES ${EVENT_FILES})
 source_group("Image\\" FILES ${IMAGE_FILES})
 source_group("ImGui\\" FILES ${GUI_FILES})
 source_group("Interface\\" FILES ${INTERFACE_FILES})
+source_group("Math\\" FILES ${MATH_FILES})
 source_group("FileSystem\\" FILES ${FS_FILES})
 source_group("Physics\\" FILES ${PHYSICS_FILES})
 source_group("Platform\\D3D12\\" FILES ${D3D12_FILES})
@@ -307,9 +310,11 @@ set(PROJECT_FILES
     ${FRAMEWORK_FILES}
     ${EDITOR_FILES}
     ${EVENT_FILES}
+    ${FS_FILES}
     ${IMAGE_FILES}
     ${GUI_FILES}
     ${INTERFACE_FILES}
+    ${MATH_FILES}
     ${IO_FILES}
     ${PHYSICS_FILES}
     ${D3D12_FILES}
@@ -340,9 +345,6 @@ target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMA
 add_subdirectory(sl)
 add_subdirectory(Media)
 
-set(GLExternal )
-set(SPIRVExternal )
-set(CoreExternal )
 target_link_libraries(${PROJECT_NAME}
     slapi
     slCodec

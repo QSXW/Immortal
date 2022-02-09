@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include <queue>
+#include <mutex>
 
 namespace Immortal
 {

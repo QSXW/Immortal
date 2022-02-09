@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Scene/Component.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

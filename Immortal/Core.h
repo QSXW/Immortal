@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <memory>
 #include <iostream>
+#include <algorithm>
+
 #include "sl.h"
 
 #define IMMORTAL_PLATFORM_SURFACE SLSURFACE
@@ -31,7 +33,13 @@
     #error Only support Windows!
 #endif
 
-#include "Framework/Vector.h"
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
+
 #include "Framework/Log.h"
 
 namespace Immortal

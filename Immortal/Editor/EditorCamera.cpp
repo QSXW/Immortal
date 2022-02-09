@@ -1,6 +1,5 @@
 #include "impch.h"
 #include "EditorCamera.h"
-
 #include "Framework/Input.h"
 
 namespace Immortal
@@ -156,3 +155,4 @@ void EditorCamera::SetViewportSize(const Vector2 &size)
     SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
 }
 }
+                                                                  

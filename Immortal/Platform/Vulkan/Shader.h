@@ -4,7 +4,6 @@
 
 #include "Common.h"
 #include "Render/Shader.h"
-#include "Render/GLSLCompiler.h"
 #include "PipelineLayout.h"
 #include "Buffer.h"
 #include "Descriptor.h"

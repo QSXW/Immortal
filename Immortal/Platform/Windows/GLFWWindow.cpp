@@ -1,12 +1,12 @@
 #include "impch.h"
 
 #include "GLFWWindow.h"
+#include "GLFWInput.h"
 #include "Event/ApplicationEvent.h"
 #include "Event/MouseEvent.h"
 #include "Event/KeyEvent.h"
 #include "Render/Render.h"
 #include "Render/Frame.h"
-#include "GLFWInput.h"
 
 namespace Immortal
 {

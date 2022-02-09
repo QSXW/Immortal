@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Event/MouseEvent.h"
 #include "Render/Camera.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

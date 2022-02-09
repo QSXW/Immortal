@@ -12,8 +12,8 @@ struct FSInput
 {
     vec3 WorldPos;
     vec3 Normal;
-    vec3 Tagent;
-    vec3 Bitagent;
+    vec3 Tangent;
+    vec3 BiTangent;
     vec2 TexCoord;
 };
 

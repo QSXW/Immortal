@@ -1,8 +1,10 @@
 #pragma once
 
 #include <filesystem>
+
 #include "Core.h"
 #include "Media/Stream.h"
+
 
 namespace Immortal
 {
@@ -127,7 +129,7 @@ static std::string ExtractFileName(const std::string &path)
 
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
         
-    return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
+    return path.substr(lastSlash, std::max(lastDot, path.size()) - lastSlash);
 }
 
 static void MakeDirectory(const std::string &path)

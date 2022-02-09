@@ -169,46 +169,6 @@ public:
         return type == Type::Graphics;
     }
 
-    virtual void Set(const std::string& name, int value)
-    {
-
-    }
-
-    virtual void Set(const std::string& name, int* values, uint32_t count)
-    {
-    
-    }
-
-    virtual void Set(const std::string &name, float value)
-    { 
- 
-    } 
-
-    virtual void Set(const std::string &name, const Vector2 &value)
-    {
-
-    } 
-
-    virtual void Set(const std::string &name, const Vector3 &value)
-    { 
-     
-    } 
- 
-    virtual void Set(const std::string &name, const Vector4 &value)
-    { 
-     
-    } 
- 
-    virtual void Set(const std::string &name, const Matrix4 &value)
-    {
-    
-    }
-
-    virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
-    {
-
-    }
-
 protected:
     Type type{ Type::Graphics };
 };

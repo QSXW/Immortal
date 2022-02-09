@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Core.h"
-#include "Vector.h"
 #include "KeyCodes.h"
+
+#include "Math/Vector.h"
 
 namespace Immortal
 {

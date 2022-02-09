@@ -16,10 +16,15 @@ Window *Window::Create(const Description &description)
         LOG::INFO("Creating window with Native Win32");
         return new DirectWindow{ description };
     }
-    LOG::INFO("Creating window with GLFW");
-    return new GLFWWindow{ description };
+    if (Render::API & (Render::Type::Vulkan | Render::Type::OpenGL))
+    {
+        LOG::INFO("Creating window with GLFW");
+        return new GLFWWindow{ description };
+    }
+    LOG::ERR("There is no Window implemented for the rendering API specified yet.");
+    return nullptr;
 #else
-    SLASSERT(false && "Unknown platform!");
+    THROWIF(true, "Unknown platform!");
     return nullptr;
 #endif
 }

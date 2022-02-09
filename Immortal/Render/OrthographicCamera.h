@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Camera.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

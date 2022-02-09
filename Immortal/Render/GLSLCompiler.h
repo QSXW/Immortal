@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GLSLCompiler.h"
 #include "Shader.h"
 
 namespace Immortal

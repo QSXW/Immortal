@@ -11,6 +11,7 @@
 #include "CommandPool.h"
 #include "CommandAllocator.h"
 #include "Queue.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

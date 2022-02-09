@@ -4,6 +4,7 @@
 
 #include "Texture.h"
 #include "Shader.h"
+#include "Math/Vector.h"
 
 namespace Immortal
 {

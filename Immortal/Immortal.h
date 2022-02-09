@@ -19,6 +19,9 @@
 #include "ImGui/ImGuizmo.h"
 #include "ImGui/Utils.h"
 
+#include "Math/Math.h"
+#include "Math/Vector.h"
+
 #include "Utils/PlatformUtils.h"
 #include "Utils/json.h"
 

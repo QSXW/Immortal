@@ -3,6 +3,8 @@
 #include "Core.h"
 
 #include "SceneCamera.h"
+#include "Math/Vector.h"
+
 namespace Immortal
 {
 	class ObserverCamera : public SceneCamera
