@@ -15,23 +15,31 @@ public:
             ImGuiTreeNodeFlags_AllowItemOverlap |
             ImGuiTreeNodeFlags_FramePadding;
 
-    static inline bool DrawFloat(const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f)
+    template <class T>
+    static inline bool DrawColumn(const std::string &label, T draw)
     {
         bool modified = false;
 
         ImGui::PushID(label.c_str());
-
         ImGui::Columns(2);
         ImGui::Text(label.c_str());
         ImGui::SetColumnWidth(0, 64);
         ImGui::NextColumn();
         ImGui::PushItemWidth(-1);
-        modified |= ImGui::SliderFloat("##C", values, min, max);
+
+        modified = draw();
 
         ImGui::Columns(1);
         ImGui::PopID();
 
         return modified;
+    }
+
+    static inline bool DrawFloat(const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f)
+    {
+        return DrawColumn(label, [&]() -> bool {
+            return ImGui::SliderFloat("##C", values, min, max);
+            });
     };
 
 public:
@@ -59,6 +67,17 @@ public:
                             transform.Rotation = Vector::Radians(rotation);
                     });
                 }
+
+                if (object.HasComponent<LightComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("Light"),
+                        [&]() -> void {
+                            auto &light = object.GetComponent<LightComponent>();
+                            DrawColumn(WordsMap::Get("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
+                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&light.Radiance); });
+                        });
+                }
                 
                 if (object.HasComponent<MaterialComponent>())
                 {
@@ -67,17 +86,7 @@ public:
                         [&]() -> void {
                             auto &material = object.GetComponent<MaterialComponent>();
 
-                            auto id = WordsMap::Get("Color").c_str();
-                            ImGui::PushID(id);
-                            ImGui::Columns(2);
-                            ImGui::Text(id);
-                            ImGui::SetColumnWidth(0, 64);
-                            ImGui::NextColumn();
-                            ImGui::PushItemWidth(-1);
-                            ImGui::SetColorEditOptions(ImGuiColorEditFlags_DefaultOptions_);
-                            ImGui::ColorEdit4("##C", (float *)&material.AlbedoColor);
-                            ImGui::NextColumn();
-                            ImGui::PopID();
+                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&material.AlbedoColor); });
 
                             float smoothness = 1.0f - material.Roughness;
                             DrawFloat(WordsMap::Get("Metallic"), &material.Metallic, 0.001, 0, 1.0f);
@@ -145,7 +154,6 @@ public:
                             ImGui::SetColumnWidth(0, 64);
                             ImGui::NextColumn();
                             ImGui::PushItemWidth(-1);
-                            ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_PickerHueBar);
                             c.Modified |= ImGui::ColorEdit4("##C", (float *)&c.RGBA);
                             ImGui::NextColumn();
                             ImGui::PopID();
@@ -163,6 +171,7 @@ public:
                             ImGui::PushItemWidth(-1);
                             ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
                             c.Modified |= ImGui::ColorEdit4("##C", (float *)&c.HSL, ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_InputHSV | ImGuiColorEditFlags_Float);
+                            ImGui::SetColorEditOptions(ImGuiColorEditFlags_DefaultOptions_);
 
                             ImGui::NextColumn();
                             ImGui::Columns(1);

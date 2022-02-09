@@ -131,11 +131,12 @@ public:
 
     void UpdateMenuBar()
     {
+        bool isSaveAsClicked = false;
         auto *gui = Application::App()->GetGuiLayer();
         gui->UpdateTheme();
 
         ImGui::PushFont(gui->Bold());
-        menuBar.OnUpdate([=]() -> void {
+        menuBar.OnUpdate([&]() -> void {
             if (ImGui::BeginMenu(WordsMap::Get("Menu")))
             {
                 if (ImGui::MenuItem(WordsMap::Get("Open"), "Ctrl + O"))
@@ -152,7 +153,7 @@ public:
                 }
                 if (ImGui::MenuItem(WordsMap::Get("Save As"), "Ctrl+A"))
                 {
-
+                    isSaveAsClicked = true;
                 }
                 if (ImGui::MenuItem(WordsMap::Get("Exit"), "Ctrl + W"))
                 {
@@ -178,13 +179,75 @@ public:
                 ImGui::EndMenu();
             }
             });
+
+        if (isSaveAsClicked)
+        {
+            ImGui::OpenPopup(WordsMap::Get("Save Option").c_str());
+        }
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        static bool opened = true;
+        if (ImGui::BeginPopupModal(WordsMap::Get("Save Option").c_str(), &opened, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text(
+                "\n"
+                "\n\n"
+            );
+            ImGui::Separator();
+
+            static bool dontAskMeNextTime = false;
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+            ImGui::Checkbox(WordsMap::Get("Don't ask me next time").c_str(), &dontAskMeNextTime);
+            ImGui::PopStyleVar();
+
+            if (ImGui::Button(WordsMap::Get("OK").c_str(), ImVec2(120, 0)))
+            { 
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button(WordsMap::Get("Cancel").c_str(), ImVec2(120, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::PopFont();
+    }
+
+    void UpdateRightClickMenu()
+    {
+        if (editableArea.IsHovered() && !ImGuizmo::IsOver() && Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt))
+        {
+            ImGui::OpenPopup("Right Click Menu");
+        }
+        if (ImGui::BeginPopup("Right Click Menu"))
+        {
+            if (ImGui::MenuItem(WordsMap::Get("Delete").c_str()) && selectedObject)
+            {
+                panels.hierarchyGraphics.Select(Object{});
+                scene.DestroyObject(selectedObject);
+                selectedObject = Object{};
+            }
+            if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
+            {
+                ImGui::EndPopup();
+                LoadObject();
+            }
+            else
+            {
+                ImGui::EndPopup();
+            }
+        }
     }
 
     virtual void OnGuiRender() override
     {
         UpdateEditableArea();
         UpdateMenuBar();
+        UpdateRightClickMenu();
 
         panels
             .hierarchyGraphics
@@ -370,22 +433,21 @@ public:
 
     bool OnMouseDown(MouseButtonPressedEvent &e)
     {
-        if (editableArea.IsHovered() && !ImGuizmo::IsOver() && e.GetMouseButton() == MouseCode::Left)
+        if (editableArea.IsHovered() && !ImGuizmo::IsOver())
         {
-            if (!Input::IsKeyPressed(KeyCode::Control))
+            if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control))
             {
+                auto [x, y] = ImGui::GetMousePos();
+                x -= editableArea.MinBound().x;
+                y -= editableArea.MinBound().y;
+
+                uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
+
+                Object o = Object{ *(int *)&pixel, &scene };
+                panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
+
                 return true;
             }
-            auto [x, y] = ImGui::GetMousePos();
-            x -= editableArea.MinBound().x;
-            y -= editableArea.MinBound().y;
-
-            uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
-
-            Object o = Object{ *(int *)&pixel, &scene };
-            panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
-
-            return true;
         }
 
         return false;
@@ -422,7 +484,7 @@ private:
     } panels;
 
     struct {
-        bool showDemoWindow{ false };
+        bool showDemoWindow{ true };
     } Settings;
 
     Widget::Viewport editableArea{ WordsMap::Get("Offline Render") };
