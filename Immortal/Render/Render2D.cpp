@@ -54,7 +54,7 @@ void Render2D::Setup()
     }
     pipeline->Create(Render::Preset()->Target);
 
-    data.WhiteTexture = Render::Preset()->WhiteTexture;
+    data.WhiteTexture = Render::Preset()->Textures.White;
 
     for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
     {

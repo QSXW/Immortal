@@ -63,6 +63,16 @@ public:
 
         if (panels.tools.IsControlActive(Tools::Start))
         {
+            if (selectedObject)
+            {
+                auto &c = selectedObject.GetComponent<ColorMixingComponent>();
+                c.HSL.r += 3.0f * Application::DeltaTime();
+                if (c.HSL.r > 1.0f)
+                {
+                    c.HSL.r = -1.0f;
+                }
+                c.Modified = true;
+            }
             scene.OnRenderRuntime();
         }
         else
@@ -258,10 +268,7 @@ public:
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
                 auto &material = o.Add<MaterialComponent>();
-                material.Textures.Albedo = mesh.Mesh->Textures[0].Albedo;
-
-                auto &transform = o.Get<TransformComponent>();
-                transform.Scale = { 0.01f, 0.01f, 0.01f };
+                // material.Textures.Albedo = mesh.Mesh->Textures[0].Albedo;
             }
             else
             {
@@ -331,6 +338,7 @@ public:
             break;
 
         case KeyCode::Q:
+            panels.tools.Activate(Tools::Hand);
             guizmoType = ImGuizmo::OPERATION::INVALID;
             break;
 
@@ -414,7 +422,7 @@ private:
     } panels;
 
     struct {
-        bool showDemoWindow{ true };
+        bool showDemoWindow{ false };
     } Settings;
 
     Widget::Viewport editableArea{ WordsMap::Get("Offline Render") };

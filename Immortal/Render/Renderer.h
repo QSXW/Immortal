@@ -20,10 +20,6 @@ public:
 
     virtual void OnResize(UINT32 x, UINT32 y, UINT32 width, UINT32 height) { }
 
-    virtual void EnableDepthTest() { }
-
-    virtual void DisableDepthTest() { }
-
     virtual void SetClearColor(const Vector4 &color) { }
 
     virtual void Clear() { }

@@ -102,6 +102,12 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     {
         auto &light = CreateObject(std::string{ "Light#" } + std::to_string(i));
         light.AddComponent<LightComponent>();
+        light.AddComponent<MaterialComponent>();
+        auto &mesh = light.AddComponent<MeshComponent>();
+        mesh.Mesh = Mesh::CreateSphere(0.5f);
+
+        auto &transform = light.GetComponent<TransformComponent>();
+        transform.Scale = Vector3{ 1.0f, 1.0f, 1.0f };
     }
 
     Render2D::Setup(renderTarget);
@@ -248,16 +254,16 @@ void Scene::OnRender(const Camera &camera)
         auto &nodeList = mesh.Mesh->NodeList();
         for (auto &node : nodeList)
         {
-            pipelines.pbr->AllocateDescriptorSet((uint64_t)&node);
-            pipelines.pbr->Set(node.Vertex);
-            pipelines.pbr->Set(node.Index);
-            pipelines.pbr->Bind(material.Textures.Albedo.get(), 2);
-            pipelines.pbr->Bind(material.Textures.Normal.get(), 3);
-            pipelines.pbr->Bind(material.Textures.Metallic.get(), 4);
-            pipelines.pbr->Bind(material.Textures.Roughness.get(), 5);
-            pipelines.pbr->Bind(material.Textures.AO.get(), 6);
-            Render::PushConstant(pipelines.pbr.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
-            Render::Draw(pipelines.pbr);
+            pipelines.basic->AllocateDescriptorSet((uint64_t)&node);
+            pipelines.basic->Set(node.Vertex);
+            pipelines.basic->Set(node.Index);
+            pipelines.basic->Bind(material.Textures.Albedo.get(), 2);
+            pipelines.basic->Bind(material.Textures.Normal.get(), 3);
+            pipelines.basic->Bind(material.Textures.Metallic.get(), 4);
+            pipelines.basic->Bind(material.Textures.Roughness.get(), 5);
+            pipelines.basic->Bind(material.Textures.AO.get(), 6);
+            Render::PushConstant(pipelines.basic.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
+            Render::Draw(pipelines.basic);
         }
     }
 
@@ -274,18 +280,32 @@ void Scene::OnRender(const Camera &camera)
 
 Object Scene::CreateObject(const std::string &name)
 {
-    auto o = Object{ registry.create(), this };
+    auto object = Object{ registry.create(), this };
+        
+    object.AddComponent<TagComponent>(name);
+    object.AddComponent<TransformComponent>();
+    object.AddComponent<IDComponent>();
 
-    o.AddComponent<TransformComponent>();
-    auto &idComponent = o.AddComponent<IDComponent>();
-    o.AddComponent<TagComponent>(name);
-
-    return o;
+    return object;
 }
 
 void Scene::DestroyObject(Object &object)
 {
-    pipelines.pbr->FreeDescriptorSet(object);
+
+    if (object.HasComponent<MeshComponent>())
+    {
+        MeshComponent &mesh = object.GetComponent<MeshComponent>();
+        auto &nodeList = mesh.Mesh->NodeList();
+        for (auto &node : nodeList)
+        {
+            pipelines.pbr->FreeDescriptorSet((uint64_t)&node);
+            pipelines.basic->FreeDescriptorSet((uint64_t)&node);
+        }
+    }
+    else
+    {
+        pipelines.pbr->FreeDescriptorSet(object);
+    }
     registry.destroy(object);
 }
 

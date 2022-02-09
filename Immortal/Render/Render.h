@@ -23,9 +23,11 @@ public:
     struct Data
     {
         std::shared_ptr<RenderTarget> Target;
-        std::shared_ptr<Texture>      BlackTexture;
-        std::shared_ptr<Texture>      TransparentTexture;
-        std::shared_ptr<Texture>      WhiteTexture;
+        struct {
+            std::shared_ptr<Texture> Black;
+            std::shared_ptr<Texture> Transparent;
+            std::shared_ptr<Texture> White;
+        } Textures;
     };
 
     enum class Type
@@ -103,7 +105,6 @@ public:
 
     static void Setup(const std::shared_ptr<RenderTarget> &renderTarget);
 
-
     static const char *Sringify(Render::Type type)
     {
         switch (type)
@@ -128,16 +129,6 @@ public:
         renderer->OnResize(0, 0, width, height);
     }
 
-    static void EnableDepthTest()
-    {
-        renderer->EnableDepthTest();
-    }
-
-    static void DisableDepthTest()
-    {
-        renderer->DisableDepthTest();
-    }
-
     static void SetClearColor(Color &color)
     {
         renderer->SetClearColor(color);
@@ -149,19 +140,19 @@ public:
         renderer->Clear();
     }
 
-    static void Render::Begin(const Camera &camera)
+    static void Begin(const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
         renderer->Begin(data.Target);
     }
 
-    static void Render::Begin(std::shared_ptr<RenderTarget> &renderTarget)
+    static void Begin(std::shared_ptr<RenderTarget> &renderTarget)
     {
         user.renderTarget = renderTarget;
         renderer->Begin(user.renderTarget);
     }
 
-    static void Render::Begin(std::shared_ptr<RenderTarget> &renderTarget, const Camera &camera)
+    static void Begin(std::shared_ptr<RenderTarget> &renderTarget, const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
         user.renderTarget = renderTarget;
@@ -169,7 +160,7 @@ public:
         renderer->Begin(user.renderTarget);
     }
 
-    static void Render::End()
+    static void End()
     {
         renderer->End();
     }

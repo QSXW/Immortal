@@ -12,15 +12,15 @@ struct FSInput
 {
     vec3 WorldPos;
     vec3 Normal;
-    vec3 Tagent;
-    vec3 Bitagent;
+    vec3 Tangent;
+    vec3 BiTangent;
     vec2 TexCoord;
 };
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;
-layout (location = 2) in vec3 inTagent;
-layout (location = 3) in vec3 inBitagent;
+layout (location = 2) in vec3 inTangent;
+layout (location = 3) in vec3 inBiTangent;
 layout (location = 4) in vec2 inTexCoord;
 
 layout (location = 0) out FSInput fsInput;
@@ -54,15 +54,16 @@ void main()
     outModel.metallic  = model.metallic;
     outModel.objectID  = model.objectID;
 
-	gl_Position =  ubo.viewProjection * model.transform * vec4(inPos, 1.0);
+    vec4 worldPos = model.transform * vec4(inPos, 1.0);
+	gl_Position =  ubo.viewProjection * worldPos;
+
+    fsInput.WorldPos  = vec3(worldPos);
+    fsInput.Normal    = mat3(model.transform) * inNormal;
+    fsInput.Tangent   = inTangent;
+    fsInput.BiTangent = inBiTangent;
+    fsInput.TexCoord  = inTexCoord;
 
 #if VULKAN
 	gl_Position.y = -gl_Position.y;
 #endif
-
-    fsInput.WorldPos = vec3(gl_Position);
-    fsInput.Normal   = mat3(model.transform) * inNormal;
-    fsInput.Tagent   = inTagent;
-    fsInput.Bitagent = inBitagent;
-    fsInput.TexCoord = inTexCoord;
 }

@@ -12,8 +12,8 @@ struct FSInput
 {
     vec3 WorldPos;
     vec3 Normal;
-    vec3 Tagent;
-    vec3 Bitagent;
+    vec3 Tangent;
+    vec3 Bitangent;
     vec2 TexCoord;
 };
 
@@ -147,7 +147,7 @@ vec3 calculateNormal()
 	vec3 tangentNormal = texture(NormalMap, fsInput.TexCoord).xyz * 2.0 - 1.0;
 
 	vec3 N = normalize(fsInput.Normal);
-	vec3 T = normalize(fsInput.Tagent);
+	vec3 T = normalize(fsInput.Tangent);
 	vec3 B = normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
 	return normalize(TBN * tangentNormal);
@@ -198,3 +198,4 @@ void main()
 	outColor    = vec4(color, 1.0);
 	outObjectID = inModel.objectID;
 }
+

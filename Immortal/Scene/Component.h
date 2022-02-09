@@ -143,7 +143,7 @@ struct MaterialComponent : public Component
         Metallic{ 1.0f },
         Roughness{ 1.0f }
     {
-        Textures.Albedo    = Render::Preset()->WhiteTexture;
+        Textures.Albedo    = Render::Preset()->Textures.White;
         Textures.Normal    = Textures.Albedo;
         Textures.Metallic  = Textures.Albedo;
         Textures.Roughness = Textures.Albedo;
@@ -195,7 +195,7 @@ struct SpriteRendererComponent : public Component
     SpriteRendererComponent() :
         Component{ Type::SpriteRenderer }
     {
-        Texture = Render::Preset()->WhiteTexture;
+
     }
 
     SpriteRendererComponent(std::shared_ptr<Texture> texture) :
@@ -215,9 +215,9 @@ struct SpriteRendererComponent : public Component
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    std::shared_ptr<Immortal::Texture> Texture = Render::Preset()->WhiteTexture;
+    std::shared_ptr<Immortal::Texture> Texture = Render::Preset()->Textures.White;
 
-    std::shared_ptr<Immortal::Texture> Final   = nullptr;
+    std::shared_ptr<Immortal::Texture> Final   = Texture;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 

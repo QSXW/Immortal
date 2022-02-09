@@ -33,10 +33,6 @@ public:
 
     virtual void Clear() override;
 
-    virtual void EnableDepthTest() override;
-
-    virtual void DisableDepthTest() override;
-
     virtual void SwapBuffers() override;
 
     virtual const char *GraphicsRenderer() override

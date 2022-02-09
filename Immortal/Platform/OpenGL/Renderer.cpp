@@ -73,16 +73,6 @@ void Renderer::SetClearColor(const Vector::Vector4 &color)
     glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void Renderer::EnableDepthTest()
-{
-    glEnable(GL_DEPTH_TEST);
-}
-
-void Renderer::DisableDepthTest()
-{
-    glDisable(GL_DEPTH_TEST);
-}
-
 void Renderer::Clear()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);

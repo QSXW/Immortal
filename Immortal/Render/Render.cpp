@@ -58,9 +58,9 @@ void Render::Setup(RenderContext *context)
         constexpr uint32_t transparency = 0x00000000;
         Texture::Description desc = { Format::RGBA8, Wrap::Repeat, Filter::Linear };
 
-        data.WhiteTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
-        data.BlackTexture       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };
-        data.TransparentTexture = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &transparency, desc) };
+        data.Textures.White       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
+        data.Textures.Black       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };
+        data.Textures.Transparent = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &transparency, desc) };
     }
     Render2D::Setup();
 }
