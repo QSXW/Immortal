@@ -30,7 +30,7 @@ inline constexpr T bcast(O o)
 }
 
 template <class T, class O>
-inline constexpr T dcast(O o)
+inline constexpr T dcast(O &&o)
 {
     return dynamic_cast<T>(o);
 }
