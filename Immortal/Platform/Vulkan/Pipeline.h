@@ -29,25 +29,25 @@ public:
 
     struct State
     {
-        VkPipelineVertexInputStateCreateInfo   vertexInput;
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly;
-        VkPipelineRasterizationStateCreateInfo rasterization;
-        VkPipelineColorBlendStateCreateInfo    colorBlend;
-        VkPipelineDepthStencilStateCreateInfo  depthStencil;
-        VkPipelineViewportStateCreateInfo      viewport;
-        VkPipelineMultisampleStateCreateInfo   multiSample;
-        VkPipelineDynamicStateCreateInfo       dynamic;
-    };
+        VkPipelineVertexInputStateCreateInfo vertexInput;
 
-    struct Configuration
-    {
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+
+        VkPipelineRasterizationStateCreateInfo rasterization;
+
+        VkPipelineColorBlendStateCreateInfo colorBlend;
+
+        VkPipelineDepthStencilStateCreateInfo depthStencil;
+
+        VkPipelineViewportStateCreateInfo viewport;
+
+        VkPipelineMultisampleStateCreateInfo multiSample;
+
+        VkPipelineDynamicStateCreateInfo dynamic;
+
         std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions;
 
         std::vector<VkVertexInputBindingDescription> vertexInputBidings;
-
-        State state;
-
-        Attachment attament;
     };
 
     struct DescriptorSetPack
@@ -79,6 +79,8 @@ public:
     virtual void AllocateDescriptorSet(uint64_t uuid) override;
 
     virtual void FreeDescriptorSet(uint64_t uuid) override;
+
+    virtual void CopyState(Super &other) override;
 
     template <Buffer::Type type>
     std::shared_ptr<Buffer> Get()
@@ -125,7 +127,6 @@ private:
 
     void SetupVertex()
     {
-        auto state = &configuration->state;
 	    state->inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	    state->inputAssembly.topology               = ConvertType(desc.PrimitiveType);
 	    state->inputAssembly.flags                  = 0;
@@ -134,9 +135,8 @@ private:
 
     void SetupLayout()
     {
-        auto state = &configuration->state;
-        auto &inputAttributeDescriptions = configuration->inputAttributeDescriptions;
-        auto &vertexInputBidings         = configuration->vertexInputBidings;
+        auto &inputAttributeDescriptions = state->inputAttributeDescriptions;
+        auto &vertexInputBidings         = state->vertexInputBidings;
         
         state->vertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         state->vertexInput.vertexBindingDescriptionCount   = U32(vertexInputBidings.size());
@@ -159,7 +159,7 @@ private:
 
     std::unique_ptr<PipelineLayout> layout;
 
-    std::unique_ptr<Configuration> configuration;
+    std::unique_ptr<State> state;
 
     std::unique_ptr<DescriptorPool> descriptorPool;
 

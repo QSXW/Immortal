@@ -90,7 +90,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     pipelines.pbr->Bind("Shading", uniforms.shading.get());
 
     pipelines.basic.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::Basic3D>()));
-    pipelines.basic->Set(StandardInputElementDescription);
+    pipelines.basic->CopyState(*pipelines.pbr);
     pipelines.basic->Create(renderTarget);
     pipelines.basic->Bind("Transform", uniforms.transform.get());
     pipelines.basic->Bind("Shading", uniforms.shading.get());

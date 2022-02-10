@@ -13,8 +13,8 @@ GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super
     device{ device },
     Super{ shader }
 {
-    configuration = std::make_unique<Configuration>();
-    CleanUpObject(configuration.get());
+    state = std::make_unique<State>();
+    CleanUpObject(state.get(), 0, offsetof(State, inputAttributeDescriptions));
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -34,7 +34,7 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
 {
     Super::Set(description);
     auto size                       = desc.layout.Size();
-    auto &inputAttributeDescription = configuration->inputAttributeDescriptions;
+    auto &inputAttributeDescription = state->inputAttributeDescriptions;
 
     inputAttributeDescription.resize(size);
     for (int i = 0; i < size; i++)
@@ -45,7 +45,7 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
         inputAttributeDescription[i].offset   = desc.layout[i].Offset();
     }
 
-    configuration->vertexInputBidings.emplace_back(VkVertexInputBindingDescription{
+    state->vertexInputBidings.emplace_back(VkVertexInputBindingDescription{
         0,
         desc.layout.Stride(),
         VK_VERTEX_INPUT_RATE_VERTEX
@@ -72,9 +72,6 @@ void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superT
 void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
 {
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
-
-    auto state = &configuration->state;
-    auto attachment = &configuration->attament;
 
     state->rasterization.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     state->rasterization.polygonMode             = VK_POLYGON_MODE_FILL;
@@ -132,25 +129,37 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
 
     VkGraphicsPipelineCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.pNext = nullptr;
-    createInfo.renderPass = target->GetRenderPass();
-    createInfo.flags = 0;
-    createInfo.layout = shader->Get<PipelineLayout&>();
+    createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    createInfo.pNext               = nullptr;
+    createInfo.renderPass          = target->GetRenderPass();
+    createInfo.flags               = 0;
+    createInfo.layout              = shader->Get<PipelineLayout&>();
     createInfo.pInputAssemblyState = &state->inputAssembly;
-    createInfo.pVertexInputState = &state->vertexInput;
+    createInfo.pVertexInputState   = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;
-    createInfo.pDepthStencilState = &state->depthStencil;
-    createInfo.pViewportState = &state->viewport;
-    createInfo.pMultisampleState = &state->multiSample;
-    createInfo.pDynamicState = &state->dynamic;
-    createInfo.pColorBlendState = &state->colorBlend;
+    createInfo.pDepthStencilState  = &state->depthStencil;
+    createInfo.pViewportState      = &state->viewport;
+    createInfo.pMultisampleState   = &state->multiSample;
+    createInfo.pDynamicState       = &state->dynamic;
+    createInfo.pColorBlendState    = &state->colorBlend;
 
     auto &stages = shader->Stages();
-    createInfo.pStages = stages.data();
+    createInfo.pStages    = stages.data();
     createInfo.stageCount = stages.size();
 
     Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
+}
+
+void GraphicsPipeline::CopyState(Super &super)
+{
+    auto &other = dcast<GraphicsPipeline &>(super);
+    memcpy(state.get(), other.state.get(), offsetof(State, inputAttributeDescriptions));
+
+    state->vertexInputBidings         = other.state->vertexInputBidings;
+    state->inputAttributeDescriptions = other.state->inputAttributeDescriptions;
+
+    SetupVertex();
+    SetupLayout();
 }
 
 bool GraphicsPipeline::Ready()

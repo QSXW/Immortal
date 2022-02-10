@@ -117,6 +117,11 @@ public:
 
     }
 
+    virtual void CopyState(GraphicsPipeline &other)
+    {
+
+    }
+
     template <class T>
     void Update(size_t size, const T *data, int slot = 0)
     {
