@@ -219,11 +219,13 @@ public:
 
     void UpdateRightClickMenu()
     {
+        static ImVec2 pos;
         if (editableArea.IsHovered() && !ImGuizmo::IsOver() && Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt))
         {
+            pos = ImGui::GetMousePos();
             ImGui::OpenPopup("Right Click Menu");
         }
-        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 6 });
+        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 7 });
 
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::RGBA32(212, 115, 115, 204));
         ImGui::PushStyleColor(ImGuiCol_Separator,     ImGui::RGBA32(119, 119, 119,  88));
@@ -234,6 +236,10 @@ public:
             ImGui::PopStyleColor();
             ImGui::Separator();
 
+            if (ImGui::MenuItem(WordsMap::Get("Select/Deselect").c_str()))
+            {
+                SelectObject(pos.x, pos.y);
+            }
             if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
             {
                 LoadObject();
@@ -337,6 +343,17 @@ public:
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;
         }        
+    }
+
+    void SelectObject(float x, float y)
+    {
+        x -= editableArea.MinBound().x;
+        y -= editableArea.MinBound().y;
+
+        uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
+
+        Object o = Object{ *(int *)&pixel, &scene };
+        panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
     }
 
     bool LoadObject()
@@ -461,14 +478,7 @@ public:
             if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control))
             {
                 auto [x, y] = ImGui::GetMousePos();
-                x -= editableArea.MinBound().x;
-                y -= editableArea.MinBound().y;
-
-                uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
-
-                Object o = Object{ *(int *)&pixel, &scene };
-                panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
-
+                SelectObject(x, y);
                 return true;
             }
         }

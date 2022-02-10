@@ -67,7 +67,8 @@
             "Don't ask me next time": "下次不再提醒",
             "Copy": "复制",
             "Paste": "粘贴",
-            "Duplicate Object": "复制物体"
+            "Duplicate Object": "复制物体",
+            "Select/Deselect": "选定/取消选定"
         }
     }
 }

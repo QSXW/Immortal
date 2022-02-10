@@ -291,7 +291,10 @@ Object Scene::CreateObject(const std::string &name)
 
 void Scene::DestroyObject(Object &object)
 {
-
+    if (!object)
+    {
+        return;
+    }
     if (object.HasComponent<MeshComponent>())
     {
         MeshComponent &mesh = object.GetComponent<MeshComponent>();
