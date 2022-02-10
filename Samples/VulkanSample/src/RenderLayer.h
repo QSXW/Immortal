@@ -223,24 +223,47 @@ public:
         {
             ImGui::OpenPopup("Right Click Menu");
         }
+        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 6 });
+
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::RGBA32(212, 115, 115, 204));
+        ImGui::PushStyleColor(ImGuiCol_Separator,     ImGui::RGBA32(119, 119, 119,  88));
         if (ImGui::BeginPopup("Right Click Menu"))
         {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::RGBA32(150, 150, 150, 255));
+            ImGui::Text(WordsMap::Get("Object Editor").c_str());
+            ImGui::PopStyleColor();
+            ImGui::Separator();
+
+            if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
+            {
+                LoadObject();
+            }
+            ImGui::Separator();
+
+            if (ImGui::MenuItem(WordsMap::Get("Copy").c_str()))
+            {
+
+            }
+            if (ImGui::MenuItem(WordsMap::Get("Paste").c_str()))
+            {
+
+            }
+            if (ImGui::MenuItem(WordsMap::Get("Duplicate Object").c_str()))
+            {
+
+            }
+            ImGui::Separator();
+
             if (ImGui::MenuItem(WordsMap::Get("Delete").c_str()) && selectedObject)
             {
                 panels.hierarchyGraphics.Select(Object{});
                 scene.DestroyObject(selectedObject);
                 selectedObject = Object{};
             }
-            if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
-            {
-                ImGui::EndPopup();
-                LoadObject();
-            }
-            else
-            {
-                ImGui::EndPopup();
-            }
+
+            ImGui::EndPopup();
         }
+        ImGui::PopStyleColor(2);
     }
 
     virtual void OnGuiRender() override

@@ -52,13 +52,13 @@ void main()
 
     res += properties.Color;
 
-    res.xyz = clamp(res.xyz + properties.White * res.xyz, 0.0f, 1.0f);
-    res.xyz = clamp(res.xyz + properties.Black * (1.0f - res.xyz), 0.0f, 1.0f);
+    res.xyz = clamp(res.xyz + properties.White * res.xyz * 0.5f,          0.0f, 1.0f);
+    res.xyz = clamp(res.xyz + properties.Black * (1.0f - res.xyz) * 0.5f, 0.0f, 1.0f);
 
     float factor = 1.0;
     if (properties.Exposure > 0.0)
     {
-        factor = 1.2;
+        factor = 1.2; 
     }
 
     vec3 hsv = rgb2hsv(res.xyz);

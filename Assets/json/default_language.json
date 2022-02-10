@@ -64,7 +64,10 @@
             "Save Option": "保存选项",
             "History": "历史记录",
             "Import": "输入",
-            "Don't ask me next time": "下次不再提醒"
+            "Don't ask me next time": "下次不再提醒",
+            "Copy": "复制",
+            "Paste": "粘贴",
+            "Duplicate Object": "复制物体"
         }
     }
 }

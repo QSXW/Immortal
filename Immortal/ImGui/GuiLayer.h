@@ -17,6 +17,26 @@
 namespace ImGui
 {
 
+template <class T>
+inline constexpr ImVec4 ConvertColor(T r, T g, T b, T a)
+{
+    ImVec4 ret;
+
+    constexpr decltype(ret.x) max = (T)~0;
+
+    ret.x = r / max;
+    ret.y = g / max;
+    ret.z = b / max;
+    ret.w = a / max;
+
+    return ret;
+}
+
+static inline ImVec4 RGBA32(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return ConvertColor<decltype(r)>(r, g, b, a);
+}
+
 static inline bool MenuItem(const std::string &label, const char *shortcut = NULL, bool selected = false, bool enabled = true)
 {
     return MenuItem(label.c_str(), shortcut, selected, enabled);
