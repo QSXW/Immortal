@@ -54,46 +54,20 @@ public:
         "Assets/Shaders/hlsl/"
     };
 
-    enum class ShaderName : INT32
-    {
-        Basic,
-        Texture,
-        Render2D,
-        PhysicalBasedRendering,
-        ColorMixing,
-        SimpleBlur,
-        Basic3D,
-        Skybox,
-        Tonemap,
-        Test,
-        Last
-    };
-
-    static std::vector<std::shared_ptr<Immortal::Shader>> ShaderContainer;
-
     static const Shader::Properties ShaderProperties[];
 
-    template <class T, ShaderName U>
-    static constexpr inline std::shared_ptr<Shader> Get()
-    {
-        static_assert(IsPrimitiveOf<Shader, T>() && "No suitable Type for getter");
-        if constexpr (IsPrimitiveOf<Shader, T>())
-        {
-            THROWIF(U >= ShaderName::Last, SError::OutOfBound);
-            return ShaderContainer[ncast<INT32>(U)];
-        }
-    }
+    static Shader::Manager ShaderManager;
 
-    template <class T>
-    static inline std::shared_ptr<Shader> Get(const ShaderName index)
+    static std::shared_ptr<Shader> GetShader(const std::string &name)
     {
-        if constexpr (IsPrimitiveOf<T, Shader>())
+        auto &it = ShaderManager.find(name);
+        if (it != ShaderManager.end())
         {
-            size_t i = static_cast<size_t>(index);
-            SLASSERT(i < ShaderContainer.size() && "Shader Index out of bound.");
-            return ShaderContainer[i];
+            return it->second;
         }
-        static_assert(false, "No suitable Type for getter");
+
+        LOG::WARN("Request shader {0} not found!", name);
+        return nullptr;
     }
 
     static auto *Preset()
@@ -306,8 +280,6 @@ public:
 
     static inline const char *SAPI{ nullptr };
 };
-
-using ShaderName = Render::ShaderName;
 
 SL_DEFINE_BITWISE_OPERATION(Render::Type, uint32_t)
 

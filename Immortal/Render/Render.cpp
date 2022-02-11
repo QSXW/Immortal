@@ -7,20 +7,22 @@ namespace Immortal
 
 std::unique_ptr<Renderer> Render::renderer;
 
-std::vector<std::shared_ptr<Shader>> Render::ShaderContainer{};
+Shader::Manager Render::ShaderManager;
 
 Render::Scene Render::scene{};
 
 Render::Data Render::data{};
 
 const Shader::Properties Render::ShaderProperties[] = {
-    {                  "Basic", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    {                "Texture", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    {               "Render2D", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
+    { "Basic",                  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
+    { "Basic3D",                U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
+    { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
+    { "Render2D",               U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
+    { "Outline",                U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
-    {            "ColorMixing", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
-    {             "SimpleBlur", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
-    {                "Basic3D", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
+    { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+
 };
 
 void Render::Setup(RenderContext *context)
@@ -32,14 +34,13 @@ void Render::Setup(RenderContext *context)
     {
         Profiler profiler{ "Loading Shader" };
         auto asset = API == Type::D3D12 ? 1 : 0;
-        ShaderContainer.reserve(SL_ARRAY_LENGTH(ShaderProperties));
         for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)
         {
             if (ncast<Render::Type>(ShaderProperties[i].API) & API)
             {
-                auto &&shader = std::shared_ptr<Shader>{ Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Path, ShaderProperties[i].Type) };
-                ShaderContainer.emplace_back(std::move(shader));
-            }    
+                auto &&shader = std::shared_ptr<Shader>{ Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Name, ShaderProperties[i].Type) };
+                ShaderManager.emplace(ShaderProperties[i].Name, std::move(shader));
+            }
         }
     }
 

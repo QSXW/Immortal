@@ -49,6 +49,31 @@ struct Model
 
 }
 
+static __forceinline void RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material)
+{
+    UniformBuffer::Model model;
+    model.Transform = transform;
+    model.Color     = material.AlbedoColor;
+    model.Roughness = material.Roughness;
+    model.Metallic  = material.Metallic;
+    model.ObjectID  = (int)object;
+
+    auto &nodeList = mesh.Mesh->NodeList();
+    for (auto &node : nodeList)
+    {
+        pipeline->AllocateDescriptorSet((uint64_t)&node);
+        pipeline->Set(node.Vertex);
+        pipeline->Set(node.Index);
+        pipeline->Bind(material.Textures.Albedo.get(), 2);
+        pipeline->Bind(material.Textures.Normal.get(), 3);
+        pipeline->Bind(material.Textures.Metallic.get(), 4);
+        pipeline->Bind(material.Textures.Roughness.get(), 5);
+        pipeline->Bind(material.Textures.AO.get(), 6);
+        Render::PushConstant(pipeline.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
+        Render::Draw(pipeline);
+    }
+}
+
 Scene::Scene(const std::string &debugName, bool isEditorScene) :
     debugName{ debugName }
 {
@@ -82,29 +107,44 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     // renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
     renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
 
+    InputElementDescription commonDesc = {
+        { Format::VECTOR3, "POSITION" },
+        { Format::VECTOR3, "NORMAL"   },
+        { Format::VECTOR3, "TAGENT"   },
+        { Format::VECTOR3, "BITAGENT" },
+        { Format::VECTOR2, "TEXCOORD" },
+    };
+
     pipelines.tonemap = nullptr;
-    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::PhysicalBasedRendering>()));
-    pipelines.pbr->Set(StandardInputElementDescription);
+    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("PhysicalBasedRendering")));
+    pipelines.pbr->Set(commonDesc);
     pipelines.pbr->Create(renderTarget);
     pipelines.pbr->Bind("Transform", uniforms.transform.get());
     pipelines.pbr->Bind("Shading", uniforms.shading.get());
 
-    pipelines.basic.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::Basic3D>()));
+    pipelines.basic.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Basic3D")));
     pipelines.basic->CopyState(*pipelines.pbr);
     pipelines.basic->Create(renderTarget);
     pipelines.basic->Bind("Transform", uniforms.transform.get());
     pipelines.basic->Bind("Shading", uniforms.shading.get());
 
-    pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::Get<Shader, ShaderName::ColorMixing>().get()));
-    // pipelines.colorMixing->Bind("Properties", uniforms.properties.get());
+    InputElementDescription outlineDesc = {
+        { Format::VECTOR3, "POSITION" }
+    };
+    outlineDesc.Stride = commonDesc.Stride;
+    pipelines.outline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Outline")));
+    pipelines.outline->Set(outlineDesc);
+    pipelines.outline->Create(renderTarget, Pipeline::Option{ false, true });
+
+    pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get()));
 
     for (size_t i = 0; i < Limit::MaxLightNumber; i++)
     {
         auto &light = CreateObject(std::string{ "Light#" } + std::to_string(i));
         light.AddComponent<LightComponent>();
         light.AddComponent<MaterialComponent>();
-        auto &mesh = light.AddComponent<MeshComponent>();
-        mesh.Mesh = Mesh::CreateSphere(0.5f);
+        // auto &mesh = light.AddComponent<MeshComponent>();
+        // mesh.Mesh = Mesh::CreateSphere(0.5f);
 
         auto &transform = light.GetComponent<TransformComponent>();
         transform.Scale = Vector3{ 1.0f, 1.0f, 1.0f };
@@ -213,9 +253,9 @@ void Scene::OnRender(const Camera &camera)
         } buffers;
 
         auto transform = &buffers.transform;
-        transform->ViewProjection   = camera.ViewProjection();
+        transform->ViewProjection = camera.ViewProjection();
         transform->SkyboxPorjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
-        transform->SceneRotation    = Matrix4{ Matrix3{ camera.View() } };
+        transform->SceneRotation = Matrix4{ Matrix3{ camera.View() } };
 
         auto shading = &buffers.shading;
 
@@ -239,32 +279,43 @@ void Scene::OnRender(const Camera &camera)
         uniforms.host->Update(sizeof(buffers), &buffers);
     }
 
+        {
+        if (selectedObject && *selectedObject && selectedObject->HasComponent<MeshComponent>())
+        {
+            auto &mesh = selectedObject->GetComponent<MeshComponent>();
+            auto &transform = selectedObject->GetComponent<TransformComponent>();
+
+            TransformComponent outlineTransform = transform;
+            outlineTransform.Scale *= 1.02f;
+            struct {
+                Matrix4 transform;
+                Vector4 color;
+                int id;
+            } pushConstants{
+                outlineTransform,
+                Vector4{ 1.0f, 0.0f, 0.0f, 1.0f },
+                *selectedObject
+            };
+
+            auto &nodeList = mesh.Mesh->NodeList();
+            for (auto &node : nodeList)
+            {
+
+                pipelines.outline->AllocateDescriptorSet((uint64_t)&node);
+                pipelines.outline->Set(node.Vertex);
+                pipelines.outline->Set(node.Index);
+                pipelines.outline->Bind("Transform", uniforms.transform.get());
+                Render::PushConstant(pipelines.outline.get(), Shader::Stage::Vertex, sizeof(pushConstants), &pushConstants, 0);
+                Render::Draw(pipelines.outline);
+            }
+        }
+    }
+
     auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
     for (auto object : view)
     {
         auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
-
-        UniformBuffer::Model model;
-        model.Transform = transform;
-        model.Color     = material.AlbedoColor;
-        model.Roughness = material.Roughness;
-        model.Metallic  = material.Metallic;
-        model.ObjectID  = (int)object;
-
-        auto &nodeList = mesh.Mesh->NodeList();
-        for (auto &node : nodeList)
-        {
-            pipelines.basic->AllocateDescriptorSet((uint64_t)&node);
-            pipelines.basic->Set(node.Vertex);
-            pipelines.basic->Set(node.Index);
-            pipelines.basic->Bind(material.Textures.Albedo.get(), 2);
-            pipelines.basic->Bind(material.Textures.Normal.get(), 3);
-            pipelines.basic->Bind(material.Textures.Metallic.get(), 4);
-            pipelines.basic->Bind(material.Textures.Roughness.get(), 5);
-            pipelines.basic->Bind(material.Textures.AO.get(), 6);
-            Render::PushConstant(pipelines.basic.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
-            Render::Draw(pipelines.basic);
-        }
+        RenderObject(pipelines.basic, object, transform, mesh, material);
     }
 
     Render2D::BeginScene(camera);
@@ -330,6 +381,11 @@ Object Scene::PrimaryCameraObject()
         }
     }
     return Object{};
+}
+
+void Scene::Select(Object *object)
+{
+    selectedObject = object;
 }
 
 }

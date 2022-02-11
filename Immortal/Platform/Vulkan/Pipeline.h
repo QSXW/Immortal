@@ -66,9 +66,9 @@ public:
     
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
 
-    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
 
     virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
 

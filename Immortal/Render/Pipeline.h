@@ -15,6 +15,13 @@ class ComputePipeline;
 class IMMORTAL_API Pipeline
 {
 public:
+    struct Option
+    {
+        bool DepthEnable = true;
+        bool BlendEnable = true;
+    };
+
+public:
     virtual ~Pipeline()
     {
 
@@ -97,12 +104,12 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
     {
         
     }
 
-    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
     {
 
     }

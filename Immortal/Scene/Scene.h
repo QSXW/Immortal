@@ -47,14 +47,6 @@ public:
         static constexpr int MaxLightNumber = 4;
     };
 
-    static inline InputElementDescription StandardInputElementDescription {
-        { Format::VECTOR3, "POSITION" },
-        { Format::VECTOR3, "NORMAL"   },
-        { Format::VECTOR3, "TAGENT"   },
-        { Format::VECTOR3, "BITAGENT" },
-        { Format::VECTOR2, "TEXCOORD" },
-    };
-
 public:
     Scene(const std::string &debugName="Untitled", bool isEditorScene = false);
 
@@ -75,6 +67,8 @@ public:
     void DestroyObject(Object &object);
 
     void SetViewportSize(const Vector2 &size);
+
+    void Select(Object *object);
 
     Object PrimaryCameraObject();
 
@@ -117,6 +111,7 @@ private:
         std::shared_ptr<GraphicsPipeline> tonemap;
         std::shared_ptr<GraphicsPipeline> pbr;
         std::shared_ptr<GraphicsPipeline> basic;
+        std::shared_ptr<GraphicsPipeline> outline;
         std::shared_ptr<ComputePipeline>  colorMixing;
     } pipelines;
 
@@ -133,6 +128,8 @@ private:
     std::shared_ptr<RenderTarget> renderTarget;
 
     Vector2 viewportSize{ 0.0f, 0.0f };
+
+    Object *selectedObject{ nullptr };
 
 private:
     ObserverCamera observerCamera;

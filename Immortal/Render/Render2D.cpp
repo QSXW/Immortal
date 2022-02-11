@@ -19,7 +19,7 @@ void Render2D::Setup()
     data.textureDescriptors.reset(Render::CreateDescriptor<Texture>(Data::MaxTextureSlots));
 
     data.QuadVertexBufferBase.reset(new QuadVertex[data.MaxVertices]);
-    pipeline.reset(Render::Create<Pipeline::Graphics>(Render::Get<Shader, ShaderName::Render2D>()));
+    pipeline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Render2D")));
     uniform.reset(Render::Create<Buffer>(sizeof(Matrix4), 0));
 
     pipeline->Set({

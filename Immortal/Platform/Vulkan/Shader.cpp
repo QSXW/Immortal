@@ -252,7 +252,7 @@ inline size_t ParseStructure(const char *ptr, Shader::Resource &resource)
     }
 
     InputElementDescription desc{ std::move(elements) };
-    resource.size = desc.Stride();
+    resource.size = desc.Stride;
 
     return i;
 }

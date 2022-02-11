@@ -23,7 +23,7 @@ public:
 
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } }));
 
-        shader = Render::Get<Shader, ShaderName::Basic>();
+        shader = Render::GetShader("Basic");
 
         uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
 
@@ -61,6 +61,7 @@ public:
             scene.SetViewportSize(viewportSize);
         }
 
+        scene.Select(&selectedObject);
         if (panels.tools.IsControlActive(Tools::Start))
         {
             if (selectedObject)

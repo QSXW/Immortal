@@ -46,7 +46,7 @@ public:
                 glVertexAttribIPointer(attributeIndex,
                     e.ComponentCount(),
                     glBaseType,
-                    inputElementDescription.Stride(),
+                    inputElementDescription.Stride,
                     (const void*)(intptr_t)e.Offset());
             }
             else
@@ -55,7 +55,7 @@ public:
                     e.ComponentCount(),
                     glBaseType,
                     GL_FALSE,
-                    inputElementDescription.Stride(),
+                    inputElementDescription.Stride,
                     rcast<const void *>((intptr_t)e.Offset()));
             }
             glEnableVertexAttribArray(attributeIndex++);

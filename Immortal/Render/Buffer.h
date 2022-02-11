@@ -92,14 +92,14 @@ struct InputElementDescription
     }
 
     InputElementDescription(const InputElementDescription &other) :
-        stride{ other.stride },
+        Stride{ other.Stride },
         elements{ other.elements.begin(), other.elements.end() }
     {
 
     }
 
     InputElementDescription(InputElementDescription &&other) :
-        stride{ other.stride },
+        Stride{ other.Stride },
         elements{ std::move(other.elements) }
     {
 
@@ -107,7 +107,7 @@ struct InputElementDescription
 
     InputElementDescription &operator=(const InputElementDescription &other)
     {
-        stride = other.Stride();
+        Stride = other.Stride;
         elements.resize(other.elements.size());
         std::copy(other.elements.begin(), other.elements.end(), elements.begin());
         return *this;
@@ -161,11 +161,6 @@ struct InputElementDescription
         return elements.size();
     }
 
-    uint32_t Stride() const
-    {
-        return stride;
-    }
-
     bool Empty() const
     {
         return elements.empty();
@@ -180,12 +175,13 @@ private:
             e.offset =  offset;
             offset += Map::FormatSize(e.format);
         }
-        stride = offset;
+        Stride = offset;
     }
 
     std::vector<InputElement> elements;
 
-    uint32_t stride{ 0 };
+public:
+    uint32_t Stride{ 0 };
 };
 
 using VertexLayout = InputElementDescription;

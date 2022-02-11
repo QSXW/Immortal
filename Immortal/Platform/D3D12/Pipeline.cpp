@@ -57,15 +57,15 @@ void Pipeline::Set(const InputElementDescription &description)
         inputElementDesc[i].InputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
         inputElementDesc[i].InstanceDataStepRate = 0;
     }
-    bufferViews.vertex.StrideInBytes = desc.layout.Stride();
+    bufferViews.vertex.StrideInBytes = desc.layout.Stride;
 }
 
-void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)
+void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget, Option option)
 {
     Reconstruct(renderTarget);
 }
 
-void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget, Option option)
 {
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     auto &bytesCodes       = shader->ByteCodes();

@@ -91,13 +91,16 @@ public:
 
     struct Properties
     {
-        std::string Path;
+        std::string Name;
 
         uint32_t API;
 
         Shader::Type Type;
     };
 
+    using Manager = std::map<std::string, std::shared_ptr<Shader>>;
+
+public:
     static Resource::Type GetResourceType(const std::string &key)
     {
         static std::map<std::string, Resource::Type> map = {

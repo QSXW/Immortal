@@ -47,7 +47,7 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
 
     state->vertexInputBidings.emplace_back(VkVertexInputBindingDescription{
         0,
-        desc.layout.Stride(),
+        desc.layout.Stride,
         VK_VERTEX_INPUT_RATE_VERTEX
         });
 
@@ -55,9 +55,9 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
     SetupLayout();
 }
 
-void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
+void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget, Option option)
 {
-    Reconstruct(superTarget);
+    Reconstruct(superTarget, option);
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
@@ -69,7 +69,7 @@ void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superT
     }
 }
 
-void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
+void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget, Option option)
 {
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
@@ -98,7 +98,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     state->colorBlend.blendConstants[3]   = 1.0f;
 
     state->depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    state->depthStencil.depthTestEnable       = VK_TRUE;
+    state->depthStencil.depthTestEnable       = option.DepthEnable ? VK_TRUE : VK_FALSE;
     state->depthStencil.depthWriteEnable      = VK_TRUE;
     state->depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     state->depthStencil.depthBoundsTestEnable = VK_FALSE;
