@@ -249,7 +249,7 @@ public:
 
             if (ImGui::MenuItem(WordsMap::Get("Copy").c_str()))
             {
-
+                CopyObject();
             }
             if (ImGui::MenuItem(WordsMap::Get("Paste").c_str()))
             {
@@ -257,7 +257,7 @@ public:
             }
             if (ImGui::MenuItem(WordsMap::Get("Duplicate Object").c_str()))
             {
-
+                panels.hierarchyGraphics.Select(CopyObject());
             }
             ImGui::Separator();
 
@@ -394,6 +394,14 @@ public:
         }
 
         return false;
+    }
+
+    Object CopyObject()
+    {
+        Object dst = scene.CreateObject();
+
+        selectedObject.CopyTo(dst);
+        return dst;
     }
 
     bool OnKeyPressed(KeyPressedEvent &e)

@@ -57,7 +57,7 @@ struct TagComponent : public Component
 {
     DEFINE_COMP_TYPE(Tag)
 
-    TagComponent(const std::string &tag) :
+    TagComponent(const std::string &tag = "") :
         Tag{ tag }
     {
 
@@ -118,6 +118,14 @@ struct MeshComponent : public Component
     operator std::shared_ptr<Immortal::Mesh>()
     {
         return Mesh;
+    }
+
+    MeshComponent &operator=(const MeshComponent &other)
+    {
+        ThrowIf(&other == this, SError::SelfAssignment)
+
+        Mesh = other.Mesh;
+        return *this;
     }
 
     std::shared_ptr<Immortal::Mesh> Mesh;

@@ -10,6 +10,9 @@
 namespace Immortal
 {
 
+template <class T>
+inline void CopyComponent(Object &dst, const Object &src);
+
 class IMMORTAL_API Object
 {
 public:
@@ -63,7 +66,7 @@ public:
     }
 
     template <class T>
-    bool HasComponent()
+    bool HasComponent() const
     {
         return scene->Registry().has<T>(handle);
     }
@@ -90,6 +93,19 @@ public:
     bool Has()
     {
         return HasComponent<T>();
+    }
+
+    /* Copy Component */
+    void CopyTo(Object &other)
+    {
+        ThrowIf(&other == this, SError::SelfAssignment)
+
+        CopyComponent<TagComponent>(other, *this);
+        CopyComponent<TransformComponent>(other, *this);
+        CopyComponent<MeshComponent>(other, *this);
+        CopyComponent<MaterialComponent>(other, *this);
+        CopyComponent<SpriteRendererComponent>(other, *this);
+        CopyComponent<ColorMixingComponent>(other, *this);
     }
 
     TransformComponent &Transform() 
@@ -154,5 +170,25 @@ private:
 
     Primitive handle{ NullRef };
 };
+
+template <class T>
+inline void CopyComponent(Object &dst, const Object &src)
+{
+    if (src.HasComponent<T>())
+    {
+        if (dst.HasComponent<T>())
+        {
+            T &component    = src.GetComponent<T>();
+            T &dstComponent = dst.GetComponent<T>();
+            dstComponent = component;
+        }
+        else
+        {
+            T &dstComponent = dst.AddComponent<T>();
+            T &component = src.GetComponent<T>();
+            dstComponent = component;
+        }
+    }
+}
 
 }

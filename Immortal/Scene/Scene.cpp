@@ -296,7 +296,6 @@ void Scene::OnRender(const Camera &camera)
             auto &nodeList = mesh.Mesh->NodeList();
             for (auto &node : nodeList)
             {
-
                 pipelines.outline->AllocateDescriptorSet((uint64_t)&node);
                 pipelines.outline->Set(node.Vertex);
                 pipelines.outline->Set(node.Index);
