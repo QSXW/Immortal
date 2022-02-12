@@ -231,11 +231,7 @@ void Scene::OnRender(const Camera &camera)
             if (color.Modified || !color.Initialized)
             {
                 pipelines.colorMixing->ResetResource();
-                pipelines.colorMixing->PushConstant(
-                    sizeof(ColorMixingComponent) - offsetof(ColorMixingComponent, RGBA),
-                    &color.RGBA,
-                    0
-                );
+                pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Texture.get(), 0);
                 pipelines.colorMixing->Bind(sprite.Final.get(), 1);
                 pipelines.colorMixing->Dispatch(width / 16, height / 16, 1);

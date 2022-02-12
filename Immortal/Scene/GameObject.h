@@ -52,15 +52,15 @@ public:
 
 struct NativeScriptComponent : public Component
 {
+    DEFINE_COMP_TYPE(NativeScript)
+
     NativeScriptComponent() :
-        Component{ Type::Script },
         Status{ Status::NotLoaded }
     {
         delegate = std::make_shared<Delegate<void()>>();
     }
 
     NativeScriptComponent(const std::string &module) :
-        Component{ Type::Script },
         Module{ module },
         Status{ Status::NotLoaded }
     {

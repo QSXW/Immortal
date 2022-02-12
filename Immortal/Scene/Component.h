@@ -15,57 +15,49 @@ struct Component
     enum class Type
     {
         None,
+        Camera,
         ColorMixing,
-        ID,
+        DirectionalLight,
         Filter,
-        Tag,
-        Transform,
+        ID,
+        Light,
         Mesh,
         Meta,
-        Light,
+        Material,
+        NativeScript,
         Script,
         Scene,
         SpriteRenderer,
-        Camera
+        Tag,
+        Transform
     };
 
-    Component(Type type) :
-        type{ type }
+    Component()
     {
         
     }
-
-    Type type{ Type::None };
 };
+
+#define DEFINE_COMP_TYPE(T) static Component::Type GetType() { return Component::Type::##T; }
 
 struct IDComponent : public Component
 {
-    IDComponent() :
-        Component{ Type::ID }
+    DEFINE_COMP_TYPE(ID)
+
+    IDComponent(uint64_t id = 0) :
+        uid(id)
     {
         
     }
 
-    IDComponent(uint64_t id) :
-        Component{ Type::ID },
-        uid(id)
-    {
-    
-    }
-
-    uint64_t uid{ 0 };
+    uint64_t uid;
 };
 
 struct TagComponent : public Component
 {
-    TagComponent() :
-        Component{ Type::Tag }
-    {
-        
-    }
+    DEFINE_COMP_TYPE(Tag)
 
     TagComponent(const std::string &tag) :
-        Component{ Type::Tag },
         Tag{ tag }
     {
 
@@ -76,11 +68,7 @@ struct TagComponent : public Component
 
 struct TransformComponent : public Component
 {
-    TransformComponent() :
-        Component{ Type::Transform }
-    {
-        
-    }
+    DEFINE_COMP_TYPE(Transform)
 
     void Set(Vector3 position, Vector3 rotation, Vector3 scale)
     { 
@@ -114,14 +102,14 @@ struct TransformComponent : public Component
 
 struct MeshComponent : public Component
 {
-    MeshComponent() :
-        Component{ Type::Mesh }
+    DEFINE_COMP_TYPE(Mesh)
+
+    MeshComponent()
     {
-    
+
     }
 
     MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) :
-        Component{ Type::Mesh },
         Mesh{ mesh }
     {
     
@@ -137,8 +125,9 @@ struct MeshComponent : public Component
 
 struct MaterialComponent : public Component
 {
+    DEFINE_COMP_TYPE(Material)
+
     MaterialComponent() :
-        Component{ Type::Mesh },
         AlbedoColor{ 0.995f, 0.995f, 0.995f },
         Metallic{ 1.0f },
         Roughness{ 1.0f }
@@ -165,11 +154,7 @@ struct MaterialComponent : public Component
 
 struct LightComponent : public Component
 {
-    LightComponent() :
-        Component{ Type::Light }
-    {
-        
-    }
+    DEFINE_COMP_TYPE(Light)
 
     Vector4 Radiance{ 1.0f };
     bool Enabled = true;
@@ -177,36 +162,31 @@ struct LightComponent : public Component
 
 struct SceneComponent : public Component
 {
-    SceneComponent() :
-        Component{ Type::Scene }
-    {
-    
-    }
+    DEFINE_COMP_TYPE(Scene)
 };
 
 struct SpriteRendererComponent : public Component
 {
+    DEFINE_COMP_TYPE(SpriteRenderer)
+
     static inline Texture::Description Desc = {
         Format::RGBA8,
         Wrap::Repeat,
         Filter::Linear
     };
-
-    SpriteRendererComponent() :
-        Component{ Type::SpriteRenderer }
+    
+    SpriteRendererComponent()
     {
 
     }
 
     SpriteRendererComponent(std::shared_ptr<Texture> texture) :
-        Component{ Type::SpriteRenderer },
         Texture{ texture }
     {
 
     }
 
     SpriteRendererComponent(std::shared_ptr<Texture> texture, const Vector4 color) :
-        Component{ Type::SpriteRenderer },
         Texture{ texture },
         Color{ color }
     {
@@ -226,8 +206,9 @@ struct SpriteRendererComponent : public Component
 
 struct CameraComponent : public Component
 {
-    CameraComponent() :
-        Component{ Type::Camera }
+    DEFINE_COMP_TYPE(Camera)
+
+    CameraComponent()
     {
     
     }
@@ -251,11 +232,7 @@ struct CameraComponent : public Component
 
 struct DirectionalLightComponent : public Component
 {
-    DirectionalLightComponent() :
-        Component{ Type::Light }
-    {
-    
-    }
+    DEFINE_COMP_TYPE(DirectionalLight)
 
     Vector3 Radiance{ 1.0f, 1.0f, 1.0f };
 
@@ -267,16 +244,11 @@ struct DirectionalLightComponent : public Component
 
 struct ScriptComponent : public Component
 {
-    ScriptComponent() :
-        Component{ Type::Script }
-    {
-    
-    }
+    DEFINE_COMP_TYPE(Script)
 
     ScriptComponent(const ScriptComponent & other) = default;
 
     ScriptComponent(const std::string &name) :
-        Component{ Type::Script },
         Name{ name }
     {
 
@@ -287,22 +259,14 @@ struct ScriptComponent : public Component
 
 struct MetaComponent : public Component
 {
-    MetaComponent() :
-        Component{ Type::Meta }
-    {
-
-    }
+    DEFINE_COMP_TYPE(Meta)
 
     void *Meta = nullptr;
 };
 
 struct ColorMixingComponent : public Component
 {
-    ColorMixingComponent() :
-        Component{ Type::ColorMixing }
-    {
-
-    }
+    DEFINE_COMP_TYPE(ColorMixing)
 
     bool Modified    = false;
     bool Initialized = false;
@@ -325,7 +289,11 @@ struct ColorMixingComponent : public Component
     float Hightlights = 0;
     float Shadow      = 0;
     float Vividness   = 0;
+
+    static size_t Length;
 };
+
+inline size_t ColorMixingComponent::Length = sizeof(ColorMixingComponent) - offsetof(ColorMixingComponent, RGBA);
 
 enum class FilterType
 {
@@ -337,8 +305,9 @@ enum class FilterType
 
 struct FilterComponent : public Component
 {
-    FilterComponent() :
-        Component{ Type::Filter }
+    DEFINE_COMP_TYPE(Filter)
+
+    FilterComponent()
     {
 
     }
