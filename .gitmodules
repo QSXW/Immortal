@@ -16,8 +16,6 @@
 	path = 3rdparty/imgui
 	url = https://github.com/QSXW/imgui.git
 	branch = docking
-[submodule "<path>"]
-	ignore = untracked
 [submodule "3rdparty/SPIRV-Cross"]
 	path = 3rdparty/SPIRV-Cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross.git

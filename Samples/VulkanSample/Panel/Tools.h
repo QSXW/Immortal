@@ -81,12 +81,12 @@ public:
             ImGui::PushFont(GuiLayer::NotoSans.Bold);
             {
                 ImGui::SameLine(0.0f, 24.0f);
-                if (ImGui::Button(WordsMap::Get("").c_str(), ImVec2{ size.x * 2.4f, size.y }))
+                if (ImGui::Button(WordsMap::Get("##X").c_str(), ImVec2{ size.x * 2.4f, size.y }))
                 {
 
                 }
                 ImGui::SameLine(0.0f, 1.0);
-                if (ImGui::Button(WordsMap::Get("").c_str(), ImVec2{ size.x * 2.4f, size.y }))
+                if (ImGui::Button(WordsMap::Get("##X").c_str(), ImVec2{ size.x * 2.4f, size.y }))
                 {
 
                 }
