@@ -30,6 +30,7 @@ public:
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
         ImGui::Begin(Super::Text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
+        ImGui::BeginChild("###");
 
         auto &[x, y] = ImGui::GetContentRegionAvail();
 
@@ -52,6 +53,7 @@ public:
 
         process();
 
+        ImGui::EndChild();
         ImGui::End();
         ImGui::PopStyleVar();
     }
