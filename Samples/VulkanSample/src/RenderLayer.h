@@ -92,9 +92,12 @@ public:
 
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
+                auto &[x, y] = ImGui::GetWindowPos();
+                auto &[w, h] = ImGui::GetWindowSize();
+
                 ImGuizmo::SetOrthographic(false);
                 ImGuizmo::SetDrawlist();
-                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+                ImGuizmo::SetRect(x, y, w, h);
 
                 Matrix4 cameraProjectionMatrix = editorCamera.Projection();
                 Matrix4 cameraViewMatrix = editorCamera.View();
@@ -108,11 +111,11 @@ public:
                     { 45.0f, 45.0f, 45.0f },
                     {  0.5f,  0.5f,  0.5f }
                 };
-
+                
                 ImGuizmo::Manipulate(
                     &cameraViewMatrix[0].x,
                     &cameraProjectionMatrix[0].x,
-                    static_cast<ImGuizmo::OPERATION>(guizmoType),
+                    guizmoType,
                     ImGuizmo::LOCAL,
                     &munipulatedTransform[0].x,
                     nullptr,
@@ -550,7 +553,7 @@ private:
 
     EditorCamera editorCamera;
 
-    int guizmoType = ImGuizmo::OPERATION::INVALID;
+    ImGuizmo::OPERATION guizmoType = ImGuizmo::OPERATION::INVALID;
 };
 
 }
