@@ -136,7 +136,7 @@ struct MaterialComponent : public Component
     DEFINE_COMP_TYPE(Material)
 
     MaterialComponent() :
-        AlbedoColor{ 0.995f, 0.995f, 0.995f },
+        AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
         Metallic{ 1.0f },
         Roughness{ 1.0f }
     {
@@ -155,7 +155,7 @@ struct MaterialComponent : public Component
         std::shared_ptr<Texture> AO;
     } Textures;
 
-    Vector3 AlbedoColor;
+    Vector4 AlbedoColor;
     float   Metallic;
     float   Roughness;
 };
