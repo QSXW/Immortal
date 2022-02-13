@@ -154,7 +154,7 @@ public:
         {
             return;
         }
-        std::bind(func, that, std::placeholders::_1)(e);
+        e.Handled |= std::bind(func, that, std::placeholders::_1)(e);
     }
 
 private:
