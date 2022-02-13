@@ -84,10 +84,25 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
 
     std::vector<VkPipelineColorBlendAttachmentState> colorBlends;
     colorBlends.resize(target->ColorAttachmentCount());
-    for (auto &colorBlend : colorBlends)
+    for (size_t i = 0; i < colorBlends.size(); i++)
     {
-        colorBlend.colorWriteMask = 0xf;
-        colorBlend.blendEnable    = VK_FALSE;
+        auto &colorBlend = colorBlends[i];
+        colorBlend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;;
+
+        if (option.BlendEnable && !i)
+        {
+            colorBlend.blendEnable         = VK_TRUE;
+            colorBlend.colorBlendOp        = VK_BLEND_OP_ADD;
+            colorBlend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+            colorBlend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            colorBlend.alphaBlendOp        = VK_BLEND_OP_ADD;
+            colorBlend.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            colorBlend.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+        }
+        else
+        {
+            colorBlend.blendEnable = VK_FALSE;
+        }
     }
     state->colorBlend.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     state->colorBlend.attachmentCount     = U32(colorBlends.size());

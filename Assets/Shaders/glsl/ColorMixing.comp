@@ -58,7 +58,7 @@ void main()
     float factor = 1.0;
     if (properties.Exposure > 0.0)
     {
-        factor = 1.2; 
+        factor = 1.2;
     }
 
     vec3 hsv = rgb2hsv(res.xyz);
@@ -73,7 +73,7 @@ void main()
     /* Contrast */
     res.rgb = ((res.rgb - 0.5f) * max(1.0f + properties.Contrast, 0)) + 0.5f;
 
-    res = pow(res, vec4(1 / (1.0 + factor * (properties.Exposure - properties.Contrast))));
+    res.rgb = pow(res.rgb, vec3(1 / (1.0 + factor * (properties.Exposure - properties.Contrast))));
 
     imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), res);
 }

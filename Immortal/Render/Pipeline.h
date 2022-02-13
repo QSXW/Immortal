@@ -18,7 +18,7 @@ public:
     struct Option
     {
         bool DepthEnable = true;
-        bool BlendEnable = true;
+        bool BlendEnable = false;
     };
 
 public:

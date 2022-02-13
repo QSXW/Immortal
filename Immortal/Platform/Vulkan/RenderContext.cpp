@@ -52,6 +52,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     physicalDevice.HighPriorityGraphicsQueue            = true;
     physicalDevice.RequestedFeatures.samplerAnisotropy  = VK_TRUE;
     physicalDevice.RequestedFeatures.robustBufferAccess = VK_TRUE;
+    physicalDevice.RequestedFeatures.independentBlend   = VK_TRUE;
 
     depthFormat = SuitableDepthFormat(physicalDevice.Handle());
 
