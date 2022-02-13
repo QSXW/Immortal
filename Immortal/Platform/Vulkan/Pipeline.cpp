@@ -9,9 +9,137 @@ namespace Immortal
 namespace Vulkan
 {
 
+struct TopologyConverter
+{
+    TopologyConverter(GraphicsPipeline::PrimitiveType type) :
+        Type{ type }
+    {
+
+    }
+
+    operator VkPrimitiveTopology()
+    {
+        switch (Type)
+        {
+
+        case GraphicsPipeline::PrimitiveType::Point:
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        case GraphicsPipeline::PrimitiveType::Line:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        case GraphicsPipeline::PrimitiveType::Triangles:
+        default:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        }
+    }
+
+    GraphicsPipeline::PrimitiveType Type;
+};
+
+Pipeline::Pipeline(Device *device, Shader *shader) :
+    device{ device }
+{
+    layout = shader->Get<PipelineLayout&>();
+    descriptor.setLayout  = shader->Get<VkDescriptorSetLayout>();
+    descriptor.setUpdater = shader->GetAddress<DescriptorSetUpdater>();
+    descriptor.pool.reset(new DescriptorPool{ device, shader->PoolSize() });
+}
+
+Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptor.packs.find(uuid);
+    if (it != descriptor.packs.end())
+    {
+        DescriptorSetPack &pack = it->second;
+        descriptor.set = pack.DescriptorSets[pack.Sync];
+        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+    }
+    else
+    {
+        DescriptorSetPack pack{};
+        if (!descriptor.freePacks.empty())
+        {
+            pack = descriptor.freePacks.front();
+            descriptor.freePacks.pop();
+        }
+        else
+        {
+            for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
+            {
+                Check(descriptor.pool->Allocate(&descriptor.setLayout, &pack.DescriptorSets[i]));
+            }
+        }
+        descriptor.set = pack.DescriptorSets[pack.Sync];
+        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+
+        descriptor.packs[uuid] = pack;
+    }
+    descriptor.setUpdater->Set(descriptor.set);
+
+    return Anonymize(descriptor.set);
+}
+
+void Pipeline::FreeDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptor.packs.find(uuid);
+    if (it != descriptor.packs.end())
+    {
+        DescriptorSetPack &pack = it->second;
+        descriptor.freePacks.push(std::move(pack));
+        descriptor.packs.erase(it);
+    }
+}
+
+bool Pipeline::Ready()
+{
+    bool ready = descriptor.setUpdater->Ready();
+
+    if (ready && !descriptor.set)
+    {
+        Check(descriptor.pool->Allocate(&descriptor.setLayout, &descriptor.set));
+        descriptor.setUpdater->Set(descriptor.set);
+    }
+    return ready;
+}
+
+void Pipeline::Update()
+{
+    if (Ready())
+    {
+        descriptor.setUpdater->Update(*device);
+    }
+}
+
+void Pipeline::Bind(Texture::Super *superTexture, uint32_t slot)
+{
+    auto texture = dcast<Texture *>(superTexture);
+    Bind((const Descriptor *)(&texture->DescriptorInfo()), slot);
+}
+
+void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+{
+    auto bufferDescriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
+    descriptor.setUpdater->Set(name, bufferDescriptor);
+    Update();
+}
+
+void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
+{
+    for (auto &writeDescriptor : descriptor.setUpdater->WriteDescriptorSets)
+    {
+        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
+            writeDescriptor.dstBinding == slot)
+        {
+            writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
+            writeDescriptor.dstSet = descriptor.set;
+            break;
+        }
+    }
+    Update();
+}
+
 GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader) :
-    device{ device },
-    Super{ shader }
+    Super{ shader },
+    NativeSuper{ device, std::dynamic_pointer_cast<Shader>(shader).get() }
 {
     state = std::make_unique<State>();
     CleanUpObject(state.get(), 0, offsetof(State, inputAttributeDescriptions));
@@ -21,8 +149,28 @@ GraphicsPipeline::~GraphicsPipeline()
 {
     if (device)
     {
-        device->Destroy(handle);
+        device->DestroyAsync(handle);
     }
+}
+
+void GraphicsPipeline::SetupVertex()
+{
+    state->inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    state->inputAssembly.flags    = 0;
+    state->inputAssembly.topology = TopologyConverter{ desc.PrimitiveType };
+    state->inputAssembly.primitiveRestartEnable = VK_FALSE;
+}
+
+void GraphicsPipeline::SetupLayout()
+{
+    auto &inputAttributeDescriptions = state->inputAttributeDescriptions;
+    auto &vertexInputBidings = state->vertexInputBidings;
+
+    state->vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    state->vertexInput.vertexBindingDescriptionCount   = U32(vertexInputBidings.size());
+    state->vertexInput.pVertexBindingDescriptions      = vertexInputBidings.data();
+    state->vertexInput.vertexAttributeDescriptionCount = U32(inputAttributeDescriptions.size());
+    state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
 }
 
 void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
@@ -58,15 +206,7 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
 void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget, Option option)
 {
     Reconstruct(superTarget, option);
-
-    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
-    descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
-    descriptorPool.reset(new DescriptorPool{ device, shader->PoolSize() });
-
-    if (Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
+    NativeSuper::Update();
 }
 
 void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget, Option option)
@@ -141,14 +281,13 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     state->dynamic.pDynamicStates = dynamic.data();
 
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
-    descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
 
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.pNext               = nullptr;
     createInfo.renderPass          = target->GetRenderPass();
     createInfo.flags               = 0;
-    createInfo.layout              = shader->Get<PipelineLayout&>();
+    createInfo.layout              = layout;
     createInfo.pInputAssemblyState = &state->inputAssembly;
     createInfo.pVertexInputState   = &state->vertexInput;
     createInfo.pRasterizationState = &state->rasterization;
@@ -162,7 +301,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     createInfo.pStages    = stages.data();
     createInfo.stageCount = stages.size();
 
-    Check(device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle));
+    Check(device->CreatePipelines(cache, 1, &createInfo, &handle));
 }
 
 void GraphicsPipeline::CopyState(Super &super)
@@ -177,182 +316,66 @@ void GraphicsPipeline::CopyState(Super &super)
     SetupLayout();
 }
 
-bool GraphicsPipeline::Ready()
-{
-    bool ready = descriptorSetUpdater->Ready();
-    if (ready && !descriptorSet)
-    {
-        Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
-        descriptorSetUpdater->Set(descriptorSet);
-    }
-    return ready;
-}
-
-void GraphicsPipeline::Bind(Texture::Super *superTexture, uint32_t slot)
-{
-    auto texture = dynamic_cast<Texture *>(superTexture);
-    auto descriptor = rcast<const Descriptor *>(&texture->DescriptorInfo());
-    
-    //for (auto &writeDesc : descriptorSetUpdater->WriteDescriptorSets)
-    //{
-    //    if (writeDesc.dstBinding == slot &&
-    //        Equals(writeDesc.pImageInfo, descriptor))
-    //    {
-    //        return;
-    //    }
-    //}
-
-    Bind(descriptor, slot);
-}
-
-void GraphicsPipeline::Bind(const std::string &name, const Buffer::Super *uniform)
-{
-    auto descriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
-    descriptorSetUpdater->Set(name, descriptor);
-    if (Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
-}
-
-void GraphicsPipeline::Bind(const Descriptor *descriptors, uint32_t slot)
-{
-    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
-    {
-        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
-            writeDescriptor.dstBinding == slot)
-        {
-            writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
-            writeDescriptor.dstSet = descriptorSet;
-            break;
-        }
-    }
-    if (Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
-}
-
-void GraphicsPipeline::AllocateDescriptorSet(uint64_t uuid)
-{
-    auto it = descriptorSets.find(uuid);
-    if (it != descriptorSets.end())
-    {
-        DescriptorSetPack &pack = it->second;
-        descriptorSet = pack.DescriptorSets[pack.Sync];
-        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
-    }
-    else
-    {
-        DescriptorSetPack pack{};
-        if (!freeDescriptorSetPacks.empty())
-        {
-            pack = freeDescriptorSetPacks.front();
-            freeDescriptorSetPacks.pop();
-        }
-        else
-        {
-            for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
-            {
-                Check(descriptorPool->Allocate(&descriptorSetLayout, &pack.DescriptorSets[i]));
-            }
-        }
-        descriptorSet = pack.DescriptorSets[pack.Sync];
-        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
-
-        descriptorSets[uuid] = pack;
-    }
-
-    descriptorSetUpdater->Set(descriptorSet);
-}
-
-void GraphicsPipeline::FreeDescriptorSet(uint64_t uuid)
-{
-    auto it = descriptorSets.find(uuid);
-    if (it != descriptorSets.end())
-    {
-        DescriptorSetPack &pack = it->second;
-        freeDescriptorSetPacks.push(std::move(pack));
-        descriptorSets.erase(it);
-    }
-}
-
 ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
-    device{ device }
+    NativeSuper{ device, dcast<Shader *>(superShader) }
 {
     auto shader = dynamic_cast<Shader *>(superShader);
     auto &stage = shader->Stages();
 
-    layout = shader->Get<PipelineLayout&>();
-    descriptorSetLayout = shader->Get<VkDescriptorSetLayout>();
-    descriptorSetUpdater = shader->GetAddress<DescriptorSetUpdater>();
-
-    descriptorPool.reset(new DescriptorPool{ device , shader->PoolSize() });
+    THROWIF(!shader->IsType(Shader::Type::Compute), "init compute pipeline with incorrect shader source type")
 
     VkComputePipelineCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    createInfo.pNext = nullptr;
+    createInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    createInfo.pNext  = nullptr;
     createInfo.layout = layout;
-    createInfo.stage = stage[0];
+    createInfo.stage  = stage[0];
 
-    device->CreatePipelines(cache, 1, &createInfo, nullptr, &handle);
+    device->CreatePipelines(cache, 1, &createInfo, &handle);
 
-    if (Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
+    Update();
 }
 
 ComputePipeline::~ComputePipeline()
 {
     if (device)
     {
-        device->Destroy(handle);
+        device->DestroyAsync(handle);
     }
 }
 
-void ComputePipeline::Bind(const std::string &name, const Buffer::Super *uniform)
+void ComputePipeline::Update()
 {
-    auto descriptor = rcast<const BufferDescriptor *>(uniform->Descriptor());
-    descriptorSetUpdater->Set(name, descriptor);
     if (Ready())
     {
-        descriptorSetUpdater->Update(*device);
+        descriptor.setUpdater->Update(*device);
     }
 }
 
 void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
+    NativeSuper::Bind(superTexture, slot);
     auto texture = dynamic_cast<Texture *>(superTexture);
 
-    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
+    for (auto &writeDescriptor : descriptor.setUpdater->WriteDescriptorSets)
     {
-        if (writeDescriptor.dstBinding == slot)
+        if (writeDescriptor.dstBinding == slot && writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
         {
             VkDescriptorImageInfo *descriptorInfo = rcast<VkDescriptorImageInfo *>(&texture->DescriptorInfo());
-            if (descriptorInfo != writeDescriptor.pImageInfo)
-            {
-                isChanged++;
-                writeDescriptor.pImageInfo = descriptorInfo;
-            }
-            if (writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-            {
-                VkImageSubresourceRange subresourceRange{};
-                subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-                subresourceRange.baseMipLevel = 0;
-                subresourceRange.levelCount   = texture->MipLevels();
-                subresourceRange.layerCount   = 1;
+            VkImageSubresourceRange subresourceRange{};
+            subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+            subresourceRange.baseMipLevel = 0;
+            subresourceRange.levelCount   = texture->MipLevels();
+            subresourceRange.layerCount   = 1;
 
-                barriers.emplace_back(
-                    texture->Get<VkImage>(),
-                    subresourceRange,
-                    texture->Layout,
-                    VK_IMAGE_LAYOUT_GENERAL,
-                    VK_ACCESS_SHADER_READ_BIT,
-                    VK_ACCESS_SHADER_WRITE_BIT
-                );
-                descriptorInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-            }
+            barriers.emplace_back(
+                texture->Get<VkImage>(),
+                subresourceRange,
+                texture->Layout,
+                VK_IMAGE_LAYOUT_GENERAL,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_ACCESS_SHADER_WRITE_BIT
+            );
+            descriptorInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
             break;
         }
     }
@@ -367,56 +390,20 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
             U32(barriers.size()), barriers.data()
         );
         });
-
-    if (isChanged == descriptorSetUpdater->WriteDescriptorSets.size() && Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
-}
-
-void ComputePipeline::Bind(const Descriptor *descriptors, uint32_t slot)
-{
-    for (auto &writeDescriptor : descriptorSetUpdater->WriteDescriptorSets)
-    {
-        if (writeDescriptor.dstBinding == slot)
-        {
-            if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-            {
-                writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
-            }
-            else
-            {
-                writeDescriptor.pBufferInfo = rcast<const VkDescriptorBufferInfo *>(descriptors);
-            }
-            break;
-        }
-    }
-
-    if (Ready())
-    {
-        descriptorSetUpdater->Update(*device);
-    }
 }
 
 void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
-    isChanged = 0;
-
-    vkCmdBindDescriptorSets(
-        *cmdbuf,
+    cmdbuf->BindDescriptorSets(
         BindPoint,
         layout,
         0, 1,
-        &descriptorSet,
+        &descriptor.set,
         0, nullptr
     );
-    vkCmdBindPipeline(*cmdbuf, BindPoint, handle);
 
-    cmdbuf->Dispatch(
-        nGroupX,
-        nGroupY,
-        nGroupZ
-    );
+    cmdbuf->BindPipeline(handle, BindPoint);
+    cmdbuf->Dispatch(nGroupX, nGroupY, nGroupZ);
 
     RenderContext::That->Submit([&](CommandBuffer *drawCmdbuf) {
         VkImageLayout layouts[] = {
@@ -464,20 +451,9 @@ void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t off
         });
 }
 
-bool ComputePipeline::Ready()
-{
-    bool ready = descriptorSetUpdater->Ready();
-    if (ready)
-    {
-        Check(descriptorPool->Allocate(&descriptorSetLayout, &descriptorSet));
-        descriptorSetUpdater->Set(descriptorSet);
-    }
-    return ready;
-}
-
 void ComputePipeline::ResetResource()
 {
-    // descriptorPool->Reset();
+
 }
 
 }

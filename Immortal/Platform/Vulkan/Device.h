@@ -129,7 +129,7 @@ public:
     }
 
 #define DEFINE_CREATE_PIPELINES(T) \
-    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) \
+    VkResult CreatePipelines(VkPipelineCache pipelineCache, uint32_t createInfoCount, const Vk##T##PipelineCreateInfo *pCreateInfos, VkPipeline *pPipelines, const VkAllocationCallbacks *pAllocator = nullptr) \
     { \
         return vkCreate##T##Pipelines(handle, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); \
     }

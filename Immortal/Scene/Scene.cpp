@@ -221,15 +221,16 @@ void Scene::OnRender(const Camera &camera)
 {
     auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent, ColorMixingComponent>);
     {
-        for (auto o : group)
+        for (auto object : group)
         {
-            auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
+            auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(object);
 
             auto width = sprite.Final->Width();
             auto height = sprite.Final->Height();
 
             if (color.Modified || !color.Initialized)
             {
+                pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
                 pipelines.colorMixing->ResetResource();
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Texture.get(), 0);

@@ -22,10 +22,70 @@ namespace Vulkan
 
 class Device;
 class CommandBuffer;
-class GraphicsPipeline : public SuperGraphicsPipeline
+
+class Pipeline : public virtual SuperPipeline
 {
 public:
+    using Super = SuperPipeline;
+
+    struct DescriptorSetPack
+    {
+        uint32_t Sync = 0;
+
+        VkDescriptorSet DescriptorSets[6];
+    };
+
+public:
+    Pipeline(Device *device, Shader *shader);
+
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
+
+    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
+
+    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+
+    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
+
+    virtual void FreeDescriptorSet(uint64_t uuid) override;
+
+public:
+    bool Ready();
+
+    void Update();
+
+protected:
+    Device *device{ nullptr };
+
+    VkPipeline handle{ VK_NULL_HANDLE };
+
+    VkPipelineCache cache{ VK_NULL_HANDLE };
+
+    PipelineLayout layout;
+
+    struct
+    {
+        VkDescriptorSetLayout setLayout;
+
+        VkDescriptorSet set{ VK_NULL_HANDLE };
+
+        DescriptorSetUpdater *setUpdater{ nullptr };
+
+        std::unique_ptr<DescriptorPool> pool;
+
+        std::unordered_map<uint64_t, DescriptorSetPack> packs;
+
+        std::queue<DescriptorSetPack> freePacks;
+    } descriptor;
+};
+
+class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
+{
+public:
+    using NativeSuper = Vulkan::Pipeline;
+
     using Super = SuperGraphicsPipeline;
+
+    static constexpr VkPipelineBindPoint BindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     struct State
     {
@@ -50,13 +110,6 @@ public:
         std::vector<VkVertexInputBindingDescription> vertexInputBidings;
     };
 
-    struct DescriptorSetPack
-    {
-        uint32_t Sync = 0;
-
-        VkDescriptorSet DescriptorSets[6];
-    };
-
 public:
     GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader);
 
@@ -69,16 +122,6 @@ public:
     virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
 
     virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
-
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
-
-    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
-
-    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
-
-    virtual void AllocateDescriptorSet(uint64_t uuid) override;
-
-    virtual void FreeDescriptorSet(uint64_t uuid) override;
 
     virtual void CopyState(Super &other) override;
 
@@ -95,88 +138,35 @@ public:
         }
     }
 
+    VkDescriptorSet GetDescriptorSet() const
+    {
+        return descriptor.set;
+    }
+
     operator VkPipeline() const
     {
         return handle;
     }
 
-    const VkPipelineBindPoint &BindPoint() const
+    VkPipelineLayout Layout() const
     {
-        return bindPoint;
-    }
-
-    const VkPipelineLayout &Layout() const
-    {
-        return std::dynamic_pointer_cast<Shader>(desc.shader)->Get<PipelineLayout&>();
-    }
-
-    const VkDescriptorSet &GetDescriptorSet() const
-    {
-        return descriptorSet;
+        return layout;
     }
 
 private:
-    VkPrimitiveTopology ConvertType(PrimitiveType &type)
-    {
-        if (type == PrimitiveType::Line)
-        {
-            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        }
-        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    }
+    void SetupVertex();
 
-    void SetupVertex()
-    {
-	    state->inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	    state->inputAssembly.topology               = ConvertType(desc.PrimitiveType);
-	    state->inputAssembly.flags                  = 0;
-	    state->inputAssembly.primitiveRestartEnable = VK_FALSE;
-    }
-
-    void SetupLayout()
-    {
-        auto &inputAttributeDescriptions = state->inputAttributeDescriptions;
-        auto &vertexInputBidings         = state->vertexInputBidings;
-        
-        state->vertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        state->vertexInput.vertexBindingDescriptionCount   = U32(vertexInputBidings.size());
-        state->vertexInput.pVertexBindingDescriptions      = vertexInputBidings.data();
-        state->vertexInput.vertexAttributeDescriptionCount = U32(inputAttributeDescriptions.size());
-        state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
-    }
+    void SetupLayout();
 
 private:
-    bool Ready();
-
-private:
-    Device *device{ nullptr };
-
-    VkPipeline handle{ VK_NULL_HANDLE };
-
-    VkPipelineCache cache{ VK_NULL_HANDLE };
-
-    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    std::unique_ptr<PipelineLayout> layout;
-
     std::unique_ptr<State> state;
-
-    std::unique_ptr<DescriptorPool> descriptorPool;
-
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
-
-    std::unordered_map<uint64_t, DescriptorSetPack> descriptorSets;
-
-    std::queue<DescriptorSetPack> freeDescriptorSetPacks;
-
-    DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
 };
 
-class ComputePipeline : public SuperComputePipeline
+class ComputePipeline : public Pipeline, public SuperComputePipeline
 {
 public:
+    using NativeSuper = Vulkan::Pipeline;
+
     using Super = SuperComputePipeline;
 
     static constexpr VkPipelineBindPoint BindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
@@ -186,11 +176,7 @@ public:
 
     virtual ~ComputePipeline();
 
-    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
-
     virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
-
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
@@ -200,39 +186,21 @@ public:
 
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 
-    const VkPipelineLayout &Layout() const
+    VkPipelineLayout Layout() const
     {
         return layout;
     }
 
     const VkDescriptorSet &GetDescriptorSet() const
     {
-        return descriptorSet;
+        return descriptor.set;
     }
 
 private:
-    bool Ready();
+    void Update();
 
 private:
-    Device *device{ nullptr };
-
-    VkPipeline handle{ VK_NULL_HANDLE };
-
-    VkPipelineCache cache{ VK_NULL_HANDLE };
-
-    VkPipelineLayout layout{ VK_NULL_HANDLE };
-
-    DescriptorSetUpdater *descriptorSetUpdater{ nullptr };
-
-    VkDescriptorSet descriptorSet{ VK_NULL_HANDLE };
-
-    VkDescriptorSetLayout descriptorSetLayout{ VK_NULL_HANDLE };
-
-    std::unique_ptr<DescriptorPool> descriptorPool;
-
     std::vector<ImageBarrier> barriers;
-
-    uint32_t isChanged = 0;
 };
 
 }

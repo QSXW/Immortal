@@ -207,17 +207,19 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
 {
     context->Submit([&](CommandBuffer *cmdbuf) {
         auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
+
+        VkDescriptorSet descriptorSets[] = {pipeline->GetDescriptorSet()};
         cmdbuf->BindDescriptorSets(
-            pipeline->BindPoint(),
+            GraphicsPipeline::BindPoint,
             pipeline->Layout(),
             0, 1,
-            &pipeline->GetDescriptorSet(),
+            descriptorSets,
             0, 0
             );
 
         cmdbuf->BindPipeline(
             *pipeline,
-             pipeline->BindPoint()
+             GraphicsPipeline::BindPoint
             );
 
         auto &buffer = pipeline->Get<Buffer::Type::Vertex>();

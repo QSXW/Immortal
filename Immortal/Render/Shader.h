@@ -172,6 +172,11 @@ public:
         return type == Type::Graphics;
     }
 
+    bool IsType(Type other) const
+    {
+        return type == other;
+    }
+
 protected:
     Type type{ Type::Graphics };
 };

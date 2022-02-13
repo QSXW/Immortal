@@ -27,7 +27,30 @@ public:
 
     }
 
-    virtual void Bind(const std::string &name, const Buffer *uniform) = 0;
+    virtual void Bind(Texture *texture, uint32_t slot = 0)
+    {
+
+    }
+
+    virtual void Bind(const std::string &name, const Buffer *uniform)
+    {
+
+    }
+
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
+    {
+
+    }
+
+    virtual Anonymous AllocateDescriptorSet(uint64_t uuid)
+    {
+        return nullptr;
+    }
+
+    virtual void FreeDescriptorSet(uint64_t uuid)
+    {
+
+    }
 
     enum class DrawType
     {
@@ -50,7 +73,7 @@ public:
     using Compute  = ComputePipeline;
 };
 
-class IMMORTAL_API GraphicsPipeline : public Pipeline
+class IMMORTAL_API GraphicsPipeline : public virtual Pipeline
 {
 public:
     GraphicsPipeline()
@@ -69,21 +92,6 @@ public:
     virtual void Map() { }
 
     virtual void Unmap() { }
-
-    virtual void Bind(Texture *texture, uint32_t slot = 0)
-    {
-
-    }
-
-    virtual void Bind(const std::string &name, const Buffer *uniform)
-    {
-
-    }
-
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
-    {
-
-    }
 
     virtual void Set(std::shared_ptr<Buffer> &buffer)
     {
@@ -110,16 +118,6 @@ public:
     }
 
     virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
-    {
-
-    }
-
-    virtual void AllocateDescriptorSet(uint64_t uuid)
-    {
-
-    }
-
-    virtual void FreeDescriptorSet(uint64_t uuid)
     {
 
     }
@@ -167,15 +165,9 @@ public:
     uint32_t ElementCount = 0;
 };
 
-class IMMORTAL_API ComputePipeline : public Pipeline
+class IMMORTAL_API ComputePipeline : public virtual Pipeline
 {
 public:
-    virtual void Bind(const std::string &name, const Buffer *uniform) = 0;
-
-    virtual void Bind(Texture *texture, uint32_t slot) = 0;
-
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot) = 0;
-
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
 
     virtual void ResetResource()
@@ -196,8 +188,8 @@ public:
     }
 };
 
+using SuperPipeline         = Pipeline;
+using SuperComputePipeline  = ComputePipeline;
 using SuperGraphicsPipeline = GraphicsPipeline;
-
-using SuperComputePipeline = ComputePipeline;
 
 }

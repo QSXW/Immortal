@@ -52,7 +52,7 @@ void Render2D::Setup()
         }
         pipeline->Set(std::shared_ptr<Buffer>{ Render::CreateBuffer<uint32_t>(data.MaxIndices, quadIndices.get(), Buffer::Type::Index) });
     }
-    pipeline->Create(Render::Preset()->Target, Pipeline::Option { true, true });
+    pipeline->Create(Render::Preset()->Target, Pipeline::Option{ true, true });
 
     data.WhiteTexture = Render::Preset()->Textures.White;
 
@@ -62,6 +62,7 @@ void Render2D::Setup()
         data.ActiveTextures[i] = data.WhiteTexture;
     }
 
+    pipeline->AllocateDescriptorSet((uint64_t)&data);
     pipeline->Bind("UBO", uniform.get());
     pipeline->Bind(data.textureDescriptors.get(), 1);
 
@@ -90,6 +91,7 @@ void Render2D::Flush()
 
     if (isTextureChanged)
     {
+        pipeline->AllocateDescriptorSet((uint64_t)&data);
         pipeline->Bind(data.textureDescriptors.get(), 1);
         isTextureChanged = false;
     }
