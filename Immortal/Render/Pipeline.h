@@ -15,10 +15,16 @@ class ComputePipeline;
 class IMMORTAL_API Pipeline
 {
 public:
+    enum class Feature
+    {
+        None  = 0,
+        DepthDisabled = BIT(1),
+        BlendEnabled  = BIT(2)
+    };
+
     struct Option
     {
-        bool DepthEnable = true;
-        bool BlendEnable = false;
+        Feature flags = Feature::None;
     };
 
 public:
@@ -191,5 +197,7 @@ public:
 using SuperPipeline         = Pipeline;
 using SuperComputePipeline  = ComputePipeline;
 using SuperGraphicsPipeline = GraphicsPipeline;
+
+SL_DEFINE_BITWISE_OPERATION(Pipeline::Feature, uint32_t)
 
 }

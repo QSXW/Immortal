@@ -52,7 +52,7 @@ void Render2D::Setup()
         }
         pipeline->Set(std::shared_ptr<Buffer>{ Render::CreateBuffer<uint32_t>(data.MaxIndices, quadIndices.get(), Buffer::Type::Index) });
     }
-    pipeline->Create(Render::Preset()->Target, Pipeline::Option{ true, true });
+    pipeline->Create(Render::Preset()->Target, Pipeline::Option{ Pipeline::Feature::BlendEnabled });
 
     data.WhiteTexture = Render::Preset()->Textures.White;
 

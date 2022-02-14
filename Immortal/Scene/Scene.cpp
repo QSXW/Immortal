@@ -134,7 +134,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     outlineDesc.Stride = commonDesc.Stride;
     pipelines.outline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Outline")));
     pipelines.outline->Set(outlineDesc);
-    pipelines.outline->Create(renderTarget, Pipeline::Option{ false, true });
+    pipelines.outline->Create(renderTarget, { Pipeline::Feature::DepthDisabled });
 
     pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get()));
 
