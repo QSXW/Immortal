@@ -39,7 +39,7 @@ std::shared_ptr<Shader> RenderContext::CreateShader(const std::string &filename,
     if (Render::API == Render::Type::Vulkan)
     {
         auto context = dcast<Vulkan::RenderContext*>(this);
-        return std::make_shared<Vulkan::Shader>(context->Get<Vulkan::Device *>(), filename, type);
+        return std::make_shared<Vulkan::Shader>(context->GetAddress<Vulkan::Device>(), filename, type);
     }
     if (Render::API == Render::Type::D3D12)
     {

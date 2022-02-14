@@ -2,6 +2,8 @@
 
 #include "Common.h"
 
+#include <queue>
+
 namespace Immortal
 {
 namespace Vulkan
@@ -13,10 +15,10 @@ class DescriptorSetLayout;
 class DescriptorPool
 {
 public:
-    static constexpr UINT32 MaxSetsPerPool = 0x10;
+    static constexpr uint32_t MaxSetsPerPool = 1000;
 
 public:
-    DescriptorPool(Device *device, const DescriptorSetLayout &layout, UINT32 poolSize = MaxSetsPerPool);
+    DescriptorPool(Device *device, const DescriptorSetLayout &layout, uint32_t poolSize = MaxSetsPerPool);
 
     DescriptorPool(Device *device, const std::vector<VkDescriptorPoolSize> &poolSize);
 
@@ -28,16 +30,28 @@ public:
 
     void Reset();
 
+    VkDescriptorPool Handle() const
+    {
+        return handles.back();
+    }
+
+    operator VkDescriptorPool() const
+    {
+        return Handle();
+    }
+
+private:
+    VkDescriptorPool Create();
+
 private:
     Device *device{ nullptr };
-        
+
+    std::vector<VkDescriptorPool> handles{ VK_NULL_HANDLE };
+
     std::vector<VkDescriptorPoolSize> poolSize;
 
-    VkDescriptorPool handle{ VK_NULL_HANDLE };
-
-    std::vector<UINT32> setsCount;
-
-    UINT32 currentIndex{ 0 };
+    uint32_t allocatedCount = 0;
 };
+
 }
 }

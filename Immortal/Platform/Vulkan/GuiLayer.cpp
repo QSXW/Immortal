@@ -20,8 +20,6 @@ namespace Vulkan
 GuiLayer::GuiLayer(RenderContext::Super *context) :
     context{ dcast<RenderContext *>(context) }
 {
-    device     = this->context->Get<Device *>();
-    renderPass = this->context->Get<RenderPass *>();
     SLASSERT(context && "Render Context could not be NULL.");
 }
 
@@ -37,50 +35,26 @@ void GuiLayer::OnAttach()
     Application *app = Application::App();
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
 
-    auto &swapchain = context->Get<Swapchain &>();
-    auto format = swapchain.Get<VkFormat>();
-
-    VkDescriptorPoolSize poolSizes[] = {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-
-    constexpr int size = SL_ARRAY_LENGTH(poolSizes);
-    VkDescriptorPoolCreateInfo createInfo{};
-    createInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    createInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    createInfo.maxSets       = 1000 * size;
-    createInfo.poolSizeCount = size;
-    createInfo.pPoolSizes    = poolSizes;
-
-    Check(vkCreateDescriptorPool(*device, &createInfo, nullptr, &descriptorPool));
+    auto device = context->GetAddress<Device>();
+    descriptorPool.reset(new DescriptorPool{ device, Limit::PoolSize });
 
     ImGui_ImplVulkan_InitInfo initInfo{};
-    auto queue = context->Get<Queue*>();
+    auto queue = context->GetAddress<Queue>();
 
-    initInfo.Instance        = context->Get<Instance&>();
-    initInfo.PhysicalDevice  = context->Get<PhysicalDevice&>();
+    initInfo.Instance        =  context->Get<Instance&>();
+    initInfo.PhysicalDevice  =  context->Get<PhysicalDevice&>();
     initInfo.Device          = *device;
-    initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
     initInfo.Queue           = *queue;
-    initInfo.PipelineCache   = pipelineCache;
-    initInfo.DescriptorPool  = descriptorPool;
+    initInfo.QueueFamily     = queue->Get<Queue::FamilyIndex>();
+    initInfo.PipelineCache   = VK_NULL_HANDLE;
+    initInfo.DescriptorPool  = *descriptorPool;
     initInfo.Allocator       = nullptr;
-    initInfo.MinImageCount   = 3;
+    initInfo.MinImageCount   = Swapchain::MaxFrameCount;
     initInfo.ImageCount      = context->FrameSize();
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
-    if (ImGui_ImplVulkan_Init(&initInfo, *renderPass))
+    if (ImGui_ImplVulkan_Init(&initInfo, *context->GetAddress<RenderPass>()))
     {
         LOG::INFO("Initialized GUI with success");
     }

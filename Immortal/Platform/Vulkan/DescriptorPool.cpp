@@ -18,25 +18,28 @@ DescriptorPool::DescriptorPool(Device *device, const std::vector<VkDescriptorPoo
     device{ device },
     poolSize{ poolSize }
 {
-    VkDescriptorPoolCreateInfo createInfo{};
-    createInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    createInfo.poolSizeCount = poolSize.size();
-    createInfo.pPoolSizes    = poolSize.data();
-    createInfo.maxSets       = poolSize.size() * 1000;
-
-    Check(vkCreateDescriptorPool(*device, &createInfo, nullptr, &handle));
+    handles.push_back(Create());
 }
 
 DescriptorPool::~DescriptorPool()
 {
-    IfNotNullThen(vkDestroyDescriptorPool, *device, handle, nullptr);
+    for (auto &handle : handles)
+    {
+        device->DestroyAsync(handle);
+    }
 }
 
 VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count)
 {
+    allocatedCount += count;
+    if (allocatedCount > MaxSetsPerPool)
+    {
+        handles.push_back(Create());
+        allocatedCount = 0;
+    }
     VkDescriptorSetAllocateInfo createInfo{};
     createInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    createInfo.descriptorPool     = handle;
+    createInfo.descriptorPool     = handles.back();
     createInfo.descriptorSetCount = count;
     createInfo.pSetLayouts        = pDescriptorSetLayout;
 
@@ -45,12 +48,27 @@ VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLay
 
 void DescriptorPool::Free(VkDescriptorSet *pDescriptorSet, uint32_t size)
 {
-    vkFreeDescriptorSets(*device, handle, size, pDescriptorSet);
+
 }
 
 void DescriptorPool::Reset()
 {
-    device->Reset(handle, 0);
+
+}
+
+VkDescriptorPool DescriptorPool::Create()
+{
+    VkDescriptorPool handle;
+
+    VkDescriptorPoolCreateInfo createInfo{};
+    createInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    createInfo.poolSizeCount = poolSize.size();
+    createInfo.pPoolSizes    = poolSize.data();
+    createInfo.maxSets       = poolSize.size() * 1000;
+
+    Check(vkCreateDescriptorPool(*device, &createInfo, nullptr, &handle));
+
+    return handle;
 }
 
 }

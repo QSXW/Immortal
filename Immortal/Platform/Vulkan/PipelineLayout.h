@@ -12,8 +12,7 @@ struct PipelineLayout
 {
     PipelineLayout() = default;
 
-    PipelineLayout(VkDevice device, uint32_t layoutCount, VkDescriptorSetLayout *pLayout, const VkPushConstantRange *pRange, uint32_t rangeCount = 1) :
-        device{ device }
+    PipelineLayout(VkDevice device, uint32_t layoutCount, VkDescriptorSetLayout *pLayout, const VkPushConstantRange *pRange, uint32_t rangeCount = 1)
     {
         VkPipelineLayoutCreateInfo createInfo{};
         createInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -26,15 +25,12 @@ struct PipelineLayout
     }
 
     PipelineLayout(PipelineLayout &&other) :
-        device{ other.device },
         handle{ other.handle }
     {
-        other.device = VK_NULL_HANDLE;
         other.handle = VK_NULL_HANDLE;
     }
 
     PipelineLayout(const PipelineLayout &other) :
-        device{ other.device },
         handle{ other.handle }
     {
 
@@ -42,10 +38,10 @@ struct PipelineLayout
 
     ~PipelineLayout()
     {
-        IfNotNullThen(vkDestroyPipelineLayout, device, handle, nullptr);
+        
     }
 
-    operator VkPipelineLayout&()
+    VkPipelineLayout Handle() const
     {
         return handle;
     }
@@ -57,9 +53,7 @@ struct PipelineLayout
 
     PipelineLayout &operator=(PipelineLayout &&other)
     {
-        device = other.device;
         handle = other.handle;
-        other.device = VK_NULL_HANDLE;
         other.handle = VK_NULL_HANDLE;
 
         return *this;
@@ -67,14 +61,12 @@ struct PipelineLayout
 
     PipelineLayout &operator=(const PipelineLayout &other)
     {
-        device = other.device;
         handle = other.handle;
         
         return *this;
     }
 
-    VkDevice device{ VK_NULL_HANDLE };
-
+private:
     VkPipelineLayout handle{ VK_NULL_HANDLE };
 };
 

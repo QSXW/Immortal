@@ -30,6 +30,5 @@ void DescriptorSet::Update(VkWriteDescriptorSet *desc)
     device->UpdateDescriptorSets(1, desc, 0, nullptr);
 }
 
-
 }
 }

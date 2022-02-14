@@ -7,7 +7,6 @@
 #include "Queue.h"
 #include "CommandPool.h"
 #include "FencePool.h"
-#include "DescriptorPool.h"
 #include <queue>
 #include <future>
 
@@ -16,6 +15,7 @@ namespace Immortal
 namespace Vulkan
 {
 
+class DescriptorPool;
 class Swapchain;
 class Device
 {
@@ -37,6 +37,10 @@ public:
     Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
 
     ~Device();
+
+    VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets);
+
+    void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1);
 
     uint32_t QueueFailyIndex(VkQueueFlagBits queueFlag);
 
@@ -151,6 +155,7 @@ public:
     }
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
+    DEFINE_CREATE_VK_OBJECT(DescriptorPool)
     DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
     DEFINE_CREATE_VK_OBJECT(Framebuffer)
     DEFINE_CREATE_VK_OBJECT(Image)
@@ -165,6 +170,7 @@ public:
 
     DEFINE_DESTORY_VK_OBJECT(Buffer)
     DEFINE_DESTORY_VK_OBJECT(CommandPool)
+    DEFINE_DESTORY_VK_OBJECT(DescriptorPool)
     DEFINE_DESTORY_VK_OBJECT(DescriptorSetLayout)
     DEFINE_DESTORY_VK_OBJECT(Fence)
     DEFINE_DESTORY_VK_OBJECT(Framebuffer)
@@ -200,19 +206,6 @@ public:
         destroyCoroutine.queues[destroyCoroutine.working].push([=] {
             vkFreeMemory(handle, memory, pAllocator);
             }); 
-    }
-
-    VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
-    {
-        return descriptorPool->Allocate(pDescriptorSetLayout, pDescriptorSets);
-    }
-
-    void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1)
-    {
-        if (pDescriptorSets != nullptr)
-        {
-            descriptorPool->Free(pDescriptorSets, size);
-        }
     }
 
     void UpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet *pDescriptorCopies)

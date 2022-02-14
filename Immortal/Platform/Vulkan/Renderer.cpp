@@ -9,8 +9,9 @@ namespace Vulkan
 
 Renderer::Renderer(RenderContext::Super *c) : 
     context{ dcast<RenderContext *>(c) },
-    device{ context->Get<Device *>() },
-    swapchain{ context->Get<Swapchain *>() },
+    device{ context->GetAddress<Device>() },
+    swapchain{ context->GetAddress<Swapchain>() },
+    queue{ context->GetAddress<Queue>() },
     semaphorePool{ device }
 {
     Setup();
@@ -18,6 +19,7 @@ Renderer::Renderer(RenderContext::Super *c) :
 
 Renderer::~Renderer()
 {
+    device->Wait(fences.data(), fences.size());
     for (auto &fence : fences)
     {
         device->Discard(&fence);
@@ -33,8 +35,6 @@ void Renderer::Setup()
         semaphores[i].renderComplete     = semaphorePool.Request();
         semaphores[i].compute            = semaphorePool.Request();
     }
-
-    queue = context->Get<Queue*>();
 }
 
 void Renderer::PrepareFrame()
@@ -208,7 +208,7 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
     context->Submit([&](CommandBuffer *cmdbuf) {
         auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
 
-        VkDescriptorSet descriptorSets[] = {pipeline->GetDescriptorSet()};
+        VkDescriptorSet descriptorSets[] = { pipeline->GetDescriptorSet() };
         cmdbuf->BindDescriptorSets(
             GraphicsPipeline::BindPoint,
             pipeline->Layout(),

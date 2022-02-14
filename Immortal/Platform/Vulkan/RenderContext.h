@@ -82,18 +82,6 @@ public:
         {
             return *swapchain;
         }
-        if constexpr (IsPointerOf<Queue, T>())
-        {
-            return queue;
-        }
-        if constexpr (IsPointerOf<Swapchain, T>())
-        {
-            return swapchain.get();
-        }
-        if constexpr (IsPointerOf<Device, T>())
-        {
-            return device.get();
-        }
         if constexpr (IsPrimitiveOf<Extent2D, T>())
         {
             return surfaceExtent;
@@ -102,9 +90,26 @@ public:
         {
             return swapchain->Get<VkFormat>();
         }
-        if constexpr (IsPointerOf<RenderPass, T>())
+    }
+
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<Device, T>())
+        {
+            return device.get();
+        }
+        if constexpr (IsPrimitiveOf<RenderPass, T>())
         {
             return renderPass.get();
+        }
+        if constexpr (IsPrimitiveOf<Queue, T>())
+        {
+            return queue;
+        }
+        if constexpr (IsPrimitiveOf<Swapchain, T>())
+        {
+            return swapchain.get();
         }
     }
 

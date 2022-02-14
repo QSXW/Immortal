@@ -355,5 +355,18 @@ void Device::DestroyObjects()
         });
 }
 
+VkResult Device::AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
+{
+    return descriptorPool->Allocate(pDescriptorSetLayout, pDescriptorSets);
+}
+
+void Device::FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size)
+{
+    if (pDescriptorSets != nullptr)
+    {
+        descriptorPool->Free(pDescriptorSets, size);
+    }
+}
+
 }
 }

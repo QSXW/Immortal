@@ -21,8 +21,11 @@ public:
     ~GuiLayer();
 
     virtual void OnAttach() override;
+
     virtual void OnDetach() override;
+
     virtual void OnEvent(Event &e) override;
+
     virtual void OnGuiRender() override;
 
     virtual void Begin() override;
@@ -32,15 +35,7 @@ public:
 private:
     RenderContext *context{ nullptr };
 
-    Device *device{ nullptr };
-
-    VkPipelineCache pipelineCache{ VK_NULL_HANDLE };
-
-    VkDescriptorPool descriptorPool{ VK_NULL_HANDLE };
-
-    RenderPass *renderPass{ nullptr };
-    
-    uint32_t frameIndex{ 0 };
+    std::unique_ptr<DescriptorPool> descriptorPool;
 };
 
 }

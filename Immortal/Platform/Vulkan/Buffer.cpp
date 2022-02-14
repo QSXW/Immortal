@@ -65,6 +65,7 @@ Buffer::Buffer(const Buffer *host, const BindInfo &bindInfo) :
     THROWIF(!(bindInfo.type & host->type), "The type requested is not one of host buffer")
     descriptor.buffer = host->descriptor.buffer;
     descriptor.offset = bindInfo.offset;
+    descriptor.range  = bindInfo.size;
 }
 
 Buffer::~Buffer()
