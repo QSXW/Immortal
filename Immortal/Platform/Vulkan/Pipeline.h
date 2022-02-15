@@ -30,9 +30,11 @@ public:
 
     struct DescriptorSetPack
     {
+        static constexpr size_t Size = 6;
+
         uint32_t Sync = 0;
 
-        VkDescriptorSet DescriptorSets[6];
+        VkDescriptorSet DescriptorSets[Size];
     };
 
 public:

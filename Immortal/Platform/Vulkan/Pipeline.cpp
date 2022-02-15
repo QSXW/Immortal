@@ -51,7 +51,7 @@ Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
     {
         DescriptorSetPack &pack = it->second;
         descriptor.set = pack.DescriptorSets[pack.Sync];
-        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+        SLROTATE(pack.Sync, DescriptorSetPack::Size);
     }
     else
     {
@@ -63,13 +63,15 @@ Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
         }
         else
         {
-            for (size_t i = 0; i < SL_ARRAY_LENGTH(pack.DescriptorSets); i++)
+            std::array<VkDescriptorSetLayout, DescriptorSetPack::Size> descriptorSetLayouts{};
+            for (auto &d : descriptorSetLayouts)
             {
-                Check(descriptor.pool->Allocate(&descriptor.setLayout, &pack.DescriptorSets[i]));
+                d = descriptor.setLayout;
             }
+            Check(descriptor.pool->Allocate(descriptorSetLayouts.data(), pack.DescriptorSets, DescriptorSetPack::Size));
         }
         descriptor.set = pack.DescriptorSets[pack.Sync];
-        SLROTATE(pack.Sync, SL_ARRAY_LENGTH(pack.DescriptorSets));
+        SLROTATE(pack.Sync, DescriptorSetPack::Size);
 
         descriptor.packs[uuid] = pack;
     }
@@ -229,7 +231,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
         auto &colorBlend = colorBlends[i];
         colorBlend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;;
 
-        if (option.flags & Feature::BlendEnabled && !i)
+        if (!i)
         {
             colorBlend.blendEnable         = VK_TRUE;
             colorBlend.colorBlendOp        = VK_BLEND_OP_ADD;
@@ -274,7 +276,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
 
     std::array<VkDynamicState, 2> dynamic{
         VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
+        VK_DYNAMIC_STATE_SCISSOR,
     };
     state->dynamic.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     state->dynamic.dynamicStateCount = dynamic.size();

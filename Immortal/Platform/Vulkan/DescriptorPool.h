@@ -43,6 +43,8 @@ public:
 private:
     VkDescriptorPool Create();
 
+    VkResult AllocateInternal(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count);
+
 private:
     Device *device{ nullptr };
 
