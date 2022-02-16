@@ -73,7 +73,8 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
     std::vector<RootParameter> rootParameters{};
-
+    
+    rootParameters.reserve(descriptorRanges.size());
     for (size_t i = 0; i < descriptorRanges.size(); i++)
     {
         auto &range = descriptorRanges[i].first;
@@ -92,7 +93,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
                 sampler.BorderColor      = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
                 sampler.MinLOD           = 0.0f;
                 sampler.MaxLOD           = D3D12_FLOAT32_MAX;
-                sampler.ShaderRegister   = i;
+                sampler.ShaderRegister   = 0;
                 sampler.RegisterSpace    = 0;
                 sampler.ShaderVisibility = descriptorRanges[i].second;
 
