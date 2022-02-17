@@ -8,8 +8,6 @@ namespace Immortal
 namespace D3D12
 {
 
-class DescriptorPool;
-
 struct CPUDescriptor : public SuperDescriptor, D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:

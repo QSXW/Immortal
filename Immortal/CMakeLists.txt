@@ -79,8 +79,8 @@ set(D3D12_FILES
     Platform/D3D12/CommandPool.cpp
     Platform/D3D12/CommandPool.h
     Platform/D3D12/Common.h
-    Platform/D3D12/DescriptorPool.cpp
-    Platform/D3D12/DescriptorPool.h
+    Platform/D3D12/DescriptorHeap.cpp
+    Platform/D3D12/DescriptorHeap.h
     Platform/D3D12/Descriptor.cpp
     Platform/D3D12/Descriptor.h
     Platform/D3D12/Device.cpp

@@ -9,7 +9,7 @@ namespace D3D12
 {
 
 class Device;
-class DescriptorPool
+class DescriptorHeap
 {
 public:
     enum class Type
@@ -31,7 +31,7 @@ public:
     {
         using Super = D3D12_DESCRIPTOR_HEAP_DESC;
 
-        Description(DescriptorPool::Type type, int numDescriptors, Flag flags, UINT nodeMask = 0)
+        Description(DescriptorHeap::Type type, int numDescriptors, Flag flags, UINT nodeMask = 0)
         {
             Super::Type           = ncast<D3D12_DESCRIPTOR_HEAP_TYPE>(type);
             Super::NumDescriptors = ncast<UINT>(numDescriptors);
@@ -78,24 +78,24 @@ public:
     }
 
 public:
-    DescriptorPool(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc)
+    DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc)
     {
         Check(device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&handle)));
     }
 
-    DescriptorPool(const DescriptorPool &other) :
+    DescriptorHeap(const DescriptorHeap &other) :
         handle{ other.handle }
     {
 
     }
 
-    DescriptorPool(DescriptorPool &&other) :
+    DescriptorHeap(DescriptorHeap &&other) :
         handle{ std::move(other.handle) }
     {
         other.handle = nullptr;
     }
 
-    DescriptorPool &operator=(const DescriptorPool &other)
+    DescriptorHeap &operator=(const DescriptorHeap &other)
     {
         THROWIF(&other == this, SError::SelfAssignment);
 
@@ -104,7 +104,7 @@ public:
         return *this;
     }
 
-    DescriptorPool &operator=(DescriptorPool &&other)
+    DescriptorHeap &operator=(DescriptorHeap &&other)
     {
         THROWIF(&other == this, SError::SelfAssignment);
 
@@ -114,7 +114,7 @@ public:
         return *this;
     }
 
-    ~DescriptorPool()
+    ~DescriptorHeap()
     {
 
     }
@@ -138,16 +138,18 @@ private:
     ID3D12DescriptorHeap *handle{ nullptr };
 };
 
+using DescriptorPool = DescriptorHeap;
+
 class DescriptorAllocator
 {
 public:
     static constexpr int NumDescriptorPerPool = 256;
 
 public:
-    DescriptorAllocator(DescriptorPool::Type type, DescriptorPool::Flag flag = DescriptorPool::Flag::None) :
+    DescriptorAllocator(DescriptorHeap::Type type, DescriptorHeap::Flag flag = DescriptorHeap::Flag::None) :
         type{ type },
         flag{ flag },
-        activeDescriptorPool{ nullptr },
+        activeDescriptorHeap{ nullptr },
         descriptorSize{ 0 },
         freeDescritorCount{ 0 },
         avtiveDescriptor{ D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN }
@@ -155,7 +157,7 @@ public:
 
     }
 
-    static DescriptorPool *Request(Device *device, DescriptorPool::Type type, DescriptorPool::Flag flag = DescriptorPool::Flag::None);
+    static DescriptorHeap *Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flag = DescriptorHeap::Flag::None);
 
     void Init(Device *device, uint32_t count = 1);
 
@@ -167,7 +169,7 @@ public:
 
     D3D12_CPU_DESCRIPTOR_HANDLE StartOfHeap()
     {
-        return activeDescriptorPool->StartOfCPU();
+        return activeDescriptorHeap->StartOfCPU();
     }
 
     D3D12_CPU_DESCRIPTOR_HANDLE FreeStartOfHeap()
@@ -188,27 +190,27 @@ public:
     template <class T>
     T *GetAddress()
     {
-        if constexpr (IsPrimitiveOf<DescriptorPool, T>())
+        if constexpr (IsPrimitiveOf<DescriptorHeap, T>())
         {
-            return activeDescriptorPool;
+            return activeDescriptorHeap;
         }
     }
 
 private:
-    DescriptorPool *activeDescriptorPool;
+    DescriptorHeap *activeDescriptorHeap;
 
     Descriptor avtiveDescriptor;
 
-    DescriptorPool::Type type;
+    DescriptorHeap::Type type;
 
-    DescriptorPool::Flag flag;
+    DescriptorHeap::Flag flag;
 
     uint32_t descriptorSize;
 
     uint32_t freeDescritorCount;
 
 public:
-    static std::vector<std::unique_ptr<DescriptorPool>> descriptorPools;
+    static std::vector<std::unique_ptr<DescriptorHeap>> descriptorHeaps;
 
     static std::mutex mutex;
 };

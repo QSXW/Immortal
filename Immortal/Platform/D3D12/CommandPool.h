@@ -3,7 +3,7 @@
 #include "Common.h"
 
 #include "Descriptor.h"
-#include "DescriptorPool.h"
+#include "DescriptorHeap.h"
 #include "Barrier.h"
 
 namespace Immortal

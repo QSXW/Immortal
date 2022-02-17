@@ -1,4 +1,4 @@
-#include "DescriptorPool.h"
+#include "DescriptorHeap.h"
 
 #include "Device.h"
 
@@ -7,26 +7,26 @@ namespace Immortal
 namespace D3D12
 {
 
-std::vector<std::unique_ptr<DescriptorPool>> DescriptorAllocator::descriptorPools;
+std::vector<std::unique_ptr<DescriptorHeap>> DescriptorAllocator::descriptorHeaps;
 
 std::mutex DescriptorAllocator::mutex;
 
-DescriptorPool *DescriptorAllocator::Request(Device *device, DescriptorPool::Type type, DescriptorPool::Flag flag)
+DescriptorHeap *DescriptorAllocator::Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flag)
 {
     std::lock_guard<std::mutex> lock{ mutex };
 
-    DescriptorPool::Description desc{ type, NumDescriptorPerPool, flag, 1 };
-    descriptorPools.emplace_back(new DescriptorPool{ *device, &desc });
+    DescriptorHeap::Description desc{ type, NumDescriptorPerPool, flag, 1 };
+    descriptorHeaps.emplace_back(new DescriptorHeap{ *device, &desc });
 
-    return descriptorPools.back().get();
+    return descriptorHeaps.back().get();
 }
 
 void DescriptorAllocator::Init(Device * device, uint32_t count)
 {
-    if (activeDescriptorPool == nullptr || freeDescritorCount < count)
+    if (activeDescriptorHeap == nullptr || freeDescritorCount < count)
     {
-        activeDescriptorPool = Request(device, type, flag);
-        avtiveDescriptor     = activeDescriptorPool->Get<Descriptor>();
+        activeDescriptorHeap = Request(device, type, flag);
+        avtiveDescriptor     = activeDescriptorHeap->Get<Descriptor>();
         freeDescritorCount   = NumDescriptorPerPool;
 
         if (!descriptorSize)
@@ -62,7 +62,7 @@ Descriptor DescriptorAllocator::Bind(Device *device, size_t pos)
 {
     Init(device, 1);
 
-    Descriptor descriptor = activeDescriptorPool->Get<Descriptor>();
+    Descriptor descriptor = activeDescriptorHeap->Get<Descriptor>();
     descriptor.Offset(pos, descriptorSize);
 
     return descriptor;

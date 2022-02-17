@@ -166,7 +166,6 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *superConstantB
     auto constantBuffer = RemoveConst(dcast<const Buffer *>(superConstantBuffer));
 
     auto cbvDescriptor = descriptorAllocator.Bind(device, constantBuffer->Binding());
-
     device->CreateView(&constantBuffer->Desc(), cbvDescriptor.cpu);
 }
 

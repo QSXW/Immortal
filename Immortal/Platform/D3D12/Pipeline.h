@@ -7,7 +7,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "RootSignature.h"
-#include "DescriptorPool.h"
+#include "DescriptorHeap.h"
 
 namespace Immortal
 {

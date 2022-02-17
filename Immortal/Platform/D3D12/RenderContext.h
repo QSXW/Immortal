@@ -7,7 +7,7 @@
 
 #include "Device.h"
 #include "Swapchain.h"
-#include "DescriptorPool.h"
+#include "DescriptorHeap.h"
 #include "CommandPool.h"
 #include "CommandAllocator.h"
 #include "Queue.h"
