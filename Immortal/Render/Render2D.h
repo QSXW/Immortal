@@ -2,7 +2,6 @@
 
 #include "Core.h"
 
-#include "OrthographicCamera.h"
 #include "Camera.h"
 #include "Texture.h"
 #include "Scene/Component.h"
@@ -119,11 +118,6 @@ public:
         auto viewProjection = camera.Projection() * Vector::Inverse(view);
         uniform->Update(sizeof(Matrix4), &viewProjection);
         StartBatch();
-    }
-
-    static void BeginScene(const OrthographicCamera &camera)
-    {
-        BeginScene(dcast<const Camera &>(camera));
     }
 
     static void Render2D::EndScene()

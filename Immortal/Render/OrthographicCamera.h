@@ -15,8 +15,8 @@ public:
 public:
     OrthographicCamera() = default;
 
-    OrthographicCamera(float left, float right, float bottom, float top)
-        : Camera(Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f))
+    OrthographicCamera(float left, float right, float bottom, float top) :
+        Camera{ Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f) }
     {
         viewProjection = projection * view;
     }
@@ -33,7 +33,7 @@ public:
         viewProjection = Super::ViewProjection();
     }
 
-    void setPosition(const Vector3 &pos)
+    void SetPosition(const Vector3 &pos)
     {
         position = pos;
         ReCalculateViewMatrix();
@@ -67,14 +67,25 @@ public:
         return viewProjection;
     }
 
+    virtual void SetViewportSize(Vector2 size) override;
+
+    virtual void OnUpdate() override;
+
+    virtual bool OnMouseScrolled(MouseScrolledEvent &e) override;
+
 private:
     void ReCalculateViewMatrix();
 
 private:
     Matrix4 viewProjection;
-    Vector3 position{ 0.0f, 0.0f, 0.0f };
-    float   rotation{ 0.0f };
+    Vector3 position{ 0.0f };
+
+    float aspectRatio    = 0.0f;
+    float zoomLevel      = 0.5f;
+    float translateSpeed = 50.0f;
+    float rotation       = 0.0f;
+    float rotateSpeed    = 180.0f;
+    bool  rotated        = false;
 };
 
 }
-

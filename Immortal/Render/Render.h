@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Camera.h"
-#include "OrthographicCamera.h"
 #include "RenderContext.h"
 #include "Renderer.h"
 #include "Texture.h"

@@ -149,7 +149,7 @@ float EditorCamera::ZoomSpeed() const
     return std::min(speed * speed, 100.0f);
 }
 
-void EditorCamera::SetViewportSize(const Vector2 &size)
+void EditorCamera::SetViewportSize(Vector2 size)
 {
     viewportSize = size;
     SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));

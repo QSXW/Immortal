@@ -16,28 +16,14 @@ public:
         Layer{ label },
         eventSink{ this },
         selectedObject{},
-        editorCamera{ Vector::PerspectiveFOV(Vector::Radians(90.0f), viewport.x, viewport.y, 0.1f, 1000.0f) }
+        viewportSize{ viewport }
     {
-        eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
-        eventSink.Listen(&RenderLayer::OnMouseDown, Event::Type::MouseButtonPressed);
-
-        renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ viewport, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } }));
-
-        shader = Render::GetShader("Basic");
-
-        uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
-
-        pipelines.graphics.reset(Render::Create<Pipeline::Graphics>(shader));
-
-        auto &triangle = DataSet::Classic::Triangle;
-        pipelines.graphics->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) });
-        pipelines.graphics->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index)   });
-        pipelines.graphics->Set(triangle.Description());
-        pipelines.graphics->Create(renderTarget);
-        pipelines.graphics->Bind("UBO", uniformBuffer.get());
-
-        camera.primaryCamera.SetOrthographic(1.2f);
-        camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+        camera.primary = &camera.editor;
+        camera.editor = { Vector::PerspectiveFOV(Vector::Radians(90.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f) };
+        camera.orthographic.SetViewportSize(viewportSize);
+        eventSink.Listen(&RenderLayer::OnKeyPressed,    Event::Type::KeyPressed);
+        eventSink.Listen(&RenderLayer::OnMouseDown,     Event::Type::MouseButtonPressed);
+        eventSink.Listen(&RenderLayer::OnMouseScrolled, Event::Type::MouseScrolled);
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
     }
@@ -49,22 +35,20 @@ public:
 
     virtual void OnUpdate() override
     {
-        auto pos = Input::GetMousePosition();
-
-        Vector2 viewportSize = editableArea.Size();
-        if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
-            (viewportSize.x != 0 && viewportSize.y != 0))
+        Vector2 size = editableArea.Size();
+        if ((size.x != viewportSize.x || size.y != viewportSize.y) &&
+            (size.x != 0 && size.y != 0))
         {
-            renderTarget->Resize(viewportSize);
-            editorCamera.SetViewportSize(viewportSize);
-            camera.primaryCamera.SetViewportSize(renderTarget->ViewportSize());
+            viewportSize = size;
+            camera.editor.SetViewportSize(viewportSize);
+            camera.orthographic.SetViewportSize(viewportSize);
             scene.SetViewportSize(viewportSize);
         }
 
         scene.Select(&selectedObject);
         if (panels.tools.IsControlActive(Tools::Start))
         {
-            if (selectedObject)
+            if (selectedObject && selectedObject.HasComponent<ColorMixingComponent>())
             {
                 auto &c = selectedObject.GetComponent<ColorMixingComponent>();
                 c.HSL.r += 3.0f * Application::DeltaTime();
@@ -80,9 +64,9 @@ public:
         {
             if (editableArea.IsHovered())
             {
-                editorCamera.OnUpdate();
+                camera.primary->OnUpdate();
             }
-            scene.OnRenderEditor(editorCamera);
+            scene.OnRenderEditor(*camera.primary);
         }
     }
 
@@ -95,12 +79,12 @@ public:
                 auto &[x, y] = ImGui::GetWindowPos();
                 auto &[w, h] = ImGui::GetWindowSize();
 
-                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetOrthographic(camera.primary == &camera.orthographic);
                 ImGuizmo::SetDrawlist();
                 ImGuizmo::SetRect(x, y, w, h);
 
-                Matrix4 cameraProjectionMatrix = editorCamera.Projection();
-                Matrix4 cameraViewMatrix = editorCamera.View();
+                Matrix4 cameraProjectionMatrix = camera.primary->Projection();
+                Matrix4 cameraViewMatrix = camera.primary->View();
 
                 TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
                 Matrix4 munipulatedTransform = transform.Transform();
@@ -418,6 +402,12 @@ public:
         bool shift   = Input::IsKeyPressed(KeyCode::LeftShift) || Input::IsKeyPressed(KeyCode::RightShift);
         switch (e.GetKeyCode())
         {
+        case KeyCode::C:
+            camera.primary = (camera.primary == &camera.editor) ?
+                 dcast<Camera*>(&camera.orthographic) :
+                 dcast<Camera*>(&camera.editor);
+            break;
+
         case KeyCode::L:
             if (control || shift)
             {
@@ -446,10 +436,10 @@ public:
             break;
 
         case KeyCode::F:
-            if (!!selectedObject)
+            if (!!selectedObject && camera.primary == &camera.editor)
             {
-                editorCamera.Focus(selectedObject.GetComponent<TransformComponent>().Position);
-            } 
+                camera.editor.Focus(selectedObject.GetComponent<TransformComponent>().Position);
+            }
             break;
 
         case KeyCode::Q:
@@ -498,6 +488,15 @@ public:
         return false;
     }
 
+    bool OnMouseScrolled(MouseScrolledEvent &e)
+    {
+        if (editableArea.IsHovered())
+        {
+            return camera.primary->OnMouseScrolled(e);
+        }
+        return true;
+    }
+
     virtual void OnEvent(Event &e) override
     {
         eventSink.Dispatch(e);
@@ -508,6 +507,7 @@ private:
 
     std::shared_ptr<Shader> shader;
 
+    Vector2 viewportSize;
 
     Object selectedObject;
 
@@ -516,7 +516,11 @@ private:
     } pipelines;
 
     struct {
-        SceneCamera primaryCamera;
+        Camera *primary;
+
+        EditorCamera editor;
+
+        OrthographicCamera orthographic;
 
         TransformComponent transform;
     } camera;
@@ -550,8 +554,6 @@ private:
     Scene scene{ "Viewport", true };
 
     Object triangle;
-
-    EditorCamera editorCamera;
 
     ImGuizmo::OPERATION guizmoType = ImGuizmo::OPERATION::INVALID;
 };

@@ -8,10 +8,9 @@ class RenderLayer : public Layer
 {
 public:
 	RenderLayer() :
-		Layer{ "OpenGLSample2D" },
-		cameraController{ (float)Application::App()->Width(), (float)Application::App()->Height(), true }
+		Layer{ "OpenGLSample2D" }
 	{
-
+		camera.SetViewportSize({ 1920.0f, 1080.0f });
 	}
 
 	~RenderLayer()
@@ -22,9 +21,9 @@ public:
 	void OnAttach()
 	{
 		renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } }));
-		texture = Render::Preset()->WhiteTexture;
+		texture = Render::Preset()->Textures.White;
 
-		renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
+		renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 		Render2D::Setup(renderTarget);
 	}
 
@@ -35,9 +34,8 @@ public:
 
 	void OnUpdate()
 	{
-		cameraController.OnUpdate(Application::App()->DeltaTime());
-
-		Render2D::BeginScene(cameraController.Camera());
+		camera.OnUpdate();
+		Render2D::BeginScene(camera);
 
 		static float rotation = 0.0f;
 		rotation += Application::App()->DeltaTime() * 50.0f;
@@ -46,8 +44,8 @@ public:
 		Render2D::SetColor(color, luminance);
 		Render2D::EndScene();
 
-		Render::Begin(renderTarget, cameraController.Camera());
-		Render2D::BeginScene(cameraController.Camera());
+		Render::Begin(renderTarget, camera);
+		Render2D::BeginScene(camera);
 		for (float y = -5.0f; y < 5.0f; y += 0.5f)
 		{
 			for (float x = -5.0f; x < 5.0f; x += 0.5f)
@@ -76,7 +74,7 @@ public:
 	void OnEvent(Event &e)
 	{
 		LOG::INFO(e);
-		cameraController.OnEvent(e);
+		// camera.OnMouseScrolled(e);
 	}
 
 private:
@@ -87,9 +85,9 @@ private:
 	std::shared_ptr<Pipeline> pipeline;
 
 	std::shared_ptr<Texture> texture;
-
-	OrthographicCameraController cameraController;
 	
+	OrthographicCamera camera;
+
 	Widget::Viewport offline{ WordsMap::Get("offlineRender") };
 
 	float luminance{ 0 };

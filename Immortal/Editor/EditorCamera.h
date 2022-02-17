@@ -19,7 +19,7 @@ public:
     void OnUpdate();
     void OnEvent(Event &e);
 
-    void SetViewportSize(const Vector::Vector2 &size);
+    void SetViewportSize(Vector2 size);
 
     Vector3 UpDirection();
     Vector3 RightDirection();

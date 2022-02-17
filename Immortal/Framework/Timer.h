@@ -82,7 +82,7 @@ public:
         auto now = Clock::now();
         auto duration = std::chrono::duration<double, T>(now - previousTick);
         previousTick = now;
-        return duration();
+        return duration.count();
     }
 
 private:

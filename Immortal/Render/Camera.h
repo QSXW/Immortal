@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Math/Vector.h"
+#include "Event/MouseEvent.h"
 
 namespace Immortal
 {
@@ -18,8 +19,8 @@ public:
 public:
     Camera() = default;
 
-    Camera(const Matrix4 &prj)
-        : projection{ prj }
+    Camera(const Matrix4 &prj) :
+        projection{ prj }
     {
 
     }
@@ -36,24 +37,39 @@ public:
         return view;
     }
 
-    virtual Matrix4 ViewProjection() const
-    { 
-        return projection * view;
-    }
-
     void SetProjection(const Matrix4 &prj)
-    { 
+    {
         projection = prj;
     }
 
     float Exposure() const
-    { 
+    {
         return exposure;
     }
 
     float &Exposure()
     {
         return exposure;
+    }
+
+    virtual Matrix4 ViewProjection() const
+    { 
+        return projection * view;
+    }
+
+    virtual void SetViewportSize(Vector2 viewportSize)
+    {
+
+    }
+
+    virtual void OnUpdate()
+    {
+
+    }
+
+    virtual bool OnMouseScrolled(MouseScrolledEvent &e)
+    {
+        return true;
     }
 
 protected:

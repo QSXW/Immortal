@@ -58,7 +58,7 @@ public:
 
     void OnRenderRuntime();
 
-    void OnRenderEditor(const EditorCamera &editorCamera);
+    void OnRenderEditor(const Camera &editorCamera);
 
     void OnRender(const Camera &camera);
 

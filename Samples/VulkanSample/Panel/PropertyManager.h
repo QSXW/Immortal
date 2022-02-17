@@ -86,7 +86,7 @@ public:
                         [&]() -> void {
                             auto &material = object.GetComponent<MaterialComponent>();
 
-                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&material.AlbedoColor); });
+                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&material.AlbedoColor); });
 
                             float smoothness = 1.0f - material.Roughness;
                             DrawFloat(WordsMap::Get("Metallic"), &material.Metallic, 0.001, 0, 1.0f);

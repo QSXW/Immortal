@@ -219,8 +219,6 @@ set(RENDER_FILES
     Render/Mesh.h
     Render/OrthographicCamera.cpp
     Render/OrthographicCamera.h
-    Render/OrthographicCameraController.cpp
-    Render/OrthographicCameraController.h
     Render/Pipeline.h
     Render/Queue.h
     Render/Render.cpp

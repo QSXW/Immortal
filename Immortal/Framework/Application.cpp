@@ -74,7 +74,7 @@ void Application::Run()
     { 
         Render::PrepareFrame();
         timer.Lap();
-        deltaTime = timer.elapsed();
+        deltaTime = timer.tick<Timer::Seconds>();
 
         for (Layer *layer : layerStack)
         {

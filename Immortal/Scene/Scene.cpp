@@ -212,7 +212,7 @@ void Scene::OnRenderRuntime()
     OnRender(*primaryCamera);
 }
 
-void Scene::OnRenderEditor(const EditorCamera &editorCamera)
+void Scene::OnRenderEditor(const Camera &editorCamera)
 {
     OnRender(editorCamera);
 }
