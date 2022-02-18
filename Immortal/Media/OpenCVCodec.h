@@ -2,11 +2,14 @@
 
 #include <cstdint>
 #include "Decoder.h"
+#include "Config.h"
 
+#if HAVE_OPENCV
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp> 
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#endif
 
 namespace Immortal
 {
@@ -21,12 +24,13 @@ public:
         
     }
 
+#if HAVE_OPENCV
     virtual ~OpenCVCodec()
     {
         
     }
 
-    virtual CodecError Decode(const std::vector<uint8_t> &buf)
+    virtual CodecError Decode(const std::vector<uint8_t> &buf) override
     {
         cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
         if (!src.data)
@@ -65,7 +69,7 @@ public:
         return CodecError::Succeed;
     }
 
-    virtual void Encode()
+    virtual void Encode() 
     {
 
     }
@@ -87,6 +91,7 @@ public:
 
 private:
     cv::Mat mat;
+#endif
 };
 
 }

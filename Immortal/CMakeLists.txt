@@ -346,9 +346,5 @@ add_subdirectory(Media)
 target_link_libraries(${PROJECT_NAME}
     slapi
     slCodec
-    glm glad glfw glslang
-    assimp vulkan imgui
-    spdlog::spdlog opencv
-    SPIRV spirv-cross-glsl
-    glslang-default-resource-limits
+    external
 )

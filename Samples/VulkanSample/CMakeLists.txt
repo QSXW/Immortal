@@ -24,20 +24,21 @@ source_group("\\Panel\\" FILES ${PANEL_FILES})
 source_group("\\" FILES ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR})
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 target_link_libraries(${PROJECT_NAME}
-    Immortal)
+    Immortal
+)
 
 file(COPY ${WORKSPACE}//Assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-# file(COPY ${MONO_SHARED}   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 MESSAGE(
     "The libraries has been copied into"
     ${CMAKE_CURRENT_BINARY_DIR}
     " --> "
     ${ASSIMP_SHARED}
     ${OPENCV_SHARED}
-    #${MONO_SHARED}
     )

@@ -1,6 +1,8 @@
 /3rdparty/vulkan*
 /3rdparty/opencv*
 
+Config.h
+
 # cmake
 /build*
 /out*

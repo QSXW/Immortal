@@ -4,19 +4,17 @@ project(CmakeTest LANGUAGES CXX)
 
 add_executable(${PROJECT_NAME} test.cpp )
 
+file(COPY ${WORKSPACE}//Assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-# file(COPY ${MONO_SHARED}   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-MESSAGE("The libraries has been copied into" ${CMAKE_CURRENT_BINARY_DIR} --> ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED})
 
 target_link_libraries(${PROJECT_NAME}
-    glm
-    glad
-    glfw
-    # mono
-    assimp
-    vulkan
-    spdlog
-    imgui
-    opencv
-    Immortal)
+    external
+    slCodec
+    Immortal
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+    ${IMMORTAL_RUMTIME_DIR}/bin )
+set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+    ${IMMORTAL_RUMTIME_DIR}/lib )

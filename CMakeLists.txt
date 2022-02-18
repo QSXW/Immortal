@@ -10,6 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(WORKSPACE ${CMAKE_CURRENT_SOURCE_DIR})
+set(IMMORTAL_RUMTIME_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(ASSETS_DIR "${WORKSPACE}//Assets")
+
 add_subdirectory(3rdparty)
 add_subdirectory(Immortal)
 add_subdirectory(Samples/CmakeTest)

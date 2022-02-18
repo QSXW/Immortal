@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(3rdparty LANGUAGES CXX)
+set(LIB_NOT_FOUND 0)
+set(HAVE_OPENCV ${LIB_NOT_FOUND})
 
 message("Compiler Detected: " ${CMAKE_CXX_COMPILER_ID})
 
@@ -9,7 +11,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(opencv_lib libopencv_core453)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(assimp_lib assimp-vc142-mt)
-    set(opencv_lib opencv_world452)
+    set(opencv_lib opencv_world455)
 endif()
 
 message("Build Type: " ${CMAKE_BUILD_TYPE})
@@ -129,18 +131,6 @@ target_include_directories(imgui PUBLIC ${IMGUI_DIR})
 
 set_property(TARGET imgui PROPERTY FOLDER "3rdparty")
 
-# opencv
-MESSAGE("OpenCV: " ${opencv_lib})
-add_library(opencv INTERFACE)
-set(OEPNCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/opencv)
-set(OEPNCV_LIB_DIR ${OEPNCV_DIR}/bin/${CMAKE_BUILD_TYPE})
-set(ENV{OEPNCV_LIB_DIR} ${ASSIMP_LIB_DIR})
-target_include_directories(opencv INTERFACE ${OEPNCV_DIR}/)
-target_link_directories(opencv INTERFACE ${OEPNCV_LIB_DIR})
-message("OpenCV path: "  ${OEPNCV_LIB_DIR})
-target_link_libraries(opencv INTERFACE ${opencv_lib})
-set(OPENCV_SHARED ${OEPNCV_LIB_DIR}/${opencv_lib}.dll PARENT_SCOPE)
-
 #glslang
 option(ENABLE_SPVREMAPPER OFF)
 option(ENABLE_GLSLANG_BINARIES ON)
@@ -174,3 +164,25 @@ set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")
 
 # SPIRV-Cross
 add_subdirectory(SPIRV-Cross)
+
+# opencv
+if (WIN32)
+    set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/3rdparty/opencv")
+    set(OPENCV_BIN_DIR "${OpenCV_DIR}/x64/vc15/bin")
+endif(WIN32)
+find_package(OpenCV 4.5.5 REQUIRED)
+if (OpenCV_FOUND)
+    set(HAVE_OPENCV ${OpenCV_VERSION_MAJOR})
+    set(OPENCV_SHARED ${OPENCV_BIN_DIR}/${opencv_lib}.dll PARENT_SCOPE)
+endif(OpenCV_FOUND)
+
+add_library("external" INTERFACE)
+
+target_link_libraries("external" INTERFACE
+    glm glad glfw glslang
+    assimp vulkan imgui
+    spdlog::spdlog opencv_world
+    SPIRV spirv-cross-glsl
+    glslang-default-resource-limits)
+
+configure_file(Config.h.in ${CMAKE_SOURCE_DIR}/Immortal/Config.h)
