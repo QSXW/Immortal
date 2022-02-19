@@ -120,10 +120,7 @@ void RenderTarget::Update()
 
     if (colorAttachments.size() > 1)
     {
-        if (colorAttachments.size() <= 4)
-        {
-            throw Exception{ "Only Support Four Color Attchments" };
-        }
+        ThrowIf(colorAttachments.size() >= 4, "Only Support Four Color Attchments");
         GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
         glDrawBuffers((GLsizei)colorAttachments.size(), buffers);
     }
