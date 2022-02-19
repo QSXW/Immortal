@@ -91,7 +91,7 @@ static inline BaseFormatElement BaseFormatMapper[] = {
     { Format::R8,              VK_FORMAT_R8_UNORM,            DXGI_FORMAT_R8_UNORM,            GL_R8,                FS_C(uint8_t,  1)     },
     { Format::R16,             VK_FORMAT_R16_UNORM,           DXGI_FORMAT_R16_UNORM,           GL_R16,               FS_C(uint16_t, 1)     },
     { Format::R16F,            VK_FORMAT_R16_SFLOAT,          DXGI_FORMAT_R16_FLOAT,           GL_R32F,              FS_C(bfloat,   1)     },
-    { Format::R32,             VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,            GL_R32I ,             FS_C(uint32_t, 1)     },
+    { Format::R32,             VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,            GL_INT ,              FS_C(uint32_t, 1)     },
     { Format::R32F,            VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,           GL_R32F,              FS_C(float,    1)     },
     { Format::RG8,             VK_FORMAT_R8G8_UNORM,          DXGI_FORMAT_R8G8_UNORM,          GL_RG8,               FS_C(uint8_t,  2)     },
     { Format::RG16,            VK_FORMAT_R16G16_UNORM,        DXGI_FORMAT_R16G16_UNORM,        GL_RG16,              FS_C(uint16_t, 2)     },

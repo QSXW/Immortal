@@ -11,50 +11,25 @@ namespace Immortal
 namespace OpenGL
 {
 
-static GLenum ShaderTypeFromString(const std::string &type)
-{
-    if (type == "vertex")
-    {
-        return GL_VERTEX_SHADER;
-    }
-    else if (type == "fragment" || type == "pixel")
-    {
-        return GL_FRAGMENT_SHADER;
-    }
-    else if (type == "compute")
-    {
-        return GL_COMPUTE_SHADER;
-    }
-
-    SLASSERT(false && "Unknown shader type!");
-    return 0;
-}
+static constexpr size_t MAX_SHADER_SOURCE = 2;
 
 Shader::Shader(const std::string &filepath, Type type) :
     Super{ type },
     name{ std::move(FileSystem::ExtractFileName(filepath)) }
 {
-    std::unordered_map<GLenum, std::string> shaderSources;
+    std::vector<GLuint> shaders;
+    shaders.reserve(MAX_SHADER_SOURCE);
     if (type == Shader::Type::Graphics)
     {
-        shaderSources.insert({   GL_VERTEX_SHADER, FileSystem::ReadString(filepath + ".vert") });
-        shaderSources.insert({ GL_FRAGMENT_SHADER, FileSystem::ReadString(filepath + ".frag") });
+        shaders.emplace_back(CompileShader(GL_VERTEX_SHADER,   FileSystem::ReadString(filepath + ".vert").c_str()));
+        shaders.emplace_back(CompileShader(GL_FRAGMENT_SHADER, FileSystem::ReadString(filepath + ".frag").c_str()));
     }
     if (type == Type::Compute)
     {
-        shaderSources.insert({ GL_COMPUTE_SHADER, FileSystem::ReadString(filepath + ".comp") });
+        shaders.emplace_back(CompileShader(GL_COMPUTE_SHADER, FileSystem::ReadString(filepath + ".comp").c_str()));
     }
 
-    Compile(shaderSources);
-}
-
-Shader::Shader(const std::string &name, const std::string & vertexSrc, const std::string & fragmentSrc)
-    : name(name)
-{
-    std::unordered_map<GLenum, std::string> sources;
-    sources[GL_VERTEX_SHADER] = vertexSrc;
-    sources[GL_FRAGMENT_SHADER] = fragmentSrc;
-    Compile(sources);
+    Link(shaders);
 }
 
 Shader::~Shader()
@@ -71,46 +46,39 @@ GLuint Shader::Get(const std::string &name) const
     return location;
 }
 
-void Shader::Compile(const std::unordered_map<GLenum, std::string>& source)
+void Shader::Link(const std::vector<GLuint> &shaders)
 {
-    std::array<GLenum, 2> shaderIDs{};
-
-    int index = 0;
     handle = glCreateProgram();
-    for (auto &src : source)
+
+    for (auto &shader : shaders)
     {
-        shaderIDs[index] = CompileShader(src.first, src.second.c_str());
-        glAttachShader(handle, shaderIDs[index]);
-        index++;
+        glAttachShader(handle, shader);
     }
     glLinkProgram(handle);
 
-    GLint isLinked = 0;
-    glGetProgramiv(handle, GL_LINK_STATUS, &isLinked);
-    if (isLinked == GL_FALSE)
+    GLint status = GL_TRUE;
+    glGetProgramiv(handle, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE)
     {
         GLint maxLength = 0;
-        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &isLinked);
+        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &status);
 
-        std::unique_ptr<GLchar> infoLog = std::make_unique<GLchar>(maxLength);
-        glGetProgramInfoLog(handle, maxLength, &maxLength, infoLog.get());
-
-        for (int i = 0; i < source.size(); i++)
-        {
-            glDeleteShader(shaderIDs[i]);
-        }
+        std::vector<GLchar> error;
+        error.resize(maxLength);
+        glGetProgramInfoLog(handle, maxLength, &maxLength, error.data());
 
         LOG::ERR("Shader program link failure!");
-        LOG::ERR("{0}", infoLog.get());
+        LOG::ERR("{0}", error.data());
     }
 
-    for (int i = 0; i < source.size(); i++)
+    for (auto &shader : shaders)
     {
-        glDetachShader(handle, shaderIDs[i]);
+        glDetachShader(handle, shader);
+        glDeleteShader(shader);
     }	
 }
 
-uint32_t Shader::CompileShader(int type, const char *src)
+uint32_t Shader::CompileShader(GLenum type, const char *src)
 {
     uint32_t shader = glCreateShader(type);
 
@@ -131,6 +99,8 @@ uint32_t Shader::CompileShader(int type, const char *src)
 
         LOG::ERR("Shader compilation failure!");
         LOG::ERR("{0}", error.data());
+
+        THROWIF(true, error.data());
     }
 
     return shader;

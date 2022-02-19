@@ -18,8 +18,6 @@ public:
 public:
     Shader(const std::string &filepath, Type type);
 
-    Shader(const std::string &name, const std::string &vertexSrc, const std::string &fragmentSrc);
-
     ~Shader();
 
     void Map() const override;
@@ -60,9 +58,9 @@ public:
     GLuint Get(const std::string &name) const;
 
 private:
-    void Compile(const std::unordered_map<GLenum, std::string> &source);
+    void Shader::Link(const std::vector<GLuint> &shaders);
 
-    uint32_t CompileShader(int type, const char *src);
+    uint32_t CompileShader(GLenum type, const char *src);
 
 private:
     uint32_t handle;

@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 inPos;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out int  objectID;
+layout(location = 1) out flat int  objectID;
 
 layout (binding = 0) uniform Transform
 {
