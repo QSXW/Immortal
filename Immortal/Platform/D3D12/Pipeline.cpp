@@ -163,10 +163,15 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
 void Pipeline::Bind(const std::string &name, const Buffer::Super *superConstantBuffer)
 {
-    auto constantBuffer = RemoveConst(dcast<const Buffer *>(superConstantBuffer));
+    (void)name;
 
-    auto cbvDescriptor = descriptorAllocator.Bind(device, constantBuffer->Binding());
-    device->CreateView(&constantBuffer->Desc(), cbvDescriptor.cpu);
+    auto constantBuffer = RemoveConst(dcast<const Buffer *>(superConstantBuffer));
+    auto cbvDescriptor  = descriptorAllocator.Bind(device, constantBuffer->Binding());
+    device->CopyDescriptors(
+        1, cbvDescriptor.cpu,
+        constantBuffer->GetDescriptor(),
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+    );
 }
 
 void Pipeline::Bind(const Descriptor::Super *superDescriptors, uint32_t binding)

@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include "Device.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -31,7 +32,7 @@ Buffer::~Buffer()
 
 }
 
-void Buffer::InternelCreate(const Device *device)
+void Buffer::InternelCreate(Device *device)
 {
     D3D12_HEAP_PROPERTIES heapProperties{};
     heapProperties.Type                 = D3D12_HEAP_TYPE_UPLOAD;
@@ -63,6 +64,12 @@ void Buffer::InternelCreate(const Device *device)
     );
 
     virtualAddress = resource->GetGPUVirtualAddress();
+
+    if (type & Type::Uniform)
+    {
+        descriptor = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
+        device->CreateView(&Desc(), descriptor);
+    }
 }
 
 void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)

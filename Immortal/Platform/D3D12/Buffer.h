@@ -92,11 +92,18 @@ public:
         return binding;
     }
 
+    CPUDescriptor GetDescriptor() const
+    {
+        return descriptor;
+    }
+
 private:
-    void InternelCreate(const Device *device);
+    void InternelCreate(Device *device);
 
 private:
     uint32_t binding = 0;
+
+    CPUDescriptor descriptor;
 };
 
 }
