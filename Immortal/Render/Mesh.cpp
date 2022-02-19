@@ -7,8 +7,45 @@
 #include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
 
+#if HAVE_ASSIMP
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/DefaultLogger.hpp>
+#include <assimp/LogStream.hpp>
+#endif
+
 namespace Immortal
 {
+
+#if HAVE_ASSIMP
+static constexpr uint32_t ImportFlags =
+    aiProcess_CalcTangentSpace |
+    aiProcess_Triangulate |
+    aiProcess_SortByPType |
+    aiProcess_PreTransformVertices |
+    aiProcess_GenNormals |
+    aiProcess_GenUVCoords |
+    aiProcess_OptimizeMeshes |
+    aiProcess_Debone |
+    aiProcess_ValidateDataStructure;
+
+struct LogStream : public Assimp::LogStream
+{
+    static void initialize()
+    {
+        if (Assimp::DefaultLogger::isNullLogger()) {
+            Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE);
+            Assimp::DefaultLogger::get()->attachStream(new LogStream, Assimp::Logger::Err | Assimp::Logger::Warn);
+        }
+    }
+
+    virtual void write(const char *message) override
+    {
+        LOG::INFO("Assimp: {0}", message);
+    }
+};
+#endif
 
 std::vector<std::shared_ptr<Mesh>> Mesh::Primitives;
 
@@ -20,42 +57,24 @@ static inline std::string ExtractModelFileWorkspace(const std::string &modelpath
 
 void Mesh::LoadPrimitives()
 {
-    constexpr const char *pathes[] = {
-        IM_DEFAULT_MESH_PATH(Capsule),
-        IM_DEFAULT_MESH_PATH(Cone),
-        IM_DEFAULT_MESH_PATH(Cube),
-        IM_DEFAULT_MESH_PATH(Cylinder),
-        IM_DEFAULT_MESH_PATH(Plane),
-        IM_DEFAULT_MESH_PATH(Sphere),
-        IM_DEFAULT_MESH_PATH(Torus)
-    };
 
-    for (size_t i = 0; i < sizeof(pathes) / sizeof(pathes[0]); i++)
-    {
-        LOG::INFO("Loading Mesh Primitive: {0}", pathes[i]);
-        if (i == static_cast<size_t>(Mesh::Primitive::Sphere))
-        {
-            Primitives.emplace_back(CreateSphere(0.5f));
-            continue;
-        }
-        Primitives.emplace_back(new Mesh(pathes[i]));
-    }
 }
 
-Mesh::Mesh(const std::string & filepath) :
+Mesh::Mesh(const std::string &filepath) :
     path{ filepath }
 {
+#if !HAVE_ASSIMP
+    ThrowIf(false, "Assimp library not Found! Unable to import mesh from local file");
+#else
     std::string workspace = ExtractModelFileWorkspace(path);
 
     LogStream::initialize();
 
     LOG::INFO("Loading mesh: {0}", filepath.c_str());
-
-    importer.reset(new Assimp::Importer());
+    std::unique_ptr<Assimp::Importer> importer{ new Assimp::Importer() };
 
     const aiScene *scene = importer->ReadFile(filepath, ImportFlags);
     SLASSERT(scene && scene->HasMeshes() && "Failed to load Mesh file: {0}" && filepath.c_str());
-
 
     {
         std::vector<Vertex> vertices;
@@ -150,6 +169,7 @@ Mesh::Mesh(const std::string & filepath) :
             }
         }
     }
+#endif
 }
 
 Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indicies)

@@ -1,22 +1,17 @@
 #pragma once
 
 #include "Core.h"
+#include "Config.h"
 
 #include "Buffer.h"
 #include "Shader.h"
 #include "Texture.h"
 #include "Math/Vector.h"
 
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/Importer.hpp>
-#include <assimp/DefaultLogger.hpp>
-#include <assimp/LogStream.hpp>
+#include <vector>
 
 namespace Immortal
 {
-
-#define IM_DEFAULT_MESH_PATH(x) "Assets/Meshes/Default/"#x".fbx"
 
 class IMMORTAL_API Mesh
 {
@@ -110,33 +105,6 @@ public:
 
     using Index = Face;
 
-    static constexpr uint32_t ImportFlags =
-        aiProcess_CalcTangentSpace |
-        aiProcess_Triangulate |
-        aiProcess_SortByPType |
-        aiProcess_PreTransformVertices |
-        aiProcess_GenNormals |
-        aiProcess_GenUVCoords |
-        aiProcess_OptimizeMeshes |
-        aiProcess_Debone |
-        aiProcess_ValidateDataStructure;
-
-    struct LogStream : public Assimp::LogStream
-    {
-        static void initialize()
-        {
-            if (Assimp::DefaultLogger::isNullLogger()) {
-                Assimp::DefaultLogger::create("", Assimp::Logger::VERBOSE);
-                Assimp::DefaultLogger::get()->attachStream(new LogStream, Assimp::Logger::Err | Assimp::Logger::Warn);
-            }
-        }
-
-        void write(const char *message) override
-        {
-            std::fprintf(stderr, "Assimp: %s", message);
-        }
-    };
-
 public:
     Mesh(const std::string &filepath);
 
@@ -149,27 +117,12 @@ public:
         return path;
     }
 
-    template <Buffer::Type T>
-    std::shared_ptr<Buffer> Get()
-    {
-        if constexpr (T == Buffer::Type::Vertex)
-        {
-            return buffer.vertex;
-        }
-        if constexpr (T == Buffer::Type::Index)
-        {
-            return buffer.index;
-        }
-    }
-
     std::list<Node> &NodeList()
     {
         return nodes;
     }
 
 private:
-    std::unique_ptr<Assimp::Importer> importer{ nullptr };
-
     std::unique_ptr<Buffer> buffer;
 
     std::string path;

@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(3rdparty LANGUAGES CXX)
+
 set(LIB_NOT_FOUND 0)
+set(HAVE_ASSIMP ${LIB_NOT_FOUND})
 set(HAVE_OPENCV ${LIB_NOT_FOUND})
 
 message("Compiler Detected: " ${CMAKE_CXX_COMPILER_ID})
@@ -18,21 +20,7 @@ message("Build Type: " ${CMAKE_BUILD_TYPE})
 if(CMAKE_BUILD_TYPE AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
     string(APPEND assimp_lib "d")
     string(APPEND opencv_lib "d")
-
 endif()
-
-# assimp
-MESSAGE("Assimp: " ${assimp_lib})
-add_library(assimp INTERFACE)
-set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
-set(ASSIMP_LIB_DIR ${ASSIMP_DIR}/bin/${CMAKE_BUILD_TYPE})
-set(ENV{ASSIMP_LIB_DIR} ${ASSIMP_LIB_DIR})
-target_sources(assimp INTERFACE ${ASSIMP_DIR}/include/assimp/scene.h)
-target_include_directories(assimp INTERFACE ${ASSIMP_DIR}/include)
-target_link_directories(assimp INTERFACE ${ASSIMP_LIB_DIR})
-message("Assimp path: "  ${ASSIMP_LIB_DIR})
-target_link_libraries(assimp INTERFACE ${assimp_lib})
-set(ASSIMP_SHARED ${ASSIMP_LIB_DIR}/${assimp_lib}.dll PARENT_SCOPE)
 
 # glm
 add_library(glm INTERFACE)
@@ -165,6 +153,17 @@ set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")
 # SPIRV-Cross
 add_subdirectory(SPIRV-Cross)
 
+# assimp
+if(WIN32)
+    set(Assimp_DIR "${CMAKE_SOURCE_DIR}/3rdparty/Assimp")
+    set(ASSIMP_BIN_DIR "${Assimp_DIR}/bin")
+endif(WIN32)
+find_package(Assimp REQUIRED)
+if (Assimp_FOUND)
+    set(HAVE_ASSIMP ${Assimp_VERSION_MAJOR})
+    set(ASSIMP_SHARED ${ASSIMP_BIN_DIR}/${assimp_lib}.dll PARENT_SCOPE)
+endif(Assimp_FOUND)
+
 # opencv
 if (WIN32)
     set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/3rdparty/opencv")
@@ -180,7 +179,7 @@ add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang
-    assimp vulkan imgui
+    assimp::assimp vulkan imgui
     spdlog::spdlog opencv_world
     SPIRV spirv-cross-glsl
     glslang-default-resource-limits)
