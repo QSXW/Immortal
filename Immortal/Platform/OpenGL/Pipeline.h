@@ -62,7 +62,7 @@ public:
         vertexBuffer->Bind();
         indexBuffer->Bind();
         
-        glDrawElements(GL_TRIANGLES, indexBuffer->Count(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
 
         handle.Unbind();
         shader->Unmap();
