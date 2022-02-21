@@ -165,9 +165,9 @@ public:
     template <class T>
     T *GetAddress()
     {
-        if constexpr (IsPrimitiveOf<DescriptorPool, T>())
+        if constexpr (IsPrimitiveOf<DescriptorAllocator, T>())
         {
-            return descriptorAllocator.GetAddress<DescriptorPool>();
+            return &descriptorAllocator;
         }
     }
 
@@ -206,6 +206,9 @@ private:
     D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 
     std::unique_ptr<State> state;
+
+public:
+    uint32_t DescriptorTableSize = 0;
 };
 
 }

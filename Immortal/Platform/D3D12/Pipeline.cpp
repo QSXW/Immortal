@@ -76,6 +76,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     std::vector<RootParameter> rootParameters{};
     
     rootParameters.reserve(descriptorRanges.size());
+    DescriptorTableSize = descriptorRanges.size();
     for (size_t i = 0; i < descriptorRanges.size(); i++)
     {
         auto &range = descriptorRanges[i].first;

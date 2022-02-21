@@ -60,15 +60,23 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
     auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
     auto indexBuffer = pipeline->GetBuffer<Buffer::Type::Index>();
 
-    auto descriptorHeap = pipeline->GetAddress<DescriptorPool>();
+    auto descriptorAllocator = pipeline->GetAddress<DescriptorAllocator>();
+    auto descriptorHeap      = descriptorAllocator->GetAddress<DescriptorHeap>();
 
     commandList->SetPipelineState(*pipeline);
     commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
     commandList->SetDescriptorHeaps(descriptorHeap->AddressOf(), 1);
-    commandList->SetGraphicsRootDescriptorTable(0, descriptorHeap->StartOfGPU());
     commandList->SetPrimitiveTopology(pipeline->Get<D3D12_PRIMITIVE_TOPOLOGY>());
     commandList->SetVertexBuffers(&pipeline->Get<Buffer::VertexView>());
     commandList->SetIndexBuffer(&pipeline->Get<Buffer::IndexView>());
+
+    GPUDescriptor descriptors{ descriptorHeap->StartOfGPU() };
+    for (uint32_t i = 0; i < pipeline->DescriptorTableSize; i++)
+    {
+        commandList->SetGraphicsRootDescriptorTable(i, descriptors);
+        descriptors.Offset(descriptorAllocator->DescriptorSize());
+    }
+
     commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
 }
 
