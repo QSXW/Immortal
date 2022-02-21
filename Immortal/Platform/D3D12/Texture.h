@@ -27,7 +27,12 @@ public:
 
     virtual operator uint64_t() const override
     {
-        return descriptor.gpu.ptr;
+        return descriptor.visible.gpu.ptr;
+    }
+
+    CPUDescriptor GetDescriptor() const
+    {
+        return descriptor.invisible;
     }
 
     virtual void As(Descriptor::Super *descriptors, size_t index) override;
@@ -36,7 +41,10 @@ private:
     void InternalCreate(RenderContext *context, const Description &description, const void *data);
 
 private:
-    Descriptor descriptor;
+    struct {
+        Descriptor visible;
+        CPUDescriptor invisible;
+    } descriptor;
 
     int descriptorIndex{ 1 };
 };

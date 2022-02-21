@@ -36,7 +36,8 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
 {
     ID3D12Device *device = *context->GetAddress<Device>();
 
-    descriptor = context->AllocateShaderVisibleDescriptor();
+    descriptor.visible   = RenderContext::AllocateShaderVisibleDescriptor();
+    descriptor.invisible = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
 
     D3D12_HEAP_PROPERTIES props{};
     CleanUpObject(&props);
@@ -164,13 +165,14 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     srvDesc.Texture2D.MipLevels       = resourceDesc.MipLevels;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(resource, &srvDesc, descriptor.cpu);
+    device->CreateShaderResourceView(resource, &srvDesc, descriptor.visible.cpu);
+    device->CreateShaderResourceView(resource, &srvDesc, descriptor.invisible);
 }
 
 void Texture::As(Descriptor::Super *descriptors, size_t index)
 {
     CPUDescriptor *cpuDescriptors = rcast<CPUDescriptor *>(descriptors);
-    cpuDescriptors[index] = descriptor.cpu;
+    cpuDescriptors[index] = descriptor.invisible;
 }
 
 }

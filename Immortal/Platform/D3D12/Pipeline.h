@@ -139,6 +139,8 @@ public:
 
     virtual void Bind(const Descriptor::Super *descriptors, uint32_t binding = 0) override;
 
+    virtual void Bind(Texture *texture, uint32_t slot = 0);
+
     template <class T, Buffer::Type type = Buffer::Type::Index>
     T Get()
     {

@@ -1,6 +1,7 @@
 #include "Pipeline.h"
 #include "Device.h"
 #include "Buffer.h"
+#include "Texture.h"
 #include "RenderTarget.h"
 
 namespace Immortal
@@ -179,6 +180,17 @@ void Pipeline::Bind(const Descriptor::Super *superDescriptors, uint32_t binding)
     const CPUDescriptor *descriptor = rcast<const CPUDescriptor *>(superDescriptors);
 
     //device->CopyDescriptors(32, *descriptor, descriptorAllocator.FreeStartOfHeap(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
+
+void Pipeline::Bind(Texture::Super *super, uint32_t binding)
+{
+    Texture *texture = dcast<Texture *>(super);
+    auto srvDescriptor = descriptorAllocator.Bind(device, binding);
+    device->CopyDescriptors(
+        1, srvDescriptor.cpu,
+        texture->GetDescriptor(),
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+    );
 }
 
 }
