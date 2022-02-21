@@ -69,7 +69,7 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
     commandList->SetPrimitiveTopology(pipeline->Get<D3D12_PRIMITIVE_TOPOLOGY>());
     commandList->SetVertexBuffers(&pipeline->Get<Buffer::VertexView>());
     commandList->SetIndexBuffer(&pipeline->Get<Buffer::IndexView>());
-    commandList->DrawIndexedInstance(indexBuffer->Count(), 1, 0, 0, 0);
+    commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
 }
 
 void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
