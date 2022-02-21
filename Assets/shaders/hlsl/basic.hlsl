@@ -15,6 +15,9 @@ cbuffer ubo : register(b0)
 	float4x4 modelTransform;
 };
 
+Texture2D g_textures : register(t0);
+SamplerState g_sampler : register(s0);
+
 struct PSInput
 {
     float4 position : SV_POSITION;
@@ -25,10 +28,10 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 {
     PSInput result;
 
-    result.color = color;
-    result.position = position;
+    result.color      = color;
+    result.position   = position;
     result.position.y = -position.y;
-    result.position = mul(viewProjection, mul(modelTransform, result.position));
+    result.position   = mul(viewProjection, mul(modelTransform, result.position));
 
     return result;
 }

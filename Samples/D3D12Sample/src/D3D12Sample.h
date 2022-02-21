@@ -12,7 +12,6 @@ public:
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
-
         pipeline.reset(Render::Create<GraphicsPipeline>(Render::GetShader("Basic")));
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }}));
 
@@ -25,8 +24,9 @@ public:
 
         uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
         pipeline->Bind("ubo", uniformBuffer.get());
-        camera.SetPerspective(90.0f);
+        pipeline->Bind(texture.get(), 1);
 
+        camera.SetPerspective(90.0f);
         transformComponent.Position.z = -0.5f;
     }
 
