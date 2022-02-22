@@ -38,7 +38,7 @@ public:
         RasterizerDescription()
         {
             Primitive::FillMode              = D3D12_FILL_MODE_SOLID;
-            Primitive::CullMode              = D3D12_CULL_MODE_BACK;
+            Primitive::CullMode              = D3D12_CULL_MODE_NONE;
             Primitive::FrontCounterClockwise = FALSE;
             Primitive::DepthBias             = D3D12_DEFAULT_DEPTH_BIAS;
             Primitive::DepthBiasClamp        = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
