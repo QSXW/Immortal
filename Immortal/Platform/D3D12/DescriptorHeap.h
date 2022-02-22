@@ -150,7 +150,7 @@ public:
         type{ type },
         flag{ flag },
         activeDescriptorHeap{ nullptr },
-        descriptorSize{ 0 },
+        increment{ 0 },
         freeDescritorCount{ 0 },
         avtiveDescriptor{ D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN }
     {
@@ -182,9 +182,9 @@ public:
         return NumDescriptorPerPool - freeDescritorCount;
     }
 
-    uint32_t DescriptorSize()
+    uint32_t Increment() const
     {
-        return descriptorSize;
+        return increment;
     }
 
     template <class T>
@@ -205,7 +205,7 @@ private:
 
     DescriptorHeap::Flag flag;
 
-    uint32_t descriptorSize;
+    uint32_t increment;
 
     uint32_t freeDescritorCount;
 

@@ -20,6 +20,12 @@ class Pipeline : public SuperGraphicsPipeline
 public:
     using Super = SuperGraphicsPipeline;
 
+    struct DescriptorTable
+    {
+        uint32_t DescriptorCount;
+        uint32_t Offset;
+    };
+
     struct State
     {
         std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescription;
@@ -189,12 +195,19 @@ public:
         return pipelineState;
     }
 
+    const std::vector<DescriptorTable> &GetDescriptorTables() const
+    {
+        return descriptorTables;
+    }
+
 private:
     Device *device{ nullptr };
 
     ID3D12PipelineState *pipelineState{ nullptr };
 
     DescriptorAllocator descriptorAllocator;
+
+    std::vector<DescriptorTable> descriptorTables;
 
     RootSignature rootSignature;
 
@@ -206,9 +219,6 @@ private:
     D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 
     std::unique_ptr<State> state;
-
-public:
-    uint32_t DescriptorTableSize = 0;
 };
 
 }

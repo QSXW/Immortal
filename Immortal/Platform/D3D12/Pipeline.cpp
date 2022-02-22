@@ -74,9 +74,10 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
     std::vector<RootParameter> rootParameters{};
-    
+
+    descriptorTables.reserve(descriptorRanges.size());
     rootParameters.reserve(descriptorRanges.size());
-    DescriptorTableSize = descriptorRanges.size();
+    uint32_t offset = 0;
     for (size_t i = 0; i < descriptorRanges.size(); i++)
     {
         auto &range = descriptorRanges[i].first;
@@ -106,6 +107,8 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
         RootParameter rootParameter;
         rootParameter.InitAsDescriptorTable(1, &range, descriptorRanges[i].second);
         rootParameters.emplace_back(std::move(rootParameter));
+        descriptorTables.emplace_back(DescriptorTable{ range.NumDescriptors, offset });
+        offset += range.NumDescriptors;
     }
 
     RootSignature::Description rootSignatureDesc{
@@ -163,30 +166,43 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     device->Create(&pipelineStateDesc, &pipelineState);
 }
 
-void Pipeline::Bind(const std::string &name, const Buffer::Super *superConstantBuffer)
+void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
 {
     (void)name;
 
-    auto constantBuffer = RemoveConst(dcast<const Buffer *>(superConstantBuffer));
-    auto cbvDescriptor  = descriptorAllocator.Bind(device, constantBuffer->Binding());
+    auto buffer = RemoveConst(dcast<const Buffer *>(super));
+    DescriptorTable &descriptorTable = descriptorTables[buffer->Binding()];
+
+    auto cbvDescriptor  = descriptorAllocator.Bind(device, descriptorTable.Offset);
     device->CopyDescriptors(
         1, cbvDescriptor.cpu,
-        constantBuffer->GetDescriptor(),
+        buffer->GetDescriptor(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
     );
 }
 
-void Pipeline::Bind(const Descriptor::Super *superDescriptors, uint32_t binding)
+void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
 {
-    const CPUDescriptor *descriptor = rcast<const CPUDescriptor *>(superDescriptors);
+    auto descriptors = rcast<const CPUDescriptor *>(super);
 
-    //device->CopyDescriptors(32, *descriptor, descriptorAllocator.FreeStartOfHeap(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    DescriptorTable &descriptorTable = descriptorTables[binding];
+    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset);
+    for (size_t i = 0; i < descriptorTable.DescriptorCount; i++)
+    {
+        device->CopyDescriptors(
+            1, srvDescriptor.cpu,
+            descriptors[i],
+            D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+        );
+        srvDescriptor.Offset(1, descriptorAllocator.Increment());
+    }
 }
 
 void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 {
+    DescriptorTable &descriptorTable = descriptorTables[binding];
     Texture *texture = dcast<Texture *>(super);
-    auto srvDescriptor = descriptorAllocator.Bind(device, binding);
+    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset);
     device->CopyDescriptors(
         1, srvDescriptor.cpu,
         texture->GetDescriptor(),

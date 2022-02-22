@@ -30,6 +30,11 @@ public:
         return *this;
     }
 
+    CPUDescriptor &Offset(UINT descriptorIncrementSize) noexcept
+    {
+        return Offset(1, descriptorIncrementSize);
+    }
+
     void InitOffsetted(const D3D12_CPU_DESCRIPTOR_HANDLE &base, INT offsetInDescriptors, UINT descriptorIncrementSize) noexcept
     {
         InitOffsetted(*this, base, offsetInDescriptors, descriptorIncrementSize);

@@ -71,10 +71,12 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
     commandList->SetIndexBuffer(&pipeline->Get<Buffer::IndexView>());
 
     GPUDescriptor descriptors{ descriptorHeap->StartOfGPU() };
-    for (uint32_t i = 0; i < pipeline->DescriptorTableSize; i++)
+    auto &descriptorTables = pipeline->GetDescriptorTables();
+    for (uint32_t i = 0; i < descriptorTables.size(); i++)
     {
-        commandList->SetGraphicsRootDescriptorTable(i, descriptors);
-        descriptors.Offset(descriptorAllocator->DescriptorSize());
+        GPUDescriptor descriptor = descriptors;
+        descriptor.Offset(descriptorTables[i].Offset, descriptorAllocator->Increment());
+        commandList->SetGraphicsRootDescriptorTable(i, descriptor);
     }
 
     commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
