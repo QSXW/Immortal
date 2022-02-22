@@ -168,10 +168,11 @@ void Render2D::DrawQuad(const Matrix4 &transform, const std::shared_ptr<Texture>
     {
         data.ActiveTextures[data.TextureSlotIndex] = texture;
         texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
+        textureIndex = static_cast<float>(data.TextureSlotIndex);
         isTextureChanged = true;
         data.TextureSlotIndex++;
-        textureIndex = static_cast<float>(data.TextureSlotIndex);
     }
+
     else
     {
         textureIndex = static_cast<float>(i);
