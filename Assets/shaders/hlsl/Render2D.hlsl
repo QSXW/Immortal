@@ -18,6 +18,11 @@ struct PSInput
     int    id           : OBJECT_ID;
 };
 
+cbuffer ubo : register(b0)
+{
+	float4x4 viewProjection;
+};
+
 Texture2D g_textures[32] : register(t0);
 SamplerState g_sampler : register(s0);
 
@@ -25,7 +30,8 @@ PSInput VSMain(VSInput input)
 {
     PSInput result;
 
-    result.position     = input.position;
+    input.position.y    = -input.position.y;
+    result.position     = mul(viewProjection, input.position);
     result.color        = input.color;
     result.uv           = input.uv;
     result.index        = input.index;

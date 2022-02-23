@@ -38,5 +38,5 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.color;
+    return g_textures.Sample(g_sampler, input.color.xy);
 }
