@@ -35,6 +35,8 @@ public:
         return descriptor.invisible;
     }
 
+    virtual bool operator==(const Super &other) const override;
+
     virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
 private:

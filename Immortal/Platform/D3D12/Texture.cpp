@@ -162,7 +162,7 @@ void Texture::InternalCreate(RenderContext *context, const Description &descript
     CleanUpObject(&srvDesc);
     srvDesc.Format                    = resourceDesc.Format;
     srvDesc.ViewDimension             = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels       = resourceDesc.MipLevels;
+    srvDesc.Texture2D.MipLevels       = 1;
     srvDesc.Texture2D.MostDetailedMip = 0;
     srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     device->CreateShaderResourceView(resource, &srvDesc, descriptor.visible.cpu);
@@ -173,6 +173,12 @@ void Texture::As(Descriptor::Super *descriptors, size_t index)
 {
     CPUDescriptor *cpuDescriptors = rcast<CPUDescriptor *>(descriptors);
     cpuDescriptors[index] = descriptor.invisible;
+}
+
+
+bool Texture::operator==(const Super &other) const
+{
+    return resource == dcast<const Texture &>(other).resource;
 }
 
 }

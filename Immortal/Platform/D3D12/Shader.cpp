@@ -39,7 +39,7 @@ void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_V
     if (desc.TextureNormalInstructions)
     {
         DescriptorRange range{};
-        range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, desc.TextureNormalInstructions, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, desc.TextureNormalInstructions, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
         descriptorRanges.emplace_back(std::pair(range, visibility));
     }
 }
