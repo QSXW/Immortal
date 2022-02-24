@@ -40,7 +40,7 @@ public:
 		static float rotation = 0.0f;
 		rotation += Application::App()->DeltaTime() * 50.0f;
 
-		Render2D::DrawQuad({ 0.0f, 0.0f }, { texture->Ratio() * 2.0, 2.0f }, texture, 1.0f, Vector::Color(1.f));
+		Render2D::DrawRect({ 0.0f, 0.0f }, { texture->Ratio() * 2.0, 2.0f }, texture, 1.0f, Vector::Color(1.f));
 		Render2D::SetColor(color, luminance);
 		Render2D::EndScene();
 
@@ -51,7 +51,7 @@ public:
 			for (float x = -5.0f; x < 5.0f; x += 0.5f)
 			{
 				Vector4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-				Render2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, color);
+				Render2D::DrawRect({ x, y }, { 0.45f, 0.45f }, color);
 			}
 		}
 		Render2D::EndScene();

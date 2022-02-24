@@ -318,7 +318,7 @@ void Scene::OnRender(const Camera &camera)
     for (auto o : group)
     {
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
-        Render2D::DrawQuad(transform, sprite.Final, sprite.TilingFactor, sprite.Color, (int)o);
+        Render2D::DrawRect(transform, sprite.Final, sprite.TilingFactor, sprite.Color, (int)o);
     }
     Render2D::EndScene();
 
