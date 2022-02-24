@@ -175,7 +175,6 @@ void Texture::As(Descriptor::Super *descriptors, size_t index)
     cpuDescriptors[index] = descriptor.invisible;
 }
 
-
 bool Texture::operator==(const Super &other) const
 {
     return resource == dcast<const Texture &>(other).resource;
