@@ -44,7 +44,7 @@ void Renderer::SwapBuffers()
 
 Descriptor::Super *Renderer::CreateImageDescriptor(uint32_t count)
 {
-    auto descriptor = new GPUDescriptor[count];
+    auto descriptor = new CPUDescriptor[count];
     CleanUpObject(descriptor);
 
     return descriptor;
