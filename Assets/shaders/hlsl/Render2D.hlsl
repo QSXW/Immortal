@@ -13,7 +13,7 @@ struct PSInput
     float4 position     : SV_POSITION;
     float4 color        : COLOR;
     float2 uv           : TEXCOORD;
-    float  index        : INDEX;
+    uint   index        : INDEX;
     float  tilingFactor : TILING_FACTOR;
     int    id           : OBJECT_ID;
 };
@@ -45,7 +45,7 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     float4 result;
 
-    switch(int(input.index))
+    switch(input.index)
     {
         case  0: result = g_textures[ 0].Sample(g_sampler, input.uv * input.tilingFactor); break;
         case  1: result = g_textures[ 1].Sample(g_sampler, input.uv * input.tilingFactor); break;
@@ -79,7 +79,6 @@ float4 PSMain(PSInput input) : SV_TARGET
         case 29: result = g_textures[29].Sample(g_sampler, input.uv * input.tilingFactor); break;
         case 30: result = g_textures[30].Sample(g_sampler, input.uv * input.tilingFactor); break;
         case 31: result = g_textures[31].Sample(g_sampler, input.uv * input.tilingFactor); break;
-        default: break;
     }
 
     return result * input.color;
