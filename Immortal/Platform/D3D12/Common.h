@@ -248,6 +248,111 @@ struct DescriptorRange : public D3D12_DESCRIPTOR_RANGE1
     }
 };
 
+struct RasterizerDescription : public D3D12_RASTERIZER_DESC
+{
+    using Primitive = D3D12_RASTERIZER_DESC;
+
+    RasterizerDescription()
+    {
+        Primitive::FillMode = D3D12_FILL_MODE_SOLID;
+        Primitive::CullMode = D3D12_CULL_MODE_NONE;
+        Primitive::FrontCounterClockwise = FALSE;
+        Primitive::DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+        Primitive::DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+        Primitive::SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+        Primitive::DepthClipEnable = TRUE;
+        Primitive::MultisampleEnable = FALSE;
+        Primitive::AntialiasedLineEnable = FALSE;
+        Primitive::ForcedSampleCount = 0;
+        Primitive::ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+    }
+
+    explicit RasterizerDescription(const Primitive &o) noexcept :
+        Primitive{ o }
+    {
+
+    }
+
+    explicit RasterizerDescription(
+        D3D12_FILL_MODE fillMode,
+        D3D12_CULL_MODE cullMode,
+        BOOL frontCounterClockwise,
+        INT depthBias,
+        FLOAT depthBiasClamp,
+        FLOAT slopeScaledDepthBias,
+        BOOL depthClipEnable,
+        BOOL multisampleEnable,
+        BOOL antialiasedLineEnable,
+        UINT forcedSampleCount,
+        D3D12_CONSERVATIVE_RASTERIZATION_MODE conservativeRaster) noexcept
+    {
+        Primitive::FillMode = fillMode;
+        Primitive::CullMode = cullMode;
+        Primitive::FrontCounterClockwise = frontCounterClockwise;
+        Primitive::DepthBias = depthBias;
+        Primitive::DepthBiasClamp = depthBiasClamp;
+        Primitive::SlopeScaledDepthBias = slopeScaledDepthBias;
+        Primitive::DepthClipEnable = depthClipEnable;
+        Primitive::MultisampleEnable = multisampleEnable;
+        Primitive::AntialiasedLineEnable = antialiasedLineEnable;
+        Primitive::ForcedSampleCount = forcedSampleCount;
+        Primitive::ConservativeRaster = conservativeRaster;
+    }
+};
+
+struct BlendDescription : public D3D12_BLEND_DESC
+{
+    using Primitive = D3D12_BLEND_DESC;
+
+    explicit BlendDescription() noexcept
+    {
+        Primitive::AlphaToCoverageEnable = FALSE;
+        Primitive::IndependentBlendEnable = FALSE;
+        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlendDescription =
+        {
+            FALSE,FALSE,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_LOGIC_OP_NOOP,
+            D3D12_COLOR_WRITE_ENABLE_ALL,
+        };
+        for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+        {
+            Primitive::RenderTarget[i] = defaultRenderTargetBlendDescription;
+        }
+    }
+
+    explicit BlendDescription(const D3D12_BLEND_DESC &o) noexcept :
+        Primitive{ o }
+    {
+
+    }
+};
+
+struct DepthStencilDescription : public D3D12_DEPTH_STENCIL_DESC
+{
+    using Primitive = D3D12_DEPTH_STENCIL_DESC;
+
+    static inline const D3D12_DEPTH_STENCILOP_DESC DefaultStencilOp = {
+        D3D12_STENCIL_OP_KEEP,
+        D3D12_STENCIL_OP_KEEP,
+        D3D12_STENCIL_OP_KEEP,
+        D3D12_COMPARISON_FUNC_ALWAYS
+    };
+
+    explicit DepthStencilDescription() noexcept
+    {
+        Primitive::DepthEnable      = TRUE;
+        Primitive::DepthWriteMask   = D3D12_DEPTH_WRITE_MASK_ALL;
+        Primitive::DepthFunc        = D3D12_COMPARISON_FUNC_LESS;
+        Primitive::StencilEnable    = FALSE;
+        Primitive::StencilReadMask  = D3D12_DEFAULT_STENCIL_READ_MASK;
+        Primitive::StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+        Primitive::FrontFace        = DefaultStencilOp;
+        Primitive::BackFace         = DefaultStencilOp;
+    }
+};
+
 }
 }
 

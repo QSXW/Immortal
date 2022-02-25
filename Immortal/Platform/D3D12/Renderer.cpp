@@ -95,22 +95,42 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
     Rect scissorRect{ 0, 0, width, height };
     commandList->RSSetScissorRects(&scissorRect);
 
-    barrier.Transition(
-        *renderTarget,
-        D3D12_RESOURCE_STATE_COMMON,
-        D3D12_RESOURCE_STATE_RENDER_TARGET
-    );
-    commandList->ResourceBarrier(&barrier);
+    auto &colorBuffers = renderTarget->GetColorBuffers();
+    auto &depthBuffer  = renderTarget->GetDepthBuffer();
 
-    CPUDescriptor rtvDescriptor = renderTarget->GetDescriptor();
+    for (auto &colorBuffer : colorBuffers)
+    {
+        barriers[activeBarrier++].Transition(
+            colorBuffer,
+            D3D12_RESOURCE_STATE_COMMON,
+            D3D12_RESOURCE_STATE_RENDER_TARGET
+        );
+    }
+
+    barriers[activeBarrier].Transition(
+        depthBuffer,
+        D3D12_RESOURCE_STATE_COMMON,
+        D3D12_RESOURCE_STATE_DEPTH_WRITE
+    );
+    activeBarrier++;
+
+    commandList->ResourceBarrier(barriers.data(), activeBarrier);
+
+    auto &rtvDescriptor = renderTarget->GetDescriptor();
+    auto &dsvDescriptor = depthBuffer.GetDescriptor();
     commandList->ClearRenderTargetView(rtvDescriptor, rcast<float *>(renderTarget->ClearColor()));
-    commandList->OMSetRenderTargets(&rtvDescriptor, 1, false, nullptr);
+    commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
+    commandList->OMSetRenderTargets(&rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
 }
 
 void Renderer::End()
 {
-    barrier.Swap();
-    commandList->ResourceBarrier(&barrier);
+    for (auto &barrier : barriers)
+    {
+        barrier.Swap();
+    }
+    commandList->ResourceBarrier(barriers.data(), activeBarrier);
+    activeBarrier = 0;
 }
 
 }

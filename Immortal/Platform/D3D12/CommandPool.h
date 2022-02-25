@@ -61,12 +61,12 @@ public:
 
     void ClearRenderTargetView(CPUDescriptor descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
     {
-        handle->ClearRenderTargetView(
-            descriptor,
-            clearColor,
-            numRects,
-            pRects
-            );
+        handle->ClearRenderTargetView(descriptor, clearColor, numRects, pRects);
+    }
+
+    void ClearDepthStencilView(CPUDescriptor descriptor, D3D12_CLEAR_FLAGS clearFlags, FLOAT depth, UINT8 stencil, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
+    {
+        handle->ClearDepthStencilView(descriptor, clearFlags, depth, stencil, numRects, pRects);
     }
 
     void OMSetRenderTargets(const D3D12_CPU_DESCRIPTOR_HANDLE *pRenderTargetDescriptors,

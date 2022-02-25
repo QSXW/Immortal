@@ -117,7 +117,9 @@ public:
 
     UINT64 fenceValues[Swapchain::SWAP_CHAIN_BUFFER_COUNT]{ 0 };
 
-    Barrier<BarrierType::Transition> barrier;
+    std::array<Barrier<BarrierType::Transition>, 8> barriers;
+
+    uint32_t activeBarrier = 0;
 };
 
 }

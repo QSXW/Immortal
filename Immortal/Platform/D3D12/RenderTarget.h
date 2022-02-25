@@ -145,6 +145,8 @@ public:
 
     void Create(const Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
+    virtual CPUDescriptor GetDescriptor() const = 0;
+
 public:
     DXGI_FORMAT Format{ DXGI_FORMAT_UNKNOWN };
 };
@@ -177,6 +179,11 @@ public:
         {
             return renderTargetViewDescriptor;
         }
+    }
+
+    virtual CPUDescriptor GetDescriptor() const override
+    {
+        return shaderResourceViewDescriptor.cpu;
     }
 
     operator uint64_t() const
@@ -214,6 +221,11 @@ public:
     bool IsAvailable() const
     {
         return depthStencilViewDescriptor[0].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
+    }
+
+    virtual CPUDescriptor GetDescriptor() const override
+    {
+        return depthStencilViewDescriptor[0];
     }
 
 private:

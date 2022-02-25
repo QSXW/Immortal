@@ -59,7 +59,7 @@ public:
         return !!resource;
     }
 
-    operator ID3D12Resource*()
+    operator ID3D12Resource*() const
     {
         return resource;
     }

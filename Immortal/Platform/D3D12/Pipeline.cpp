@@ -143,8 +143,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     pipelineStateDesc.PS                              = bytesCodes[Shader::PixelShaderPos ];
     pipelineStateDesc.RasterizerState                 = RasterizerDescription{};
     pipelineStateDesc.BlendState                      = BlendDescription{};
-    pipelineStateDesc.DepthStencilState.DepthEnable   = FALSE;
-    pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
+    pipelineStateDesc.DepthStencilState               = DepthStencilDescription{};
     pipelineStateDesc.SampleMask                      = UINT_MAX;
     pipelineStateDesc.PrimitiveTopologyType           = SuperToBase(desc.PrimitiveType);
     pipelineStateDesc.NumRenderTargets                = 1;
