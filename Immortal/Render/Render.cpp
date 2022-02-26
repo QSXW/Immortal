@@ -25,9 +25,21 @@ const Shader::Properties Render::ShaderProperties[] = {
 
 };
 
+std::shared_ptr<Shader> Render::GetShader(const std::string &name)
+{
+    decltype(ShaderManager)::iterator &it = ShaderManager.find(name);
+    if (it != ShaderManager.end())
+    {
+        return it->second;
+    }
+
+    LOG::WARN("Request Shader {} Not Found!", name);
+    return nullptr;
+}
+
 void Render::Setup(RenderContext *context)
 {
-    LOG::INFO("Initialize Renderer with API => {0}", Sringify(Render::API));
+    LOG::INFO("Initialize Renderer With Graphics API: {}", Sringify(Render::API));
     renderer = Renderer::Create(context);
     renderer->Setup();
 

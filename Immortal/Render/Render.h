@@ -57,17 +57,7 @@ public:
 
     static Shader::Manager ShaderManager;
 
-    static std::shared_ptr<Shader> GetShader(const std::string &name)
-    {
-        auto &it = ShaderManager.find(name);
-        if (it != ShaderManager.end())
-        {
-            return it->second;
-        }
-
-        LOG::WARN("Request shader {0} not found!", name);
-        return nullptr;
-    }
+    static std::shared_ptr<Shader> GetShader(const std::string &name);
 
     static auto *Preset()
     {
