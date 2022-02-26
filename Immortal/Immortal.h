@@ -22,6 +22,8 @@
 #include "Math/Math.h"
 #include "Math/Vector.h"
 
+#include "Memory/Memory.h"
+
 #include "Utils/PlatformUtils.h"
 #include "Utils/json.h"
 

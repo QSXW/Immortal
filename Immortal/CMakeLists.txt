@@ -61,6 +61,12 @@ set(MATH_FILES
    Math/Vector.cpp
    Math/Vector.h)
 
+set(MEMORY_FILES
+    Memory/Allocator.h
+    Memory/Memory.cpp
+    Memory/Memory.h
+    )
+
 set(FS_FILES
     FileSystem/FileSystem.cpp
     FileSystem/FileSystem.h)
@@ -287,6 +293,7 @@ source_group("Image\\" FILES ${IMAGE_FILES})
 source_group("ImGui\\" FILES ${GUI_FILES})
 source_group("Interface\\" FILES ${INTERFACE_FILES})
 source_group("Math\\" FILES ${MATH_FILES})
+source_group("Memory\\" FILES ${MEMORY_FILES})
 source_group("FileSystem\\" FILES ${FS_FILES})
 source_group("Physics\\" FILES ${PHYSICS_FILES})
 source_group("Platform\\D3D12\\" FILES ${D3D12_FILES})
@@ -313,6 +320,7 @@ set(PROJECT_FILES
     ${GUI_FILES}
     ${INTERFACE_FILES}
     ${MATH_FILES}
+    ${MEMORY_FILES}
     ${IO_FILES}
     ${PHYSICS_FILES}
     ${D3D12_FILES}
