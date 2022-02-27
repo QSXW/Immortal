@@ -219,8 +219,6 @@ set(RENDER_FILES
     Render/Frame.cpp
     Render/Frame.h
     Render/RenderTarget.h
-    Render/Material.cpp
-    Render/Material.h
     Render/Mesh.cpp
     Render/Mesh.h
     Render/OrthographicCamera.cpp

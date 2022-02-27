@@ -39,15 +39,6 @@ public:
 
     static std::shared_ptr<Mesh> Mesh::CreateSphere(float radius);
 
-private:
-    VertexLayout mLayout {
-        { Format::VECTOR3, "position"  },
-        { Format::VECTOR3, "normal"    },
-        { Format::VECTOR3, "tagent"    },
-        { Format::VECTOR3, "bitangent" },
-        { Format::VECTOR2, "texcoord"  },
-    };
-
 public:
     struct Vertex
     {
