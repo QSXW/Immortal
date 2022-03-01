@@ -3,7 +3,7 @@
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
 void ColorSpace::yuv2rgb(const uint8_t *src, size_t size, uint8_t *dst)

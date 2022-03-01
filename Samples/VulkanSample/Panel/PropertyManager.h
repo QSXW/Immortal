@@ -112,7 +112,7 @@ public:
                                             texture.reset(Render::Create<Texture>(
                                                 res.value(),
                                                 Texture::Description{
-                                                    Format::UNDEFINED,
+                                                    Format::None,
                                                     Wrap::Mirror,
                                                     Filter::Linear
                                                 }));

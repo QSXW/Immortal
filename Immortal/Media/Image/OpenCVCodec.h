@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "Decoder.h"
+
+#include "Media/Interface/Codec.h"
 #include "Config.h"
 
 #if HAVE_OPENCV
@@ -13,11 +14,14 @@
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
-class OpenCVCodec : public Decoder
+class OpenCVCodec : public Interface::Codec
 {
+public:
+    using Super = Interface::Codec;
+
 public:
     OpenCVCodec()
     {
@@ -40,8 +44,7 @@ public:
         }
         if (src.data)
         {
-            desc.Depth = src.channels();
-            if (desc.Depth == 4)
+            if (src.channels() == 4)
             {
                 cv::cvtColor(src, mat, cv::COLOR_BGRA2RGBA);
             }
@@ -51,21 +54,19 @@ public:
             }
         }
 
-        desc.Width  = mat.cols;
-        desc.Height = mat.rows;
-        desc.Depth  = mat.channels();
-        desc.Format = Format::RGBA8;
+        desc.width  = mat.cols;
+        desc.height = mat.rows;
+        desc.format = Format::RGBA8;
 
         if (mat.depth() == CV_16U)
         {
-            desc.Format = Format::RGBA16;
+            desc.format = Format::RGBA16;
         }
         if (mat.depth() == CV_32FC4)
         {
-            desc.Format = Format::RGBA32F;
+            desc.format = Format::RGBA32F;
         }
 
-        FillUpDescription();
         return CodecError::Succeed;
     }
 
@@ -81,12 +82,12 @@ public:
 
     virtual void Swap(void *ptr)
     {
-        ptr = new uint8_t[desc.Size];
+        ptr = new uint8_t[desc.Size()];
         if (!ptr)
         {
             return;
         }
-        memcpy(ptr, mat.data, desc.Size);
+        memcpy(ptr, mat.data, desc.Size());
     }
 
 private:

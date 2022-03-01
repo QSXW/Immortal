@@ -18,17 +18,6 @@ namespace Immortal
 namespace D3D12
 {
 
-static inline DXGI_FORMAT NORMALIZE(Format format)
-{
-    static DXGI_FORMAT map[] = {
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        DXGI_FORMAT_R10G10B10A2_UNORM,
-        DXGI_FORMAT_R16G16B16A16_FLOAT
-    };
-
-    return map[ncast<int>(format)];
-}
-
 class RenderContext : public SuperRenderContext
 {
 public:
@@ -54,7 +43,7 @@ public:
         }
         if constexpr (IsPrimitiveOf<DXGI_FORMAT, T>())
         {
-            return NORMALIZE(desc.format);
+            return desc.format;
         }
     }
 

@@ -43,7 +43,7 @@ public:
 
         Window *WindowHandle{ nullptr };
 
-        Format format{ Format::R8G8B8A8_UNORM };
+        Format format{ Format::RGBA8 };
 
         const char *ApplicationName{ "" };
 

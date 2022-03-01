@@ -6,7 +6,6 @@
 #include <map>
 
 #include "Types.h"
-#include "Checksum.h"
 #include "Stream.h"
 
 namespace Immortal
@@ -81,7 +80,7 @@ public:
     {
         chunks.emplace_back(data.size() * sizeof(T), data.data());
     }
-    
+
     template <class T>
     void Append(const T *constant)
     {
@@ -106,7 +105,7 @@ public:
         Append(file);
         Write();
     }
-    
+
     const std::vector<Chunk> & Parse(const std::vector<uint8_t> &buf)
     {
         auto start = buf.data();

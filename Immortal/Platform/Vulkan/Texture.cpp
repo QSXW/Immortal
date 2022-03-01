@@ -22,7 +22,7 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
     mipLevels = CalculateMipmapLevels(width, height);
 
     Description desc = description;
-    desc.Format = frame.Desc().Format;
+    desc.Format = frame.Desc().format;
     Setup(desc, frame.Size(), frame.Data());
 }
 

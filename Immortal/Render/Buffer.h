@@ -61,12 +61,12 @@ struct InputElement
     template <class T>
     T BaseType() const
     {
-        return Map::BaseFormat<T>(format);
+        return format;
     }
 
     uint32_t ComponentCount() const
     {
-        return Map::FormatComponentCount(format);
+        return format.ComponentCount();
     }
 
     uint32_t Offset() const
@@ -81,7 +81,7 @@ struct InputElement
 
     std::string name;
     uint32_t    offset{ 0 };
-    Format      format{ Format::UNDEFINED };
+    Format      format{ Format::None };
 };
 
 struct InputElementDescription
@@ -173,7 +173,7 @@ private:
         for (auto &e : elements)
         {
             e.offset =  offset;
-            offset += Map::FormatSize(e.format);
+            offset += e.format.Size();
         }
         Stride = offset;
     }

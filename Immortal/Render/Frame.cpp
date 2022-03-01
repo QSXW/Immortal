@@ -2,7 +2,7 @@
 #include "Frame.h"
 
 #include "Texture.h"
-#include "Media/StillPicture.h"
+#include "Media/Image/Image.h"
 #include "FileSystem/FileSystem.h"
 
 namespace Immortal
@@ -12,7 +12,7 @@ Frame::Frame(const std::string &path)
 {
     if (FileSystem::IsFormat<FileFormat::BMP>(path))
     {
-        auto bmpCodec = new Media::BMPCodec{};
+        auto bmpCodec = new Vision::BMPCodec{};
         bmpCodec->Read(path);
         decoder.reset(bmpCodec);
     }
@@ -24,10 +24,10 @@ Frame::Frame(const std::string &path)
             return;
         }
 
-        decoder.reset(new Media::STBCodec());
-        if (decoder->Decode(buf) != Media::CodecError::Succeed)
+        decoder.reset(new Vision::STBCodec());
+        if (decoder->Decode(buf) != CodecError::Succeed)
         {
-            decoder.reset(new Media::OpenCVCodec());
+            decoder.reset(new Vision::OpenCVCodec());
             {
                 decoder->Decode(buf);
             }

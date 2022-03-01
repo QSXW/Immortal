@@ -96,17 +96,17 @@ public:
         template <class T>
         T BaseFromat() const
         {
-            return Map::BaseFormat<T>(Format);
+            return Format;
         }
 
         auto FormatSize() const
         {
-            return Map::FormatSize(Format);
+            return Format.Size();
         }
 
         auto ComponentCount() const
         {
-            return Map::FormatComponentCount(Format);
+            return Format.ComponentCount();
         }
 
         bool IsDepth() const 

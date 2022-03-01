@@ -3,7 +3,7 @@
 
 #include "Texture.h"
 #include "Format.h"
-#include "Media/StillPicture.h"
+#include "Media/Image/Image.h"
 
 namespace Immortal 
 {
@@ -21,15 +21,15 @@ public:
 
     virtual uint32_t Width() const
     { 
-        return decoder->Desc().Width;
+        return decoder->Desc().width;
     }
 
     virtual uint32_t Height() const
     {
-        return decoder->Desc().Height;
+        return decoder->Desc().height;
     }
 
-    virtual Media::Description Desc() const
+    virtual const Vision::Description &Desc() const
     { 
         return decoder->Desc();
     }
@@ -46,10 +46,10 @@ public:
 
     virtual size_t Size() const
     {
-        return decoder->Desc().Size;
+        return decoder->Desc().Size();
     }
 
 private:
-    std::unique_ptr<Media::Decoder> decoder;
+    std::unique_ptr<Vision::Interface::Codec> decoder;
 };
 }

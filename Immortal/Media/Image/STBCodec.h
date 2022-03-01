@@ -1,21 +1,24 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-#include "Decoder.h"
-#include "stb_image/stb_image.h"
+#include "Media/Interface/Codec.h"
+#include "Media/External/stb_image/stb_image.h"
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
-class STBCodec : public Decoder
+class STBCodec : public Interface::Codec
 {
+public:
+    using Super = Interface::Codec;
+
 public:
     STBCodec()
     {
-        
+
     }
 
     virtual ~STBCodec()
@@ -28,12 +31,13 @@ public:
 
     virtual CodecError Decode(const std::vector<uint8_t> &buf) override
     {
+        int depth = 0;
         data = stbi_load_from_memory(
-                    buf.data(),
+                     buf.data(),
                      static_cast<int>(buf.size()),
-                    &static_cast<int>(desc.Width),
-                    &static_cast<int>(desc.Height),
-                    &static_cast<int>(desc.Depth),
+                    &static_cast<int>(desc.width),
+                    &static_cast<int>(desc.height),
+                    &static_cast<int>(depth),
                     4
                     );
 
@@ -41,10 +45,7 @@ public:
         {
             return CodecError::CorruptedBitstream;
         }
-
-        desc.Depth = 4;
-        desc.Format = Format::RGBA8;
-        FillUpDescription();
+        desc.format = Format::RGBA8;
 
         return CodecError::Succeed;
     }

@@ -427,7 +427,7 @@ public:
                     uint8_t *dataMapped = nullptr;
                     scene.Target()->Map(0, &dataMapped);
 
-                    Media::BMPCodec bmp{};
+                    Vision::BMPCodec bmp{};
                     bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
 
                     scene.Target()->Unmap(0);

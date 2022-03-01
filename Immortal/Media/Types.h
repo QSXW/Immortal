@@ -4,17 +4,33 @@
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
 struct Description
 {
-    size_t  Size;
-    size_t  Spatial;
-    int32_t Width;
-    int32_t Height;
-    int32_t Depth;
-    Format  Format;
+public:
+    Description() :
+        width{ 0 },
+        height{ 0 },
+        format{ Format::None }
+    {
+
+    }
+
+    size_t Spatial() const
+    {
+        return width * height;
+    }
+
+    size_t Size() const
+    {
+        return Spatial() * format.ComponentCount();
+    }
+
+    int32_t width;
+    int32_t height;
+    Format  format;
 };
 
 enum class Type
@@ -29,5 +45,4 @@ enum class Type
 };
 
 }
-
 }

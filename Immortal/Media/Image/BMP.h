@@ -7,17 +7,17 @@
 #include <string>
 #include <memory>
 
-#include "Decoder.h"
+#include "Media/Interface/Codec.h"
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
-class BMPCodec : public Decoder
+class BMPCodec : public Interface::Codec
 {
 public:
-    using Super = Decoder;
+    using Super = Interface::Codec;
 
 public:
     BMPCodec() :
@@ -50,9 +50,6 @@ public:
 
     bool Write(const std::string &filepath, int width, int height, int depth, uint8_t *data, int align = 0);
 
-protected:
-    virtual void FillUpDescription() override;
-
 private:
     #pragma pack(push, 1)
     uint16_t identifer;
@@ -74,7 +71,6 @@ private:
     uint16_t empty;
     #pragma pack(pop)
 
-    int depth{ 3 };
     std::unique_ptr<uint8_t> data;
 };
 

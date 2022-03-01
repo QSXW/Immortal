@@ -17,7 +17,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, const Desc
     Super::Update(frame.Width(), frame.Height());
 
     Description desc{};
-    desc.Format = frame.Desc().Format;
+    desc.Format = frame.Desc().format;
     InternalCreate(context, desc, frame.Data());
 }
 

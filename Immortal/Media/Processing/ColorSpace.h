@@ -4,7 +4,7 @@
 
 namespace Immortal
 {
-namespace Media
+namespace Vision
 {
 
 namespace ColorSpace

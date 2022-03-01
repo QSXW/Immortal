@@ -32,7 +32,7 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Wrap wrap = Wrap::Cla
 
     data.Wrap = wrap == Wrap::Clamp ? GL_CLAMP_TO_EDGE : GL_REPEAT;
     data.Filter = filter == Filter::Linear ? GL_LINEAR : GL_NEAREST;
-    switch (format)
+    switch (Format::ValueType(format))
     {
     case Format::R32:
         data.InternalFromat = GL_R32I;

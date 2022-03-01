@@ -16,7 +16,8 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME}
-    Immortal)
+    Immortal
+    Vision)
 
 file(COPY ${WORKSPACE}/Assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

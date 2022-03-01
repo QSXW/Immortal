@@ -12,6 +12,8 @@ public:
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
+        texture.reset(Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\wallhaven-pk7z5j.jpg)"));
+        texture2.reset(Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\out.jpg)"));
         pipeline.reset(Render::Create<GraphicsPipeline>(Render::GetShader("Basic")));
         renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }}));
 
@@ -39,7 +41,13 @@ public:
     {
         Render::Begin(renderTarget, camera);
         {
-            Render::Draw(pipeline);
+            // Render::Draw(pipeline);
+            Render2D::BeginScene(camera);
+            Render2D::DrawRect(transformComponent.Transform(), texture);
+            auto newTransform = transformComponent;
+            newTransform.Position -= 0.5f;
+            Render2D::DrawRect(newTransform, texture2);
+            Render2D::EndScene();
         }
         Render::End();
     }
@@ -124,7 +132,7 @@ public:
 
 private:
     std::shared_ptr<Texture> texture;
-
+    std::shared_ptr<Texture> texture2;
     Widget::Viewport viewport{ "Texture Preview " };
 
     Widget::Viewport renderViewport{ "Render Target" };

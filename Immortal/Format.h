@@ -9,76 +9,124 @@ namespace Immortal
 {
 
 /**
-  * @brief: FLOAT here represents 32-bits floating points
-  *         INT represents 32-bits signed integers
-  */
-enum class Format
+ * @brief: FLOAT here represents 32-bits floating points
+ *         INT represents 32-bits signed integers
+ */
+struct Format
 {
-    R8G8B8A8_UNORM = 0,
-    R8G8B8A8_SRGB = 1,
-    UNDEFINED     = -1,
-    INT           = 0,
-    IVECTOR2,
-    IVECTOR3,
-    IVECTOR4,
-    FLOAT,
-    VECTOR2,
-    VECTOR3,
-    VECTOR4,
-    COLOUR = VECTOR4,
-    MATRIX4,
-    R8,
-    R16,
-    R16F,
-    R32,
-    R32F,
-    RG8,
-    RG16,
-    RG16F,
-    RG32,
-    RG32F,
-    RGB32,
-    RGB32F,
-    RGBA8,
-    RGBA16,
-    RGBA16F,
-    RGBA32,
-    RGBA32F,
-    BGRA8,
-    SRGB,
-    Depth32F,
-    Depth24Stencil8,
-    RGB8,
-    Depth = Depth32F,
-    None
+public:
+    enum ValueType : uint32_t
+    {
+        R8G8B8A8_UNORM = 0,
+        R8G8B8A8_SRGB = 1,
+        INT = 0,
+        IVECTOR2,
+        IVECTOR3,
+        IVECTOR4,
+        FLOAT,
+        VECTOR2,
+        VECTOR3,
+        VECTOR4,
+        COLOUR = VECTOR4,
+        MATRIX4,
+        R8,
+        R16,
+        R16F,
+        R32,
+        R32F,
+        RG8,
+        RG16,
+        RG16F,
+        RG32,
+        RG32F,
+        RGB32,
+        RGB32F,
+        RGBA8,
+        RGBA16,
+        RGBA16F,
+        RGBA32,
+        RGBA32F,
+        BGRA8,
+        SRGB,
+        Depth32F,
+        Depth24Stencil8,
+        RGB8,
+        Depth = Depth32F,
+        None
+    };
+
+    Format() :
+        v{ None }
+    {
+
+    }
+
+    Format(ValueType v) :
+        v{ v }
+    {
+
+    }
+
+    operator ValueType() const
+    {
+        return v;
+    }
+
+    size_t ComponentCount() const;
+
+    size_t Size() const;
+
+    operator VkFormat() const;
+
+    operator DXGI_FORMAT() const;
+
+    operator GLenum() const;
+
+private:
+    ValueType v;
 };
 
-namespace Map
+namespace StaticSpace
 {
 
-struct BaseFormatElement
+struct FormatElement
 {
-    BaseFormatElement(Format format, VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, uint32_t size, uint32_t count) :
+    FormatElement(Format format, VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, uint32_t size, uint32_t count) :
         Vulkan{ vkFormat },
         DXGI{ dxFormat },
         OpenGL{ glFormat },
-        size{ size },
-        componentCount{ count }
+        Size{ size },
+        ComponentCount{ count }
     {
         
+    }
+
+    operator VkFormat() const
+    {
+        return Vulkan;
+    }
+
+    operator DXGI_FORMAT() const
+    {
+        return DXGI;
+    }
+
+    operator GLenum() const
+    {
+        return OpenGL;
     }
 
     VkFormat    Vulkan;
     DXGI_FORMAT DXGI;
     GLenum      OpenGL;
-    uint32_t    size;
-    uint32_t    componentCount;
+    uint32_t    Size;
+    uint32_t    ComponentCount;
 };
 
 using bfloat = uint16_t;
 #define FS_C(T, CC) (sizeof(T) * (CC)), CC
 
-static inline BaseFormatElement BaseFormatMapper[] = {
+static inline FormatElement FromatElementTable[] = {
     { Format::INT,             VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,            GL_INT,               FS_C(int,      1)     },
     { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,         GL_INT,               FS_C(int,      2)     },
     { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,      GL_INT,               FS_C(int,      3)     },
@@ -111,35 +159,31 @@ static inline BaseFormatElement BaseFormatMapper[] = {
     { Format::Depth24Stencil8, VK_FORMAT_D24_UNORM_S8_UINT,   DXGI_FORMAT_D24_UNORM_S8_UINT,   GL_DEPTH24_STENCIL8,  FS_C(uint32_t, 1)     },
 };
 
-template <class T>
-static inline T BaseFormat(Format format)
+}
+
+inline size_t Format::ComponentCount() const
 {
-    if constexpr (IsPrimitiveOf<GLenum, T>())
-    {
-        return BaseFormatMapper[ncast<int>(format)].OpenGL;
-    }
-    if constexpr (IsPrimitiveOf<VkFormat, T>())
-    {
-        return BaseFormatMapper[ncast<int>(format)].Vulkan;
-    }
-    if constexpr (IsPrimitiveOf<DXGI_FORMAT, T>())
-    {
-        return BaseFormatMapper[ncast<int>(format)].DXGI;
-    }
-    return ncast<T>(format);
+    return StaticSpace::FromatElementTable[v].ComponentCount;
 }
 
-static inline auto FormatComponentCount(Format format)
+inline Format::operator VkFormat() const
 {
-    return BaseFormatMapper[ncast<int>(format)].componentCount;
+    return StaticSpace::FromatElementTable[v];
 }
 
-static inline auto FormatSize(Format format)
+inline Format::operator DXGI_FORMAT() const
 {
-    return BaseFormatMapper[ncast<int>(format)].size;
+    return StaticSpace::FromatElementTable[v];
+}
+
+inline Format::operator GLenum() const
+{
+    return StaticSpace::FromatElementTable[v];
+}
+
+inline size_t Format::Size() const
+{
+    return StaticSpace::FromatElementTable[v].Size;
 }
 
 }
-#undef FS_C
-
-};

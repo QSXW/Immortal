@@ -10,7 +10,7 @@ file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PROJECT_NAME}
     external
-    slCodec
+    Vision
     Immortal
 )
 

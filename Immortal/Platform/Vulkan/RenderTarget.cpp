@@ -366,7 +366,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     {
         auto &extent = dst->Extent();
         auto align = SLALIGN(extent.width, 8) - extent.width;
-        size_t stride = Map::FormatSize(format);
+        size_t stride = format.Size();
 
         pixel = *(uint64_t *)(ptr + (y * (align + extent.width) * stride) + x * stride);
     }

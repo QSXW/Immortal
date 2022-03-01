@@ -3,11 +3,10 @@
 #include <iostream>
 #include <vector>
 #include "Stream.h"
-#include "ColorSpace.h"
 
 namespace Immortal
 { 
-namespace Media
+namespace Vision
 {
 
 bool BMPCodec::Read(const std::string &filename, bool alpha)
@@ -23,11 +22,6 @@ bool BMPCodec::Read(const std::string &filename, bool alpha)
     if (bitsPerPixel != 24)
     {
         return false;
-    }
-
-    if (alpha)
-    {
-        depth = 4;
     }
 
     stream.Locate(offset);
@@ -72,8 +66,8 @@ bool BMPCodec::Read(const std::string &filename, bool alpha)
         }
     }
 
-    desc.Depth  = alpha ? 4 : 3;
-    FillUpDescription();
+    desc.width  = width;
+    desc.height = height;
 
     return true;
 }
@@ -141,13 +135,6 @@ bool BMPCodec::Write(const std::string &filepath, int w, int h, int depth, uint8
     }
 
     return true;
-}
-
-void BMPCodec::FillUpDescription()
-{
-    desc.Width  = width;
-    desc.Height = height;
-    Decoder::FillUpDescription();
 }
 
 }

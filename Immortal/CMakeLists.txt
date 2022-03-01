@@ -351,6 +351,6 @@ add_subdirectory(Media)
 
 target_link_libraries(${PROJECT_NAME}
     slapi
-    slCodec
+    Vision
     external
 )
