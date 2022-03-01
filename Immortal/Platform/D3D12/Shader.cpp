@@ -1,9 +1,87 @@
 #include "Shader.h"
+#include "Framework/Utils.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
+
+Shader::Shader(const std::string &filepath, Type type) :
+    Super{ type }
+{
+    constexpr UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+
+    ComPtr<ID3DBlob> error;
+
+    std::wstring wfilepath = Utils::s2ws(filepath) + std::wstring{ L".hlsl" };
+    if (type == Type::Graphics)
+    {
+        InternalCheck(
+            D3DCompileFromFile(
+                wfilepath.c_str(),
+                nullptr,
+                nullptr,
+                "VSMain",
+                "vs_5_1",
+                compileFlags,
+                0,
+                &handles[VertexShaderPos],
+                &error
+            ),
+            &error,
+            &handles[VertexShaderPos]
+            );
+
+        byteCodes[VertexShaderPos] = ShaderByteCode{ handles[VertexShaderPos] };
+
+        InternalCheck(
+            D3DCompileFromFile(
+                wfilepath.c_str(),
+                nullptr,
+                nullptr,
+                "PSMain",
+                "ps_5_1",
+                compileFlags,
+                0,
+                &handles[PixelShaderPos],
+                &error
+            ),
+            &error,
+            &handles[PixelShaderPos]
+        );
+
+        byteCodes[PixelShaderPos] = ShaderByteCode{ handles[PixelShaderPos] };
+    }
+
+    Reflect();
+}
+
+Shader::~Shader()
+{
+    for (auto &handle : handles)
+    {
+        IfNotNullThenRelease(handle);
+    }
+}
+
+void Shader::InternalCheck(HRESULT result, ID3DBlob **error, ID3DBlob **toBeReleased)
+{
+    if (FAILED(result) || !*toBeReleased)
+    {
+        if (*error)
+        {
+            LOG::ERR("D3D12 Shader Compiling failed with...\n{0}", rcast<char *>((*error)->GetBufferPointer()));
+        }
+
+        if (*toBeReleased)
+        {
+            (*toBeReleased)->Release();
+            *toBeReleased = nullptr;
+        }
+
+        THROWIF(true, "Failed to compile shader source");
+    }
+}
 
 void Shader::Reflect()
 {
