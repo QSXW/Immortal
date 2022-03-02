@@ -8,10 +8,10 @@ set(CORE_FILES
     Stream.h)
 
 set(COMMON_FILES
+    Common/BitTracker.h
     Common/Checksum.cpp
     Common/Checksum.h
     Common/Error.h
-    Common/BitTracker.h
     Common/NetworkAbstractionLayer.h)
 
 set(INTERFACE_FILES
@@ -21,6 +21,8 @@ set(IMAGE_CODEC_FILES
     Image/BMP.cpp
     Image/BMP.h
     Image/Image.h
+    Image/JPEG.cpp
+    Image/JPEG.h
     Image/STBCodec.cpp
     Image/STBCodec.h
     Image/OpenCVCodec.h)
@@ -45,6 +47,7 @@ add_library(${PROJECT_NAME} STATIC
     ${EXTERNAL_FILES}
     ${INTERFACE_FILES}
     ${IMAGE_CODEC_FILES}
+    ${VIDEO_CODEC_FILES}
     ${PROCESSING_FILES}
 )
 
