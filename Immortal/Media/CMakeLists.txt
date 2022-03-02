@@ -10,7 +10,8 @@ set(CORE_FILES
 set(COMMON_FILES
     Common/Checksum.cpp
     Common/Checksum.h
-    Common/Error.h)
+    Common/Error.h
+    Common/BitTracker.h)
 
 set(INTERFACE_FILES
     Interface/Codec.h)
