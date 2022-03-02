@@ -11,7 +11,8 @@ set(COMMON_FILES
     Common/Checksum.cpp
     Common/Checksum.h
     Common/Error.h
-    Common/BitTracker.h)
+    Common/BitTracker.h
+    Common/NetworkAbstractionLayer.h)
 
 set(INTERFACE_FILES
     Interface/Codec.h)
