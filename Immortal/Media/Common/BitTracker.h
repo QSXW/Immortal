@@ -15,6 +15,16 @@ public:
     static constexpr size_t BitsPerByte = 8;
 
 public:
+    BitTracker() :
+        start{ nullptr },
+        end{ nullptr },
+        ptr{ nullptr },
+        bitsLeft{ 0 },
+        word{ 0 }
+    {
+
+    }
+
     BitTracker(const uint8_t *data, size_t size) :
         start{ data },
         end{ data + size },
