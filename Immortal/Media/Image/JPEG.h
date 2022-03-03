@@ -4,8 +4,7 @@
 
 #include "Core.h"
 #include "Media/Interface/Codec.h"
-
-#include <bit>
+#include "Media/Common/BitTracker.h"
 
 namespace Immortal
 {
@@ -54,11 +53,37 @@ public:
         };
     };
 
+    struct HuffTable
+    {
+#define HUFFVAL_SIZE 257
+        uint8_t bits[17];
+        uint8_t huffval[HUFFVAL_SIZE];
+    };
+
+    struct HuffCodec
+    {
+        HuffCodec() = default;
+
+        HuffCodec(const HuffTable &huffTable);
+
+        int32_t MINCODE[17];
+        int32_t MAXCODE[17];
+        int32_t VALPTR[17];
+    };
+
+    struct SamplingFactor
+    {
+        int8_t horizontal;
+        int8_t vertical;
+    };
+
     struct Component
     {
-        uint8_t samplingFactor;
+        int16_t width;
+        int16_t height;
         uint8_t qtSelector;
         uint8_t htSelector;
+        SamplingFactor sampingFactor;
     };
 
 public:
@@ -67,23 +92,62 @@ public:
     void ParseHeader(const std::vector<uint8_t> &buffer);
 
     template <class T>
-    void ParseMarker(const uint8_t **data, T &&process)
-    {
-        auto *ptr = *data + 1;
-        uint16_t length = Word{ ptr };
-        *data += length;
-        process(ptr + sizeof(uint16_t));
-    }
+    void ParseMarker(const uint8_t **data, T &&process);
 
 private:
+    void ParseAPP(const uint8_t *data);
+
     void ParseDQT(const uint8_t *data);
+
+    void ParseDHT(const uint8_t *data);
+
+    void ParseDRI(const uint8_t *data);
 
     void ParseSOF(const uint8_t *data);
 
+    void ParseSOS(const uint8_t *data);
+
 private:
-    uint8_t bitDepth;
     std::vector<Component> components;
+    std::array<std::array<uint8_t, 128>, 4> quantizationTables;
+
+    std::array<HuffCodec, 4> dctbl;
+    std::array<HuffCodec, 4> actbl;
+
+    BitTracker bitTracker;
+
+    bool isProgressive = false;
+    bool restartInterval = false;
+
+    uint32_t mcuNumber;
+
+    uint8_t bitDepth;
+
+#ifndef JPEG_CODEC_MINIMAL
+    struct {
+        std::vector<uint8_t> external;
+        struct {
+            uint8_t identifier[5];
+            uint8_t majorRevisionNum;
+            uint8_t minorRevisionNum;
+            uint8_t units;
+            int16_t horizontalDensity;
+            int16_t verticalDensity;
+            uint8_t thumbnailWidth;
+            uint8_t thumbnailHeight;
+        } jfif;
+    } application;
+#endif
 };
+
+template <class T>
+inline void JpegCodec::ParseMarker(const uint8_t **data, T &&process)
+{
+    auto *ptr = *data + 1;
+    uint16_t length = Word{ ptr };
+    *data += length;
+    process(ptr + sizeof(uint16_t));
+}
 
 }
 }
