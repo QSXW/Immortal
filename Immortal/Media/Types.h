@@ -7,13 +7,24 @@ namespace Immortal
 namespace Vision
 {
 
+enum class ColorSpace
+{
+    YUV420P,
+    YUV422P,
+    YUV444P,
+    RGBA32,
+    NV12,
+    None
+};
+
 struct Description
 {
 public:
     Description() :
         width{ 0 },
         height{ 0 },
-        format{ Format::None }
+        format{ Format::None },
+        colorSpace{ ColorSpace::None }
     {
 
     }
@@ -31,6 +42,7 @@ public:
     int32_t width;
     int32_t height;
     Format  format;
+    ColorSpace colorSpace;
 };
 
 enum class Type
