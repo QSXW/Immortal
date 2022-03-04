@@ -35,6 +35,11 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
+    virtual CodecError Decode()
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
     virtual uint8_t *Data() const
     {
         return nullptr;
