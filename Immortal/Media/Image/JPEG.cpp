@@ -5,33 +5,49 @@ namespace Immortal
 namespace Vision
 {
 
-static inline ColorSpace SelectColorSpace(JpegCodec::SamplingFactor &sampingFactor)
+static inline Format SelectFormat(JpegCodec::SamplingFactor &sampingFactor)
 {
     switch (sampingFactor.horizontal)
     {
     case 1:
-        return ColorSpace::YUV444P;
+        return Format::YUV444P;
 
     case 2:
         if (sampingFactor.vertical == 2)
         {
-            return ColorSpace::YUV420P;
+            return Format::YUV420P;
         }
         if (sampingFactor.vertical == 1)
         {
-            return ColorSpace::YUV422P;
+            return Format::YUV422P;
         }
         break;
 
     default:
         ThrowIf(true, "Incorrect Samping Factor");
-        return ColorSpace::None;
+        return Format::None;
     }
+}
+
+static inline uint16_t AlignToMCU(uint16_t v)
+{
+    auto padding = v & 0x7;
+    return v + (padding ? 8 - padding : 0);
 }
 
 JpegCodec::JpegCodec(const std::vector<uint8_t> &buffer)
 {
     ParseHeader(buffer);
+}
+
+JpegCodec::~JpegCodec()
+{
+    constexpr size_t align = 64;
+    if (buffer)
+    {
+        AAllocator<uint8_t, align> allocator;
+        allocator.deallocate(buffer, align);
+    }
 }
 
 void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
@@ -86,6 +102,12 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
             }
         }
     }
+}
+
+CodecError JpegCodec::Decode()
+{
+    InitDecodedPlaneBuffer();
+    return CodecError::Succeed;
 }
 
 inline void JpegCodec::ParseAPP(const uint8_t *data)
@@ -191,13 +213,19 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         maxSampingFactor.horizontal = std::max(maxSampingFactor.horizontal, components[index].sampingFactor.horizontal);
     }
 
-    desc.colorSpace = SelectColorSpace(components[0].sampingFactor);
+    desc.format = SelectFormat(components[0].sampingFactor);
 
     for (size_t i = 0; i < components.size(); i++)
     {
         auto &component = components[i];
         component.width  = std::ceil(desc.width * ((float)component.sampingFactor.horizontal / (float)maxSampingFactor.horizontal));
         component.height = std::ceil(desc.height * ((float)component.sampingFactor.vertical / (float)maxSampingFactor.vertical));
+
+        component.x = AlignToMCU(component.width);
+        component.y = AlignToMCU(component.height);
+        mcuNumber += component.x * component.y / 64;
+
+        blockSize += component.sampingFactor.horizontal * component.sampingFactor.vertical;
     }
 }
 
@@ -220,6 +248,55 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
         auto index = ptr[0] - 1;
         components[index].htSelector = ptr[1];
     }
+}
+
+void JpegCodec::InitDecodedPlaneBuffer()
+{
+    constexpr size_t align = 64;
+
+    AAllocator<uint8_t, align> allocator;
+    size_t size = 0;
+
+    auto planes = desc.format.ComponentCount();
+    std::array<uint32_t, 4> offsets{ 0 };
+    for (size_t i = 0; i < planes; i++)
+    {
+        offsets[i] = size;
+        size += SLALIGN(components[i].x * components[i].y, align);
+    }
+    buffer = allocator.allocate(size);
+   
+    size_t blockIndex = 0;
+    for (size_t i = 0, j = 0; i < planes; i++)
+    {
+        uint32_t offset = offsets[i];
+        uint32_t stride = components[i].x * 8;
+        for (size_t v = 0; v < components[i].sampingFactor.vertical; v++)
+        {
+            for (size_t h = 0; h < components[i].sampingFactor.horizontal; h++)
+            {
+                blocks[blockIndex].stride = stride;
+                blocks[blockIndex].data = &buffer[offset + h * 8 + v * stride];
+                blockIndex++;
+            }
+        }
+    }
+}
+
+void JpegCodec::DecodeMCU()
+{
+    for (size_t i = 0; i < mcuNumber; i++)
+    {
+        for (size_t j = 0; j < blockSize; j++)
+        {
+            DecodeBlock(&blocks[j]);
+        }
+    }
+}
+
+__forceinline void JpegCodec::DecodeBlock(Block *block)
+{
+
 }
 
 static void GenerateHuffSize(const uint8_t *BITS, int32_t *HUFFSIZE, int32_t *lastk)

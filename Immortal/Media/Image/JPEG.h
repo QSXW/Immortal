@@ -5,11 +5,18 @@
 #include "Core.h"
 #include "Media/Interface/Codec.h"
 #include "Media/Common/BitTracker.h"
+#include "Memory/Allocator.h"
 
 namespace Immortal
 {
 namespace Vision
 {
+
+struct Block
+{
+    uint16_t stride;
+    uint8_t *data;
+};
 
 class IMMORTAL_API JpegCodec : public Interface::Codec
 {
@@ -79,6 +86,7 @@ public:
 
     struct Component
     {
+        uint16_t x, y;
         int16_t width;
         int16_t height;
         uint8_t qtSelector;
@@ -89,7 +97,11 @@ public:
 public:
     JpegCodec(const std::vector<uint8_t> &buffer);
 
+    ~JpegCodec();
+
     void ParseHeader(const std::vector<uint8_t> &buffer);
+
+    virtual CodecError Decode() override;
 
     template <class T>
     void ParseMarker(const uint8_t **data, T &&process);
@@ -107,8 +119,19 @@ private:
 
     void ParseSOS(const uint8_t *data);
 
+    void InitDecodedPlaneBuffer();
+
+    void DecodeMCU();
+
+    void DecodeBlock(Block *block);
+
 private:
     std::vector<Component> components;
+
+    std::array<Block, 8> blocks;
+
+    uint8_t *buffer = nullptr;
+
     std::array<std::array<uint8_t, 128>, 4> quantizationTables;
 
     std::array<HuffCodec, 4> dctbl;
@@ -119,7 +142,9 @@ private:
     bool isProgressive = false;
     bool restartInterval = false;
 
-    uint32_t mcuNumber;
+    uint32_t mcuNumber = 0;
+
+    uint8_t blockSize = 0;
 
     uint8_t bitDepth;
 
