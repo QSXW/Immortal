@@ -39,6 +39,7 @@ public:
         RG16F,
         RG32,
         RG32F,
+        RGB8,
         RGB32,
         RGB32F,
         RGBA8,
@@ -50,7 +51,9 @@ public:
         SRGB,
         Depth32F,
         Depth24Stencil8,
-        RGB8,
+        YUV420P,
+        YUV422P,
+        YUV444P,
         Depth = Depth32F,
         None
     };
@@ -146,6 +149,7 @@ static inline FormatElement FromatElementTable[] = {
     { Format::RG16F,           VK_FORMAT_R16G16_SFLOAT,       DXGI_FORMAT_R16G16_FLOAT,        GL_RG32F,             FS_C(bfloat,   2)     },
     { Format::RG32,            VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,         GL_RG32I ,            FS_C(uint32_t, 2)     },
     { Format::RG32F,           VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,        GL_RG32F,             FS_C(float,    2)     },
+    { Format::RGB8,            VK_FORMAT_R8G8B8_UNORM,         DXGI_FORMAT_UNKNOWN,            GL_RGB8 ,             FS_C(uint8_t,  3)     },
     { Format::RGB32,           VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,      GL_RGB32I ,           FS_C(uint32_t, 3)     },
     { Format::RGB32F,          VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,     GL_RGB32F,            FS_C(float,    3)     },
     { Format::RGBA8,           VK_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,      GL_RGBA8,             FS_C(uint8_t,  4)     },
@@ -157,6 +161,9 @@ static inline FormatElement FromatElementTable[] = {
     { Format::SRGB,            VK_FORMAT_R8G8B8A8_SRGB,       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, GL_SRGB8,             FS_C(uint8_t,  4)     },
     { Format::Depth32F,        VK_FORMAT_D32_SFLOAT,          DXGI_FORMAT_D32_FLOAT,           GL_DEPTH32F_STENCIL8, FS_C(float,    1)     },
     { Format::Depth24Stencil8, VK_FORMAT_D24_UNORM_S8_UINT,   DXGI_FORMAT_D24_UNORM_S8_UINT,   GL_DEPTH24_STENCIL8,  FS_C(uint32_t, 1)     },
+    { Format::YUV420P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::YUV422P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::YUV444P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
 };
 
 }
