@@ -1,6 +1,7 @@
 #include "impch.h"
 #include "EditorCamera.h"
 #include "Framework/Input.h"
+#include "Math/Math.h"
 
 namespace Immortal
 {
@@ -12,8 +13,6 @@ EditorCamera::EditorCamera(const Matrix4 &projection) :
 
     yaw = 0.0f;
     pitch = 0.0f;
-    /*yaw = 3.0f * Vector::PI / 4.0f;
-    pitch = Vector::PI / 4.0f;*/
 
     UpdateView();
 }
@@ -83,7 +82,7 @@ void EditorCamera::UpdateView()
 {
     position = CalculatePosition();
     Quaternion orientation = Orientation();
-    rotation = Vector::EulerAngles(orientation) * (180.0f / Vector::PI);
+    rotation = Vector::EulerAngles(orientation) * (float)(180.0f / Math::PI);
     view     = Vector::Translate(position) * Vector::ToMatrix4(orientation);
     view     = Vector::Inverse(view);
 }

@@ -26,8 +26,6 @@ using Matrix3    = mat3;
 using Matrix4    = mat4;
 using Quaternion = glm::quat;
 
-static constexpr float PI = 3.14159f;
-
 template <class T>
 constexpr inline auto Normalize(T &v)
 {
