@@ -1,9 +1,15 @@
 #include "JPEG.h"
+#include "Media/LookupTable/LookupTable.h"
 
 namespace Immortal
 {
 namespace Vision
 {
+
+static inline int32_t HuffExtend(int32_t r, int32_t s)
+{
+    return LookupTable::ExponentialGolobm[s][r];
+}
 
 static inline Format SelectFormat(JpegCodec::SamplingFactor &sampingFactor)
 {
@@ -24,9 +30,11 @@ static inline Format SelectFormat(JpegCodec::SamplingFactor &sampingFactor)
         break;
 
     default:
-        ThrowIf(true, "Incorrect Samping Factor");
-        return Format::None;
+        break;
     }
+
+    ThrowIf(true, "Incorrect Samping Factor");
+    return Format::None;
 }
 
 static inline uint16_t AlignToMCU(uint16_t v)
@@ -55,7 +63,7 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
     ThrowIf(buffer[0] != 0xff && buffer[1] != 0xd8, "Not a Jpeg file");
 
     auto *end = buffer.data() + buffer.size();
-    for (auto ptr = &buffer[2]; ptr < end; ptr++)
+    for (auto ptr = &buffer[2]; ptr < end; )
     {
         if (*ptr == 0xff)
         {
@@ -97,9 +105,13 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
                 break;
 
             default:
-                LOG::WARN("Unsupport Jpeg Marker Type: {}", *ptr);
+                LOG::WARN("Unsupport Jpeg Marker Type: {}", *ptr++);
                 break;
             }
+        }
+        else
+        {
+            ptr++;
         }
     }
 }
@@ -107,6 +119,7 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 CodecError JpegCodec::Decode()
 {
     InitDecodedPlaneBuffer();
+    DecodeMCU();
     return CodecError::Succeed;
 }
 
@@ -167,20 +180,18 @@ inline void JpegCodec::ParseDHT(const uint8_t *data)
         uint8_t selector = data[i++];
         uint8_t index = selector & 0x0f;
         auto &table = (0x10 & selector) ? actbl[index] : dctbl[index];
-
-        HuffTable huffTable;
-        CleanUpObject(&huffTable);
+        CleanUpObject(&table);
 
         size_t tableLength = 0;
         int j = 1;
-        while (j < SL_ARRAY_LENGTH(huffTable.bits))
+        while (j < SL_ARRAY_LENGTH(table.bits))
         {
-            tableLength += huffTable.bits[j++] = data[i++];
+            tableLength += table.bits[j++] = data[i++];
         }
-        memcpy(huffTable.huffval, &data[i], tableLength);
+        memcpy(table.huffval, &data[i], tableLength);
         i += tableLength;
 
-        table = HuffCodec{ huffTable };
+        table.Init();
     } while (i < length);
 }
 
@@ -225,8 +236,10 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         component.y = AlignToMCU(component.height);
         mcuNumber += component.x * component.y / 64;
 
-        blockSize += component.sampingFactor.horizontal * component.sampingFactor.vertical;
+        blocksInMCU += component.sampingFactor.horizontal * component.sampingFactor.vertical;
     }
+
+    mcuNumber /= blocksInMCU;
 }
 
 inline void JpegCodec::ParseSOS(const uint8_t *data)
@@ -246,7 +259,9 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
     for (size_t i = 0; i < components.size(); i++, ptr += 2)
     {
         auto index = ptr[0] - 1;
-        components[index].htSelector = ptr[1];
+        auto selector = ptr[1];
+        components[index].acIndex = (selector     ) & 0xf;
+        components[index].dcIndex = (selector >> 4) & 0xf;
     }
 }
 
@@ -275,6 +290,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
         {
             for (size_t h = 0; h < components[i].sampingFactor.horizontal; h++)
             {
+                blocks[blockIndex].componentIndex = i;
                 blocks[blockIndex].stride = stride;
                 blocks[blockIndex].data = &buffer[offset + h * 8 + v * stride];
                 blockIndex++;
@@ -285,18 +301,77 @@ void JpegCodec::InitDecodedPlaneBuffer()
 
 void JpegCodec::DecodeMCU()
 {
+    int32_t pred[4] = { 0 };
     for (size_t i = 0; i < mcuNumber; i++)
     {
-        for (size_t j = 0; j < blockSize; j++)
+        for (size_t j = 0; j < blocksInMCU; j++)
         {
-            DecodeBlock(&blocks[j]);
+            int16_t blockBuffer[BLOCK_SIZE] = { 0 };
+            auto index = blocks[j].componentIndex;
+            auto &component = components[index];
+            DecodeBlock(blockBuffer, dctbl[component.dcIndex], actbl[component.acIndex], &pred[index]);
         }
     }
 }
 
-__forceinline void JpegCodec::DecodeBlock(Block *block)
+__forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, HuffTable &acTable, int32_t *pred)
 {
+    int32_t s;
+    int32_t r;
 
+    /* DC Coefficient */
+    s = HuffDecode(dcTable);
+    if (s)
+    {
+        r = HuffReceive(s);
+        *pred += HuffExtend(r, s);
+        block[0]  = *pred;
+    }
+
+    /* AC Coefficients */
+    for (size_t k = 1; k < 64; )
+    {
+        uint32_t rs = HuffDecode(acTable);
+        s = rs & 0xf;
+        r = rs >> 4;
+
+        if (!s)
+        {
+            if (r != 0xf)
+            {
+                break;
+            }
+            else
+            {
+                k += 0x10;
+            }
+        }
+        else
+        {
+            k += r;
+            r = HuffReceive(s);
+            block[LookupTable::ZigZagToNaturalOrder[k++]] = HuffExtend(r, s);
+        }
+    }
+}
+
+__forceinline int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
+{
+    uint64_t code = 0;
+    for (int32_t i = 1, j = 0; ; )
+    {
+        code = (code << 1) + bitTracker.GetBits(1);
+        if (code > huffTable.MAXCODE[i])
+        {
+            i++;
+        }
+        else
+        {
+            j = huffTable.VALPTR[i];
+            j = j + code - huffTable.MINCODE[i];
+            return huffTable.huffval[j];
+        }
+    }
 }
 
 static void GenerateHuffSize(const uint8_t *BITS, int32_t *HUFFSIZE, int32_t *lastk)
@@ -346,16 +421,13 @@ static void GenerateHuffCode(int32_t *HUFFSIZE, int32_t *HUFFCODE)
     }
 }
 
-JpegCodec::HuffCodec::HuffCodec(const HuffTable &huffTable) :
-    MINCODE{ 0 },
-    MAXCODE{ 0 },
-    VALPTR{ 0 }
+void JpegCodec::HuffTable::Init()
 {
     int32_t lastk;
     int32_t HUFFSIZE[HUFFVAL_SIZE] = { 0 };
     int32_t HUFFCODE[HUFFVAL_SIZE] = { 0 };
 
-    GenerateHuffSize(huffTable.bits, HUFFSIZE, &lastk);
+    GenerateHuffSize(bits, HUFFSIZE, &lastk);
     GenerateHuffCode(HUFFSIZE, HUFFCODE);
 
     for (int32_t i = 0, j = 0; ; )
@@ -365,7 +437,7 @@ JpegCodec::HuffCodec::HuffCodec(const HuffTable &huffTable) :
         {
             break;
         }
-        if (huffTable.bits[i] == 0)
+        if (bits[i] == 0)
         {
             MAXCODE[i] = -1;
         }
@@ -373,7 +445,7 @@ JpegCodec::HuffCodec::HuffCodec(const HuffTable &huffTable) :
         {
             VALPTR[i] = j;
             MINCODE[i] = HUFFCODE[j];
-            j = (j + ((int32_t)huffTable.bits[i])) - 1;
+            j = (j + ((int32_t)bits[i])) - 1;
             MAXCODE[i] = HUFFCODE[j];
             j++;
         }

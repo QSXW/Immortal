@@ -75,7 +75,7 @@ public:
         return bitsLeft == 0;
     }
 
-private:
+protected:
     void Move(uint32_t n)
     {
         uint64_t bits = 0;
@@ -91,13 +91,15 @@ private:
         word |= bits << (64 - bitsLeft);
     }
 
-private:
+protected:
     const uint8_t *start;
     const uint8_t *end;
     const uint8_t *ptr;
     uint64_t word;
     uint8_t bitsLeft;
 };
+
+using SuperBitTracker = BitTracker;
 
 }
 

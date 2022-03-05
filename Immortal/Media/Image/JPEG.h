@@ -14,6 +14,7 @@ namespace Vision
 
 struct Block
 {
+    uint8_t componentIndex;
     uint16_t stride;
     uint8_t *data;
 };
@@ -21,6 +22,65 @@ struct Block
 class IMMORTAL_API JpegCodec : public Interface::Codec
 {
 public:
+    static constexpr size_t BLOCK_SIZE = 64;
+
+    class BitTracker : public SuperBitTracker
+    {
+    public:
+        using Super = SuperBitTracker;
+
+    public:
+        BitTracker() :
+            Super{ }
+        {
+
+        }
+
+        BitTracker(const uint8_t *data, size_t size) :
+            Super{}
+        {
+            Super::start = data;
+            Super::end   = data + size;
+            Super::ptr   = data;
+            Move(64);
+        }
+
+        uint64_t GetBits(uint32_t n)
+        {
+            if (n > bitsLeft)
+            {
+                Move(n);
+            }
+
+            uint64_t ret = word >> (64 - n);
+            bitsLeft -= n;
+            word <<= n;
+
+            return ret;
+        }
+
+    protected:
+        void Move(uint32_t n)
+        {
+            uint64_t bits = 0;
+            while (n > bitsLeft)
+            {
+                bits <<= 8;
+                bitsLeft += BitsPerByte;
+                if (ptr < end)
+                {
+                    uint8_t byte = *ptr;
+                    bits |= *ptr++;
+                    if (byte == 0xff && !*ptr)
+                    {
+                        ptr++;
+                    }
+                }
+            }
+            word |= bits << (64 - bitsLeft);
+        }
+    };
+
     enum MarkerType
     {
         SOI  = 0xD8,
@@ -63,16 +123,9 @@ public:
     struct HuffTable
     {
 #define HUFFVAL_SIZE 257
+        void Init();
         uint8_t bits[17];
         uint8_t huffval[HUFFVAL_SIZE];
-    };
-
-    struct HuffCodec
-    {
-        HuffCodec() = default;
-
-        HuffCodec(const HuffTable &huffTable);
-
         int32_t MINCODE[17];
         int32_t MAXCODE[17];
         int32_t VALPTR[17];
@@ -90,7 +143,8 @@ public:
         int16_t width;
         int16_t height;
         uint8_t qtSelector;
-        uint8_t htSelector;
+        uint8_t dcIndex;
+        uint8_t acIndex;
         SamplingFactor sampingFactor;
     };
 
@@ -123,7 +177,11 @@ private:
 
     void DecodeMCU();
 
-    void DecodeBlock(Block *block);
+    void DecodeBlock(int16_t *block, HuffTable &dcTable, HuffTable &acTable, int32_t *pred);
+
+    int32_t HuffReceive(int32_t s);
+
+    int32_t HuffDecode(HuffTable &huffTable);
 
 private:
     std::vector<Component> components;
@@ -134,8 +192,8 @@ private:
 
     std::array<std::array<uint8_t, 128>, 4> quantizationTables;
 
-    std::array<HuffCodec, 4> dctbl;
-    std::array<HuffCodec, 4> actbl;
+    std::array<HuffTable, 4> dctbl;
+    std::array<HuffTable, 4> actbl;
 
     BitTracker bitTracker;
 
@@ -144,7 +202,7 @@ private:
 
     uint32_t mcuNumber = 0;
 
-    uint8_t blockSize = 0;
+    uint8_t blocksInMCU = 0;
 
     uint8_t bitDepth;
 
@@ -168,10 +226,16 @@ private:
 template <class T>
 inline void JpegCodec::ParseMarker(const uint8_t **data, T &&process)
 {
-    auto *ptr = *data + 1;
+    *data += 1;
+    auto *ptr = *data;
     uint16_t length = Word{ ptr };
     *data += length;
     process(ptr + sizeof(uint16_t));
+}
+
+inline int32_t JpegCodec::HuffReceive(int32_t s)
+{
+    return bitTracker.GetBits(s);
 }
 
 }

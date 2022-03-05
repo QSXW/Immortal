@@ -17,6 +17,10 @@ set(COMMON_FILES
 set(INTERFACE_FILES
     Interface/Codec.h)
 
+set(LOOKUP_TABLE_FILE
+    LookupTable/LookupTable.cpp
+    LookupTable/LookupTable.h)
+
 set(IMAGE_CODEC_FILES
     Image/BMP.cpp
     Image/BMP.h
@@ -38,6 +42,7 @@ set(EXTERNAL_FILES
 source_group("\\" FILES ${CORE_FILES})
 source_group("\\Common\\" FILES ${COMMON_FILES})
 source_group("\\Interface\\" FILES ${INTERFACE_FILES})
+source_group("\\LookupTable\\" FILES ${LOOKUP_TABLE_FILE})
 source_group("\\Image\\" FILES ${IMAGE_CODEC_FILES})
 source_group("\\External\\" FILES ${EXTERNAL_FILES})
 
@@ -46,6 +51,7 @@ add_library(${PROJECT_NAME} STATIC
     ${COMMON_FILES}
     ${EXTERNAL_FILES}
     ${INTERFACE_FILES}
+    ${LOOKUP_TABLE_FILE}
     ${IMAGE_CODEC_FILES}
     ${VIDEO_CODEC_FILES}
     ${PROCESSING_FILES}
