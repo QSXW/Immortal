@@ -1,10 +1,26 @@
 #include "JPEG.h"
 #include "Media/LookupTable/LookupTable.h"
+#include "slintrinsic.h"
 
 namespace Immortal
 {
 namespace Vision
 {
+
+static inline void Dequantize(int16_t *block, int16_t *table)
+{
+    int16x32 b1{ block };
+    int16x32 b2{ block + 32 };
+
+    int16x32 t1{ table };
+    int16x32 t2{ table + 32 };
+    
+    b1 = b1 * t1;
+    b2 = b2 * t2;
+
+    b1.aligned_store(block);
+    b2.aligned_store(block + 32);
+}
 
 static inline int32_t HuffExtend(int32_t r, int32_t s)
 {
@@ -319,6 +335,7 @@ void JpegCodec::DecodeMCU()
             auto index = blocks[j].componentIndex;
             auto &component = components[index];
             DecodeBlock(blockBuffer, dctbl[component.dcIndex], actbl[component.acIndex], &pred[index]);
+            Dequantize(blockBuffer, quantizationTables[component.qtSelector].data());
         }
     }
 }
