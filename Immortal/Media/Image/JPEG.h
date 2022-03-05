@@ -190,7 +190,7 @@ private:
 
     uint8_t *buffer = nullptr;
 
-    std::array<std::array<uint8_t, 128>, 4> quantizationTables;
+    std::array<std::array<int16_t, BLOCK_SIZE>, 4> quantizationTables;
 
     std::array<HuffTable, 4> dctbl;
     std::array<HuffTable, 4> actbl;

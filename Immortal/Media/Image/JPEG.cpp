@@ -161,10 +161,19 @@ inline void JpegCodec::ParseDQT(const uint8_t *data)
     {
         uint8_t selector = data[i++];
         uint8_t precision = (selector & 0xf0) >> 4;
-        uint8_t size = (precision + 1) * 64;
         auto &table = quantizationTables[selector & 0x0f];
-        memcpy(table.data(), &data[i], size);
-        i += size;
+        for (size_t j = 0; j < table.size(); j++)
+        {
+            if (precision)
+            {
+                table[LookupTable::ZigZagToNaturalOrder[j]] = ((int16_t *)data)[i];
+                i += 2;
+            }
+            else
+            {
+                table[LookupTable::ZigZagToNaturalOrder[j]] = data[i++];
+            }            
+        }
     } while (i < length);
 }
 
