@@ -15,7 +15,8 @@ namespace Vision
 struct Block
 {
     uint8_t componentIndex;
-    uint16_t stride;
+    size_t stride;
+    size_t offset;
     uint8_t *data;
 };
 
@@ -200,7 +201,11 @@ private:
     bool isProgressive = false;
     bool restartInterval = false;
 
-    uint32_t mcuNumber = 0;
+    struct
+    {
+        uint16_t x = 0;
+        uint16_t y = 0;
+    } mcu;
 
     uint8_t blocksInMCU = 0;
 
