@@ -42,6 +42,8 @@ public:
     OPEARTOR_SUB(m, epi32)
     OPEARTOR_MUL(m, epi32)
 
+    DEFINE_UNALIGNED_STORE(m, epi64)
+
 #undef R
 private:
     Primitive v;
@@ -179,6 +181,35 @@ private:
     Primitive v;
 };
 
+struct uint8x32
+{
+#define R uint8x32
+public:
+    using Primitive = __m256i;
+
+public:
+    CONSTRUCTOR_PRIMITIVE()
+    CONSTURCTOR_SET1(m256, epi8,  int8_t)
+    CONSTURCTOR_SET1(m256, epi16, int16_t)
+    CONSTURCTOR_SET1(m256, epi32, int32_t)
+    CONSTURCTOR_LOAD(m256, si256, Primitive)
+
+    OPEARTOR_ADD(m256, epi8)
+    OPEARTOR_SUB(m256, epi8)
+
+    DEFINE_UNALIGNED_STORE(m256, epi64)
+    
+    R(const __m512i &other) :
+        v{ _mm512_cvtepi16_epi8(other) }
+    {
+
+    }
+
+#undef R
+private:
+    Primitive v;
+};
+
 struct int16x32
 {
 #define R int16x32
@@ -199,6 +230,12 @@ public:
 
     DEFINE_ALIGNED_STORE(m512, epi64)
     DEFINE_UNALIGNED_STORE(m512, epi64)
+
+    template <class T>
+    T convert()
+    {
+        return T{ v };
+    }
 
 #undef R
 private:
