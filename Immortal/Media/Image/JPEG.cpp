@@ -34,12 +34,12 @@ static const double A[] = {
 static const double S[] = {
     0.353553390593273762200422,
     0.254897789552079584470970,
-    0.270598050073098492199862,
-    0.300672443467522640271861,
-    0.353553390593273762200422,
-    0.449988111568207852319255,
-    0.653281482438188263928322,
-    1.281457723870753089398043,
+0.270598050073098492199862,
+0.300672443467522640271861,
+0.353553390593273762200422,
+0.449988111568207852319255,
+0.653281482438188263928322,
+1.281457723870753089398043,
 };
 
 #define IDCT8(C, stride) \
@@ -102,6 +102,7 @@ inline constexpr void InverseDCT8x8(T *block)
     IDCT8_H(block, 32);
     IDCT8_H(block, 48);
     IDCT8_H(block, 56);
+
     IDCT8_V(block, 0);
     IDCT8_V(block, 1);
     IDCT8_V(block, 2);
@@ -125,11 +126,11 @@ static inline void Levelup(int16_t *block)
     b1.convert<uint8x32>().store(block + 16);
 }
 
-#define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *((uint64_t *)(block) + n)
+#define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
 static void Backward(uint8_t *dst, size_t stride, int16_t *block, int16_t *table)
 {
     Dequantize(block, table);
-    // InverseDCT8x8(block);
+    InverseDCT8x8(block);
     Levelup(block);
 
     COPY_64BITS(0);
@@ -142,6 +143,7 @@ static void Backward(uint8_t *dst, size_t stride, int16_t *block, int16_t *table
     COPY_64BITS(7);
 }
 
+#define HuffReceive(s) bitTracker.GetBits(s)
 static inline int32_t HuffExtend(int32_t r, int32_t s)
 {
     return LookupTable::ExponentialGolobm[s][r];
@@ -186,11 +188,13 @@ JpegCodec::JpegCodec(const std::vector<uint8_t> &buffer)
 
 JpegCodec::~JpegCodec()
 {
-    constexpr size_t align = 64;
     if (buffer)
     {
-        AAllocator<uint8_t, align> allocator;
-        allocator.deallocate(buffer, align);
+        allocator.deallocate(buffer, Alignment);
+    }
+    if (data.x)
+    {
+        allocator.deallocate(data.x, Alignment);
     }
 }
 
@@ -219,7 +223,6 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 
             case MarkerType::SOS:
                 ParseMarker(&ptr, [&](auto payload) { JpegCodec::ParseSOS(payload); });
-                LOG::DEBUG("Found the start of scan. Parsing completed!");
                 bitTracker = BitTracker{ ptr, (size_t)(end - ptr) };
                 ptr = end;
                 break;
@@ -255,8 +258,17 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 CodecError JpegCodec::Decode()
 {
     InitDecodedPlaneBuffer();
-    DecodeMCU();
+    if (!isProgressive)
+    {
+        DecodeMCU();
+    }
+    ConvertColorSpace();
     return CodecError::Succeed;
+}
+
+uint8_t *JpegCodec::Data() const
+{
+    return data.x;
 }
 
 inline void JpegCodec::ParseAPP(const uint8_t *data)
@@ -266,7 +278,6 @@ inline void JpegCodec::ParseAPP(const uint8_t *data)
 
     if (type > MarkerType::APP0 && type <= MarkerType::APPF)
     {
-        LOG::DEBUG("Detected Application specified marker!");
         uint16_t length = Word{ &data[-2] } - 2;
         application.external.resize(length);
         memcpy(application.external.data(), data, length);
@@ -289,7 +300,6 @@ inline void JpegCodec::ParseAPP(const uint8_t *data)
 
 inline void JpegCodec::ParseDQT(const uint8_t *data)
 {
-    LOG::DEBUG("Parsing Quatization Table");
     uint16_t length = Word{ &data[-2] } - 2;
     size_t i = 0;
 
@@ -315,8 +325,6 @@ inline void JpegCodec::ParseDQT(const uint8_t *data)
 
 inline void JpegCodec::ParseDHT(const uint8_t *data)
 {
-    LOG::DEBUG("Parsing Huffman Table");
-
     uint16_t length = Word{ &data[-2] } - 2;
     size_t i = 0;
 
@@ -411,9 +419,6 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
 
 void JpegCodec::InitDecodedPlaneBuffer()
 {
-    constexpr size_t align = 64;
-
-    AAllocator<uint8_t, align> allocator;
     size_t size = 0;
 
     auto planes = desc.format.ComponentCount();
@@ -421,12 +426,12 @@ void JpegCodec::InitDecodedPlaneBuffer()
     for (size_t i = 0; i < planes; i++)
     {
         offsets[i] = size;
-        size += SLALIGN(components[i].x * components[i].y, align);
+        size += SLALIGN(components[i].x * components[i].y, Alignment);
     }
     buffer = allocator.allocate(size);
-   
+
     size_t blockIndex = 0;
-    for (size_t i = 0, j = 0; i < planes; i++)
+    for (size_t i = 0; i < planes; i++)
     {
         uint32_t offset = offsets[i];
         uint32_t stride = components[i].x * 8;
@@ -437,7 +442,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
                 auto &block = blocks[blockIndex];
                 block.componentIndex = i;
                 block.offset = components[i].sampingFactor.horizontal * 8;
-                block.stride = components[i].x * (8 - 1);
+                block.stride = stride;
                 block.data = &buffer[offset + h * 8 + v * stride];
                 blockIndex++;
             }
@@ -455,13 +460,12 @@ void JpegCodec::DecodeMCU()
         {
             for (size_t i = 0; i < blocksInMCU; i++)
             {
-                auto &block = dstBlocks[i];
                 int16_t blockBuffer[BLOCK_SIZE] = { 0 };
-                auto index = dstBlocks[i].componentIndex;
+                auto &block = dstBlocks[i];
+                auto index = block.componentIndex;
                 auto &component = components[index];
                 DecodeBlock(blockBuffer, dctbl[component.dcIndex], actbl[component.acIndex], &pred[index]);
-                Backward(block.data, component.x, blockBuffer, quantizationTables[component.qtSelector].data());
-                block.data += block.offset;
+                Backward(&block.data[x * block.offset], component.x, blockBuffer, quantizationTables[component.qtSelector].data());
             }
         }
         for (size_t i = 0; i < blocksInMCU; i++)
@@ -481,40 +485,38 @@ __forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, Hu
     if (s)
     {
         r = HuffReceive(s);
-        *pred += HuffExtend(r, s);
-        block[0]  = *pred;
+        block[0] += HuffExtend(r, s);
     }
+    block[0] += *pred;
+    *pred = block[0];
 
     /* AC Coefficients */
     for (size_t k = 1; k < 64; )
     {
-        uint32_t rs = HuffDecode(acTable);
-        s = rs & 0xf;
-        r = rs >> 4;
+        s = HuffDecode(acTable);
+        r = s >> 4;
+        s &= 0xf;
 
-        if (!s)
+        if (s)
+        {
+            k += r;
+            r = HuffReceive(s);
+            block[LookupTable::ZigZagToNaturalOrder[k++]] = HuffExtend(r, s);
+        }
+        else 
         {
             if (r != 0xf)
             {
                 break;
             }
-            else
-            {
-                k += 0x10;
-            }
-        }
-        else
-        {
-            k += r;
-            r = HuffReceive(s);
-            block[LookupTable::ZigZagToNaturalOrder[k++]] = HuffExtend(r, s);
+            k += 0x10;
         }
     }
 }
 
 __forceinline int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
 {
-    uint64_t code = 0;
+    int64_t code = 0;
     for (int32_t i = 1, j = 0; ; )
     {
         code = (code << 1) + bitTracker.GetBits(1);
@@ -529,6 +531,25 @@ __forceinline int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
             return huffTable.huffval[j];
         }
     }
+}
+
+void JpegCodec::ConvertColorSpace()
+{
+    auto spatial = desc.Spatial();
+    ColorSpace::Vector<uint8_t> yuv;
+    data.x = allocator.allocate(spatial * Format{ Format::RGBA8 }.ComponentCount());
+
+    for (size_t i = 0, offset = 0; i < components.size(); i++)
+    {
+        yuv[i] = buffer + offset;
+        offset += SLALIGN(components[i].x * components[i].y, Alignment);
+    }
+    if (desc.format == Format::YUV444P)
+    {
+        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height, desc.width & 0x7);
+    }
+
+    desc.format = Format::RGBA8;
 }
 
 static void GenerateHuffSize(const uint8_t *BITS, int32_t *HUFFSIZE, int32_t *lastk)

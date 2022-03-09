@@ -6,6 +6,7 @@
 #include "Media/Interface/Codec.h"
 #include "Media/Common/BitTracker.h"
 #include "Memory/Allocator.h"
+#include "Processing/ColorSpace.h"
 
 namespace Immortal
 {
@@ -24,7 +25,9 @@ class IMMORTAL_API JpegCodec : public Interface::Codec
 {
 public:
     static constexpr size_t BLOCK_SIZE = 64;
+    static constexpr size_t Alignment  = 64;
 
+public:
     class BitTracker : public SuperBitTracker
     {
     public:
@@ -48,16 +51,16 @@ public:
 
         uint64_t GetBits(uint32_t n)
         {
-            if (n > bitsLeft)
-            {
-                Move(n);
-            }
+            if (n > bitsLeft)               
+            {                               
+                Move(n + 48);             
+            }                               
 
-            uint64_t ret = word >> (64 - n);
-            bitsLeft -= n;
-            word <<= n;
+            uint64_t ret = word;
+            bitsLeft -= n;                  
+            word <<= n;                     
 
-            return ret;
+            return ret >> (64 - n);
         }
 
     protected:
@@ -70,8 +73,8 @@ public:
                 bitsLeft += BitsPerByte;
                 if (ptr < end)
                 {
-                    uint8_t byte = *ptr;
-                    bits |= *ptr++;
+                    uint8_t byte = *ptr++;
+                    bits |= byte;
                     if (byte == 0xff && !*ptr)
                     {
                         ptr++;
@@ -82,6 +85,7 @@ public:
         }
     };
 
+public:
     enum MarkerType
     {
         SOI  = 0xD8,
@@ -158,10 +162,12 @@ public:
 
     virtual CodecError Decode() override;
 
+    virtual uint8_t *Data() const override;
+
+private:
     template <class T>
     void ParseMarker(const uint8_t **data, T &&process);
 
-private:
     void ParseAPP(const uint8_t *data);
 
     void ParseDQT(const uint8_t *data);
@@ -184,7 +190,13 @@ private:
 
     int32_t HuffDecode(HuffTable &huffTable);
 
+    void ConvertColorSpace();
+
 private:
+    AAllocator<uint8_t, Alignment> allocator;
+
+    ColorSpace::Vector<uint8_t> data;
+
     std::vector<Component> components;
 
     std::array<Block, 8> blocks;
@@ -236,11 +248,6 @@ inline void JpegCodec::ParseMarker(const uint8_t **data, T &&process)
     uint16_t length = Word{ ptr };
     *data += length;
     process(ptr + sizeof(uint16_t));
-}
-
-inline int32_t JpegCodec::HuffReceive(int32_t s)
-{
-    return bitTracker.GetBits(s);
 }
 
 }
