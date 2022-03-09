@@ -6,22 +6,8 @@ namespace Immortal
 namespace Vision
 {
 
-void ColorSpace::yuv2rgb(const uint8_t *src, size_t size, uint8_t *dst)
+namespace ColorSpace
 {
-    for (size_t i = 0; i < size; i++)
-    {
-
-    }
-}
-
-template <class T, ColorSpace::CoefficientType C>
-inline constexpr void rgb2yuv(T &y, T &u, T &v, const T &r, const T &g, const T &b)
-{
-    auto &[lr, lg, lb, la] = ColorSpace::Coefficients[static_cast<size_t>(C)];
-    y = lr * r + lg * g + lb * b;
-    u = (((T)(~0)) >> 1) + (b - y) / (2 - 2 * lb);
-    v = (((T)(~0)) >> 1) + (r - y) / (2 - 2 * lr);
-}
 
 void ColorSpace::RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size)
 {
@@ -44,6 +30,8 @@ void ColorSpace::RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size)
 void ColorSpace::RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size)
 {
     auto coeffients = ColorSpace::Get<CoefficientType::REC601>();
+}
+
 }
 
 }
