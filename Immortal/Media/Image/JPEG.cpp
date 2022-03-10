@@ -236,6 +236,19 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 
             case MarkerType::APP0:
             case MarkerType::APP1:
+            case MarkerType::APP2:
+            case MarkerType::APP3:
+            case MarkerType::APP4:
+            case MarkerType::APP5:
+            case MarkerType::APP6:
+            case MarkerType::APP7:
+            case MarkerType::APP8:
+            case MarkerType::APP9:
+            case MarkerType::APPA:
+            case MarkerType::APPB:
+            case MarkerType::APPC:
+            case MarkerType::APPD:
+            case MarkerType::APPE:
                 ParseMarker(&ptr, [&](auto payload) { JpegCodec::ParseAPP(payload); });
                 break;
 
@@ -355,6 +368,11 @@ inline void JpegCodec::ParseDRI(const uint8_t *data)
 
 inline void JpegCodec::ParseSOF(const uint8_t *data)
 {
+    if (isProgressive)
+    {
+        return;
+    }
+
     bitDepth    = data[0];
     desc.height = Word{ &data[1] };
     desc.width  = Word{ &data[3] };
@@ -386,12 +404,11 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
 
         component.x = AlignToMCU(component.width);
         component.y = AlignToMCU(component.height);
-        mcu.x += component.x / 8;
-        mcu.y += component.y / 8;
+
         blocksInMCU += component.sampingFactor.horizontal * component.sampingFactor.vertical;
     }
-    mcu.x /= blocksInMCU;
-    mcu.y /= blocksInMCU;
+    mcu.x = components[0].x / (8 * components[0].sampingFactor.horizontal);
+    mcu.y = components[0].y / (8 * components[0].sampingFactor.vertical);
 }
 
 inline void JpegCodec::ParseSOS(const uint8_t *data)
@@ -465,12 +482,8 @@ void JpegCodec::DecodeMCU()
                 auto index = block.componentIndex;
                 auto &component = components[index];
                 DecodeBlock(blockBuffer, dctbl[component.dcIndex], actbl[component.acIndex], &pred[index]);
-                Backward(&block.data[x * block.offset], component.x, blockBuffer, quantizationTables[component.qtSelector].data());
+                Backward(&block.data[y * block.stride + x * block.offset], component.x, blockBuffer, quantizationTables[component.qtSelector].data());
             }
-        }
-        for (size_t i = 0; i < blocksInMCU; i++)
-        {
-            dstBlocks[i].data += dstBlocks[i].stride;
         }
     }
 }
