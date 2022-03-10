@@ -123,7 +123,7 @@ static inline void Levelup(int16_t *block)
     b2 = b2 + level;
 
     b1.convert<uint8x32>().store(block);
-    b1.convert<uint8x32>().store(block + 16);
+    b2.convert<uint8x32>().store(block + 16);
 }
 
 #define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
