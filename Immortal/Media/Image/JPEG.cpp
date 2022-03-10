@@ -459,7 +459,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
                 auto &block = blocks[blockIndex];
                 block.componentIndex = i;
                 block.offset = components[i].sampingFactor.horizontal * 8;
-                block.stride = stride;
+                block.stride = stride * components[i].sampingFactor.vertical;
                 block.data = &buffer[offset + h * 8 + v * stride];
                 blockIndex++;
             }
