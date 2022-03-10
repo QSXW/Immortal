@@ -81,14 +81,37 @@ void YUV444PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height,
     {
         for (size_t j = 0; j < width; j++)
         {
-            yuv2rgb(
-                dstptr[0], dstptr[1], dstptr[2],
-                *y++, *u++, *v++
-                );
+            yuv2rgb(dstptr[0], dstptr[1], dstptr[2], *y++, *u++, *v++);
             dstptr[3] = 0xff;
             dstptr += 4;
         }
         y += padding;
+        u += padding;
+        v += padding;
+    }
+}
+
+template <class T, class U>
+void YUV420PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height, size_t padding = 0)
+{
+    auto y = src.x, u = src.y, v = src.z;
+    auto dstptr = dst.x;
+
+    auto linesize = width * 4;
+    auto rows = width / 2;
+    auto cols = height / 2;
+    for (size_t i = 0; i < cols; i++, dstptr += linesize)
+    {
+        for (size_t j = 0; j < rows; j++, y += 2, u++, v++, dstptr += 8)
+        {
+            auto r1 = dstptr;
+            auto r2 = dstptr + linesize;
+            yuv2rgb(r1[0], r1[1], r1[2], y[        0], *u, *v); r1[3] = 0xff;
+            yuv2rgb(r1[4], r1[5], r1[6], y[        1], *u, *v); r1[7] = 0xff;
+            yuv2rgb(r2[0], r2[1], r2[2], y[width + 0], *u, *v); r2[3] = 0xff;
+            yuv2rgb(r2[4], r2[5], r2[6], y[width + 1], *u, *v); r2[7] = 0xff;
+        }
+        y += width + padding * 2;
         u += padding;
         v += padding;
     }

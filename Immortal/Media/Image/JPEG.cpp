@@ -557,11 +557,15 @@ void JpegCodec::ConvertColorSpace()
         yuv[i] = buffer + offset;
         offset += SLALIGN(components[i].x * components[i].y, Alignment);
     }
+
     if (desc.format == Format::YUV444P)
     {
         ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height, desc.width & 0x7);
     }
-
+    else if (desc.format == Format::YUV420P)
+    {
+        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height, desc.width & 0x7);
+    }
     desc.format = Format::RGBA8;
 }
 
