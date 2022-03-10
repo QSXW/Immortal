@@ -385,10 +385,14 @@ public:
 
     Object CopyObject()
     {
-        Object dst = scene.CreateObject();
+        if (selectedObject)
+        {
+            Object dst = scene.CreateObject();
 
-        selectedObject.CopyTo(dst);
-        return dst;
+            selectedObject.CopyTo(dst);
+            return dst;
+        }
+        return Object{};
     }
 
     bool OnKeyPressed(KeyPressedEvent &e)
