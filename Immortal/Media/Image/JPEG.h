@@ -199,8 +199,6 @@ private:
 
     void DecodeBlock(int16_t *block, HuffTable &dcTable, HuffTable &acTable, int32_t *pred);
 
-    int32_t HuffReceive(int32_t s);
-
     int32_t HuffDecode(HuffTable &huffTable);
 
     void ConvertColorSpace();
