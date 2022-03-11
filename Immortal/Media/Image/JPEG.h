@@ -24,8 +24,8 @@ struct Block
 class IMMORTAL_API JpegCodec : public Interface::Codec
 {
 public:
-    static constexpr size_t BLOCK_SIZE = 64;
-    static constexpr size_t Alignment  = 64;
+    static constexpr size_t BLOCK_WIDTH = 8;
+    static constexpr size_t BLOCK_SIZE  = 64;
 
 public:
     class BitTracker : public SuperBitTracker
@@ -204,7 +204,7 @@ private:
     void ConvertColorSpace();
 
 private:
-    AAllocator<uint8_t, Alignment> allocator;
+    AAllocator<uint8_t, BLOCK_SIZE> allocator;
 
     ColorSpace::Vector<uint8_t> data;
 

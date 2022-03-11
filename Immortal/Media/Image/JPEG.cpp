@@ -177,8 +177,7 @@ static inline Format SelectFormat(JpegCodec::SamplingFactor &sampingFactor)
 
 static inline uint16_t AlignToMCU(uint16_t v)
 {
-    auto padding = v & 0x7;
-    return v + (padding ? 8 - padding : 0);
+    return SLALIGN(v, JpegCodec::BLOCK_WIDTH);
 }
 
 JpegCodec::JpegCodec(const std::vector<uint8_t> &buffer)
@@ -190,11 +189,11 @@ JpegCodec::~JpegCodec()
 {
     if (buffer)
     {
-        allocator.deallocate(buffer, Alignment);
+        allocator.deallocate(buffer, BLOCK_SIZE);
     }
     if (data.x)
     {
-        allocator.deallocate(data.x, Alignment);
+        allocator.deallocate(data.x, BLOCK_SIZE);
     }
 }
 
@@ -443,7 +442,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
     for (size_t i = 0; i < planes; i++)
     {
         offsets[i] = size;
-        size += SLALIGN(components[i].x * components[i].y, Alignment);
+        size += SLALIGN(components[i].x * components[i].y, BLOCK_SIZE);
     }
     buffer = allocator.allocate(size);
 
@@ -555,7 +554,7 @@ void JpegCodec::ConvertColorSpace()
     for (size_t i = 0, offset = 0; i < components.size(); i++)
     {
         yuv[i] = buffer + offset;
-        offset += SLALIGN(components[i].x * components[i].y, Alignment);
+        offset += SLALIGN(components[i].x * components[i].y, BLOCK_SIZE);
     }
 
     if (desc.format == Format::YUV444P)
