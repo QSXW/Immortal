@@ -55,32 +55,6 @@ enum class Level : int
     Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
 };
 
-template <class T>
-inline constexpr bool operator==(T a, int b)
-{
-    if constexpr (typeof<T, Level>())
-    {
-        return ncast<int>(a) == b;
-    }
-    else
-    {
-        a == b;
-    }
-}
-
-template <class T>
-inline constexpr bool operator==(int a, T b)
-{
-    if constexpr (typeof<T, Level>())
-    {
-        return ncast<int>(b) == a;
-    }
-    else
-    {
-        a == b;
-    }
-}
-
 using Extent2D = VkExtent2D;
 using Extent3D = VkExtent3D;
 
