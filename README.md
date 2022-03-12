@@ -1,10 +1,33 @@
 # Immortal
+Immortal is a powerful, advanced, and cross-platform graphics and media library. It's targeted to push forward by two parts, one is an object-oriented, and friendly graphics API that is used for real-time rendering, the other is a vision library consisting of native implemented media codec, image processing, and external codec integrated.
 
-Powerful, advanced and cross platform Graphics Library
+## Progress for Graphics API Integration
+| Graphics API | Progress |
+| --- | ----------- |
+| Vulkan | 100% |
+| D3D12 | 70% |
+| OpenGL | 100% |
 
-### Change Log
-**2021-10-29**: The base rendering of OpenGL, Vulkan and D3D12 have been supported.<br/>
-**2021-12-03**: Support Vulkan Offline Render.<br/>
-**2021-12-06**: Support OpenGL Offline Render.<br/>
-**2021-12-06**: Support D3D12 Offline Render.
-![Vulkan-Offline-Render-Triangle](https://user-images.githubusercontent.com/47172719/144469350-6681d082-04ca-44fe-8508-62da495cdccd.png)
+ Select any graphics API you want, Vulkan, D3D12, or OpenGL. You just need to change the name literally.
+ ``` C++
+ #include "VulkanSample.h"
+ 
+int main()
+{
+    LOG::Setup();
+    Render::Set(Render::Type::Vulkan);
+
+    std::unique_ptr<Application> app{ new VulkanSample() };
+
+    app->Run();
+
+    return 0;
+}
+ ```
+
+## What you can do with Immortal?
+#### Improve your image processing by rendering pipeline of Immortal.
+![Color Editor](https://user-images.githubusercontent.com/47172719/158025476-0ab8a532-c193-4b27-8b87-f81ff7cb4a64.png)
+
+#### Build a 3D model lighting preview application
+![Model Editor](https://user-images.githubusercontent.com/47172719/158025865-1606e292-d871-4939-9717-e886ced3852c.png)
