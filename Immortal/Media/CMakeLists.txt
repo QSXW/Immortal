@@ -31,6 +31,10 @@ set(IMAGE_CODEC_FILES
     Image/STBCodec.h
     Image/OpenCVCodec.h)
 
+set(VIDEO_CODEC_FILES
+    Video/HEVC.cpp
+    Video/HEVC.h)
+
 set(PROCESSING_FILES
     Processing/ColorSpace.cpp
     Processing/ColorSpace.h)
@@ -44,7 +48,9 @@ source_group("\\Common\\" FILES ${COMMON_FILES})
 source_group("\\Interface\\" FILES ${INTERFACE_FILES})
 source_group("\\LookupTable\\" FILES ${LOOKUP_TABLE_FILE})
 source_group("\\Image\\" FILES ${IMAGE_CODEC_FILES})
+source_group("\\Video\\" FILES ${VIDEO_CODEC_FILES})
 source_group("\\External\\" FILES ${EXTERNAL_FILES})
+source_group("\\Processing\\" FILES ${PROCESSING_FILES})
 
 add_library(${PROJECT_NAME} STATIC
     ${CORE_FILES}

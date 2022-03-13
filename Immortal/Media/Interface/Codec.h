@@ -30,7 +30,12 @@ public:
     
     }
 
-    virtual CodecError Decode(const std::vector<uint8_t> &buf)
+    virtual CodecError Decode(const std::vector<uint8_t> &buffer)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError Parse(const std::vector<uint8_t> &buffer)
     {
         return CodecError::FailedToCallDecoder;
     }
