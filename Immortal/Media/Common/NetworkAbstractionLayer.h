@@ -10,8 +10,9 @@ namespace Immortal
 
 struct IMMORTAL_API NetworkAbstractionLayer
 {
-    enum Type
+    enum Type : int32_t
     {
+        Corrupted = -1,
         TRAIL_N = 0,
         TRAIL_R,
         VPP = 32,
@@ -23,8 +24,13 @@ struct IMMORTAL_API NetworkAbstractionLayer
         FD,
         PREFIX_SEI,
         SUFFIX_SEI,
-        Corrupted = ~1
+        None = ~0
     };
+
+    virtual int32_t GetType() const
+    {
+        return Type::None;
+    }
 
     struct Header {};
     struct Payload {};
