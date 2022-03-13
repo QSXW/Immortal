@@ -56,6 +56,41 @@ public:
         return ret;
     }
 
+    uint64_t GetBit()
+    {
+        if (!bitsLeft)
+        {
+            Move(64);
+        }
+
+        uint64_t ret = word >> (64 - 1);
+        bitsLeft--;
+        word <<= 1;
+
+        return ret;
+    }
+
+    void SkipBits(int32_t n)
+    {
+        if (n > bitsLeft)
+        {
+            n -= bitsLeft;
+            word = bitsLeft = 0;
+            Move(64);
+        }
+        bitsLeft -= n;
+        word <<= n;
+    }
+
+    uint64_t Preview(uint32_t n)
+    {
+        if (n > bitsLeft)
+        {
+            Move(n);
+        }
+        return word >> (64 - n);
+    }
+
     uint64_t ue()
     {
         uint64_t ret = 0;
@@ -75,17 +110,35 @@ public:
         return bitsLeft == 0;
     }
 
+    bool NoMoreData() const
+    {
+#ifdef _DEBUG
+        return eof == EOF;
+#else
+        return !ptr;
+#endif
+    }
+
 protected:
     void Move(uint32_t n)
     {
         uint64_t bits = 0;
         while (n > bitsLeft)
         {
-            bits <<= 8;
-            bitsLeft += BitsPerByte;
             if (ptr < end)
             {
+                bits <<= 8;
+                bitsLeft += BitsPerByte;
                 bits |= *ptr++;
+            }
+            else
+            {
+#ifdef _DEBUG
+                eof = EOF;
+#else
+                ptr = nullptr;
+#endif
+                break;
             }
         }
         word |= bits << (64 - bitsLeft);
@@ -97,6 +150,10 @@ protected:
     const uint8_t *ptr;
     uint64_t word;
     uint8_t bitsLeft;
+#ifdef _DEBUG
+    int32_t eof = 0;
+#endif
+
 };
 
 using SuperBitTracker = BitTracker;
