@@ -175,9 +175,9 @@ static inline Format SelectFormat(JpegCodec::SamplingFactor &sampingFactor)
     return Format::None;
 }
 
-static inline uint16_t AlignToMCU(uint16_t v)
+static inline int32_t AlignToMCU(int32_t v, int32_t samplingFactor)
 {
-    return SLALIGN(v, JpegCodec::BLOCK_WIDTH);
+    return SLALIGN(v, JpegCodec::BLOCK_WIDTH * samplingFactor);
 }
 
 JpegCodec::JpegCodec(const std::vector<uint8_t> &buffer)
@@ -401,8 +401,8 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         component.width  = std::ceil(desc.width * ((float)component.sampingFactor.horizontal / (float)maxSampingFactor.horizontal));
         component.height = std::ceil(desc.height * ((float)component.sampingFactor.vertical / (float)maxSampingFactor.vertical));
 
-        component.x = AlignToMCU(component.width);
-        component.y = AlignToMCU(component.height);
+        component.x = AlignToMCU(component.width, component.sampingFactor.horizontal);
+        component.y = AlignToMCU(component.height, component.sampingFactor.vertical);
 
         blocksInMCU += component.sampingFactor.horizontal * component.sampingFactor.vertical;
     }
@@ -457,9 +457,9 @@ void JpegCodec::InitDecodedPlaneBuffer()
             {
                 auto &block = blocks[blockIndex];
                 block.componentIndex = i;
-                block.offset = components[i].sampingFactor.horizontal * 8;
+                block.offset = components[i].sampingFactor.horizontal * BLOCK_WIDTH;
                 block.stride = stride * components[i].sampingFactor.vertical;
-                block.data = &buffer[offset + h * 8 + v * stride];
+                block.data = &buffer[offset + h * BLOCK_WIDTH + v * stride];
                 blockIndex++;
             }
         }
@@ -483,6 +483,13 @@ void JpegCodec::DecodeMCU()
                 DecodeBlock(blockBuffer, dctbl[component.dcIndex], actbl[component.acIndex], &pred[index]);
                 Backward(&block.data[y * block.stride + x * block.offset], component.x, blockBuffer, quantizationTables[component.qtSelector].data());
             }
+            if (bitTracker.RestartMarker)
+            {
+                int32x4 zero{ 0 };
+                zero.store(pred);
+                bitTracker.RestartMarker = false;
+                break;
+            }
         }
     }
 }
@@ -497,10 +504,10 @@ __forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, Hu
     if (s)
     {
         r = HuffReceive(s);
-        block[0] += HuffExtend(r, s);
+        s = HuffExtend(r, s);
     }
-    block[0] += *pred;
-    *pred = block[0];
+    *pred += s;
+    block[0] = *pred;
 
     /* AC Coefficients */
     for (size_t k = 1; k < 64; )

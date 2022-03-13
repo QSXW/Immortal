@@ -69,20 +69,34 @@ public:
             uint64_t bits = 0;
             while (n > bitsLeft)
             {
-                bits <<= 8;
+                bits <<= BitsPerByte;
                 bitsLeft += BitsPerByte;
                 if (ptr < end)
                 {
                     uint8_t byte = *ptr++;
                     bits |= byte;
-                    if (byte == 0xff && !*ptr)
+                    if (byte == 0xff)
                     {
-                        ptr++;
+                        byte = *ptr;
+                        if (!byte)
+                        {
+                            ptr++;
+                        }
+                        else if (byte >= RST0 && byte <= RST7)
+                        {
+                            bits &= (((uint64_t)-1) << 8);
+                            bits |= *ptr++;
+                            RestartMarker = true;
+                            continue;
+                        }
                     }
                 }
             }
             word |= bits << (64 - bitsLeft);
         }
+
+    public:
+        bool RestartMarker = false;
     };
 
 public:
@@ -112,6 +126,14 @@ public:
         APPD = 0xED,
         APPE = 0xEE,
         APPF = 0xEF,
+        RST0 = 0xD0,
+        RST1 = 0xD1,
+        RST2 = 0xD2,
+        RST3 = 0xD3,
+        RST4 = 0xD4,
+        RST5 = 0xD5,
+        RST6 = 0xD6,
+        RST7 = 0xD7,
         SOF0 = 0xC0, // Baseline DCT           
         SOF1 = 0xC1, // Extended sequential DCT
         SOF2 = 0xC2, // Progressive DCT
