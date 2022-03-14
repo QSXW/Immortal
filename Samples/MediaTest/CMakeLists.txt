@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.21)
+
+project("MediaTest" LANGUAGES CXX)
+
+set(SRC_FILES
+    MediaTest.cpp)
+
+add_executable(${PROJECT_NAME}
+    ${SRC_FILES}
+)
+
+source_group("\\" FILES ${SRC_FILES})
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME}
+    Immortal
+)
+
+file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
