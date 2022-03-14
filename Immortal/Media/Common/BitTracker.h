@@ -4,6 +4,7 @@
 #define BIT_TRACKER_H__
 
 #include "Core.h"
+#include "Media/LookupTable/LookupTable.h"
 
 namespace Immortal
 {
@@ -102,12 +103,16 @@ public:
 
     uint64_t SignedExpGolomb()
     {
-        throw RuntimeException("No supported yet!");
+        auto bits = Preview(32);
+        auto s = 31 - (int32_t)std::log2(bits);
+        SkipBits(s);
+
+        return LookupTable::ExponentialGolobm[s][GetBits(s + 1) - 1];
     }
 
     bool ByteAligned()
     {
-        return bitsLeft == 0;
+        return !(bitsLeft & 0x7);
     }
 
     bool NoMoreData() const
