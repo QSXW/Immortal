@@ -13,9 +13,9 @@ namespace Immortal
 namespace Vulkan
 {
 
-Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions)
-    : physicalDevice(physicalDevice),
-        surface(surface)
+Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
+    physicalDevice(physicalDevice),
+    surface(surface)
 {
     uint32_t propsCount = U32(physicalDevice.QueueFamilyProperties.size());
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
@@ -141,7 +141,7 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     for (uint32_t queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {
         const auto& queueFamilyProps = physicalDevice.QueueFamilyProperties[queueFamilyIndex];
-        VkBool32 presentSupported = physicalDevice.IsPresentSupported(surface, queueFamilyIndex);
+        VkBool32 presentSupported = surface ? physicalDevice.IsPresentSupported(surface, queueFamilyIndex) : false;
 
         for (uint32_t queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
         {
@@ -204,41 +204,26 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
     EnableGlobal();
 }
 
-uint32_t Device::QueueFailyIndex(VkQueueFlagBits queueFlag)
+uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
 {
-    const auto& queueFamilyProperties = physicalDevice.QueueFamilyProperties;
+    const auto &queueFamilyProperties = physicalDevice.QueueFamilyProperties;
 
-    // @required Compute Queue
-    if (queueFlag & VK_QUEUE_COMPUTE_BIT)
+    VkQueueFlags mask = 0;
+
+    if (requestFlags & VK_QUEUE_COMPUTE_BIT)
     {
-        for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
-        {
-            if ((queueFamilyProperties[i].queueFlags & queueFlag) && !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT))
-            {
-                return i;
-                break;
-            }
-        }
+        mask |= VK_QUEUE_GRAPHICS_BIT;
     }
 
-    // @required Transfer Queue
-    if (queueFlag & VK_QUEUE_TRANSFER_BIT)
+    if (requestFlags & VK_QUEUE_TRANSFER_BIT)
     {
-        for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
-        {
-            if ((queueFamilyProperties[i].queueFlags & queueFlag) &&
-                !(queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
-                !(queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT))
-            {
-                return i;
-                break;
-            }
-        }
+        mask |= VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     }
 
     for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
     {
-        if (queueFamilyProperties[i].queueFlags & queueFlag)
+        auto queueFlags = queueFamilyProperties[i].queueFlags;
+        if (queueFlags & requestFlags && !(queueFlags & mask))
         {
             return i;
             break;
