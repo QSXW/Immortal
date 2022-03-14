@@ -30,5 +30,29 @@ T Lerp(T a, T b, T w)
     return a + (b - a) * w;
 }
 
+struct Rational
+{
+    Rational() :
+        numerator{ 0 },
+        denominator{ 1 }
+    {
+
+    }
+    
+    template <class T>
+    Rational(T n, T d) :
+        numerator{ (int64_t)n },
+        denominator{ (int64_t)d }
+    {
+        static_assert(std::is_arithmetic_v<T>);
+    }
+
+    int64_t numerator;
+    int64_t denominator;
+};
+
 }
+
+using Rational = Math::Rational;
+
 }
