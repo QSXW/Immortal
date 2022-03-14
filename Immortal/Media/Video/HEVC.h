@@ -81,6 +81,20 @@ struct ProfileTierLevel
     Description sub_layer[8];
 };
 
+struct ScalingListData
+{
+    ScalingListData() = default;
+
+    ScalingListData(BitTracker &bitTracker);
+
+    void Parse(BitTracker &bitTracker);
+
+    uint32_t scaling_list_pred_matrix_id_delta;
+    uint8_t scaling_list[4][6][64];
+    uint8_t scaling_list_dc_coef_minus8[2][6];
+    int32_t scaling_list_delta_coef;
+};
+
 struct VideoParameterSet : public NAL::Payload
 {
     VideoParameterSet(BitTracker &bitTracker);
@@ -117,11 +131,11 @@ struct SequenceParameterSet : public NAL::Payload
 
     void Parse(BitTracker &bitTracker);
 
-    void ScalingListData(BitTracker &bitTracker);
-
     void DecodeVuiParameters(BitTracker &bitTracker);
 
     ProfileTierLevel profile_tier_level;
+    ScalingListData scalingListData;
+
     int32_t sps_seq_parameter_set_id;
     int32_t chroma_format_idc;
     int32_t pic_width_in_luma_samples;
@@ -146,11 +160,6 @@ struct SequenceParameterSet : public NAL::Payload
     uint32_t log2_diff_max_min_luma_transform_block_size;
     uint32_t max_transform_hierarchy_depth_inter;
     uint32_t max_transform_hierarchy_depth_intra;
-
-    uint32_t scaling_list_pred_matrix_id_delta;
-    uint8_t scaling_list[4][6][64];
-    uint8_t scaling_list_dc_coef_minus8[2][6];
-    int32_t scaling_list_delta_coef;
 
     uint32_t log2_min_pcm_luma_coding_block_size_minus3;
     uint32_t log2_diff_max_min_pcm_luma_coding_block_size;
@@ -228,6 +237,65 @@ struct SequenceParameterSet : public NAL::Payload
     uint32_t sps_extension_4bits                      : 4;
 };
 
+struct PictureParameterSet : public NAL::Payload
+{
+    PictureParameterSet(BitTracker &bitTracker);
+
+    ~PictureParameterSet();
+
+    void Parse(BitTracker &bitTracker);
+
+    ScalingListData scalingListData;
+
+    uint32_t pps_pic_parameter_set_id;
+    uint32_t pps_seq_parameter_set_id;
+    uint32_t num_ref_idx_l0_default_active_minus1;
+    uint32_t num_ref_idx_l1_default_active_minus1;
+    uint32_t diff_cu_qp_delta_depth;
+    uint32_t num_tile_columns_minus1;
+    uint32_t num_tile_rows_minus1;
+    uint32_t log2_parallel_merge_level_minus2;
+
+    uint32_t *column_width_minus1;
+    uint32_t *row_height_minus1;
+
+    int32_t init_qp_minus26;
+    int32_t pps_cb_qp_offset;
+    int32_t pps_cr_qp_offset;
+    int32_t pps_beta_offset_div2;
+    int32_t pps_tc_offset_div2;
+
+    uint32_t dependent_slice_segments_enabled_flag       : 1;
+    uint32_t output_flag_present_flag                    : 1;
+    uint32_t num_extra_slice_header_bits                 : 3;
+    uint32_t sign_data_hiding_enabled_flag               : 1;
+    uint32_t cabac_init_present_flag                     : 1;
+    uint32_t constrained_intra_pred_flag                 : 1;
+    uint32_t transform_skip_enabled_flag                 : 1;
+    uint32_t cu_qp_delta_enabled_flag                    : 1;
+    uint32_t pps_slice_chroma_qp_offsets_present_flag    : 1;
+    uint32_t weighted_pred_flag                          : 1;
+    uint32_t weighted_bipred_flag                        : 1;
+    uint32_t transquant_bypass_enabled_flag              : 1;
+    uint32_t tiles_enabled_flag                          : 1;
+    uint32_t entropy_coding_sync_enabled_flag            : 1;
+    uint32_t uniform_spacing_flag                        : 1;
+    uint32_t loop_filter_across_tiles_enabled_flag       : 1;
+    uint32_t pps_loop_filter_across_slices_enabled_flag  : 1;
+    uint32_t deblocking_filter_control_present_flag      : 1;
+    uint32_t deblocking_filter_override_enabled_flag     : 1;
+    uint32_t pps_deblocking_filter_disabled_flag         : 1;
+    uint32_t pps_scaling_list_data_present_flag          : 1;
+    uint32_t lists_modification_present_flag             : 1;
+    uint32_t slice_segment_header_extension_present_flag : 1;
+    uint32_t pps_extension_present_flag                  : 1;
+    uint32_t pps_range_extension_flag                    : 1;
+    uint32_t pps_multilayer_extension_flag               : 1;
+    uint32_t pps_3d_extension_flag                       : 1;
+    uint32_t pps_scc_extension_flag                      : 1;
+    uint32_t pps_extension_4bits                         : 4;
+};
+
 struct NetworkAbstractionLayer : SuperNetworkAbstractionLayer
 {
     using Super = SuperNetworkAbstractionLayer;
@@ -287,6 +355,8 @@ public:
     VideoParameterSet *vps;
 
     SequenceParameterSet *sps;
+
+    PictureParameterSet *pps;
 };
 
 }

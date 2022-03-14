@@ -213,7 +213,7 @@ VideoParameterSet::VideoParameterSet(BitTracker &bitTracker)
     Parse(bitTracker);
 }
 
-void SequenceParameterSet::ScalingListData(BitTracker &bitTracker)
+void ScalingListData::Parse(BitTracker &bitTracker)
 {
     int nextCoef;
 
@@ -244,6 +244,12 @@ void SequenceParameterSet::ScalingListData(BitTracker &bitTracker)
             }
         }
     }
+}
+
+ScalingListData::ScalingListData(BitTracker &bitTracker)
+{
+    CleanUpObject(this);
+    Parse(bitTracker);
 }
 
 void SequenceParameterSet::DecodeVuiParameters(BitTracker & bitTracker)
@@ -380,7 +386,7 @@ void SequenceParameterSet::Parse(BitTracker & bitTracker)
         sps_scaling_list_data_present_flag = bitTracker.GetBit();
         if (sps_scaling_list_data_present_flag)
         {
-            ScalingListData(bitTracker);
+            scalingListData.Parse(bitTracker);
         }
     }
 
@@ -439,6 +445,119 @@ SequenceParameterSet::SequenceParameterSet(BitTracker &bitTracker)
     Parse(bitTracker);
 }
 
+void PictureParameterSet::Parse(BitTracker &bitTracker)
+{
+    LOG::DEBUG("HEVC: Paring Picture Parameter Set");
+    pps_pic_parameter_set_id = bitTracker.UnsignedExpGolomb();
+    pps_seq_parameter_set_id = bitTracker.UnsignedExpGolomb();
+
+    dependent_slice_segments_enabled_flag = bitTracker.GetBit();
+    output_flag_present_flag              = bitTracker.GetBit();
+    num_extra_slice_header_bits           = bitTracker.GetBits(3);
+    sign_data_hiding_enabled_flag         = bitTracker.GetBit();
+    cabac_init_present_flag               = bitTracker.GetBit();
+
+    num_ref_idx_l0_default_active_minus1 = bitTracker.UnsignedExpGolomb();
+    num_ref_idx_l1_default_active_minus1 = bitTracker.UnsignedExpGolomb();
+
+    init_qp_minus26 = bitTracker.SignedExpGolomb();
+
+    constrained_intra_pred_flag = bitTracker.GetBit();
+    transform_skip_enabled_flag = bitTracker.GetBit();
+
+    cu_qp_delta_enabled_flag    = bitTracker.GetBit();
+    if (cu_qp_delta_enabled_flag)
+    {
+        diff_cu_qp_delta_depth = bitTracker.UnsignedExpGolomb();
+    }
+
+    pps_cb_qp_offset = bitTracker.SignedExpGolomb();
+    pps_cr_qp_offset = bitTracker.SignedExpGolomb();
+
+    pps_slice_chroma_qp_offsets_present_flag = bitTracker.GetBit();
+    weighted_pred_flag                       = bitTracker.GetBit();
+    weighted_bipred_flag                     = bitTracker.GetBit();
+    transquant_bypass_enabled_flag           = bitTracker.GetBit();
+    tiles_enabled_flag                       = bitTracker.GetBit();
+    entropy_coding_sync_enabled_flag         = bitTracker.GetBit();
+
+    if (tiles_enabled_flag)
+    {
+        num_tile_columns_minus1 = bitTracker.UnsignedExpGolomb() + 1;
+        num_tile_rows_minus1 = bitTracker.UnsignedExpGolomb() + 1;
+        uniform_spacing_flag    = bitTracker.GetBit();
+        if (uniform_spacing_flag)
+        {
+            column_width_minus1 = new uint32_t[num_tile_columns_minus1 + 1];
+            row_height_minus1   = new uint32_t[num_tile_rows_minus1 + 1];
+            for (size_t i = 0; i < num_tile_columns_minus1; i++)
+            {
+                column_width_minus1[i] = bitTracker.UnsignedExpGolomb();
+            }
+            for (size_t i = 0; i < num_tile_rows_minus1; i++)
+            {
+                row_height_minus1[i] = bitTracker.UnsignedExpGolomb();
+            }
+        }
+        loop_filter_across_tiles_enabled_flag = bitTracker.GetBit();
+    }
+
+    pps_loop_filter_across_slices_enabled_flag = bitTracker.GetBit();
+    deblocking_filter_control_present_flag     = bitTracker.GetBit();
+    if (deblocking_filter_control_present_flag)
+    {
+        deblocking_filter_override_enabled_flag = bitTracker.GetBit();
+        pps_deblocking_filter_disabled_flag     = bitTracker.GetBit();
+        if (!pps_deblocking_filter_disabled_flag)
+        {
+            pps_beta_offset_div2 = bitTracker.SignedExpGolomb();
+            pps_tc_offset_div2   = bitTracker.SignedExpGolomb();
+        }
+    }
+
+    pps_scaling_list_data_present_flag = bitTracker.GetBit();
+    if (pps_scaling_list_data_present_flag)
+    {
+        scalingListData.Parse(bitTracker);
+    }
+
+    lists_modification_present_flag  = bitTracker.GetBit();
+    log2_parallel_merge_level_minus2 = bitTracker.UnsignedExpGolomb();
+    slice_segment_header_extension_present_flag = bitTracker.GetBit();
+    pps_extension_present_flag = bitTracker.GetBit();
+
+    if (pps_extension_present_flag)
+    {
+        pps_range_extension_flag      = bitTracker.GetBit();
+        pps_multilayer_extension_flag = bitTracker.GetBit();
+        pps_3d_extension_flag         = bitTracker.GetBit();
+        pps_scc_extension_flag        = bitTracker.GetBit();
+        pps_extension_4bits           = bitTracker.GetBits(4);
+
+        ThrowIf(true, "Extension is not supported yet!");
+    }
+
+    rbsp_trailing_bits(bitTracker);
+}
+
+PictureParameterSet::PictureParameterSet(BitTracker &bitTracker)
+{
+    CleanUpObject(this);
+    Parse(bitTracker);
+}
+
+PictureParameterSet::~PictureParameterSet()
+{
+    if (column_width_minus1)
+    {
+        delete[] column_width_minus1;
+    }
+    if (row_height_minus1)
+    {
+        delete[] row_height_minus1;
+    }
+}
+
 CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
 {
     BitTracker bitTracker{ buffer.data(), buffer.size() };
@@ -455,9 +574,11 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
         break;
 
     case NAL::Type::PPS:
+        pps = new PictureParameterSet{ bitTracker };
         break;
 
     default:
+        LOG::WARN("Unsupported NAL unit type {0}", nal.GetType());
         break;
     }
 
