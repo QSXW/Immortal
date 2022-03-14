@@ -38,9 +38,9 @@ static std::vector<const char *> ValidationLayers = {
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc) :
-    handle{ desc.WindowHandle->GetNativeWindow() }
+    handle{ desc.WindowHandle ? desc.WindowHandle->GetNativeWindow() : nullptr }
 {
-    instance = std::make_unique<Instance>(Application::Name(), InstanceExtensions, ValidationLayers);
+    instance = std::make_unique<Instance>(desc.ApplicationName, InstanceExtensions, ValidationLayers);
     if (!instance->Ready())
     {
         LOG::ERR("Vulkan Not Supported!");
@@ -69,7 +69,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
 
-    surfaceExtent = VkExtent2D{ Application::Width(), Application::Height() };
+    surfaceExtent = VkExtent2D{ desc.Width, desc.Height };
     if (surface != VK_NULL_HANDLE)
     {
         VkSurfaceCapabilitiesKHR surfaceProperties{};
@@ -83,8 +83,9 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
         {
             swapchain = std::make_unique<Swapchain>(device.get(), surface);
         }
+
+        Prepare();
     }
-    Prepare();
     EnableGlobal();
 
     Super::UpdateMeta(physicalDevice.Properties.deviceName, nullptr, nullptr);
