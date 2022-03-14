@@ -6,6 +6,7 @@
 #include "Common/BitTracker.h"
 #include "Common/NetworkAbstractionLayer.h"
 #include "Media/Interface/Codec.h"
+#include "Math/Math.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable: 26495)
@@ -18,7 +19,10 @@ namespace Vision
 
 enum H265
 {
-    MAX_DPB_SIZE = 16
+    MAX_SUB_LAYERS         = 7,
+    MAX_DPB_SIZE           = 16,
+    MAX_LONG_TERM_REF_PICS = 32,
+    EXTENDED_SAR           = 255,
 };
 
 enum Profiler
@@ -42,12 +46,6 @@ static const char *Stringify(Profiler profier)
     }
 #undef XX
 }
-
-constexpr uint32_t MAX_SUB_LAYERS = 7;
-
-#define EXTRACT(V, N) ((V >> (31 - N)) & 0x1)
-
-
 
 struct ProfileTierLevel
 {
@@ -85,25 +83,22 @@ struct ProfileTierLevel
 
 struct VideoParameterSet : public NAL::Payload
 {
-    VideoParameterSet()
-    {
-        CleanUpObject(this);
-    }
-
     VideoParameterSet(BitTracker &bitTracker);
 
+    void VideoParameterSet::Parse(BitTracker &bitTracker);
+
     ProfileTierLevel profile_tier_level;
-    uint32_t vps_video_parameter_set_id    : 4;
-    uint32_t vps_base_layer_internal_flag  : 1;
-    uint32_t vps_base_layer_available_flag : 1;
-    uint32_t vps_max_layers_minus1         : 6;
-    uint32_t vps_max_sub_layers_minus1     : 3;
-    uint32_t vps_temporal_id_nesting_flag  : 1;
-    uint32_t vps_reserved_0xffff_16bits    : 16;
+    uint32_t vps_video_parameter_set_id               : 4;
+    uint32_t vps_base_layer_internal_flag             : 1;
+    uint32_t vps_base_layer_available_flag            : 1;
+    uint32_t vps_max_layers_minus1                    : 6;
+    uint32_t vps_max_sub_layers_minus1                : 3;
+    uint32_t vps_temporal_id_nesting_flag             : 1;
+    uint32_t vps_reserved_0xffff_16bits               : 16;
     uint32_t vps_sub_layer_ordering_info_present_flag : 1;
-    uint32_t vps_max_layer_id              : 6;
-    uint32_t vps_timing_info_present_flag  : 1;
-    uint32_t vps_poc_proportional_to_timing_flag : 1;
+    uint32_t vps_max_layer_id                         : 6;
+    uint32_t vps_timing_info_present_flag             : 1;
+    uint32_t vps_poc_proportional_to_timing_flag      : 1;
 
     uint32_t vps_num_layer_sets_minus1;
     uint32_t vps_num_units_in_tick;
@@ -114,6 +109,123 @@ struct VideoParameterSet : public NAL::Payload
     uint8_t  vps_num_reorder_pics[8];
     uint8_t  vps_max_latency_increase[8];
     uint8_t  layer_id_included_flag[8][8];
+};
+
+struct SequenceParameterSet : public NAL::Payload
+{
+    SequenceParameterSet(BitTracker &bitTracker);
+
+    void Parse(BitTracker &bitTracker);
+
+    void ScalingListData(BitTracker &bitTracker);
+
+    void DecodeVuiParameters(BitTracker &bitTracker);
+
+    ProfileTierLevel profile_tier_level;
+    int32_t sps_seq_parameter_set_id;
+    int32_t chroma_format_idc;
+    int32_t pic_width_in_luma_samples;
+    int32_t pic_height_in_luma_samples;
+    int32_t conf_win_left_offset;
+    int32_t conf_win_right_offset;
+    int32_t conf_win_top_offset;
+    int32_t conf_win_bottom_offset;
+    int32_t bit_depth_luma_minus8;
+    int32_t bit_depth_chroma_minus8;
+    uint32_t log2_max_pic_order_cnt_lsb_minus4;
+
+    struct {
+        int sps_max_dec_pic_buffering_minus1;
+        int sps_max_num_reorder_pics;
+        int sps_max_latency_increase_plus1;
+    } subLayers[H265::MAX_SUB_LAYERS];
+
+    uint32_t log2_min_luma_coding_block_size_minus3;
+    uint32_t log2_diff_max_min_luma_coding_block_size;
+    uint32_t log2_min_luma_transform_block_size_minus2;
+    uint32_t log2_diff_max_min_luma_transform_block_size;
+    uint32_t max_transform_hierarchy_depth_inter;
+    uint32_t max_transform_hierarchy_depth_intra;
+
+    uint32_t scaling_list_pred_matrix_id_delta;
+    uint8_t scaling_list[4][6][64];
+    uint8_t scaling_list_dc_coef_minus8[2][6];
+    int32_t scaling_list_delta_coef;
+
+    uint32_t log2_min_pcm_luma_coding_block_size_minus3;
+    uint32_t log2_diff_max_min_pcm_luma_coding_block_size;
+
+    uint32_t num_short_term_ref_pic_sets;
+    uint32_t num_long_term_ref_pics_sps;
+    uint16_t lt_ref_pic_poc_lsb_sps[MAX_LONG_TERM_REF_PICS];
+    uint8_t used_by_curr_pic_lt_sps_flag[MAX_LONG_TERM_REF_PICS];
+
+    Rational sar;
+    uint8_t colour_primaries;
+    uint8_t transfer_characteristics;
+    uint8_t matrix_coeffs;
+
+    uint32_t chroma_sample_loc_type_top_field;
+    uint32_t chroma_sample_loc_type_bottom_field;
+
+    uint32_t def_disp_win_left_offset;
+    uint32_t def_disp_win_right_offset;
+    uint32_t def_disp_win_top_offset;
+    uint32_t def_disp_win_bottom_offset;
+
+    uint32_t vui_num_ticks_poc_diff_one_minus1;
+    uint32_t min_spatial_segmentation_idc;
+    uint32_t max_bytes_per_pic_denom;
+    uint32_t max_bits_per_min_cu_denom;
+    uint32_t log2_max_mv_length_horizontal;
+    uint32_t log2_max_mv_length_vertical;
+
+    uint32_t sps_video_parameter_set_id               : 4;
+    uint32_t sps_max_sub_layers_minus1                : 3;
+    uint32_t sps_temporal_id_nesting_flag             : 1;
+    uint32_t separate_colour_plane_flag               : 1;
+    uint32_t conformance_window_flag                  : 1;
+    uint32_t sps_sub_layer_ordering_info_present_flag : 1;
+    uint32_t scaling_list_enabled_flag                : 1;
+    uint32_t sps_scaling_list_data_present_flag       : 1;
+    uint32_t amp_enabled_flag                         : 1;
+    uint32_t sample_adaptive_offset_enabled_flag      : 1;
+    uint32_t pcm_enabled_flag                         : 1;
+    uint32_t pcm_sample_bit_depth_luma_minus1         : 4;
+    uint32_t pcm_sample_bit_depth_chroma_minus1       : 4;
+    uint32_t pcm_loop_filter_disabled_flag            : 1;
+    uint32_t long_term_ref_pics_present_flag          : 1;
+    uint32_t sps_temporal_mvp_enabled_flag            : 1;
+    uint32_t strong_intra_smoothing_enabled_flag      : 1;
+    uint32_t vui_parameters_present_flag              : 1;
+    uint32_t aspect_ratio_info_present_flag           : 1;
+    uint32_t aspect_ratio_idc                         : 8;
+    uint32_t overscan_info_present_flag               : 1;
+    uint32_t overscan_appropriate_flag                : 1;
+    uint32_t video_signal_type_present_flag           : 1;
+    uint32_t video_format                             : 3;
+    uint32_t video_full_range_flag                    : 1;
+    uint32_t colour_description_present_flag          : 1;
+    uint32_t chroma_loc_info_present_flag             : 1;
+    uint32_t neutral_chroma_indication_flag           : 1;
+    uint32_t field_seq_flag                           : 1;
+    uint32_t frame_field_info_present_flag            : 1;
+    uint32_t default_display_window_flag              : 1;
+    uint32_t vui_timing_info_present_flag             : 1;
+    uint32_t vui_num_units_in_tick                    : 32;
+    uint32_t vui_time_scale                           : 32;
+    uint32_t vui_poc_proportional_to_timing_flag      : 1;
+    uint32_t vui_hrd_parameters_present_flag          : 1;
+    uint32_t bitstream_restriction_flag               : 1;
+    uint32_t tiles_fixed_structure_flag               : 1;
+    uint32_t motion_vectors_over_pic_boundaries_flag  : 1;
+    uint32_t restricted_ref_pic_lists_flag            : 1;
+    uint32_t sps_extension_present_flag               : 1;
+    uint32_t sps_range_extension_flag                 : 1;
+    uint32_t sps_multilayer_extension_flag            : 1;
+    uint32_t sps_3d_extension_flag                    : 1;
+    uint32_t sps_scc_extension_flag                   : 1;
+    uint32_t sps_extension_4bits                      : 4;
 };
 
 struct NetworkAbstractionLayer : SuperNetworkAbstractionLayer
@@ -173,6 +285,8 @@ public:
     virtual CodecError Parse(const std::vector<uint8_t> &buffer) override;
 
     VideoParameterSet *vps;
+
+    SequenceParameterSet *sps;
 };
 
 }

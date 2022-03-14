@@ -91,18 +91,18 @@ public:
         return word >> (64 - n);
     }
 
-    uint64_t ue()
+    uint64_t UnsignedExpGolomb()
     {
-        uint64_t ret = 0;
-        int leadingZeroBits = -1;
+        auto bits = Preview(32);
+        auto l = 31 - (int32_t)std::log2(bits);
+        SkipBits(l);
 
-        for (int bit = 0; !bit; leadingZeroBits++)
-        {
-            bit = GetBits(1);
-        }
-        ret = std::pow(2, leadingZeroBits) - 1 + GetBits(leadingZeroBits);
+        return GetBits(l + 1) - 1;
+    }
 
-        return ret;
+    uint64_t SignedExpGolomb()
+    {
+        throw RuntimeException("No supported yet!");
     }
 
     bool ByteAligned()

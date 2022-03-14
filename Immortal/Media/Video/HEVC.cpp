@@ -7,14 +7,14 @@ namespace Vision
 
 static inline void rbsp_trailing_bits(BitTracker &bitTracker)
 {
-    auto rbsp_stop_one_bit = bitTracker.GetBits(1);
+    auto rbsp_stop_one_bit = bitTracker.GetBit();
     ThrowIf(
         rbsp_stop_one_bit != 1,
         "Incorrect rbsp_stop_one_bit"
     );
     while (!bitTracker.ByteAligned())
     {
-        auto rbsp_alignment_zero_bit = bitTracker.GetBits(1);
+        auto rbsp_alignment_zero_bit = bitTracker.GetBit();
         ThrowIf(
             rbsp_alignment_zero_bit != 0,
             "Incorrect rbsp_alignment_zero_bit"
@@ -31,14 +31,14 @@ static inline int32_t FilterByteStream(std::vector<uint8_t> &dst, const uint8_t 
     if (start_code_prefix_one_4bytes == 0x01000000)
     {
         ptr += 4;
-        while (*rcast<const uint32_t *>(ptr) != 0x01000000 && ptr < end)
+        for ( ; *(const uint32_t *)(ptr) != 0x01000000 && ptr < end; ptr++)
         {
             auto byte = *ptr;
-            if (byte != emulation_prevention_three_byte)
+            if (byte == emulation_prevention_three_byte && !ptr[-2] && !ptr[-1])
             {
-                dst.emplace_back(byte);
+                continue;
             }
-            ptr++;
+            dst.emplace_back(byte);
         }
     }
 
@@ -62,6 +62,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
     return CodecError::Succeed;
 }
 
+#define EXTRACT(V, N) ((V >> (31 - N)) & 0x1)
 #define CHECK_PROFILE_IDC(IDC) general.profile_idc == IDC || EXTRACT(general.profile_compatibility_flag, IDC)
 ProfileTierLevel::ProfileTierLevel(BitTracker & bitTracker, uint32_t profilePresentFlag, uint32_t maxNumSubLayersMinus1)
 {
@@ -148,9 +149,10 @@ ProfileTierLevel::ProfileTierLevel(BitTracker & bitTracker, uint32_t profilePres
     }
 }
 
-VideoParameterSet::VideoParameterSet(BitTracker &bitTracker) :
-    VideoParameterSet{}
+void VideoParameterSet::Parse(BitTracker &bitTracker)
 {
+    LOG::DEBUG("HEVC: Paring Video Parameter Set");
+
     vps_video_parameter_set_id    = bitTracker.GetBits(4);
     vps_base_layer_internal_flag  = bitTracker.GetBits(1);
     vps_base_layer_available_flag = bitTracker.GetBits(1); 
@@ -164,9 +166,9 @@ VideoParameterSet::VideoParameterSet(BitTracker &bitTracker) :
     vps_sub_layer_ordering_info_present_flag = bitTracker.GetBits(1);
     for (int i = (vps_sub_layer_ordering_info_present_flag ? 0 : vps_max_sub_layers_minus1); i <= vps_max_sub_layers_minus1; i++)
     {
-        vps_max_dec_pic_buffering_minus1[i] = bitTracker.ue();
-        vps_num_reorder_pics[i]             = bitTracker.ue();
-        vps_max_latency_increase[i]         = bitTracker.ue();
+        vps_max_dec_pic_buffering_minus1[i] = bitTracker.UnsignedExpGolomb();
+        vps_num_reorder_pics[i]             = bitTracker.UnsignedExpGolomb();
+        vps_max_latency_increase[i]         = bitTracker.UnsignedExpGolomb();
         ThrowIf(
             vps_max_dec_pic_buffering_minus1[i] + 1 > H265::MAX_DPB_SIZE ||
             vps_num_reorder_pics[i] > vps_max_dec_pic_buffering_minus1[i],
@@ -174,7 +176,7 @@ VideoParameterSet::VideoParameterSet(BitTracker &bitTracker) :
         );
     }
     vps_max_layer_id = bitTracker.GetBits(6);
-    vps_num_layer_sets_minus1 = bitTracker.ue();
+    vps_num_layer_sets_minus1 = bitTracker.UnsignedExpGolomb();
 
     for (int i = 1; i <= vps_num_layer_sets_minus1; i++)
     {
@@ -191,9 +193,9 @@ VideoParameterSet::VideoParameterSet(BitTracker &bitTracker) :
         vps_poc_proportional_to_timing_flag = bitTracker.GetBits(1);
         if (vps_poc_proportional_to_timing_flag)
         {
-            vps_num_ticks_poc_diff_one_minus1 = bitTracker.ue();
+            vps_num_ticks_poc_diff_one_minus1 = bitTracker.UnsignedExpGolomb();
         }
-        vps_num_hrd_parameters = bitTracker.ue();
+        vps_num_hrd_parameters = bitTracker.UnsignedExpGolomb();
         for (int i = 0; i < vps_num_hrd_parameters; i++)
         {
 
@@ -202,6 +204,239 @@ VideoParameterSet::VideoParameterSet(BitTracker &bitTracker) :
     auto vps_extension_flag = bitTracker.GetBit();
     if (vps_extension_flag) { }
     rbsp_trailing_bits(bitTracker);
+}
+
+
+VideoParameterSet::VideoParameterSet(BitTracker &bitTracker)
+{
+    CleanUpObject(this);
+    Parse(bitTracker);
+}
+
+void SequenceParameterSet::ScalingListData(BitTracker &bitTracker)
+{
+    int nextCoef;
+
+    for (int sizeId = 0; sizeId < 4; sizeId++)
+    {
+        for (int matrixId = 0; matrixId < 6; matrixId += (sizeId == 3) ? 3 : 1)
+        {
+            auto scaling_list_pred_mode_flag = bitTracker.GetBit();
+            if (scaling_list_pred_mode_flag)
+            {
+                auto scaling_list_pred_matrix_id_delta = bitTracker.UnsignedExpGolomb();
+            }
+            else
+            {
+                nextCoef = 8;
+                auto coefNum = std::min(64, (1 << (4 + (sizeId << 1))));
+                if (sizeId > 1)
+                {
+                    scaling_list_dc_coef_minus8[sizeId - 2][matrixId] = bitTracker.SignedExpGolomb();
+                    nextCoef = scaling_list_dc_coef_minus8[sizeId - 2][matrixId] + 8;
+                }
+                for (int i = 0; i < coefNum; i++)
+                {
+                    scaling_list_delta_coef = bitTracker.SignedExpGolomb();
+                    nextCoef = (nextCoef + scaling_list_delta_coef + 256) % 256;
+                    scaling_list[sizeId][matrixId][i] = nextCoef;
+                }
+            }
+        }
+    }
+}
+
+void SequenceParameterSet::DecodeVuiParameters(BitTracker & bitTracker)
+{
+    aspect_ratio_info_present_flag = bitTracker.GetBit();
+    if (aspect_ratio_info_present_flag)
+    {
+        aspect_ratio_idc = bitTracker.GetBits(8);
+        if (aspect_ratio_idc == H265::EXTENDED_SAR)
+        {
+            sar = Rational{ bitTracker.GetBits(16), bitTracker.GetBits(16) };
+        }
+    }
+
+    overscan_info_present_flag = bitTracker.GetBit();
+    if (overscan_info_present_flag)
+    {
+        overscan_appropriate_flag = bitTracker.GetBit();
+    }
+
+    video_signal_type_present_flag = bitTracker.GetBit();
+    if (video_signal_type_present_flag)
+    {
+        video_format                    = bitTracker.GetBits(3);
+        video_full_range_flag           = bitTracker.GetBit();
+        colour_description_present_flag = bitTracker.GetBit();
+        if (colour_description_present_flag)
+        {
+            colour_primaries         = bitTracker.GetBits(8);
+            transfer_characteristics = bitTracker.GetBits(8);
+            matrix_coeffs = bitTracker.GetBits(8);
+        }
+    }
+
+    chroma_loc_info_present_flag = bitTracker.GetBit();
+    if (chroma_loc_info_present_flag)
+    {
+        chroma_sample_loc_type_top_field    = bitTracker.UnsignedExpGolomb();
+        chroma_sample_loc_type_bottom_field = bitTracker.UnsignedExpGolomb();
+    }
+
+    neutral_chroma_indication_flag = bitTracker.GetBit();
+    field_seq_flag                 = bitTracker.GetBit();
+    frame_field_info_present_flag  = bitTracker.GetBit();
+    default_display_window_flag    = bitTracker.GetBit();
+    if (default_display_window_flag)
+    {
+        def_disp_win_left_offset   = bitTracker.UnsignedExpGolomb();
+        def_disp_win_right_offset  = bitTracker.UnsignedExpGolomb();
+        def_disp_win_top_offset    = bitTracker.UnsignedExpGolomb();
+        def_disp_win_bottom_offset = bitTracker.UnsignedExpGolomb();
+    }
+
+    vui_timing_info_present_flag = bitTracker.GetBit();
+    if (vui_timing_info_present_flag)
+    {
+        vui_num_units_in_tick               = bitTracker.GetBits(32);
+        vui_time_scale                      = bitTracker.GetBits(32);
+        vui_poc_proportional_to_timing_flag = bitTracker.GetBit();
+        if (vui_poc_proportional_to_timing_flag)
+        {
+            vui_num_ticks_poc_diff_one_minus1 = bitTracker.UnsignedExpGolomb();
+        }
+        vui_hrd_parameters_present_flag = bitTracker.GetBit();
+        if (vui_hrd_parameters_present_flag)
+        {
+            throw StaticException("Unsupport yet!");
+        }
+    }
+
+    bitstream_restriction_flag = bitTracker.GetBit();
+    if (bitstream_restriction_flag)
+    {
+        tiles_fixed_structure_flag              = bitTracker.GetBit();
+        motion_vectors_over_pic_boundaries_flag = bitTracker.GetBit();
+        restricted_ref_pic_lists_flag           = bitTracker.GetBit();
+        min_spatial_segmentation_idc            = bitTracker.UnsignedExpGolomb();
+        max_bytes_per_pic_denom                 = bitTracker.UnsignedExpGolomb();
+        max_bits_per_min_cu_denom               = bitTracker.UnsignedExpGolomb();
+        log2_max_mv_length_horizontal           = bitTracker.UnsignedExpGolomb();
+        log2_max_mv_length_vertical             = bitTracker.UnsignedExpGolomb();
+    }
+}
+
+void SequenceParameterSet::Parse(BitTracker & bitTracker)
+{
+    LOG::DEBUG("HEVC: Paring Sequence Parameter Set");
+    sps_video_parameter_set_id   = bitTracker.GetBits(4);
+    sps_max_sub_layers_minus1    = bitTracker.GetBits(3);
+    sps_temporal_id_nesting_flag = bitTracker.GetBit();
+
+    profile_tier_level = ProfileTierLevel{ bitTracker, 1, sps_max_sub_layers_minus1 };
+
+    sps_seq_parameter_set_id = bitTracker.UnsignedExpGolomb();
+    chroma_format_idc = bitTracker.UnsignedExpGolomb();
+    if (chroma_format_idc == 3)
+    {
+        separate_colour_plane_flag = bitTracker.GetBit();
+    }
+    pic_width_in_luma_samples  = bitTracker.UnsignedExpGolomb();
+    pic_height_in_luma_samples = bitTracker.UnsignedExpGolomb();
+    
+    if (/* conformance_window_flag = */ bitTracker.GetBit())
+    {
+        conf_win_left_offset   = bitTracker.UnsignedExpGolomb();
+        conf_win_right_offset  = bitTracker.UnsignedExpGolomb();
+        conf_win_top_offset    = bitTracker.UnsignedExpGolomb();
+        conf_win_bottom_offset = bitTracker.UnsignedExpGolomb();
+    }
+
+    bit_depth_luma_minus8   = bitTracker.UnsignedExpGolomb() + 8;
+    bit_depth_chroma_minus8 = bitTracker.UnsignedExpGolomb() + 8;
+    log2_max_pic_order_cnt_lsb_minus4 = bitTracker.UnsignedExpGolomb();
+    sps_sub_layer_ordering_info_present_flag = bitTracker.GetBit();
+
+    for (int i = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1); 
+            i <= sps_max_sub_layers_minus1; i++)
+    {
+        subLayers[i].sps_max_dec_pic_buffering_minus1 = bitTracker.UnsignedExpGolomb();
+        subLayers[i].sps_max_num_reorder_pics         = bitTracker.UnsignedExpGolomb();
+        subLayers[i].sps_max_latency_increase_plus1   = bitTracker.UnsignedExpGolomb();
+    }
+
+    log2_min_luma_coding_block_size_minus3      = bitTracker.UnsignedExpGolomb();
+    log2_diff_max_min_luma_coding_block_size    = bitTracker.UnsignedExpGolomb();
+    log2_min_luma_transform_block_size_minus2   = bitTracker.UnsignedExpGolomb();
+    log2_diff_max_min_luma_transform_block_size = bitTracker.UnsignedExpGolomb();
+    max_transform_hierarchy_depth_inter         = bitTracker.UnsignedExpGolomb();
+    max_transform_hierarchy_depth_intra         = bitTracker.UnsignedExpGolomb();
+
+    scaling_list_enabled_flag = bitTracker.GetBit();
+    if (scaling_list_enabled_flag)
+    {
+        sps_scaling_list_data_present_flag = bitTracker.GetBit();
+        if (sps_scaling_list_data_present_flag)
+        {
+            ScalingListData(bitTracker);
+        }
+    }
+
+    amp_enabled_flag                    = bitTracker.GetBit();
+    sample_adaptive_offset_enabled_flag = bitTracker.GetBit();
+    pcm_enabled_flag                    = bitTracker.GetBit();
+    if (pcm_enabled_flag)
+    {
+        pcm_sample_bit_depth_luma_minus1   = bitTracker.GetBits(4);
+        pcm_sample_bit_depth_chroma_minus1 = bitTracker.GetBits(4);
+        log2_min_pcm_luma_coding_block_size_minus3   = bitTracker.UnsignedExpGolomb();
+        log2_diff_max_min_pcm_luma_coding_block_size = bitTracker.UnsignedExpGolomb();
+        pcm_loop_filter_disabled_flag = bitTracker.GetBit();
+    }
+
+    num_short_term_ref_pic_sets = bitTracker.UnsignedExpGolomb();
+    for (int i = 0; i < num_short_term_ref_pic_sets; i++)
+    {
+        // st_ref_pic_set(i);
+    }
+    long_term_ref_pics_present_flag = bitTracker.GetBit();
+    if (long_term_ref_pics_present_flag)
+    {
+        num_long_term_ref_pics_sps = bitTracker.UnsignedExpGolomb();
+        for (int i = 0; i < num_long_term_ref_pics_sps; i++)
+        {
+            lt_ref_pic_poc_lsb_sps[i] = bitTracker.GetBits(log2_max_pic_order_cnt_lsb_minus4 + 4);
+            used_by_curr_pic_lt_sps_flag[i] = bitTracker.GetBit();
+        }
+    }
+
+    sps_temporal_mvp_enabled_flag       = bitTracker.GetBit();
+    strong_intra_smoothing_enabled_flag = bitTracker.GetBit();
+    vui_parameters_present_flag         = bitTracker.GetBit();
+    if (vui_parameters_present_flag)
+    {
+        DecodeVuiParameters(bitTracker);
+    }
+
+    sps_extension_present_flag = bitTracker.GetBit();
+    if (sps_extension_present_flag)
+    {
+        sps_range_extension_flag      = bitTracker.GetBit();
+        sps_multilayer_extension_flag = bitTracker.GetBit();
+        sps_3d_extension_flag         = bitTracker.GetBit();
+        sps_scc_extension_flag        = bitTracker.GetBit();
+        sps_extension_4bits           = bitTracker.GetBits(4);
+    }
+
+    rbsp_trailing_bits(bitTracker);
+}
+
+SequenceParameterSet::SequenceParameterSet(BitTracker &bitTracker)
+{
+    CleanUpObject(this);
+    Parse(bitTracker);
 }
 
 CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
@@ -216,6 +451,7 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
         break;
 
     case NAL::Type::SPS:
+        sps = new SequenceParameterSet{ bitTracker };
         break;
 
     case NAL::Type::PPS:
@@ -226,8 +462,8 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
     }
 
     while (!bitTracker.NoMoreData() &&
-            bitTracker.Preview(24) != 0x000001 &&
-            bitTracker.Preview(32) != 0x00000001)
+        bitTracker.Preview(24) != 0x000001 &&
+        bitTracker.Preview(32) != 0x00000001)
     {
         auto traillingZeroBits = bitTracker.GetBits(8);
     }
