@@ -1,8 +1,10 @@
 #pragma once
 
-#ifndef __VULKAN_COMMON_H__
-#define __VULKAN_COMMON_H__
+#ifndef VULKAN_COMMON_H__
+#define VULKAN_COMMON_H__
+
 #define GLFW_INCLUDE_VULKAN
+#define VK_ENABLE_BETA_EXTENSIONS
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
