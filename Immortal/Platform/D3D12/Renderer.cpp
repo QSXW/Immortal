@@ -116,11 +116,11 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 
     commandList->ResourceBarrier(barriers.data(), activeBarrier);
 
-    auto &rtvDescriptor = renderTarget->GetDescriptor();
-    auto &dsvDescriptor = depthBuffer.GetDescriptor();
-    commandList->ClearRenderTargetView(rtvDescriptor, rcast<float *>(renderTarget->ClearColor()));
+    const auto &rtvDescriptor = renderTarget->GetDescriptor();
+    const auto &dsvDescriptor = depthBuffer.GetDescriptor();
+    commandList->ClearRenderTargetView(rtvDescriptor[0], rcast<float *>(renderTarget->ClearColor()));
     commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
-    commandList->OMSetRenderTargets(&rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
+    commandList->OMSetRenderTargets(rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
 }
 
 void Renderer::End()

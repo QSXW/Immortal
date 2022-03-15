@@ -279,9 +279,9 @@ public:
         return attachments.color[0];
     }
 
-    CPUDescriptor GetDescriptor() const
+    const CPUDescriptor *GetDescriptor() const
     {
-        return attachments.color[0].Get<Descriptor::Type::RenderTargetView>();
+        return descriptors;
     }
 
     operator ID3D12Resource*()
@@ -305,6 +305,8 @@ public:
     }
 
 private:
+    CPUDescriptor descriptors[32];
+
     struct
     {
         std::vector<ColorBuffer> color;

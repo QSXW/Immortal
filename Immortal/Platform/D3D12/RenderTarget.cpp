@@ -218,16 +218,18 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
         }
         else
         {
-            clearValue.Color[0] = Super::clearValues[index].r;
-            clearValue.Color[1] = Super::clearValues[index].g;
-            clearValue.Color[2] = Super::clearValues[index].b;
-            clearValue.Color[3] = Super::clearValues[index].a;
+            auto &clearValues = Super::clearValues[index];
+            clearValue.Color[0] = clearValues.r;
+            clearValue.Color[1] = clearValues.g;
+            clearValue.Color[2] = clearValues.b;
+            clearValue.Color[3] = clearValues.a;
 
             ColorBuffer colorBuffer{};
             colorBuffer.Create(device, resourceDesc, clearValue);
             attachments.color.emplace_back(std::move(colorBuffer));
+            descriptors[index] = colorBuffer.Get<Descriptor::Type::RenderTargetView>();
+            index++;
         }
-        index++;
     }
     
 #ifdef SLDEBUG
