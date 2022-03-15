@@ -39,10 +39,16 @@ public:
 
     virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
-private:
-    void InternalCreate(RenderContext *context, const Description &description, const void *data);
+    virtual void Update(const void *data, uint32_t size);
 
 private:
+    void InternalCreate(const void *data);
+
+private:
+    RenderContext *context{ nullptr };
+
+    Format format = Format::None;
+
     struct {
         Descriptor visible;
         CPUDescriptor invisible;
