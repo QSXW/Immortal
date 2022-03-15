@@ -13,6 +13,13 @@ namespace Immortal
 namespace Vulkan
 {
 
+static inline std::array<const char *, 4> VideoCodecExtensions = {
+    "VK_KHR_synchronization2",
+    "VK_KHR_video_queue",
+    "VK_KHR_video_decode_queue",
+    "VK_KHR_video_encode_queue"
+};
+
 Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
     physicalDevice(physicalDevice),
     surface(surface)
@@ -116,14 +123,20 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
             else
             {
                 LOG::ERR("Required device extension {0} not available. Stop running!", ext);
-                Vulkan::Check(VK_ERROR_EXTENSION_NOT_PRESENT);
+                Check(VK_ERROR_EXTENSION_NOT_PRESENT);
             }
         }
     }
 
-    // @required
-    // @info flags is reserved for future use.
-    // @warn enableLayer related is deprecated and ignored
+    /* Try to enable the video queue extension */
+    for (const auto &extension : VideoCodecExtensions)
+    {
+        if (IsExtensionSupport(extension))
+        {
+            enabledExtensions.emplace_back(extension);
+        }
+    }
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pNext                   = physicalDevice.LastRequestedExtensionFeature;
