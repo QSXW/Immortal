@@ -169,6 +169,8 @@ set(VULKAN_FILES
    Platform/Vulkan/Shader.h
    Platform/Vulkan/Texture.cpp
    Platform/Vulkan/Texture.h
+   Platform/Vulkan/VideoSession.cpp
+   Platform/Vulkan/VideoSession.h
    Platform/Vulkan/RenderPass.cpp
    Platform/Vulkan/RenderPass.h)
 
