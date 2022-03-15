@@ -87,6 +87,8 @@ void Shader::Reflect()
 {
     ComPtr<ID3D12ShaderReflection> reflector = NULL;;
 
+    uint32_t baseRegisters[8] = { 0 };
+
     for (size_t i = 0; i < byteCodes.size(); i++)
     {
         if (!byteCodes[i].pShaderBytecode)
@@ -102,22 +104,32 @@ void Shader::Reflect()
         D3D12_SHADER_DESC desc{};
         Check(reflector->GetDesc(&desc));
         SetupDescriptorRanges(desc, IsGraphics() ?
-            (i == VertexShaderPos ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL) : D3D12_SHADER_VISIBILITY_ALL);
+            (i == VertexShaderPos ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL) : D3D12_SHADER_VISIBILITY_ALL, baseRegisters);
     }
 }
 
-void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility)
+void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters)
 {
     if (desc.ConstantBuffers)
     {
         DescriptorRange range{};
-        range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, desc.ConstantBuffers, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        range.Init(
+            D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
+            desc.ConstantBuffers,
+            refBaseRegisters[D3D12_DESCRIPTOR_RANGE_TYPE_CBV]++, 0,
+            D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE
+        );
         descriptorRanges.emplace_back(std::pair(range, visibility));
     }
     if (desc.TextureNormalInstructions)
     {
         DescriptorRange range{};
-        range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, desc.TextureNormalInstructions, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+        range.Init(
+            D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+            desc.TextureNormalInstructions,
+            refBaseRegisters[D3D12_DESCRIPTOR_RANGE_TYPE_SRV]++, 0,
+            D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE
+        );
         descriptorRanges.emplace_back(std::pair(range, visibility));
     }
 }

@@ -74,7 +74,7 @@ private:
 
     void Reflect();
 
-    void SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility);
+    void SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters);
 
 private:
     std::array<ID3DBlob*, MaxHandleCount> handles{ nullptr };
