@@ -35,6 +35,10 @@ set(VIDEO_CODEC_FILES
     Video/HEVC.cpp
     Video/HEVC.h)
 
+set(VULKAN_VIDEO_FILES
+    Video/Vulkan/HEVC.cpp
+    Video/Vulkan/HEVC.h)
+
 set(PROCESSING_FILES
     Processing/ColorSpace.cpp
     Processing/ColorSpace.h)
@@ -49,6 +53,7 @@ source_group("\\Interface\\" FILES ${INTERFACE_FILES})
 source_group("\\LookupTable\\" FILES ${LOOKUP_TABLE_FILE})
 source_group("\\Image\\" FILES ${IMAGE_CODEC_FILES})
 source_group("\\Video\\" FILES ${VIDEO_CODEC_FILES})
+source_group("\\Video\\Vulkan\\" FILES ${VULKAN_VIDEO_FILES})
 source_group("\\External\\" FILES ${EXTERNAL_FILES})
 source_group("\\Processing\\" FILES ${PROCESSING_FILES})
 
@@ -60,6 +65,7 @@ add_library(${PROJECT_NAME} STATIC
     ${LOOKUP_TABLE_FILE}
     ${IMAGE_CODEC_FILES}
     ${VIDEO_CODEC_FILES}
+    ${VULKAN_VIDEO_FILES}
     ${PROCESSING_FILES}
 )
 

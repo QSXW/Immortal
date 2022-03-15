@@ -119,7 +119,7 @@ struct VideoParameterSet : public NAL::Payload
     uint32_t vps_time_scale;
     uint32_t vps_num_ticks_poc_diff_one_minus1;
     uint32_t vps_num_hrd_parameters;
-    uint8_t  vps_max_dec_pic_buffering_minus1[8];
+    uint8_t  vps_max_dec_pic_buffering[8];
     uint8_t  vps_num_reorder_pics[8];
     uint8_t  vps_max_latency_increase[8];
     uint8_t  layer_id_included_flag[8][8];
@@ -144,8 +144,8 @@ struct SequenceParameterSet : public NAL::Payload
     int32_t conf_win_right_offset;
     int32_t conf_win_top_offset;
     int32_t conf_win_bottom_offset;
-    int32_t bit_depth_luma_minus8;
-    int32_t bit_depth_chroma_minus8;
+    int32_t bit_depth_luma;
+    int32_t bit_depth_chroma;
     uint32_t log2_max_pic_order_cnt_lsb_minus4;
 
     struct {
@@ -347,7 +347,7 @@ public:
         MAX_SUB_LAYERS = 7
     };
 
-public:
+protected:
     virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
 
     virtual CodecError Parse(const std::vector<uint8_t> &buffer) override;
@@ -358,6 +358,8 @@ public:
 
     PictureParameterSet *pps;
 };
+
+using SuperHEVCCodec = HEVCCodec;
 
 }
 }

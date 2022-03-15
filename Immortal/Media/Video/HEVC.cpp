@@ -45,6 +45,33 @@ static inline int32_t FilterByteStream(std::vector<uint8_t> &dst, const uint8_t 
     return ptr - src;
 }
 
+static inline Format SelectFormat(int32_t bitDepth, int32_t chromaFormatIDC)
+{
+    switch (bitDepth)
+    {
+    case 8:
+        if (chromaFormatIDC == 0)
+        {
+            return Format::None;
+        }
+        if (chromaFormatIDC == 1)
+        {
+            return  Format::YUV420P;
+        }
+        if (chromaFormatIDC == 2)
+        {
+            return Format::YUV422P;
+        }
+        if (chromaFormatIDC == 2)
+        {
+            return Format::YUV444P;
+        }
+
+    default:
+        return Format::None;
+    }
+}
+
 CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 {
     std::vector<uint8_t> buffer;
@@ -55,7 +82,10 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
     while ((bytes = FilterByteStream(buffer, rbsp.data() + bytesConsumed, end)) > 0)
     {
         bytesConsumed += bytes;
-        Parse(buffer);
+        if (Parse(buffer) != CodecError::Preparing)
+        {
+            break;
+        }
         buffer.clear();
     }
 
@@ -166,12 +196,12 @@ void VideoParameterSet::Parse(BitTracker &bitTracker)
     vps_sub_layer_ordering_info_present_flag = bitTracker.GetBits(1);
     for (int i = (vps_sub_layer_ordering_info_present_flag ? 0 : vps_max_sub_layers_minus1); i <= vps_max_sub_layers_minus1; i++)
     {
-        vps_max_dec_pic_buffering_minus1[i] = bitTracker.UnsignedExpGolomb();
-        vps_num_reorder_pics[i]             = bitTracker.UnsignedExpGolomb();
-        vps_max_latency_increase[i]         = bitTracker.UnsignedExpGolomb();
+        vps_max_dec_pic_buffering[i] = bitTracker.UnsignedExpGolomb() + 1;
+        vps_num_reorder_pics[i]      = bitTracker.UnsignedExpGolomb();
+        vps_max_latency_increase[i]  = bitTracker.UnsignedExpGolomb();
         ThrowIf(
-            vps_max_dec_pic_buffering_minus1[i] + 1 > H265::MAX_DPB_SIZE ||
-            vps_num_reorder_pics[i] > vps_max_dec_pic_buffering_minus1[i],
+            vps_max_dec_pic_buffering[i] + 1 > H265::MAX_DPB_SIZE ||
+            vps_num_reorder_pics[i] > vps_max_dec_pic_buffering[i],
             SError::OutOfBound
         );
     }
@@ -360,8 +390,8 @@ void SequenceParameterSet::Parse(BitTracker & bitTracker)
         conf_win_bottom_offset = bitTracker.UnsignedExpGolomb();
     }
 
-    bit_depth_luma_minus8   = bitTracker.UnsignedExpGolomb() + 8;
-    bit_depth_chroma_minus8 = bitTracker.UnsignedExpGolomb() + 8;
+    bit_depth_luma   = bitTracker.UnsignedExpGolomb() + 8;
+    bit_depth_chroma = bitTracker.UnsignedExpGolomb() + 8;
     log2_max_pic_order_cnt_lsb_minus4 = bitTracker.UnsignedExpGolomb();
     sps_sub_layer_ordering_info_present_flag = bitTracker.GetBit();
 
@@ -571,6 +601,7 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
 
     case NAL::Type::SPS:
         sps = new SequenceParameterSet{ bitTracker };
+        desc.format = SelectFormat(sps->bit_depth_luma, sps->chroma_format_idc);
         break;
 
     case NAL::Type::PPS:
@@ -579,7 +610,7 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
 
     default:
         LOG::WARN("Unsupported NAL unit type {0}", nal.GetType());
-        break;
+        return CodecError::Succeed;
     }
 
     while (!bitTracker.NoMoreData() &&
@@ -589,7 +620,7 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
         auto traillingZeroBits = bitTracker.GetBits(8);
     }
 
-    return CodecError::Succeed;
+    return CodecError::Preparing;
 }
 
 }
