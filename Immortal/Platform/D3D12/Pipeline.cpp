@@ -69,14 +69,19 @@ void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget, 
 void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget, Option option)
 {
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    if (!shader)
+    {
+        return;
+    }
+
     auto &bytesCodes       = shader->ByteCodes();
     auto &descriptorRanges = shader->DescriptorRanges();
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
     std::vector<RootParameter> rootParameters{};
 
-    descriptorTables.reserve(descriptorRanges.size());
-    rootParameters.reserve(descriptorRanges.size());
+    descriptorTables.resize(descriptorRanges.size());
+    rootParameters.resize(descriptorRanges.size());
     uint32_t offset = 0;
     for (size_t i = 0; i < descriptorRanges.size(); i++)
     {
@@ -106,8 +111,8 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
         RootParameter rootParameter;
         rootParameter.InitAsDescriptorTable(1, &range, descriptorRanges[i].second);
-        rootParameters.emplace_back(std::move(rootParameter));
-        descriptorTables.emplace_back(DescriptorTable{ range.NumDescriptors, offset });
+        rootParameters[i] = std::move(rootParameter);
+        descriptorTables[i] = DescriptorTable{ range.NumDescriptors, offset };
         offset += range.NumDescriptors;
     }
 
