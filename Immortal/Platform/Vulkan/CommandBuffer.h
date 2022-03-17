@@ -212,6 +212,31 @@ public:
         vkCmdDrawIndexed(handle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
+    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) const
+    {
+        vkCmdBeginVideoCodingKHR(handle, pBeginInfo);
+    }
+
+    void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndInfo) const
+    {
+        vkCmdEndVideoCodingKHR(handle, pEndInfo);
+    }
+
+    void Decode(const VkVideoDecodeInfoKHR *pFrameInfo) const
+    {
+        vkCmdDecodeVideoKHR(handle, pFrameInfo);
+    }
+
+    void Begin(const VkVideoBeginCodingInfoKHR *pBeginInfo) const
+    {
+        BeginVideoCoding(pBeginInfo);
+    }
+
+    void End(const VkVideoEndCodingInfoKHR *pEndInfo) const
+    {
+        EndVideoCoding(pEndInfo);
+    }
+
 private:
     CommandPool *commandPool{ nullptr };
 
