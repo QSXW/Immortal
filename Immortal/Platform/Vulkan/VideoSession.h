@@ -20,10 +20,17 @@ public:
         return handle;
     }
 
+    const VkVideoSessionParametersKHR &GetParameters() const
+    {
+        return parameters;
+    }
+
 private:
     Device *device{ nullptr };
 
     VkVideoSessionKHR handle{ VK_NULL_HANDLE };
+
+    VkVideoSessionParametersKHR parameters{ VK_NULL_HANDLE };
 };
 
 }   
