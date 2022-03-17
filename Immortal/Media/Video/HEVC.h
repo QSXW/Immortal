@@ -256,8 +256,8 @@ struct PictureParameterSet : public NAL::Payload
     uint32_t num_tile_rows_minus1;
     uint32_t log2_parallel_merge_level_minus2;
 
-    uint32_t *column_width_minus1;
-    uint32_t *row_height_minus1;
+    uint16_t column_width_minus1[19];
+    uint16_t row_height_minus1[21];
 
     int32_t init_qp_minus26;
     int32_t pps_cb_qp_offset;

@@ -23,12 +23,29 @@ class HEVCCodec : public SuperHEVCCodec
 public:
     using Super = SuperHEVCCodec;
 
-    virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
+    struct ParameterSet
+    {
+        StdVideoH265SequenceParameterSet    sps;
+        StdVideoH265SequenceParameterSetVui vui;
+        StdVideoH265PictureParameterSet     pps;
+        StdVideoH265ScalingLists            spsScalingLists;
+        StdVideoH265ScalingLists            ppsScalingLists;
+    };
 
 public:
+    virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
+
+private:
+    void UpdateSequenceParameterSet();
+
+    void UpdatePictureParameterSet();
+
+    void TransferParameterSet();
 
 private:
     std::unique_ptr<VideoSession> session;
+
+    ParameterSet ps;
 };
 
 }

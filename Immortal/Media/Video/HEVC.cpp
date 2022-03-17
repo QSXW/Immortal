@@ -518,8 +518,6 @@ void PictureParameterSet::Parse(BitTracker &bitTracker)
         uniform_spacing_flag    = bitTracker.GetBit();
         if (uniform_spacing_flag)
         {
-            column_width_minus1 = new uint32_t[num_tile_columns_minus1 + 1];
-            row_height_minus1   = new uint32_t[num_tile_rows_minus1 + 1];
             for (size_t i = 0; i < num_tile_columns_minus1; i++)
             {
                 column_width_minus1[i] = bitTracker.UnsignedExpGolomb();
