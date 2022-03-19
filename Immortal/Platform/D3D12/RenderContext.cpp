@@ -67,9 +67,9 @@ void RenderContext::Setup()
     }
     shaderVisibleDescriptorAllocator.Init(device.get());
 
-    auto adaptorDesc = device->AdaptorDesc();
+    auto adapterDesc = device->GetAdapterDesc();
     Super::UpdateMeta(
-        Utils::ws2s(adaptorDesc.Description).c_str(),
+        Utils::ws2s(adapterDesc.Description).c_str(),
         nullptr,
         nullptr
         );
@@ -95,9 +95,9 @@ void RenderContext::Setup()
         swapchainDesc.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapchainDesc.SampleDesc.Count  = 1;
         swapchainDesc.Flags             = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-        // swapchainDesc.Flags             = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        // swapchainDesc.Flags          = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
-        swapchain = std::make_unique<Swapchain>(dxgiFactory, queue->Handle(), hWnd, swapchainDesc);
+        swapchain = std::make_unique<Swapchain>(device.get(), queue->Handle(), hWnd, swapchainDesc);
         // swapchain->SetMaximumFrameLatency(desc.FrameCount);
         // swapchainWritableObject = swapchain->FrameLatencyWaitableObject();
     }
@@ -117,27 +117,7 @@ void RenderContext::Setup()
         ); */
     }
 
-    {
-        DescriptorPool::Description renderTargetViewDesc = {
-            DescriptorPool::Type::RenderTargetView,
-            desc.FrameCount,
-            DescriptorPool::Flag::None,
-            1
-        };
-
-        renderTargetViewDescriptorHeap = std::make_unique<DescriptorPool>(
-            device->Handle(),
-            &renderTargetViewDesc
-            );
-
-        renderTargetViewDescriptorSize = device->DescriptorHandleIncrementSize(
-            renderTargetViewDesc.Type
-            );
-    }
-
-    CreateRenderTarget();
-
-    for (int i{0}; i < desc.FrameCount; i++)
+    for (int i = 0; i < desc.FrameCount; i++)
     {
         commandAllocator[i] = queue->RequestCommandAllocator();
     }
@@ -150,15 +130,14 @@ void RenderContext::Setup()
 
     commandList->Close();
 
-    queue->Handle()->ExecuteCommandLists(1, (ID3D12CommandList **)commandList->AddressOf());
+    queue->Execute(commandList->AddressOf<ID3D12CommandList>());
 
     // Create synchronization objects and wait until assets have been uploaded to the GPU.
     {
-        frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+        auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
         device->CreateFence(&fence, fenceValues[frameIndex], D3D12_FENCE_FLAG_NONE);
         fenceValues[frameIndex]++;
 
-        // Create an event handle to use for frame synchronization.
         fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         if (!fenceEvent)
         {
@@ -166,32 +145,12 @@ void RenderContext::Setup()
             return;
         }
 
-        const uint64_t fenceToWaitFor = fenceValues[frameIndex];
-        queue->Signal(fence, fenceToWaitFor);
-        fenceValues[frameIndex]++;
-
-        Check(fence->SetEventOnCompletion(fenceToWaitFor, fenceEvent));
-        WaitForSingleObject(fenceEvent, INFINITE);
+        WaitForGPU();
     }
 
 #ifdef SLDEBUG
     device->Set("RenderContext::Device");
 #endif
-}
-
-void RenderContext::CreateRenderTarget()
-{
-    CPUDescriptor renderTargetViewDescriptor {
-        renderTargetViewDescriptorHeap->StartOfCPU()
-        };
-
-    for (UINT i = 0; i < desc.FrameCount; i++)
-    {
-        swapchain->AccessBackBuffer(i, &renderTargets[i]);
-        device->CreateView(renderTargets[i], rcast<D3D12_RENDER_TARGET_VIEW_DESC *>(nullptr), renderTargetViewDescriptor);
-        renderTargetViewDescriptor.Offset(1, renderTargetViewDescriptorSize);
-        renderTargets[i]->SetName((std::wstring(L"Render Target{") + std::to_wstring(i) + std::wstring(L"}")).c_str());
-    }
 }
 
 inline int ComputeIntersectionArea(int ax1, int ay1, int ax2, int ay2, int bx1, int by1, int bx2, int by2)
@@ -339,41 +298,22 @@ void RenderContext::SetHDRMetaData(float maxOutputNits, float minOutputNits, flo
     swapchain->Set(DXGI_HDR_METADATA_TYPE_HDR10, sizeof(metaData), &metaData);
 }
 
-void RenderContext::CleanUpRenderTarget()
-{
-    for (UINT i = 0; i < desc.FrameCount; i++)
-    {
-        if (renderTargets[i])
-        {
-            renderTargets[i]->Release();
-            renderTargets[i] = nullptr;
-        }
-    }
-}
-
 void RenderContext::WaitForGPU()
 {
-    // Schedule a Signal command in the queue.
+    auto frameIndex = swapchain->GetCurrentFrameIndex();
     queue->Signal(fence, fenceValues[frameIndex]);
-
-    // Wait until the fence has been processed.
     fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent);
     WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
-
-    // Increment the fence value for the current frame.
     fenceValues[frameIndex]++;
 }
 
 UINT RenderContext::WaitForPreviousFrame()
 {
-    // Schedule a Signal command in the queue.
-    const UINT64 currentFenceValue = fenceValues[frameIndex];
+    auto frameIndex = swapchain->GetCurrentFrameIndex();
+    const uint64_t currentFenceValue = fenceValues[frameIndex];
     queue->Signal(fence, currentFenceValue);
 
-    // Update the frame index.
     frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-
-    // If the next frame is not ready to be rendered yet, wait until it is ready.
     auto completedValue = fence->GetCompletedValue();
     if (completedValue < fenceValues[frameIndex])
     {
@@ -381,7 +321,6 @@ UINT RenderContext::WaitForPreviousFrame()
         WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
     }
 
-    // Set the fence value for the next frame.
     fenceValues[frameIndex] = currentFenceValue + 1;
 
     return frameIndex;
@@ -393,11 +332,12 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
     {
         return;
     }
+
     WaitForGPU();
-    CleanUpRenderTarget();
+    swapchain->ClearRenderTarget();
 
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
-    swapchain->Desc(&swapchainDesc);
+    swapchain->GetDesc(&swapchainDesc);
     swapchain->ResizeBuffers(
         width,
         height,
@@ -405,14 +345,14 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
         swapchainDesc.Flags,
         desc.FrameCount
     );
-    EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
 
-    CreateRenderTarget();
+    EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
+    swapchain->CreateRenderTarget();
 }
 
 void RenderContext::WaitForNextFrameResources()
 {
-    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
     HANDLE waitableObjects[] = {
         swapchainWritableObject,
@@ -420,8 +360,8 @@ void RenderContext::WaitForNextFrameResources()
     };
     DWORD numWaitableObjects = 1;
 
-    UINT64 fenceValue = fenceValues[frameIndex];
-    if (fenceValue != 0) // means no fence was signaled
+    uint64_t fenceValue = fenceValues[frameIndex];
+    if (fenceValue != 0)
     {
         fenceValues[frameIndex] = 0;
         fence->SetEventOnCompletion(fenceValue, fenceEvent);

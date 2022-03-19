@@ -90,20 +90,6 @@ public:
         return shaderVisibleDescriptorAllocator.GetAddress<DescriptorPool>();
     }
 
-    ID3D12Resource *RenderTarget(UINT backBufferIndex)
-    {
-        return renderTargets[backBufferIndex];
-    }
-
-    CPUDescriptor RenderTargetDescriptor(INT backBufferIndex)
-    {
-        return CPUDescriptor{
-                 renderTargetViewDescriptorHeap->Get<D3D12_CPU_DESCRIPTOR_HANDLE>(),
-                 backBufferIndex,
-                 renderTargetViewDescriptorSize
-            };
-    }
-
     Vector2 Extent()
     {
         return Vector2{
@@ -111,10 +97,6 @@ public:
             ncast<float>(desc.Height)
         };
     }
-
-    void CleanUpRenderTarget();
-
-    void CreateRenderTarget();
 
     void CheckDisplayHDRSupport();
 
@@ -147,15 +129,7 @@ private:
 
     HANDLE swapchainWritableObject{ nullptr };
 
-    std::unique_ptr<DescriptorPool> renderTargetViewDescriptorHeap;
-
     std::unique_ptr<CommandList> commandList;
-
-    UINT frameIndex{ 0 };
-
-    UINT renderTargetViewDescriptorSize{ 0 };
-
-    ID3D12Resource *renderTargets[MAX_FRAME_COUNT]{ nullptr };
 
     ID3D12CommandAllocator *commandAllocator[MAX_FRAME_COUNT];
 
@@ -184,13 +158,7 @@ private:
         DXGI_COLOR_SPACE_TYPE currentColorSpace{ DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 };
     } color;
 
-    struct
-    {
-        int left{ 0 };
-        int top{ 0 };
-        int right{ 0 };
-        int bottom{ 0 };
-    } windowBounds;
+    Rect windowBounds;
 
     ErrorHandle error;
 

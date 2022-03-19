@@ -13,14 +13,17 @@ namespace D3D12
 
 class Device
 {
+public: 
+    using Super = ID3D12Device;
+
 public:
     Device(ComPtr<IDXGIFactory4> factory);
 
-    ~Device()
-    {
-        IfNotNullThenRelease(handle);
-    }
+    ~Device();
 
+    DXGI_ADAPTER_DESC GetAdapterDesc();
+
+public:
     ID3D12Device *Handle()
     {
         return handle;
@@ -34,6 +37,15 @@ public:
     operator ID3D12Device*()
     {
         return handle;
+    }
+
+    template <class T>
+    T *GetAddress() const
+    {
+        if (IsPrimitiveOf<IDXGIFactory4, T>())
+        {
+            return dxgiFactory;
+        }
     }
 
     std::unique_ptr<Queue> CreateQueue(Queue::Description &desc) const
@@ -160,8 +172,7 @@ public:
         UINT                        numDescriptors,
         D3D12_CPU_DESCRIPTOR_HANDLE destDescriptorRangeStart,
         D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptorRangeStart,
-        D3D12_DESCRIPTOR_HEAP_TYPE  descriptorHeapsType
-    )
+        D3D12_DESCRIPTOR_HEAP_TYPE  descriptorHeapsType)
     {
         handle->CopyDescriptorsSimple(
             numDescriptors,
@@ -170,8 +181,6 @@ public:
             descriptorHeapsType
             );
     }
-
-    DXGI_ADAPTER_DESC AdaptorDesc();
 
     void Set(const std::wstring &name)
     {

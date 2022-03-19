@@ -23,7 +23,12 @@ Device::Device(ComPtr<IDXGIFactory4> factory) :
     }
 }
 
-DXGI_ADAPTER_DESC Device::AdaptorDesc()
+Device::~Device()
+{
+    IfNotNullThenRelease(handle);
+}
+
+DXGI_ADAPTER_DESC Device::GetAdapterDesc()
 {
     ComPtr<IDXGIAdapter> dxgiAdapter{ nullptr };
     Check(dxgiFactory->EnumAdapters(0, &dxgiAdapter));

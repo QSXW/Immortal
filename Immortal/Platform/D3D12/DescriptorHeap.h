@@ -31,10 +31,10 @@ public:
     {
         using Super = D3D12_DESCRIPTOR_HEAP_DESC;
 
-        Description(DescriptorHeap::Type type, int numDescriptors, Flag flags, UINT nodeMask = 0)
+        Description(DescriptorHeap::Type type, UINT numDescriptors, Flag flags, UINT nodeMask = 0)
         {
             Super::Type           = ncast<D3D12_DESCRIPTOR_HEAP_TYPE>(type);
-            Super::NumDescriptors = ncast<UINT>(numDescriptors);
+            Super::NumDescriptors = numDescriptors;
             Super::Flags          = ncast<D3D12_DESCRIPTOR_HEAP_FLAGS>(flags);
             Super::NodeMask       = nodeMask;
         }
@@ -45,14 +45,14 @@ public:
         }
     };
 
-    D3D12_CPU_DESCRIPTOR_HANDLE StartOfCPU()
+    CPUDescriptor StartOfCPU()
     {
-        return handle->GetCPUDescriptorHandleForHeapStart();
+        return CPUDescriptor{ handle->GetCPUDescriptorHandleForHeapStart() };
     }
 
-    D3D12_GPU_DESCRIPTOR_HANDLE StartOfGPU()
+    GPUDescriptor StartOfGPU()
     {
-        return handle->GetGPUDescriptorHandleForHeapStart();
+        return GPUDescriptor{ handle->GetGPUDescriptorHandleForHeapStart() };
     }
 
     template <class T>
@@ -78,7 +78,8 @@ public:
     }
 
 public:
-    DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc)
+    DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc) :
+        increment{ device->GetDescriptorHandleIncrementSize(desc->Type) }
     {
         Check(device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&handle)));
     }
@@ -134,8 +135,15 @@ public:
         return &handle;
     }
 
+    uint32_t GetIncrement() const
+    {
+        return increment;
+    }
+
 private:
     ID3D12DescriptorHeap *handle{ nullptr };
+
+    uint32_t increment = 0;
 };
 
 using DescriptorPool = DescriptorHeap;
@@ -150,7 +158,6 @@ public:
         type{ type },
         flag{ flag },
         activeDescriptorHeap{ nullptr },
-        increment{ 0 },
         freeDescritorCount{ 0 },
         avtiveDescriptor{ D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN }
     {
@@ -184,7 +191,7 @@ public:
 
     uint32_t Increment() const
     {
-        return increment;
+        return activeDescriptorHeap->GetIncrement();
     }
 
     template <class T>
@@ -204,8 +211,6 @@ private:
     DescriptorHeap::Type type;
 
     DescriptorHeap::Flag flag;
-
-    uint32_t increment;
 
     uint32_t freeDescritorCount;
 

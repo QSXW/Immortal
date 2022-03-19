@@ -25,7 +25,7 @@ void Renderer::Setup()
 
 void Renderer::PrepareFrame()
 {
-    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
     commandAllocators[frameIndex]->Reset();
 
@@ -39,7 +39,7 @@ void Renderer::SwapBuffers()
 
     swapchain->Present(1, 0);
 
-    frameIndex = context->WaitForPreviousFrame();
+    context->WaitForPreviousFrame();
 }
 
 Descriptor::Super *Renderer::CreateImageDescriptor(uint32_t count)
@@ -120,7 +120,7 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
     const auto &dsvDescriptor = depthBuffer.GetDescriptor();
     commandList->ClearRenderTargetView(rtvDescriptor[0], rcast<float *>(renderTarget->ClearColor()));
     commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
-    commandList->OMSetRenderTargets(rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
+    commandList->SetRenderTargets(rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
 }
 
 void Renderer::End()

@@ -28,11 +28,6 @@ void DescriptorAllocator::Init(Device * device, uint32_t count)
         activeDescriptorHeap = Request(device, type, flag);
         avtiveDescriptor     = activeDescriptorHeap->Get<Descriptor>();
         freeDescritorCount   = NumDescriptorPerPool;
-
-        if (!increment)
-        {
-            increment = device->DescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE(type));
-        }
     }
 }
 
@@ -41,7 +36,7 @@ CPUDescriptor DescriptorAllocator::Allocate(Device *device, uint32_t count)
     Init(device, count);
 
     CPUDescriptor descriptor = avtiveDescriptor.cpu;
-    avtiveDescriptor.Offset(count, increment);
+    avtiveDescriptor.Offset(count, Increment());
     freeDescritorCount -= count;
 
     return descriptor;
@@ -52,7 +47,7 @@ Descriptor DescriptorAllocator::Allocate(Device *device)
     Init(device, 1);
 
     Descriptor descriptor = avtiveDescriptor;
-    avtiveDescriptor.Offset(1, increment);
+    avtiveDescriptor.Offset(1, Increment());
     freeDescritorCount--;
 
     return descriptor;
@@ -63,7 +58,7 @@ Descriptor DescriptorAllocator::Bind(Device *device, size_t pos)
     Init(device, 1);
 
     Descriptor descriptor = activeDescriptorHeap->Get<Descriptor>();
-    descriptor.Offset(pos, increment);
+    descriptor.Offset(pos, Increment());
 
     return descriptor;
 }

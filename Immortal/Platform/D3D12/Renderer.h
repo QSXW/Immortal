@@ -30,11 +30,6 @@ public:
 
     virtual void PrepareFrame() override;
 
-    virtual uint32_t Index() override
-    {
-        return frameIndex;
-    }
-
     virtual const char *GraphicsRenderer() override
     {
         return context->GraphicsRenderer();
@@ -43,13 +38,6 @@ public:
     virtual void OnResize(UINT x, UINT y, UINT width, UINT height) override
     {
         context->UpdateSwapchain(width, height);
-
-        frameIndex = Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1;
-
-        for (int i = 0; i < Swapchain::SWAP_CHAIN_BUFFER_COUNT; i++)
-        {
-            fenceValues[i] = queue->FenceValue();
-        }
     }
 
     virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
@@ -112,10 +100,6 @@ public:
     CommandList *commandList{ nullptr };
 
     ID3D12CommandAllocator **commandAllocators;
-
-    UINT frameIndex{ Swapchain::SWAP_CHAIN_BUFFER_COUNT - 1 };
-
-    UINT64 fenceValues[Swapchain::SWAP_CHAIN_BUFFER_COUNT]{ 0 };
 
     std::array<Barrier<BarrierType::Transition>, 8> barriers;
 

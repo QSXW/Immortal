@@ -84,6 +84,11 @@ public:
         return nextFenceValue++;
     }
 
+    void Execute(ID3D12CommandList **ppCommandList, uint32_t num = 1)
+    {
+        handle->ExecuteCommandLists(num, ppCommandList);
+    }
+
     bool IsFenceCompleted(UINT64 fenceValue)
     {
         if (fenceValue > lastCompletedFenceValue)

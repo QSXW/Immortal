@@ -49,7 +49,7 @@ public:
         virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 
-    void Set(const std::wstring &name)
+    void SetName(const std::wstring &name)
     {
         resource->SetName(name.c_str());
     }

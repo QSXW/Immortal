@@ -3,9 +3,9 @@
 #include "Common.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
-#include "Render/Texture.h"
 #include "Buffer.h"
 #include "Shader.h"
+#include "Texture.h"
 #include "RootSignature.h"
 #include "DescriptorHeap.h"
 
@@ -64,7 +64,7 @@ public:
 
     virtual void Bind(const Descriptor::Super *descriptors, uint32_t binding = 0) override;
 
-    virtual void Bind(Texture *texture, uint32_t slot = 0);
+    virtual void Bind(Texture::Super *texture, uint32_t slot = 0);
 
     template <class T, Buffer::Type type = Buffer::Type::Index>
     T Get()

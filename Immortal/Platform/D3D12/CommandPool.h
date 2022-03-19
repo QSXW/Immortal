@@ -30,12 +30,9 @@ public:
 public:
     CommandList(Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
-    CommandList::CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
+    CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
-    ~CommandList()
-    {
-        IfNotNullThenRelease(handle);
-    }
+    ~CommandList();
 
     void Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState = nullptr);
 
@@ -49,9 +46,11 @@ public:
         return handle;
     }
 
-    ID3D12GraphicsCommandList **AddressOf()
+    template <class T = ID3D12GraphicsCommandList>
+    T **AddressOf()
     {
-        return &handle;
+        static_assert(IsPrimitiveOf<ID3D12CommandList, T>() || IsPrimitiveOf<ID3D12GraphicsCommandList, T>());
+        return (T **)&handle;
     }
 
     void Close()
@@ -69,10 +68,10 @@ public:
         handle->ClearDepthStencilView(descriptor, clearFlags, depth, stencil, numRects, pRects);
     }
 
-    void OMSetRenderTargets(const D3D12_CPU_DESCRIPTOR_HANDLE *pRenderTargetDescriptors,
-                            UINT                               numRenderTargetDescriptors,
-                            bool                               RTsSingleHandleToDescriptorRange,
-                            const D3D12_CPU_DESCRIPTOR_HANDLE *pDepthStencilDescriptor = nullptr)
+    void SetRenderTargets(const D3D12_CPU_DESCRIPTOR_HANDLE *pRenderTargetDescriptors,
+                          UINT                               numRenderTargetDescriptors,
+                          bool                               RTsSingleHandleToDescriptorRange,
+                          const D3D12_CPU_DESCRIPTOR_HANDLE *pDepthStencilDescriptor = nullptr)
     {
         handle->OMSetRenderTargets(
             numRenderTargetDescriptors,
@@ -132,16 +131,10 @@ public:
         handle->IASetIndexBuffer(pView);
     }
     
-    void DrawIndexedInstance(
-        UINT indexCountPerInstance,
-        UINT instanceCount,
-        UINT startIndexLocation,
-        INT  baseVertexLocation,
-        UINT startInstanceLocation)
+    void DrawIndexedInstance(UINT indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, INT  baseVertexLocation, UINT startInstanceLocation)
     {
         handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
     }
-
 
 private:
     ID3D12GraphicsCommandList *handle;

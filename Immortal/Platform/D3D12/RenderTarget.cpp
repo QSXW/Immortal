@@ -233,10 +233,10 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
     }
     
 #ifdef SLDEBUG
-    attachments.depth.Set(L"RenderTarget::DepthStencilAttachment");
+    attachments.depth.SetName(L"RenderTarget::DepthStencilAttachment");
     for (size_t i = 0; i < attachments.color.size(); i++)
     {
-        attachments.color[i].Set(std::wstring{ L"RenderTarget::ColorAttachment#" } + std::to_wstring(i));
+        attachments.color[i].SetName(std::wstring{ L"RenderTarget::ColorAttachment#" } + std::to_wstring(i));
     }
 #endif
 }

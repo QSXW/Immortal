@@ -29,6 +29,11 @@ CommandList::CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator
     );
 }
 
+CommandList::~CommandList()
+{
+    IfNotNullThenRelease(handle);
+}
+
 void CommandList::Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState)
 {
     Check(handle->Reset(
@@ -36,7 +41,6 @@ void CommandList::Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState 
         pInitalState
         ));
 }
-
 
 }
 }

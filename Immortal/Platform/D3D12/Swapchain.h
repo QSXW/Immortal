@@ -1,12 +1,17 @@
 #pragma once
 
 #include "Common.h"
+#include "Resource.h"
+#include "Descriptor.h"
+#include "DescriptorHeap.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
+class Device;
+class DescriptorHeap;
 class Swapchain
 {
 public:
@@ -26,24 +31,32 @@ public:
     static inline constexpr UINT64 SWAP_CHAIN_BUFFER_COUNT = 3;
 
 public:
-    Swapchain(ComPtr<IDXGIFactory4> factory, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc)
-    {
-        ComPtr<IDXGISwapChain1> swapchain1;
-        Check(factory->CreateSwapChainForHwnd(
-            queue.Get(),
-            hWnd,
-            &desc,
-            nullptr,
-            nullptr,
-            &swapchain1
-            ));
+    Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc);
 
-        Check(swapchain1.As(&handle));
+    void CreateRenderTarget();
+
+    void ClearRenderTarget();
+
+    void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
+    {
+        Check(handle->ResizeBuffers(
+            bufferCount,
+            width,
+            height,
+            newFormat,
+            flags
+        ));
     }
 
     UINT AcquireCurrentBackBufferIndex()
     {
-        return handle->GetCurrentBackBufferIndex();
+        bufferIndex = handle->GetCurrentBackBufferIndex();
+        return bufferIndex;
+    }
+
+    uint32_t GetCurrentFrameIndex() const
+    {
+        return bufferIndex;
     }
 
     void AccessBackBuffer(UINT index, ID3D12Resource **pRenderTarget)
@@ -71,17 +84,6 @@ public:
         handle->Present(syncInterval, flags);
     }
 
-    void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
-    {
-        Check(handle->ResizeBuffers(
-            bufferCount,
-            width,
-            height,
-            newFormat,
-            flags
-            ));
-    }
-
     bool CheckColorSpaceSupport(DXGI_COLOR_SPACE_TYPE colorSpace, UINT *pSupport)
     {
         return SUCCEEDED(handle->CheckColorSpaceSupport(colorSpace, pSupport));
@@ -97,13 +99,31 @@ public:
         Check(handle->SetHDRMetaData(type, size, pMetaData));
     }
 
-    void Desc(DXGI_SWAP_CHAIN_DESC1 *desc)
+    void GetDesc(DXGI_SWAP_CHAIN_DESC1 *desc)
     {
         handle->GetDesc1(desc);
     }
 
+    CPUDescriptor GetDescriptor()
+    {
+        return rtvDescriptorHeap->StartOfCPU().Offset(bufferIndex, rtvDescriptorHeap->GetIncrement());
+    }
+
+    ID3D12Resource *GetRenderTarget() const
+    {
+        return renderTargets[bufferIndex];
+    }
+
 private:
+    Device *device{ nullptr };
+
     ComPtr<IDXGISwapChain4> handle{ nullptr };
+
+    std::unique_ptr<DescriptorHeap> rtvDescriptorHeap;
+
+    std::vector<ID3D12Resource *> renderTargets;
+
+    uint32_t bufferIndex = 0;
 };
 
 }
