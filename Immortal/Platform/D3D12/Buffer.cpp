@@ -7,6 +7,13 @@ namespace Immortal
 namespace D3D12
 {
 
+Buffer::Buffer(const Buffer &other, const BindInfo &bindInfo) :
+    Super{ bindInfo.type, bindInfo.size },
+    descriptor{ other.descriptor }
+{
+    virtualAddress = other.virtualAddress + bindInfo.offset;
+}
+
 Buffer::Buffer(Device *device, const size_t size, const void *data, Type type) :
     Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size }
 {
@@ -82,6 +89,11 @@ void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
         memcpy(memory + offset, data, updateSize);
     }
     Unmap();
+}
+
+Buffer *Buffer::Bind(const BindInfo &bindInfo) const
+{
+    return new Buffer{ *this, bindInfo };
 }
 
 }

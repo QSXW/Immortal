@@ -117,34 +117,27 @@ void RenderContext::Setup()
         ); */
     }
 
-    for (int i = 0; i < desc.FrameCount; i++)
     {
-        commandAllocator[i] = queue->RequestCommandAllocator();
-    }
+        frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
-    commandList = std::make_unique<CommandList>(
-        device.get(),
-        CommandList::Type::Direct,
-        commandAllocator[0]
-        );
-
-    commandList->Close();
-
-    queue->Execute(commandList->AddressOf<ID3D12CommandList>());
-
-    // Create synchronization objects and wait until assets have been uploaded to the GPU.
-    {
-        auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-        device->CreateFence(&fence, fenceValues[frameIndex], D3D12_FENCE_FLAG_NONE);
-        fenceValues[frameIndex]++;
-
-        fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (!fenceEvent)
+        for (int i = 0; i < desc.FrameCount; i++)
         {
-            Check(HRESULT_FROM_WIN32(GetLastError()));
-            return;
+            commandAllocator[i] = queue->RequestCommandAllocator();
         }
 
+        commandList = std::make_unique<CommandList>(
+            device.get(),
+            CommandList::Type::Direct,
+            commandAllocator[frameIndex]
+            );
+
+        commandList->Close();
+
+        queue->Execute(commandList->AddressOf<ID3D12CommandList>());
+
+        fence.reset(new Fence{ device.get(), fenceValues[frameIndex] });
+
+        fenceValues[frameIndex]++;
         WaitForGPU();
     }
 
@@ -300,25 +293,23 @@ void RenderContext::SetHDRMetaData(float maxOutputNits, float minOutputNits, flo
 
 void RenderContext::WaitForGPU()
 {
-    auto frameIndex = swapchain->GetCurrentFrameIndex();
-    queue->Signal(fence, fenceValues[frameIndex]);
-    fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent);
-    WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
+    Check(queue->Signal(*fence, fenceValues[frameIndex]));
+    Check(fence->SetCompletion(fenceValues[frameIndex]));
+    fence->Wait();
     fenceValues[frameIndex]++;
 }
 
 UINT RenderContext::WaitForPreviousFrame()
 {
-    auto frameIndex = swapchain->GetCurrentFrameIndex();
     const uint64_t currentFenceValue = fenceValues[frameIndex];
-    queue->Signal(fence, currentFenceValue);
+    Check(queue->Signal(*fence, currentFenceValue));
 
     frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-    auto completedValue = fence->GetCompletedValue();
+    auto completedValue = fence->GetCompletion();
     if (completedValue < fenceValues[frameIndex])
     {
-        Check(fence->SetEventOnCompletion(fenceValues[frameIndex], fenceEvent));
-        WaitForSingleObjectEx(fenceEvent, INFINITE, FALSE);
+        Check(fence->SetCompletion(fenceValues[frameIndex]));
+        fence->Wait();
     }
 
     fenceValues[frameIndex] = currentFenceValue + 1;
@@ -333,21 +324,25 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
         return;
     }
 
-    WaitForGPU();
-    swapchain->ClearRenderTarget();
-
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
     swapchain->GetDesc(&swapchainDesc);
-    swapchain->ResizeBuffers(
-        width,
-        height,
-        DXGI_FORMAT_UNKNOWN,
-        swapchainDesc.Flags,
-        desc.FrameCount
-    );
 
-    EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
-    swapchain->CreateRenderTarget();
+    if (desc.Width != width || desc.Height != height)
+    {
+        WaitForGPU();
+        swapchain->ClearRenderTarget();
+
+        swapchain->ResizeBuffers(
+            width,
+            height,
+            DXGI_FORMAT_UNKNOWN,
+            swapchainDesc.Flags,
+            desc.FrameCount
+        );
+
+        EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);
+        swapchain->CreateRenderTarget();
+    }
 }
 
 void RenderContext::WaitForNextFrameResources()
@@ -364,8 +359,8 @@ void RenderContext::WaitForNextFrameResources()
     if (fenceValue != 0)
     {
         fenceValues[frameIndex] = 0;
-        fence->SetEventOnCompletion(fenceValue, fenceEvent);
-        waitableObjects[1] = fenceEvent;
+        fence->SetCompletion(fenceValue);
+        waitableObjects[1] = fence->GetEvent();;
         numWaitableObjects = 2;
     }
 

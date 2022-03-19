@@ -11,6 +11,7 @@
 #include "CommandPool.h"
 #include "CommandAllocator.h"
 #include "Queue.h"
+#include "Fence.h"
 #include "Math/Vector.h"
 
 namespace Immortal
@@ -133,13 +134,11 @@ private:
 
     ID3D12CommandAllocator *commandAllocator[MAX_FRAME_COUNT];
 
-    ID3D12Fence *fence;
+    std::unique_ptr<Fence> fence;
 
-    HANDLE fenceEvent{ nullptr };
+    uint64_t fenceValues[MAX_FRAME_COUNT]{ 0 };
 
-    UINT64 fenceValues[MAX_FRAME_COUNT]{ 0 };
-
-    UINT64 fenceLastSignaledValue{ 0 };
+    uint32_t frameIndex = 0;
 
     struct
     {

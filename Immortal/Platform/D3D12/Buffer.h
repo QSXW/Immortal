@@ -55,6 +55,10 @@ public:
     };
 
 public:
+    Buffer() = default;
+
+    Buffer(const Buffer &other, const BindInfo &bindInfo);
+
     Buffer(Device *device, const size_t size, const void *data, Type type);
 
     Buffer(Device *device, const size_t size, Type type);
@@ -64,6 +68,8 @@ public:
     virtual ~Buffer() override;
 
     virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
+
+    virtual Buffer *Bind(const BindInfo &bindInfo) const override;
 
     void Map(void **data)
     {

@@ -122,9 +122,9 @@ public:
         WaitForFence(IncrementFence());
     }
 
-    void Signal(ID3D12Fence *fence, UINT64 value)
+    HRESULT Signal(ID3D12Fence *fence, UINT64 value)
     {
-        Check(handle->Signal(fence, value));
+        return handle->Signal(fence, value);
     }
 
     void WaitForFence(UINT64 fenceValue)

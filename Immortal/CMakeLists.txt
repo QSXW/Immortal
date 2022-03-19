@@ -91,8 +91,8 @@ set(D3D12_FILES
     Platform/D3D12/Descriptor.h
     Platform/D3D12/Device.cpp
     Platform/D3D12/Device.h
-    Platform/D3D12/FencePool.cpp
-    Platform/D3D12/FencePool.h
+    Platform/D3D12/Fence.cpp
+    Platform/D3D12/Fence.h
     Platform/D3D12/GuiLayer.cpp
     Platform/D3D12/GuiLayer.h
     Platform/D3D12/Pipeline.cpp

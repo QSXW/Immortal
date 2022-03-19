@@ -103,6 +103,8 @@ public:
 
     std::array<Barrier<BarrierType::Transition>, 8> barriers;
 
+    uint32_t frameIndex = 0;
+
     uint32_t activeBarrier = 0;
 };
 

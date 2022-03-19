@@ -26,8 +26,6 @@ void PixelBuffer::Create(const Device *device, const D3D12_RESOURCE_DESC &desc, 
         &clearValue,
         &resource
     );
-
-    LOG::INFO("Create Resource: {0}", (void *)resource);
 }
 
 void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)

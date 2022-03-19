@@ -25,7 +25,7 @@ void Renderer::Setup()
 
 void Renderer::PrepareFrame()
 {
-    auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+    frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
     commandAllocators[frameIndex]->Reset();
 
@@ -35,7 +35,7 @@ void Renderer::PrepareFrame()
 void Renderer::SwapBuffers()
 {
     commandList->Close();
-    queue->Handle()->ExecuteCommandLists(1, (ID3D12CommandList **)commandList->AddressOf());
+    queue->Execute(commandList->AddressOf<ID3D12CommandList>());
 
     swapchain->Present(1, 0);
 
