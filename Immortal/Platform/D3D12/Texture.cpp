@@ -113,8 +113,8 @@ void Texture::Update(const void *data, uint32_t size)
     D3D12_RESOURCE_DESC uploadDesc{};
     CleanUpObject(&uploadDesc);
 
-    UINT uploadPitch              = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
-    UINT uploadSize               = height * uploadPitch;
+    uint32_t uploadPitch          = SLALIGN(width * format.ComponentCount(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+    uint32_t uploadSize           = height * uploadPitch;
     uploadDesc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
     uploadDesc.Alignment          = 0;
     uploadDesc.Width              = uploadSize;
