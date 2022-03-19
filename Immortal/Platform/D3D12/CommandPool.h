@@ -136,6 +136,16 @@ public:
         handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
     }
 
+    void SetGraphicsRoot32BitConstants(UINT rootParameterIndex, UINT num32BitValuesToSet, const void *pSrcData, UINT dstOffsetIn32BitValues)
+    {
+        handle->SetGraphicsRoot32BitConstants(rootParameterIndex, num32BitValuesToSet, pSrcData, dstOffsetIn32BitValues);
+    }
+    
+    void PushConstant(uint32_t size, const void *data, uint32_t offset)
+    {
+        SetGraphicsRoot32BitConstants(0, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
+    }
+
 private:
     ID3D12GraphicsCommandList *handle;
 };

@@ -76,7 +76,7 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
     {
         GPUDescriptor descriptor = descriptors;
         descriptor.Offset(descriptorTables[i].Offset, descriptorAllocator->Increment());
-        commandList->SetGraphicsRootDescriptorTable(i, descriptor);
+        commandList->SetGraphicsRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
     }
 
     commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
@@ -131,6 +131,15 @@ void Renderer::End()
     }
     commandList->ResourceBarrier(barriers.data(), activeBarrier);
     activeBarrier = 0;
+}
+
+void Renderer::PushConstant(Pipeline::Super *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+{
+    (void)stage;
+
+    auto pipeline = dynamic_cast<Pipeline *>(super);
+    commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
+    commandList->PushConstant(size, data, offset);
 }
 
 }

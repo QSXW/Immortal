@@ -28,6 +28,20 @@ namespace Immortal
 namespace D3D12
 {
 
+namespace Definitions
+{
+
+constexpr uint32_t RootConstantsIndex = 8;
+
+}
+
+namespace Limit
+{
+
+constexpr uint32_t BytesOfRootConstant = 128;
+
+}
+
 template <void(*F), class ... A>
 void IfNotNullThen(A&& ... args)
 {

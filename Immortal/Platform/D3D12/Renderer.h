@@ -90,6 +90,8 @@ public:
 
     virtual void End() override;
 
+    void PushConstant(Pipeline::Super *super, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset);
+
 public:
     RenderContext *context{ nullptr };
 
