@@ -281,7 +281,7 @@ public:
         panels
             .propertyManager
             .OnUpdate(selectedObject);
-
+                                                                      
         panels
             .tools
             .OnUpdate(selectedObject);
@@ -341,7 +341,7 @@ public:
         uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
 
         Object o = Object{ *(int *)&pixel, &scene };
-        panels.hierarchyGraphics.Select(o == selectedObject ? Object{} : o);
+        panels.hierarchyGraphics.Select(pixel == -1 || o == selectedObject ? Object{} : o);
     }
 
     bool LoadObject()
