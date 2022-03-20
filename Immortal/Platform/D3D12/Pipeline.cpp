@@ -190,8 +190,8 @@ void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
 {
     auto descriptors = rcast<const CPUDescriptor *>(super);
 
-    DescriptorTable &descriptorTable = descriptorTables[binding];
-    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset);
+    DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
+    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset + binding);
     for (size_t i = 0; i < descriptorTable.DescriptorCount; i++)
     {
         device->CopyDescriptors(
@@ -205,9 +205,9 @@ void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
 
 void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 {
-    DescriptorTable &descriptorTable = descriptorTables[binding];
+    DescriptorTable &descriptorTable = descriptorTables[Definitions::TextureIndex];
     Texture *texture = dcast<Texture *>(super);
-    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset);
+    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset + binding);
     device->CopyDescriptors(
         1, srvDescriptor.cpu,
         texture->GetDescriptor(),

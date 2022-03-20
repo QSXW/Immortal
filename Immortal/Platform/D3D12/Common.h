@@ -31,7 +31,9 @@ namespace D3D12
 namespace Definitions
 {
 
-constexpr uint32_t RootConstantsIndex = 8;
+constexpr uint32_t RootConstantsIndex  = 8;
+constexpr uint32_t ConstantBufferIndex = 1;
+constexpr uint32_t TextureIndex        = 2;
 
 }
 
