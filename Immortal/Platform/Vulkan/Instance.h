@@ -19,7 +19,7 @@ public:
              const std::unordered_map<const char*, bool> &requiredExtension        = {},
              const std::vector<const char*>&              requiredValidationLayers = {},
              bool                                         headless                 = false,
-             uint32_t                                     apiVersion               = VK_API_VERSION_1_0);
+             uint32_t                                     apiVersion               = VK_API_VERSION_1_2);
 
     Instance(VkInstance instance);
 

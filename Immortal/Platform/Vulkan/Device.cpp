@@ -13,11 +13,12 @@ namespace Immortal
 namespace Vulkan
 {
 
-static inline std::array<const char *, 4> VideoCodecExtensions = {
+static inline std::array<const char *, 5> VideoCodecExtensions = {
     "VK_KHR_synchronization2",
     "VK_KHR_video_queue",
     "VK_KHR_video_decode_queue",
-    "VK_KHR_video_encode_queue"
+    "VK_KHR_video_encode_queue",
+    "VK_KHR_sampler_ycbcr_conversion"
 };
 
 Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
