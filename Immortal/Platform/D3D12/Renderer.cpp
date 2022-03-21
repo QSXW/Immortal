@@ -55,9 +55,9 @@ Descriptor::Super *Renderer::CreateBufferDescriptor(uint32_t count)
     return CreateImageDescriptor(count);
 }
 
-void Renderer::Draw(Pipeline::Super *super)
+void Renderer::Draw(GraphicsPipeline::Super *super)
 {
-    auto pipeline       = dynamic_cast<Pipeline *>(super);
+    auto pipeline       = dynamic_cast<GraphicsPipeline *>(super);
     auto indexBuffer    = pipeline->GetBuffer<Buffer::Type::Index>();
     auto descriptorHeap = pipeline->GetAddress<DescriptorHeap>();
 

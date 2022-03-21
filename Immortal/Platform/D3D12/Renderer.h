@@ -60,9 +60,14 @@ public:
         return new Shader{ filepath, type };
     }
 
-    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> &shader) override
     {
-        return new Pipeline{ context->GetAddress<Device>(), shader };
+        return new GraphicsPipeline{ context->GetAddress<Device>(), shader };
+    }
+
+    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader) override
+    {
+        return new ComputePipeline{ context->GetAddress<Device>(), shader };
     }
 
     virtual Texture::Super *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override
@@ -84,7 +89,7 @@ public:
 
     virtual Descriptor::Super *CreateBufferDescriptor(uint32_t count) override;
 
-    virtual void Draw(Pipeline::Super *pipeline) override;
+    virtual void Draw(GraphicsPipeline::Super *pipeline) override;
 
     virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
 

@@ -15,10 +15,10 @@ namespace D3D12
 {
 
 class Device;
-class Pipeline : public SuperGraphicsPipeline
+class Pipeline : public virtual SuperPipeline
 {
 public:
-    using Super = SuperGraphicsPipeline;
+    using Super = SuperPipeline;
 
     struct DescriptorTable
     {
@@ -26,39 +26,8 @@ public:
         uint32_t Offset;
     };
 
-    struct State
-    {
-        std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescription;
-    };
-
-    static D3D12_PRIMITIVE_TOPOLOGY_TYPE SuperToBase(const PrimitiveType type)
-    {
-        switch (type)
-        {
-        case PrimitiveType::Line:
-            return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-
-        case PrimitiveType::Point:
-            return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-
-        case PrimitiveType::Triangles:
-        default:
-            return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        }
-    }
-
 public:
-    Pipeline(Device *device, std::shared_ptr<Shader::Super> shader);
-
     virtual ~Pipeline();
-
-    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
-
-    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
-
-    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
-
-    virtual void Set(const InputElementDescription &description) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
@@ -73,6 +42,75 @@ public:
     virtual void FreeDescriptorSet(uint64_t uuid) override;
 
     void Bind(Buffer *buffer, uint32_t slot = 0);
+
+    void InitRootSignature(const Shader *shader);
+
+public:
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<DescriptorHeap, T>())
+        {
+            return descriptorHeap.active;
+        }
+    }
+
+    template <class T>
+    T Get()
+    {
+        if constexpr (IsPrimitiveOf<RootSignature, T>())
+        {
+            return rootSignature;
+        }
+    }
+
+    operator ID3D12PipelineState*()
+    {
+        return pipelineState;
+    }
+
+    const std::vector<DescriptorTable> &GetDescriptorTables() const
+    {
+        return descriptorTables;
+    }
+
+protected:
+    Device *device{ nullptr };
+
+    ID3D12PipelineState *pipelineState{ nullptr };
+
+    struct {
+        DescriptorHeap *active = nullptr;
+        std::unordered_map <uint64_t, DescriptorHeap*> packs;
+        std::queue<DescriptorHeap*> freePacks;
+    } descriptorHeap;
+
+    uint32_t textureIndexInDescriptorTable = 0;
+    std::vector<DescriptorTable> descriptorTables;
+    
+    RootSignature rootSignature;
+};
+
+class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
+{
+public:
+    using Super = SuperGraphicsPipeline;
+
+    struct State
+    {
+        std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescription;
+    };
+
+public:
+    GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader);
+
+    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+
+    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+
+    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
+
+    virtual void Set(const InputElementDescription &description) override;
 
 public:
     template <class T, Buffer::Type type = Buffer::Type::Index>
@@ -96,15 +134,6 @@ public:
         }
     }
 
-    template <class T>
-    T *GetAddress()
-    {
-        if constexpr (IsPrimitiveOf<DescriptorHeap, T>())
-        {
-            return descriptorHeap.active;
-        }
-    }
-
     template <Buffer::Type type>
     Buffer *GetBuffer()
     {
@@ -118,32 +147,7 @@ public:
         }
     }
 
-    operator ID3D12PipelineState*()
-    {
-        return pipelineState;
-    }
-
-    const std::vector<DescriptorTable> &GetDescriptorTables() const
-    {
-        return descriptorTables;
-    }
-
 private:
-    Device *device{ nullptr };
-
-    ID3D12PipelineState *pipelineState{ nullptr };
-
-    struct {
-        DescriptorHeap *active = nullptr;
-        std::unordered_map <uint64_t, DescriptorHeap*> packs;
-        std::queue<DescriptorHeap*> freePacks;
-    } descriptorHeap;
-
-    uint32_t textureIndexInDescriptorTable = 0;
-    std::vector<DescriptorTable> descriptorTables;
-    
-    RootSignature rootSignature;
-
     struct {
         Buffer::VertexView vertex;
         Buffer::IndexView index;
@@ -152,6 +156,19 @@ private:
     D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 
     std::unique_ptr<State> state;
+};
+
+class ComputePipeline : public Pipeline, public SuperComputePipeline
+{
+public:
+    using Super = SuperComputePipeline;
+
+public:
+    ComputePipeline(Device *device, Shader::Super *shader);
+
+    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+
+private:
 };
 
 }

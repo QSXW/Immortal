@@ -9,71 +9,25 @@ namespace Immortal
 namespace D3D12
 {
 
-Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
-    Super{ shader },
-    device{ device },
-    state{ new State{} }
+static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopologyType(const Pipeline::PrimitiveType type)
 {
-
-}
-
-Pipeline::~Pipeline()
-{
-    IfNotNullThenRelease(pipelineState);
-}
-
-void Pipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
-{
-    Super::Set(superBuffer);
-
-    auto buffer = std::dynamic_pointer_cast<Buffer>(superBuffer);
-
-    if (buffer->GetType() == Buffer::Type::Vertex)
+    switch (type)
     {
-        bufferViews.vertex.BufferLocation = *buffer;
-        bufferViews.vertex.SizeInBytes = buffer->Size();
-    }
-    else if (buffer->GetType() == Buffer::Type::Index)
-    {
-        bufferViews.index.BufferLocation = *buffer;
-        bufferViews.index.SizeInBytes = buffer->Size();
+    case Pipeline::PrimitiveType::Line:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+
+    case Pipeline::PrimitiveType::Point:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+
+    case Pipeline::PrimitiveType::Triangles:
+    default:
+        return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     }
 }
 
-void Pipeline::Set(const InputElementDescription &description)
+
+void Pipeline::InitRootSignature(const Shader *shader)
 {
-    Super::Set(description);
-    THROWIF(!state, SError::NullPointerReference);
-
-    auto &inputElementDesc = state->InputElementDescription;
-    inputElementDesc.resize(desc.layout.Size());
-    for (size_t i = 0; i < desc.layout.Size(); i++)
-    {
-        inputElementDesc[i].SemanticName         = desc.layout[i].Name().c_str();
-        inputElementDesc[i].SemanticIndex        = 0;
-        inputElementDesc[i].Format               = desc.layout[i].BaseType<DXGI_FORMAT>();
-        inputElementDesc[i].InputSlot            = 0;
-        inputElementDesc[i].AlignedByteOffset    = desc.layout[i].Offset();
-        inputElementDesc[i].InputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-        inputElementDesc[i].InstanceDataStepRate = 0;
-    }
-    bufferViews.vertex.StrideInBytes = desc.layout.Stride;
-}
-
-void Pipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget, Option option)
-{
-    Reconstruct(renderTarget);
-}
-
-void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget, Option option)
-{
-    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
-    if (!shader)
-    {
-        return;
-    }
-
-    auto &bytesCodes       = shader->ByteCodes();
     auto &descriptorRanges = shader->DescriptorRanges();
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
@@ -135,6 +89,73 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     }
 
     device->Create(0, signature.Get(), &rootSignature);
+}
+
+GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
+    Super{ shader },
+    state{ new State{} }
+{
+    Pipeline::device = device;
+}
+
+Pipeline::~Pipeline()
+{
+    IfNotNullThenRelease(pipelineState);
+}
+
+void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
+{
+    Super::Set(superBuffer);
+
+    auto buffer = std::dynamic_pointer_cast<Buffer>(superBuffer);
+
+    if (buffer->GetType() == Buffer::Type::Vertex)
+    {
+        bufferViews.vertex.BufferLocation = *buffer;
+        bufferViews.vertex.SizeInBytes = buffer->Size();
+    }
+    else if (buffer->GetType() == Buffer::Type::Index)
+    {
+        bufferViews.index.BufferLocation = *buffer;
+        bufferViews.index.SizeInBytes = buffer->Size();
+    }
+}
+
+void GraphicsPipeline::Set(const InputElementDescription &description)
+{
+    Super::Set(description);
+    THROWIF(!state, SError::NullPointerReference);
+
+    auto &inputElementDesc = state->InputElementDescription;
+    inputElementDesc.resize(desc.layout.Size());
+    for (size_t i = 0; i < desc.layout.Size(); i++)
+    {
+        inputElementDesc[i].SemanticName         = desc.layout[i].Name().c_str();
+        inputElementDesc[i].SemanticIndex        = 0;
+        inputElementDesc[i].Format               = desc.layout[i].BaseType<DXGI_FORMAT>();
+        inputElementDesc[i].InputSlot            = 0;
+        inputElementDesc[i].AlignedByteOffset    = desc.layout[i].Offset();
+        inputElementDesc[i].InputSlotClass       = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+        inputElementDesc[i].InstanceDataStepRate = 0;
+    }
+    bufferViews.vertex.StrideInBytes = desc.layout.Stride;
+}
+
+void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget, Option option)
+{
+    Reconstruct(renderTarget);
+}
+
+void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget, Option option)
+{
+    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    if (!shader)
+    {
+        return;
+    }
+
+    auto &bytesCodes = shader->ByteCodes();
+    InitRootSignature(shader.get());
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = { 
         state->InputElementDescription.data(),
@@ -143,17 +164,17 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
     CleanUpObject(&pipelineStateDesc);
-    pipelineStateDesc.InputLayout                     = inputLayoutDesc;
-    pipelineStateDesc.pRootSignature                  = rootSignature;
-    pipelineStateDesc.VS                              = bytesCodes[Shader::VertexShaderPos];
-    pipelineStateDesc.PS                              = bytesCodes[Shader::PixelShaderPos ];
-    pipelineStateDesc.RasterizerState                 = RasterizerDescription{};
-    pipelineStateDesc.BlendState                      = BlendDescription{};
-    pipelineStateDesc.DepthStencilState               = DepthStencilDescription{};
-    pipelineStateDesc.SampleMask                      = UINT_MAX;
-    pipelineStateDesc.PrimitiveTopologyType           = SuperToBase(desc.PrimitiveType);
-    pipelineStateDesc.NumRenderTargets                = 1;
-    pipelineStateDesc.SampleDesc.Count                = 1;
+    pipelineStateDesc.InputLayout           = inputLayoutDesc;
+    pipelineStateDesc.pRootSignature        = rootSignature;
+    pipelineStateDesc.VS                    = bytesCodes[Shader::VertexShaderPos];
+    pipelineStateDesc.PS                    = bytesCodes[Shader::PixelShaderPos ];
+    pipelineStateDesc.RasterizerState       = RasterizerDescription{};
+    pipelineStateDesc.BlendState            = BlendDescription{};
+    pipelineStateDesc.DepthStencilState     = DepthStencilDescription{};
+    pipelineStateDesc.SampleMask            = UINT_MAX;
+    pipelineStateDesc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.PrimitiveType);
+    pipelineStateDesc.NumRenderTargets      = 1;
+    pipelineStateDesc.SampleDesc.Count      = 1;
 
     auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
     auto &colorBuffers = renderTarget->GetColorBuffers();
@@ -268,6 +289,32 @@ void Pipeline::FreeDescriptorSet(uint64_t uuid)
         descriptorHeap.freePacks.push(it->second);
         descriptorHeap.packs.erase(it);
     }
+}
+
+ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader)
+{
+    Pipeline::device = device;
+
+    if (!superShader)
+    {
+        LOG::ERR("Failed to create compute pipeline with a null shader");
+        return;
+    }
+    auto shader = dynamic_cast<Shader *>(superShader);
+    auto &byteCodes = shader->ByteCodes();
+
+    InitRootSignature(shader);
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
+    desc.pRootSignature = rootSignature;
+    desc.CS             = byteCodes[Shader::ComputeShaderPos];
+
+    device->Create(&desc, &pipelineState);
+}
+
+void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+
 }
 
 }
