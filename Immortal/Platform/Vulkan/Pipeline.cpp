@@ -111,10 +111,16 @@ void Pipeline::Update()
     }
 }
 
-void Pipeline::Bind(Texture::Super *superTexture, uint32_t slot)
+void Pipeline::Bind(Texture::Super *super, uint32_t slot)
 {
-    auto texture = dcast<Texture *>(superTexture);
+    auto texture = dcast<Texture *>(super);
     Bind((const Descriptor *)(&texture->DescriptorInfo()), slot);
+}
+
+void Pipeline::Bind(Buffer::Super *super, uint32_t slot)
+{
+    auto buffer = dcast<Buffer *>(super);
+    Bind((const Descriptor *)(buffer->Descriptor()), slot);
 }
 
 void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
@@ -126,16 +132,16 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
 
 void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
 {
-    for (auto &writeDescriptor : descriptor.setUpdater->WriteDescriptorSets)
+    auto &writeDescriptor = descriptor.setUpdater->WriteDescriptorSets[slot];
+    if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-        if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
-            writeDescriptor.dstBinding == slot)
-        {
-            writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
-            writeDescriptor.dstSet = descriptor.set;
-            break;
-        }
+        writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
     }
+    else
+    {
+        writeDescriptor.pBufferInfo = rcast<const VkDescriptorBufferInfo *>(descriptors);
+    }
+    writeDescriptor.dstSet = descriptor.set;
     Update();
 }
 

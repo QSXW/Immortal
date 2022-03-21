@@ -40,9 +40,11 @@ public:
 public:
     Pipeline(Device *device, Shader *shader);
 
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot) override;
+    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0) override;
 
-    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
+    virtual void Bind(Texture::Super *texture, uint32_t slot = 0) override;
+
+    virtual void Bind(Buffer::Super *buffer, uint32_t slot = 0) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 

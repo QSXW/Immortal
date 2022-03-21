@@ -10,9 +10,6 @@
 #include "Component.h"
 #include "GameObject.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 namespace Immortal
 {
 
@@ -49,8 +46,14 @@ struct Model
 
 }
 
-static __forceinline void RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material)
+void Scene::RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material)
 {
+    uint32_t baseRegister = 0;
+    if (Render::API == Render::Type::Vulkan)
+    {
+        baseRegister = 2;
+    }
+
     UniformBuffer::Model model;
     model.Transform = transform;
     model.Color     = material.AlbedoColor;
@@ -64,11 +67,14 @@ static __forceinline void RenderObject(std::shared_ptr<Pipeline::Graphics> pipel
         pipeline->AllocateDescriptorSet((uint64_t)&node);
         pipeline->Set(node.Vertex);
         pipeline->Set(node.Index);
-        pipeline->Bind(material.Textures.Albedo.get(), 2);
-        pipeline->Bind(material.Textures.Normal.get(), 3);
-        pipeline->Bind(material.Textures.Metallic.get(), 4);
-        pipeline->Bind(material.Textures.Roughness.get(), 5);
-        pipeline->Bind(material.Textures.AO.get(), 6);
+        pipeline->Bind(uniforms.transform.get(), 0);
+        pipeline->Bind(uniforms.shading.get(),   1);
+        pipeline->Bind(material.Textures.Albedo.get(),    baseRegister + 0);
+        pipeline->Bind(material.Textures.Normal.get(),    baseRegister + 1);
+        pipeline->Bind(material.Textures.Metallic.get(),  baseRegister + 2);
+        pipeline->Bind(material.Textures.Roughness.get(), baseRegister + 3);
+        pipeline->Bind(material.Textures.AO.get(),        baseRegister + 4);
+
         Render::PushConstant(pipeline.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
         Render::Draw(pipeline);
     }
@@ -99,39 +105,35 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     renderTarget.reset(Render::CreateRenderTarget({
         Resolutions::FHD.Width, Resolutions::FHD.Height,
         {
-            { Format::RGBA8           },
-            { Format::R32             },
-            { Format::Depth24Stencil8 }
+            { Format::RGBA8    },
+            { Format::R32      },
+            { Format::Depth32F }
         }
     }));
-    // renderTarget->Set(Color{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
-    renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
+    renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
+    // renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
 
-    InputElementDescription commonDesc = {
+    InputElementDescription inputElementDescription = {
         { Format::VECTOR3, "POSITION" },
         { Format::VECTOR3, "NORMAL"   },
-        { Format::VECTOR3, "TAGENT"   },
-        { Format::VECTOR3, "BITAGENT" },
+        { Format::VECTOR3, "TANGENT"   },
+        { Format::VECTOR3, "BITANGENT" },
         { Format::VECTOR2, "TEXCOORD" },
     };
 
     pipelines.tonemap = nullptr;
-    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("PhysicalBasedRendering")));
-    pipelines.pbr->Set(commonDesc);
+    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Basic3D")));
+    pipelines.pbr->Set(inputElementDescription);
     pipelines.pbr->Create(renderTarget);
-    pipelines.pbr->Bind("Transform", uniforms.transform.get());
-    pipelines.pbr->Bind("Shading", uniforms.shading.get());
 
     pipelines.basic.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Basic3D")));
-    pipelines.basic->CopyState(*pipelines.pbr);
+    pipelines.basic->Set(inputElementDescription);
     pipelines.basic->Create(renderTarget);
-    pipelines.basic->Bind("Transform", uniforms.transform.get());
-    pipelines.basic->Bind("Shading", uniforms.shading.get());
 
     InputElementDescription outlineDesc = {
         { Format::VECTOR3, "POSITION" }
     };
-    outlineDesc.Stride = commonDesc.Stride;
+    outlineDesc.Stride = inputElementDescription.Stride;
     pipelines.outline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Outline")));
     pipelines.outline->Set(outlineDesc);
     pipelines.outline->Create(renderTarget, { Pipeline::Feature::DepthDisabled });
@@ -197,7 +199,7 @@ void Scene::OnRenderRuntime()
         }
     }
 
-    // Only renderer when we have a primary Camera
+    // Only render when we have a primary Camera
     if (!primaryCamera)
     {
         primaryCamera = dynamic_cast<SceneCamera*>(&observerCamera);
@@ -228,6 +230,11 @@ void Scene::OnRender(const Camera &camera)
             auto width = sprite.Final->Width();
             auto height = sprite.Final->Height();
 
+            if (Render::API != Render::Type::Vulkan)
+            {
+                break;
+            }
+
             if (color.Modified || !color.Initialized)
             {
                 pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
@@ -256,8 +263,8 @@ void Scene::OnRender(const Camera &camera)
 
         auto shading = &buffers.shading;
 
-        auto &lightObjects = registry.view<TransformComponent, LightComponent>();
         size_t i = 0;
+        auto &lightObjects = registry.view<TransformComponent, LightComponent>();
         for (auto &lightObject : lightObjects)
         {
             auto &[transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
@@ -276,8 +283,8 @@ void Scene::OnRender(const Camera &camera)
         uniforms.host->Update(sizeof(buffers), &buffers);
     }
 
-        {
-        if (selectedObject && *selectedObject && selectedObject->HasComponent<MeshComponent>())
+    {
+        if (selectedObject && *selectedObject && selectedObject->HasComponent<MeshComponent>() && Render::API == Render::Type::Vulkan)
         {
             auto &mesh = selectedObject->GetComponent<MeshComponent>();
             auto &transform = selectedObject->GetComponent<TransformComponent>();
@@ -318,7 +325,11 @@ void Scene::OnRender(const Camera &camera)
     for (auto o : group)
     {
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
-        Render2D::DrawRect(transform, sprite.Final, sprite.TilingFactor, sprite.Color, (int)o);
+        Render2D::DrawRect(
+            transform,
+            Render::API == Render::Type::Vulkan ? sprite.Final : sprite.Texture,
+            sprite.TilingFactor, sprite.Color, (int)o
+        );
     }
     Render2D::EndScene();
 

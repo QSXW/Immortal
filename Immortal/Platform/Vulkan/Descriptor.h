@@ -53,10 +53,20 @@ struct DescriptorSetUpdater
 {
     DescriptorSetUpdater() = default;
 
-    void Emplace(const std::string &key, VkWriteDescriptorSet &&writeDescriptorSet)
+    void Emplace(const std::string &key, const VkWriteDescriptorSet &&writeDescriptorSet)
     {
-        WriteDescriptorSets.emplace_back(writeDescriptorSet);
-        Map[key] = WriteDescriptorSets.size() - 1;
+        auto binding = writeDescriptorSet.dstBinding;
+        if (binding >= WriteDescriptorSets.size())
+        {
+            WriteDescriptorSets.resize(binding + 1);
+        }
+        WriteDescriptorSets[binding] = writeDescriptorSet;
+        Map[key] = binding;
+    }
+
+    VkWriteDescriptorSet &operator [](size_t index)
+    {
+        return WriteDescriptorSets[index];
     }
 
     void Update(VkDevice device)

@@ -12,6 +12,7 @@
 #include "Render/Mesh.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
+#include "Component.h"
 
 namespace Immortal
 {
@@ -65,6 +66,8 @@ public:
     Object CreateObject(const std::string &name = "");
 
     void DestroyObject(Object &object);
+
+    void RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
 
     void SetViewportSize(const Vector2 &size);
 
