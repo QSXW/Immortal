@@ -85,6 +85,16 @@ public:
         return new RenderTarget{ context->GetAddress<Device>(), description };
     }
 
+    virtual void PushConstant(GraphicsPipeline::Super *super, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset) override
+    {
+        PushConstant(dcast<Pipeline::Super*>(super), stage, size, data, offset);
+    }
+
+    virtual void PushConstant(ComputePipeline::Super *super, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset) override
+    {
+        PushConstant(dcast<Pipeline::Super*>(super), stage, size, data, offset);
+    }
+
     virtual Descriptor::Super *CreateImageDescriptor(uint32_t count) override;
 
     virtual Descriptor::Super *CreateBufferDescriptor(uint32_t count) override;
