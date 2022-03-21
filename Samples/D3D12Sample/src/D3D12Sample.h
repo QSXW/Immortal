@@ -25,6 +25,7 @@ public:
         pipeline->Reconstruct(renderTarget);
 
         uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
+        pipeline->AllocateDescriptorSet(0);
         pipeline->Bind("ubo", uniformBuffer.get());
         pipeline->Bind(texture.get(), 1);
 
