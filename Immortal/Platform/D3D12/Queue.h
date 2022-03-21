@@ -17,6 +17,7 @@ struct UploadContext
     ID3D12CommandAllocator *Allocator{ nullptr };
 };
 
+class Device;
 class Queue
 {
 public:
@@ -32,39 +33,16 @@ public:
     };
 
 public:
-    Queue(ComPtr<ID3D12Device> device, const Description &desc) :
-        desc{ desc },
-        nextFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },
-        lastCompletedFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },
-        commandAllocatorPool{ device.Get(), desc.Type }
+    Queue(Device *device, const Description &desc);
+
+    ~Queue();
+
+    ID3D12CommandQueue *Handle() const
     {
-        Check(device->CreateCommandQueue(&desc, IID_PPV_ARGS(&handle)));
-        handle->SetName(L"Command Queue");
-
-        device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
-        fence->SetName(L"Command Queue::Fence");
-        fence->Signal((uint64_t)desc.Type << 56);
-
-        fenceEventHandle = CreateEvent(nullptr, false, false, nullptr);
-        SLASSERT(fenceEventHandle != nullptr);
-
-        uploadContext.Allocator = RequestCommandAllocator();
-        uploadContext.Cmdlist   = std::make_unique<CommandList>(
-            device.Get(),
-            CommandList::Type::Direct,
-            uploadContext.Allocator
-            );
-        uploadContext.Cmdlist->Close();
-        Discard(fence->GetCompletedValue(), uploadContext.Allocator);
+        return handle;
     }
 
-    ~Queue()
-    {
-        IfNotNullThenRelease(handle);
-        IfNotNullThenRelease(fence);
-    }
-
-    ID3D12CommandQueue *Handle()
+    operator ID3D12CommandQueue*() const
     {
         return handle;
     }

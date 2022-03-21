@@ -81,7 +81,7 @@ void RenderContext::Setup()
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-        queue = device->CreateQueue(queueDesc);
+        queue.reset(new Queue{ device.get(), queueDesc});
     }
 
     {

@@ -147,7 +147,7 @@ public:
     }
 
 private:
-    ID3D12GraphicsCommandList *handle;
+    ID3D12GraphicsCommandList *handle = nullptr;
 };
 
 }

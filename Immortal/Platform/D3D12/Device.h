@@ -48,19 +48,23 @@ public:
         }
     }
 
-#define DEFINE_CREATE_OBJECT(U, T) \
+#define DEFINE_CRETE_FUNC(U, T, O) \
     HRESULT Create(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \
     { \
-        return handle->Create##T(pDesc, IID_PPV_ARGS(ppObject)); \
-    }
+        return handle->Create##O(pDesc, IID_PPV_ARGS(ppObject)); \
+    } \
+    HRESULT Create##O(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \
+    { \
+        return handle->Create##O(pDesc, IID_PPV_ARGS(ppObject)); \
+    } \
 
-    DEFINE_CREATE_OBJECT(COMMAND_QUEUE, CommandQueue)
+#define DEFINE_CREATE_OBJECT(U, T)    DEFINE_CRETE_FUNC(U, T, T)
+    DEFINE_CREATE_OBJECT(COMMAND_QUEUE,   CommandQueue  )
     DEFINE_CREATE_OBJECT(DESCRIPTOR_HEAP, DescriptorHeap)
 
-    std::unique_ptr<Queue> CreateQueue(Queue::Description &desc) const
-    {
-        return std::make_unique<Queue>(handle, desc);
-    }
+#define DEFINE_CREATE_PREFIX(U, T, P) DEFINE_CRETE_FUNC(U, T, P##T)
+    DEFINE_CREATE_PREFIX(GRAPHICS_PIPELINE_STATE, PipelineState, Graphics)
+    DEFINE_CREATE_PREFIX(COMPUTE_PIPELINE_STATE,  PipelineState, Compute )
 
     uint32_t GetDescriptorIncrement(const D3D12_DESCRIPTOR_HEAP_TYPE &type) const
     {
@@ -70,16 +74,12 @@ public:
 #define DEFINE_CREATE_VIEW(T, F) \
     void CreateView(ID3D12Resource *p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
     { \
-        handle->Create##F##View( \
-            p##F, \
-            pDesc, \
-            descriptor \
-            ); \
+        handle->Create##F##View(p##F, pDesc, descriptor); \
     }
 
-    DEFINE_CREATE_VIEW(RENDER_TARGET, RenderTarget)
+    DEFINE_CREATE_VIEW(RENDER_TARGET,   RenderTarget  )
     DEFINE_CREATE_VIEW(SHADER_RESOURCE, ShaderResource)
-    DEFINE_CREATE_VIEW(DEPTH_STENCIL, DepthStencil)
+    DEFINE_CREATE_VIEW(DEPTH_STENCIL,   DepthStencil  )
 
     void CreateView(ID3D12Resource *pResource,
         ID3D12Resource *pCounterResouce,
@@ -102,11 +102,6 @@ public:
             pSignature->GetBufferSize(),
             IID_PPV_ARGS(ppRootSignature)
             ));
-    }
-
-    void Create(const D3D12_GRAPHICS_PIPELINE_STATE_DESC *pDesc, ID3D12PipelineState **ppPipelineState)
-    {
-        Check(handle->CreateGraphicsPipelineState(pDesc, IID_PPV_ARGS(ppPipelineState)));
     }
 
     void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
