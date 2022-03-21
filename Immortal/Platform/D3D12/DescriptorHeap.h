@@ -12,7 +12,7 @@ class Device;
 class DescriptorHeap
 {
 public:
-    enum class Type
+    enum Type
     {
         ShaderResourceView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
         Sampler            = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
@@ -21,7 +21,7 @@ public:
         Quantity           = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES
     };
 
-    enum class Flag
+    enum Flag
     {
         None          = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         ShaderVisible = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
@@ -78,11 +78,9 @@ public:
     }
 
 public:
-    DescriptorHeap(ID3D12Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc) :
-        increment{ device->GetDescriptorHandleIncrementSize(desc->Type) }
-    {
-        Check(device->CreateDescriptorHeap(desc, IID_PPV_ARGS(&handle)));
-    }
+    DescriptorHeap(Device *device, D3D12_DESCRIPTOR_HEAP_DESC *desc);
+
+    DescriptorHeap(Device *device, uint32_t descriptorCount, Type type, Flag flags);
 
     DescriptorHeap(const DescriptorHeap &other) :
         handle{ other.handle }

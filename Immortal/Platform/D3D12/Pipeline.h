@@ -64,8 +64,17 @@ public:
 
     virtual void Bind(const Descriptor::Super *descriptors, uint32_t binding = 0) override;
 
-    virtual void Bind(Texture::Super *texture, uint32_t slot = 0);
+    virtual void Bind(Buffer::Super *buffer, uint32_t slot = 0) override;
 
+    virtual void Bind(Texture::Super *texture, uint32_t slot = 0) override;
+
+    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
+
+    virtual void FreeDescriptorSet(uint64_t uuid) override;
+
+    void Bind(Buffer *buffer, uint32_t slot = 0);
+
+public:
     template <class T, Buffer::Type type = Buffer::Type::Index>
     T Get()
     {
@@ -90,9 +99,9 @@ public:
     template <class T>
     T *GetAddress()
     {
-        if constexpr (IsPrimitiveOf<DescriptorAllocator, T>())
+        if constexpr (IsPrimitiveOf<DescriptorHeap, T>())
         {
-            return &descriptorAllocator;
+            return descriptorHeap.active;
         }
     }
 
@@ -124,10 +133,15 @@ private:
 
     ID3D12PipelineState *pipelineState{ nullptr };
 
-    DescriptorAllocator descriptorAllocator;
+    struct {
+        DescriptorHeap *active = nullptr;
+        std::unordered_map <uint64_t, DescriptorHeap*> packs;
+        std::queue<DescriptorHeap*> freePacks;
+    } descriptorHeap;
 
+    uint32_t textureIndexInDescriptorTable = 0;
     std::vector<DescriptorTable> descriptorTables;
-
+    
     RootSignature rootSignature;
 
     struct {

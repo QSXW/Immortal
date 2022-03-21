@@ -55,13 +55,11 @@ Descriptor::Super *Renderer::CreateBufferDescriptor(uint32_t count)
     return CreateImageDescriptor(count);
 }
 
-void Renderer::Draw(Pipeline::Super *superPipeline)
+void Renderer::Draw(Pipeline::Super *super)
 {
-    auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
-    auto indexBuffer = pipeline->GetBuffer<Buffer::Type::Index>();
-
-    auto descriptorAllocator = pipeline->GetAddress<DescriptorAllocator>();
-    auto descriptorHeap      = descriptorAllocator->GetAddress<DescriptorHeap>();
+    auto pipeline       = dynamic_cast<Pipeline *>(super);
+    auto indexBuffer    = pipeline->GetBuffer<Buffer::Type::Index>();
+    auto descriptorHeap = pipeline->GetAddress<DescriptorHeap>();
 
     commandList->SetPipelineState(*pipeline);
     commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
@@ -75,7 +73,7 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
     for (uint32_t i = 0; i < descriptorTables.size(); i++)
     {
         GPUDescriptor descriptor = descriptors;
-        descriptor.Offset(descriptorTables[i].Offset, descriptorAllocator->Increment());
+        descriptor.Offset(descriptorTables[i].Offset, descriptorHeap->GetIncrement());
         commandList->SetGraphicsRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
     }
 

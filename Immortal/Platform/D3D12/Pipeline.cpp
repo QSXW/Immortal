@@ -12,10 +12,9 @@ namespace D3D12
 Pipeline::Pipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
     Super{ shader },
     device{ device },
-    state{ new State{} },
-    descriptorAllocator{ DescriptorPool::Type::ShaderResourceView, DescriptorPool::Flag::ShaderVisible }
+    state{ new State{} }
 {
-    descriptorAllocator.Init(device);
+
 }
 
 Pipeline::~Pipeline()
@@ -91,6 +90,7 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
         auto &range = descriptorRange.first;
         if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
         {
+            textureIndexInDescriptorTable = i;
             if (samplers.empty())
             {
                 D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -171,48 +171,103 @@ void Pipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRend
     device->Create(&pipelineStateDesc, &pipelineState);
 }
 
-void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
+void Pipeline::Bind(Buffer *buffer, uint32_t binding)
 {
-    (void)name;
+    DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
 
-    auto buffer = RemoveConst(dcast<const Buffer *>(super));
-    DescriptorTable &descriptorTable = descriptorTables[buffer->Binding()];
-
-    auto cbvDescriptor  = descriptorAllocator.Bind(device, descriptorTable.Offset);
+    auto &cbvDescriptor = descriptorHeap.active->StartOfCPU();
+    cbvDescriptor.Offset(descriptorTable.Offset + binding, descriptorHeap.active->GetIncrement());
     device->CopyDescriptors(
-        1, cbvDescriptor.cpu,
+        1, cbvDescriptor,
         buffer->GetDescriptor(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
     );
 }
 
+void Pipeline::Pipeline::Bind(Buffer::Super *super, uint32_t binding)
+{
+    auto buffer = dcast<Buffer *>(super);
+    Bind(buffer, binding);
+}
+
+void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
+{
+    (void)name;
+
+    auto buffer = dcast<Buffer *>(ccast<Buffer::Super *>(super));
+    Bind(buffer, buffer->Binding());
+}
+
 void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
 {
     auto descriptors = rcast<const CPUDescriptor *>(super);
+    auto increment = descriptorHeap.active->GetIncrement();
 
-    DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
-    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset + binding);
+    DescriptorTable &descriptorTable = descriptorTables[binding];
+    auto &srvDescriptor = descriptorHeap.active->StartOfCPU();
+    srvDescriptor.Offset(descriptorTable.Offset, increment);
     for (size_t i = 0; i < descriptorTable.DescriptorCount; i++)
     {
         device->CopyDescriptors(
-            1, srvDescriptor.cpu,
+            1, srvDescriptor,
             descriptors[i],
             D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
         );
-        srvDescriptor.Offset(1, descriptorAllocator.Increment());
+        srvDescriptor.Offset(1, increment);
     }
 }
 
 void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 {
-    DescriptorTable &descriptorTable = descriptorTables[Definitions::TextureIndex];
+    DescriptorTable &descriptorTable = descriptorTables[textureIndexInDescriptorTable];
     Texture *texture = dcast<Texture *>(super);
-    auto srvDescriptor = descriptorAllocator.Bind(device, descriptorTable.Offset + binding);
+    auto &srvDescriptor = descriptorHeap.active->StartOfCPU();
+    srvDescriptor.Offset(descriptorTable.Offset + binding, descriptorHeap.active->GetIncrement());
     device->CopyDescriptors(
-        1, srvDescriptor.cpu,
+        1, srvDescriptor,
         texture->GetDescriptor(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
     );
+}
+
+Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptorHeap.packs.find(uuid);
+    if (it != descriptorHeap.packs.end())
+    {
+        descriptorHeap.active = it->second;
+    }
+    else
+    {
+        if (!descriptorHeap.freePacks.empty())
+        {
+            descriptorHeap.active = descriptorHeap.freePacks.front();
+            descriptorHeap.freePacks.pop();
+        }
+        else
+        {
+            auto &descriptorTable = descriptorTables.back();
+            descriptorHeap.active = new DescriptorHeap{
+                device,
+                (descriptorTable.Offset + descriptorTable.DescriptorCount) * 3,
+                DescriptorHeap::Type::ShaderResourceView,
+                DescriptorHeap::Flag::ShaderVisible
+            };
+            descriptorHeap.packs[uuid] = descriptorHeap.active;
+        }
+    }
+
+    return Anonymize(descriptorHeap.active);
+}
+
+void Pipeline::FreeDescriptorSet(uint64_t uuid)
+{
+    auto it = descriptorHeap.packs.find(uuid);
+    if (it != descriptorHeap.packs.end())
+    {
+        descriptorHeap.freePacks.push(it->second);
+        descriptorHeap.packs.erase(it);
+    }
 }
 
 }

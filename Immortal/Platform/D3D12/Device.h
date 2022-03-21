@@ -48,16 +48,23 @@ public:
         }
     }
 
+#define DEFINE_CREATE_OBJECT(U, T) \
+    HRESULT Create(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \
+    { \
+        return handle->Create##T(pDesc, IID_PPV_ARGS(ppObject)); \
+    }
+
+    DEFINE_CREATE_OBJECT(COMMAND_QUEUE, CommandQueue)
+    DEFINE_CREATE_OBJECT(DESCRIPTOR_HEAP, DescriptorHeap)
+
     std::unique_ptr<Queue> CreateQueue(Queue::Description &desc) const
     {
         return std::make_unique<Queue>(handle, desc);
     }
 
-    UINT DescriptorHandleIncrementSize(const D3D12_DESCRIPTOR_HEAP_TYPE &type) const
+    uint32_t GetDescriptorIncrement(const D3D12_DESCRIPTOR_HEAP_TYPE &type) const
     {
-        return handle->GetDescriptorHandleIncrementSize(
-            type
-            );
+        return handle->GetDescriptorHandleIncrementSize(type);
     }
 
 #define DEFINE_CREATE_VIEW(T, F) \

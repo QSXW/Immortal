@@ -33,6 +33,11 @@ public:
 
     }
 
+    virtual void Bind(Buffer *buffer, uint32_t slot = 0)
+    {
+
+    }
+
     virtual void Bind(Texture *texture, uint32_t slot = 0)
     {
 

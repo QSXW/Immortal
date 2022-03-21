@@ -31,7 +31,7 @@ Swapchain::Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd
         1
     };
 
-    rtvDescriptorHeap.reset(new DescriptorHeap{ *device, &rtvDesc });
+    rtvDescriptorHeap.reset(new DescriptorHeap{ device, &rtvDesc });
     CreateRenderTarget();
 }
 
