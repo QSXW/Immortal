@@ -18,6 +18,12 @@ struct PSInput
     int    id           : OBJECT_ID;
 };
 
+struct PSOutput
+{
+    float4 color : SV_TARGET;
+    int objectID : COLOR;
+};
+
 cbuffer ubo : register(b0)
 {
 	float4x4 viewProjection;
@@ -41,10 +47,11 @@ PSInput VSMain(VSInput input)
     return result;
 }
 
-float4 PSMain(PSInput input) : SV_TARGET
+PSOutput PSMain(PSInput input) : SV_TARGET
 {
-    float4 result;
+    PSOutput output;
 
+    float4 result;
     switch(input.index)
     {
         case  0: result = g_textures[ 0].Sample(g_sampler, input.uv * input.tilingFactor); break;
@@ -81,5 +88,8 @@ float4 PSMain(PSInput input) : SV_TARGET
         case 31: result = g_textures[31].Sample(g_sampler, input.uv * input.tilingFactor); break;
     }
 
-    return result * input.color;
+    output.color    = result * input.color;
+    output.objectID = input.id;
+
+    return output;
 }
