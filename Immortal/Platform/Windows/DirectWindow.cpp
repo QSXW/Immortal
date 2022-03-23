@@ -145,6 +145,26 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
 
+    case WM_MOUSEWHEEL:
+    {
+        MouseScrolledEvent e{
+            0.0f,
+            (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA
+        };
+        DirectWindow::EventDispatcher(e);
+        return 0;
+    }
+
+    case WM_MOUSEHWHEEL:
+    {
+        MouseScrolledEvent e{
+            (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA,
+            0.0f
+        };
+        DirectWindow::EventDispatcher(e);
+        return 0;
+    }
+
     case WM_SETFOCUS:
     case WM_KILLFOCUS:
         DirectWindow::Input->Focus = (msg == WM_SETFOCUS);
