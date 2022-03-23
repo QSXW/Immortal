@@ -14,26 +14,35 @@ Shader::Shader(const std::string &filepath, Type type) :
     ComPtr<ID3DBlob> error;
 
     std::wstring wfilepath = Utils::s2ws(filepath) + std::wstring{ L".hlsl" };
+
+    char *target     = "vs_5_1";
+    char *entryPoint = "VSMain";
+    if (type == Type::Compute)
+    {
+        target = "cs_5_1";
+        entryPoint = "main";
+    }
+
+    InternalCheck(
+        D3DCompileFromFile(
+            wfilepath.c_str(),
+            nullptr,
+            nullptr,
+            entryPoint,
+            target,
+            compileFlags,
+            0,
+            &handles[VertexShaderPos],
+            &error
+        ),
+        &error,
+        &handles[VertexShaderPos]
+        );
+
+    byteCodes[VertexShaderPos] = ShaderByteCode{ handles[VertexShaderPos] };
+
     if (type == Type::Graphics)
     {
-        InternalCheck(
-            D3DCompileFromFile(
-                wfilepath.c_str(),
-                nullptr,
-                nullptr,
-                "VSMain",
-                "vs_5_1",
-                compileFlags,
-                0,
-                &handles[VertexShaderPos],
-                &error
-            ),
-            &error,
-            &handles[VertexShaderPos]
-            );
-
-        byteCodes[VertexShaderPos] = ShaderByteCode{ handles[VertexShaderPos] };
-
         InternalCheck(
             D3DCompileFromFile(
                 wfilepath.c_str(),
@@ -110,9 +119,10 @@ void Shader::Reflect()
 
 void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters)
 {
+    DescriptorRange range{};
+
     if (desc.ConstantBuffers)
     {
-        DescriptorRange range{};
         range.Init(
             D3D12_DESCRIPTOR_RANGE_TYPE_CBV,
             desc.ConstantBuffers,
@@ -123,7 +133,6 @@ void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_V
     }
     if (desc.TextureNormalInstructions)
     {
-        DescriptorRange range{};
         range.Init(
             D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
             desc.TextureNormalInstructions,
@@ -132,7 +141,17 @@ void Shader::SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_V
         );
         descriptorRanges.emplace_back(std::pair(range, visibility));
     }
+    if (desc.BoundResources && IsType(Type::Compute))
+    {
+        range.Init(
+            D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
+            desc.BoundResources - desc.ConstantBuffers,
+            0, 0,
+            D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE
+        );
+        descriptorRanges.emplace_back(std::pair(range, visibility));
+    }
 }
 
-} 
+}
 }
