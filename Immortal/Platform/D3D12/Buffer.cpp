@@ -85,9 +85,7 @@ void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
 
     uint8_t *memory = nullptr;
     Map(rcast<void **>(&memory));
-    {
-        memcpy(memory + offset, data, updateSize);
-    }
+    memcpy(memory + offset, data, updateSize);
     Unmap();
 }
 

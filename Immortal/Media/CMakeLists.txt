@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 
 project("Vision" LANGUAGES CXX)
 
@@ -29,6 +29,7 @@ set(IMAGE_CODEC_FILES
     Image/JPEG.h
     Image/STBCodec.cpp
     Image/STBCodec.h
+    Image/OpenCVCodec.cpp
     Image/OpenCVCodec.h)
 
 set(VIDEO_CODEC_FILES

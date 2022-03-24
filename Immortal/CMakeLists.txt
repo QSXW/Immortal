@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 
 project(Immortal LANGUAGES CXX)
 
@@ -339,6 +339,8 @@ set(PROJECT_FILES
 )
 
 source_group("\\" FILES ${PROJECT_FILES})
+
+list(TRANSFORM PROJECT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_library(${PROJECT_NAME} STATIC ${PROJECT_FILES})
 

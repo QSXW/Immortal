@@ -576,14 +576,7 @@ PictureParameterSet::PictureParameterSet(BitTracker &bitTracker)
 
 PictureParameterSet::~PictureParameterSet()
 {
-    if (column_width_minus1)
-    {
-        delete[] column_width_minus1;
-    }
-    if (row_height_minus1)
-    {
-        delete[] row_height_minus1;
-    }
+
 }
 
 CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)

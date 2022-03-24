@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.16)
 
 project(3rdparty LANGUAGES CXX)
 
@@ -7,19 +7,12 @@ set(HAVE_ASSIMP ${LIB_NOT_FOUND})
 set(HAVE_OPENCV ${LIB_NOT_FOUND})
 
 message("Compiler Detected: " ${CMAKE_CXX_COMPILER_ID})
-
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(assimp_lib libassimp)
-    set(opencv_lib libopencv_core453)
+    set(ASSIMP_LIB libassimp)
+    set(OPENCV_LIB libopencv_core)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(assimp_lib assimp-vc142-mt)
-    set(opencv_lib opencv_world455)
-endif()
-
-message("Build Type: " ${CMAKE_BUILD_TYPE})
-if(CMAKE_BUILD_TYPE AND (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-    string(APPEND assimp_lib "d")
-    string(APPEND opencv_lib "d")
+    set(ASSIMP_LIB assimp-vc142-mt)
+    set(OPENCV_LIB opencv_world)
 endif()
 
 # glm
@@ -96,7 +89,7 @@ elseif(UNIX)
         set(DIRECT_TO_DISPLAY TRUE PARENT_SCOPE)
         target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_DISPLAY_KHR)
     else()
-        message(FATAL_ERROR "Unknown WSI")
+        message("Unknown WSI")
     endif()
 endif()
 
@@ -155,35 +148,42 @@ set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")
 # SPIRV-Cross
 add_subdirectory(SPIRV-Cross)
 
+set(SHARED_SUFFIX .dll)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    string(PREPEND SHARED_SUFFIX d)
+endif()
+
 # assimp
 if(WIN32)
     set(Assimp_DIR "${CMAKE_SOURCE_DIR}/3rdparty/Assimp")
     set(ASSIMP_BIN_DIR "${Assimp_DIR}/bin")
 endif(WIN32)
-find_package(Assimp REQUIRED)
+find_package(Assimp QUIET)
 if (Assimp_FOUND)
-    set(HAVE_ASSIMP ${Assimp_VERSION_MAJOR})
-    set(ASSIMP_SHARED ${ASSIMP_BIN_DIR}/${assimp_lib}.dll PARENT_SCOPE)
+    set(HAVE_ASSIMP "${Assimp_VERSION_MAJOR}")
+    set(ASSIMP_SHARED "${ASSIMP_BIN_DIR}/${ASSIMP_LIB}${SHARED_SUFFIX}" PARENT_SCOPE)
 endif(Assimp_FOUND)
 
 # opencv
-if (WIN32)
-    set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/3rdparty/opencv")
-    set(OPENCV_BIN_DIR "${OpenCV_DIR}/x64/vc15/bin")
-endif(WIN32)
-find_package(OpenCV 4.5.5 REQUIRED)
+find_package(OpenCV QUIET)
 if (OpenCV_FOUND)
-    set(HAVE_OPENCV ${OpenCV_VERSION_MAJOR})
-    set(OPENCV_SHARED ${OPENCV_BIN_DIR}/${opencv_lib}.dll PARENT_SCOPE)
+    set(HAVE_OPENCV "${OpenCV_VERSION_MAJOR}")
+    if (WIN32)
+        set(OPENCV_BIN_DIR "${OpenCV_DIR}/x64/${OpenCV_RUNTIME}/bin")
+    endif(WIN32)
+    set(OPENCV_LIB_SUFFIX "${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}${SHARED_SUFFIX}")
+    list(TRANSFORM OPENCV_LIB PREPEND "${OPENCV_BIN_DIR}/")
+    list(TRANSFORM OPENCV_LIB APPEND "${OPENCV_LIB_SUFFIX}")
+    set(OPENCV_SHARED "${OPENCV_LIB}" PARENT_SCOPE)
 endif(OpenCV_FOUND)
 
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
-    glm glad glfw glslang
-    assimp::assimp vulkan imgui
-    spdlog::spdlog opencv_world
+    glm glad glfw glslang glslang-default-resource-limits
+    vulkan imgui spdlog::spdlog
     SPIRV spirv-cross-glsl
-    glslang-default-resource-limits)
+    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
+    $<$<BOOL:${OpenCV_FOUND}>:opencv_world>)
 
 configure_file(Config.h.in ${CMAKE_SOURCE_DIR}/Immortal/Config.h)

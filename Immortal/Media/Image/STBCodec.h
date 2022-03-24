@@ -21,52 +21,13 @@ public:
 
     }
 
-    virtual ~STBCodec()
-    {
-        if (data)
-        {
-            stbi_image_free(data);
-        }
-    }
+    virtual ~STBCodec() override;
 
-    virtual CodecError Decode(const std::vector<uint8_t> &buf) override
-    {
-        int depth = 0;
-        data = stbi_load_from_memory(
-                     buf.data(),
-                     static_cast<int>(buf.size()),
-                    &static_cast<int>(desc.width),
-                    &static_cast<int>(desc.height),
-                    &static_cast<int>(depth),
-                    4
-                    );
+    virtual CodecError Decode(const std::vector<uint8_t> &buf) override;
 
-        if (!data)
-        {
-            return CodecError::CorruptedBitstream;
-        }
-        desc.format = Format::RGBA8;
+    virtual uint8_t *Data() const override;
 
-        return CodecError::Succeed;
-    }
-
-    virtual void Encode()
-    {
-
-    }
-
-    virtual uint8_t *Data() const
-    {
-        return data;
-    }
-
-    virtual void Swap(void *ptr)
-    {
-        void *tmp = nullptr;
-        tmp  = ptr;
-        ptr  = data;
-        data = reinterpret_cast<stbi_uc *>(tmp);
-    }
+    virtual void Swap(void *ptr) override;
 
 private:
     stbi_uc *data = nullptr;

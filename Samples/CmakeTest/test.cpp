@@ -16,8 +16,10 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
+#if HAVE_OPENCV
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#endif
 
 #include <Immortal.h>
 
@@ -53,9 +55,11 @@ int main()
     VkInstance handle;
     vkCreateInstance(&createInfo, nullptr, &handle);
 
+#if HAVE_OPENCV
     auto img = cv::imread("Assets/Icon/terminal.png", cv::IMREAD_COLOR);
-
     std::cout << img.rows << std::endl;
+#endif
+
     system("pause");
     return 0;
 }

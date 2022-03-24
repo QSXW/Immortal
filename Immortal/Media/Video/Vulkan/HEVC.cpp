@@ -55,7 +55,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 
         VkVideoProfileKHR profile{};
         profile.pNext               = nullptr;
-        profile.sType               = (VkStructureType)1000023000; /* VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR */
+        profile.sType               = VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR;
         profile.lumaBitDepth        = SelectBitDepth(sps->bit_depth_luma);
         profile.chromaBitDepth      = SelectBitDepth(sps->bit_depth_chroma);
         profile.chromaSubsampling   = SelectChromaSampling(desc.format);
@@ -71,6 +71,24 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
     }
 
     TransferParameterSet();
+
+    VkVideoBeginCodingInfoKHR beginInfo{};
+    beginInfo.pNext                  = nullptr;
+    beginInfo.sType                  = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR;
+    beginInfo.videoSession           = *session;
+    beginInfo.codecQualityPreset     = VK_VIDEO_CODING_QUALITY_PRESET_NORMAL_BIT_KHR;
+    beginInfo.videoSessionParameters = session->GetParameters();
+    beginInfo.referenceSlotCount     = 16;
+
+    VkVideoEndCodingInfoKHR endInfo{};
+
+    VkVideoDecodeInfoKHR decodeInfo{};
+
+    auto cmdbuf = Device::That->RequestCommandBuffer(Vulkan::Level::Primary);
+
+    cmdbuf->Begin(&beginInfo);
+    cmdbuf->Decode(&decodeInfo);
+    cmdbuf->End(&endInfo);
 
     return CodecError::Succeed;
 }
