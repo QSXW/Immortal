@@ -15,7 +15,7 @@ public:
         ImGuiTreeNodeFlags flags = (selectedObject == object ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-        bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)object, flags, tag.c_str());
+        bool isExpanded = ImGui::TreeNodeEx((void *)(uint64_t)object, flags, "%s", tag.c_str());
         ImGui::SameLine(64.0f);
         ImGui::NewLine();
 

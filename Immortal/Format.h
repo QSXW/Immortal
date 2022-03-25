@@ -3,7 +3,14 @@
 #include "Core.h"
 #include <glad/glad.h>
 #include <vulkan/vulkan_core.h>
+
+#if defined(_MSC_VER)
 #include <dxgiformat.h>
+#define DXF(x) x
+#else
+#define DXF(x) 0
+using DXGI_FORMAT = int;
+#endif
 
 namespace Immortal
 {
@@ -101,7 +108,7 @@ struct FormatElement
         Size{ size },
         ComponentCount{ count }
     {
-        
+
     }
 
     operator VkFormat() const
@@ -130,40 +137,40 @@ using bfloat = uint16_t;
 #define FS_C(T, CC) (sizeof(T) * (CC)), CC
 
 static inline FormatElement FromatElementTable[] = {
-    { Format::INT,             VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,            GL_INT,               FS_C(int,      1)     },
-    { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,         GL_INT,               FS_C(int,      2)     },
-    { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,      GL_INT,               FS_C(int,      3)     },
-    { Format::IVECTOR4,        VK_FORMAT_R32G32B32A32_SINT,   DXGI_FORMAT_R32G32B32A32_SINT,   GL_INT,               FS_C(int,      4)     },
-    { Format::FLOAT,           VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,           GL_FLOAT,             FS_C(float,    1)     },
-    { Format::VECTOR2,         VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,        GL_FLOAT,             FS_C(float,    2)     },
-    { Format::VECTOR3,         VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,     GL_FLOAT,             FS_C(float,    3)     },
-    { Format::VECTOR4,         VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT,  GL_FLOAT,             FS_C(float,    4)     },
-    { Format::MATRIX4,         VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,           GL_FLOAT,             FS_C(float,    4 * 4) },
-    { Format::R8,              VK_FORMAT_R8_UNORM,            DXGI_FORMAT_R8_UNORM,            GL_R8,                FS_C(uint8_t,  1)     },
-    { Format::R16,             VK_FORMAT_R16_UNORM,           DXGI_FORMAT_R16_UNORM,           GL_R16,               FS_C(uint16_t, 1)     },
-    { Format::R16F,            VK_FORMAT_R16_SFLOAT,          DXGI_FORMAT_R16_FLOAT,           GL_R32F,              FS_C(bfloat,   1)     },
-    { Format::R32,             VK_FORMAT_R32_SINT,            DXGI_FORMAT_R32_SINT,            GL_INT ,              FS_C(uint32_t, 1)     },
-    { Format::R32F,            VK_FORMAT_R32_SFLOAT,          DXGI_FORMAT_R32_FLOAT,           GL_R32F,              FS_C(float,    1)     },
-    { Format::RG8,             VK_FORMAT_R8G8_UNORM,          DXGI_FORMAT_R8G8_UNORM,          GL_RG8,               FS_C(uint8_t,  2)     },
-    { Format::RG16,            VK_FORMAT_R16G16_UNORM,        DXGI_FORMAT_R16G16_UNORM,        GL_RG16,              FS_C(uint16_t, 2)     },
-    { Format::RG16F,           VK_FORMAT_R16G16_SFLOAT,       DXGI_FORMAT_R16G16_FLOAT,        GL_RG32F,             FS_C(bfloat,   2)     },
-    { Format::RG32,            VK_FORMAT_R32G32_SINT,         DXGI_FORMAT_R32G32_SINT,         GL_RG32I ,            FS_C(uint32_t, 2)     },
-    { Format::RG32F,           VK_FORMAT_R32G32_SFLOAT,       DXGI_FORMAT_R32G32_FLOAT,        GL_RG32F,             FS_C(float,    2)     },
-    { Format::RGB8,            VK_FORMAT_R8G8B8_UNORM,         DXGI_FORMAT_UNKNOWN,            GL_RGB8 ,             FS_C(uint8_t,  3)     },
-    { Format::RGB32,           VK_FORMAT_R32G32B32_SINT,      DXGI_FORMAT_R32G32B32_SINT,      GL_RGB32I ,           FS_C(uint32_t, 3)     },
-    { Format::RGB32F,          VK_FORMAT_R32G32B32_SFLOAT,    DXGI_FORMAT_R32G32B32_FLOAT,     GL_RGB32F,            FS_C(float,    3)     },
-    { Format::RGBA8,           VK_FORMAT_R8G8B8A8_UNORM,      DXGI_FORMAT_R8G8B8A8_UNORM,      GL_RGBA8,             FS_C(uint8_t,  4)     },
-    { Format::RGBA16,          VK_FORMAT_R16G16B16A16_UNORM,  DXGI_FORMAT_R16G16B16A16_UNORM,  GL_RGBA16,            FS_C(uint16_t, 4)     },
-    { Format::RGBA16F,         VK_FORMAT_R16G16B16A16_SFLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT,  GL_RGBA16F,           FS_C(bfloat,   4)     },
-    { Format::RGBA32,          VK_FORMAT_R32G32B32A32_SINT,   DXGI_FORMAT_R32G32B32A32_SINT,   GL_INT,               FS_C(int,      4)     },
-    { Format::RGBA32F,         VK_FORMAT_R32G32B32A32_SFLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT,  GL_RGBA32F,           FS_C(float,    4)     },
-    { Format::BGRA8,           VK_FORMAT_B8G8R8A8_UNORM,      DXGI_FORMAT_B8G8R8A8_UNORM,      GL_RGBA8,             FS_C(uint8_t,  4)     },
-    { Format::SRGB,            VK_FORMAT_R8G8B8A8_SRGB,       DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, GL_SRGB8,             FS_C(uint8_t,  4)     },
-    { Format::Depth32F,        VK_FORMAT_D32_SFLOAT,          DXGI_FORMAT_D32_FLOAT,           GL_DEPTH32F_STENCIL8, FS_C(float,    1)     },
-    { Format::Depth24Stencil8, VK_FORMAT_D24_UNORM_S8_UINT,   DXGI_FORMAT_D24_UNORM_S8_UINT,   GL_DEPTH24_STENCIL8,  FS_C(uint32_t, 1)     },
-    { Format::YUV420P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
-    { Format::YUV422P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
-    { Format::YUV444P,         VK_FORMAT_UNDEFINED,           DXGI_FORMAT_UNKNOWN,             GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::INT,             VK_FORMAT_R32_SINT,            DXF(DXGI_FORMAT_R32_SINT           ),  GL_INT,               FS_C(int,      1)     },
+    { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,         DXF(DXGI_FORMAT_R32G32_SINT        ),  GL_INT,               FS_C(int,      2)     },
+    { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,      DXF(DXGI_FORMAT_R32G32B32_SINT     ),  GL_INT,               FS_C(int,      3)     },
+    { Format::IVECTOR4,        VK_FORMAT_R32G32B32A32_SINT,   DXF(DXGI_FORMAT_R32G32B32A32_SINT  ),  GL_INT,               FS_C(int,      4)     },
+    { Format::FLOAT,           VK_FORMAT_R32_SFLOAT,          DXF(DXGI_FORMAT_R32_FLOAT          ),  GL_FLOAT,             FS_C(float,    1)     },
+    { Format::VECTOR2,         VK_FORMAT_R32G32_SFLOAT,       DXF(DXGI_FORMAT_R32G32_FLOAT       ),  GL_FLOAT,             FS_C(float,    2)     },
+    { Format::VECTOR3,         VK_FORMAT_R32G32B32_SFLOAT,    DXF(DXGI_FORMAT_R32G32B32_FLOAT    ),  GL_FLOAT,             FS_C(float,    3)     },
+    { Format::VECTOR4,         VK_FORMAT_R32G32B32A32_SFLOAT, DXF(DXGI_FORMAT_R32G32B32A32_FLOAT ),  GL_FLOAT,             FS_C(float,    4)     },
+    { Format::MATRIX4,         VK_FORMAT_R32_SFLOAT,          DXF(DXGI_FORMAT_R32_FLOAT          ),  GL_FLOAT,             FS_C(float,    4 * 4) },
+    { Format::R8,              VK_FORMAT_R8_UNORM,            DXF(DXGI_FORMAT_R8_UNORM           ),  GL_R8,                FS_C(uint8_t,  1)     },
+    { Format::R16,             VK_FORMAT_R16_UNORM,           DXF(DXGI_FORMAT_R16_UNORM          ),  GL_R16,               FS_C(uint16_t, 1)     },
+    { Format::R16F,            VK_FORMAT_R16_SFLOAT,          DXF(DXGI_FORMAT_R16_FLOAT          ),  GL_R32F,              FS_C(bfloat,   1)     },
+    { Format::R32,             VK_FORMAT_R32_SINT,            DXF(DXGI_FORMAT_R32_SINT           ),  GL_INT ,              FS_C(uint32_t, 1)     },
+    { Format::R32F,            VK_FORMAT_R32_SFLOAT,          DXF(DXGI_FORMAT_R32_FLOAT          ),  GL_R32F,              FS_C(float,    1)     },
+    { Format::RG8,             VK_FORMAT_R8G8_UNORM,          DXF(DXGI_FORMAT_R8G8_UNORM         ),  GL_RG8,               FS_C(uint8_t,  2)     },
+    { Format::RG16,            VK_FORMAT_R16G16_UNORM,        DXF(DXGI_FORMAT_R16G16_UNORM       ),  GL_RG16,              FS_C(uint16_t, 2)     },
+    { Format::RG16F,           VK_FORMAT_R16G16_SFLOAT,       DXF(DXGI_FORMAT_R16G16_FLOAT       ),  GL_RG32F,             FS_C(bfloat,   2)     },
+    { Format::RG32,            VK_FORMAT_R32G32_SINT,         DXF(DXGI_FORMAT_R32G32_SINT        ),  GL_RG32I ,            FS_C(uint32_t, 2)     },
+    { Format::RG32F,           VK_FORMAT_R32G32_SFLOAT,       DXF(DXGI_FORMAT_R32G32_FLOAT       ),  GL_RG32F,             FS_C(float,    2)     },
+    { Format::RGB8,            VK_FORMAT_R8G8B8_UNORM,        DXF(DXGI_FORMAT_UNKNOWN            ),  GL_RGB8 ,             FS_C(uint8_t,  3)     },
+    { Format::RGB32,           VK_FORMAT_R32G32B32_SINT,      DXF(DXGI_FORMAT_R32G32B32_SINT     ),  GL_RGB32I ,           FS_C(uint32_t, 3)     },
+    { Format::RGB32F,          VK_FORMAT_R32G32B32_SFLOAT,    DXF(DXGI_FORMAT_R32G32B32_FLOAT    ),  GL_RGB32F,            FS_C(float,    3)     },
+    { Format::RGBA8,           VK_FORMAT_R8G8B8A8_UNORM,      DXF(DXGI_FORMAT_R8G8B8A8_UNORM     ),  GL_RGBA8,             FS_C(uint8_t,  4)     },
+    { Format::RGBA16,          VK_FORMAT_R16G16B16A16_UNORM,  DXF(DXGI_FORMAT_R16G16B16A16_UNORM ),  GL_RGBA16,            FS_C(uint16_t, 4)     },
+    { Format::RGBA16F,         VK_FORMAT_R16G16B16A16_SFLOAT, DXF(DXGI_FORMAT_R16G16B16A16_FLOAT ),  GL_RGBA16F,           FS_C(bfloat,   4)     },
+    { Format::RGBA32,          VK_FORMAT_R32G32B32A32_SINT,   DXF(DXGI_FORMAT_R32G32B32A32_SINT  ),  GL_INT,               FS_C(int,      4)     },
+    { Format::RGBA32F,         VK_FORMAT_R32G32B32A32_SFLOAT, DXF(DXGI_FORMAT_R32G32B32A32_FLOAT ),  GL_RGBA32F,           FS_C(float,    4)     },
+    { Format::BGRA8,           VK_FORMAT_B8G8R8A8_UNORM,      DXF(DXGI_FORMAT_B8G8R8A8_UNORM     ),  GL_RGBA8,             FS_C(uint8_t,  4)     },
+    { Format::SRGB,            VK_FORMAT_R8G8B8A8_SRGB,       DXF(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB),  GL_SRGB8,             FS_C(uint8_t,  4)     },
+    { Format::Depth32F,        VK_FORMAT_D32_SFLOAT,          DXF(DXGI_FORMAT_D32_FLOAT          ),  GL_DEPTH32F_STENCIL8, FS_C(float,    1)     },
+    { Format::Depth24Stencil8, VK_FORMAT_D24_UNORM_S8_UINT,   DXF(DXGI_FORMAT_D24_UNORM_S8_UINT  ),  GL_DEPTH24_STENCIL8,  FS_C(uint32_t, 1)     },
+    { Format::YUV420P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::YUV422P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::YUV444P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
 };
 
 }

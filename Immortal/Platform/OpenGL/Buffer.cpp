@@ -8,7 +8,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-Buffer::Buffer(size_t size, Type type) :
+Buffer::Buffer(uint32_t size, Type type) :
     Super{ type, size }
 {
     SelectBindPoint(type);
@@ -19,7 +19,7 @@ Buffer::Buffer(size_t size, Type type) :
     glBindBuffer(bindPoint, 0);
 }
 
-Buffer::Buffer(size_t size, const void *data, Type type) :
+Buffer::Buffer(uint32_t size, const void *data, Type type) :
     Super{ type, size }
 {
     SelectBindPoint(type);
@@ -30,7 +30,7 @@ Buffer::Buffer(size_t size, const void *data, Type type) :
     glBindBuffer(bindPoint, 0);
 }
 
-Buffer::Buffer(size_t size, uint32_t binding) :
+Buffer::Buffer(uint32_t size, uint32_t binding) :
     Super{ Type::Uniform, size }
 {
     SelectBindPoint(type);
@@ -53,7 +53,7 @@ void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
     glBufferSubData(bindPoint, offset, size, data);
 }
 
-UniformBuffer::UniformBuffer(size_t size, uint32_t binding) :
+UniformBuffer::UniformBuffer(uint32_t size, uint32_t binding) :
     Super{ size, binding },
     binding{ U32(binding) }
 {

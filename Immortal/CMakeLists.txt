@@ -198,15 +198,21 @@ set(OPENGL_FILES
     Platform/OpenGL/VertexArray.h)
 
 set(WINDOWS_FILES
-    Platform/Windows/DirectWindow.cpp
-    Platform/Windows/DirectWindow.h
     Platform/Windows/GLFWWindow.cpp
     Platform/Windows/GLFWWindow.h
-    Platform/Windows/WindowPlatformUtils.cpp
     Platform/Windows/GLFWInput.cpp
     Platform/Windows/GLFWInput.h
+    Platform/Windows/WindowPlatformUtils.cpp)
+
+set(WIN32_WINDOES_FILES
+    Platform/Windows/DirectWindow.cpp
+    Platform/Windows/DirectWindow.h
     Platform/Windows/NativeInput.cpp
     Platform/Windows/NativeInput.h)
+
+set(WINDOWS_FILES
+    ${WINDOWS_FILES}
+    $<$<C_COMPILER_ID:MSVC>:${WIN32_WINDOES_FILES}>)
 
 set(RENDER_FILES
     Render/Buffer.h
@@ -323,7 +329,6 @@ set(PROJECT_FILES
     ${MEMORY_FILES}
     ${IO_FILES}
     ${PHYSICS_FILES}
-    ${D3D12_FILES}
     ${VULKAN_FILES}
     ${OPENGL_FILES}
     ${WINDOWS_FILES}
@@ -336,6 +341,7 @@ set(PROJECT_FILES
     ${UTILS_FILES}
     ${WIDGET_FILES}
     ${NET_FILES}
+    $<$<C_COMPILER_ID:MSVC>:${D3D12_FILES}>
 )
 
 source_group("\\" FILES ${PROJECT_FILES})

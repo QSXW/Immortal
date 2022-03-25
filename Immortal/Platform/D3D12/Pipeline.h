@@ -108,7 +108,7 @@ public:
 
     virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
 
-    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
+    virtual void Set(std::shared_ptr<Buffer::Super> buffer) override;
 
     virtual void Set(const InputElementDescription &description) override;
 

@@ -15,7 +15,7 @@ Application::Application(const Window::Description &description) :
     eventSink{ this }
 {
     !!That ? throw Exception(SError::InvalidSingleton) : That = this;
-    
+
     eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
 
@@ -34,7 +34,7 @@ Application::Application(const Window::Description &description) :
         });
 
     Async::Execute([&](){
-        gui = GuiLayer::Create(context.get());
+        gui = context->CreateGuiLayer();
         timer.Start();
     });
 
@@ -67,11 +67,11 @@ Layer *Application::PushOverlay(Layer *overlay)
 
     return overlay;
 }
-    
+
 void Application::Run()
 {
     while (runtime.running)
-    { 
+    {
         Render::PrepareFrame();
         timer.Lap();
         deltaTime = timer.tick<Timer::Seconds>();
@@ -115,7 +115,7 @@ void Application::OnEvent(Event &e)
 bool Application::OnWindowClosed(WindowCloseEvent &e)
 {
     /* Wait all threads to finish before closing */
-    Async::Wait(); 
+    Async::Wait();
 
     runtime.running = false;
     return !runtime.running;

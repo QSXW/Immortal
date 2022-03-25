@@ -29,7 +29,7 @@ public:
     Stream(Mode mode) :
         mode{ mode }
     {
-        
+
     }
 
     Stream(const std::string &filepath, Mode mode) :
@@ -58,7 +58,7 @@ public:
         return true;
     }
 
-    bool ReOpen(const std::string &filepath, Mode mode)
+    void ReOpen(const std::string &filepath, Mode mode)
     {
         if (fp)
         {

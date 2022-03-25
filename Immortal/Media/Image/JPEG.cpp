@@ -14,7 +14,7 @@ static inline void Dequantize(int16_t *block, int16_t *table)
 
     int16x32 t1{ table };
     int16x32 t2{ table + 32 };
-    
+
     b1 = b1 * t1;
     b2 = b2 * t2;
 
@@ -122,8 +122,8 @@ static inline void Levelup(int16_t *block)
     b1 = b1 + level;
     b2 = b2 + level;
 
-    b1.convert<uint8x32>().store(block);
-    b2.convert<uint8x32>().store(block + 16);
+    b1.convert<uint8x32>().aligned_store(block);
+    b2.convert<uint8x32>().aligned_store(block + 16);
 }
 
 #define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
@@ -330,7 +330,7 @@ inline void JpegCodec::ParseDQT(const uint8_t *data)
             else
             {
                 table[LookupTable::ZigZagToNaturalOrder[j]] = data[i++];
-            }            
+            }
         }
     } while (i < length);
 }
@@ -413,7 +413,7 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
 inline void JpegCodec::ParseSOS(const uint8_t *data)
 {
     uint8_t componentNum = data[0];
-    
+
     if (componentNum != components.size())
     {
         LOG::WARN("The component number of Start of Scan mismatch to Start of Frame's");
@@ -422,7 +422,7 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
             components.resize(componentNum);
         }
     }
-    
+
     auto ptr = &data[1];
     for (size_t i = 0; i < components.size(); i++, ptr += 2)
     {
@@ -468,7 +468,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
 
 void JpegCodec::DecodeMCU()
 {
-    int32_t pred[4] = { 0 };
+    int32_t SL_ALIGNED(16) pred[4] = { 0 };
     auto dstBlocks = blocks;
     for (size_t y = 0; y < mcu.y; y++)
     {
@@ -486,7 +486,7 @@ void JpegCodec::DecodeMCU()
             if (bitTracker.RestartMarker)
             {
                 int32x4 zero{ 0 };
-                zero.store(pred);
+                zero.aligned_store(pred);
                 bitTracker.RestartMarker = false;
                 break;
             }
@@ -494,7 +494,7 @@ void JpegCodec::DecodeMCU()
     }
 }
 
-__forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, HuffTable &acTable, int32_t *pred)
+void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, HuffTable &acTable, int32_t *pred)
 {
     int32_t s;
     int32_t r;
@@ -522,7 +522,7 @@ __forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, Hu
             r = HuffReceive(s);
             block[LookupTable::ZigZagToNaturalOrder[k++]] = HuffExtend(r, s);
         }
-        else 
+        else
         {
             if (r != 0xf)
             {
@@ -533,7 +533,7 @@ __forceinline void JpegCodec::DecodeBlock(int16_t *block, HuffTable &dcTable, Hu
     }
 }
 
-__forceinline int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
+int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
 {
     int64_t code = 0;
     for (int32_t i = 1, j = 0; ; )

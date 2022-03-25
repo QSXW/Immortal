@@ -1,5 +1,4 @@
-#pragma once
-
+#include "FencePool.h"
 #include "Common.h"
 #include "Device.h"
 
@@ -11,7 +10,7 @@ namespace Vulkan
 FencePool::FencePool(Device *device) :
     device{ device }
 {
-        
+
 }
 
 FencePool::~FencePool()
@@ -50,7 +49,7 @@ VkFence FencePool::Request()
         fence = pending.front();
         pending.pop();
     }
-    else 
+    else
     {
         VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
         Check(vkCreateFence(*device, &createInfo, nullptr, &fence));

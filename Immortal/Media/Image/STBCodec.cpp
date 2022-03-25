@@ -15,21 +15,26 @@ STBCodec::~STBCodec()
 
 CodecError STBCodec::Decode(const std::vector<uint8_t> &buf)
 {
-    int depth = 0;
+    int depth  = 0;
+    int width  = static_cast<int>(desc.width);
+    int height = static_cast<int>(desc.height);
     data = stbi_load_from_memory(
                     buf.data(),
                     static_cast<int>(buf.size()),
-                &static_cast<int>(desc.width),
-                &static_cast<int>(desc.height),
-                &static_cast<int>(depth),
-                4
+                    &width,
+                    &height,
+                    &depth,
+                    4
                 );
 
     if (!data)
     {
         return CodecError::CorruptedBitstream;
     }
+
     desc.format = Format::RGBA8;
+    desc.width  = width;
+    desc.height = height;
 
     return CodecError::Succeed;
 }

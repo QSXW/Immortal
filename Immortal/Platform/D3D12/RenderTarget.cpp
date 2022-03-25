@@ -204,7 +204,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
                                                             D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
         D3D12_RESOURCE_DESC resourceDesc = SuperToBase(
             descrition,
-            attachment.BaseFromat<DXGI_FORMAT>(),
+            attachment.format,
             flags
             );
         clearValue.Format = resourceDesc.Format;

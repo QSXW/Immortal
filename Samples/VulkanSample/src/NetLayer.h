@@ -16,6 +16,7 @@ public:
 
     virtual void OnAttach() override
     {
+#ifdef _WIN32
         Async::Execute([]() {
             Socket socket{ "localhost", "8080" };
 
@@ -34,6 +35,7 @@ public:
                 }
                 });
             });
+#endif
     }
 
     virtual void OnDetach() override

@@ -7,7 +7,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-Renderer::Renderer(RenderContext::Super *c) : 
+Renderer::Renderer(RenderContext::Super *c) :
     context{ dcast<RenderContext *>(c) },
     device{ context->GetAddress<Device>() },
     swapchain{ context->GetAddress<Swapchain>() },
@@ -222,7 +222,7 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
              GraphicsPipeline::BindPoint
             );
 
-        auto &buffer = pipeline->Get<Buffer::Type::Vertex>();
+        auto buffer = pipeline->Get<Buffer::Type::Vertex>();
         cmdbuf->BindVertexBuffers(
             0, 1,
             &buffer->Handle(),

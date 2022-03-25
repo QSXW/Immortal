@@ -4,7 +4,7 @@
 #include "Media/Interface/Codec.h"
 #include "Media/Video/HEVC.h"
 #include "Media/Common/BitTracker.h"
-#include "Media/Image/Jpeg.h"
+#include "Media/Image/JPEG.h"
 
 using namespace Immortal;
 

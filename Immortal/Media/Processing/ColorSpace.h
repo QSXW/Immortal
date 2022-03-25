@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "Core.h"
 
 namespace Immortal
 {
@@ -27,7 +28,7 @@ struct Vector
         case  1: return y;
         case  2: return z;
         case  3: return w;
-        default: SLASSERT(0); return x;
+        default: THROWIF(true, SError::OutOfBound); return x;
         }
     }
 };

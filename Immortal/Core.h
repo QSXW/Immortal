@@ -13,8 +13,6 @@
 
 #include "sl.h"
 
-#define IMMORTAL_PLATFORM_SURFACE SLSURFACE
-
 #pragma warning( disable: 4251  )
 #pragma warning( disable: 4996  )
 #pragma warning( disable: 4006  )
@@ -29,8 +27,10 @@
     #else
         #define IMMORTAL_API
     #endif
+#elif defined( LINUX )
+    #define IMMORTAL_API __attribute__((visibility("default")))
 #else
-    #error Only support Windows!
+    #error Unsupport Platform Detected!
 #endif
 
 #ifdef max

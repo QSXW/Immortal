@@ -86,7 +86,7 @@ void GLFWWindow::Setup(const Description &description)
     GLFWWindowCount++;
 
     glfwSetWindowUserPointer(window, &desc);
-        
+
     /* Set callbacks */
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
     {
@@ -108,7 +108,7 @@ void GLFWWindow::Setup(const Description &description)
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int modes)
     {
         Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
-            
+
         switch (action)
         {
             case GLFW_PRESS:
@@ -123,7 +123,7 @@ void GLFWWindow::Setup(const Description &description)
                 desc->EventCallback(event);
                 break;
             }
-                
+
             case GLFW_REPEAT:
             {
                 KeyPressedEvent event(key, 1);
@@ -186,7 +186,11 @@ void GLFWWindow::Shutdown()
 
 void *GLFWWindow::Primitive() const
 {
+#ifdef _WIN32
     return glfwGetWin32Window(window);
+#else
+    return Anonymize(window);
+#endif
 }
 
 float GLFWWindow::Time() const

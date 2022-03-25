@@ -17,7 +17,7 @@ class IMMORTAL_API Object
 {
 public:
     using Primitive = entt::entity;
-    
+
     static inline Primitive NullRef = entt::null;
 
 public:
@@ -39,7 +39,7 @@ public:
 
     ~Object()
     {
-    
+
     }
 
     template <class T>
@@ -108,12 +108,12 @@ public:
         CopyComponent<ColorMixingComponent>(other, *this);
     }
 
-    TransformComponent &Transform() 
+    TransformComponent &Transform()
     {
         return GetComponent<TransformComponent>();
     }
 
-    const Matrix4 &Transform() const
+    Matrix4 Transform() const
     {
         return GetComponent<TransformComponent>().Transform();
     }

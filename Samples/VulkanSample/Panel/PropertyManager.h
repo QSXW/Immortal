@@ -22,7 +22,7 @@ public:
 
         ImGui::PushID(label.c_str());
         ImGui::Columns(2);
-        ImGui::Text(label.c_str());
+        ImGui::Text("%s", label.c_str());
         ImGui::SetColumnWidth(0, 64);
         ImGui::NextColumn();
         ImGui::PushItemWidth(-1);
@@ -78,7 +78,7 @@ public:
                             DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&light.Radiance); });
                         });
                 }
-                
+
                 if (object.HasComponent<MaterialComponent>())
                 {
                     DrawComponent(
@@ -100,7 +100,7 @@ public:
                             auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
                                     ImGui::PushID(label.c_str());
                                     ImGui::Columns(2);
-                                    ImGui::Text(label.c_str());
+                                    ImGui::Text("%s", label.c_str());
                                     ImGui::SetColumnWidth(0, 64);
                                     ImGui::NextColumn();
                                     ImGui::PushItemWidth(-1);
@@ -138,10 +138,10 @@ public:
                 {
                     DrawComponent(
                         WordsMap::Get("ColorMixing"),
-                        [&]() -> void {    
+                        [&]() -> void {
                             auto &c = object.GetComponent<ColorMixingComponent>();
                             c.Modified = false;
-                            
+
                             c.Modified |= DrawFloat(WordsMap::Get("Red").c_str(),   &c.RGBA.r);
                             c.Modified |= DrawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
                             c.Modified |= DrawFloat(WordsMap::Get("Blue").c_str(),  &c.RGBA.b);
@@ -150,7 +150,7 @@ public:
                             auto channels = WordsMap::Get("Channels").c_str();
                             ImGui::PushID(channels);
                             ImGui::Columns(2);
-                            ImGui::Text(channels);
+                            ImGui::Text("%s", channels);
                             ImGui::SetColumnWidth(0, 64);
                             ImGui::NextColumn();
                             ImGui::PushItemWidth(-1);
@@ -165,7 +165,7 @@ public:
                             auto hsl = WordsMap::Get("HSL").c_str();
                             ImGui::PushID(hsl);
                             ImGui::Columns(2);
-                            ImGui::Text(hsl);
+                            ImGui::Text("%s", hsl);
                             ImGui::SetColumnWidth(0, 64);
                             ImGui::NextColumn();
                             ImGui::PushItemWidth(-1);
@@ -197,13 +197,13 @@ public:
     {
         ImGui::PushID(name.c_str());
         ImGui::AlignTextToFramePadding();
-        auto &[x, y] = ImGui::GetContentRegionAvail();
+        auto [x, y] = ImGui::GetContentRegionAvail();
 
         // ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
 
         float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 
-        bool isOpen = ImGui::TreeNodeEx("##Undefined", TreeNodeFlags, name.c_str());
+        bool isOpen = ImGui::TreeNodeEx("##Undefined", TreeNodeFlags, "%s", name.c_str());
         bool isRightClicked = ImGui::IsItemClicked(ImGuiMouseButton_Right);
 
         // ImGui::PopStyleVar();

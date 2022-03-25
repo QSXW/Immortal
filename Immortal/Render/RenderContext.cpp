@@ -11,7 +11,7 @@
 namespace Immortal
 {
 
-std::unique_ptr<RenderContext> RenderContext::Create(Description &desc)
+std::unique_ptr<RenderContext> RenderContext::Create(const Description &desc)
 {
     switch (Render::API)
     {

@@ -142,7 +142,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 
     for (size_t i = 0; i < Limit::MaxLightNumber; i++)
     {
-        auto &light = CreateObject(std::string{ "Light#" } + std::to_string(i));
+        Object light = CreateObject(std::string{ "Light#" } + std::to_string(i));
         light.AddComponent<LightComponent>();
         light.AddComponent<MaterialComponent>();
         // auto &mesh = light.AddComponent<MeshComponent>();
@@ -162,7 +162,7 @@ Scene::~Scene()
 
 void Scene::OnUpdate()
 {
-        
+
 }
 
 void Scene::OnEvent()
@@ -227,8 +227,8 @@ void Scene::OnRender(const Camera &camera)
         {
             auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(object);
 
-            auto width = sprite.Final->Width();
-            auto height = sprite.Final->Height();
+            auto width = sprite.final->Width();
+            auto height = sprite.final->Height();
 
             if (Render::API != Render::Type::Vulkan)
             {
@@ -240,8 +240,8 @@ void Scene::OnRender(const Camera &camera)
                 pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
                 pipelines.colorMixing->ResetResource();
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
-                pipelines.colorMixing->Bind(sprite.Texture.get(), 0);
-                pipelines.colorMixing->Bind(sprite.Final.get(), 1);
+                pipelines.colorMixing->Bind(sprite.texture.get(), 0);
+                pipelines.colorMixing->Bind(sprite.final.get(), 1);
                 pipelines.colorMixing->Dispatch(width / 16, height / 16, 1);
 
                 color.Initialized = true;
@@ -264,10 +264,10 @@ void Scene::OnRender(const Camera &camera)
         auto shading = &buffers.shading;
 
         size_t i = 0;
-        auto &lightObjects = registry.view<TransformComponent, LightComponent>();
+        auto lightObjects = registry.view<TransformComponent, LightComponent>();
         for (auto &lightObject : lightObjects)
         {
-            auto &[transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
+            auto [transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
             shading->lights[i].direction = Vector4{ transform.Position, 1.0f };
 
             if (light.Enabled)
@@ -327,7 +327,7 @@ void Scene::OnRender(const Camera &camera)
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
         Render2D::DrawRect(
             transform,
-            Render::API == Render::Type::Vulkan ? sprite.Final : sprite.Texture,
+            Render::API == Render::Type::Vulkan ? sprite.final : sprite.texture,
             sprite.TilingFactor, sprite.Color, (int)o
         );
     }
@@ -339,7 +339,7 @@ void Scene::OnRender(const Camera &camera)
 Object Scene::CreateObject(const std::string &name)
 {
     auto object = Object{ registry.create(), this };
-        
+
     object.AddComponent<TagComponent>(name);
     object.AddComponent<TransformComponent>();
     object.AddComponent<IDComponent>();

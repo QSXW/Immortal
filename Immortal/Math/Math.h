@@ -22,7 +22,7 @@ static inline float N(float x) noexcept \
 FW(Cos, cos)
 FW(Sin, sin)
 FW(Tan, tan)
-FW(Absolute, fabsf)
+FW(Absolute, fabs)
 
 template <class T>
 T Lerp(T a, T b, T w)
@@ -38,7 +38,7 @@ struct Rational
     {
 
     }
-    
+
     template <class T>
     Rational(T n, T d) :
         numerator{ (int64_t)n },

@@ -165,7 +165,7 @@ void GraphicsPipeline::SetupVertex()
 {
     state->inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     state->inputAssembly.flags    = 0;
-    state->inputAssembly.topology = TopologyConverter{ desc.PrimitiveType };
+    state->inputAssembly.topology = TopologyConverter{ desc.primitiveType };
     state->inputAssembly.primitiveRestartEnable = VK_FALSE;
 }
 
@@ -181,7 +181,7 @@ void GraphicsPipeline::SetupLayout()
     state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
 }
 
-void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &buffer)
+void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> buffer)
 {
     Super::Set(buffer);
 }

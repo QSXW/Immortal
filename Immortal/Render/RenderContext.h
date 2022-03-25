@@ -2,8 +2,8 @@
 
 #include "Core.h"
 #include "Framework/Window.h"
-#include "Render/Shader.h"
-#include "Render/Buffer.h"
+#include "ImGui/GuiLayer.h"
+#include "Shader.h"
 
 namespace Immortal
 {
@@ -32,7 +32,7 @@ public:
             Height{ height },
             FrameCount{ ncast<int>(mode) }
         {
-            
+
         }
 
         UINT32 Width{ 0 };
@@ -54,17 +54,31 @@ public:
     };
 
 public:
-    static std::unique_ptr<RenderContext> Create(Description &desc);
+    static std::unique_ptr<RenderContext> Create(const Description &desc);
 
 public:
-    RenderContext() { }
+    RenderContext()
+    {
 
-    virtual void SwapBuffers() { }
+    }
 
-    virtual bool HasSwapchain() { return false;  }
+    virtual void SwapBuffers()
+    {
+
+    }
+
+    virtual bool HasSwapchain()
+    {
+        return false;
+    }
+
+    virtual GuiLayer *CreateGuiLayer()
+    {
+        return nullptr;
+    }
 
     virtual const char *GraphicsRenderer() const
-    { 
+    {
         return graphicsRenderer.c_str();
     }
 
@@ -85,7 +99,7 @@ public:
     RenderContext(RenderContext &&) = delete;
     RenderContext &operator=(const RenderContext &) = delete;
     RenderContext &operator=(RenderContext &&) = delete;
-    
+
     void UpdateMeta(const char *physicalDevice, const char *version, const char *vendor)
     {
         if (physicalDevice)

@@ -10,6 +10,7 @@
 #include "Renderer.h"
 #include "Image.h"
 #include "Framebuffer.h"
+#include "GuiLayer.h"
 
 namespace Immortal
 {
@@ -19,7 +20,11 @@ namespace Vulkan
 VkResult RenderContext::Status = VK_NOT_READY;
 
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
-    { IMMORTAL_PLATFORM_SURFACE, false }
+#if defined( _WIN32 )
+    { "VK_KHR_win32_surface", false }
+#elif defined( __linux__ )
+    { "VK_KHR_surface", false }
+#endif
 };
 
 std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
@@ -115,10 +120,10 @@ void RenderContext::Prepare(size_t threadCount)
     swapchain->Create();
 
     renderPass.reset(new RenderPass{ device.get(), swapchain->Get<VkFormat>(), depthFormat });
-    
+
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
-    
+
     std::vector<ImageView> views;
 
     for (auto &handle : swapchain->Get<Swapchain::Images>())
@@ -216,6 +221,11 @@ void RenderContext::SetupDescriptorSetLayout()
     info.bindingCount = U32(bindings.size());
     info.pBindings    = bindings.data();
     Check(device->Create(&info, &DescriptorSetLayout));
+}
+
+GuiLayer::Super *RenderContext::CreateGuiLayer()
+{
+    return new GuiLayer{ this };
 }
 
 }

@@ -58,7 +58,7 @@ void GuiLayer::OnAttach()
     {
         LOG::INFO("Initialized GUI with success");
     }
-    
+
     device->Transfer([&](auto *cmdbuf) -> void {
         ImGui_ImplVulkan_CreateFontsTexture(*cmdbuf);
         });
@@ -101,7 +101,7 @@ void GuiLayer::End()
 
     ImGuiIO &io  = ImGui::GetIO();
 
-    auto &[width, height] = context->Get<Extent2D>();
+    const auto &[width, height] = context->Get<Extent2D>();
 
     io.DisplaySize = ImVec2{ (float)width, (float)height };
 
@@ -125,7 +125,7 @@ void GuiLayer::End()
 
         cmdbuf->EndRenderPass();
         });
-    
+
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         ImGui::UpdatePlatformWindows();

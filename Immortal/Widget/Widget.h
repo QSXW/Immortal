@@ -90,7 +90,7 @@ public:
     constexpr void Set(ImVec4 color)
     {
         THROWIF(T >= Theme::MaxCount, SError::OutOfBound)
-        Colors[U32[T]] = color;
+        Colors[static_cast<size_t>(T)] = color;
     }
 
 public:

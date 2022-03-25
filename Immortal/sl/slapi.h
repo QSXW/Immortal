@@ -56,10 +56,9 @@ inline void aligned_free(void* ptr)
 
 #if defined( WIN32 ) || defined( _WIN32 )
 #   define WINDOWS
-#   define SLSURFACE "VK_KHR_win32_surface"
 #elif defined( __ANDROID__ )
 #   define ANDROID
-elif defined(__linux__)
+#elif defined(__linux__)
 #   define LINUX
 #elif defined( __APPLE__ ) || defined( __MACH__ )
 #   define APPLE
@@ -151,7 +150,7 @@ static inline bool Equals(const char *str1, const char *str2)
 
 class Exception : public std::exception
 {
-public: Exception(const char *what) noexcept : 
+public: Exception(const char *what) noexcept :
 #ifdef _MSC_VER
 std::exception(what, 1) { }
 #elif __GNUC__

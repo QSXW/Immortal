@@ -3,6 +3,7 @@
 
 #include "Framework/Utils.h"
 #include "Descriptor.h"
+#include "GuiLayer.h"
 
 namespace Immortal
 {
@@ -23,7 +24,7 @@ DescriptorAllocator RenderContext::descriptorAllocators[U32(DescriptorPool::Type
     DescriptorPool::Type::DepthStencilView
 };
 
-RenderContext::RenderContext(Description &descrition) :
+RenderContext::RenderContext(const Description &descrition) :
     desc{ descrition }
 {
     Setup();
@@ -203,7 +204,7 @@ void RenderContext::CheckDisplayHDRSupport()
     ComPtr<IDXGIOutput> currentOutput;
     ComPtr<IDXGIOutput> bestOutput;
     float bestIntersectArea = -1;
-    
+
     while (dxgiAdapter->EnumOutputs(i, &currentOutput) != DXGI_ERROR_NOT_FOUND)
     {
         int ax1 = windowBounds.left;
@@ -251,7 +252,7 @@ void RenderContext::SetHDRMetaData(float maxOutputNits, float minOutputNits, flo
     }
 
     static const DisplayChromaticities displayChromaticityList[] = {
-        { 0.64000f, 0.33000f, 0.30000f, 0.60000f, 0.15000f, 0.06000f, 0.31270f, 0.32900f }, // Display Gamut Rec709 
+        { 0.64000f, 0.33000f, 0.30000f, 0.60000f, 0.15000f, 0.06000f, 0.31270f, 0.32900f }, // Display Gamut Rec709
         { 0.70800f, 0.29200f, 0.17000f, 0.79700f, 0.13100f, 0.04600f, 0.31270f, 0.32900f }, // Display Gamut Rec2020
     };
 
@@ -377,6 +378,11 @@ void RenderContext::CopyDescriptorHeapToShaderVisible()
         srcDescriptorAllocator.StartOfHeap(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
         );
+}
+
+GuiLayer::Super *RenderContext::CreateGuiLayer()
+{
+    return new GuiLayer{ this };
 }
 
 }

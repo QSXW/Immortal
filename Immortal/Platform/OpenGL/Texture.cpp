@@ -125,7 +125,7 @@ Texture::Texture(const uint32_t width, const uint32_t height, Texture::Descripti
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
     glTextureStorage2D(handle, mipLevels, type.InternalFromat, width, height);
-        
+
     // glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
 
     glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : type.Filter);
@@ -181,12 +181,12 @@ void Texture::As(Descriptor::Super *superDescriptors, size_t index)
     descriptors[index] = handle;
 }
 
-TextureCube::TextureCube(const uint32_t width, const uint32_t height, Texture::Description &spec, int levels)
+TextureCube::TextureCube(const uint32_t width, const uint32_t height, const Texture::Description &description, int levels)
 {
-    this->Create(width, height, spec, levels);
+    this->Create(width, height, description, levels);
 }
 
-void TextureCube::Create(const uint32_t width, const uint32_t height, Texture::Description &description, int levels)
+void TextureCube::Create(const uint32_t width, const uint32_t height, const Texture::Description &description, int levels)
 {
     this->width = width;
     this->height = height;
@@ -208,7 +208,7 @@ void TextureCube::Create(const uint32_t width, const uint32_t height, Texture::D
 TextureCube::TextureCube(const std::string &path)
 {
     // Parameters
-    static constexpr uint32_t cubemapSize = 1024;
+    constexpr uint32_t cubemapSize = 1024;
 
     // Unfiltered environment cube map (temporary).
     TextureCube envCubeUnfiltered(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Linear });

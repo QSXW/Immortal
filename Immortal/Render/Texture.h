@@ -76,48 +76,35 @@ public:
 
         Description(std::initializer_list<Description> &list)
         {
-            
+
         }
 
         Description(Wrap wrap, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
-            Wrap{ wrap },
-            Filter{ filter },
-            Type{ type }
+            wrap{ wrap },
+            filter{ filter },
+            type{ type }
         {
 
         }
 
         Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
-            Format{ format }, Wrap{ wrap }, Filter{ filter }, Type{ type }
+            format{ format },
+            wrap{ wrap },
+            filter{ filter },
+            type{ type }
         {
 
         }
 
-        template <class T>
-        T BaseFromat() const
+        bool IsDepth() const
         {
-            return Format;
+            return format == Format::Depth || format == Format::Depth24Stencil8;
         }
 
-        auto FormatSize() const
-        {
-            return Format.Size();
-        }
-
-        auto ComponentCount() const
-        {
-            return Format.ComponentCount();
-        }
-
-        bool IsDepth() const 
-        {
-            return Format == Format::Depth || Format == Format::Depth24Stencil8;
-        }
-
-        Format Format = Format::R8G8B8A8_UNORM;
-        Wrap   Wrap   = Wrap::Clamp;
-        Filter Filter = Filter::Nearest;
-        Type   Type   = Type::Texture2D;
+        Format format = Format::R8G8B8A8_UNORM;
+        Wrap   wrap   = Wrap::Clamp;
+        Filter filter = Filter::Nearest;
+        Type   type   = Type::Texture2D;
 
         bool Anisotropic{ true };
     };

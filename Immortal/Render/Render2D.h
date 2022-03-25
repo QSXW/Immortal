@@ -43,7 +43,7 @@ public:
         uint32_t RectCount = 0;
 
         uint32_t TotalVertexCount() const
-        { 
+        {
             return RectCount * 4;
         }
 
@@ -63,7 +63,7 @@ public:
         std::shared_ptr<Texture> WhiteTexture;
         std::shared_ptr<Shader> TextureShader;
         std::unique_ptr<Descriptor> textureDescriptors;
-        
+
         uint32_t RectIndexCount = 0;
         std::vector<RectVertex> RectVertexBuffer;
 
@@ -89,38 +89,39 @@ public:
 
     static void Flush();
 
-    static void Render2D::StartBatch()
+    static void StartBatch()
     {
         data.RectIndexCount   = 0;
         data.pRectVertex      = data.RectVertexBuffer.data(); // reset to start
         data.TextureSlotIndex = 1;
     }
 
-    static void Render2D::NextBatch()
+    static void NextBatch()
     {
         Flush();
         StartBatch();
     }
 
-    static void Render2D::ResetStats()
+    static void ResetStats()
     {
         CleanUpObject(&data.Stats);
     }
 
-    static void Render2D::BeginScene(const Camera &camera)
+    static void BeginScene(const Camera &camera)
     {
-        uniform->Update(sizeof(Matrix4), &camera.ViewProjection());
+        auto viewProjection = camera.ViewProjection();
+        uniform->Update(sizeof(Matrix4), &viewProjection);
         NextBatch();
     }
 
-    static void Render2D::BeginScene(const Camera &camera, const Matrix4 &view)
+    static void BeginScene(const Camera &camera, const Matrix4 &view)
     {
         auto viewProjection = camera.Projection() * Vector::Inverse(view);
         uniform->Update(sizeof(Matrix4), &viewProjection);
         NextBatch();
     }
 
-    static void Render2D::EndScene()
+    static void EndScene()
     {
         NextBatch();
     }
@@ -180,7 +181,7 @@ public:
 
     static void DrawSprite(const Matrix4 &transform, SpriteRendererComponent &src, int object)
     {
-        DrawRect(transform, src.Texture, src.TilingFactor, src.Color, object);
+        DrawRect(transform, src.texture, src.TilingFactor, src.Color, object);
     }
 
 public:

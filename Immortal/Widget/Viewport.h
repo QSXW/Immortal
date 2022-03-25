@@ -17,7 +17,7 @@ public:
     Viewport(const std::string &name) :
         Super(name)
     {
-    
+
     }
 
     void Set(const Vector2 &value)
@@ -26,20 +26,20 @@ public:
     }
 
     template<class T, class P>
-    void OnUpdate(std::shared_ptr<T> &target, P process = []() -> void{ })
+    void OnUpdate(std::shared_ptr<T> target, P process = []() -> void{ })
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
         ImGui::Begin(Super::Text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
         ImGui::BeginChild("###");
 
-        auto &[x, y] = ImGui::GetContentRegionAvail();
+        auto [x, y] = ImGui::GetContentRegionAvail();
 
         Set({ x, y });
 
         ImVec2 offset    = ImGui::GetWindowPos();
         ImVec2 minRegion = ImGui::GetWindowContentRegionMin();
         ImVec2 maxRegion = ImGui::GetWindowContentRegionMax();
-         
+
         bounds.min = { minRegion.x + offset.x, minRegion.y + offset.y };
         bounds.max = { maxRegion.x + offset.x, maxRegion.y + offset.y };
 

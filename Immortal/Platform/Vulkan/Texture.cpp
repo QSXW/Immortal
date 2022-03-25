@@ -22,7 +22,7 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
     mipLevels = CalculateMipmapLevels(width, height);
 
     Description desc = description;
-    desc.Format = frame.Desc().format;
+    desc.format = frame.Desc().format;
     Setup(desc, frame.Size(), frame.Data());
 }
 
@@ -34,7 +34,7 @@ Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *da
     {
         mipLevels = 1;
     }
-    Setup(description, width * height * description.FormatSize(), data);
+    Setup(description, width * height * description.format.Size(), data);
 }
 
 Texture::~Texture()
@@ -97,18 +97,18 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     Layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkImageCreateInfo imageCreateInfo{};
-    ConvertType(imageCreateInfo, description);
     imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.imageType     = VK_IMAGE_TYPE_2D;
     imageCreateInfo.mipLevels     = mipLevels;
     imageCreateInfo.arrayLayers   = 1;
+    imageCreateInfo.format        = description.format;
     imageCreateInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageCreateInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.extent        = { width, height, 1 };
     imageCreateInfo.usage         = usage;
-    
+
     image.reset(new Image{
         device,
         imageCreateInfo,
@@ -128,7 +128,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT
-    }; 
+    };
 
     device->Transfer([&](auto copyCmd) -> void {
         copyCmd->PipelineBarrier(

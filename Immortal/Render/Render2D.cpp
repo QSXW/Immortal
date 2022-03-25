@@ -148,7 +148,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const std::shared_ptr<Texture>
         { 1.0f, 1.0f },
         { 0.0f, 1.0f }
     };
-        
+
     if (data.RectIndexCount >= Data::MaxIndices || data.TextureSlotIndex >= Data::MaxTextureSlots)
     {
         NextBatch();

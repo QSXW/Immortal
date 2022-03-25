@@ -103,7 +103,7 @@ Pipeline::~Pipeline()
     IfNotNullThenRelease(pipelineState);
 }
 
-void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> &superBuffer)
+void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> superBuffer)
 {
     Super::Set(superBuffer);
 
@@ -172,7 +172,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &s
     pipelineStateDesc.BlendState            = BlendDescription{};
     pipelineStateDesc.DepthStencilState     = DepthStencilDescription{};
     pipelineStateDesc.SampleMask            = UINT_MAX;
-    pipelineStateDesc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.PrimitiveType);
+    pipelineStateDesc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.primitiveType);
     pipelineStateDesc.NumRenderTargets      = 1;
     pipelineStateDesc.SampleDesc.Count      = 1;
 

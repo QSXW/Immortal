@@ -5,8 +5,6 @@
 
 #include "Core.h"
 
-#ifdef WINDOWS
-
 #include <wrl/client.h>
 using Microsoft::WRL::ComPtr;
 
@@ -192,7 +190,7 @@ struct Rect : public D3D12_RECT
     explicit Rect(const Primitive &p) noexcept :
         Primitive{ p }
     {
-    
+
     }
 
     template <class T0, class T1, class T2, class T3>
@@ -371,5 +369,4 @@ struct DepthStencilDescription : public D3D12_DEPTH_STENCIL_DESC
 }
 }
 
-#endif
 #endif // __D3D12_COMMON_H__

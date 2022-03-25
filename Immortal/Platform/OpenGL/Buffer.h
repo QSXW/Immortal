@@ -14,16 +14,16 @@ public:
     using BindPointType = uint32_t;
 
 public:
-    Buffer(size_t size, Type type);
+    Buffer(uint32_t size, Type type);
 
-    Buffer(size_t size, const void *data, Type type);
+    Buffer(uint32_t size, const void *data, Type type);
 
-    Buffer(size_t size, uint32_t binding);
+    Buffer(uint32_t size, uint32_t binding);
 
     virtual ~Buffer() override;
 
     virtual uint32_t Handle() const
-    { 
+    {
         return handle;
     }
 
@@ -74,7 +74,7 @@ public:
     using Super = Buffer;
 
 public:
-    UniformBuffer(size_t size, uint32_t binding);
+    UniformBuffer(uint32_t size, uint32_t binding);
 
     GLuint Binding() const
     {

@@ -76,8 +76,8 @@ public:
 
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
-                auto &[x, y] = ImGui::GetWindowPos();
-                auto &[w, h] = ImGui::GetWindowSize();
+                auto [x, y] = ImGui::GetWindowPos();
+                auto [w, h] = ImGui::GetWindowSize();
 
                 ImGuizmo::SetOrthographic(camera.primary == &camera.orthographic);
                 ImGuizmo::SetDrawlist();
@@ -95,7 +95,7 @@ public:
                     { 45.0f, 45.0f, 45.0f },
                     {  0.5f,  0.5f,  0.5f }
                 };
-                
+
                 ImGuizmo::Manipulate(
                     &cameraViewMatrix[0].x,
                     &cameraProjectionMatrix[0].x,
@@ -190,7 +190,7 @@ public:
             ImGui::PopStyleVar();
 
             if (ImGui::Button(WordsMap::Get("OK").c_str(), ImVec2(120, 0)))
-            { 
+            {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::SetItemDefaultFocus();
@@ -220,7 +220,7 @@ public:
         if (ImGui::BeginPopup("Right Click Menu"))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImGui::RGBA32(150, 150, 150, 255));
-            ImGui::Text(WordsMap::Get("Object Editor").c_str());
+            ImGui::Text("%s", WordsMap::Get("Object Editor").c_str());
             ImGui::PopStyleColor();
             ImGui::Separator();
 
@@ -281,7 +281,7 @@ public:
         panels
             .propertyManager
             .OnUpdate(selectedObject);
-                                                                      
+
         panels
             .tools
             .OnUpdate(selectedObject);
@@ -325,12 +325,12 @@ public:
                 selectedObject.AddComponent<SpriteRendererComponent>();
             }
             auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
-            sprite.Texture = newTexture;
-            sprite.Final.reset(Render::Create<Texture>(sprite.Texture->Width(), sprite.Texture->Height(), nullptr, Texture::Description{ Format::RGBA8 }));
+            sprite.texture = newTexture;
+            sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, Texture::Description{ Format::RGBA8 }));
 
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;
-        }        
+        }
     }
 
     void SelectObject(float x, float y)
@@ -365,14 +365,14 @@ public:
             {
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = o.Add<SpriteRendererComponent>();
-                sprite.Texture = texture;
-                sprite.Final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
+                sprite.texture = texture;
+                sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
                     Format::RGBA8,
                     Wrap::Clamp
                     }));
 
                 o.Add<ColorMixingComponent>();
-     
+
                 auto &transform = o.Get<TransformComponent>();
                 transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
             }

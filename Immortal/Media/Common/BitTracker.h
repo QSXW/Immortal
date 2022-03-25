@@ -40,7 +40,7 @@ public:
     uint64_t GetBytes()
     {
         static_assert(bytes > 4 && "Unsupported bytes number");
-        return GetBits<>(bytes * BitsPerByte);
+        return GetBits(bytes * BitsPerByte);
     }
 
     uint64_t GetBits(uint32_t n)

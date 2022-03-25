@@ -2,8 +2,6 @@
 #include "Mesh.h"
 
 #include "Render.h"
-#include "Math.h"
-
 #include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
 
@@ -133,7 +131,7 @@ Mesh::Mesh(const std::string &filepath) :
 
             for (size_t i = 0; i < mesh->mNumFaces; i++)
             {
-                Face face{ 
+                Face face{
                     mesh->mFaces[i].mIndices[0],
                     mesh->mFaces[i].mIndices[1],
                     mesh->mFaces[i].mIndices[2]
@@ -148,7 +146,7 @@ Mesh::Mesh(const std::string &filepath) :
         buffer->Update(vertices);
         buffer->Update(faces, vertices.size() * sizeof(Vertex));
     }
-    
+
     if (scene->HasMaterials())
     {
         for (size_t i = 0; i < scene->mNumMaterials; i++)

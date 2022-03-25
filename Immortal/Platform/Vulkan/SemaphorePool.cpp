@@ -1,13 +1,13 @@
-#pragma once
+#include "SemaphorePool.h"
 
 #include "Common.h"
 #include "Device.h"
-#include "SemaphorePool.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
+
 SemaphorePool::SemaphorePool(Device *device) :
     device{ device }
 {

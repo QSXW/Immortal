@@ -17,7 +17,7 @@ public:
 
         for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
         {
-            auto &item = it->items();
+            const auto &item = it->items();
             words[it.key()] = it.value().get<std::string>();
             int pause = 0;
         }
@@ -25,7 +25,7 @@ public:
 
     static const std::string &Get(const std::string &key)
     {
-        auto &it = That.words.find(key);
+        const auto &it = That.words.find(key);
         return it == That.words.end() ? key : it->second;
     }
 

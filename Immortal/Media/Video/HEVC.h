@@ -99,7 +99,7 @@ struct VideoParameterSet : public NAL::Payload
 {
     VideoParameterSet(BitTracker &bitTracker);
 
-    void VideoParameterSet::Parse(BitTracker &bitTracker);
+    void Parse(BitTracker &bitTracker);
 
     ProfileTierLevel profile_tier_level;
     uint32_t vps_video_parameter_set_id               : 4;
@@ -347,11 +347,12 @@ public:
         MAX_SUB_LAYERS = 7
     };
 
-protected:
+public:
     virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
 
     virtual CodecError Parse(const std::vector<uint8_t> &buffer) override;
 
+protected:
     VideoParameterSet *vps;
 
     SequenceParameterSet *sps;

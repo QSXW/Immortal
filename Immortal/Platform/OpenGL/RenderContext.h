@@ -15,9 +15,11 @@ public:
     using Super = SuperRenderContext;
 
 public:
-    RenderContext(SuperRenderContext::Description &desc);
+    RenderContext(const SuperRenderContext::Description &desc);
 
     void Setup();
+
+    virtual GuiLayer *CreateGuiLayer() override;
 
     GLFWwindow *Handle()
     {

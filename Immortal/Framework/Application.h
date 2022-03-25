@@ -69,7 +69,7 @@ public:
     }
 
     static uint32_t Width()
-    { 
+    {
         return That->desc.Width;
     }
 
@@ -79,7 +79,7 @@ public:
     }
 
     static const char *Name()
-    { 
+    {
         return That->name.c_str();
     }
 

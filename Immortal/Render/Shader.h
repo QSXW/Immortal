@@ -71,7 +71,7 @@ public:
         };
 
         Type type;
-        
+
         Format format;
 
         uint8_t set;
@@ -79,7 +79,7 @@ public:
         uint8_t binding;
 
         uint8_t location;
-        
+
         uint8_t count;
 
         uint32_t size;
@@ -110,7 +110,7 @@ public:
             { "in",        Resource::Type::Input        },
             { "out",       Resource::Type::Output       }
         };
-        auto &it = map.find(key);
+        const auto &it = map.find(key);
 
         if (it == map.end())
         {
@@ -130,7 +130,7 @@ public:
             { "mat4",  Format::MATRIX4 }
         };
 
-        auto &it = map.find(key);
+        const auto &it = map.find(key);
 
         if (it == map.end())
         {

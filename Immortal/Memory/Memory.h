@@ -7,7 +7,7 @@
 
 namespace Immortal
 {
- 
+
 struct AllocateInfo
 {
     size_t size;
@@ -59,7 +59,7 @@ private:
 
 }
 
-inline void * __cdecl operator new(size_t size)
+inline void *operator new(size_t size)
 {
     return Immortal::MemoryAllocator::Primary.Allocate(size);
 }

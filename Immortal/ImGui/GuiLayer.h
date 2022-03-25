@@ -83,8 +83,6 @@ public:
     static constexpr float MinWindowSizeX = 320.0f;
     static constexpr float MinWindowSizeY = 36.0f;
 
-    static GuiLayer *Create(RenderContext *context);
-
     static FontContext NotoSans;
 
     static FontContext SimSun;
@@ -102,12 +100,12 @@ public:
 
     virtual void OnGuiRender() override;
 
-    inline virtual void GuiLayer::OnDetach() override
+    inline virtual void OnDetach() override
     {
         ImGui::DestroyContext();
     }
 
-    inline void GuiLayer::Begin()
+    void Begin()
     {
         ImGui::NewFrame();
 
@@ -169,7 +167,7 @@ public:
         }
     }
 
-    inline void GuiLayer::End()
+    void End()
     {
         ImGui::End(); /* Dockspace */
         ImGui::Render();
@@ -200,7 +198,7 @@ public:
 
 private:
     bool blockEvents = true;
-    
+
     float time = 0.0f;
 };
 

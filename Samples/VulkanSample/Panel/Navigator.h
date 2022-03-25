@@ -16,10 +16,10 @@ public:
         {
             sprite = object.GetComponent<SpriteRendererComponent>();
         }
-        
+
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Navigator"));
-        
+
         {
             if (object)
             {
@@ -33,16 +33,16 @@ public:
             }
             ImGui::NewLine();
 
-            auto &[x, y] = ImGui::GetContentRegionAvail();
+            auto [x, y] = ImGui::GetContentRegionAvail();
 
             ImVec2 size{};
             size.x = x - 8;
-            size.y = size.x * sprite.Texture->Height() / sprite.Texture->Width();
+            size.y = size.x * sprite.texture->Height() / sprite.texture->Width();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.4509f, 0.7882f, 0.8980f, 1.0f });
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 20.0f, 20.0f });
-            if (ImGui::ImageButton((ImTextureID)(uint64_t)*sprite.Texture, size))
+            if (ImGui::ImageButton((ImTextureID)(uint64_t)*sprite.texture, size))
             {
                 if (object)
                 {

@@ -28,21 +28,27 @@ public:
 
     static constexpr uint32_t MaxFrameCount = 3;
 
-    static inline struct
+    static inline struct Priorities
     {
-        std::vector<VkPresentModeKHR> PresentMode = {
-            VK_PRESENT_MODE_FIFO_KHR,
-            VK_PRESENT_MODE_MAILBOX_KHR,
-            VK_PRESENT_MODE_IMMEDIATE_KHR
-        };
+        Priorities() :
+            PresentMode{
+                { VK_PRESENT_MODE_FIFO_KHR      },
+                { VK_PRESENT_MODE_MAILBOX_KHR   },
+                { VK_PRESENT_MODE_IMMEDIATE_KHR },
+            },
+            SurfaceFormat{
+                VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+                VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+                VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+                VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+            }
+        {
 
-        std::vector<VkSurfaceFormatKHR> SurfaceFormat = {
-            VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-            VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-            VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-            VkSurfaceFormatKHR{ VK_FORMAT_B8G8R8A8_SRGB,  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
-        };
-    } Priorities;
+        }
+        std::vector<VkPresentModeKHR> PresentMode;
+
+        std::vector<VkSurfaceFormatKHR> SurfaceFormat;
+    } priorities;
 
 public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);

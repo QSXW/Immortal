@@ -9,6 +9,7 @@
 #include "Math/Vector.h"
 
 #include <vector>
+#include <list>
 
 namespace Immortal
 {
@@ -37,7 +38,7 @@ public:
 
     static void LoadPrimitives();
 
-    static std::shared_ptr<Mesh> Mesh::CreateSphere(float radius);
+    static std::shared_ptr<Mesh> CreateSphere(float radius);
 
 public:
     struct Vertex

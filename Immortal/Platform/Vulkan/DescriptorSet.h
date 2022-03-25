@@ -34,16 +34,15 @@ public:
         if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
         {
             desc.pImageInfo = &descriptorInfo;
+            Update(&desc);
+            return;
         }
-        else if constexpr (IsPrimitiveOf<BufferDescriptor, T>())
+        if constexpr (IsPrimitiveOf<BufferDescriptor, T>())
         {
             desc.pBufferInfo = &descriptorInfo;
+            Update(&desc);
+            return;
         }
-        else
-        {
-            static_assert(false && "Incorrect Descriptor Type");
-        }
-        Update(&desc);
     }
 
     operator uint64_t() const

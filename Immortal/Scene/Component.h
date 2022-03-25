@@ -34,11 +34,11 @@ struct Component
 
     Component()
     {
-        
+
     }
 };
 
-#define DEFINE_COMP_TYPE(T) static Component::Type GetType() { return Component::Type::##T; }
+#define DEFINE_COMP_TYPE(T) static Component::Type GetType() { return Component::Type::T; }
 
 struct IDComponent : public Component
 {
@@ -47,7 +47,7 @@ struct IDComponent : public Component
     IDComponent(uint64_t id = 0) :
         uid(id)
     {
-        
+
     }
 
     uint64_t uid;
@@ -71,7 +71,7 @@ struct TransformComponent : public Component
     DEFINE_COMP_TYPE(Transform)
 
     void Set(Vector3 position, Vector3 rotation, Vector3 scale)
-    { 
+    {
         Position = position;
         Rotation = rotation;
         Scale    = scale;
@@ -112,7 +112,7 @@ struct MeshComponent : public Component
     MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) :
         Mesh{ mesh }
     {
-    
+
     }
 
     operator std::shared_ptr<Immortal::Mesh>()
@@ -182,20 +182,20 @@ struct SpriteRendererComponent : public Component
         Wrap::Repeat,
         Filter::Linear
     };
-    
+
     SpriteRendererComponent()
     {
 
     }
 
     SpriteRendererComponent(std::shared_ptr<Texture> texture) :
-        Texture{ texture }
+        texture{ texture }
     {
 
     }
 
     SpriteRendererComponent(std::shared_ptr<Texture> texture, const Vector4 color) :
-        Texture{ texture },
+        texture{ texture },
         Color{ color }
     {
 
@@ -203,9 +203,9 @@ struct SpriteRendererComponent : public Component
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    std::shared_ptr<Immortal::Texture> Texture = Render::Preset()->Textures.White;
+    std::shared_ptr<Immortal::Texture> texture = Render::Preset()->Textures.White;
 
-    std::shared_ptr<Immortal::Texture> Final   = Texture;
+    std::shared_ptr<Immortal::Texture> final = texture;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -218,18 +218,18 @@ struct CameraComponent : public Component
 
     CameraComponent()
     {
-    
+
     }
 
     CameraComponent(const CameraComponent &other) = default;
 
     operator SceneCamera&()
-    { 
+    {
         return Camera;
     }
 
     operator const SceneCamera&() const
-    { 
+    {
         return Camera;
     }
 
@@ -281,7 +281,7 @@ struct ColorMixingComponent : public Component
 
     Vector4 RGBA = Vector4{ 0, 0, 0, 1.0f };
     Vector4 HSL;
-    
+
     struct {
         float ColorTemperature;
         float Hue;

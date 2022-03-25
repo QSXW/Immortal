@@ -62,14 +62,11 @@ inline VkSurfaceFormatKHR SelectSurfaceFormat(const VkSurfaceFormatKHR request, 
                 });
             if (it != available.end())
             {
-            end:
                 LOG::WARN<SwapchainOutput>("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
                             Stringify(request), Stringify(*it));
                 return *it;
             }
         }
-        it = available.begin();
-        goto end;
     }
     else
     {
@@ -93,7 +90,7 @@ inline VkImageUsageFlags SelectImageUsage(VkImageUsageFlags &request, VkImageUsa
     }
 
     if (!validated)
-    {   
+    {
         validated = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         validated &= support;
         if (VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT & supportedFeatures)
@@ -242,7 +239,7 @@ Swapchain::Swapchain(Swapchain                           &oldSwapchain,
     this->properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
     this->properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
     this->properties.ArrayLayers   = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
-    this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, Priorities.SurfaceFormat);
+    this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, priorities.SurfaceFormat);
 
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, this->properties.SurfaceFormat.format, &formatProperties);
@@ -262,8 +259,8 @@ Swapchain::~Swapchain()
 void Swapchain::Create()
 {
     // Revalidate the present mode and surface format
-    properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, Priorities.PresentMode);
-    properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, Priorities.SurfaceFormat);
+    properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, priorities.PresentMode);
+    properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, priorities.SurfaceFormat);
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

@@ -96,7 +96,7 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Wrap wrap = Wrap::Cla
 
 static inline Texture::DataType NativeTypeToOpenGl(const Texture::Description &spec)
 {
-    return NativeTypeToOpenGl(spec.Format, spec.Wrap, spec.Filter);
+    return NativeTypeToOpenGl(spec.format, spec.wrap, spec.filter);
 }
 
 class Texture : public SuperTexture
@@ -137,7 +137,7 @@ public:
     }
 
     virtual const char *Path() const override
-    { 
+    {
         return filepath.c_str();
     }
 
@@ -159,7 +159,7 @@ private:
 class TextureCube : public SuperTextureCube
 {
 public:
-    TextureCube(const uint32_t width, const uint32_t height, Texture::Description&, int levels = 0);
+    TextureCube(const uint32_t width, const uint32_t height, const Texture::Description&, int levels = 0);
 
     TextureCube(const std::string& path);
 
@@ -168,24 +168,24 @@ public:
     virtual void Map(uint32_t slot = 0) const;
 
     virtual uint32_t Width() const
-    { 
+    {
         return width;
     }
 
     virtual uint32_t Height() const
-    { 
+    {
         return height;
     }
 
     virtual float Ratio() const
-    { 
+    {
         return (float)width / (float)height;
     }
 
     virtual void SetData(void *data, uint32_t size) override;
 
     virtual const char *Path() const override
-    { 
+    {
         return filepath.c_str();
     }
 
@@ -199,7 +199,7 @@ public:
         return handle == ((TextureCube&)other).handle;
     }
 
-    void Create(const uint32_t width, const uint32_t height, Texture::Description &description, int levels = 0);
+    void Create(const uint32_t width, const uint32_t height, const Texture::Description &description, int levels = 0);
 
     virtual void BindImageTexture(bool layered = false) override;
 

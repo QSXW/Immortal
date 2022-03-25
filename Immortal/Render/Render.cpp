@@ -26,7 +26,7 @@ const Shader::Properties Render::ShaderProperties[] = {
 
 std::shared_ptr<Shader> Render::GetShader(const std::string &name)
 {
-    decltype(ShaderManager)::iterator &it = ShaderManager.find(name);
+    const decltype(ShaderManager)::iterator &it = ShaderManager.find(name);
     if (it != ShaderManager.end())
     {
         return it->second;

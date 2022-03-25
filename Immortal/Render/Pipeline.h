@@ -89,13 +89,13 @@ class IMMORTAL_API GraphicsPipeline : public virtual Pipeline
 public:
     GraphicsPipeline()
     {
-    
+
     }
 
     GraphicsPipeline(std::shared_ptr<Shader> &shader) :
         desc{ shader }
     {
-        
+
     }
 
     virtual ~GraphicsPipeline() { }
@@ -104,7 +104,7 @@ public:
 
     virtual void Unmap() { }
 
-    virtual void Set(std::shared_ptr<Buffer> &buffer)
+    virtual void Set(std::shared_ptr<Buffer> buffer)
     {
         if (buffer->GetType() == Buffer::Type::Vertex)
         {
@@ -125,7 +125,7 @@ public:
 
     virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
     {
-        
+
     }
 
     virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
@@ -167,9 +167,9 @@ protected:
 
         InputElementDescription layout{};
 
-        DrawType Type{ DrawType::Static };
+        DrawType type{ DrawType::Static };
 
-        PrimitiveType PrimitiveType = PrimitiveType::Triangles;
+        PrimitiveType primitiveType = PrimitiveType::Triangles;
     } desc;
 
 public:

@@ -1,7 +1,5 @@
-#pragma once
-
-#include "Common.h"
 #include "CommandBuffer.h"
+
 #include "CommandPool.h"
 #include "Device.h"
 
@@ -36,7 +34,7 @@ VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
     {
         SLASSERT(primaryCommandBuffer && "A primary command buffer pointer must be provided when calling begin from a second one");
     }
-    
+
     if (Recoding())
     {
         LOG::ERR("Command buffer is already recording, call end first then begin");

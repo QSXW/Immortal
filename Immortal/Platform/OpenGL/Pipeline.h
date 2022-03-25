@@ -28,7 +28,7 @@ public:
 
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Set(std::shared_ptr<SuperBuffer> &buffer) override;
+    virtual void Set(std::shared_ptr<SuperBuffer> buffer) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
@@ -61,7 +61,7 @@ public:
 
         vertexBuffer->Bind();
         indexBuffer->Bind();
-        
+
         glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
 
         handle.Unbind();

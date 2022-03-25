@@ -3,7 +3,7 @@
 #include "sl.h"
 #include "Core.h"
 
-#ifdef WINDOWS
+#ifdef _WIN32
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -16,6 +16,7 @@
 namespace Immortal
 {
 
+#ifdef _WIN32
 enum Family
 {
     Ipv4       = AF_INET,
@@ -27,7 +28,7 @@ enum class SocketType
 {
     Stream = SOCK_STREAM
 };
-        
+
 enum Protocol
 {
     TCP = IPPROTO_TCP,
@@ -57,7 +58,7 @@ public:
         hints.ai_socktype = socketType;
         hints.ai_protocol = protocol;
     }
-    
+
     ~AddrInfo()
     {
         freeaddrinfo(response);
@@ -249,5 +250,7 @@ private:
     WSAData   wsaData;
     AddrInfo  addrInfo;
 };
+
+#endif
 
 }

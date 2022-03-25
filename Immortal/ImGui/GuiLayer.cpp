@@ -8,10 +8,6 @@
 #include "Framework/Application.h"
 #include "Render/Render.h"
 
-#include "Platform/OpenGL/GuiLayer.h"
-#include "Platform/Vulkan/GuiLayer.h"
-#include "Platform/D3D12/GuiLayer.h"
-
 #include "String/LanguageSettings.h"
 #include "Media/Stream.h"
 #include "Framework/Async.h"
@@ -23,28 +19,11 @@ namespace Immortal
     static const std::string SystemFontPath = { "C:\\Windows\\Fonts\\" };
 #endif
 
-GuiLayer *GuiLayer::Create(RenderContext *context)
-{
-    if (Render::API == Render::Type::OpenGL)
-    {
-        return dcast<GuiLayer*>(new OpenGL::GuiLayer(context));     
-    }
-    if (Render::API == Render::Type::Vulkan)
-    {
-        return dcast<GuiLayer *>(new Vulkan::GuiLayer(context));
-    }
-    if (Render::API == Render::Type::D3D12)
-    {
-        return dcast<GuiLayer *>(new D3D12::GuiLayer(context));
-    }
-    return new GuiLayer();
-}
-
 FontContext GuiLayer::NotoSans;
 FontContext GuiLayer::SimSun;
 
-GuiLayer::GuiLayer()
-    : Layer("GuiLayer")
+GuiLayer::GuiLayer() :
+    Layer{ "GuiLayer" }
 {
 
 }
@@ -60,7 +39,7 @@ void GuiLayer::OnAttach()
     IMGUI_CHECKVERSION();
 #endif
     ImGui::CreateContext();
-    
+
     if (!LoadTheme())
     {
         SetTheme();
@@ -72,7 +51,7 @@ void GuiLayer::OnAttach()
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
-    
+
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowMinSize.x = MinWindowSizeX;
     style.WindowMinSize.y = MinWindowSizeY;
@@ -190,60 +169,60 @@ void GuiLayer::UpdateTheme()
     ImGui::Begin("Theme Editor");
 
 #define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
-    XX(Text);                 
-    XX(TextDisabled);          
-    XX(WindowBg);              
-    XX(ChildBg);               
-    XX(PopupBg);               
-    XX(Border);                
-    XX(BorderShadow);          
-    XX(FrameBg);               
-    XX(FrameBgHovered);        
-    XX(FrameBgActive);         
-    XX(TitleBg);               
-    XX(TitleBgActive);         
-    XX(TitleBgCollapsed);      
-    XX(MenuBarBg);             
-    XX(ScrollbarBg);           
-    XX(ScrollbarGrab);         
-    XX(ScrollbarGrabHovered);  
-    XX(ScrollbarGrabActive);   
-    XX(CheckMark);             
-    XX(SliderGrab);            
-    XX(SliderGrabActive);      
-    XX(Button);                
-    XX(ButtonHovered);         
-    XX(ButtonActive);          
-    XX(Header);                
-    XX(HeaderHovered);         
-    XX(HeaderActive);          
-    XX(Separator);             
-    XX(SeparatorHovered);      
-    XX(SeparatorActive);       
-    XX(ResizeGrip);            
-    XX(ResizeGripHovered);     
-    XX(ResizeGripActive);      
-    XX(Tab);                   
-    XX(TabHovered);            
-    XX(TabActive);             
-    XX(TabUnfocused);          
-    XX(TabUnfocusedActive);    
-    XX(DockingEmptyBg);        
-    XX(PlotLines);             
-    XX(PlotLinesHovered);      
-    XX(PlotHistogram);         
-    XX(PlotHistogramHovered);  
-    XX(TableHeaderBg);         
-    XX(TableBorderStrong);     
-    XX(TableBorderLight);      
-    XX(TableRowBg);            
-    XX(TableRowBgAlt);         
-    XX(TextSelectedBg);        
-    XX(DragDropTarget);        
-    XX(NavHighlight);          
-    XX(NavWindowingHighlight); 
-    XX(NavWindowingDimBg);     
-    XX(ModalWindowDimBg);      
+    XX(Text);
+    XX(TextDisabled);
+    XX(WindowBg);
+    XX(ChildBg);
+    XX(PopupBg);
+    XX(Border);
+    XX(BorderShadow);
+    XX(FrameBg);
+    XX(FrameBgHovered);
+    XX(FrameBgActive);
+    XX(TitleBg);
+    XX(TitleBgActive);
+    XX(TitleBgCollapsed);
+    XX(MenuBarBg);
+    XX(ScrollbarBg);
+    XX(ScrollbarGrab);
+    XX(ScrollbarGrabHovered);
+    XX(ScrollbarGrabActive);
+    XX(CheckMark);
+    XX(SliderGrab);
+    XX(SliderGrabActive);
+    XX(Button);
+    XX(ButtonHovered);
+    XX(ButtonActive);
+    XX(Header);
+    XX(HeaderHovered);
+    XX(HeaderActive);
+    XX(Separator);
+    XX(SeparatorHovered);
+    XX(SeparatorActive);
+    XX(ResizeGrip);
+    XX(ResizeGripHovered);
+    XX(ResizeGripActive);
+    XX(Tab);
+    XX(TabHovered);
+    XX(TabActive);
+    XX(TabUnfocused);
+    XX(TabUnfocusedActive);
+    XX(DockingEmptyBg);
+    XX(PlotLines);
+    XX(PlotLinesHovered);
+    XX(PlotHistogram);
+    XX(PlotHistogramHovered);
+    XX(TableHeaderBg);
+    XX(TableBorderStrong);
+    XX(TableBorderLight);
+    XX(TableRowBg);
+    XX(TableRowBgAlt);
+    XX(TextSelectedBg);
+    XX(DragDropTarget);
+    XX(NavHighlight);
+    XX(NavWindowingHighlight);
+    XX(NavWindowingDimBg);
+    XX(ModalWindowDimBg);
 #undef XX
 
     if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))

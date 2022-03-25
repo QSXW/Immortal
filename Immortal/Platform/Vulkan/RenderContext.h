@@ -43,16 +43,18 @@ public:
 
     ~RenderContext();
 
-    virtual bool HasSwapchain()
+    virtual bool HasSwapchain() override
     {
         return !!swapchain;
     }
+
+    virtual GuiLayer *CreateGuiLayer() override;
 
 public:
     void CreateSurface();
 
     Swapchain *UpdateSurface();
-    
+
     void Prepare(size_t threadCount = 1);
 
     void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
@@ -113,35 +115,6 @@ public:
         }
     }
 
-    template <class T>
-    inline constexpr void Set(const T value)
-    {
-        if constexpr (IsPrimitiveOf<SurfaceFormatPriority, T>())
-        {
-            SLASSERT(!value.empty() && "Priority cannot be empty");
-            surfaceFormatPriorities = value;
-        }
-        if constexpr (IsPrimitiveOf<VkFormat, T>())
-        {
-            if (swapchain)
-            {
-                swapchain->Get<Swapchain::Properties>().SurfaceFormat.format = value;
-            }
-        }
-        if constexpr (IsPrimitiveOf<PresentModePriorities, T>())
-        {
-            SLASSERT(!value.empty() && "Priority cannot be empty");
-            presentModePriorities = value;
-        }
-        if constexpr (IsPrimitiveOf<VkPresentModeKHR, T>())
-        {
-            if (swapchain)
-            {
-                swapchain->Get<Swapchain::Properties>().PresentMode = value;
-            }
-        }
-    }
-
     void AddDeviceExtension(const char *extension, bool optional = false)
     {
         DeviceExtensions[extension] = optional;
@@ -177,7 +150,7 @@ public:
         beginInfo.framebuffer = *GetFramebuffer();
         process(GetCommandBuffer(), &beginInfo);
     }
-    
+
     template <class T>
     void Begin(T &&postProcess = [](auto) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
     {

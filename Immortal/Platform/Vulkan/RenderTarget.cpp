@@ -26,7 +26,7 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colo
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    
+
     images.emplace_back(std::move(colorImage));
     images.emplace_back(std::move(depthImage));
 
@@ -95,7 +95,7 @@ RenderTarget::RenderTarget(RenderTarget &&other) :
 
 RenderTarget::~RenderTarget()
 {
-    
+
 }
 
 RenderTarget &RenderTarget::operator=(RenderTarget &&other)
@@ -127,7 +127,7 @@ void RenderTarget::Create()
             VkClearDepthStencilValue *depthClearValue = reinterpret_cast<VkClearDepthStencilValue *>(&clearValues[index]);
             depthClearValue->depth   = 1.0f;
             depthClearValue->stencil = 0.0f;
-            depthFormat = attachment.BaseFromat<VkFormat>();
+            depthFormat = attachment.format;
             attachments.depth.image.reset(new Image{
                 device,
                 extent,
@@ -144,7 +144,7 @@ void RenderTarget::Create()
 
             attachments.colors.resize(attachments.colors.size() + 1);
             auto &color = attachments.colors.back();
-            colorFormat = attachment.BaseFromat<VkFormat>();
+            colorFormat = attachment.format;
             color.image.reset(new Image{
                 device,
                 extent,
@@ -166,7 +166,7 @@ void RenderTarget::Create()
                 };
             uint8_t *dataMapped = nullptr;
             image->Map((void **)&dataMapped);
-            memset(dataMapped, -1, attachment.ComponentCount() *extent.width * extent.height * extent.depth);
+            memset(dataMapped, -1, attachment.format.ComponentCount() *extent.width * extent.height * extent.depth);
             image->Unmap();
             stagingImages.emplace_back(image);
         }
@@ -195,7 +195,7 @@ void RenderTarget::Create()
         colorRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorRefs.emplace_back(std::move(colorRef));
     }
-    
+
     VkAttachmentDescription depthAttachmentDesc{};
     depthAttachmentDesc.format         = depthFormat;
     depthAttachmentDesc.samples        = VK_SAMPLE_COUNT_1_BIT;
@@ -218,7 +218,7 @@ void RenderTarget::Create()
     subpassDescription.pDepthStencilAttachment = &depthRef;
 
     std::array<VkSubpassDependency, 2> dependencies{};
-                                  
+
     dependencies[0].srcSubpass      = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass      = 0;
     dependencies[0].srcStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -274,7 +274,7 @@ void RenderTarget::Resize(uint32_t x, uint32_t y)
 {
     desc.Width  = x;
     desc.Height = y;
-    
+
     device->Wait();
     Create();
 }
@@ -288,7 +288,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     uint8_t *ptr   = nullptr;
     Image *src = attachments.colors[index].image.get();
     Image *dst = stagingImages[index].get();
-    
+
     VkImageSubresourceLayers subresourceLayers{};
     subresourceLayers.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceLayers.layerCount     = 1;

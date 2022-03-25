@@ -1,10 +1,28 @@
 #pragma once
 
 #include "Render/RenderContext.h"
-#include "Common.h"
+
+#ifndef _MSC_VER
+namespace Immortal
+{
+namespace D3D12
+{
+
+class RenderContext : public SuperRenderContext
+{
+public:
+    RenderContext(const Description &desc)
+    {
+        ThrowIf(true, "D3D12 is not supported on this platform");
+    }
+};
+
+}
+}
+#else
 
 #include <array>
-
+#include "Common.h"
 #include "Device.h"
 #include "Swapchain.h"
 #include "DescriptorHeap.h"
@@ -29,9 +47,11 @@ public:
 public:
     RenderContext(const void *handle);
 
-    RenderContext(Description &desc);
+    RenderContext(const Description &desc);
 
     ~RenderContext();
+
+    virtual GuiLayer *CreateGuiLayer() override;
 
     void Setup();
 
@@ -165,7 +185,7 @@ public:
     static Device *UnlimitedDevice;
 
     static DescriptorAllocator descriptorAllocators[U32(DescriptorPool::Type::Quantity)];
-    
+
     static DescriptorAllocator shaderVisibleDescriptorAllocator;
 
     static DescriptorPool *Request(DescriptorPool::Type type)
@@ -186,3 +206,5 @@ public:
 
 }
 }
+
+#endif

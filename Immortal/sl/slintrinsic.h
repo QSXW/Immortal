@@ -20,9 +20,12 @@ namespace sl
 #define OPEARTOR_MUL(P, T) DEFINE_OPERATOR(P, *, mul, T)
 #define OPEARTOR_ADD(P, T) DEFINE_OPERATOR(P, +, add, T)
 #define OPEARTOR_SUB(P, T) DEFINE_OPERATOR(P, -, sub, T)
-
+    
 #define DEFINE_ALIGNED_STORE(P, S)   void aligned_store(void *dst) { _m##P##_store_##S(dst, v); }
 #define DEFINE_UNALIGNED_STORE(P, S) void store(void *dst) { _m##P##_storeu_##S(dst, v); }
+#define DEFINE_INT_STORE(P, N) \
+    void aligned_store(void *dst) { _m##P##_store_ps((float*)dst, _m##P##_castsi##N##_ps(v)); } \
+    void store(void *dst) { _m##P##_storeu_ps((float*)dst, _m##P##_castsi##N##_ps(v)); }
 
 struct int32x4
 {
@@ -42,7 +45,7 @@ public:
     OPEARTOR_SUB(m, epi32)
     OPEARTOR_MUL(m, epi32)
 
-    DEFINE_UNALIGNED_STORE(m, epi64)
+    DEFINE_INT_STORE(m, 128);
 
 #undef R
 private:
@@ -197,8 +200,8 @@ public:
     OPEARTOR_ADD(m256, epi8)
     OPEARTOR_SUB(m256, epi8)
 
-    DEFINE_UNALIGNED_STORE(m256, epi64)
-    
+    DEFINE_INT_STORE(m256, 256);
+
     R(const __m512i &other) :
         v{ _mm512_cvtepi16_epi8(other) }
     {
@@ -229,7 +232,6 @@ public:
     DEFINE_OPERATOR(m512, *, mullo, epi16)
 
     DEFINE_ALIGNED_STORE(m512, epi64)
-    DEFINE_UNALIGNED_STORE(m512, epi64)
 
     template <class T>
     T convert()

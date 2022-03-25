@@ -39,7 +39,7 @@ void Pipeline::Bind(Texture *texture, uint32_t slot)
 
 }
 
-void Pipeline::Set(std::shared_ptr<SuperBuffer> &buffer)
+void Pipeline::Set(std::shared_ptr<SuperBuffer> buffer)
 {
     if (buffer->GetType() == Buffer::Type::Vertex)
     {
@@ -59,7 +59,7 @@ void Pipeline::Set(std::shared_ptr<SuperBuffer> &buffer)
 void Pipeline::Bind(const Descriptor::Super *descriptors, uint32_t slot)
 {
     auto textures = rcast<const GLuint *>(descriptors);
-    
+
     for (int i = 0; i < 32; i++)
     {
         glBindTextureUnit(i, textures[i]);

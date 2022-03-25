@@ -98,7 +98,7 @@ public:
         renderer->SetClearColor(color);
     }
 
-    static void Clear(Color &color = Color{ 0.0f })
+    static void Clear(const Color &color = Color{ 0.0f })
     {
         renderer->SetClearColor(color);
         renderer->Clear();

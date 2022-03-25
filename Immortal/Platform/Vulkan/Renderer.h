@@ -57,7 +57,7 @@ public:
         return new Shader{ device, filepath, type };
     }
 
-    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> &shader)
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader)
     {
         return new GraphicsPipeline{ device, shader };
     }
@@ -128,7 +128,7 @@ private:
     SemaphorePool semaphorePool;
 
     std::array<Semaphores, 3> semaphores;
-    
+
     std::array<VkFence, 3> fences{ VK_NULL_HANDLE };
 
     uint32_t sync{ 0 };

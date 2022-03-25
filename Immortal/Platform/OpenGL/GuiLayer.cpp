@@ -16,7 +16,7 @@ namespace OpenGL
 
 GuiLayer::GuiLayer(RenderContext::Super *context)
 {
-
+    (void)context;
 }
 
 GuiLayer::~GuiLayer()

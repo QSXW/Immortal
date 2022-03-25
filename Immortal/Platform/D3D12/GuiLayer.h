@@ -2,6 +2,8 @@
 
 #include "ImGui/GuiLayer.h"
 #include "RenderContext.h"
+#include "DescriptorHeap.h"
+#include "CommandPool.h"
 
 namespace Immortal
 {
@@ -34,7 +36,7 @@ private:
 
     Swapchain *swapchain{ nullptr };
 
-    DescriptorPool *srvDescriptorHeap{ nullptr };
+    DescriptorHeap *srvDescriptorHeap{ nullptr };
 
     CommandList *commandList{ nullptr };
 

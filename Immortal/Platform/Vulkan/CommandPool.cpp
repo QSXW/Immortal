@@ -1,9 +1,6 @@
-#pragma once
-
-#include "Common.h"
-#include "Device.h"
 #include "CommandPool.h"
-#include "..\D3D12\CommandPool.h"
+
+#include "Device.h"
 
 namespace Immortal
 {
@@ -32,7 +29,7 @@ CommandPool::CommandPool(Device *device, UINT32 queueFamilyIndex, RenderFrame *r
     resetMode{ resetMode }
 {
     VkCommandPoolCreateFlags flags;
-        
+
     if (resetMode == CommandBuffer::ResetMode::ResetIndividually ||
         resetMode == CommandBuffer::ResetMode::AlwaysAllocated)
     {

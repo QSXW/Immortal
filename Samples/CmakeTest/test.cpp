@@ -7,14 +7,16 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
+#if HAVE_ASSIMP
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/LogStream.hpp>
-
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
+#endif
 
 #if HAVE_OPENCV
 #include <opencv2/core.hpp>
@@ -29,8 +31,6 @@ int main()
 {
     glm::vec4 v;
     std::shared_ptr<spdlog::logger> log;
-
-    Assimp::Importer importer;
 
     VkInstanceCreateInfo appinfo = { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     appinfo.pNext = nullptr;
@@ -54,6 +54,10 @@ int main()
 
     VkInstance handle;
     vkCreateInstance(&createInfo, nullptr, &handle);
+
+#if HAVE_ASSIMP
+    Assimp::Importer importer;
+#endif
 
 #if HAVE_OPENCV
     auto img = cv::imread("Assets/Icon/terminal.png", cv::IMREAD_COLOR);

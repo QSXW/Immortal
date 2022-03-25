@@ -161,13 +161,11 @@ public:
     {
         if constexpr (type == Buffer::Type::Vertex)
         {
-            BindVertexBuffer(buffer);
-            return;
+            BindVertexBuffers(buffer.get());
         }
         if constexpr (type == Buffer::Type::Index)
         {
-            BindIndexBuffer(buffer);
-            return;
+            BindIndexBuffer(buffer.get());
         }
     }
 

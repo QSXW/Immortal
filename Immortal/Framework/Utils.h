@@ -10,7 +10,7 @@ namespace Utils
 template <class T>
 inline constexpr bool IsOdd(const T x)
 {
-    static_assert(std::is_integral<T, int>());
+    static_assert(std::is_integral<T>());
     return 0x1 & x;
 }
 
@@ -45,7 +45,7 @@ inline constexpr void Clamp(T v, const T min, const T max)
 }
 
 template <int min, int max>
-inline constexpr void Clamp(int v) 
+inline constexpr void Clamp(int v)
 {
     Clamp<int, min, max>(v);
 }
@@ -53,24 +53,24 @@ inline constexpr void Clamp(int v)
 template <class T, T m>
 inline constexpr T Mod(T v)
 {
-    static_assert(Type::IsIntegral<T>());
+    static_assert(std::is_integral<T>());
     return v & (m - 1);
 }
 
 template <int m>
-inline constexpr int Mod(int v) 
+inline constexpr int Mod(int v)
 {
     return Mod<int, m>(v);
 }
 
 template <class T, T v>
-inline constexpr T Power2() 
+inline constexpr T Power2()
 {
     return ((size_t)0x1) << v;
 }
 
 template <class T>
-inline constexpr T Power2(T v) 
+inline constexpr T Power2(T v)
 {
     return ((size_t)0x1) << v;
 }

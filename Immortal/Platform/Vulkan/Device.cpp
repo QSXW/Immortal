@@ -259,7 +259,11 @@ Device::~Device()
         vmaDestroyAllocator(memoryAllocator);
     };
 
-    IfNotNullThen<VmaAllocator, DestroyVmaAllocator>(memoryAllocator);
+    if (memoryAllocator != VK_NULL_HANDLE)
+    {
+        DestroyVmaAllocator(memoryAllocator);
+    }
+
     IfNotNullThen(vkDestroyDevice, handle);
 }
 

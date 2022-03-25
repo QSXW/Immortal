@@ -45,11 +45,6 @@ public:
 
     void Setup(const Description &description, uint32_t size, const void *data = nullptr);
 
-    void ConvertType(VkImageCreateInfo &dst, const Description &src)
-    {
-        dst.format = src.BaseFromat<VkFormat>();
-    }
-
     void SetupSampler(const Description &desc)
     {
         sampler = Sampler{ device, desc };
@@ -92,7 +87,7 @@ private:
     Sampler sampler;
 
     std::unique_ptr<Image> image;
-    
+
     std::unique_ptr<ImageView> view;
 
     std::unique_ptr<DescriptorSet> descriptorSet;

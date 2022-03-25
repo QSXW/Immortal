@@ -34,23 +34,14 @@ public:
 
     ~ImageView();
 
-    VkImageView &Handle()
+    VkImageView Handle() const
     {
         return handle;
     }
 
-    operator VkImageView&()
+    operator VkImageView() const
     {
         return handle;
-    }
-
-    template <class T>
-    T Get()
-    {
-        if constexpr (is_same<T, VkImageView, VkImageView &>)
-        {
-            return handle;
-        }
     }
 
     void Set(Image *image)

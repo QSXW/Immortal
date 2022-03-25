@@ -58,7 +58,7 @@ public:
     GLuint Get(const std::string &name) const;
 
 private:
-    void Shader::Link(const std::vector<GLuint> &shaders);
+    void Link(const std::vector<GLuint> &shaders);
 
     uint32_t CompileShader(GLenum type, const char *src);
 

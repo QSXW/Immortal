@@ -119,8 +119,8 @@ public:
 
     virtual ~GraphicsPipeline();
 
-    virtual void Set(std::shared_ptr<Buffer::Super> &buffer) override;
-    
+    virtual void Set(std::shared_ptr<Buffer::Super> buffer) override;
+
     virtual void Set(const InputElementDescription &description) override;
 
     virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;

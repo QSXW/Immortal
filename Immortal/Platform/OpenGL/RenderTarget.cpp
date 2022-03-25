@@ -105,16 +105,16 @@ void RenderTarget::Update()
         for (size_t i = 0; i < colorAttachments.size(); i++)
         {
             BindTexture(multisample, colorAttachments[i]);
-            Texture::DataType type = NativeTypeToOpenGl(colorAttachmentDescriptions[i].Format, colorAttachmentDescriptions[i].Wrap, colorAttachmentDescriptions[i].Filter);
+            Texture::DataType type = NativeTypeToOpenGl(colorAttachmentDescriptions[i].format, colorAttachmentDescriptions[i].wrap, colorAttachmentDescriptions[i].filter);
             AttachColorTexture(colorAttachments[i], desc.Samples, type, desc.Width, desc.Height, (int)i);
         }
     }
 
-    if (depthAttachmentDescription.Format != Format::None)
+    if (depthAttachmentDescription.format != Format::None)
     {
         CreateTexture(multisample, &depthAttachment, 1);
         BindTexture(multisample, depthAttachment);
-        Texture::DataType type = NativeTypeToOpenGl(depthAttachmentDescription.Format, depthAttachmentDescription.Wrap, depthAttachmentDescription.Filter);
+        Texture::DataType type = NativeTypeToOpenGl(depthAttachmentDescription.format, depthAttachmentDescription.wrap, depthAttachmentDescription.filter);
         AttachDepthTexture(depthAttachment, desc.Samples, type, GL_DEPTH_STENCIL_ATTACHMENT, desc.Width, desc.Height);
     }
 
@@ -129,7 +129,7 @@ void RenderTarget::Update()
         glDrawBuffer(GL_NONE);
     }
 
-    SLASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
+    ThrowIf(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -183,7 +183,7 @@ void RenderTarget::ClearAttachment(uint32_t index, int value)
         throw RuntimeException{ SError::OutOfBound };
     }
 
-    auto type = NativeTypeToOpenGl(colorAttachmentDescriptions[index].Format);
+    auto type = NativeTypeToOpenGl(colorAttachmentDescriptions[index].format);
     glClearTexImage(colorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
 }
 

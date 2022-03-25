@@ -42,7 +42,7 @@ public:
         return nullptr;
     }
 
-    virtual GraphicsPipeline *CreateGraphicsPipeline(std::shared_ptr<Shader> &shader)
+    virtual GraphicsPipeline *CreateGraphicsPipeline(std::shared_ptr<Shader> shader)
     {
         return nullptr;
     }
@@ -84,7 +84,7 @@ public:
 
     virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
     {
-    
+
     }
 
     virtual void PushConstant(ComputePipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
@@ -94,7 +94,7 @@ public:
 
     virtual void Draw(GraphicsPipeline *pipeline)
     {
-    
+
     }
 
     virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)

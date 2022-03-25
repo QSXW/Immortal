@@ -1,8 +1,5 @@
-#pragma once
-
-#include "Common.h"
-#include "Device.h"
 #include "DescriptorSet.h"
+#include "Device.h"
 
 namespace Immortal
 {

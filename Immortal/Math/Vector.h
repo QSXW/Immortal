@@ -27,13 +27,13 @@ using Matrix4    = mat4;
 using Quaternion = glm::quat;
 
 template <class T>
-constexpr inline auto Normalize(T &v)
+constexpr inline auto Normalize(T v)
 {
     return glm::normalize(v);
 }
 
 template <class T>
-constexpr inline auto Cross(T &v1, T &v2)
+constexpr inline auto Cross(T v1, T v2)
 {
     return glm::cross(v1, v2);
 }

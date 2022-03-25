@@ -52,20 +52,20 @@ public:
 
     virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override
     {
-        return new UniformBuffer{ size, binding };
+        return new UniformBuffer{ U32(size), binding };
     }
 
     virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
     {
-        return new Buffer{ size, data, type };
+        return new Buffer{ U32(size), data, type };
     }
 
     virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override
     {
-        return new Buffer{ size, type };
+        return new Buffer{ U32(size), type };
     }
 
-    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<SuperShader> &shader)
+    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<SuperShader> shader)
     {
         return new Pipeline{ shader };
     }
