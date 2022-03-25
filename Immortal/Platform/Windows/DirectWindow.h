@@ -14,6 +14,8 @@ namespace Immortal
 class IMMORTAL_API DirectWindow : public Window
 {
 public:
+    DEFINE_WINDOW_TYPE(Win32)
+
     DirectWindow(const Description &description);
 
     virtual ~DirectWindow();

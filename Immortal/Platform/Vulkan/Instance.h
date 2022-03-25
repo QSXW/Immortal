@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Core.h"
-
 #include "Common.h"
 
 namespace Immortal
 {
+
+class Window;
 namespace Vulkan
 {
 
@@ -29,7 +30,24 @@ public:
 
     void QueryPhysicalDevice();
 
-    bool CheckValidationLayerSupport();
+public: /* vk api */
+    VkResult EnumeratePhysicalDevices(uint32_t *physicalDeviceCount, VkPhysicalDevice *pPhysicalDevice) const
+    {
+        return vkEnumeratePhysicalDevices(handle, physicalDeviceCount, pPhysicalDevice);
+    }
+
+    template <class T>
+    T GetProcAddr(const std::string &func) const
+    {
+        return (T)vkGetInstanceProcAddr(handle, func.c_str());
+    }
+
+    void DestroySurface(VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator = nullptr) const
+    {
+        vkDestroySurfaceKHR(handle, surface, pAllocator);
+    }
+
+    VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr) const;
 
 public:
     bool IsEnabled(const char *extension) const
@@ -41,7 +59,7 @@ public:
         }) != enabledExtensions.end();
     }
 
-    VkInstance &Handle()
+    VkInstance Handle() const
     {
         return handle;
     }

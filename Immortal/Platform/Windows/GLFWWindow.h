@@ -17,6 +17,8 @@ namespace Immortal
 class GLFWWindow : public Window
 {
 public:
+    DEFINE_WINDOW_TYPE(GLFW)
+
     GLFWWindow(const Description &description);
 
     virtual ~GLFWWindow();

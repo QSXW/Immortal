@@ -8,10 +8,29 @@
 namespace Immortal
 {
 
+#define DEFINE_WINDOW_TYPE(T) \
+static Window::Type GetStaticType() \
+{ \
+    return Window::Type::T; \
+} \
+\
+virtual Window::Type GetType() const override \
+{ \
+    return GetStaticType(); \
+} \
+
 class IMMORTAL_API Window
 {
 public:
     using EventCallbackFunc = std::function<void(Event&)>;
+
+    enum Type : int
+    {
+        None = 0,
+        GLFW,
+        Win32,
+        Headless = None
+    };
 
     struct Description
     {
@@ -39,12 +58,12 @@ public:
             if (this != &other)
             {
                 Title         = other.Title;
-                Width         = other.Width; 
+                Width         = other.Width;
                 Height        = other.Height;
-                Vsync         = other.Vsync; 
+                Vsync         = other.Vsync;
                 EventCallback = other.EventCallback;
             }
-            
+
             return *this;
         }
 
@@ -53,12 +72,12 @@ public:
             if (this != &other)
             {
                 Title         = std::move(std::move(other.Title));
-                Width         = std::move(other.Width); 
+                Width         = std::move(other.Width);
                 Height        = std::move(other.Height);
-                Vsync         = std::move(other.Vsync); 
+                Vsync         = std::move(other.Vsync);
                 EventCallback = std::move(other.EventCallback);
             }
-            
+
             return *this;
         }
 
@@ -100,6 +119,11 @@ public:
     virtual void Show() {}
 
     virtual void SetIcon(const std::string &filepath) {}
+
+    virtual Type GetType() const
+    {
+        return Type::None;
+    }
 
 public:
     static Window *Create(const Description &description = Description{});

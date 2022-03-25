@@ -17,8 +17,6 @@ void *MemoryAllocator::Allocate(size_t size)
         allocation.reset(new Allocation{});
     }
 
-    ThrowIf(!size, "Trying to allocate zero size");
-
     Anonymous address = nullptr;
     AllocateInfo info{};
     info.size = size;

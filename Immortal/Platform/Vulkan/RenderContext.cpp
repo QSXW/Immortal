@@ -4,7 +4,6 @@
 #include <array>
 
 #include "Common.h"
-#include <GLFW/glfw3.h>
 
 #include "Framework/Application.h"
 #include "Renderer.h"
@@ -22,8 +21,6 @@ VkResult RenderContext::Status = VK_NOT_READY;
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
 #if defined( _WIN32 )
     { "VK_KHR_win32_surface", false }
-#elif defined( __linux__ )
-    { "VK_KHR_surface", false }
 #endif
 };
 
@@ -43,7 +40,7 @@ static std::vector<const char *> ValidationLayers = {
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc) :
-    handle{ desc.WindowHandle ? desc.WindowHandle->GetNativeWindow() : nullptr }
+    window{ desc.WindowHandle }
 {
     instance = std::make_unique<Instance>(desc.ApplicationName, InstanceExtensions, ValidationLayers);
     if (!instance->Ready())
@@ -98,19 +95,13 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
 RenderContext::~RenderContext()
 {
-    vkDestroySurfaceKHR(*instance, surface, nullptr);
+    instance->DestroySurface(surface, nullptr);
     instance.release();
 }
 
 void RenderContext::CreateSurface()
 {
-    if (!handle)
-    {
-        surface = VK_NULL_HANDLE;
-        return;
-    }
-
-    Check(glfwCreateWindowSurface(*instance, static_cast<GLFWwindow *>(handle), nullptr, &surface));
+    Check(instance->CreateSurface(window, &surface));
 }
 
 void RenderContext::Prepare(size_t threadCount)

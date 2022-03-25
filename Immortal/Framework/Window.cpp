@@ -26,7 +26,7 @@ Window *Window::Create(const Description &description)
         return new GLFWWindow{ description };
     }
 
-    LOG::ERR("There is no Window implemented for the rendering API specified yet.");
+    LOG::WARN("There is no Window implemented for the rendering API specified yet.");
     return nullptr;
 }
 

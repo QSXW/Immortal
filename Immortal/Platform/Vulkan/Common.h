@@ -14,8 +14,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-static struct VolkDeviceTable DeviceMap {};
-
 struct Semaphores
 {
     VkSemaphore acquiredImageReady;
@@ -178,7 +176,7 @@ inline const std::string Stringify(VkSurfaceFormatKHR surfaceFormat)
     }
     return surfaceFormatString;
 }
-        
+
 #if defined( DEBUG ) || defined( _DEBUG )
 inline void Check(VkResult status)
 {

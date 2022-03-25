@@ -74,7 +74,7 @@ void GLFWWindow::Setup(const Description &description)
     {
         glfwSetErrorCallback(GLFWErrorCallback);
         auto error = glfwInit();
-        SLASSERT(error && "Could not initialize GLFW!");
+        ThrowIf(!error, "Failed to initialize GLFW Window!");
     }
 
     if (Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12)

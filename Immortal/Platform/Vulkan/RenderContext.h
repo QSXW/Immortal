@@ -12,6 +12,8 @@
 
 namespace Immortal
 {
+
+class Window;
 namespace Vulkan
 {
 
@@ -170,7 +172,7 @@ public:
     }
 
 private:
-    void *handle{ nullptr };
+    Window *window{ nullptr };
 
     std::unique_ptr<Instance> instance;
 

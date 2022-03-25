@@ -1,9 +1,12 @@
-#include "impch.h"
 #include "Instance.h"
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "RenderContext.h"
+#include "Framework/Window.h"
 
 namespace Immortal
 {
@@ -50,7 +53,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags,
         LOG::INFO("{0}: {1}", layerPrefix, message);
         break;
     }
-    
+
     return VK_FALSE;
 }
 
@@ -254,8 +257,8 @@ Instance::Instance(const char                                   *applicationName
     QueryPhysicalDevice();
 }
 
-Instance::Instance(VkInstance instance)
-    : handle(instance)
+Instance::Instance(VkInstance instance) :
+    handle(instance)
 {
     if (handle != VK_NULL_HANDLE)
     {
@@ -285,12 +288,12 @@ Instance::~Instance()
 void Instance::QueryPhysicalDevice()
 {
     uint32_t count{ 0 };
-    Check(vkEnumeratePhysicalDevices(handle, &count, nullptr));
+    Check(EnumeratePhysicalDevices(&count, nullptr));
 
-    SLASSERT(count >= 1 && "Couldn't find a physical device that supports Vulkan.");
+    ThrowIf(!count, "Couldn't find a physical device that supports Vulkan.");
 
     std::vector<VkPhysicalDevice> physicalDevices{ count };
-    Check(vkEnumeratePhysicalDevices(handle, &count, physicalDevices.data()));
+    Check(EnumeratePhysicalDevices(&count, physicalDevices.data()));
 
     for (auto &pd : physicalDevices)
     {
@@ -310,28 +313,42 @@ PhysicalDevice &Instance::SuitablePhysicalDevice()
         }
     }
 
-    LOG::WARN("Couldn't find a discrete physical device. Picking default GPU");
+    if (physicalDevices[0]->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+    {
+        throw RuntimeException("No physical device available on this host!");
+    }
+
+    LOG::WARN("Couldn't find a discrete physical device. Picking the default.");
     return *physicalDevices.at(0);
 }
 
-bool Instance::CheckValidationLayerSupport()
+VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator) const
 {
-    uint32_t layerInstanceExtensionCount;
-    Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, nullptr));
-
-    std::vector<VkExtensionProperties> availableLayerInstanceExtension(layerInstanceExtensionCount);
-    Check(vkEnumerateInstanceExtensionProperties("VK_LAYER_KHRONOS_validation", &layerInstanceExtensionCount, availableLayerInstanceExtension.data()));
-
-    for (auto &ext : availableLayerInstanceExtension)
+    if (!window || window->GetType() == Window::Type::Headless)
     {
-        if (Equals(ext.extensionName, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME))
-        {
-            LOG::INFO("{0} is available. Enabling it!", VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-            enabledExtensions.emplace_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-            return true;
-        }
+        LOG::WARN("Failed to create surface without valid window. Enable the headless Vulkan rendering.");
+        *pSurface = VK_NULL_HANDLE;
+        return VK_SUCCESS;
     }
-    return false;
+
+    switch (window->GetType())
+    {
+    case  Window::Type::GLFW:
+        return glfwCreateWindowSurface(handle, static_cast<GLFWwindow *>(window->GetNativeWindow()), pAllocator, pSurface);
+
+    default:
+#ifdef _WIN32
+        VkWin32SurfaceCreateInfoKHR createInfo{};
+        createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        createInfo.hinstance = GetModuleHandle(NULL);
+        createInfo.hwnd      = static_cast<HWND>(window->Primitive());
+        return vkCreateWin32SurfaceKHR(handle, &createInfo, pAllocator, nullptr);
+#endif
+#ifdef __linux__
+        LOG::WARN("Native surface creation is not supported on Linux yet!");
+        return VK_ERROR_INITIALIZATION_FAILED;
+#endif
+    }
 }
 
 }
