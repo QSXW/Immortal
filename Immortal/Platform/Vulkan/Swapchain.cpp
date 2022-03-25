@@ -210,9 +210,9 @@ Swapchain::Swapchain(Swapchain                           &oldSwapchain,
     device{ device },
     surface{ surface }
 {
-    VkPhysicalDevice &physicalDevice = device->Get<PhysicalDevice>();
+    VkPhysicalDevice physicalDevice = device->Get<PhysicalDevice&>();
     VkSurfaceCapabilitiesKHR surfaceCapabilities{};
-    Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCapabilities));
+    Check(device->GetSurfaceCapabilities(surface, &surfaceCapabilities));
 
     uint32_t surfaceFormatCount = 0;
     Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr));

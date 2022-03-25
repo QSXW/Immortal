@@ -79,12 +79,7 @@ public:
     using Format = VkFormat;
     using Usage  = VkImageUsageFlags;
 
-    VkSwapchainKHR &Handle()
-    {
-        return handle;
-    }
-
-    operator VkSwapchainKHR&()
+    VkSwapchainKHR Handle() const
     {
         return handle;
     }

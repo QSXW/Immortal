@@ -34,7 +34,7 @@ public:
 public:
     Device() = default;
 
-    Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
+    Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
 
     ~Device();
 
@@ -77,7 +77,7 @@ public:
 
     VkFormat DepthFormat(bool depthOnly = false)
     {
-        return physicalDevice.DepthFormat(depthOnly);
+        return physicalDevice->GetSuitableDepthFormat(depthOnly);
     }
 
     bool IsEnabled(const std::string &extension) const
@@ -245,7 +245,7 @@ public:
     {
         if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
-            return physicalDevice;
+            return *physicalDevice;
         }
         if constexpr (IsPrimitiveOf<Queue, T>())
         {
@@ -285,7 +285,7 @@ public:
 
     VkResult GetSurfaceCapabilities(Surface &surface, VkSurfaceCapabilitiesKHR *properties)
     {
-        return vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice.Handle(), surface, properties);
+        return physicalDevice->GetCapabilities(surface, properties);
     }
 
     CommandBuffer *RequestCommandBuffer(Level level)
@@ -363,7 +363,7 @@ public:
     }
 
 private:
-    PhysicalDevice &physicalDevice;
+    PhysicalDevice *physicalDevice{ nullptr };
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 

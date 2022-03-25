@@ -21,18 +21,18 @@ static inline std::array<const char *, 5> VideoCodecExtensions = {
     "VK_KHR_sampler_ycbcr_conversion"
 };
 
-Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
-    physicalDevice(physicalDevice),
+Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
+    physicalDevice{ physicalDevice },
     surface(surface)
 {
-    uint32_t propsCount = U32(physicalDevice.QueueFamilyProperties.size());
+    uint32_t propsCount = U32(physicalDevice->QueueFamilyProperties.size());
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
     std::vector<std::vector<float>>      queueProps(propsCount);
 
     for (uint32_t index = 0; index < propsCount; index++)
     {
-        const VkQueueFamilyProperties &prop = physicalDevice.QueueFamilyProperties[index];
-        if (physicalDevice.HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
+        const VkQueueFamilyProperties &prop = physicalDevice->QueueFamilyProperties[index];
+        if (physicalDevice->HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
         {
             queueProps[index].reserve(prop.queueCount);
             queueProps[index].push_back(1.0f);
@@ -53,10 +53,10 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     std::vector<VkExtensionProperties> deviceExtensions;
     uint32_t deviceExtensionCount;
-    Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, nullptr));
+    Check(physicalDevice->EnumerateDeviceExtensionProperties(nullptr, &deviceExtensionCount, nullptr));
 
     deviceExtensions.resize(deviceExtensionCount);
-    Check(vkEnumerateDeviceExtensionProperties(physicalDevice.Handle(), nullptr, &deviceExtensionCount, deviceExtensions.data()));
+    Check(physicalDevice->EnumerateDeviceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtensions.data()));
 
     for (auto &e : deviceExtensions)
     {
@@ -85,8 +85,8 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
     {
-        auto &perfCounterFeatures       = physicalDevice.RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
-        auto &host_query_reset_features = physicalDevice.RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
+        auto &perfCounterFeatures       = physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+        auto &host_query_reset_features = physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
         LOG::DEBUG<isLogNeed>("Performance query enabled");
     }
 
@@ -140,20 +140,20 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext                   = physicalDevice.LastRequestedExtensionFeature;
+    createInfo.pNext                   = physicalDevice->LastRequestedExtensionFeature;
     createInfo.queueCreateInfoCount    = U32(queueCreateInfos.size());
     createInfo.pQueueCreateInfos       = queueCreateInfos.data();
     createInfo.enabledExtensionCount   = U32(enabledExtensions.size());
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
-    createInfo.pEnabledFeatures        = &physicalDevice.RequestedFeatures;
+    createInfo.pEnabledFeatures        = &physicalDevice->RequestedFeatures;
 
-    Check(vkCreateDevice(physicalDevice, &createInfo, nullptr, &handle));
+    Check(physicalDevice->CreateDevice(&createInfo, &handle));
 
     queues.resize(propsCount);
     for (uint32_t queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {
-        const auto& queueFamilyProps = physicalDevice.QueueFamilyProperties[queueFamilyIndex];
-        VkBool32 presentSupported = surface ? physicalDevice.IsPresentSupported(surface, queueFamilyIndex) : false;
+        const auto& queueFamilyProps = physicalDevice->QueueFamilyProperties[queueFamilyIndex];
+        VkBool32 presentSupported = surface ? physicalDevice->IsPresentSupported(surface, queueFamilyIndex) : false;
 
         for (uint32_t queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
         {
@@ -183,9 +183,9 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
     // @required
     VmaAllocatorCreateInfo allocatorInfo{};
-    allocatorInfo.physicalDevice = physicalDevice;
+    allocatorInfo.physicalDevice = *physicalDevice;
     allocatorInfo.device         = handle;
-    allocatorInfo.instance       = physicalDevice.Get<Instance&>();
+    allocatorInfo.instance       = physicalDevice->Get<Instance&>();
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
@@ -218,7 +218,7 @@ Device::Device(PhysicalDevice &physicalDevice, VkSurfaceKHR surface, std::unorde
 
 uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
 {
-    const auto &queueFamilyProperties = physicalDevice.QueueFamilyProperties;
+    const auto &queueFamilyProperties = physicalDevice->QueueFamilyProperties;
 
     VkQueueFlags mask = 0;
 
@@ -305,11 +305,11 @@ Queue &Device::FindQueueByType(Queue::Type type, uint32_t queueIndex)
 
 uint32_t Device::GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound)
 {
-    for (uint32_t i = 0; i < physicalDevice.MemoryProperties.memoryTypeCount; i++)
+    for (uint32_t i = 0; i < physicalDevice->MemoryProperties.memoryTypeCount; i++)
     {
         if (bits & 1)
         {
-            if ((physicalDevice.MemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            if ((physicalDevice->MemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
             {
                 if (memoryTypeFound)
                 {

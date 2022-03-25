@@ -297,7 +297,7 @@ void Instance::QueryPhysicalDevice()
 
     for (auto &pd : physicalDevices)
     {
-        this->physicalDevices.emplace_back(std::make_unique<PhysicalDevice>(*this, pd));
+        this->physicalDevices.emplace_back(std::make_unique<PhysicalDevice>(this, pd));
     }
 }
 

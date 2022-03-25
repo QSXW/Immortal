@@ -50,32 +50,26 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     }
     CreateSurface();
 
-    auto &physicalDevice = instance->SuitablePhysicalDevice();
-    physicalDevice.HighPriorityGraphicsQueue            = true;
-    physicalDevice.RequestedFeatures.samplerAnisotropy  = VK_TRUE;
-    physicalDevice.RequestedFeatures.robustBufferAccess = VK_TRUE;
-    physicalDevice.RequestedFeatures.independentBlend   = VK_TRUE;
-
-    depthFormat = SuitableDepthFormat(physicalDevice.Handle());
-
-    if (physicalDevice.Features.textureCompressionASTC_LDR)
-    {
-        physicalDevice.RequestedFeatures.textureCompressionASTC_LDR = VK_TRUE;
-    }
-
     if (instance->IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
     {
         AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
 
-    device = std::make_unique<Device>(physicalDevice, surface, DeviceExtensions);
+    auto &physicalDevice = instance->SuitablePhysicalDevice();
+    physicalDevice.Activate(PhysicalDevice::Feature::SamplerAnisotropy);
+    physicalDevice.Activate(PhysicalDevice::Feature::RobustBufferAccess);
+    physicalDevice.Activate(PhysicalDevice::Feature::IndependentBlend);
+
+    depthFormat = physicalDevice.GetSuitableDepthFormat();
+
+    device = std::make_unique<Device>(&physicalDevice, surface, DeviceExtensions);
     queue  = device->SuitableGraphicsQueuePtr();
 
     surfaceExtent = VkExtent2D{ desc.Width, desc.Height };
     if (surface != VK_NULL_HANDLE)
     {
         VkSurfaceCapabilitiesKHR surfaceProperties{};
-        Check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceProperties));
+        Check(device->GetSurfaceCapabilities(surface, &surfaceProperties));
 
         if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
         {

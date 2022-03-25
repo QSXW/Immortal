@@ -77,13 +77,14 @@ void Renderer::SubmitFrame()
 {
     VkResult error{ VK_SUCCESS };
 
+    VkSwapchainKHR swapchainKHR = *swapchain;
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.pNext              = nullptr;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores    = &semaphores[sync].renderComplete;
     presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = &swapchain->Handle();
+    presentInfo.pSwapchains        = &swapchainKHR;
     presentInfo.pImageIndices      = &currentBuffer;
     presentInfo.pResults           = nullptr;
 
