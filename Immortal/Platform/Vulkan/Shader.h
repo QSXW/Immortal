@@ -26,7 +26,9 @@ public:
 
     VkShaderModule Load(const std::string &filename, Stage stage);
 
-    auto &Stages()
+    VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module, VkShaderStageFlagBits stage);
+
+    auto &GetStages()
     {
         return stages;
     }
@@ -70,9 +72,9 @@ private:
 
     std::vector<VkShaderModule> modules;
 
-    std::vector<VkPipelineShaderStageCreateInfo> stages;
-
     std::vector<Shader::Resource> resources;
+
+    std::array<VkPipelineShaderStageCreateInfo, 2> stages;
 
     PipelineLayout pipelineLayout;
 

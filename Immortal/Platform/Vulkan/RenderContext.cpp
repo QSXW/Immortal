@@ -89,8 +89,16 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
 RenderContext::~RenderContext()
 {
+    if (DescriptorSetLayout != VK_NULL_HANDLE)
+    {
+        device->DestroyAsync(DescriptorSetLayout);
+        DescriptorSetLayout = VK_NULL_HANDLE;
+    }
+    present.renderTargets.clear();
+    renderPass.reset();
+    swapchain.reset();
+
     instance->DestroySurface(surface, nullptr);
-    instance.release();
 }
 
 void RenderContext::CreateSurface()
@@ -128,7 +136,7 @@ void RenderContext::Prepare(size_t threadCount)
 
     for (auto &buf : present.commandBuffers)
     {
-        buf.reset(device->RequestCommandBuffer(Level::Primary));
+        buf = device->RequestCommandBuffer(Level::Primary);
     }
 
     SetupDescriptorSetLayout();

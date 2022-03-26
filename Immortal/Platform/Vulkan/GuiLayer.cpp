@@ -25,7 +25,8 @@ GuiLayer::GuiLayer(RenderContext::Super *context) :
 
 GuiLayer::~GuiLayer()
 {
-
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
 }
 
 void GuiLayer::OnAttach()

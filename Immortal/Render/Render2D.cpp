@@ -74,6 +74,19 @@ void Render2D::Setup()
     data.pRectVertex = data.RectVertexBuffer.data();
 }
 
+void Render2D::Release()
+{
+    uniform.reset();
+    data.WhiteTexture.reset();
+    data.RectVertexBuffer.clear();
+    pipeline.reset();
+
+    for (auto &t : data.ActiveTextures)
+    {
+        t.reset();
+    }
+}
+
 void Render2D::Shutdown()
 {
 

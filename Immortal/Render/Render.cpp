@@ -82,4 +82,17 @@ void Render::Setup(const std::shared_ptr<RenderTarget> &renderTarget)
     Render2D::Setup(renderTarget);
 }
 
+void Render::Release()
+{
+    data.Textures.White.reset();
+    data.Textures.Black.reset();
+    data.Textures.Transparent.reset();
+    data.Target.reset();
+    user.renderTarget.reset();
+    ShaderManager.clear();
+
+    Render2D::Release();
+    renderer.reset();
+}
+
 }

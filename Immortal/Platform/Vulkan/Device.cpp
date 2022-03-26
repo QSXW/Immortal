@@ -161,7 +161,6 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         }
     }
 
-    // @required
     VmaVulkanFunctions vmaVulkanFunc{};
     vmaVulkanFunc.vkAllocateMemory                    = vkAllocateMemory;
     vmaVulkanFunc.vkBindBufferMemory                  = vkBindBufferMemory;
@@ -181,11 +180,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     vmaVulkanFunc.vkUnmapMemory                       = vkUnmapMemory;
     vmaVulkanFunc.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
 
-    // @required
     VmaAllocatorCreateInfo allocatorInfo{};
     allocatorInfo.physicalDevice = *physicalDevice;
     allocatorInfo.device         = handle;
     allocatorInfo.instance       = physicalDevice->Get<Instance&>();
+    allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
@@ -199,7 +198,6 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         vmaVulkanFunc.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
     }
 
-    allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
     commandPool.reset(new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() });
@@ -248,18 +246,31 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
 
 Device::~Device()
 {
-    static auto DestroyVmaAllocator = [](VmaAllocator memoryAllocator)
-    {
-        VmaStats stats;
-        vmaCalculateStats(memoryAllocator, &stats);
-        LOG::INFO("Total device memory leaked: {0} bytes.", stats.total.usedBytes);
+    Wait();
+    commandPool.reset();
+    compute.commandPool.reset();
+    fencePool.reset();
+    descriptorPool.reset();
 
-        vmaDestroyAllocator(memoryAllocator);
-    };
+    for (auto &queue : destroyCoroutine.queues)
+    {
+        while (!queue.empty())
+        {
+            std::function<void()> func = queue.front();
+            queue.pop();
+            func();
+        }
+    }
 
     if (memoryAllocator != VK_NULL_HANDLE)
     {
-        DestroyVmaAllocator(memoryAllocator);
+        VmaStats stats;
+        vmaCalculateStats(memoryAllocator, &stats);
+        LOG::INFO("Total device memory leaked: {} Bytes({} MB).",
+            stats.total.usedBytes,
+            stats.total.usedBytes / (1024.0f * 1024.0f)
+        );
+        vmaDestroyAllocator(memoryAllocator);
     }
 
     IfNotNullThen(vkDestroyDevice, handle);

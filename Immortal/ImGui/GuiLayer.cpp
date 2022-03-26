@@ -30,7 +30,7 @@ GuiLayer::GuiLayer() :
 
 GuiLayer::~GuiLayer()
 {
-
+    ImGui::DestroyContext();
 }
 
 void GuiLayer::OnAttach()

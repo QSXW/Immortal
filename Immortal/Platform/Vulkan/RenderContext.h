@@ -43,7 +43,7 @@ public:
 
     RenderContext(const Description &desc);
 
-    ~RenderContext();
+    virtual ~RenderContext();
 
     virtual bool HasSwapchain() override
     {
@@ -134,7 +134,7 @@ public:
 
     CommandBuffer *GetCommandBuffer()
     {
-        return present.commandBuffers[present.bufferIndex].get();
+        return present.commandBuffers[present.bufferIndex];
     }
 
     constexpr size_t FrameSize()
@@ -186,7 +186,7 @@ private:
 
     struct
     {
-        std::array<std::unique_ptr<CommandBuffer>, Swapchain::MaxFrameCount> commandBuffers;
+        std::array<CommandBuffer*, Swapchain::MaxFrameCount> commandBuffers;
 
         std::vector<std::unique_ptr<RenderTarget>> renderTargets;
 

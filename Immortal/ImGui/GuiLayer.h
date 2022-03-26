@@ -90,7 +90,7 @@ public:
 public:
     GuiLayer();
 
-    ~GuiLayer();
+    virtual ~GuiLayer();
 
     void OnUpdate() { };
 

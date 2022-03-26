@@ -67,6 +67,8 @@ public:
 public:
     static void Setup(RenderContext *context);
 
+    static void Release();
+
     static void Setup(const std::shared_ptr<RenderTarget> &renderTarget);
 
     static const char *Sringify(Render::Type type)

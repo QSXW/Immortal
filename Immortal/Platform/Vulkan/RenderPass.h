@@ -17,12 +17,7 @@ public:
 
     ~RenderPass();
 
-    VkRenderPass &Handle()
-    {
-        return handle;
-    }
-
-    operator VkRenderPass&()
+    VkRenderPass Handle() const
     {
         return handle;
     }

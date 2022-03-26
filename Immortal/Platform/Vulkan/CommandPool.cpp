@@ -45,7 +45,7 @@ CommandPool::CommandPool(Device *device, UINT32 queueFamilyIndex, RenderFrame *r
     createInfo.queueFamilyIndex = queueFamilyIndex;
     createInfo.flags            = flags;
 
-    Check:vkCreateCommandPool(*device, &createInfo, nullptr, &handle);
+    device->Create(&createInfo, &handle);
 }
 
 CommandPool::CommandPool(CommandPool &&other) :

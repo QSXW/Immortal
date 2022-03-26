@@ -155,8 +155,10 @@ public:
     }
 
     DEFINE_CREATE_VK_OBJECT(Buffer)
+    DEFINE_CREATE_VK_OBJECT(CommandPool)
     DEFINE_CREATE_VK_OBJECT(DescriptorPool)
     DEFINE_CREATE_VK_OBJECT(DescriptorSetLayout)
+    DEFINE_CREATE_VK_OBJECT(Fence)
     DEFINE_CREATE_VK_OBJECT(Framebuffer)
     DEFINE_CREATE_VK_OBJECT(Image)
     DEFINE_CREATE_VK_OBJECT(ImageView)
@@ -165,6 +167,7 @@ public:
     DEFINE_CREATE_VK_OBJECT(Sampler)
     DEFINE_CREATE_VK_OBJECT(Semaphore)
     DEFINE_CREATE_VK_OBJECT(ShaderModule)
+    DEFINE_CREATE_VK_OBJECT(PipelineCache)
 
     DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
     DEFINE_CREATE_VK_KHR_OBJECT(VideoSession)
@@ -184,6 +187,7 @@ public:
     DEFINE_DESTORY_VK_OBJECT(Semaphore)
     DEFINE_DESTORY_VK_OBJECT(ShaderModule)
     DEFINE_DESTORY_VK_OBJECT(SwapchainKHR)
+    DEFINE_DESTORY_VK_OBJECT(PipelineCache)
 
     DEFINE_RESET_OBJECT(CommandPool)
     DEFINE_RESET_OBJECT(DescriptorPool)
@@ -230,7 +234,7 @@ public:
     }
 
 public:
-    VkDevice &Handle()
+    VkDevice Handle() const
     {
         return handle;
     }
@@ -262,7 +266,7 @@ public:
         return vkDeviceWaitIdle(handle);
     }
 
-    VkResult Wait(VkFence *pFences, uint32_t fenceCount = 1, VkBool32 waitAll = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max())
+    VkResult Wait(const VkFence *pFences, uint32_t fenceCount = 1, VkBool32 waitAll = VK_TRUE, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const
     {
         return vkWaitForFences(handle, fenceCount, pFences, waitAll, timeout);
     }

@@ -83,7 +83,8 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     Check(device->Create(&createInfo, &handle));
 }
 
-RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo * pCreateInfo)
+RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo * pCreateInfo) :
+    device{ device }
 {
     Check(device->Create(pCreateInfo, &handle));
 }

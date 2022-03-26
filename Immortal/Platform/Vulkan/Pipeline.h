@@ -40,6 +40,8 @@ public:
 public:
     Pipeline(Device *device, Shader *shader);
 
+    virtual ~Pipeline();
+
     virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0) override;
 
     virtual void Bind(Texture::Super *texture, uint32_t slot = 0) override;
@@ -56,6 +58,8 @@ public:
     bool Ready();
 
     void Update();
+
+    void Destroy();
 
 protected:
     Device *device{ nullptr };

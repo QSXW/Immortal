@@ -21,7 +21,7 @@ public:
 		
 	~FencePool();
 
-	VkResult Wait(UINT32 timeout = std::numeric_limits<UINT32>::max()) const;
+	VkResult Wait(uint32_t timeout = std::numeric_limits<uint32_t>::max()) const;
 
 	VkResult Reset();
 
@@ -41,7 +41,7 @@ private:
 
 	std::queue<VkFence> pending;
 
-	UINT32 activeCount{ 0 };
+	uint32_t activeCount{ 0 };
 
 	std::mutex mutux;
 };

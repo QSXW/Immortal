@@ -162,6 +162,11 @@ public:
         return "Un-Specified";
     }
 
+    virtual const std::string &GetEntryPoint() const
+    {
+        return entryPoint;
+    }
+
     virtual const uint32_t Handle() const
     {
         return -1;
@@ -179,6 +184,8 @@ public:
 
 protected:
     Type type{ Type::Graphics };
+
+    std::string entryPoint = "main";
 };
 
 using SuperShader = Shader;

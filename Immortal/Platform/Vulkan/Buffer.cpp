@@ -108,6 +108,7 @@ void Buffer::Create(size_t size)
     {
         allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
+
     Check(vmaCreateBuffer(device->MemoryAllocator(), &createInfo, &allocCreateInfo, &descriptor.buffer, &memory, &allocInfo));
 
     if (persistent)

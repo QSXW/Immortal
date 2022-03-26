@@ -67,21 +67,10 @@ bool ReadSpirv(const std::string &path, const std::string &shaderName, const std
     return true;
 }
 
-static inline VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module, VkShaderStageFlagBits stage)
-{
-    VkPipelineShaderStageCreateInfo createInfo{};
-    createInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    createInfo.stage  = stage;
-    createInfo.module = module;
-    createInfo.pName  = "main";
-    return createInfo;
-}
-
 Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
     Super{ type },
     device { d }
 {   
-    stages.reserve(2);
     if (type == Shader::Type::Graphics)
     {
         VkShaderModule vert = Load(filename + ".vert", Shader::Stage::Vertex);
@@ -89,7 +78,6 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
 
         modules.push_back(vert);
         modules.push_back(frag);
-        stages.resize(2);
         stages[0] = CreateStage(vert, VK_SHADER_STAGE_VERTEX_BIT);
         stages[1] = CreateStage(frag, VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -97,7 +85,6 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
     {
         VkShaderModule comp = Load(filename + ".comp", Shader::Stage::Compute);
         modules.push_back(comp);
-        stages.resize(1);
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
     Setup();
@@ -114,6 +101,16 @@ Shader::~Shader()
         device->DestroyAsync(descriptorSetLayout);
         device->DestroyAsync(pipelineLayout.Handle());
     }
+}
+
+VkPipelineShaderStageCreateInfo Shader::CreateStage(VkShaderModule module, VkShaderStageFlagBits stage)
+{
+    VkPipelineShaderStageCreateInfo createInfo{};
+    createInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    createInfo.stage  = stage;
+    createInfo.module = module;
+    createInfo.pName  = entryPoint.c_str();
+    return createInfo;
 }
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)

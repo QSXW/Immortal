@@ -24,7 +24,7 @@ CommandBuffer::~CommandBuffer()
 {
     if (handle != VK_NULL_HANDLE)
     {
-       vkFreeCommandBuffers(*commandPool->GetAddress<Device>(), commandPool->Handle(), 1, &handle);
+       vkFreeCommandBuffers(*commandPool->GetAddress<Device>(), *commandPool, 1, &handle);
     }
 }
 

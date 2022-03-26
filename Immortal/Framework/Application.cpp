@@ -49,6 +49,7 @@ Application::Application(const Window::Description &description) :
 
 Application::~Application()
 {
+    Render::Release();
     timer.Stop();
 }
 

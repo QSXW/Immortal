@@ -139,7 +139,7 @@ void Renderer::SwapBuffers()
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();
 
-    sync = (sync + 1) % context->FrameSize();
+    SLROTATE(sync, context->FrameSize());
 
     device->ExecuteComputeThread();
     device->DestroyObjects();

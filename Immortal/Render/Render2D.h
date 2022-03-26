@@ -80,6 +80,8 @@ public:
 public:
     static void Setup();
 
+    static void Release();
+
     static void Setup(const std::shared_ptr<RenderTarget> &renderTarget)
     {
         pipeline->Reconstruct(renderTarget);

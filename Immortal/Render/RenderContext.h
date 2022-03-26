@@ -62,6 +62,8 @@ public:
 
     }
 
+    virtual ~RenderContext() = default;
+
     virtual void SwapBuffers()
     {
 

@@ -22,13 +22,13 @@ FencePool::~FencePool()
     handles.clear();
 }
 
-VkResult FencePool::Wait(UINT32 timeout) const
+VkResult FencePool::Wait(uint32_t timeout) const
 {
     if (activeCount < 1 || handles.empty())
     {
         return VK_SUCCESS;
     }
-    return vkWaitForFences(*device, activeCount, handles.data(), true, timeout);
+    return device->Wait(handles.data(), activeCount, true, timeout);
 }
 
 VkResult FencePool::Reset()
@@ -38,7 +38,7 @@ VkResult FencePool::Reset()
         return VK_SUCCESS;
     }
     activeCount = 0;
-    return vkResetFences(*device, activeCount, handles.data());
+    return device->Reset(handles.data(), handles.size());
 }
 
 VkFence FencePool::Request()
@@ -52,7 +52,7 @@ VkFence FencePool::Request()
     else
     {
         VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-        Check(vkCreateFence(*device, &createInfo, nullptr, &fence));
+        Check(device->Create(&createInfo, &fence));
 
         handles.emplace_back(fence);
         activeCount++;
@@ -63,7 +63,7 @@ VkFence FencePool::Request()
 
 void FencePool::Discard(VkFence *pFence)
 {
-    vkResetFences(*device, 1, pFence);
+    device->Reset(pFence, 1);
     pending.push(*pFence);
     activeCount--;
     *pFence = nullptr;

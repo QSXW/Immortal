@@ -114,6 +114,7 @@ Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memor
     {
         memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
+
     Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
 }
 

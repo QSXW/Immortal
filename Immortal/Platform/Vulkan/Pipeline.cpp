@@ -44,6 +44,19 @@ Pipeline::Pipeline(Device *device, Shader *shader) :
     descriptor.pool.reset(new DescriptorPool{ device, shader->PoolSize() });
 }
 
+Pipeline::~Pipeline()
+{
+    Destroy();
+}
+
+void Pipeline::Destroy()
+{
+    if (device && handle)
+    {
+        device->DestroyAsync(handle);
+    }
+}
+
 Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
 {
     auto it = descriptor.packs.find(uuid);
@@ -155,10 +168,7 @@ GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super
 
 GraphicsPipeline::~GraphicsPipeline()
 {
-    if (device)
-    {
-        device->DestroyAsync(handle);
-    }
+
 }
 
 void GraphicsPipeline::SetupVertex()
@@ -219,6 +229,8 @@ void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superT
 
 void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget, Option option)
 {
+    Destroy();
+
     auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
 
     state->rasterization.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -305,7 +317,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     createInfo.pDynamicState       = &state->dynamic;
     createInfo.pColorBlendState    = &state->colorBlend;
 
-    auto &stages = shader->Stages();
+    auto &stages = shader->GetStages();
     createInfo.pStages    = stages.data();
     createInfo.stageCount = stages.size();
 
@@ -328,9 +340,9 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
     NativeSuper{ device, dcast<Shader *>(superShader) }
 {
     auto shader = dynamic_cast<Shader *>(superShader);
-    auto &stage = shader->Stages();
+    auto &stage = shader->GetStages();
 
-    THROWIF(!shader->IsType(Shader::Type::Compute), "init compute pipeline with incorrect shader source type")
+    THROWIF(!shader->IsType(Shader::Type::Compute), "Init compute pipeline with incorrect shader source type")
 
     VkComputePipelineCreateInfo createInfo{};
     createInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -339,16 +351,12 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
     createInfo.stage  = stage[0];
 
     device->CreatePipelines(cache, 1, &createInfo, &handle);
-
     Update();
 }
 
 ComputePipeline::~ComputePipeline()
 {
-    if (device)
-    {
-        device->DestroyAsync(handle);
-    }
+
 }
 
 void ComputePipeline::Update()
