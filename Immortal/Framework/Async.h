@@ -37,52 +37,13 @@ using Task = std::function<void()>;
 class ThreadPool
 {
 public:
-    explicit ThreadPool(int num)
-    {
-        for (int i = 0; i < num; i++)
-        {
-            semaphores[i] = Thread::State::Idle;
-            threads.emplace_back([=]() -> void {
-                while (true)
-                {
-                    static Thread::Semaphore *semaphore = semaphores + i;
-                    Task task;
-                    {
-                        std::unique_lock<std::mutex> lock{ mutex };
-                        condition.wait(lock, [=] { return stopping || !tasks.empty(); });
+    ThreadPool(uint32_t num);
 
-                        if (stopping)
-                        {
-                            LOG::DEBUG("Stopping Thread -> \tid => {0}\thandle => {1}",
-                                      threads[i].get_id(), threads[i].native_handle());
-                            break;
-                        }
-                        *semaphore = Thread::State::Block;
-                        task = std::move(tasks.front());
-                        tasks.pop();
-                    }
-                    task();
-                    *semaphore = Thread::State::Idle;
-                }
-            });
-            LOG::DEBUG("\tid => {0}\thandle => {1}", threads[i].get_id(), threads[i].native_handle());
-        }
-    }
+    ~ThreadPool();
 
-    ~ThreadPool()
-    {
-        {
-            std::unique_lock<std::mutex> lock{ mutex };
-            stopping = true;
-        }
-        condition.notify_all();
+    void Join();
 
-        for (auto &thread : threads)
-        {
-            thread.join();
-        }
-    }
-
+public:
     template <class T>
     auto Enqueue(T task)->std::future<decltype(task())>
     {
@@ -97,8 +58,6 @@ public:
         condition.notify_one();
         return wrapper->get_future();
     }
-
-    void Join();
 
 private:
     std::vector<std::thread> threads;
@@ -117,15 +76,10 @@ private:
 class Async
 {
 public:
-    template <bool isLogNeed = false>
     static void Setup()
     {
-        int count = std::thread::hardware_concurrency();
-
-        Profiler p;
-        LOG::DEBUG<isLogNeed>("Creating {0} Thread(s)", count);
-
-        threadPool.reset(new ThreadPool{ count });
+        Profiler p{ "Initializing Asynchronous Library" };
+        threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
     }
 
     template <class T>
