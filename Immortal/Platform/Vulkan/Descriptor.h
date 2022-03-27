@@ -86,7 +86,8 @@ struct DescriptorSetUpdater
     {
         for (auto &w : WriteDescriptorSets)
         {
-            w.pImageInfo = nullptr;
+            w.pBufferInfo = nullptr;
+            w.pImageInfo  = nullptr;
         }
     }
 

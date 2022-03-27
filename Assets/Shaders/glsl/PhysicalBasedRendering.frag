@@ -142,9 +142,9 @@ vec3 specularContribution(vec3 L, vec3 V, vec3 N, vec3 F0, float metallic, float
 	return color;
 }
 
-vec3 calculateNormal()
+vec3 CalculateNormal(vec2 uv)
 {
-	vec3 tangentNormal = texture(NormalMap, fsInput.TexCoord).xyz * 2.0 - 1.0;
+	vec3 tangentNormal = texture(NormalMap, uv).xyz * 2.0 - 1.0;
 
 	vec3 N = normalize(fsInput.Normal);
 	vec3 T = normalize(fsInput.Tangent);
@@ -170,7 +170,7 @@ void main()
 	vec2 uv = vec2(fsInput.TexCoord.x, 1.0f - fsInput.TexCoord.y);
 	vec3 albedo = texture(AlbedoMap, uv).rgb * inModel.color;
 
-	vec3 N = calculateNormal();
+	vec3 N = CalculateNormal(uv);
 	vec3 V = normalize(shading.camPos - fsInput.WorldPos);
 	vec3 R = reflect(-V, N);
 

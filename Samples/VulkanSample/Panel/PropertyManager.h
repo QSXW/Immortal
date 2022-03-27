@@ -15,12 +15,19 @@ public:
             ImGuiTreeNodeFlags_AllowItemOverlap |
             ImGuiTreeNodeFlags_FramePadding;
 
+    static inline int uuid = 0;
+
+    static void BeginDraw()
+    {
+        uuid = 0;
+    }
+
     template <class T>
     static inline bool DrawColumn(const std::string &label, T draw)
     {
         bool modified = false;
 
-        ImGui::PushID(label.c_str());
+        ImGui::PushID(uuid++);
         ImGui::Columns(2);
         ImGui::Text("%s", label.c_str());
         ImGui::SetColumnWidth(0, 64);
@@ -45,6 +52,8 @@ public:
 public:
     void OnUpdate(Object &object)
     {
+        BeginDraw();
+
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Properties"));
         {
@@ -79,26 +88,33 @@ public:
                         });
                 }
 
-                if (object.HasComponent<MaterialComponent>())
+                if (object.HasComponent<MaterialComponent>() && object.HasComponent<MeshComponent>())
                 {
                     DrawComponent(
                         WordsMap::Get("Material"),
                         [&]() -> void {
                             auto &material = object.GetComponent<MaterialComponent>();
+                            auto &mesh     = object.GetComponent<MeshComponent>();
+                            auto &nodeList = mesh.Mesh->NodeList();
+                            
+                            for (auto &node : nodeList)
+                            {
+                                auto &ref = material.Ref[node.MaterialIndex];
+                                ImGui::Text("%s", node.Name.c_str());
 
-                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&material.AlbedoColor); });
+                                DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
 
-                            float smoothness = 1.0f - material.Roughness;
-                            DrawFloat(WordsMap::Get("Metallic"), &material.Metallic, 0.001, 0, 1.0f);
-                            DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
-                            material.Roughness = 1.0f - smoothness;
+                                float smoothness = 1.0f - ref.Roughness;
+                                DrawFloat(WordsMap::Get("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
+                                DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
+                                ref.Roughness = 1.0f - smoothness;
 
-                            ImGui::Columns(1);
-                            auto &textures = material.Textures;
-                            ImVec2 size = { 64.0f, 64.0f };
+                                ImGui::Columns(1);
+                                auto &textures = ref.Textures;
+                                ImVec2 size = { 64.0f, 64.0f };
 
-                            auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
-                                    ImGui::PushID(label.c_str());
+                                auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
+                                    ImGui::PushID((void*)(node.MaterialIndex + (uint64_t)label.c_str()));
                                     ImGui::Columns(2);
                                     ImGui::Text("%s", label.c_str());
                                     ImGui::SetColumnWidth(0, 64);
@@ -120,17 +136,18 @@ public:
                                     }
                                     ImGui::Columns(1);
                                     ImGui::PopID();
-                            };
-                            ImGui::PushStyleColor(ImGuiCol_Header,        ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
-                            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
-                            ImGui::PushStyleColor(ImGuiCol_HeaderActive,  ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+                                };
+                                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
+                                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+                                ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
 
-                            drawTexture(textures.Albedo,    WordsMap::Get("Albedo"));
-                            drawTexture(textures.Normal,    WordsMap::Get("Normal"));
-                            drawTexture(textures.Metallic,  WordsMap::Get("Metallic"));
-                            drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
+                                drawTexture(textures.Albedo,    WordsMap::Get("Albedo"));
+                                drawTexture(textures.Normal,    WordsMap::Get("Normal"));
+                                drawTexture(textures.Metallic,  WordsMap::Get("Metallic"));
+                                drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
 
-                            ImGui::PopStyleColor(3);
+                                ImGui::PopStyleColor(3);
+                            }
                         });
                 }
 

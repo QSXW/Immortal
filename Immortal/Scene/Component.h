@@ -135,29 +135,38 @@ struct MaterialComponent : public Component
 {
     DEFINE_COMP_TYPE(Material)
 
-    MaterialComponent() :
-        AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
-        Metallic{ 1.0f },
-        Roughness{ 1.0f }
+    MaterialComponent()
     {
-        Textures.Albedo    = Render::Preset()->Textures.White;
-        Textures.Normal    = Render::Preset()->Textures.Normal;
-        Textures.Metallic  = Textures.Albedo;
-        Textures.Roughness = Textures.Albedo;
-        Textures.AO        = Textures.Albedo;
+        Ref.resize(1);
     }
 
-    struct {
-        std::shared_ptr<Texture> Albedo;
-        std::shared_ptr<Texture> Normal;
-        std::shared_ptr<Texture> Metallic;
-        std::shared_ptr<Texture> Roughness;
-        std::shared_ptr<Texture> AO;
-    } Textures;
+    struct Reference
+    {
+        Reference() :
+            AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
+            Metallic{ 1.0f },
+            Roughness{ 1.0f }
+        {
+            Textures.Albedo = Render::Preset()->Textures.White;
+            Textures.Normal = Render::Preset()->Textures.Normal;
+            Textures.Metallic = Textures.Albedo;
+            Textures.Roughness = Textures.Albedo;
+            Textures.AO = Textures.Albedo;
+        }
+        struct {
+            std::shared_ptr<Texture> Albedo;
+            std::shared_ptr<Texture> Normal;
+            std::shared_ptr<Texture> Metallic;
+            std::shared_ptr<Texture> Roughness;
+            std::shared_ptr<Texture> AO;
+        } Textures;
 
-    Vector4 AlbedoColor;
-    float   Metallic;
-    float   Roughness;
+        Vector4 AlbedoColor;
+        float   Metallic;
+        float   Roughness;
+    };
+
+    std::vector<Reference> Ref;
 };
 
 struct LightComponent : public Component

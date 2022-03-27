@@ -359,7 +359,7 @@ public:
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
                 auto &material = o.Add<MaterialComponent>();
-                // material.Textures.Albedo = mesh.Mesh->Textures[0].Albedo;
+                material.Ref.resize(mesh.Mesh->NodeList().size());
             }
             else
             {

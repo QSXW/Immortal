@@ -89,6 +89,7 @@ Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
         descriptor.packs[uuid] = pack;
     }
     descriptor.setUpdater->Set(descriptor.set);
+    descriptor.setUpdater->Clear();
 
     return Anonymize(descriptor.set);
 }

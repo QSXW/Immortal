@@ -62,10 +62,6 @@ void Render2D::Setup()
         data.ActiveTextures[i] = data.WhiteTexture;
     }
 
-    pipeline->AllocateDescriptorSet((uint64_t)&data);
-    pipeline->Bind("UBO", uniform.get());
-    pipeline->Bind(data.textureDescriptors.get(), 1);
-
     data.RectVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
     data.RectVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
     data.RectVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
@@ -105,6 +101,7 @@ void Render2D::Flush()
     if (isTextureChanged)
     {
         pipeline->AllocateDescriptorSet((uint64_t)&data);
+        pipeline->Bind(uniform.get(),                 0);
         pipeline->Bind(data.textureDescriptors.get(), 1);
         isTextureChanged = false;
     }

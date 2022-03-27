@@ -77,7 +77,8 @@ public:
         Node(const Node &other) :
             Name{ other.Name },
             Vertex{ other.Vertex },
-            Index{ other.Index }
+            Index{ other.Index },
+            MaterialIndex{ other.MaterialIndex }
         {
 
         }
@@ -85,7 +86,8 @@ public:
         Node(Node &&other) :
             Name{ std::move(other.Name) },
             Vertex{ std::move(other.Vertex) },
-            Index{ std::move(other.Index) }
+            Index{ std::move(other.Index) },
+            MaterialIndex{ std::move(other.MaterialIndex) }
         {
 
         }
@@ -93,6 +95,8 @@ public:
         std::string Name;
         std::shared_ptr<Buffer> Vertex;
         std::shared_ptr<Buffer> Index;
+
+        uint32_t MaterialIndex = 0;
     };
 
     using Index = Face;
@@ -133,15 +137,6 @@ private:
 
         bool playing = true;
     } animation;
-
-public:
-    struct {
-        std::shared_ptr<Texture> Albedo;
-        std::shared_ptr<Texture> Normal;
-        std::shared_ptr<Texture> Metallic;
-        std::shared_ptr<Texture> Roughness;
-        std::shared_ptr<Texture> AO;
-    } Textures[8];
 };
 
 }

@@ -56,8 +56,8 @@ void ObserverCamera::OnUpdate(float deltaTime)
     }
 
     Vector2 currentPos = Input::GetMousePosition();
-    INT32 dx = (INT32)(mousePos.x - currentPos.x);
-    INT32 dy = (INT32)(mousePos.y - currentPos.y);
+    int dx = (int)(mousePos.x - currentPos.x);
+    int dy = -(int)(mousePos.y - currentPos.y);
 
     if (mouseButtons.Left)
     {

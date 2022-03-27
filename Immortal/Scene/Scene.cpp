@@ -55,25 +55,28 @@ void Scene::RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::ent
     }
 
     UniformBuffer::Model model;
-    model.Transform = transform;
-    model.Color     = material.AlbedoColor;
-    model.Roughness = material.Roughness;
-    model.Metallic  = material.Metallic;
-    model.ObjectID  = (int)object;
 
     auto &nodeList = mesh.Mesh->NodeList();
     for (auto &node : nodeList)
     {
-        pipeline->AllocateDescriptorSet((uint64_t)&node);
+        auto &ref = material.Ref[node.MaterialIndex];
+
+        pipeline->AllocateDescriptorSet(((uint64_t)object << 32) | (uint64_t)node.MaterialIndex);
         pipeline->Set(node.Vertex);
         pipeline->Set(node.Index);
         pipeline->Bind(uniforms.transform.get(), 0);
         pipeline->Bind(uniforms.shading.get(),   1);
-        pipeline->Bind(material.Textures.Albedo.get(),    baseRegister + 0);
-        pipeline->Bind(material.Textures.Normal.get(),    baseRegister + 1);
-        pipeline->Bind(material.Textures.Metallic.get(),  baseRegister + 2);
-        pipeline->Bind(material.Textures.Roughness.get(), baseRegister + 3);
-        pipeline->Bind(material.Textures.AO.get(),        baseRegister + 4);
+        pipeline->Bind(ref.Textures.Albedo.get(),    baseRegister + 0);
+        pipeline->Bind(ref.Textures.Normal.get(),    baseRegister + 1);
+        pipeline->Bind(ref.Textures.Metallic.get(),  baseRegister + 2);
+        pipeline->Bind(ref.Textures.Roughness.get(), baseRegister + 3);
+        pipeline->Bind(ref.Textures.AO.get(),        baseRegister + 4);
+
+        model.Transform = transform;
+        model.Color     = ref.AlbedoColor;
+        model.Roughness = ref.Roughness;
+        model.Metallic  = ref.Metallic;
+        model.ObjectID  = (int)object;
 
         Render::PushConstant(pipeline.get(), Shader::Stage::Vertex, sizeof(model), &model, 0);
         Render::Draw(pipeline);
@@ -122,7 +125,7 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
     };
 
     pipelines.tonemap = nullptr;
-    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Basic3D")));
+    pipelines.pbr.reset(Render::Create<Pipeline::Graphics>(Render::GetShader(Render::API == Render::Type::Vulkan ? "PhysicalBasedRendering" : "Basic3D")));
     pipelines.pbr->Set(inputElementDescription);
     pipelines.pbr->Create(renderTarget);
 
@@ -318,7 +321,7 @@ void Scene::OnRender(const Camera &camera)
     for (auto object : view)
     {
         auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
-        RenderObject(pipelines.basic, object, transform, mesh, material);
+        RenderObject(pipelines.pbr, object, transform, mesh, material);
     }
 
     Render2D::BeginScene(camera);

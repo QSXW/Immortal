@@ -108,6 +108,7 @@ Mesh::Mesh(const std::string &filepath) :
         {
             auto mesh = scene->mMeshes[i];
             Node node{ mesh->mName.C_Str() };
+            node.MaterialIndex = i;
 
             THROWIF(!mesh->HasPositions() || !mesh->HasNormals(), "No Position and Normals in the mesh object");
 
@@ -156,14 +157,7 @@ Mesh::Mesh(const std::string &filepath) :
             auto count = material->GetTextureCount(aiTextureType_BASE_COLOR);
             if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
             {
-                auto absolutePath = FileSystem::Path::Join(workspace, texturePath.C_Str());
-                LOG::DEBUG("Load texture: {0}", absolutePath);
-                Textures[i].Albedo.reset(Render::Create<Texture>(
-                    absolutePath,
-                    Texture::Description{
-                        Wrap::Mirror,
-                        Filter::Linear
-                    }));
+
             }
         }
     }
