@@ -2,12 +2,15 @@
 
 int main()
 {
-    LOG::Setup();
-    Render::Set(Render::Type::Vulkan);
+    LOG::Init();
 
-    std::unique_ptr<Application> app{ new VulkanSample() };
+    {
+        Render::Set(Render::Type::Vulkan);
+        std::unique_ptr<Application> app{ new VulkanSample() };
+        app->Run();
+    }
 
-    app->Run();
+    LOG::Release();
 
     return 0;
 }

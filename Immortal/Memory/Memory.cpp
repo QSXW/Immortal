@@ -10,11 +10,16 @@ MemoryAllocator::~MemoryAllocator()
     Release();
 }
 
+MemoryAllocator::MemoryAllocator()
+{
+    allocation.reset(new Allocation{});
+}
+
 void *MemoryAllocator::Allocate(size_t size)
 {
     if (!allocation)
     {
-        allocation.reset(new Allocation{});
+        return malloc(size);
     }
 
     Anonymous address = nullptr;
@@ -41,23 +46,22 @@ void MemoryAllocator::Free(Anonymous _ptr)
 
 void MemoryAllocator::Release()
 {
-    if (!Primary.allocation)
+    if (!allocation)
     {
         return;
     }
-    LOG::DEBUG("Total Size Allocated: {}", Primary.allocatedSize);
-    size_t leakSize = 0;
+    printf("Total Size Allocated: %zd\n", allocatedSize);
+    int leakSize = 0;
 
-    for (auto &alloc : *Primary.allocation)
+    for (auto &alloc : *allocation)
     {
         auto &address = std::get<0>(alloc);
         auto &allocateInfo = std::get<1>(alloc);
-        LOG::DEBUG("Memory Leak: Address: {},\tSize: {}", (void *)address, allocateInfo.size);
         leakSize += allocateInfo.size;
     }
-    LOG::DEBUG("Total Size Leaked: {}", leakSize);
+    printf("Total Size Leaked: %d\n", leakSize);
 
-    Primary.allocation = nullptr;
+    allocation = nullptr;
 }
 
 }

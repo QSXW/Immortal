@@ -40,7 +40,7 @@ public:
     static MemoryAllocator Primary;
 
 public:
-    MemoryAllocator() = default;
+    MemoryAllocator();
 
     ~MemoryAllocator();
 
@@ -49,7 +49,7 @@ public:
     void Free(Anonymous ptr);
 
 public:
-    static void Release();
+    void Release();
 
 private:
     std::unique_ptr<Allocation> allocation;
@@ -59,12 +59,16 @@ private:
 
 }
 
+#if SLDEBUG
 inline void *operator new(size_t size)
 {
-    return Immortal::MemoryAllocator::Primary.Allocate(size);
+    auto &allocator = Immortal::MemoryAllocator::Primary;
+    return allocator.Allocate(size);
 }
 
 inline void operator delete(void *ptr)
 {
-    Immortal::MemoryAllocator::Primary.Free(ptr);
+    auto &allocator = Immortal::MemoryAllocator::Primary;
+    allocator.Free(ptr);
 }
+#endif

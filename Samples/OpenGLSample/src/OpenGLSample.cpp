@@ -4,11 +4,13 @@ using namespace Immortal;
 
 int main()
 {
-    LOG::Setup();
-    Render::Set(Render::Type::OpenGL);
-    std::unique_ptr<Application> app{ new OpenGLSample() };
-
-    app->Run();
+    LOG::Init();
+    {
+        Render::Set(Render::Type::OpenGL);
+        std::unique_ptr<Application> app{ new OpenGLSample() };
+        app->Run();
+    }
+    LOG::Release();
 
     return 0;
 }

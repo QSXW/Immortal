@@ -18,6 +18,13 @@ class LOG
 public:
     static void Setup(bool async = false);
 
+    static void Release();
+
+    static void Init(bool async = false)
+    {
+        Setup(async);
+    }
+
     template <bool On = true, class... Args>
     static inline constexpr void WARN(Args&& ... args)
     {

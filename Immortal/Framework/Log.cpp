@@ -33,4 +33,10 @@ void LOG::Setup(bool async)
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
 }
+
+void LOG::Release()
+{
+    logger.reset();
+}
+
 }
