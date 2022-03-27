@@ -68,11 +68,13 @@ void Render::Setup(RenderContext *context)
         constexpr uint32_t white        = 0xffffffff;
         constexpr uint32_t black        = 0x000000ff;
         constexpr uint32_t transparency = 0x00000000;
+        constexpr uint32_t normal       = 0xffff7f7f;
         Texture::Description desc = { Format::RGBA8, Wrap::Repeat, Filter::Linear };
 
         data.Textures.White       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
         data.Textures.Black       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };
         data.Textures.Transparent = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &transparency, desc) };
+        data.Textures.Normal      = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &normal, desc)       };
     }
     Render2D::Setup();
 }
@@ -87,6 +89,7 @@ void Render::Release()
     data.Textures.White.reset();
     data.Textures.Black.reset();
     data.Textures.Transparent.reset();
+    data.Textures.Normal.reset();
     data.Target.reset();
     user.renderTarget.reset();
     ShaderManager.clear();

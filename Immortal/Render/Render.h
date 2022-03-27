@@ -27,6 +27,7 @@ public:
             std::shared_ptr<Texture> Black;
             std::shared_ptr<Texture> Transparent;
             std::shared_ptr<Texture> White;
+            std::shared_ptr<Texture> Normal;
         } Textures;
     };
 

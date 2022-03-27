@@ -41,6 +41,17 @@ layout (binding = 6) uniform sampler2D AOMap;
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out int  outObjectID;
 
+vec3 CalculateNormal(vec2 uv)
+{
+	vec3 tangentNormal = texture(NormalMap, uv).xyz * 2.0 - 1.0;
+
+	vec3 N = normalize(fsInput.Normal);
+	vec3 T = normalize(fsInput.Tangent);
+	vec3 B = normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+	return normalize(TBN * tangentNormal);
+}
+
 void main()
 {
 	vec2 uv = vec2(fsInput.TexCoord.x, 1.0f - fsInput.TexCoord.y);
@@ -50,7 +61,7 @@ void main()
     float specularStrength = 0.5f;
 
     // Norm
-    vec3 N = normalize(fsInput.Normal);
+    vec3 N = CalculateNormal(uv);
 
     // View Direction
     vec3 V = normalize(shading.camPos - fsInput.WorldPos);

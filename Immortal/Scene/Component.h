@@ -141,7 +141,7 @@ struct MaterialComponent : public Component
         Roughness{ 1.0f }
     {
         Textures.Albedo    = Render::Preset()->Textures.White;
-        Textures.Normal    = Textures.Albedo;
+        Textures.Normal    = Render::Preset()->Textures.Normal;
         Textures.Metallic  = Textures.Albedo;
         Textures.Roughness = Textures.Albedo;
         Textures.AO        = Textures.Albedo;
