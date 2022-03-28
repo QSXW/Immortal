@@ -1,7 +1,8 @@
 #include <iostream>
 #include <memory>
 
-#include "Immortal.h"
+#include <Immortal.h>
+#include <Platform/Vulkan/Common.h>
 
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
@@ -23,9 +24,29 @@
 #include <opencv2/imgcodecs.hpp>
 #endif
 
-#include <Immortal.h>
+void TestRef()
+{
+    using namespace Immortal;
+    class A : public IObject
+    {
 
-#include <Platform/Vulkan/Common.h>
+    };
+
+    Ref<A> b = nullptr;
+
+    {
+        Ref<A> a = new A;
+        b = a;
+    }
+
+    Ref<A> c = new A;
+    c = b;
+
+    {
+        MonoRef<A> a = new A;
+        a.Reset(new A);
+    }
+}
 
 int main()
 {
@@ -64,6 +85,7 @@ int main()
     std::cout << img.rows << std::endl;
 #endif
 
-    system("pause");
+    TestRef();
+
     return 0;
 }

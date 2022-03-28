@@ -54,7 +54,8 @@ set(GUI_FILES
 
 set(INTERFACE_FILES
    Interface/Delegate.cpp
-   Interface/Delegate.h)
+   Interface/Delegate.h
+   Interface/IObject.h)
 
 set(MATH_FILES
    Math/Math.h

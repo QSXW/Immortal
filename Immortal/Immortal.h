@@ -6,6 +6,7 @@
 #include "imgui_internal.h"
 
 #include "Core.h"
+#include "Config.h"
 
 #include "FileSystem/FileSystem.h"
 
@@ -18,6 +19,8 @@
 #include "ImGui/GuiLayer.h"
 #include "ImGui/ImGuizmo.h"
 #include "ImGui/Utils.h"
+
+#include "Interface/IObject.h"
 
 #include "Math/Math.h"
 #include "Math/Vector.h"
