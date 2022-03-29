@@ -9,7 +9,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-uint32_t InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType & type, int level)
+uint32_t InternalCreate(GLenum target, const uint32_t width, const uint32_t height, Texture::DataType &type, int level)
 {
     uint32_t texture;
 
@@ -43,7 +43,8 @@ Texture::Texture(uint32_t width, uint32_t height) :
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-Texture::Texture(const std::string &path, bool flip, Wrap wrap, Filter filter)
+Texture::Texture(const std::string &path, bool flip, Wrap wrap, Filter filter) :
+    Super{ path }
 {
     Frame frame = Frame(path);
 
@@ -63,7 +64,7 @@ Texture::Texture(const std::string &path, bool flip, Wrap wrap, Filter filter)
 }
 
 Texture::Texture(const std::string &path, const Description &description) :
-    filepath{ path },
+    Super{ path },
     handle{ 0 }
 {
     Frame frame = Frame(path);
@@ -140,7 +141,7 @@ Texture::Texture(const uint32_t width, const uint32_t height, const void *data, 
     Super{ width, height }
 {
     mipLevels = (level > 0) ? level : CalculateMipmapLevels(width, height);
-    type    = NativeTypeToOpenGl(description);
+    type   = NativeTypeToOpenGl(description);
     handle = InternalCreate(GL_TEXTURE_2D, width, height, type, mipLevels);
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
@@ -205,7 +206,8 @@ void TextureCube::Create(const uint32_t width, const uint32_t height, const Text
     glTextureParameteri(handle, GL_TEXTURE_WRAP_R, type.Wrap);
 }
 
-TextureCube::TextureCube(const std::string &path)
+TextureCube::TextureCube(const std::string &path) :
+    Super{ path }
 {
     // Parameters
     constexpr uint32_t cubemapSize = 1024;

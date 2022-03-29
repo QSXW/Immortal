@@ -1,5 +1,6 @@
 /3rdparty/vulkan*
 /3rdparty/opencv*
+/3rdparty/Assimp*
 
 Config.h
 

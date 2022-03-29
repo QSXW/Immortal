@@ -142,6 +142,19 @@ public:
                 if (ImGui::MenuItem(WordsMap::Get("Save As"), "Ctrl+A"))
                 {
                     isSaveAsClicked = true;
+                    auto path = FileDialogs::SaveFile(FileFilter::Scene);
+                    if (path.has_value())
+                    {
+                        scene.Serialize(path.value());
+                    }
+                }
+                if (ImGui::MenuItem(WordsMap::Get("Load Scene"), "Ctrl + L"))
+                {
+                    auto path = FileDialogs::OpenFile(FileFilter::Scene);
+                    if (path.has_value())
+                    {
+                        scene.Deserialize(path.value());
+                    }
                 }
                 if (ImGui::MenuItem(WordsMap::Get("Exit"), "Ctrl + W"))
                 {

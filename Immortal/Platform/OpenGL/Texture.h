@@ -136,11 +136,6 @@ public:
         return handle == other->handle;
     }
 
-    virtual const char *Path() const override
-    {
-        return filepath.c_str();
-    }
-
     uint32_t Handle() const
     {
         return ncast<uint64_t>(handle);
@@ -149,8 +144,6 @@ public:
     virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
 private:
-    std::string filepath;
-
     uint32_t handle;
 
     Texture::DataType type;
@@ -158,6 +151,9 @@ private:
 
 class TextureCube : public SuperTextureCube
 {
+public:
+    using Super = SuperTextureCube;
+
 public:
     TextureCube(const uint32_t width, const uint32_t height, const Texture::Description&, int levels = 0);
 
@@ -184,17 +180,12 @@ public:
 
     virtual void SetData(void *data, uint32_t size) override;
 
-    virtual const char *Path() const override
-    {
-        return filepath.c_str();
-    }
-
     virtual operator uint64_t() const override
     {
         return handle;
     }
 
-    virtual bool operator==(const Texture& other) const override
+    virtual bool operator==(const Texture &other) const override
     {
         return handle == ((TextureCube&)other).handle;
     }
@@ -214,8 +205,6 @@ private:
     Description desc;
 
     DataType type;
-
-    std::string filepath;
 };
 
 }

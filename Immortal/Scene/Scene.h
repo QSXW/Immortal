@@ -75,6 +75,10 @@ public:
 
     Object PrimaryCameraObject();
 
+    void Serialize(const std::string &path);
+
+    bool Deserialize(const std::string &path);
+
     auto &Registry()
     {
         return registry;

@@ -9,6 +9,7 @@
 #include "Object.h"
 #include "Component.h"
 #include "GameObject.h"
+#include "Serializer/SceneSerializer.h"
 
 namespace Immortal
 {
@@ -270,6 +271,10 @@ void Scene::OnRender(const Camera &camera)
         auto lightObjects = registry.view<TransformComponent, LightComponent>();
         for (auto &lightObject : lightObjects)
         {
+            if (i >= SL_ARRAY_LENGTH(UniformBuffer::Shading::lights))
+            {
+                break;
+            }
             auto [transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
             shading->lights[i].direction = Vector4{ transform.Position, 1.0f };
 
@@ -321,7 +326,7 @@ void Scene::OnRender(const Camera &camera)
     for (auto object : view)
     {
         auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
-        RenderObject(pipelines.pbr, object, transform, mesh, material);
+        RenderObject(pipelines.basic, object, transform, mesh, material);
     }
 
     Render2D::BeginScene(camera);
@@ -391,6 +396,16 @@ Object Scene::PrimaryCameraObject()
         }
     }
     return Object{};
+}
+
+void Scene::Serialize(const std::string &path)
+{
+    SceneSerializer{}.Serialize(this, path);
+}
+
+bool Scene::Deserialize(const std::string & path)
+{
+    return SceneSerializer{}.Deserialize(this, path);
 }
 
 void Scene::Select(Object *object)

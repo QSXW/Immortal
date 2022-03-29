@@ -9,7 +9,8 @@ namespace Vulkan
 {
 
 Texture::Texture(Device *device, const std::string &filepath, const Description &description) :
-    device{ device }
+    device{ device },
+    Super{ filepath }
 {
     Frame frame{ filepath };
     if (!frame.Available())

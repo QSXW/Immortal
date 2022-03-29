@@ -15,6 +15,10 @@ public:
         "All Files\0*.*\0\0"
     };
 
+    static inline char Scene[] = {
+        "Immortal Scene\0*.iml\0"
+    };
+
     static inline char Image[] = {
         "Image File\0*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif\0"
     };
@@ -27,8 +31,8 @@ public:
 class FileDialogs
 {
 public:
-    static std::optional<std::string> OpenFile(const char *filter);
-    static std::optional<std::string> SaveFile(const char *filter);            
+    static std::optional<std::string> OpenFile(const char *filter = FileFilter::None);
+    static std::optional<std::string> SaveFile(const char *filter = FileFilter::None);
 };
 
 }

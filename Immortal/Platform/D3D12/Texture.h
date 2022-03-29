@@ -53,8 +53,6 @@ private:
         Descriptor visible;
         CPUDescriptor invisible;
     } descriptor;
-
-    int descriptorIndex{ 1 };
 };
 
 }

@@ -11,7 +11,8 @@ namespace D3D12
 {
 
 Texture::Texture(RenderContext *context, const std::string &filepath, const Description &description) :
-    context{ context }
+    context{ context },
+    Super{ filepath }
 {
     Frame frame{ filepath };
 

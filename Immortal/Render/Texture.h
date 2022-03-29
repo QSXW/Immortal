@@ -115,7 +115,14 @@ public:
 
     }
 
-    Texture(uint32_t width, uint32_t height) :
+    Texture(const std::string &source) :
+        source{ source }
+    {
+
+    }
+
+    Texture(uint32_t width, uint32_t height, const std::string &source = {}) :
+        source{ source },
         width{ width },
         height{ height },
         mipLevels{ CalculateMipmapLevels(width, height) }
@@ -166,9 +173,9 @@ public:
 
     virtual void Map(uint32_t slot = 0) { }
 
-    virtual const char *Path() const
+    virtual const std::string &Source() const
     {
-        return nullptr;
+        return source;
     }
 
     virtual bool operator==(const Texture &other) const
@@ -179,6 +186,8 @@ public:
     virtual void BindImageTexture(bool layered) { }
 
 protected:
+    std::string source;
+
     uint32_t width{ 0 };
 
     uint32_t height{ 0 };
@@ -191,7 +200,19 @@ using SuperTexture = Texture;
 
 class IMMORTAL_API TextureCube : public Texture
 {
+public:
+    using Super = Texture;
 
+    TextureCube()
+    {
+
+    }
+
+    TextureCube(const std::string &source) :
+        Super{ source }
+    {
+
+    }
 };
 
 using SuperTextureCube = TextureCube;

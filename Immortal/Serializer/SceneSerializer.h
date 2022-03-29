@@ -2,26 +2,20 @@
 
 #include "Core.h"
 
-#include "Scene/Scene.h"
-
 namespace Immortal
 {
 
+class Scene;
 class IMMORTAL_API SceneSerializer
 {
 public:
-    SceneSerializer(const std::shared_ptr<Scene> &scene);
+    SceneSerializer();
+
     ~SceneSerializer() = default;
         
-    void Serialize(const std::string &filepath);
-    void SerializeRuntime(const std::string &filepath);
+    void Serialize(Scene *scene, const std::string &filepath);
 
-    bool Deserialize(const std::string &filepath);
-    bool DeserializeRuntime(const std::string& filepath);
-
-private:
-    std::shared_ptr<Scene> mScene;
+    bool Deserialize(Scene *scene, const std::string &filepath);
 };
 
 }
-
