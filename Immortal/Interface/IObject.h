@@ -119,6 +119,11 @@ public:
         return *this;
     }
 
+    operator T*() const
+    {
+        return _obj;
+    }
+
     void Swap(T *other)
     {
         Ref(other).Swap(*this);
