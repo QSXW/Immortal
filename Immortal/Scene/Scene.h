@@ -7,6 +7,7 @@
 
 #include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
+#include "Interface/IObject.h"
 #include "Render/Texture.h"
 #include "Render/Environment.h"
 #include "Render/Mesh.h"
@@ -40,7 +41,7 @@ namespace Resolutions
 }
 
 class Object;
-class IMMORTAL_API Scene
+class IMMORTAL_API Scene : public IObject
 {
 public:
     struct Limit

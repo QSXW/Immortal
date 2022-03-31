@@ -68,7 +68,9 @@
             "Copy": "复制",
             "Paste": "粘贴",
             "Duplicate Object": "复制物体",
-            "Select/Deselect": "选定/取消选定"
+            "Select/Deselect": "选定/取消选定",
+            "Load Scene": "加载场景",
+            "Save Scene": "保存场景"
         }
     }
 }

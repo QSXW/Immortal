@@ -42,10 +42,10 @@ public:
             viewportSize = size;
             camera.editor.SetViewportSize(viewportSize);
             camera.orthographic.SetViewportSize(viewportSize);
-            scene.SetViewportSize(viewportSize);
+            scene->SetViewportSize(viewportSize);
         }
 
-        scene.Select(&selectedObject);
+        scene->Select(&selectedObject);
         if (panels.tools.IsControlActive(Tools::Start))
         {
             if (selectedObject && selectedObject.HasComponent<ColorMixingComponent>())
@@ -58,7 +58,7 @@ public:
                 }
                 c.Modified = true;
             }
-            scene.OnRenderRuntime();
+            scene->OnRenderRuntime();
         }
         else
         {
@@ -66,13 +66,13 @@ public:
             {
                 camera.primary->OnUpdate();
             }
-            scene.OnRenderEditor(*camera.primary);
+            scene->OnRenderEditor(*camera.primary);
         }
     }
 
     void UpdateEditableArea()
     {
-        editableArea.OnUpdate(scene.Target(), [&]() -> void {
+        editableArea.OnUpdate(scene->Target(), [&]() -> void {
 
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
@@ -142,19 +142,14 @@ public:
                 if (ImGui::MenuItem(WordsMap::Get("Save As"), "Ctrl+A"))
                 {
                     isSaveAsClicked = true;
-                    auto path = FileDialogs::SaveFile(FileFilter::Scene);
-                    if (path.has_value())
-                    {
-                        scene.Serialize(path.value());
-                    }
                 }
-                if (ImGui::MenuItem(WordsMap::Get("Load Scene"), "Ctrl + L"))
+                if (ImGui::MenuItem(WordsMap::Get("Save Scene"), "Ctrl + Alt + A"))
                 {
-                    auto path = FileDialogs::OpenFile(FileFilter::Scene);
-                    if (path.has_value())
-                    {
-                        scene.Deserialize(path.value());
-                    }
+                    SaveScene();
+                }
+                if (ImGui::MenuItem(WordsMap::Get("Load Scene"), "Ctrl + Alt + L"))
+                {
+                    LoadScene();
                 }
                 if (ImGui::MenuItem(WordsMap::Get("Exit"), "Ctrl + W"))
                 {
@@ -226,7 +221,7 @@ public:
             pos = ImGui::GetMousePos();
             ImGui::OpenPopup("Right Click Menu");
         }
-        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 7 });
+        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 9 });
 
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::RGBA32(212, 115, 115, 204));
         ImGui::PushStyleColor(ImGuiCol_Separator,     ImGui::RGBA32(119, 119, 119,  88));
@@ -244,6 +239,14 @@ public:
             if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
             {
                 LoadObject();
+            }
+            if (ImGui::MenuItem(WordsMap::Get("Save Scene").c_str()))
+            {
+                SaveScene();
+            }
+            if (ImGui::MenuItem(WordsMap::Get("Load Scene").c_str()))
+            {
+                LoadScene();
             }
             ImGui::Separator();
 
@@ -264,7 +267,7 @@ public:
             if (ImGui::MenuItem(WordsMap::Get("Delete").c_str()) && selectedObject)
             {
                 panels.hierarchyGraphics.Select(Object{});
-                scene.DestroyObject(selectedObject);
+                scene->DestroyObject(selectedObject);
                 selectedObject = Object{};
             }
 
@@ -281,7 +284,7 @@ public:
 
         panels
             .hierarchyGraphics
-            .OnUpdate(&scene, [&](Object &o) -> void {
+            .OnUpdate(scene, [&](Object &o) -> void {
                 selectedObject = o;
             });
 
@@ -351,9 +354,9 @@ public:
         x -= editableArea.MinBound().x;
         y -= editableArea.MinBound().y;
 
-        uint64_t pixel = scene.Target()->PickPixel(1, x, y, Format::R32);
+        uint64_t pixel = scene->Target()->PickPixel(1, x, y, Format::R32);
 
-        Object o = Object{ *(int *)&pixel, &scene };
+        Object o = Object{ *(int *)&pixel, scene };
         panels.hierarchyGraphics.Select(pixel == -1 || o == selectedObject ? Object{} : o);
     }
 
@@ -362,31 +365,31 @@ public:
         auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())
         {
-            auto o = scene.CreateObject(res.value());
+            auto object = scene->CreateObject(res.value());
 
-            panels.hierarchyGraphics.Select(o);
+            panels.hierarchyGraphics.Select(object);
 
             if (FileSystem::Is3DModel(res.value()))
             {
-                auto &mesh = o.Add<MeshComponent>();
+                auto &mesh = object.Add<MeshComponent>();
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
-                auto &material = o.Add<MaterialComponent>();
+                auto &material = object.Add<MaterialComponent>();
                 material.Ref.resize(mesh.Mesh->NodeList().size());
             }
             else
             {
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
-                auto &sprite = o.Add<SpriteRendererComponent>();
+                auto &sprite = object.Add<SpriteRendererComponent>();
                 sprite.texture = texture;
                 sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
                     Format::RGBA8,
                     Wrap::Clamp
                     }));
 
-                o.Add<ColorMixingComponent>();
+                object.Add<ColorMixingComponent>();
 
-                auto &transform = o.Get<TransformComponent>();
+                auto &transform = object.Get<TransformComponent>();
                 transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
             }
 
@@ -396,11 +399,30 @@ public:
         return false;
     }
 
+    void SaveScene()
+    {
+        auto path = FileDialogs::SaveFile(FileFilter::Scene);
+        if (path.has_value())
+        {
+            scene->Serialize(path.value());
+        }
+    }
+
+    void LoadScene()
+    {
+        auto path = FileDialogs::OpenFile(FileFilter::Scene);
+        if (path.has_value())
+        {
+            scene.Reset(new Scene{});
+            scene->Deserialize(path.value());
+        }
+    }
+
     Object CopyObject()
     {
         if (selectedObject)
         {
-            Object dst = scene.CreateObject();
+            Object dst = scene->CreateObject();
 
             selectedObject.CopyTo(dst);
             return dst;
@@ -426,28 +448,35 @@ public:
             break;
 
         case KeyCode::L:
-            if (control || shift)
+            if (control)
             {
-                LoadObject();
+                if (Input::IsKeyPressed(KeyCode::LeftAlt))
+                {
+                    LoadScene();
+                }
+                else
+                {
+                    LoadObject();
+                }
             }
             break;
 
         case KeyCode::S:
             if (control)
             {
-                scene.Target()->PickPixel(0, 0, 0, Format::RGBA8);
+                scene->Target()->PickPixel(0, 0, 0, Format::RGBA8);
                 Async::Execute([&]() -> void {
                     auto size = editableArea.Size();
                     uint32_t width = U32(size.x);
                     uint32_t height = U32(size.y);
 
                     uint8_t *dataMapped = nullptr;
-                    scene.Target()->Map(0, &dataMapped);
+                    scene->Target()->Map(0, &dataMapped);
 
                     Vision::BMPCodec bmp{};
                     bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
 
-                    scene.Target()->Unmap(0);
+                    scene->Target()->Unmap(0);
                 });
             }
             break;
@@ -568,7 +597,7 @@ private:
 
     EventSink<RenderLayer> eventSink;
 
-    Scene scene{ "Viewport", true };
+    Ref<Scene> scene{ new Scene{} };
 
     Object triangle;
 
