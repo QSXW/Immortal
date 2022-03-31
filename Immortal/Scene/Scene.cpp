@@ -144,18 +144,6 @@ Scene::Scene(const std::string &debugName, bool isEditorScene) :
 
     pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get()));
 
-    for (size_t i = 0; i < Limit::MaxLightNumber; i++)
-    {
-        Object light = CreateObject(std::string{ "Light#" } + std::to_string(i));
-        light.AddComponent<LightComponent>();
-        light.AddComponent<MaterialComponent>();
-        // auto &mesh = light.AddComponent<MeshComponent>();
-        // mesh.Mesh = Mesh::CreateSphere(0.5f);
-
-        auto &transform = light.GetComponent<TransformComponent>();
-        transform.Scale = Vector3{ 1.0f, 1.0f, 1.0f };
-    }
-
     Render2D::Setup(renderTarget);
 }
 

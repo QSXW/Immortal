@@ -108,7 +108,7 @@ public:
 
     ~Mesh() { }
 
-    const std::string &Path() const
+    const std::string &Source() const
     {
         return path;
     }
@@ -116,6 +116,11 @@ public:
     std::list<Node> &NodeList()
     {
         return nodes;
+    }
+
+    size_t Size() const
+    {
+        return nodes.size();
     }
 
 private:

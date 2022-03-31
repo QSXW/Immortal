@@ -112,8 +112,38 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
             auto &sprite     = objectData["SpriteRenderer"];
             const auto &s    = object.GetComponent<SpriteRendererComponent>();
             ns::to_json(sprite["Color"], s.Color);
-            sprite["Src"]          = s.texture->Source();
+            sprite["Source"]          = s.texture->Source();
             sprite["TilingFactor"] = s.TilingFactor;
+        }
+        if (object.HasComponent<MeshComponent>())
+        {
+            auto &meshObject = objectData["Mesh"];
+            const auto &mesh = object.GetComponent<MeshComponent>().Mesh;
+            meshObject["Source"] = mesh->Source();
+
+            if (object.HasComponent<MaterialComponent>())
+            {
+                auto &materialObject = objectData["Material"];
+                const auto &materialComponent = object.GetComponent<MaterialComponent>();
+                for (auto &material : materialComponent.Ref)
+                {
+                    json j;
+                    ns::to_json(j["Albedo"], material.AlbedoColor);
+                    j["Metalness"] = material.Metallic;
+                    j["Roughness"] = material.Roughness;
+
+                    auto &textures = j["Textures"];
+                    textures["Albedo"   ] = material.Textures.Albedo->Source();
+                    textures["Normal"   ] = material.Textures.Normal->Source();
+                    textures["Metalness"] = material.Textures.Metallic->Source();
+                    textures["Roughness"] = material.Textures.Roughness->Source();
+                    materialObject.emplace_back(std::move(j));
+                }
+            }
+            else
+            {
+                LOG::ERR("Material Component Missing");
+            }
         }
 
         objects.emplace_back(objectData);
@@ -154,13 +184,52 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
             auto &s = object.AddComponent<SpriteRendererComponent>();
             ns::from_json(sprite["Color"], s.Color);
             s.TilingFactor = sprite["TilingFactor"];
-            s.texture.reset(Render::Create<Texture>(sprite["Src"]));
+            s.texture.reset(Render::Create<Texture>(sprite["Source"]));
             s.final.reset(Render::Create<Texture>(s.texture->Width(), s.texture->Height(), nullptr, Texture::Description{
                     Format::RGBA8,
                     Wrap::Clamp
                 }));
 
             object.AddComponent<ColorMixingComponent>();
+        }
+
+        const auto &meshObject = ns::TryFind(data, "Mesh");
+        if (!meshObject.is_null())
+        {
+            auto &meshComponent = object.AddComponent<MeshComponent>();
+            meshComponent.Mesh.reset(new Mesh{ meshObject["Source"] });
+        }
+
+        const auto &materialObject = ns::TryFind(data, "Material");
+        if (!materialObject.is_null())
+        {
+            auto &meshComponent = object.GetComponent<MeshComponent>();
+            auto &material = object.AddComponent<MaterialComponent>();
+            material.Ref.resize(meshComponent.Mesh->Size());
+
+            auto LoadTexture = [&](std::shared_ptr<Texture> &texture, const std::string &path) {
+                if (!path.empty())
+                {
+                    Texture::Description desc{ Format::None, Wrap::Mirror, Filter::Linear };
+                    texture.reset(Render::Create<Texture>(path, desc));
+                }
+            };
+            for (size_t i = 0; i < materialObject.size(); i++)
+            {
+                auto &ref = material.Ref[i];
+                const auto &m = materialObject[i];
+
+                ns::from_json(m["Albedo"], ref.AlbedoColor);
+
+                ref.Metallic  = m["Metalness"];
+                ref.Roughness = m["Roughness"];
+                
+                auto &textures = m["Textures"];
+                LoadTexture(ref.Textures.Albedo,    textures["Albedo"]);
+                LoadTexture(ref.Textures.Normal,    textures["Normal"]);
+                LoadTexture(ref.Textures.Metallic,  textures["Metalness"]);
+                LoadTexture(ref.Textures.Roughness, textures["Roughness"]);
+            }
         }
     }
 
