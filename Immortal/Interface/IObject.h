@@ -146,7 +146,7 @@ public:
         return (U *)_obj;
     }
 
-    T* Get() const
+    T *Get() const
     {
         return _obj;
     }
@@ -236,6 +236,16 @@ public:
             delete _obj;
             _obj = nullptr;
         }
+    }
+
+    operator T*() const
+    {
+        return _obj;
+    }
+
+    T *operator->() const
+    {
+        return _obj;
     }
 
 protected:
