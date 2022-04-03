@@ -61,16 +61,14 @@ public:
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Project"));
 
+        scene->Registry().each([&](auto id)
         {
-            scene->Registry().each([&](auto id)
+            Object object{ id, scene };
+            if (object.HasComponent<TagComponent>())
             {
-                Object object{ id, scene };
-                if (object.HasComponent<TagComponent>())
-                {
-                    DrawObjectNode(scene, object);
-                }
-            });
-        }
+                DrawObjectNode(scene, object);
+            }
+        });      
 
         ImGui::End();
         ImGui::PopFont();

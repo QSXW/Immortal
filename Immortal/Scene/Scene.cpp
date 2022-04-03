@@ -10,6 +10,7 @@
 #include "Component.h"
 #include "GameObject.h"
 #include "Serializer/SceneSerializer.h"
+#include "String/LanguageSettings.h"
 
 namespace Immortal
 {
@@ -84,15 +85,9 @@ void Scene::RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::ent
     }
 }
 
-Scene::Scene(const std::string &debugName, bool isEditorScene) :
-    debugName{ debugName }
+Scene::Scene(const std::string &name, bool isEditorScene) :
+    name{ name }
 {
-    entity = registry.create();
-    registry.emplace<TransformComponent>(entity);
-
-    // meshes.skybox = std::make_shared<Mesh>("assets/meshes/skybox.obj");
-    // textures.skybox.reset(Render::Create<TextureCube>("assets/textures/environment.hdr"));
-
     uniforms.host.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform) + sizeof(UniformBuffer::Shading), 0));
 
     Buffer::BindInfo bindInfo{};
@@ -157,9 +152,19 @@ void Scene::OnUpdate()
 
 }
 
+void Scene::OnGuiRender()
+{
+    ImGui::Begin(WordsMap::Get("Scene Editor"));
+
+    ImGui::DragFloat(WordsMap::Get("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
+    ImGui::DragFloat(WordsMap::Get("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);
+
+    ImGui::End();
+}
+
 void Scene::OnEvent()
 {
-
+    
 }
 
 void Scene::OnRenderRuntime()
@@ -273,8 +278,8 @@ void Scene::OnRender(const Camera &camera)
             i++;
         }
         shading->CameraPosition = camera.View()[3];
-        shading->Exposure = 4.5f;
-        shading->Gamma = 2.2f;
+        shading->Exposure = settings.exposure;
+        shading->Gamma    = settings.gamma;
 
         uniforms.host->Update(sizeof(buffers), &buffers);
     }

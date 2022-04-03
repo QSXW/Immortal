@@ -323,6 +323,8 @@ public:
         {
             ImGui::ShowDemoWindow(&Settings.showDemoWindow);
         }
+            
+        scene->OnGuiRender();
 
         Application::App()->GetGuiLayer()->BlockEvent(false);
     }

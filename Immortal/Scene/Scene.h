@@ -50,11 +50,13 @@ public:
     };
 
 public:
-    Scene(const std::string &debugName="Untitled", bool isEditorScene = false);
+    Scene(const std::string &name="Untitled", bool isEditorScene = false);
 
     ~Scene();
 
     void OnUpdate();
+
+    void OnGuiRender();
 
     void OnEvent();
 
@@ -85,12 +87,12 @@ public:
         return registry;
     }
 
-    const char *Name() const
+    const char *GetName() const
     { 
-        return debugName.c_str();
+        return name.c_str();
     }
 
-    const ObserverCamera &Observer() const
+    const ObserverCamera &GetObserver() const
     { 
         return observerCamera;
     }
@@ -101,11 +103,15 @@ public:
     }
 
 private:
-    std::string debugName;
+    std::string name;
 
     entt::registry registry;
 
-    entt::entity entity;
+    struct Settings
+    {
+        float exposure = 4.5f;
+        float gamma    = 2.2f;
+    } settings;
 
     struct {
         std::shared_ptr<Mesh> skybox;
