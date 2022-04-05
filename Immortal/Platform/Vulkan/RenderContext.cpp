@@ -20,7 +20,9 @@ VkResult RenderContext::Status = VK_NOT_READY;
 
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
 #if defined( _WIN32 )
-    { "VK_KHR_win32_surface", false }
+    { "VK_KHR_win32_surface", false },
+#elif defined( __linux__ )
+    { "VK_KHR_xcb_surface",   false },
 #endif
 };
 
