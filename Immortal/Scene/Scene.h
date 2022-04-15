@@ -103,6 +103,9 @@ public:
     }
 
 private:
+    void Init();
+
+private:
     std::string name;
 
     entt::registry registry;

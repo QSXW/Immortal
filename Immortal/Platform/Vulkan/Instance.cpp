@@ -112,34 +112,28 @@ Instance::Instance(const char                                   *applicationName
     std::vector<VkExtensionProperties> availableExtension{ extensionCount };
     Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
 
-#ifdef SLDEBUG
-    bool debugUtils = false;
-#endif
-    bool headlessExtension = false;
-    for (auto &ext : availableExtension)
-    {
-#ifdef SLDEBUG
-        if (Equals(ext.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-        {
-            debugUtils = true;
-            VkEnableExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            enabledExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-#endif
-        if (headless && Equals(ext.extensionName, VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
-        {
-            headlessExtension = true;
-            VkEnableExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-            enabledExtensions.emplace_back(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-        }
+    uint64_t extensionsFlags = 0;
+    static std::vector<const char*> utilsExtensions = {
+        { VK_EXT_DEBUG_UTILS_EXTENSION_NAME                      },
+        { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME                 },
+        { VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME },
+    };
 
-        if (Equals(ext.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME))
+    for (size_t i = 0; i < utilsExtensions.size(); i++)
+    {
+        auto &extension = utilsExtensions[i];
+        for (size_t j = 0; j < availableExtension.size(); j++)
         {
-            VkEnableExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-            enabledExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            if (Equals(availableExtension[j].extensionName, extension))
+            {
+                extensionsFlags |= BIT(i);
+                VkEnableExtension(extension);
+                enabledExtensions.push_back(extension);
+            }
         }
     }
-    if (headless && !headlessExtension)
+
+    if (headless && !(extensionsFlags & BIT(1)))
     {
         LOG::WARN("{0} is not available. Disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
@@ -148,36 +142,34 @@ Instance::Instance(const char                                   *applicationName
         enabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
     }
 
-#ifdef SLDEBUG
-    if (!debugUtils)
+    if (!(extensionsFlags & BIT(0)) /* not debug utils */)
     {
         enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
-#endif
 
-    for (auto &ext : requiredExtension)
+    for (auto &requird : requiredExtension)
     {
-        auto extensionName = ext.first;
-        auto isOptional    = ext.second;
+        auto extension  = requird.first;
+        auto isOptional = requird.second;
 
-        if (std::find_if(availableExtension.begin(), availableExtension.end(), [&extensionName](VkExtensionProperties &availableExtension)
+        if (std::find_if(availableExtension.begin(), availableExtension.end(), [&extension](VkExtensionProperties &availableExtension)
             {
-                return Equals(availableExtension.extensionName, extensionName);
+                return Equals(availableExtension.extensionName, extension);
             }) == availableExtension.end())
         {
             if (isOptional)
             {
-                LOG::WARN("Optional instance extension {0} not available, some features may be disabled", extensionName);
+                LOG::WARN("Optional instance extension {0} not available, some features may be disabled", extension);
             }
             else
             {
-                LOG::ERR("Required instance extension {0} not available, cannot run", extensionName);
+                LOG::ERR("Required instance extension {0} not available, cannot run", extension);
                 LOG::ERR("Required instance extensions are missing.");
             }
         }
         else
         {
-            enabledExtensions.emplace_back(extensionName);
+            enabledExtensions.emplace_back(extension);
         }
     }
 
@@ -192,7 +184,7 @@ Instance::Instance(const char                                   *applicationName
         LOG::INFO("Enabled Validation Layers: ");
         for (const auto &layer : requiredValidationLayers)
         {
-            LOG::DEBUG("  \t{0}", layer);;
+            LOG::DEBUG("  \t{0}", layer);
         }
     }
     else
@@ -222,7 +214,7 @@ Instance::Instance(const char                                   *applicationName
     VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
     VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT };
 
-    if (debugUtils)
+    if (extensionsFlags & BIT(0))
     {
         debugUtilsCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
         debugUtilsCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
@@ -243,7 +235,7 @@ Instance::Instance(const char                                   *applicationName
     volkLoadInstance(handle);
 
 #ifdef SLDEBUG
-    if (debugUtils)
+    if (extensionsFlags & BIT(0))
     {
         SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
         Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));

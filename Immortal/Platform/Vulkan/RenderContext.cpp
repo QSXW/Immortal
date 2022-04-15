@@ -64,22 +64,22 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
     depthFormat = physicalDevice.GetSuitableDepthFormat();
 
-    device = std::make_unique<Device>(&physicalDevice, surface, DeviceExtensions);
+    device.Reset(new Device{ &physicalDevice, surface, DeviceExtensions });
     queue  = device->SuitableGraphicsQueuePtr();
 
     surfaceExtent = VkExtent2D{ desc.Width, desc.Height };
     if (surface != VK_NULL_HANDLE)
     {
         VkSurfaceCapabilitiesKHR surfaceProperties{};
-        Check(device->GetSurfaceCapabilities(surface, &surfaceProperties));
+        Check(device->GetSurfaceCapabilities(&surfaceProperties));
 
         if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
         {
-            swapchain = std::make_unique<Swapchain>(device.get(), surface, surfaceExtent);
+            swapchain = std::make_unique<Swapchain>(device, surfaceExtent);
         }
         else
         {
-            swapchain = std::make_unique<Swapchain>(device.get(), surface);
+            swapchain = std::make_unique<Swapchain>(device);
         }
 
         Prepare();
@@ -114,7 +114,7 @@ void RenderContext::Prepare(size_t threadCount)
 
     swapchain->Create();
 
-    renderPass.reset(new RenderPass{ device.get(), swapchain->Get<VkFormat>(), depthFormat });
+    renderPass.reset(new RenderPass{ device, swapchain->Get<VkFormat>(), depthFormat });
 
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
@@ -124,7 +124,7 @@ void RenderContext::Prepare(size_t threadCount)
     for (auto &handle : swapchain->Get<Swapchain::Images>())
     {
         auto image = std::make_unique<Image>(
-            device.get(),
+            device,
             handle,
             extent,
             swapchain->Get<VkFormat>(),
@@ -154,7 +154,7 @@ Swapchain *RenderContext::UpdateSurface()
     }
 
     VkSurfaceCapabilitiesKHR properties;
-    Check(device->GetSurfaceCapabilities(swapchain->Get<Surface>(), &properties));
+    Check(device->GetSurfaceCapabilities(&properties));
 
     if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.width <= 0 || properties.currentExtent.height <= 0))
     {
@@ -189,7 +189,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
     for (auto &handle : swapchain->Get<Swapchain::Images&>())
     {
         auto image = std::make_unique<Image>(
-            device.get(),
+            device,
             handle,
             VkExtent3D{ extent.width, extent.height, 1 },
             swapchain->Get<VkFormat>(),

@@ -8,3 +8,4 @@
 #include "BMP.h"
 #include "STBCodec.h"
 #include "OpenCVCodec.h"
+#include "JPEG.h"

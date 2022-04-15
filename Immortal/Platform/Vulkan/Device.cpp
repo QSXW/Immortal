@@ -23,8 +23,11 @@ static inline std::array<const char *, 5> VideoCodecExtensions = {
 
 Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
     physicalDevice{ physicalDevice },
-    surface(surface)
+    surface{ surface }
 {
+    VmaVulkanFunctions     vmaVulkanFunc{};
+    VmaAllocatorCreateInfo allocatorInfo{};
+
     uint32_t propsCount = U32(physicalDevice->QueueFamilyProperties.size());
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos(propsCount, { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO });
     std::vector<std::vector<float>>      queueProps(propsCount);
@@ -73,12 +76,14 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         }
     }
 #endif
-    bool hasGetMemoryRequirements2 = IsExtensionSupport("VK_KHR_get_memory_requirements2");
-    bool hasDedicatedAllocation    = IsExtensionSupport("VK_KHR_dedicated_allocation");
-    if (hasGetMemoryRequirements2 && hasDedicatedAllocation)
+    if (IsExtensionSupport("VK_KHR_get_memory_requirements2") && IsExtensionSupport("VK_KHR_dedicated_allocation"))
     {
         enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
         enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
+
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+        vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+        vmaVulkanFunc.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
 
         LOG::DEBUG<isLogNeed>("Dedicated Allocation enabled");
     }
@@ -161,7 +166,6 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         }
     }
 
-    VmaVulkanFunctions vmaVulkanFunc{};
     vmaVulkanFunc.vkAllocateMemory                    = vkAllocateMemory;
     vmaVulkanFunc.vkBindBufferMemory                  = vkBindBufferMemory;
     vmaVulkanFunc.vkBindImageMemory                   = vkBindImageMemory;
@@ -180,22 +184,14 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     vmaVulkanFunc.vkUnmapMemory                       = vkUnmapMemory;
     vmaVulkanFunc.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
 
-    VmaAllocatorCreateInfo allocatorInfo{};
-    allocatorInfo.physicalDevice = *physicalDevice;
-    allocatorInfo.device         = handle;
-    allocatorInfo.instance       = physicalDevice->Get<Instance&>();
+    allocatorInfo.physicalDevice   = *physicalDevice;
+    allocatorInfo.device           = handle;
+    allocatorInfo.instance         = physicalDevice->Get<Instance&>();
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    }
-
-    if (hasGetMemoryRequirements2 && hasDedicatedAllocation)
-    {
-        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-        vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-        vmaVulkanFunc.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
     }
 
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));

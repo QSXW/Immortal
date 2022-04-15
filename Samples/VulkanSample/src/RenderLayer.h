@@ -250,6 +250,12 @@ public:
             }
             ImGui::Separator();
 
+            if (ImGui::MenuItem(WordsMap::Get("Create").c_str()))
+            {
+                Object object = scene->CreateObject("Light");
+                object.AddComponent<LightComponent>();
+            }
+
             if (ImGui::MenuItem(WordsMap::Get("Copy").c_str()))
             {
                 CopyObject();

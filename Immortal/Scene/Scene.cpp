@@ -85,9 +85,16 @@ void Scene::RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::ent
     }
 }
 
+void Scene::Init()
+{
+    registry.create();
+}
+
 Scene::Scene(const std::string &name, bool isEditorScene) :
     name{ name }
 {
+    Init();
+
     uniforms.host.reset(Render::Create<Buffer>(sizeof(UniformBuffer::Transform) + sizeof(UniformBuffer::Shading), 0));
 
     Buffer::BindInfo bindInfo{};

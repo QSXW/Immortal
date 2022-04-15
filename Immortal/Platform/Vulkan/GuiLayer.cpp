@@ -113,14 +113,19 @@ void GuiLayer::End()
         {{  .0f,  .0f,    .0f, 0.0f }}
     };
 
-    context->Record([&](CommandBuffer *cmdbuf, VkRenderPassBeginInfo *beginInfo) -> void {
-        beginInfo->clearValueCount          = 2;
-        beginInfo->pClearValues             = clearValues;
-        beginInfo->renderArea.extent.width  = io.DisplaySize.x;
-        beginInfo->renderArea.extent.height = io.DisplaySize.y;
-        beginInfo->renderArea.offset        = { 0, 0 };
+    context->Record([&](CommandBuffer *cmdbuf) -> void {
+        VkRenderPassBeginInfo beginInfo{};
+        beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        beginInfo.pNext                    = nullptr;
+        beginInfo.renderPass               = *context->GetAddress<RenderPass>();
+        beginInfo.framebuffer              = *context->GetAddress<Framebuffer>();
+        beginInfo.clearValueCount          = 2;
+        beginInfo.pClearValues             = clearValues;
+        beginInfo.renderArea.extent.width  = io.DisplaySize.x;
+        beginInfo.renderArea.extent.height = io.DisplaySize.y;
+        beginInfo.renderArea.offset        = { 0, 0 };
 
-        cmdbuf->BeginRenderPass(beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         ImGui_ImplVulkan_RenderDrawData(primaryDrawData, *cmdbuf);
 

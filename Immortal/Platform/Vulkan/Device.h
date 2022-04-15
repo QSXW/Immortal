@@ -7,6 +7,8 @@
 #include "Queue.h"
 #include "CommandPool.h"
 #include "FencePool.h"
+#include "Interface/IObject.h"
+
 #include <queue>
 #include <future>
 
@@ -17,11 +19,9 @@ namespace Vulkan
 
 class DescriptorPool;
 class Swapchain;
-class Device
+class Device : public IObject
 {
 public:
-    using UploadProcess = void (*)(CommandBuffer *);
-
     static inline Device *That = nullptr;
 
     static inline constexpr bool isLogNeed = false;
@@ -201,6 +201,27 @@ public:
     DEFINE_BIND_MEMORY(Buffer)
     DEFINE_BIND_MEMORY(Image)
 
+#define DEFINE_VMA_CREATE_DESTROY_OBJECT(T) \
+    VkResult Create##T(const Vk##T##CreateInfo *pCreateInfo, const VmaAllocationCreateInfo *pAllocationCreateInfo, Vk##T *pObject,VmaAllocation *pAllocation, VmaAllocationInfo *pAllocationInfo = nullptr) \
+    { \
+        return vmaCreate##T(memoryAllocator, pCreateInfo, pAllocationCreateInfo, pObject, pAllocation, pAllocationInfo); \
+    } \
+    VkResult Create(const Vk##T##CreateInfo *pCreateInfo, const VmaAllocationCreateInfo *pAllocationCreateInfo, Vk##T *pObject, VmaAllocation *pAllocation, VmaAllocationInfo *pAllocationInfo = nullptr) \
+    { \
+        return vmaCreate##T(memoryAllocator, pCreateInfo, pAllocationCreateInfo, pObject, pAllocation, pAllocationInfo); \
+    } \
+    void Destroy##T(Vk##T object, VmaAllocation allocation) \
+    { \
+        vmaDestroy##T(memoryAllocator, object, allocation); \
+    } \
+    void Destroy(Vk##T object, VmaAllocation allocation) \
+    { \
+        vmaDestroy##T(memoryAllocator, object, allocation); \
+    }
+
+    DEFINE_VMA_CREATE_DESTROY_OBJECT(Buffer)
+    DEFINE_VMA_CREATE_DESTROY_OBJECT(Image)
+
     VkResult AllocateMemory(const VkMemoryAllocateInfo *pAllocateInfo, VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory)
     {
         return vkAllocateMemory(handle, pAllocateInfo, pAllocator, pMemory);
@@ -282,12 +303,17 @@ public:
         Check(Reset(pFence, fenceCount));
     }
 
+    VkSurfaceKHR GetSurface() const
+    {
+        return surface;
+    }
+
     VmaAllocator MemoryAllocator() const
     {
         return memoryAllocator;
     }
 
-    VkResult GetSurfaceCapabilities(Surface &surface, VkSurfaceCapabilitiesKHR *properties)
+    VkResult GetSurfaceCapabilities(VkSurfaceCapabilitiesKHR *properties)
     {
         return physicalDevice->GetCapabilities(surface, properties);
     }

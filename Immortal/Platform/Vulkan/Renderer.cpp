@@ -149,7 +149,7 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 {
     auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
 
-    context->Begin([&](CommandBuffer *cmdbuf) {
+    context->Submit([&](CommandBuffer *cmdbuf) {
         auto &desc = renderTarget->Desc();
 
         VkRenderPassBeginInfo beginInfo{};
@@ -171,7 +171,7 @@ void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 
 void Renderer::End()
 {
-    context->End([&](CommandBuffer *cmdbuf) {
+    context->Submit([&](CommandBuffer *cmdbuf) {
         cmdbuf->EndRenderPass();
     });
 }

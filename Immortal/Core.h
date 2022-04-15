@@ -19,15 +19,15 @@
 #pragma warning( disable: 26812 )
 #pragma warning( disable: 26439 )
 
-#ifdef WINDOWS
-    #if defined DLLEXPORT
+#ifdef _WIN32
+    #if defined IML_DLL_EXPORT
         #define IMMORTAL_API __declspec(dllexport)
-    #elif defined DLLIMPORT
+    #elif defined IML_DLL_IMPORT
         #define IMMORTAL_API __declspec(dllimport)
     #else
         #define IMMORTAL_API
     #endif
-#elif defined( LINUX )
+#elif defined( __linux__ )
     #define IMMORTAL_API __attribute__((visibility("default")))
 #else
     #error Unsupport Platform Detected!

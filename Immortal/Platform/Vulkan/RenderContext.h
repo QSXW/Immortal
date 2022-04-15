@@ -101,7 +101,11 @@ public:
     {
         if constexpr (IsPrimitiveOf<Device, T>())
         {
-            return device.get();
+            return device;
+        }
+        if constexpr (IsPrimitiveOf<Framebuffer, T>())
+        {
+            return GetFramebuffer();
         }
         if constexpr (IsPrimitiveOf<RenderPass, T>())
         {
@@ -127,7 +131,7 @@ public:
         present.bufferIndex = index;
     }
 
-    const Framebuffer *GetFramebuffer()
+    Framebuffer *GetFramebuffer()
     {
         return present.renderTargets[present.bufferIndex]->GetAddress<Framebuffer>();
     }
@@ -143,26 +147,9 @@ public:
     }
 
     template <class T>
-    void Record(T &&process = [](auto, auto)->void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
+    void Record(T &&process = [](auto) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
     {
-        VkRenderPassBeginInfo beginInfo = {};
-        beginInfo.sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        beginInfo.pNext       = nullptr;
-        beginInfo.renderPass  = *renderPass;
-        beginInfo.framebuffer = *GetFramebuffer();
-        process(GetCommandBuffer(), &beginInfo);
-    }
-
-    template <class T>
-    void Begin(T &&postProcess = [](auto) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
-    {
-        postProcess(GetCommandBuffer());
-    }
-
-    template <class T>
-    void End(T &&preprocess = [](auto) -> void {})
-    {
-        preprocess(GetCommandBuffer());
+        process(GetCommandBuffer());
     }
 
     template <class T>
@@ -175,8 +162,8 @@ private:
     Window *window{ nullptr };
 
     std::unique_ptr<Instance> instance;
-
-    std::unique_ptr<Device> device;
+    
+    MonoRef<Device> device;
 
     std::unique_ptr<Swapchain> swapchain;
 

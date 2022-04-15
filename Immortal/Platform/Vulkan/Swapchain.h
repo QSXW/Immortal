@@ -54,7 +54,6 @@ public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
     Swapchain(Device                              *device,
-              VkSurfaceKHR                         surface,
               const VkExtent2D                    &extent      = {},
               const uint32_t                       imageCount  = 3,
               const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
@@ -63,7 +62,6 @@ public:
 
     Swapchain(Swapchain                           &oldSwapchain,
               Device                              *device,
-              VkSurfaceKHR                         surface,
               const VkExtent2D                    &extent      = {},
               const uint32_t                       imageCount  = 3,
               const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
@@ -112,10 +110,6 @@ public:
         {
             return images;
         }
-        if constexpr (IsPrimitiveOf<Surface, T>())
-        {
-            return surface;
-        }
     }
 
     void Set(const VkPresentModeKHR mode)
@@ -145,8 +139,6 @@ public:
 
 private:
     Device *device{ nullptr };
-
-    VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
     VkSwapchainKHR handle{ VK_NULL_HANDLE };
 

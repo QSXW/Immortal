@@ -96,7 +96,7 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
         memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
 
-    Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
+    Check(device->Create(&info, &memoryInfo, &handle, &memory, nullptr));
 }
 
 Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage) :
@@ -115,7 +115,7 @@ Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memor
         memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
     }
 
-    Check(vmaCreateImage(device->MemoryAllocator(), &info, &memoryInfo, &handle, &memory, nullptr));
+    Check(device->Create(&info, &memoryInfo, &handle, &memory));
 }
 
 Image::Image(Image &&other) :
@@ -172,8 +172,7 @@ Image::~Image()
         };
 
         device->DestroyAsync([dpack] () {
-            vmaDestroyImage(
-                dpack.device->MemoryAllocator(),
+            dpack.device->Destroy(
                 dpack.image,
                 dpack.memory
                 );

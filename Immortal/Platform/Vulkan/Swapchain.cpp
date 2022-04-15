@@ -182,37 +182,36 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
 }
 
 Swapchain::Swapchain(Swapchain &oldSwapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform) :
-    Swapchain{ oldSwapchain, oldSwapchain.device, oldSwapchain.surface, extent, oldSwapchain.properties.ImageCount, transform, oldSwapchain.properties.PresentMode, oldSwapchain.properties.ImageUsage }
+    Swapchain{ oldSwapchain, oldSwapchain.device, extent, oldSwapchain.properties.ImageCount, transform, oldSwapchain.properties.PresentMode, oldSwapchain.properties.ImageUsage }
 {
     Create();
 }
 
 Swapchain::Swapchain(Device                               *device,
-                     VkSurfaceKHR                         surface,
                      const VkExtent2D &extent,
                      const uint32_t                       imageCount,
                      const VkSurfaceTransformFlagBitsKHR  transform,
                      const VkPresentModeKHR               presentMode,
                            VkImageUsageFlags              imageUsageFlags) :
-    Swapchain{ *this, device, surface, extent, imageCount, transform, presentMode, imageUsageFlags }
+    Swapchain{ *this, device, extent, imageCount, transform, presentMode, imageUsageFlags }
 {
 
 }
 
 Swapchain::Swapchain(Swapchain                           &oldSwapchain,
                      Device                              *device,
-                     VkSurfaceKHR                         surface,
                      const VkExtent2D                    &extent,
                      const uint32_t                       imageCount,
                      const VkSurfaceTransformFlagBitsKHR  transform,
                      const VkPresentModeKHR               presentMode,
                            VkImageUsageFlags              imageUsageFlags) :
-    device{ device },
-    surface{ surface }
+    device{ device }
 {
+    auto surface = device->GetSurface();
+
     VkPhysicalDevice physicalDevice = device->Get<PhysicalDevice&>();
     VkSurfaceCapabilitiesKHR surfaceCapabilities{};
-    Check(device->GetSurfaceCapabilities(surface, &surfaceCapabilities));
+    Check(device->GetSurfaceCapabilities(&surfaceCapabilities));
 
     uint32_t surfaceFormatCount = 0;
     Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr));
@@ -275,7 +274,7 @@ void Swapchain::Create()
     createInfo.preTransform     = properties.PreTransform;
     createInfo.compositeAlpha   = properties.CompositeAlpha;
     createInfo.oldSwapchain     = properties.OldSwapchain;
-    createInfo.surface          = surface;
+    createInfo.surface          = device->GetSurface();
     createInfo.clipped          = VK_TRUE; // Get the best performance by enabling clipping.
 
     device->Create(&createInfo, &handle);
