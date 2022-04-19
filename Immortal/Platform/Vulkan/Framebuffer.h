@@ -14,24 +14,16 @@ namespace Vulkan
 class Framebuffer
 {
 public:
+    using Primitive = VkFramebuffer;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, const VkExtent2D &extent);
 
     ~Framebuffer();
 
-    VkFramebuffer &Handle()
-    {
-        return handle;
-    }
-
-    operator VkFramebuffer() const
-    {
-        return handle;
-    }
-
 private:
     Device *device{ nullptr };
-
-    VkFramebuffer handle{ VK_NULL_HANDLE };
 };
 
 }

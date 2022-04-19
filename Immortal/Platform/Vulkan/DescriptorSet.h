@@ -12,6 +12,10 @@ class Device;
 class DescriptorSet
 {
 public:
+    using Primitive = VkDescriptorSet;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout);
 
     DescriptorSet(const VkDescriptorSet other);
@@ -50,15 +54,8 @@ public:
         return rcast<uint64_t>(handle);
     }
 
-    operator const VkDescriptorSet&() const
-    {
-        return handle;
-    }
-
-private:
+protected:
     Device *device{ nullptr };
-
-    VkDescriptorSet handle{ VK_NULL_HANDLE };
 };
 
 }

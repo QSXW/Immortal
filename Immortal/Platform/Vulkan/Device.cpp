@@ -35,18 +35,10 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     for (uint32_t index = 0; index < propsCount; index++)
     {
         const VkQueueFamilyProperties &prop = physicalDevice->QueueFamilyProperties[index];
+        queueProps[index].resize(prop.queueCount, 0.5f);
         if (physicalDevice->HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
         {
-            queueProps[index].reserve(prop.queueCount);
-            queueProps[index].push_back(1.0f);
-            for (uint32_t i = 1; i < prop.queueCount; i++)
-            {
-                queueProps[index].push_back(0.5f);
-            }
-        }
-        else
-        {
-            queueProps[index].resize(prop.queueCount, 0.5f);
+            queueProps[index][0] = 1.0f;
         }
         queueCreateInfos[index].pNext            = nullptr;
         queueCreateInfos[index].queueFamilyIndex = index;
@@ -226,12 +218,12 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
         mask |= VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     }
 
-    for (uint32_t i = 0; i < U32(queueFamilyProperties.size()); i++)
+    for (size_t i = 0; i < queueFamilyProperties.size(); i++)
     {
         auto queueFlags = queueFamilyProperties[i].queueFlags;
         if (queueFlags & requestFlags && !(queueFlags & mask))
         {
-            return i;
+            return U32(i);
             break;
         }
     }

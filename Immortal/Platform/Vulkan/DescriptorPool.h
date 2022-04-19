@@ -45,7 +45,7 @@ private:
 
     VkResult AllocateInternal(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count);
 
-private:
+protected:
     Device *device{ nullptr };
 
     std::vector<VkDescriptorPool> handles{ VK_NULL_HANDLE };

@@ -50,6 +50,9 @@ public:
         std::vector<VkSurfaceFormatKHR> SurfaceFormat;
     } priorities;
 
+    using Primitive = VkSwapchainKHR;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
 
@@ -76,16 +79,6 @@ public:
     using Images = std::vector<VkImage>;
     using Format = VkFormat;
     using Usage  = VkImageUsageFlags;
-
-    VkSwapchainKHR Handle() const
-    {
-        return handle;
-    }
-
-    operator VkSwapchainKHR() const
-    {
-        return handle;
-    }
 
     template <class T>
     T &Get()
@@ -139,8 +132,6 @@ public:
 
 private:
     Device *device{ nullptr };
-
-    VkSwapchainKHR handle{ VK_NULL_HANDLE };
 
     std::vector<VkImage> images;
 

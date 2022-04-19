@@ -36,7 +36,8 @@ public:
         SimultaneousUse    = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
     };
 
-    VkResult reset(ResetMode reset_mode);
+    using Primitive = VkCommandBuffer;
+    VKCPP_OPERATOR_HANDLE()
 
 public:
     CommandBuffer(CommandPool *cmdPool, Level level);
@@ -49,20 +50,7 @@ public:
 
     VkResult Execute();
 
-    VkCommandBuffer &Handle()
-    {
-        return handle;
-    }
-
-    operator VkCommandBuffer&()
-    {
-        return handle;
-    }
-
-    operator VkCommandBuffer() const
-    {
-        return handle;
-    }
+    VkResult reset(ResetMode reset_mode);
 
     bool Recoding()
     {
@@ -143,7 +131,9 @@ public:
 
     void BindVertexBuffers(Buffer *buffer)
     {
-        BindVertexBuffers(0, 1, &buffer->Handle(), &buffer->Offset());
+        VkBuffer buffers[1]     = { *buffer };
+        VkDeviceSize offsets[1] = { buffer->Offset() };
+        BindVertexBuffers(0, 1, buffers, offsets);
     }
 
     void BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType = VK_INDEX_TYPE_UINT32)
@@ -239,8 +229,6 @@ private:
     CommandPool *commandPool{ nullptr };
 
     State state{ State::Initial };
-
-    VkCommandBuffer handle{ VK_NULL_HANDLE };
 
     Level level{ Level::Primary };
 };

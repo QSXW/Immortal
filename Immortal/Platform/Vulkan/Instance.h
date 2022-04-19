@@ -14,6 +14,10 @@ class PhysicalDevice;
 class Instance
 {
 public:
+    using Primitive = VkInstance;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     Instance() = default;
 
     Instance(const char*                                  applicationName,
@@ -59,24 +63,12 @@ public:
         }) != enabledExtensions.end();
     }
 
-    VkInstance Handle() const
-    {
-        return handle;
-    }
-
-    operator VkInstance() const
-    {
-        return handle;
-    }
-
     bool Ready() const
     {
         return !!handle;
     }
 
 private:
-    VkInstance handle{ VK_NULL_HANDLE };
-
     std::vector<const char*> enabledExtensions{};
 
     std::vector<std::unique_ptr<PhysicalDevice>> physicalDevices{};

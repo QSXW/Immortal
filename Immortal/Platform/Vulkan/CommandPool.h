@@ -15,6 +15,9 @@ class CommandPool
 public:
     using QueueFamilyIndex = UINT32;
 
+    using Primitive = VkCommandPool;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     CommandPool() = default;
 
@@ -41,16 +44,6 @@ public:
 
         secondaryCommandBuffers.clear();
         secondaryActiveCount = 0;
-    }
-
-    VkCommandPool &Handle()
-    {
-        return handle;
-    }
-
-    operator VkCommandPool() const
-    {
-        return handle;
     }
 
     template <class T>
@@ -90,8 +83,6 @@ public:
 
 private:
     Device *device{ nullptr };
-        
-    VkCommandPool handle{ VK_NULL_HANDLE };
 
     RenderFrame *renderFrame{ nullptr };
 

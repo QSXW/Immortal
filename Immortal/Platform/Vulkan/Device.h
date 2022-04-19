@@ -31,6 +31,9 @@ public:
         That = this;
     }
 
+    using Primitive = VkDevice;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     Device() = default;
 
@@ -255,16 +258,6 @@ public:
     }
 
 public:
-    VkDevice Handle() const
-    {
-        return handle;
-    }
-
-    operator VkDevice() const
-    {
-        return handle;
-    }
-
     template <class T>
     T Get()
     {
@@ -352,10 +345,11 @@ public:
 
         auto &queue = FindQueueByType(T, QueueFailyIndex(T));
 
+        VkCommandBuffer commandBuffers[1] = { *cmdbuf };
         VkSubmitInfo submitInfo{};
         submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &cmdbuf->Handle();
+        submitInfo.pCommandBuffers    = commandBuffers;
 
         auto fence = RequestFence();
 
@@ -396,8 +390,6 @@ private:
     PhysicalDevice *physicalDevice{ nullptr };
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
-
-    VkDevice handle{ VK_NULL_HANDLE };
 
     std::unordered_set<std::string> availableExtensions;
 

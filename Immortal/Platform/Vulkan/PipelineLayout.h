@@ -38,17 +38,7 @@ struct PipelineLayout
 
     ~PipelineLayout()
     {
-        
-    }
 
-    VkPipelineLayout Handle() const
-    {
-        return handle;
-    }
-
-    operator VkPipelineLayout() const
-    {
-        return handle;
     }
 
     PipelineLayout &operator=(PipelineLayout &&other)
@@ -66,8 +56,8 @@ struct PipelineLayout
         return *this;
     }
 
-private:
-    VkPipelineLayout handle{ VK_NULL_HANDLE };
+    using Primitive = VkPipelineLayout;
+    VKCPP_OPERATOR_HANDLE()
 };
 
 }

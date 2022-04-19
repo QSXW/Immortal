@@ -71,6 +71,9 @@ public:
         InheritedQueries,
     };
 
+    using Primitive = VkPhysicalDevice;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     PhysicalDevice() = default;
 
@@ -118,16 +121,6 @@ public: /* vk api */
     DEFINE_PHYSICAL_DEVICE_GETTER(MemoryProperties)
 
 public:
-    VkPhysicalDevice Handle() const
-    {
-        return handle;
-    }
-
-    operator VkPhysicalDevice() const
-    {
-        return handle;
-    }
-
     template <class T>
     T Get()
     {
@@ -190,8 +183,6 @@ public:
 
 private:
     Instance *instance{ nullptr };
-
-    VkPhysicalDevice handle{ VK_NULL_HANDLE };
 
 public:
     std::vector<VkQueueFamilyProperties> QueueFamilyProperties;

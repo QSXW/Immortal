@@ -14,6 +14,7 @@ class Buffer : public SuperBuffer
 {
 public:
     using Super  = SuperBuffer;
+    using Primitive = VkBuffer;
 
 public:
     Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage = Usage::Persistent);
@@ -32,12 +33,12 @@ public:
 
     virtual Super *Bind(const BindInfo &bindInfo) const override;
 
-    VkDeviceSize &Offset()
+    VkDeviceSize Offset() const
     {
         return descriptor.offset;
     }
 
-    VkBuffer &Handle()
+    VkBuffer Handle() const
     {
         return descriptor.buffer;
     }

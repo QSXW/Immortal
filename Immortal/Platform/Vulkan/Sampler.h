@@ -12,6 +12,10 @@ class Device;
 class Sampler
 {
 public:
+    using Primitive = VkSampler;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     Sampler() = default;
 
     Sampler(Device *device, const VkSamplerCreateInfo &info);
@@ -24,20 +28,8 @@ public:
 
     ~Sampler();
 
-    VkSampler &Handle()
-    {
-        return handle;
-    }
-
-    operator VkSampler() const
-    {
-        return handle;
-    }
-
 private:
     Device *device{ nullptr };
-
-    VkSampler handle{ VK_NULL_HANDLE };
 };
 
 }

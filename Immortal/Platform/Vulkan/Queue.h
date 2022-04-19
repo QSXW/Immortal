@@ -15,6 +15,9 @@ public:
     using FamilyIndex = uint32_t;
     using Super = SuperQueue;
 
+    using Primitive = VkQueue;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     Queue(Device *device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
 
@@ -43,21 +46,6 @@ public:
         }
     }
 
-    VkQueue &Handle()
-    {
-        return handle;
-    }
-
-    operator VkQueue&()
-    {
-        return handle;
-    }
-
-    operator VkQueue() const
-    {
-        return handle;
-    }
-
     VkQueueFamilyProperties &Properties()
     {
         return properties;
@@ -80,8 +68,6 @@ public:
 
 private:
     Device *device;
-
-    VkQueue handle{ VK_NULL_HANDLE };
 
     uint32_t familyIndex{ 0 };
 

@@ -99,6 +99,8 @@ void Renderer::SubmitFrame()
 
 void Renderer::SwapBuffers()
 {
+    VkCommandBuffer commandBuffers[1] = { 0 };
+
     VkPipelineStageFlags computeWaitDstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
     VkSubmitInfo computeSubmitInfo{};
@@ -110,8 +112,9 @@ void Renderer::SwapBuffers()
     auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
     device->Compute([&](CommandBuffer *cmdbuf) {
         cmdbuf->End();
+        commandBuffers[0] = *cmdbuf;
         computeSubmitInfo.commandBufferCount = 1;
-        computeSubmitInfo.pCommandBuffers = &cmdbuf->Handle();
+        computeSubmitInfo.pCommandBuffers = commandBuffers;
         });
 
     computeQueue.Submit(computeSubmitInfo, nullptr);
@@ -128,13 +131,14 @@ void Renderer::SwapBuffers()
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     };
 
+    commandBuffers[0] = *context->GetCommandBuffer();
     submitInfo.waitSemaphoreCount   = SL_ARRAY_LENGTH(waitSemaphores);
     submitInfo.pWaitSemaphores      = waitSemaphores;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
     submitInfo.pWaitDstStageMask    = graphicsWaitDstStageMask;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &context->GetCommandBuffer()->Handle();
+    submitInfo.pCommandBuffers      = commandBuffers;
 
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();
@@ -224,10 +228,12 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
             );
 
         auto buffer = pipeline->Get<Buffer::Type::Vertex>();
+        VkBuffer vertex = *buffer;
+        VkDeviceSize offsets = buffer->Offset();
         cmdbuf->BindVertexBuffers(
             0, 1,
-            &buffer->Handle(),
-            &buffer->Offset()
+            &vertex,
+            &offsets
             );
 
         buffer = pipeline->Get<Buffer::Type::Index>();

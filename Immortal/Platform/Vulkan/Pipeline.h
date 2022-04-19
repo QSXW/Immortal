@@ -37,6 +37,9 @@ public:
         VkDescriptorSet DescriptorSets[Size];
     };
 
+    using Primitive = VkPipeline;
+    VKCPP_OPERATOR_HANDLE()
+
 public:
     Pipeline(Device *device, Shader *shader);
 
@@ -63,8 +66,6 @@ public:
 
 protected:
     Device *device{ nullptr };
-
-    VkPipeline handle{ VK_NULL_HANDLE };
 
     VkPipelineCache cache{ VK_NULL_HANDLE };
 
@@ -149,11 +150,6 @@ public:
     VkDescriptorSet GetDescriptorSet() const
     {
         return descriptor.set;
-    }
-
-    operator VkPipeline() const
-    {
-        return handle;
     }
 
     VkPipelineLayout Layout() const

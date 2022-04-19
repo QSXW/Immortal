@@ -13,6 +13,10 @@ class ImageView;
 class Image
 {
 public:
+    using Primitive = VkImage;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     Image(Device               *device,
           VkImage               handle,
           const VkExtent3D     &extent,
@@ -48,16 +52,6 @@ public:
     Image &operator=(Image &&other);
 
 public:
-    VkImage &Handle()
-    {
-        return handle;
-    }
-
-    operator VkImage() const
-    {
-        return handle;
-    }
-
     template <class T>
     T *GetAddress()
     {
@@ -113,8 +107,6 @@ public:
 
 private:
     Device *device{ nullptr };
-
-    VkImage handle{ VK_NULL_HANDLE };
 
     VmaAllocation memory{ VK_NULL_HANDLE };
 
