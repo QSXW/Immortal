@@ -13,6 +13,9 @@ public:
 
     virtual ~NativeInput();
 
+    void Clear();
+
+protected:
     virtual bool InternalIsKeyPressed(KeyCode key) override;
 
     virtual bool InternalIsMouseButtonPressed(MouseCode button) override;
@@ -22,14 +25,6 @@ public:
     virtual float InternalGetMouseX() override;
 
     virtual float InternalGetMouseY() override;
-
-    void CleanUpInputs()
-    {
-        CleanUpObject(KeysDown, 0, sizeof(KeysDown));
-
-        auto *i64 = rcast<uint64_t *>(MouseDown);
-        *i64 = 0;
-    }
 
 public:
     HWND handle{ nullptr };

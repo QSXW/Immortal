@@ -15,12 +15,18 @@ NativeInput::NativeInput(Window *window) :
     handle{ rcast<HWND>(window->Primitive()) }
 {
     !!Input::That ? throw Exception(SError::InvalidSingleton) : That = this;
-    CleanUpInputs();
+    Clear();
 }
 
 NativeInput::~NativeInput()
 {
 
+}
+
+void NativeInput::Clear()
+{
+    CleanUpObject(KeysDown, 0, sizeof(KeysDown));
+    InterpretAs<uint64_t>(&MouseDown) = 0;
 }
 
 bool NativeInput::InternalIsKeyPressed(const KeyCode key)

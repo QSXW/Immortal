@@ -13,6 +13,7 @@ public:
 
     virtual ~GLFWInput();
 
+protected:
     virtual bool InternalIsKeyPressed(KeyCode key) override;
 
     virtual bool InternalIsMouseButtonPressed(MouseCode button) override;

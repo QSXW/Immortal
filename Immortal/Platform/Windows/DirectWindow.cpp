@@ -170,7 +170,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         DirectWindow::Input->Focus = (msg == WM_SETFOCUS);
         if (!DirectWindow::Input->Focus)
         {
-            DirectWindow::Input->CleanUpInputs();
+            DirectWindow::Input->Clear();
         }
         return 0;
 

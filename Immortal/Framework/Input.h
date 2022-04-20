@@ -15,7 +15,6 @@ public:
 
     static constexpr size_t MaxMouseCodes = 7;
 
-public:
     Input() = default;
 
     virtual ~Input()
@@ -23,6 +22,7 @@ public:
 
     }
 
+protected:
     virtual bool InternalIsKeyPressed(KeyCode key) = 0;
 
     virtual bool InternalIsMouseButtonPressed(MouseCode button) = 0;
@@ -33,6 +33,7 @@ public:
 
     virtual float InternalGetMouseY() = 0;
 
+public:
     static bool IsKeyPressed(KeyCode key)
     {
         return That->InternalIsKeyPressed(key);
