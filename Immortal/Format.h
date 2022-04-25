@@ -136,7 +136,7 @@ struct FormatElement
 using bfloat = uint16_t;
 #define FS_C(T, CC) (sizeof(T) * (CC)), CC
 
-static inline FormatElement FromatElementTable[] = {
+static inline FormatElement FormatElementTable[] = {
     { Format::INT,             VK_FORMAT_R32_SINT,            DXF(DXGI_FORMAT_R32_SINT           ),  GL_INT,               FS_C(int,      1)     },
     { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,         DXF(DXGI_FORMAT_R32G32_SINT        ),  GL_INT,               FS_C(int,      2)     },
     { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,      DXF(DXGI_FORMAT_R32G32B32_SINT     ),  GL_INT,               FS_C(int,      3)     },
@@ -177,27 +177,27 @@ static inline FormatElement FromatElementTable[] = {
 
 inline size_t Format::ComponentCount() const
 {
-    return StaticSpace::FromatElementTable[v].ComponentCount;
+    return StaticSpace::FormatElementTable[v].ComponentCount;
 }
 
 inline Format::operator VkFormat() const
 {
-    return StaticSpace::FromatElementTable[v];
+    return StaticSpace::FormatElementTable[v];
 }
 
 inline Format::operator DXGI_FORMAT() const
 {
-    return StaticSpace::FromatElementTable[v];
+    return StaticSpace::FormatElementTable[v];
 }
 
 inline Format::operator GLenum() const
 {
-    return StaticSpace::FromatElementTable[v];
+    return StaticSpace::FormatElementTable[v];
 }
 
 inline size_t Format::Size() const
 {
-    return StaticSpace::FromatElementTable[v].Size;
+    return StaticSpace::FormatElementTable[v].Size;
 }
 
 }
