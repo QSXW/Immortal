@@ -7,6 +7,7 @@
 #include <queue>
 #include <future>
 #include <functional>
+#include <Interface/IObject.h>
 
 namespace Immortal
 {
@@ -30,6 +31,35 @@ public:
         return (int)pthread_self();
 #endif
     }
+
+public:
+    template <class T>
+    Thread(T task)
+    {
+        auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
+        stub = [=] {
+            (*wrapper)();
+        };
+    }
+
+    ~Thread()
+    {
+        handle->join();
+    }
+
+    void Start()
+    {
+        handle = new std::thread{ stub };
+    }
+
+    void Join()
+    {
+        handle->join();
+    }
+
+    std::function<void()> stub;
+
+    MonoRef<std::thread> handle;
 };
 
 using Task = std::function<void()>;
