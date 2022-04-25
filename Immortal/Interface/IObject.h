@@ -248,6 +248,12 @@ public:
         return _obj;
     }
 
+    MonoRef &operator=(T *other)
+    {
+        MonoRef(other).Swap(*this);
+        return *this;
+    }
+
 protected:
     T *_obj;
 
