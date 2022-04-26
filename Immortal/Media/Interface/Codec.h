@@ -1,17 +1,29 @@
 #pragma once
 
 #include "Format.h"
+#include "Interface/IObject.h"
 #include "Media/Types.h"
 #include "Media/Common/Error.h"
+#include "Media/Common/Animator.h"
 
 namespace Immortal
 {
 namespace Vision
 {
+
+struct CodedFrame
+{
+    int64_t timestamp;
+    int64_t duration;
+    int64_t offset;
+
+    std::vector<uint8_t> buffer;
+};
+
 namespace Interface
 {
 
-class Codec
+class Codec : public IObject
 {
 public:
     Codec()
@@ -31,6 +43,16 @@ public:
     }
 
     virtual CodecError Decode(const std::vector<uint8_t> &buffer)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError Decode(CodedFrame *codedFrame)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError DecodeAsync(const std::vector<uint8_t> &buffer)
     {
         return CodecError::FailedToCallDecoder;
     }
@@ -67,5 +89,22 @@ protected:
 };
 
 }
+
+class VideoCodec : public Interface::Codec
+{
+public:
+    template <class T>
+    T *GetAddress()
+    {
+        if (IsPrimitiveOf<T, Animator>())
+        {
+            return &animator;
+        }
+    }
+
+protected:
+    Animator animator;
+};
+
 }
 }

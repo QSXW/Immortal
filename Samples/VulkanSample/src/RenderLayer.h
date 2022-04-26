@@ -370,6 +370,10 @@ public:
 
     bool LoadObject()
     {
+        Texture::Description desc = {
+            Format::RGBA8,
+            Wrap::Clamp
+        };
         auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())
         {
@@ -385,15 +389,34 @@ public:
                 auto &material = object.Add<MaterialComponent>();
                 material.Ref.resize(mesh.Mesh->NodeList().size());
             }
-            else
+            else if (FileSystem::IsFormat<FileFormat::IVF>(res.value()))
+            {
+                Vision::IVFDemuxer demuxer;
+
+                Ref<Vision::DAV1DCodec> decoder = new Vision::DAV1DCodec{};
+                demuxer.Open(res.value(), decoder);
+                Vision::CodedFrame codedFrame;
+                while (!demuxer.Read(&codedFrame))
+                {
+                    if (decoder->Decode(&codedFrame) == CodecError::Succeed)
+                    {
+                        break;
+                    }
+                }
+
+                auto &sprite = object.Add<SpriteRendererComponent>();
+                sprite.texture.reset(Render::Create<Texture>(decoder->Desc().width, decoder->Desc().height, decoder->Data(), desc));
+                sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, desc));
+                object.Add<ColorMixingComponent>();
+                auto &transform = object.Get<TransformComponent>();
+                transform.Scale = Vector3{ sprite.texture->Ratio(), 1.0f, 1.0f };
+            }
+            else if (FileSystem::IsImage(res.value()))
             {
                 std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = object.Add<SpriteRendererComponent>();
                 sprite.texture = texture;
-                sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, Texture::Description{
-                    Format::RGBA8,
-                    Wrap::Clamp
-                    }));
+                sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, desc));
 
                 object.Add<ColorMixingComponent>();
 

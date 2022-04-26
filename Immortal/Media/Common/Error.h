@@ -13,6 +13,7 @@ enum CodecError
     CorruptedBitstream = NEG(1114),
     FailedToOpenFile,
     FailedToCallDecoder,
+    Repeat,
     Succeed = 0,
     Preparing
 };

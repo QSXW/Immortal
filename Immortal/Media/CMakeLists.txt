@@ -8,14 +8,20 @@ set(CORE_FILES
     Stream.h)
 
 set(COMMON_FILES
+    Common/Animator.h
     Common/BitTracker.h
     Common/Checksum.cpp
     Common/Checksum.h
     Common/Error.h
     Common/NetworkAbstractionLayer.h)
 
+set(DEMUX_FILES
+    Demux/IVFDemuxer.h
+    Demux/IVFDemuxer.cpp)
+
 set(INTERFACE_FILES
-    Interface/Codec.h)
+    Interface/Codec.h
+    Interface/Demuxer.h)
 
 set(LOOKUP_TABLE_FILE
     LookupTable/LookupTable.cpp
@@ -34,7 +40,9 @@ set(IMAGE_CODEC_FILES
 
 set(VIDEO_CODEC_FILES
     Video/HEVC.cpp
-    Video/HEVC.h)
+    Video/HEVC.h
+    Video/DAV1DCodec.cpp
+    Video/DAV1DCodec.h)
 
 set(VULKAN_VIDEO_FILES
     Video/Vulkan/HEVC.cpp
@@ -50,6 +58,7 @@ set(EXTERNAL_FILES
 
 source_group("\\" FILES ${CORE_FILES})
 source_group("\\Common\\" FILES ${COMMON_FILES})
+source_group("\\Demux\\" FILES ${DEMUX_FILES})
 source_group("\\Interface\\" FILES ${INTERFACE_FILES})
 source_group("\\LookupTable\\" FILES ${LOOKUP_TABLE_FILE})
 source_group("\\Image\\" FILES ${IMAGE_CODEC_FILES})
@@ -61,6 +70,7 @@ source_group("\\Processing\\" FILES ${PROCESSING_FILES})
 add_library(${PROJECT_NAME} STATIC
     ${CORE_FILES}
     ${COMMON_FILES}
+    ${DEMUX_FILES}
     ${EXTERNAL_FILES}
     ${INTERFACE_FILES}
     ${LOOKUP_TABLE_FILE}

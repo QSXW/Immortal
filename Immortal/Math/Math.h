@@ -39,12 +39,17 @@ struct Rational
 
     }
 
-    template <class T>
-    Rational(T n, T d) :
+    template <class T, class U>
+    Rational(T n, U d) :
         numerator{ (int64_t)n },
         denominator{ (int64_t)d }
     {
-        static_assert(std::is_arithmetic_v<T>);
+        static_assert(std::is_arithmetic_v<T> && std::is_arithmetic_v<U>);
+    }
+
+    double Normalize() const
+    {
+        return (double)numerator / (double)denominator;
     }
 
     int64_t numerator;

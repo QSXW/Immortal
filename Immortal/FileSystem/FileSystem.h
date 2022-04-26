@@ -59,7 +59,8 @@ enum class FileFormat : uint64_t
     OBJ   = MakeIdentifier('O', 'B', 'J'),
     PNG   = MakeIdentifier('P', 'N', 'G'),
     JPG   = MakeIdentifier('J', 'P', 'G'),
-    JPEG  = MakeIdentifier('J', 'P', 'E', 'G')
+    JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
+    IVF   = MakeIdentifier('I', 'V', 'F')
 };
 
 namespace FileSystem
@@ -86,6 +87,16 @@ static inline bool Is3DModel(const std::string &path)
            IsFormat<FileFormat::FBX>(id) ||
            IsFormat<FileFormat::BLEND>(id) || 
            IsFormat<FileFormat::GLTF>(id);
+}
+
+static inline bool IsImage(const std::string &path)
+{
+    auto id = MakeIdentifier(path);
+
+    return IsFormat<FileFormat::BMP>(id) ||
+           IsFormat<FileFormat::JPEG>(id) ||
+           IsFormat<FileFormat::JPG>(id) ||
+           IsFormat<FileFormat::PNG>(id);
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename)

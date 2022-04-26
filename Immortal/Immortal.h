@@ -27,6 +27,9 @@
 
 #include "Memory/Memory.h"
 
+#include "Media/Demux/IVFDemuxer.h"
+#include "Media/Video/DAV1DCodec.h"
+
 #include "Utils/PlatformUtils.h"
 #include "Utils/json.h"
 
