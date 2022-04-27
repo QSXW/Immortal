@@ -1,11 +1,15 @@
 #pragma once
 
-#include "Core.h"
+#include <queue>
 
+#include "Core.h"
+#include "Framework/Async.h"
 #include "Render/Render.h"
 #include "Render/Mesh.h"
 #include "Render/Texture.h"
 #include "SceneCamera.h"
+#include "Media/Interface/Codec.h"
+#include "Media/Interface/Demuxer.h"
 
 namespace IMMORTAL_API Immortal
 {
@@ -29,7 +33,8 @@ struct Component
         Scene,
         SpriteRenderer,
         Tag,
-        Transform
+        Transform,
+        VideoPlayer
     };
 
     Component()
@@ -330,6 +335,121 @@ struct FilterComponent : public Component
     }
 
     std::vector<FilterType> Filter;
+};
+
+struct VideoPlayerComponent : public Component
+{
+    DEFINE_COMP_TYPE(VideoPlayer)
+
+    VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer) :
+        decoder{ decoder },
+        demuxer{ demuxer },
+        fifo{ new std::queue<Vision::Picture>{} },
+        mutex{ new std::mutex{} },
+        state{ new State{} }
+    {
+        struct {
+            Vision::VideoCodec *decoder;
+            Vision::Interface::Demuxer *demuxer;
+            std::queue<Vision::Picture> *fifo;
+            bool *exited;
+            std::mutex *mutex;
+        } tpack {
+            decoder,
+            demuxer,
+            fifo,
+            &state->exited,
+            mutex.get(),
+        };
+
+        VideoPlayerComponent *that = this;
+        thread = new Thread{ [=]() {
+            do
+            {
+                Vision::CodedFrame codedFrame;
+                while (tpack.fifo->size() < 7 && !tpack.demuxer->Read(&codedFrame))
+                {
+                    if (tpack.decoder->Decode(&codedFrame) == CodecError::Succeed)
+                    {
+                        Vision::Picture picture = tpack.decoder->GetPicture();
+
+                        {
+                            std::lock_guard lock{ *tpack.mutex };
+                            tpack.fifo->push(picture);
+                        }
+                    }
+                }
+            } while (!*tpack.exited);
+        } };
+
+        thread->Start();
+    }
+
+    ~VideoPlayerComponent()
+    {
+        if (state)
+        {
+            state->exited = true;
+        }
+        thread.Release();
+    }
+
+    VideoPlayerComponent(VideoPlayerComponent &&other)
+    {
+        Swap(other);
+    }
+
+    VideoPlayerComponent &operator=(VideoPlayerComponent &&other)
+    {
+        Swap(other);
+        return *this;
+    }
+
+    void Swap(VideoPlayerComponent &other)
+    {
+        std::lock_guard lock{ *other.mutex };
+        mutex.swap(other.mutex);
+        thread.Swap(other.thread);
+        decoder.Swap(other.decoder);
+        demuxer.Swap(other.demuxer);
+        fifo.Swap(other.fifo);
+        state.Swap(other.state);
+    }
+
+    Vision::Picture GetPicture()
+    {
+        if (fifo->empty())
+        {
+            return Vision::Picture{};
+        }
+
+        auto ret = fifo->front();
+
+        {
+            std::lock_guard lock{ *mutex };    
+            fifo->pop();
+        }
+
+        return ret;
+    }
+
+    Animator *GetAnimator() const
+    {
+        return decoder->GetAddress<Animator>();
+    }
+
+    MonoRef<Thread> thread;
+    std::unique_ptr<std::mutex> mutex;
+
+    Ref<Vision::VideoCodec> decoder;
+    Ref<Vision::Interface::Demuxer> demuxer;
+    MonoRef<std::queue<Vision::Picture>> fifo;
+
+    struct State {
+        bool playing = false;
+        bool exited = false;
+    };
+    MonoRef<State> state;
 };
 
 }

@@ -19,6 +19,7 @@ public:
         int64_t current;
     } timestamps;
 
+    double accumulator;
     double timebase;
     double spf;
     uint32_t step;

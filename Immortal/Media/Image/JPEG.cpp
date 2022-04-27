@@ -566,11 +566,11 @@ void JpegCodec::ConvertColorSpace()
 
     if (desc.format == Format::YUV444P)
     {
-        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height, desc.width & 0x7);
+        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height, SLALIGN(desc.width, 8));
     }
     else if (desc.format == Format::YUV420P)
     {
-        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height, desc.width & 0x7);
+        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height, SLALIGN(desc.width, 8), SLALIGN(desc.width, 8) / 2);
     }
     desc.format = Format::RGBA8;
 }

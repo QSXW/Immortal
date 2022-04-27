@@ -177,7 +177,7 @@ protected:
         return ref;
     }
 
-protected:
+public:
     ObjectType *_obj;
 };
 

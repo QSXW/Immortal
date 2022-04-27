@@ -225,6 +225,32 @@ void Scene::OnRenderEditor(const Camera &editorCamera)
 
 void Scene::OnRender(const Camera &camera)
 {
+    float deltaTime = Application::DeltaTime();
+
+    /* Update Video Player Component */
+    {
+        auto view = registry.view<SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>();
+        for (auto object : view)
+        {
+            auto [sprite, videoPlayer, color] = view.get<SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>(object);
+
+            auto animator = videoPlayer.GetAnimator();
+            animator->accumulator += deltaTime;
+            if (animator->accumulator < animator->spf)
+            {
+                continue;
+            }
+
+            animator->accumulator = 0;
+            auto picture = videoPlayer.GetPicture();
+            if (picture.Available())
+            {
+                sprite.texture->Update(picture.data.get());
+                color.Modified = true;
+            }
+        }
+    }
+
     auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent, ColorMixingComponent>);
     {
         for (auto object : group)

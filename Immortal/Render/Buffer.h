@@ -194,11 +194,13 @@ public:
     enum class Type
     {
         Layout,
-        Vertex       = BIT(1),
-        Index        = BIT(2),
-        Uniform      = BIT(3),
-        PushConstant = BIT(4),
-        Unspecified  = BIT(31)
+        Vertex              = BIT(1),
+        Index               = BIT(2),
+        Uniform             = BIT(3),
+        PushConstant        = BIT(4),
+        TransferSource      = BIT(5),
+        TransferDestination = BIT(6),
+        Unspecified         = BIT(31)
     };
 
     enum class Usage

@@ -20,6 +20,17 @@ struct CodedFrame
     std::vector<uint8_t> buffer;
 };
 
+struct Picture
+{
+    bool Available() const
+    {
+        return !!data;
+    }
+
+    Description desc;
+    std::shared_ptr<uint8_t> data;
+};
+
 namespace Interface
 {
 
@@ -77,6 +88,11 @@ public:
         ptr = nullptr;
     }
 
+    virtual Picture GetPicture() const
+    {
+        return Picture{ desc, nullptr };
+    }
+
     const Description &Desc() const
     {
         return desc;
@@ -100,6 +116,7 @@ public:
         {
             return &animator;
         }
+        return nullptr;
     }
 
 protected:

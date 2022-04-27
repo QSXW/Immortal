@@ -55,6 +55,8 @@ private:
     std::unique_ptr<Allocation> allocation;
 
     size_t allocatedSize = 0;
+
+    std::mutex mutex;
 };
 
 }

@@ -391,23 +391,28 @@ public:
             }
             else if (FileSystem::IsFormat<FileFormat::IVF>(res.value()))
             {
-                Vision::IVFDemuxer demuxer;
+                Ref<Vision::IVFDemuxer> demuxer{ new Vision::IVFDemuxer{} };
+                Ref<Vision::VideoCodec> decoder{ new Vision::DAV1DCodec{} };
 
-                Ref<Vision::DAV1DCodec> decoder = new Vision::DAV1DCodec{};
-                demuxer.Open(res.value(), decoder);
+                demuxer->Open(res.value(), decoder);
                 Vision::CodedFrame codedFrame;
-                while (!demuxer.Read(&codedFrame))
+
+                while (!demuxer->Read(&codedFrame))
                 {
-                    if (decoder->Decode(&codedFrame) == CodecError::Succeed)
+                    if ((decoder->Decode(&codedFrame) == CodecError::Succeed))
                     {
                         break;
                     }
                 }
 
-                auto &sprite = object.Add<SpriteRendererComponent>();
-                sprite.texture.reset(Render::Create<Texture>(decoder->Desc().width, decoder->Desc().height, decoder->Data(), desc));
+                auto &videoDesc = decoder->Desc();
+                auto &sprite = object.AddComponent<SpriteRendererComponent>();
+                sprite.texture.reset(Render::Create<Texture>(videoDesc.width, videoDesc.height, decoder->Data(), desc));
                 sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, desc));
-                object.Add<ColorMixingComponent>();
+
+                object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
+
+                object.AddComponent<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
                 transform.Scale = Vector3{ sprite.texture->Ratio(), 1.0f, 1.0f };
             }

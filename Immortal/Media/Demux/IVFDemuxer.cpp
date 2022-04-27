@@ -97,6 +97,7 @@ CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
     };
 
     animator->step = duration / animator->frameNumber;
+    animator->spf  = (double)fps.denominator / fps.numerator;
 
     stream.Locate(32);
     return CodecError::Succeed;
@@ -106,10 +107,11 @@ CodecError IVFDemuxer::Read(CodedFrame *codedFrame)
 {
     auto header = ReadHeader();
     codedFrame->buffer.resize(header.size);
-    ThrowIf(
-        stream.Read(codedFrame->buffer.data(), codedFrame->buffer.size()) != 1,
-        "Failed to coded read frame data"
-    );
+
+    if (stream.Read(codedFrame->buffer.data(), codedFrame->buffer.size()) != 1)
+    {
+        return CodecError::EndOfFile;
+    }
 
     codedFrame->offset = header.offset;
     codedFrame->timestamp = header.timestamp;
@@ -125,7 +127,7 @@ IVFDemuxer::Header IVFDemuxer::ReadHeader()
     header.offset = stream.Pos();
     if (stream.Read(data, 4, 1) == 1)
     {
-        header.size = DoubleWord{ data };
+        header.size = (uint32_t)DoubleWord{ data };
     }
     if (stream.Read(data, 8, 1) == 1)
     {

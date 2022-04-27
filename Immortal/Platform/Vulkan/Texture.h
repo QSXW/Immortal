@@ -63,6 +63,8 @@ public:
         return *descriptorSet;
     }
 
+    virtual void Update(void *data);
+
     virtual void As(Descriptor *descriptor, size_t index) override;
 
     virtual void Map(uint32_t slot = 0) override

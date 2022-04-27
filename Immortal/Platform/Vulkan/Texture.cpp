@@ -46,56 +46,8 @@ Texture::~Texture()
 
 void Texture::Setup(const Description &description, uint32_t size, const void *data)
 {
-    VkBuffer stagingBuffer{ VK_NULL_HANDLE };
-    VkDeviceMemory stagingMemory{ VK_NULL_HANDLE };
-
-    VkBufferCreateInfo createInfo{};
-    createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    createInfo.pNext       = nullptr;
-    createInfo.size        = size;
-    createInfo.usage       = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    Check(device->Create(&createInfo, &stagingBuffer));
-
-    VkMemoryRequirements memoryRequirements{};
-    device->GetRequirements(stagingBuffer, &memoryRequirements);
-
-    VkMemoryAllocateInfo allocateInfo{};
-    allocateInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocateInfo.allocationSize  = memoryRequirements.size;
-    allocateInfo.memoryTypeIndex = device->GetMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    Check(device->AllocateMemory(&allocateInfo, nullptr, &stagingMemory));
-    device->BindMemory(stagingBuffer, stagingMemory, 0);
-
-    // Copy texture data into host local staging buffer
-    if (data)
-    {
-        uint8_t *mappedData{ nullptr };
-        Check(device->MapMemory(stagingMemory, 0, memoryRequirements.size, 0, rcast<void **>(&mappedData)));
-        memcpy(mappedData, data, size);
-        device->UnmapMemory(stagingMemory);
-    }
-
-    std::vector<VkBufferImageCopy> bufferCopyRegions;
-    uint32_t offset = 0;
-
-    for (int i = 0; i < mipLevels; i++)
-    {
-        VkBufferImageCopy bufferCopyRegion{};
-        bufferCopyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        bufferCopyRegion.imageSubresource.mipLevel       = i;
-        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-        bufferCopyRegion.imageSubresource.layerCount     = 1;
-        bufferCopyRegion.imageExtent.width               = width >> i;
-        bufferCopyRegion.imageExtent.height              = height >> i;
-        bufferCopyRegion.imageExtent.depth               = 1;
-        bufferCopyRegion.imageOffset                     = VkOffset3D{ 0, 0, 0 };
-        bufferCopyRegions.emplace_back(std::move(bufferCopyRegion));
-    }
-
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-    Layout = VK_IMAGE_LAYOUT_GENERAL;
+    Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageCreateInfo imageCreateInfo{};
     imageCreateInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -116,6 +68,39 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
         VMA_MEMORY_USAGE_GPU_ONLY
         });;
 
+    Update((void*)data);
+
+    SetupSampler(description);
+    SetupImageView(imageCreateInfo.format);
+
+    descriptor.Update(sampler, *view, Layout);
+
+    descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
+    descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+}
+
+void Texture::Update(void *data)
+{
+    size_t size = width * height * 4;
+    Buffer stagingBuffer{ device, size, data, Buffer::Type::TransferSource };
+
+    std::vector<VkBufferImageCopy> bufferCopyRegions;
+    uint32_t offset = 0;
+
+    for (int i = 0; i < mipLevels; i++)
+    {
+        VkBufferImageCopy bufferCopyRegion{};
+        bufferCopyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        bufferCopyRegion.imageSubresource.mipLevel       = i;
+        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+        bufferCopyRegion.imageSubresource.layerCount     = 1;
+        bufferCopyRegion.imageExtent.width               = width >> i;
+        bufferCopyRegion.imageExtent.height              = height >> i;
+        bufferCopyRegion.imageExtent.depth               = 1;
+        bufferCopyRegion.imageOffset                     = VkOffset3D{ 0, 0, 0 };
+        bufferCopyRegions.emplace_back(std::move(bufferCopyRegion));
+    }
+
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
@@ -125,7 +110,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     ImageBarrier barrier{
         *image,
         subresourceRange,
-        VK_IMAGE_LAYOUT_UNDEFINED,
+        Layout,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT
@@ -149,6 +134,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
             bufferCopyRegions.data()
         );
 
+        Layout = VK_IMAGE_LAYOUT_GENERAL;
         barrier.Swap();
         barrier.To(Layout);
 
@@ -161,17 +147,6 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
             1, &barrier
         );
         });
-
-    device->Destroy(stagingBuffer);
-    device->FreeMemory(stagingMemory);
-
-    SetupSampler(description);
-    SetupImageView(imageCreateInfo.format);
-
-    descriptor.Update(sampler, *view, Layout);
-
-    descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
-    descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
 void Texture::As(Descriptor *descriptors, size_t index)

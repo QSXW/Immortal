@@ -239,14 +239,16 @@ void GuiLayer::UpdateTheme()
 void GuiLayer::OnGuiRender()
 {
     static char title[128] = { 0 };
+
+    const auto &io = ImGui::GetIO();
     sprintf(
         title,
         "%s (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
         Application::Name(),
         Render::Api(),
         Render::GraphicsRenderer(),
-        1000.0f / ImGui::GetIO().Framerate,
-        ImGui::GetIO().Framerate
+        1000.0f / io.Framerate,
+        io.Framerate
     );
     Application::SetTitle(title);
 }

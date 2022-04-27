@@ -169,7 +169,7 @@ public:
         return mipLevels;
     }
 
-    virtual void SetData(void *data, uint32_t size) { }
+    virtual void Update(void *data) { }
 
     virtual void Map(uint32_t slot = 0) { }
 

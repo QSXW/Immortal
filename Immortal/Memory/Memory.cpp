@@ -28,8 +28,10 @@ void *MemoryAllocator::Allocate(size_t size)
     allocatedSize += size;
 
     address = malloc(size);
-    allocation->insert({ (uint64_t)address, info });
-
+    {
+        std::lock_guard lock{ mutex };
+        allocation->insert({ (uint64_t)address, info });
+    }
     return address;
 }
 
@@ -37,9 +39,13 @@ void MemoryAllocator::Free(Anonymous _ptr)
 {
     uint64_t ptr = (uint64_t)_ptr;
 
-    if (allocation && allocation->find(ptr) != allocation->end())
+    if (allocation)
     {
-        allocation->erase((uint64_t)ptr);
+        std::lock_guard lock{ mutex };
+        if (allocation->find(ptr) != allocation->end())
+        {
+            allocation->erase((uint64_t)ptr);
+        }
     }
     free(_ptr);
 }

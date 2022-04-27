@@ -22,6 +22,14 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     {
         flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     }
+    if (type & Buffer::Type::TransferSource)
+    {
+        flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+    if (type & Buffer::Type::TransferDestination)
+    {
+        flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
 
     return flags;
 }

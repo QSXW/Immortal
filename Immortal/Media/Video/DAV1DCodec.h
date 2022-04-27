@@ -23,13 +23,15 @@ public:
 
     virtual uint8_t *Data() const;
 
+    virtual Picture GetPicture() const;
+
 private:
     void CheckVersion();
 
 protected:
     Dav1dContext *handle;
 
-    MonoRef<uint8_t> data;
+    std::shared_ptr<uint8_t> data;
 
     const char *version;
 #endif

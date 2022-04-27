@@ -157,10 +157,9 @@ Texture::~Texture()
     glDeleteTextures(1, &handle);
 }
 
-void Texture::SetData(void * data, uint32_t size)
+void Texture::Update(void * data)
 {
     uint32_t bpp = type.DataFormat == GL_RGBA ? 4 : 3;
-    SLASSERT(size == width * height * bpp && "Data must be entire texture!");
 
     // glTextureStorage2D(handle, 1, mInternalFormat, width, height);
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
@@ -266,7 +265,7 @@ void TextureCube::Map(uint32_t slot) const
     glBindTextureUnit(slot, handle);
 }
 
-void TextureCube::SetData(void * data, uint32_t size)
+void TextureCube::Update(void * data)
 {
 
 }
