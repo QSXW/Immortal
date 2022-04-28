@@ -8,31 +8,31 @@
 namespace Immortal
 {
 
+static Vision::Interface::Codec *SelectSuitableCodec(const std::string &path)
+{
+    switch (FileSystem::DumpFileId(path))
+    {
+    case FileFormat::BMP:
+        return new Vision::BMPCodec{};
+
+    case FileFormat::JPG:
+    case FileFormat::JPEG:
+    case FileFormat::PNG:
+        return new Vision::STBCodec{};
+
+    default:
+        return new Vision::OpenCVCodec{};
+        break;
+    }
+}
+
 Frame::Frame(const std::string &path)
 {
-    if (FileSystem::IsFormat<FileFormat::BMP>(path))
-    {
-        auto bmpCodec = new Vision::BMPCodec{};
-        bmpCodec->Read(path);
-        decoder.reset(bmpCodec);
-    }
-    else
-    {
-        auto buf = FileSystem::ReadBinary(path);
-        if (buf.empty())
-        {
-            return;
-        }
+    Vision::CodedFrame codedFrame{};
+    codedFrame.Assign(FileSystem::ReadBinary(path));
 
-        decoder.reset(new Vision::STBCodec());
-        if (decoder->Decode(buf) != CodecError::Succeed)
-        {
-            decoder.reset(new Vision::OpenCVCodec());
-            {
-                decoder->Decode(buf);
-            }
-        }
-    }
+    decoder.Reset(SelectSuitableCodec(path));
+    decoder->Decode(codedFrame);
 }
 
 Frame::Frame(uint32_t width, uint32_t height, int depth, const void *data)

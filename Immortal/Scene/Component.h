@@ -369,7 +369,7 @@ struct VideoPlayerComponent : public Component
                 Vision::CodedFrame codedFrame;
                 while (tpack.fifo->size() < 7 && !tpack.demuxer->Read(&codedFrame))
                 {
-                    if (tpack.decoder->Decode(&codedFrame) == CodecError::Succeed)
+                    if (tpack.decoder->Decode(codedFrame) == CodecError::Succeed)
                     {
                         Vision::Picture picture = tpack.decoder->GetPicture();
 

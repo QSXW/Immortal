@@ -23,7 +23,7 @@ public:
 
     virtual ~STBCodec() override;
 
-    virtual CodecError Decode(const std::vector<uint8_t> &buf) override;
+    virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
     virtual uint8_t *Data() const override;
 

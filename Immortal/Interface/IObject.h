@@ -238,9 +238,19 @@ public:
         }
     }
 
+    T *Get() const
+    {
+        return _obj;
+    }
+
     operator T*() const
     {
         return _obj;
+    }
+
+    bool operator!() const
+    {
+        return !_obj;
     }
 
     T *operator->() const

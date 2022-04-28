@@ -29,21 +29,6 @@ constexpr uint64_t MakeIdentifier(
            (((uint64_t)u0) << 8 * 0);
 }
 
-static inline uint64_t MakeIdentifier(const std::string &path)
-{
-    uint64_t id = 0;
-
-    size_t i = path.size() - 1;
-
-    id |= std::toupper(path[i--]);
-    while (i && path[i] != '.')
-    {
-        id = (id << 8) | std::toupper(path[i--]);
-    }
-
-    return path[i] == '.' ? id : 0;
-}
-
 enum class FileType
 {
     Binary,
@@ -65,6 +50,26 @@ enum class FileFormat : uint64_t
 
 namespace FileSystem
 {
+
+static uint64_t MakeIdentifier(const std::string &path)
+{
+    uint64_t id = 0;
+
+    size_t i = path.size() - 1;
+
+    id |= std::toupper(path[i--]);
+    while (i && path[i] != '.')
+    {
+        id = (id << 8) | std::toupper(path[i--]);
+    }
+
+    return path[i] == '.' ? id : 0;
+}
+
+static inline FileFormat DumpFileId(const std::string &path)
+{
+    return (FileFormat)MakeIdentifier(path);
+}
 
 template <FileFormat T>
 inline constexpr bool IsFormat(const std::string &path)

@@ -9,3 +9,4 @@
 #include "STBCodec.h"
 #include "OpenCVCodec.h"
 #include "JPEG.h"
+#include "MFXJpegCodec.h"

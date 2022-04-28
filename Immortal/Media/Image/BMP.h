@@ -36,17 +36,17 @@ public:
         return data.get();
     }
 
-    void Swap(std::unique_ptr<uint8_t> &right)
+    virtual CodecError Decode(const CodedFrame &codedFrame);
+
+    void Swap(std::unique_ptr<uint8_t> &other)
     {
-        data.swap(right);
+        data.swap(other);
     }
 
     size_t HeaderSize()
     {
         return reinterpret_cast<uint8_t *>(&importantColours) - reinterpret_cast<uint8_t *>(&identifer);
     }
-
-    bool Read(const std::string &filename, bool alpha = true);
 
     bool Write(const std::string &filepath, int width, int height, int depth, uint8_t *data, int align = 0);
 

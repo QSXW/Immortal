@@ -6,7 +6,8 @@ set(LIB_FOUND     1)
 set(LIB_NOT_FOUND 0)
 set(HAVE_ASSIMP ${LIB_NOT_FOUND})
 set(HAVE_OPENCV ${LIB_NOT_FOUND})
-set(HAVE_DAV1D ${LIB_NOT_FOUND})
+set(HAVE_DAV1D  ${LIB_NOT_FOUND})
+set(HAVE_MFX    ${LIB_NOT_FOUND})
 
 include(CheckIncludeFileCXX)
 
@@ -184,7 +185,7 @@ endif(OpenCV_FOUND)
 # dav1d
 set(DAV1D_COMMON_HEADER "dav1d/dav1d.h")
 if (WIN32)
-    set(DAV1D_DIR "${CMAKE_SOURCE_DIR}/3rdparty/dav1d")
+    set(DAV1D_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dav1d")
     set(DAV1D_BINARY_DIR "${DAV1D_DIR}/bin")
     set(DAV1D_LIBRARY_DIR "${DAV1D_DIR}/lib")
     set(DAV1D_INCLUDE_DIR "${DAV1D_DIR}/include")
@@ -202,6 +203,19 @@ if (DAV1D_FOUND)
         "${DAV1D_BINARY_DIR}/dav1d.dll" PARENT_SCOPE)
 endif()
 
+# Intel mfx
+set(MFX_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libmfx")
+set(MFX_LIBRARY_DIR "${MFX_DIR}/lib")
+set(MFX_INCLUDE_DIR "${MFX_DIR}/include")
+find_path(MFX_FOUND "libmfx" ${MFX_DIR})
+if (MFX_FOUND)
+    set(HAVE_MFX ${LIB_FOUND})
+    add_library("intel_mfx" INTERFACE)
+    target_include_directories("intel_mfx" INTERFACE ${MFX_INCLUDE_DIR})
+    target_link_directories("intel_mfx" INTERFACE ${MFX_LIBRARY_DIR})
+    target_link_libraries("intel_mfx" INTERFACE libmfx)
+endif()
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
@@ -210,6 +224,7 @@ target_link_libraries("external" INTERFACE
     SPIRV spirv-cross-glsl
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>>
+    $<$<BOOL:${MFX_FOUND}>:intel_mfx>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>)
 
 configure_file(Config.h.in ${CMAKE_SOURCE_DIR}/Immortal/Config.h)

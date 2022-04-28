@@ -50,6 +50,7 @@ public:
     }
 
 private:
-    std::unique_ptr<Vision::Interface::Codec> decoder;
+    MonoRef<Vision::Interface::Codec> decoder;
 };
+
 }

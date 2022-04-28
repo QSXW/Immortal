@@ -5,6 +5,7 @@
 #include <dav1d/version.h>
 
 #include "Processing/ColorSpace.h"
+#include "Media/Image/MFXJpegCodec.h"
 
 namespace Immortal
 {
@@ -51,17 +52,17 @@ void DAV1DCodec::CheckVersion()
     version = dav1d_version();
 }
 
-CodecError DAV1DCodec::Decode(CodedFrame *codedFrame)
+CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
 {
     int res = 0;
     Dav1dData dav1dData{};
     Dav1dPicture picture{};
 
-    auto ptr = dav1d_data_create(&dav1dData, codedFrame->buffer.size());
+    auto ptr = dav1d_data_create(&dav1dData, codedFrame.buffer.size());
 
-    memcpy(ptr, codedFrame->buffer.data(), codedFrame->buffer.size());
-    dav1dData.m.timestamp = codedFrame->timestamp;
-    dav1dData.m.offset    = codedFrame->offset;
+    memcpy(ptr, codedFrame.buffer.data(), codedFrame.buffer.size());
+    dav1dData.m.timestamp = codedFrame.timestamp;
+    dav1dData.m.offset    = codedFrame.offset;
 
     do {
         if ((res = dav1d_send_data(handle, &dav1dData)) < 0)

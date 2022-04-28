@@ -180,9 +180,9 @@ static inline int32_t AlignToMCU(int32_t v, int32_t samplingFactor)
     return SLALIGN(v, JpegCodec::BLOCK_WIDTH * samplingFactor);
 }
 
-JpegCodec::JpegCodec(const std::vector<uint8_t> &buffer)
+JpegCodec::JpegCodec()
 {
-    ParseHeader(buffer);
+
 }
 
 JpegCodec::~JpegCodec()
@@ -267,8 +267,9 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
     }
 }
 
-CodecError JpegCodec::Decode()
+CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
 {
+    ParseHeader(codedFrame.buffer);
     InitDecodedPlaneBuffer();
     if (!isProgressive)
     {

@@ -11,8 +11,9 @@ OpenCVCodec::~OpenCVCodec()
         
 }
 
-CodecError OpenCVCodec::Decode(const std::vector<uint8_t> &buf)
+CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 {
+    const auto &buf = codedFrame.buffer;
     cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
     {

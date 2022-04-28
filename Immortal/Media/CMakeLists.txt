@@ -21,7 +21,9 @@ set(DEMUX_FILES
 
 set(INTERFACE_FILES
     Interface/Codec.h
-    Interface/Demuxer.h)
+    Interface/Demuxer.h
+    Interface/MFXCodec.cpp
+    Interface/MFXCodec.h)
 
 set(LOOKUP_TABLE_FILE
     LookupTable/LookupTable.cpp
@@ -35,6 +37,8 @@ set(IMAGE_CODEC_FILES
     Image/JPEG.h
     Image/STBCodec.cpp
     Image/STBCodec.h
+    Image/MFXJpegCodec.cpp
+    Image/MFXJpegCodec.h
     Image/OpenCVCodec.cpp
     Image/OpenCVCodec.h)
 

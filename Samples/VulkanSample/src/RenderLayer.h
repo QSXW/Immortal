@@ -399,7 +399,7 @@ public:
 
                 while (!demuxer->Read(&codedFrame))
                 {
-                    if ((decoder->Decode(&codedFrame) == CodecError::Succeed))
+                    if ((decoder->Decode(codedFrame) == CodecError::Succeed))
                     {
                         break;
                     }

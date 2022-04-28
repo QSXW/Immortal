@@ -2,6 +2,7 @@
 /3rdparty/opencv*
 /3rdparty/Assimp*
 /3rdparty/dav1d*
+/3rdparty/libmfx*
 
 Config.h
 

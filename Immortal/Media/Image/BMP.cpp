@@ -9,67 +9,44 @@ namespace Immortal
 namespace Vision
 {
 
-bool BMPCodec::Read(const std::string &filename, bool alpha)
+CodecError BMPCodec::Decode(const CodedFrame &codedFrame)
 {
-    Stream stream{ filename.c_str(), Stream::Mode::Read };
-
-    if (!stream.Readable())
-    {
-        return false;
-    }
-    stream.Read(&identifer, HeaderSize());
+    const auto &buffer = codedFrame.buffer;
+    memcpy(&identifer, buffer.data(), HeaderSize());
 
     if (bitsPerPixel != 24)
     {
-        return false;
+        return CodecError::UnsupportFormat;
     }
-
-    stream.Locate(offset);
-
-    auto padding  = width & 3;
-    auto linesize = width * 3;
     
-    auto size = (linesize + /* alpha */width) * height;
-    data.reset(new uint8_t [size]);
-    if (!data)
-    {
-        return false;
-    }
-
-    uint8_t *ptr = data.get() + size - linesize - width;
-    if (alpha)
-    {
-        std::vector<uint8_t> buffer{};
-        buffer.resize(linesize);
-        for (int y = 0; y < height; y++)
-        {
-            uint8_t *src = buffer.data();
-            stream.Read(src, linesize);
-            stream.Skip(padding);
-            uint8_t *dst = ptr;
-            for (int x = 0; x < width; x++, dst += 4, src += 3)
-            {
-                dst[0] = src[0];
-                dst[1] = src[1];
-                dst[2] = src[2];
-                dst[3] = ~0;
-            }
-            ptr = ptr - linesize - width;
-        }
-    }
-    else
-    {
-        for (int y = 0; y < height; y++, ptr -= linesize)
-        {
-            stream.Read(ptr, linesize);
-            stream.Skip(padding);
-        }
-    }
-
     desc.width  = width;
     desc.height = height;
 
-    return true;
+    auto src = buffer.data() + offset;
+
+    auto padding  = width & 3;
+    auto linesize = width * desc.format.ComponentCount();
+    
+    auto size = desc.Size();
+    data.reset(new uint8_t [size]);
+
+    uint8_t *ptr = data.get() + size - linesize;
+
+    for (int y = 0; y < height; y++)
+    {
+        uint8_t *dst = ptr;
+        for (int x = 0; x < width; x++, dst += 4, src += 3)
+        {
+            dst[0] = src[0];
+            dst[1] = src[1];
+            dst[2] = src[2];
+            dst[3] = ~0;
+        }
+        ptr = ptr - linesize;
+        src += padding;
+    }
+
+    return CodecError::Succeed;
 }
 
 bool BMPCodec::Write(const std::string &filepath, int w, int h, int depth, uint8_t *data, int align)

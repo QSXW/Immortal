@@ -13,8 +13,9 @@ STBCodec::~STBCodec()
     }
 }
 
-CodecError STBCodec::Decode(const std::vector<uint8_t> &buf)
+CodecError STBCodec::Decode(const CodedFrame &codedFrame)
 {
+    const auto &buf = codedFrame.buffer;
     int depth  = 0;
     int width  = static_cast<int>(desc.width);
     int height = static_cast<int>(desc.height);

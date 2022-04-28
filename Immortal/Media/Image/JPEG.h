@@ -189,13 +189,13 @@ public:
     };
 
 public:
-    JpegCodec(const std::vector<uint8_t> &buffer);
+    JpegCodec();
 
     ~JpegCodec();
 
     void ParseHeader(const std::vector<uint8_t> &buffer);
 
-    virtual CodecError Decode() override;
+    virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
     virtual uint8_t *Data() const override;
 

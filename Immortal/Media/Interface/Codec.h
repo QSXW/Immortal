@@ -17,6 +17,11 @@ struct CodedFrame
     int64_t duration;
     int64_t offset;
 
+    void Assign(std::vector<uint8_t> &&other)
+    {
+        buffer = std::move(other);
+    }
+
     std::vector<uint8_t> buffer;
 };
 
@@ -58,7 +63,7 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual CodecError Decode(CodedFrame *codedFrame)
+    virtual CodecError Decode(const CodedFrame &codedFrame)
     {
         return CodecError::FailedToCallDecoder;
     }

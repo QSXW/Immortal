@@ -19,7 +19,7 @@ public:
 
     virtual ~DAV1DCodec();
 
-    virtual CodecError Decode(CodedFrame *codedFrame);
+    virtual CodecError Decode(const CodedFrame &codedFrame);
 
     virtual uint8_t *Data() const;
 
