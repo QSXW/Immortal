@@ -38,14 +38,15 @@ enum class FileType
 enum class FileFormat : uint64_t
 {
     BLEND = MakeIdentifier('B', 'L', 'E', 'N', 'D'),
-    GLTF  = MakeIdentifier('G', 'L', 'T', 'F'),
-    BMP   = MakeIdentifier('B', 'M', 'P'),
-    FBX   = MakeIdentifier('F', 'B', 'X'),
-    OBJ   = MakeIdentifier('O', 'B', 'J'),
-    PNG   = MakeIdentifier('P', 'N', 'G'),
-    JPG   = MakeIdentifier('J', 'P', 'G'),
-    JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
-    IVF   = MakeIdentifier('I', 'V', 'F')
+    GLTF  = MakeIdentifier('G', 'L', 'T', 'F'     ),
+    BMP   = MakeIdentifier('B', 'M', 'P'          ),
+    FBX   = MakeIdentifier('F', 'B', 'X'          ),
+    OBJ   = MakeIdentifier('O', 'B', 'J'          ),
+    PNG   = MakeIdentifier('P', 'N', 'G'          ),
+    JFIF  = MakeIdentifier('J', 'F', 'I', 'F'     ),
+    JPG   = MakeIdentifier('J', 'P', 'G'          ),
+    JPEG  = MakeIdentifier('J', 'P', 'E', 'G'     ),
+    IVF   = MakeIdentifier('I', 'V', 'F'          )
 };
 
 namespace FileSystem
@@ -98,13 +99,14 @@ static inline bool IsImage(const std::string &path)
 {
     auto id = MakeIdentifier(path);
 
-    return IsFormat<FileFormat::BMP>(id) ||
+    return IsFormat<FileFormat::BMP>(id)  ||
            IsFormat<FileFormat::JPEG>(id) ||
-           IsFormat<FileFormat::JPG>(id) ||
-           IsFormat<FileFormat::PNG>(id);
+           IsFormat<FileFormat::JPG>(id)  ||
+           IsFormat<FileFormat::PNG>(id)  ||
+           IsFormat<FileFormat::JFIF>(id);
 }
 
-static inline std::vector<uint8_t> ReadBinary(const std::string &filename)
+static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint32_t align = sizeof(void*))
 {
     std::vector<uint8_t> buffer{};
     Stream stream{ filename, Stream::Mode::Read };
