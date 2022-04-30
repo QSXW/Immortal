@@ -6,6 +6,7 @@
 #include "Media/Common/Animator.h"
 
 #if HAVE_MFX
+#include <mfx/mfxadapter.h>
 #include <mfx/mfxvideo++.h>
 #endif
 
@@ -25,12 +26,12 @@ public:
 
         }
 
-        BitStreamReference(const std::vector<uint8_t> &buffer)
+        BitStreamReference(const std::vector<uint8_t> &buffer) :
+            mfxBitstream{}
         {
-            CleanUpObject(this);
-            Data = (decltype(Data))buffer.data();
+            Data       = (decltype(Data))buffer.data();
             DataLength = buffer.size();
-            MaxLength = buffer.size();
+            MaxLength  = DataLength;
         }
     };
 
@@ -45,6 +46,9 @@ public:
     virtual ~MFXCodec();
 
     virtual CodecError Decode(const CodedFrame &codedFrame);
+
+protected:
+    mfxStatus CheckAdapterSupported();
 
 protected:
     MonoRef<MFXVideoDECODE> handle;

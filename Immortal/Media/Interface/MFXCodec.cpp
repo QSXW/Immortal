@@ -42,12 +42,11 @@ static const char *GetApiType(mfxIMPL impl)
 }
 #undef XX
 
-MFXCodec::MFXCodec()
+MFXCodec::MFXCodec() :
+    surface{},
+    videoParam{}
 {
-    CleanUpObject(&surface);
-
     mfxInitParam initParam{};
-    CleanUpObject(&initParam);
 
     initParam.Implementation = MFX_IMPL_AUTO_ANY;
     initParam.Version.Major = 1;
@@ -94,6 +93,28 @@ CodecError MFXCodec::Decode(const CodedFrame &codedFrame)
 {
    
     return CodecError::Succeed;
+}
+
+mfxStatus MFXCodec::CheckAdapterSupported()
+{
+    mfxStatus status = MFX_ERR_NONE;
+    mfxU32 numAdapters = 0;
+
+    if ((status = MFXQueryAdaptersNumber(&numAdapters)) != MFX_ERR_NONE)
+    {
+        LOG::ERR("Failed to available query adapter");
+        return status;
+    }
+
+    std::vector<mfxAdapterInfo> adapterInfo{ numAdapters };
+    mfxAdaptersInfo adapters = { adapterInfo.data(), mfxU32(adapterInfo.size()), 0 };
+
+    status = MFXQueryAdaptersDecode(&bitstream, videoParam.mfx.CodecId, &adapters);
+    if (status == MFX_ERR_NOT_FOUND)
+    {
+        LOG::ERR("Failed to find an available adapter");
+    }
+    return status;
 }
 
 }

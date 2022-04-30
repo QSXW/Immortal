@@ -13,7 +13,6 @@ namespace Vision
 MFXJpegCodec::MFXJpegCodec() :
     Super{}
 {
-    CleanUpObject(&videoParam);
     videoParam.mfx.CodecId                = MFX_CODEC_JPEG;
     videoParam.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
     videoParam.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
@@ -31,11 +30,17 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
     mfxFrameSurface1 *pOutSurface{};
 
     bitstream = BitStreamReference{ codedFrame.buffer };
+    if ((status = CheckAdapterSupported()) != MFX_ERR_NONE)
+    {
+        return CodecError::ExternalFailed;
+    }
+  
     if ((status = handle->DecodeHeader(&bitstream, &videoParam)) != MFX_ERR_NONE)
     {
         LOG::ERR("Failed to decode header: {}", status);
         return CodecError::ExternalFailed;
     }
+
     bitstream.DataFlag |= MFX_BITSTREAM_COMPLETE_FRAME;
 
     if ((status = handle->Init(&videoParam)) != MFX_ERR_NONE)
@@ -45,18 +50,16 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
     }
 
     desc.format  = Format::RGBA8;
-    desc.width   = videoParam.mfx.FrameInfo.Width;
-    desc.height  = videoParam.mfx.FrameInfo.Height;
+    desc.width   = videoParam.mfx.FrameInfo.CropW;
+    desc.height  = videoParam.mfx.FrameInfo.CropH;
     MonoRef<uint8_t> temp = new uint8_t[desc.Size()];
-    memset(temp, 0,  desc.Size());
 
     surface.Info = videoParam.mfx.FrameInfo;
-    surface.Data.PitchLow  = desc.width;
+    surface.Data.PitchLow = surface.Info.Width;
     surface.Data.Y  = &temp[0];
-    surface.Data.UV = &temp[desc.Spatial()];
+    surface.Data.UV = &temp[surface.Data.PitchLow * surface.Info.Height];
 
     data = new uint8_t[desc.Size()];
-    memset(data, 0, desc.Size());
 
     if ((status = handle->DecodeFrameAsync(&bitstream, &surface, &pOutSurface, &syncPoint)) != MFX_ERR_NONE)
     {
@@ -75,10 +78,10 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
     dst.r = data;
 
     ColorSpace::Vector<uint8_t> src{};
-    src.x = surface.Data.Y;
-    src.y = surface.Data.UV;
+    src.x = pOutSurface->Data.Y;
+    src.y = pOutSurface->Data.UV;
 
-    ColorSpace::NV12ToRGBA8(dst, src, desc.width, desc.height, desc.width, desc.width);
+    ColorSpace::NV12ToRGBA8(dst, src, desc.width, desc.height, pOutSurface->Data.PitchLow, pOutSurface->Data.PitchLow);
 
     return CodecError::Succeed;
 }
