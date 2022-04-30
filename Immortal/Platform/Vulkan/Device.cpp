@@ -40,9 +40,9 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         {
             queueProps[index][0] = 1.0f;
         }
-        queueCreateInfos[index].pNext            = nullptr;
+        queueCreateInfos[index].pNext = nullptr;
         queueCreateInfos[index].queueFamilyIndex = index;
-        queueCreateInfos[index].queueCount       = prop.queueCount;
+        queueCreateInfos[index].queueCount = prop.queueCount;
         queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
     }
 
@@ -75,14 +75,14 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
         vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-        vmaVulkanFunc.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
+        vmaVulkanFunc.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
 
         LOG::DEBUG<isLogNeed>("Dedicated Allocation enabled");
     }
 
     if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
     {
-        auto &perfCounterFeatures       = physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+        auto &perfCounterFeatures = physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
         auto &host_query_reset_features = physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
         LOG::DEBUG<isLogNeed>("Performance query enabled");
     }
@@ -136,13 +136,13 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     }
 
     VkDeviceCreateInfo createInfo{};
-    createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext                   = physicalDevice->LastRequestedExtensionFeature;
-    createInfo.queueCreateInfoCount    = U32(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos       = queueCreateInfos.data();
-    createInfo.enabledExtensionCount   = U32(enabledExtensions.size());
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext = physicalDevice->LastRequestedExtensionFeature;
+    createInfo.queueCreateInfoCount = U32(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.enabledExtensionCount = U32(enabledExtensions.size());
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
-    createInfo.pEnabledFeatures        = &physicalDevice->RequestedFeatures;
+    createInfo.pEnabledFeatures = &physicalDevice->RequestedFeatures;
 
     Check(physicalDevice->CreateDevice(&createInfo, &handle));
 
@@ -158,27 +158,27 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         }
     }
 
-    vmaVulkanFunc.vkAllocateMemory                    = vkAllocateMemory;
-    vmaVulkanFunc.vkBindBufferMemory                  = vkBindBufferMemory;
-    vmaVulkanFunc.vkBindImageMemory                   = vkBindImageMemory;
-    vmaVulkanFunc.vkCreateBuffer                      = vkCreateBuffer;
-    vmaVulkanFunc.vkCreateImage                       = vkCreateImage;
-    vmaVulkanFunc.vkDestroyBuffer                     = vkDestroyBuffer;
-    vmaVulkanFunc.vkDestroyImage                      = vkDestroyImage;
-    vmaVulkanFunc.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
-    vmaVulkanFunc.vkFreeMemory                        = vkFreeMemory;
-    vmaVulkanFunc.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
-    vmaVulkanFunc.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
+    vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
+    vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
+    vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
+    vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
+    vmaVulkanFunc.vkCreateImage = vkCreateImage;
+    vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
+    vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
+    vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+    vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
+    vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+    vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
     vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-    vmaVulkanFunc.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
-    vmaVulkanFunc.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
-    vmaVulkanFunc.vkMapMemory                         = vkMapMemory;
-    vmaVulkanFunc.vkUnmapMemory                       = vkUnmapMemory;
-    vmaVulkanFunc.vkCmdCopyBuffer                     = vkCmdCopyBuffer;
+    vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+    vmaVulkanFunc.vkMapMemory = vkMapMemory;
+    vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
+    vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
-    allocatorInfo.physicalDevice   = *physicalDevice;
-    allocatorInfo.device           = handle;
-    allocatorInfo.instance         = physicalDevice->Get<Instance&>();
+    allocatorInfo.physicalDevice = *physicalDevice;
+    allocatorInfo.device = handle;
+    allocatorInfo.instance = physicalDevice->Get<Instance&>();
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
@@ -189,15 +189,16 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
     commandPool.reset(new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() });
-    compute.commandPool.reset(new CommandPool{ this, FindQueueByType(Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() });
+
     fencePool.reset(new FencePool{ this });
 
     descriptorPool.reset(new DescriptorPool{ this, Limit::PoolSize });
 
-    for (size_t i = 0; i < SL_ARRAY_LENGTH(compute.commandBuffers); i++)
-    {
-        compute.commandBuffers[i] = compute.commandPool->RequestBuffer(Level::Primary);
-    }
+    graphics = new AsynchronousCommandBuffer{ this, Queue::Type::Graphics };
+
+    compute = new AsynchronousCommandBuffer{ this, Queue::Type::Compute };
+
+    transfer = new AsynchronousCommandBuffer{ this, Queue::Type::Transfer };
 
     EnableGlobal();
 }
@@ -228,15 +229,18 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
         }
     }
 
-    LOG::ERR("Counld not find a matching queue family index");
+    // LOG::ERR("Counld not find a matching queue family index");
     return 0;
 }
 
 Device::~Device()
 {
     Wait();
+
+    graphics.Reset();
+    compute.Reset();
+    transfer.Reset();
     commandPool.reset();
-    compute.commandPool.reset();
     fencePool.reset();
     descriptorPool.reset();
 

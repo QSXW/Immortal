@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "CommandBuffer.h"
+#include "Queue.h"
 
 namespace Immortal
 {
@@ -104,6 +105,45 @@ private:
 
 private:
     VkResult ResetCommandBuffers();
+};
+
+class AsynchronousCommandBuffer
+{
+public:
+    AsynchronousCommandBuffer() = default;
+
+    AsynchronousCommandBuffer(Device *device, Queue::Type type);
+    
+public:
+    /* inline */
+    CommandBuffer *GetCurrentCommandBuffer() const
+    {
+        return commandBuffers[sync];
+    }
+
+    CommandBuffer *Begin()
+    {
+        commandBuffers[sync]->Begin();
+        return commandBuffers[sync];
+    }
+
+    CommandBuffer *End()
+    {
+        commandBuffers[sync]->End();
+        return commandBuffers[sync];
+    }
+
+    void Sync()
+    {
+        SLROTATE(sync, SL_ARRAY_LENGTH(commandBuffers));
+    }
+
+private:
+    std::unique_ptr<CommandPool> commandPool;
+
+    CommandBuffer *commandBuffers[3];
+
+    uint32_t sync = 0;
 };
 
 }

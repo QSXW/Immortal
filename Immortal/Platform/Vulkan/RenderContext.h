@@ -136,26 +136,21 @@ public:
         return present.renderTargets[present.bufferIndex]->GetAddress<Framebuffer>();
     }
 
-    CommandBuffer *GetCommandBuffer()
-    {
-        return present.commandBuffers[present.bufferIndex];
-    }
-
     constexpr size_t FrameSize()
     {
         return Swapchain::MaxFrameCount;
     }
 
     template <class T>
-    void Record(T &&process = [](auto) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
+    void Record(T &&process = [](CommandBuffer *) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
     {
-        process(GetCommandBuffer());
+        device->Submit(process);
     }
 
     template <class T>
-    void Submit(T &&process = [](auto) -> void {})
+    void Submit(T &&process = [](CommandBuffer *) -> void {})
     {
-        process(GetCommandBuffer());
+        device->Submit(process);
     }
 
 private:
@@ -173,8 +168,6 @@ private:
 
     struct
     {
-        std::array<CommandBuffer*, Swapchain::MaxFrameCount> commandBuffers;
-
         std::vector<std::unique_ptr<RenderTarget>> renderTargets;
 
         uint32_t bufferIndex{ 0 };

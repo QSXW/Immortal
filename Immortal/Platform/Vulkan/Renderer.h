@@ -22,6 +22,14 @@ class Renderer : public SuperRenderer
 public:
     using Super = SuperRenderer;
 
+    struct Semaphores
+    {
+        VkSemaphore acquiredImageReady;
+        VkSemaphore renderComplete;
+        VkSemaphore compute;
+        VkSemaphore transfer;
+    };
+
     static inline VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 
 public:

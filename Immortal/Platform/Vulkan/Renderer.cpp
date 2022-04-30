@@ -34,6 +34,7 @@ void Renderer::Setup()
         semaphores[i].acquiredImageReady = semaphorePool.Request();
         semaphores[i].renderComplete     = semaphorePool.Request();
         semaphores[i].compute            = semaphorePool.Request();
+        semaphores[i].transfer           = semaphorePool.Request();
     }
 }
 
@@ -63,7 +64,7 @@ void Renderer::PrepareFrame()
     {
         Check(error);
     }
-    context->GetCommandBuffer()->Begin();
+
     device->BeginComputeThread();
 }
 
@@ -101,44 +102,67 @@ void Renderer::SwapBuffers()
 {
     VkCommandBuffer commandBuffers[1] = { 0 };
 
-    VkPipelineStageFlags computeWaitDstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    {
+        VkPipelineStageFlags waitDstStageFlags[1] = {};
 
-    VkSubmitInfo computeSubmitInfo{};
-    computeSubmitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    computeSubmitInfo.pSignalSemaphores    = &semaphores[sync].compute;
-    computeSubmitInfo.signalSemaphoreCount = 1;
-    computeSubmitInfo.pWaitDstStageMask    = &computeWaitDstStageMask;
+        VkSemaphore signalSemaphores[] = {
+            semaphores[sync].compute,
+            semaphores[sync].transfer,
+        };
 
-    auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
-    device->Compute([&](CommandBuffer *cmdbuf) {
-        cmdbuf->End();
-        commandBuffers[0] = *cmdbuf;
-        computeSubmitInfo.commandBufferCount = 1;
-        computeSubmitInfo.pCommandBuffers = commandBuffers;
-        });
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.commandBufferCount   = 1;
+        submitInfo.pCommandBuffers      = commandBuffers;
 
-    computeQueue.Submit(computeSubmitInfo, nullptr);
-
-    context->GetCommandBuffer()->End();
-
+        device->Compute([&](CommandBuffer *cmdbuf) {
+            cmdbuf->End();
+            waitDstStageFlags[0] = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            submitInfo.pSignalSemaphores = &signalSemaphores[0];
+            submitInfo.pWaitDstStageMask = waitDstStageFlags;
+            commandBuffers[0] = *cmdbuf;
+            });
+      
+        auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
+        computeQueue.Submit(submitInfo, nullptr);
+     
+        device->TransferAsync([&](CommandBuffer *cmdbuf) {
+            cmdbuf->End();
+            waitDstStageFlags[0]         = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            submitInfo.pSignalSemaphores = &signalSemaphores[1];
+            submitInfo.pWaitDstStageMask = waitDstStageFlags;
+            commandBuffers[0] = *cmdbuf;
+            });
+        
+        auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
+        transferQueue.Submit(submitInfo, nullptr);
+    }
+   
     VkSemaphore waitSemaphores[] = {
         semaphores[sync].compute,
+        semaphores[sync].transfer,
         semaphores[sync].acquiredImageReady
     };
 
     static VkPipelineStageFlags graphicsWaitDstStageMask[] = {
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
-    commandBuffers[0] = *context->GetCommandBuffer();
-    submitInfo.waitSemaphoreCount   = SL_ARRAY_LENGTH(waitSemaphores);
-    submitInfo.pWaitSemaphores      = waitSemaphores;
+    context->Submit([&](CommandBuffer *cmdbuf) {
+        cmdbuf->End();
+        commandBuffers[0] = *cmdbuf;
+        });
+
+    submitInfo.waitSemaphoreCount = SL_ARRAY_LENGTH(waitSemaphores);
+    submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
-    submitInfo.pWaitDstStageMask    = graphicsWaitDstStageMask;
-    submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = commandBuffers;
+    submitInfo.pSignalSemaphores = &semaphores[sync].renderComplete;
+    submitInfo.pWaitDstStageMask = graphicsWaitDstStageMask;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = commandBuffers;
 
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();

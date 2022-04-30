@@ -16,13 +16,6 @@ namespace Vulkan
 
 #define VKCPP_OPERATOR_HANDLE() Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{ VK_NULL_HANDLE };
 
-struct Semaphores
-{
-    VkSemaphore acquiredImageReady;
-    VkSemaphore renderComplete;
-    VkSemaphore compute;
-};
-
 using ThreadIndex = UINT32;
 using FrameIndex  = UINT32;
 using Surface     = VkSurfaceKHR;

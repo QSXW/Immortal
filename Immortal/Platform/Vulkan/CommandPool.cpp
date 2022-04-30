@@ -152,5 +152,19 @@ VkResult CommandPool::ResetCommandBuffers()
 
     return VK_ERROR_INITIALIZATION_FAILED;
 }
+
+AsynchronousCommandBuffer::AsynchronousCommandBuffer(Device *device, Queue::Type type)
+{
+    commandPool.reset(new CommandPool{
+        device,
+        device->FindQueueByType(type, 0).Get<Queue::FamilyIndex>()
+        });
+
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(commandBuffers); i++)
+    {
+        commandBuffers[i] = commandPool->RequestBuffer(Level::Primary);
+    }
+}
+
 }
 }

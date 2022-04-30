@@ -20,7 +20,7 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
 
     width     = frame.Width();
     height    = frame.Height();
-    mipLevels = CalculateMipmapLevels(width, height);
+    mipLevels = 1; // CalculateMipmapLevels(width, height);
 
     Description desc = description;
     desc.format = frame.Desc().format;
@@ -31,10 +31,12 @@ Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *da
     device{ device },
     Super{ width, height }
 {
-    if (!data)
+    if (width == 0 || height == 0)
     {
-        mipLevels = 1;
+        return;
     }
+
+    mipLevels = 1;
     Setup(description, width * height * description.format.Size(), data);
 }
 
@@ -85,11 +87,13 @@ void Texture::Update(void *data)
     Buffer stagingBuffer{ device, size, data, Buffer::Type::TransferSource };
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
-    uint32_t offset = 0;
 
     for (int i = 0; i < mipLevels; i++)
     {
         VkBufferImageCopy bufferCopyRegion{};
+        bufferCopyRegion.bufferOffset                    = 0;
+        bufferCopyRegion.bufferRowLength                 = 0;
+        bufferCopyRegion.bufferImageHeight               = 0;
         bufferCopyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
         bufferCopyRegion.imageSubresource.mipLevel       = i;
         bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
@@ -103,7 +107,7 @@ void Texture::Update(void *data)
 
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.baseMipLevel = 0;
+    // subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount   = mipLevels;
     subresourceRange.layerCount   = 1;
 
@@ -116,7 +120,7 @@ void Texture::Update(void *data)
         VK_ACCESS_TRANSFER_WRITE_BIT
     };
 
-    device->Transfer([&](auto copyCmd) -> void {
+    device->TransferAsync([&](CommandBuffer *copyCmd) -> void {
         copyCmd->PipelineBarrier(
             VK_PIPELINE_STAGE_HOST_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT,

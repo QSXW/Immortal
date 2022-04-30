@@ -371,19 +371,43 @@ public:
     }
 
     template <class T>
+    void TransferAsync(T &&process)
+    {
+        CommandBuffer *cmdbuf = transfer->GetCurrentCommandBuffer();
+        if (!cmdbuf->Recoding())
+        {
+            Transfer(process);
+        }
+        else
+        {
+            process(cmdbuf);
+        }
+    }
+
+    template <class T>
     void Compute(T &&process)
     {
-        process(compute.commandBuffers[compute.sync]);
+        process(compute->GetCurrentCommandBuffer());
+    }
+
+    template <class T>
+    void Submit(T &&process)
+    {
+        process(graphics->GetCurrentCommandBuffer());
     }
 
     void BeginComputeThread()
     {
-        compute.commandBuffers[compute.sync]->Begin();
+        graphics->Begin();
+        compute->Begin();
+        transfer->Begin();
     }
 
     void ExecuteComputeThread()
     {
-        compute.sync = (compute.sync + 1) % 3;
+        graphics->Sync();
+        compute->Sync();
+        transfer->Sync();
     }
 
 private:
@@ -405,13 +429,11 @@ private:
 
     std::unique_ptr<DescriptorPool> descriptorPool;
 
-    struct {
-        std::unique_ptr<CommandPool> commandPool;
+    MonoRef<AsynchronousCommandBuffer> compute;
 
-        CommandBuffer *commandBuffers[3];
+    MonoRef<AsynchronousCommandBuffer> transfer;
 
-        uint32_t sync = 0;
-    } compute;
+    MonoRef<AsynchronousCommandBuffer> graphics;
 
     struct {
         std::array<std::queue<std::function<void()>>, 6> queues;

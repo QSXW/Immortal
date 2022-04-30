@@ -136,11 +136,6 @@ void RenderContext::Prepare(size_t threadCount)
     }
     this->threadCount = threadCount;
 
-    for (auto &buf : present.commandBuffers)
-    {
-        buf = device->RequestCommandBuffer(Level::Primary);
-    }
-
     SetupDescriptorSetLayout();
 
     Status = VK_SUCCESS;
@@ -174,6 +169,7 @@ end:
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
 {
+    present.bufferIndex = 0;
     present.renderTargets.clear();
 
     if (transform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
