@@ -203,6 +203,18 @@ public:
                             c.Modified |= DrawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
                         });
                 }
+                if (object.HasComponent<VideoPlayerComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("VideoPlayer"),
+                        [&]() -> void {
+                            auto &v = object.GetComponent<VideoPlayerComponent>();
+                            auto animator = v.GetAnimator();
+
+                            float progress = (float)animator->timestamps.current / animator->frameNumber;
+                            DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
+                        });
+                }
             }
         }
         ImGui::End();

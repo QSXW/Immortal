@@ -106,6 +106,8 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
             ColorSpace::YUV420PToRGBA8(dst, src, desc.width, desc.height, picture.stride[0], picture.stride[1]);
 
             dav1d_picture_unref(&picture);
+
+            animator.timestamps.current = codedFrame.timestamp;
         }      
     } while (dav1dData.sz > 0);
 
