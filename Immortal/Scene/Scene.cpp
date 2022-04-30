@@ -272,7 +272,7 @@ void Scene::OnRender(const Camera &camera)
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.texture.get(), 0);
                 pipelines.colorMixing->Bind(sprite.final.get(), 1);
-                pipelines.colorMixing->Dispatch(width / 16, height / 16, 1);
+                pipelines.colorMixing->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
 
                 color.Initialized = true;
             }
