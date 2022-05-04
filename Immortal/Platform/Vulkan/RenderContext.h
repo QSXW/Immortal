@@ -9,6 +9,7 @@
 #include "RenderPass.h"
 #include "Framebuffer.h"
 #include "CommandBuffer.h"
+#include "GuiLayer.h"
 
 namespace Immortal
 {
@@ -50,7 +51,7 @@ public:
         return !!swapchain;
     }
 
-    virtual GuiLayer *CreateGuiLayer() override;
+    virtual GuiLayer::Super *CreateGuiLayer() override;
 
 public:
     void CreateSurface();

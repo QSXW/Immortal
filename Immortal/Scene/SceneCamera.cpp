@@ -6,7 +6,7 @@ namespace Immortal
 
 SceneCamera::SceneCamera()
 {
-
+    SetProjectionType(ProjectionType::Orthographic);
 }
 
 SceneCamera::~SceneCamera()
@@ -16,7 +16,7 @@ SceneCamera::~SceneCamera()
 
 void SceneCamera::SetPerspective(float verticalFOV, float nearClip, float farClip)
 {
-    type = ProjectionType::Perspective;
+    projectionType = ProjectionType::Perspective;
     perspectiveFOV = Vector::Radians(verticalFOV);
     perspectiveFar = nearClip;
     perspectiveFar = farClip;
@@ -24,7 +24,7 @@ void SceneCamera::SetPerspective(float verticalFOV, float nearClip, float farCli
 
 void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
 {
-    type = ProjectionType::Orthographic;
+    projectionType = ProjectionType::Orthographic;
     orthographicSize = size;
     orthographicNear = nearClip;
     orthographicFar = farClip;
@@ -32,11 +32,11 @@ void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
 
 void SceneCamera::SetViewportSize(float width, float height)
 {
-    if (type == ProjectionType::Perspective)
+    if (projectionType == ProjectionType::Perspective)
     {
         projection = Vector::PerspectiveFOV(perspectiveFOV, width, height, perspectiveNear, perspectiveFar);
     }
-    else if (type == ProjectionType::Orthographic)
+    else if (projectionType == ProjectionType::Orthographic)
     {
         float aspect = width / height;
         float w = orthographicSize * aspect;

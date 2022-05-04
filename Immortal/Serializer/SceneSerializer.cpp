@@ -145,7 +145,25 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
                 LOG::ERR("Material Component Missing");
             }
         }
-
+        if (object.HasComponent<ScriptComponent>())
+        {
+            auto &script = object.GetComponent<ScriptComponent>();
+            auto &scriptObject = objectData["Script"];
+            scriptObject["Source"] = script.path;
+        }
+        if (object.HasComponent<VideoPlayerComponent>())
+        {
+            auto &videoPlayer = object.GetComponent<VideoPlayerComponent>();
+            auto &videoPlayerObject = objectData["VideoPlayer"];
+            videoPlayerObject["Source"] = videoPlayer.GetSource();
+        }
+        if (object.HasComponent<CameraComponent>())
+        {
+            auto &camera = object.GetComponent<CameraComponent>();
+            auto &cameraObject = objectData["Camera"];
+            cameraObject["Primary"] = camera.Primary;
+            cameraObject["ProjectionType"] = camera.Camera.GetType();
+        }
         objects.emplace_back(objectData);
         });
 
@@ -230,6 +248,27 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
                 LoadTexture(ref.Textures.Metallic,  textures["Metalness"]);
                 LoadTexture(ref.Textures.Roughness, textures["Roughness"]);
             }
+        }
+
+        const auto &scriptObject = ns::TryFind(data, "Script");
+        if (!scriptObject.is_null())
+        {
+            auto &script = object.AddComponent<ScriptComponent>(scriptObject["Source"]);
+            script.Init((int)object, scene);
+        }
+
+        const auto &cameraObject = ns::TryFind(data, "Camera");
+        if (!cameraObject.is_null())
+        {
+            auto &camera = object.AddComponent<CameraComponent>();
+            camera.Primary = cameraObject["Primary"];
+            camera.Camera.SetProjectionType(cameraObject["ProjectionType"]);
+        }
+
+        const auto &videoPlayerObject = ns::TryFind(data, "VideoPlayer");
+        if (!videoPlayerObject.is_null())
+        {
+
         }
     }
 

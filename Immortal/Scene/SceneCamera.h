@@ -91,12 +91,12 @@ public:
 
     void SetProjectionType(ProjectionType type)
     {
-        this->type = type;
+        projectionType = type;
     }
 
-    ProjectionType Type() const
+    ProjectionType GetType() const
     { 
-        return type;
+        return projectionType;
     }
 
     void SetTransform(const Matrix4 &transform)
@@ -105,8 +105,6 @@ public:
     }
 
 protected:
-    ProjectionType type = ProjectionType::Perspective;
-
     float perspectiveFOV{ Vector::Radians(90.0f) };
     float perspectiveNear{ 0.1f };
     float perspectiveFar{ 1000.0f };

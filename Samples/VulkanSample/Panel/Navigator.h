@@ -11,6 +11,7 @@ public:
     template <class Callback>
     void OnUpdate(Object &object, Callback callback = [] {})
     {
+        UI::BeginDraw();
         SpriteRendererComponent sprite;
         if (object && object.HasComponent<SpriteRendererComponent>())
         {
@@ -59,7 +60,10 @@ public:
 
             if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
             {
-
+                const auto width = sprite.texture->Width();
+                const auto height = sprite.texture->Height();
+                UI::DrawColumn(WordsMap::Get("Width"),  [&]() -> bool { ImGui::Text("%d", width);  return false ; });
+                UI::DrawColumn(WordsMap::Get("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
             }
             ImGui::Separator();
 

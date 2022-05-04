@@ -14,6 +14,7 @@
 namespace IMMORTAL_API Immortal
 {
 
+class Scene;
 struct Component
 {
     enum class Type
@@ -268,15 +269,40 @@ struct ScriptComponent : public Component
 {
     DEFINE_COMP_TYPE(Script)
 
-    ScriptComponent(const ScriptComponent & other) = default;
-
-    ScriptComponent(const std::string &name) :
-        Name{ name }
+    ScriptComponent() :
+        path{},
+        vtable{},
+        object{}
     {
 
     }
 
-    std::string Name;
+    ScriptComponent(const ScriptComponent &other) = default;
+
+    ScriptComponent(const std::string &path) :
+        vtable{},
+        object{},
+        path{ path }
+    {
+        
+    }
+
+    void Init(int id, Scene *scene);
+
+    void Update(int id, Scene *scene, float deltaTime);
+
+    void OnKeyDown(int id, Scene *scene, int keyCode);
+
+    struct {
+        Anonymous __setId;
+        Anonymous __update;
+        Anonymous __onKeyDown;
+    } vtable;
+
+    Anonymous object;
+
+    std::string path;
+    std::string className;
 };
 
 struct MetaComponent : public Component
@@ -341,63 +367,18 @@ struct VideoPlayerComponent : public Component
 {
     DEFINE_COMP_TYPE(VideoPlayer)
 
-    VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer) :
-        decoder{ decoder },
-        demuxer{ demuxer },
-        fifo{ new std::queue<Vision::Picture>{} },
-        mutex{ new std::mutex{} },
-        state{ new State{} }
-    {
-        struct {
-            Vision::VideoCodec *decoder;
-            Vision::Interface::Demuxer *demuxer;
-            std::queue<Vision::Picture> *fifo;
-            bool *exited;
-            std::mutex *mutex;
-        } tpack {
-            decoder,
-            demuxer,
-            fifo,
-            &state->exited,
-            mutex.get(),
-        };
+    VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer);
 
-        VideoPlayerComponent *that = this;
-        thread = new Thread{ [=]() {
-            do
-            {
-                Vision::CodedFrame codedFrame;
-                while (tpack.fifo->size() < 7 && !tpack.demuxer->Read(&codedFrame))
-                {
-                    if (tpack.decoder->Decode(codedFrame) == CodecError::Succeed)
-                    {
-                        Vision::Picture picture = tpack.decoder->GetPicture();
-
-                        {
-                            std::lock_guard lock{ *tpack.mutex };
-                            tpack.fifo->push(picture);
-                        }
-                    }
-                }
-            } while (!*tpack.exited);
-        } };
-
-        thread->Start();
-    }
-
-    ~VideoPlayerComponent()
-    {
-        if (state)
-        {
-            state->exited = true;
-        }
-        thread.Release();
-    }
+    ~VideoPlayerComponent();
 
     VideoPlayerComponent(VideoPlayerComponent &&other)
     {
         Swap(other);
     }
+    
+    Vision::Picture GetPicture();
+
+    void PopPicture();
 
     VideoPlayerComponent &operator=(VideoPlayerComponent &&other)
     {
@@ -412,25 +393,9 @@ struct VideoPlayerComponent : public Component
         thread.Swap(other.thread);
         decoder.Swap(other.decoder);
         demuxer.Swap(other.demuxer);
+        lastPicture.Swap(other.lastPicture);
         fifo.Swap(other.fifo);
         state.Swap(other.state);
-    }
-
-    Vision::Picture GetPicture()
-    {
-        if (fifo->empty())
-        {
-            return Vision::Picture{};
-        }
-
-        auto ret = fifo->front();
-
-        {
-            std::lock_guard lock{ *mutex };    
-            fifo->pop();
-        }
-
-        return ret;
     }
 
     Animator *GetAnimator() const
@@ -438,12 +403,20 @@ struct VideoPlayerComponent : public Component
         return decoder->GetAddress<Animator>();
     }
 
+    const std::string &GetSource() const
+    {
+        return demuxer->GetSource();
+    }
+
+public:
     MonoRef<Thread> thread;
     std::unique_ptr<std::mutex> mutex;
 
     Ref<Vision::VideoCodec> decoder;
     Ref<Vision::Interface::Demuxer> demuxer;
     MonoRef<std::queue<Vision::Picture>> fifo;
+
+    MonoRef<Vision::Picture> lastPicture;
 
     struct State {
         bool playing = false;

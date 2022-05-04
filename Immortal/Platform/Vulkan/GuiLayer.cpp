@@ -2,12 +2,13 @@
 #include "GuiLayer.h"
 
 #include "Framework/Application.h"
+#include "Render/Render.h"
+#include "RenderContext.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
-#include <Render/Render.h>
-
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -17,8 +18,8 @@ namespace Immortal
 namespace Vulkan
 {
 
-GuiLayer::GuiLayer(RenderContext::Super *context) :
-    context{ dcast<RenderContext *>(context) }
+GuiLayer::GuiLayer(RenderContext *context) :
+    context{ context }
 {
     SLASSERT(context && "Render Context could not be NULL.");
 }

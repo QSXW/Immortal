@@ -25,8 +25,18 @@ struct CodedFrame
     std::vector<uint8_t> buffer;
 };
 
+using TimeStamp = uint64_t;
+
 struct Picture
 {
+    Picture() :
+        desc{},
+        data{},
+        pts{}
+    {
+
+    }
+
     bool Available() const
     {
         return !!data;
@@ -34,6 +44,7 @@ struct Picture
 
     Description desc;
     std::shared_ptr<uint8_t> data;
+    TimeStamp pts;
 };
 
 namespace Interface
@@ -78,6 +89,11 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
+    virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
     virtual CodecError Decode()
     {
         return CodecError::FailedToCallDecoder;
@@ -95,7 +111,7 @@ public:
 
     virtual Picture GetPicture() const
     {
-        return Picture{ desc, nullptr };
+        return Picture{ };
     }
 
     const Description &Desc() const

@@ -22,29 +22,9 @@ public:
         uuid = 0;
     }
 
-    template <class T>
-    static inline bool DrawColumn(const std::string &label, T draw)
-    {
-        bool modified = false;
-
-        ImGui::PushID(uuid++);
-        ImGui::Columns(2);
-        ImGui::Text("%s", label.c_str());
-        ImGui::SetColumnWidth(0, 64);
-        ImGui::NextColumn();
-        ImGui::PushItemWidth(-1);
-
-        modified = draw();
-
-        ImGui::Columns(1);
-        ImGui::PopID();
-
-        return modified;
-    }
-
     static inline bool DrawFloat(const std::string &label, float *values, float speed = 0.001f, float min = -1.0f, float max = 1.0f)
     {
-        return DrawColumn(label, [&]() -> bool {
+        return UI::DrawColumn(label, [&]() -> bool {
             return ImGui::SliderFloat("##C", values, min, max);
             });
     };
@@ -52,7 +32,7 @@ public:
 public:
     void OnUpdate(Object &object)
     {
-        BeginDraw();
+        UI::BeginDraw();
 
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
         ImGui::Begin(WordsMap::Get("Properties"));
@@ -77,14 +57,59 @@ public:
                     });
                 }
 
+                if (object.HasComponent<ScriptComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("Script"),
+                        [&]() -> void {
+                            auto &script = object.GetComponent<ScriptComponent>();
+                            UI::DrawColumn(WordsMap::Get("Source"), [&]() -> bool {
+                                bool modified = false;
+                                if ((modified = ImGui::Button(script.className.c_str(), ImVec2{ script.className.empty() ? 64.0f : 0, 0 })))
+                                {
+                                    auto path = FileDialogs::OpenFile("C Sharp Scripts\0 * .cs\0");
+                                    if (path.has_value())
+                                    {
+                                        script.path = path.value();
+                                        script.Init((int)object, object.GetScene());
+                                    }
+                                }
+                                return modified;
+                                });
+                        });
+                }
+
+                if (object.HasComponent<VideoPlayerComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("VideoPlayer"),
+                        [&]() -> void {
+                            auto &v = object.GetComponent<VideoPlayerComponent>();
+                            auto animator = v.GetAnimator();
+
+                            float progress = (float)animator->timestamps.current / animator->frameNumber;
+                            UI::DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
+                        });
+                }
+
+                if (object.HasComponent<CameraComponent>())
+                {
+                    DrawComponent(
+                        WordsMap::Get("Camera"),
+                        [&]() -> void {
+                            auto &camera = object.GetComponent<CameraComponent>();
+                            UI::DrawColumn(WordsMap::Get("Is Primary"), [&]() -> bool { return ImGui::Checkbox("##C", &camera.Primary); });
+                        });
+                }
+
                 if (object.HasComponent<LightComponent>())
                 {
                     DrawComponent(
                         WordsMap::Get("Light"),
                         [&]() -> void {
                             auto &light = object.GetComponent<LightComponent>();
-                            DrawColumn(WordsMap::Get("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
-                            DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&light.Radiance); });
+                            UI::DrawColumn(WordsMap::Get("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
+                            UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *)&light.Radiance); });
                         });
                 }
 
@@ -102,7 +127,7 @@ public:
                                 auto &ref = material.Ref[node.MaterialIndex];
                                 ImGui::Text("%s", node.Name.c_str());
 
-                                DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
+                                UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
 
                                 float smoothness = 1.0f - ref.Roughness;
                                 DrawFloat(WordsMap::Get("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
@@ -201,18 +226,6 @@ public:
                             c.Modified |= DrawFloat(WordsMap::Get("Hightlights"    ).c_str(), &c.Hightlights    );
                             c.Modified |= DrawFloat(WordsMap::Get("Shadow"         ).c_str(), &c.Shadow         );
                             c.Modified |= DrawFloat(WordsMap::Get("Vividness"      ).c_str(), &c.Vividness      );
-                        });
-                }
-                if (object.HasComponent<VideoPlayerComponent>())
-                {
-                    DrawComponent(
-                        WordsMap::Get("VideoPlayer"),
-                        [&]() -> void {
-                            auto &v = object.GetComponent<VideoPlayerComponent>();
-                            auto animator = v.GetAnimator();
-
-                            float progress = (float)animator->timestamps.current / animator->frameNumber;
-                            DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
                         });
                 }
             }

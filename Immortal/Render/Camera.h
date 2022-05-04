@@ -17,7 +17,11 @@ public:
     };
 
 public:
-    Camera() = default;
+    Camera(ProjectionType type = ProjectionType::Perspective) :
+        projectionType{ type }
+    {
+
+    }
 
     Camera(const Matrix4 &prj) :
         projection{ prj }
@@ -72,7 +76,14 @@ public:
         return true;
     }
 
+    bool IsOrthographic() const
+    {
+        return projectionType == ProjectionType::Orthographic;
+    }
+
 protected:
+    ProjectionType projectionType = ProjectionType::Perspective;
+
     Matrix4 view{ 1.0f };
 
     Matrix4 projection{ 1.0f };

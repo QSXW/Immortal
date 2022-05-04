@@ -90,6 +90,12 @@ void Scene::Init()
     registry.create();
 }
 
+Scene::Scene(const std::string &name) :
+    name{ name }
+{
+    Init();
+}
+
 Scene::Scene(const std::string &name, bool isEditorScene) :
     name{ name }
 {
@@ -178,17 +184,12 @@ void Scene::OnRenderRuntime()
 {
     // Update Script
     {
-        registry.view<NativeScriptComponent>().each([=](auto o, NativeScriptComponent &script)
-            {
-                if (script.Status == NativeScriptComponent::Status::Ready)
-                {
-                    script.OnRuntime();
-                }
+        registry.view<ScriptComponent>().each([=](auto object, ScriptComponent &script) {
+                script.Update((int)object, this, Application::DeltaTime());
             });
     }
 
-    SceneCamera *primaryCamera = nullptr;
-    Matrix4 cameraTransform;
+    SceneCamera *sceneCamera = nullptr;
     {
         auto view = registry.view<TransformComponent, CameraComponent>();
         for (auto &o : view)
@@ -196,25 +197,25 @@ void Scene::OnRenderRuntime()
             auto [transform, camera] = view.get<TransformComponent, CameraComponent>(o);
             if (camera.Primary)
             {
-                primaryCamera = &camera.Camera;
-                cameraTransform = transform;
+                sceneCamera = &camera.Camera;
+                sceneCamera->SetTransform(transform);
                 break;
             }
         }
     }
 
     // Only render when we have a primary Camera
-    if (!primaryCamera)
+    if (!sceneCamera)
     {
         primaryCamera = dynamic_cast<SceneCamera*>(&observerCamera);
-        primaryCamera->SetViewportSize(viewportSize);
         observerCamera.OnUpdate(Application::DeltaTime());
     }
     else
     {
-        primaryCamera->SetTransform(cameraTransform);
+        primaryCamera = sceneCamera;
     }
 
+    primaryCamera->SetViewportSize(viewportSize);
     OnRender(*primaryCamera);
 }
 
@@ -245,6 +246,7 @@ void Scene::OnRender(const Camera &camera)
             auto picture = videoPlayer.GetPicture();
             if (picture.Available())
             {
+                videoPlayer.PopPicture();
                 sprite.texture->Update(picture.data.get());
                 color.Modified = true;
             }
@@ -432,6 +434,13 @@ void Scene::Serialize(const std::string &path)
 bool Scene::Deserialize(const std::string & path)
 {
     return SceneSerializer{}.Deserialize(this, path);
+}
+
+void Scene::OnKeyPressed(KeyPressedEvent & e)
+{
+    registry.view<ScriptComponent>().each([=](auto object, ScriptComponent &script) {
+        script.OnKeyDown((int)object, this, (int)e.GetKeyCode());
+        });
 }
 
 void Scene::Select(Object *object)

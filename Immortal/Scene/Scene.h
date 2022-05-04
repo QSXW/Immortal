@@ -50,7 +50,9 @@ public:
     };
 
 public:
-    Scene(const std::string &name="Untitled", bool isEditorScene = false);
+    Scene(const std::string &name = "Untitle");
+
+    Scene(const std::string &name, bool isEditorScene = false);
 
     ~Scene();
 
@@ -82,6 +84,8 @@ public:
 
     bool Deserialize(const std::string &path);
 
+    void OnKeyPressed(KeyPressedEvent &e);
+
     auto &Registry()
     {
         return registry;
@@ -95,6 +99,11 @@ public:
     const ObserverCamera &GetObserver() const
     { 
         return observerCamera;
+    }
+
+    const Camera *GetCamera() const
+    {
+        return primaryCamera;
     }
 
     std::shared_ptr<RenderTarget> Target() const
@@ -149,6 +158,8 @@ private:
     Object *selectedObject{ nullptr };
 
 private:
+    SceneCamera *primaryCamera = nullptr;
+
     ObserverCamera observerCamera;
 };
 

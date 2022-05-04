@@ -54,6 +54,8 @@
 
 #include "Editor/EditorCamera.h"
 
+#include "Script/ScriptEngine.h"
+
 #include "Scene/Object.h"
 #include "Scene/Scene.h"
 #include "Scene/Component.h"

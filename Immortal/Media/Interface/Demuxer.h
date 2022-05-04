@@ -6,6 +6,8 @@
 #include "Media/Common/Error.h"
 #include "Media/Common/Animator.h"
 
+#include <string>
+
 namespace Immortal
 {
 namespace Vision
@@ -25,6 +27,8 @@ public:
     {
         return CodecError::FailedToCallDecoder;
     }
+
+    virtual const std::string &GetSource() const = 0;
 };
 
 }

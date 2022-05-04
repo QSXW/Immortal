@@ -115,7 +115,7 @@ VkPipelineShaderStageCreateInfo Shader::CreateStage(VkShaderModule module, VkSha
 
 VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 {
-    constexpr const char *tmpPath = "tmp/";
+    constexpr const char *tmpPath = "SpirvCache/";
 
     GLSLCompiler compiler{};
 

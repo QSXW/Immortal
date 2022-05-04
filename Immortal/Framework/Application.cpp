@@ -5,6 +5,7 @@
 #include "Async.h"
 #include "Render/Render.h"
 #include "Render/RenderContext.h"
+#include "Script/ScriptEngine.h"
 
 namespace Immortal
 {
@@ -32,6 +33,8 @@ Application::Application(const Window::Description &description) :
         desc.Width,
         desc.Height
         });
+
+    scriptEngine = new ScriptEngine{ description.Title, "Script.dll" };
 
     Async::Execute([&](){
         gui = context->CreateGuiLayer();

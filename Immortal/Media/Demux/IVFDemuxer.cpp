@@ -119,6 +119,11 @@ CodecError IVFDemuxer::Read(CodedFrame *codedFrame)
     return CodecError::Succeed;
 }
 
+const std::string & IVFDemuxer::GetSource() const
+{
+    return stream.GetFilePath();
+}
+
 IVFDemuxer::Header IVFDemuxer::ReadHeader()
 {
     Header header{};

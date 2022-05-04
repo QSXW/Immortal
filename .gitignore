@@ -3,6 +3,7 @@
 /3rdparty/Assimp*
 /3rdparty/dav1d*
 /3rdparty/libmfx*
+/3rdparty/mono*
 
 Config.h
 

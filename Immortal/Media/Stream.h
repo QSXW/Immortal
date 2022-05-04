@@ -33,6 +33,7 @@ public:
     }
 
     Stream(const std::string &filepath, Mode mode) :
+        filepath{ filepath },
         mode{ mode }
     {
         Open(filepath);
@@ -47,8 +48,9 @@ public:
         fclose(fp);
     }
 
-    bool Open(const std::string &filepath)
+    bool Open(const std::string &path)
     {
+        filepath = path;
         fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
         if (!fp)
         {
@@ -130,6 +132,11 @@ public:
         return fclose(fp);
     }
 
+    const std::string &GetFilePath() const
+    {
+        return filepath;
+    }
+
 public:
     static inline size_t GetFileSize(FILE *fp)
     {
@@ -140,6 +147,8 @@ public:
     }
 
 private:
+    std::string filepath;
+
     Mode mode{ 0 };
 
     FILE *fp{ nullptr };

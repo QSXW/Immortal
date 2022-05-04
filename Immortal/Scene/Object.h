@@ -42,6 +42,11 @@ public:
 
     }
 
+    Scene *GetScene() const
+    {
+        return scene;
+    }
+
     template <class T>
     void RemoveComponent()
     {

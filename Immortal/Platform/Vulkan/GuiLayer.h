@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImGui/GuiLayer.h"
-#include "RenderContext.h"
 #include "Common.h"
 #include "DescriptorPool.h"
 
@@ -10,13 +9,14 @@ namespace Immortal
 namespace Vulkan
 {
 
+class RenderContext;
 class GuiLayer : virtual public SuperGuiLayer
 {
 public:
     using Super = SuperGuiLayer;
 
 public:
-    GuiLayer(RenderContext::Super *context);
+    GuiLayer(RenderContext *context);
 
     ~GuiLayer();
 

@@ -26,6 +26,8 @@ public:
 
     virtual CodecError Read(CodedFrame *codedFrame);
 
+    virtual const std::string &GetSource() const override;
+
 private:
     Header ReadHeader();
 

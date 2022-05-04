@@ -13,11 +13,16 @@ public:
     using Super = Camera;
 
 public:
-    OrthographicCamera() = default;
+    OrthographicCamera() :
+        Super{ ProjectionType::Orthographic }
+    {
+        
+    }
 
     OrthographicCamera(float left, float right, float bottom, float top) :
         Camera{ Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f) }
     {
+        projectionType = ProjectionType::Orthographic;
         viewProjection = projection * view;
     }
 

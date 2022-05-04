@@ -198,9 +198,9 @@ public:
     }
 
     MonoRef(MonoRef &&other) :
-        _obj{ other._obj }
+        _obj{ nullptr }
     {
-        other.Release();
+        other.Swap(*this);
     }
 
     ~MonoRef()

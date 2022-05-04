@@ -14,6 +14,8 @@ set(CORE_FILES
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
+    Framework/DLLLoader.cpp
+    Framework/DLLLoader.h
     Framework/Input.cpp
     Framework/Input.h
     Framework/KeyCodes.h
@@ -262,8 +264,8 @@ set(SCENE_FILES
     Scene/SceneCamera.h)
 
 set(SCRIPT_FILES
-    Script/ScriptDriver.cpp
-    Script/ScriptDriver.h)
+    Script/ScriptEngine.cpp
+    Script/ScriptEngine.h)
 
 set(SERIALIZER_FILES
     Serializer/SceneSerializer.cpp

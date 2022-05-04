@@ -1,9 +1,8 @@
 #include "VulkanSample.h"
 
-int main()
+int main(int argc, char **argv)
 {
     LOG::Init();
-
     {
         Render::Set(Render::Type::Vulkan);
         std::unique_ptr<Application> app{ new VulkanSample() };

@@ -10,7 +10,7 @@ namespace Immortal::UI
 
 struct Context
 {
-    int ID = 0;
+    int Id = 0;
     uint32_t Counter = 0;
 };
 
@@ -18,14 +18,13 @@ static inline Context context;
 
 static inline void PushID()
 {
-    ImGui::PushID(context.ID++);
-    context.Counter = 0;
+    ImGui::PushID(context.Id++);
+    context.Counter++;
 }
 
 static inline void PopID()
 {
     ImGui::PopID();
-    context.ID--;
 }
 
 static inline void BeginPropertyGrid()
@@ -38,6 +37,32 @@ static inline void EndPropertyGrid()
 {
     ImGui::Columns(1);
     PopID();
+}
+
+static inline void BeginDraw()
+{
+    context.Id = 0;
+    context.Counter = 0;
+}
+
+template <class T>
+static inline bool DrawColumn(const std::string &label, T draw, int columnWidth = 64)
+{
+    bool modified = false;
+
+    PushID();
+    ImGui::Columns(2);
+    ImGui::Text("%s", label.c_str());
+    ImGui::SetColumnWidth(0, columnWidth);
+    ImGui::NextColumn();
+    ImGui::PushItemWidth(-1);
+
+    modified = draw();
+
+    ImGui::Columns(1);
+    PopID();
+
+    return modified;
 }
 
 static bool DrawVec3Control(const std::string &label, Vector3 &values, float speed = 0.01f, float resetValue = 0.0f, float columnWidth = 64.0f)

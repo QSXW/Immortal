@@ -17,9 +17,10 @@ namespace Immortal
 		};
 
 	public:
-		ObserverCamera() : SceneCamera()
+		ObserverCamera() :
+			SceneCamera{}
 		{
-
+			projectionType = ProjectionType::Perspective;
 		}
 		void OnUpdate(float deltaTime);
 

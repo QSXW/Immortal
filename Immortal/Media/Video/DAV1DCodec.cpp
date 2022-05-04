@@ -56,7 +56,7 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
 {
     int res = 0;
     Dav1dData dav1dData{};
-    Dav1dPicture picture{};
+    Dav1dPicture dav1dPicture{};
 
     auto ptr = dav1d_data_create(&dav1dData, codedFrame.buffer.size());
 
@@ -75,8 +75,8 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
             }
         }
 
-        memset(&picture, 0, sizeof(Dav1dPicture));
-        if ((res = dav1d_get_picture(handle, &picture)) < 0)
+        memset(&dav1dPicture, 0, sizeof(Dav1dPicture));
+        if ((res = dav1d_get_picture(handle, &dav1dPicture)) < 0)
         {
             if (res != DAV1D_ERR(EAGAIN))
             {
@@ -90,23 +90,25 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
         else
         {
             desc.format = Format::RGBA8;
-            desc.width  = picture.p.w;
-            desc.height = picture.p.h;
+            desc.width  = dav1dPicture.p.w;
+            desc.height = dav1dPicture.p.h;
 
-            data.reset(new uint8_t[desc.Size()]);
+            picture.desc = desc;
+            picture.data.reset(new uint8_t[desc.Size()]);
 
             ColorSpace::Vector<uint8_t> dst{};
-            dst.x = data.get();
+            dst.x = picture.data.get();
 
             ColorSpace::Vector<uint8_t> src{};
-            src.x = (uint8_t *)picture.data[0];
-            src.y = (uint8_t *)picture.data[1];
-            src.z = (uint8_t *)picture.data[2];
+            src.x = (uint8_t *)dav1dPicture.data[0];
+            src.y = (uint8_t *)dav1dPicture.data[1];
+            src.z = (uint8_t *)dav1dPicture.data[2];
 
-            ColorSpace::YUV420PToRGBA8(dst, src, desc.width, desc.height, picture.stride[0], picture.stride[1]);
+            ColorSpace::YUV420PToRGBA8(dst, src, desc.width, desc.height, dav1dPicture.stride[0], dav1dPicture.stride[1]);
 
-            dav1d_picture_unref(&picture);
+            dav1d_picture_unref(&dav1dPicture);
 
+            picture.pts = codedFrame.timestamp;
             animator.timestamps.current = codedFrame.timestamp;
         }      
     } while (dav1dData.sz > 0);
@@ -117,12 +119,12 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
 
 uint8_t * DAV1DCodec::Data() const
 {
-    return data.get();
+    return picture.data.get();
 }
 
 Picture DAV1DCodec::GetPicture() const
 {
-    return Picture{ desc, data };
+    return picture;
 }
 
 }

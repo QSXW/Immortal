@@ -8,6 +8,7 @@ set(HAVE_ASSIMP ${LIB_NOT_FOUND})
 set(HAVE_OPENCV ${LIB_NOT_FOUND})
 set(HAVE_DAV1D  ${LIB_NOT_FOUND})
 set(HAVE_MFX    ${LIB_NOT_FOUND})
+set(HAVE_MONO   ${LIB_NOT_FOUND})
 
 include(CheckIncludeFileCXX)
 
@@ -216,6 +217,24 @@ if (MFX_FOUND)
     target_link_libraries("intel_mfx" INTERFACE libmfx)
 endif()
 
+# Mono
+set(MONO_LIB "mono-2.0-sgen")
+set(MONO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Mono")
+set(MONO_LIBRARY_DIR "${MONO_DIR}/lib")
+set(MONO_BINARY_DIR  "${MONO_DIR}/bin")
+set(MONO_INCLUDE_DIR "${MONO_DIR}/include/mono-2.0")
+find_path(MONO_FOUND "Mono" ${MONO_DIR})
+if (MONO_FOUND)
+    set(HAVE_MONO ${LIB_FOUND})
+    add_library("mono" INTERFACE)
+    target_include_directories("mono" INTERFACE ${MONO_INCLUDE_DIR})
+    target_link_directories("mono" INTERFACE ${MONO_LIBRARY_DIR})
+    target_link_libraries("mono" INTERFACE ${MONO_LIB})
+    if (WIN32)
+        set(MONO_SHARED "${MONO_BINARY_DIR}/${MONO_LIB}.dll")
+    endif()
+endif()
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
@@ -225,6 +244,7 @@ target_link_libraries("external" INTERFACE
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
+    $<$<BOOL:${MONO_FOUND}>:mono>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>)
 
 configure_file(Config.h.in ${CMAKE_SOURCE_DIR}/Immortal/Config.h)

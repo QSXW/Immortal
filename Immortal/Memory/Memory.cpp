@@ -57,7 +57,7 @@ void MemoryAllocator::Release()
         return;
     }
     printf("Total Size Allocated: %zd\n", allocatedSize);
-    int leakSize = 0;
+    size_t leakSize = 0;
 
     for (auto &alloc : *allocation)
     {
@@ -65,7 +65,7 @@ void MemoryAllocator::Release()
         auto &allocateInfo = std::get<1>(alloc);
         leakSize += allocateInfo.size;
     }
-    printf("Total Size Leaked: %d\n", leakSize);
+    printf("Total Size Leaked: %d\n", (int)leakSize);
 
     allocation = nullptr;
 }

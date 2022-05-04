@@ -2,6 +2,8 @@
 
 #include "Render/Frame.h"
 #include "GuiLayer.h"
+#include "Device.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {

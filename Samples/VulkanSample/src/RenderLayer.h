@@ -48,16 +48,6 @@ public:
         scene->Select(&selectedObject);
         if (panels.tools.IsControlActive(Tools::Start))
         {
-            if (selectedObject && selectedObject.HasComponent<ColorMixingComponent>())
-            {
-                auto &c = selectedObject.GetComponent<ColorMixingComponent>();
-                c.HSL.r += 3.0f * Application::DeltaTime();
-                if (c.HSL.r > 1.0f)
-                {
-                    c.HSL.r = -1.0f;
-                }
-                c.Modified = true;
-            }
             scene->OnRenderRuntime();
         }
         else
@@ -79,16 +69,25 @@ public:
                 auto [x, y] = ImGui::GetWindowPos();
                 auto [w, h] = ImGui::GetWindowSize();
 
-                ImGuizmo::SetOrthographic(camera.primary == &camera.orthographic);
+                const Camera *primaryCamera = nullptr;
+                if (panels.tools.IsControlActive(Tools::Start))
+                {
+                    primaryCamera = scene->GetCamera();
+                }
+                else
+                {
+                    primaryCamera = camera.primary;
+                }
+                ImGuizmo::SetOrthographic(primaryCamera->IsOrthographic());
                 ImGuizmo::SetDrawlist();
                 ImGuizmo::SetRect(x, y, w, h);
-
-                Matrix4 cameraProjectionMatrix = camera.primary->Projection();
-                Matrix4 cameraViewMatrix = camera.primary->View();
 
                 TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
                 Matrix4 munipulatedTransform = transform.Transform();
 
+                Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
+                Matrix4 cameraViewMatrix = primaryCamera->View();
+                 
                 bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
                 float snapValues[][3] = {
                     {  0.5f,  0.5f,  0.5f },
@@ -216,7 +215,9 @@ public:
     void UpdateRightClickMenu()
     {
         static ImVec2 pos;
-        if (editableArea.IsHovered() && !ImGuizmo::IsOver() && Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt))
+        if (editableArea.IsHovered() && !ImGuizmo::IsOver() &&
+            Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt)
+            && !panels.tools.IsControlActive(Tools::Start))
         {
             pos = ImGui::GetMousePos();
             ImGui::OpenPopup("Right Click Menu");
@@ -250,10 +251,24 @@ public:
             }
             ImGui::Separator();
 
-            if (ImGui::MenuItem(WordsMap::Get("Create").c_str()))
+            if (ImGui::BeginMenu(WordsMap::Get("Create Object").c_str()))
             {
-                Object object = scene->CreateObject("Light");
-                object.AddComponent<LightComponent>();
+                if (ImGui::MenuItem(WordsMap::Get("Empty")))
+                {
+                    Object object = scene->CreateObject("Empty");
+                }
+                if (ImGui::MenuItem(WordsMap::Get("Camera")))
+                {
+                    Object object = scene->CreateObject("Camera");
+                    object.AddComponent<CameraComponent>();
+                }
+                if (ImGui::MenuItem(WordsMap::Get("Light")))
+                {
+                    Object object = scene->CreateObject("Light");
+                    object.AddComponent<LightComponent>();
+                }
+
+                ImGui::EndMenu();
             }
 
             if (ImGui::MenuItem(WordsMap::Get("Copy").c_str()))
@@ -397,20 +412,18 @@ public:
                 demuxer->Open(res.value(), decoder);
                 Vision::CodedFrame codedFrame;
 
-                while (!demuxer->Read(&codedFrame))
+                auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
+
+                Vision::Picture picture{};
+                do 
                 {
-                    if ((decoder->Decode(codedFrame) == CodecError::Succeed))
-                    {
-                        break;
-                    }
-                }
+                    picture = videoPlayer.GetPicture();
+                } while (!picture.Available());
+                videoPlayer.PopPicture();
 
-                auto &videoDesc = decoder->Desc();
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
-                sprite.texture.reset(Render::Create<Texture>(videoDesc.width, videoDesc.height, decoder->Data(), desc));
+                sprite.texture.reset(Render::Create<Texture>(picture.desc.width, picture.desc.height, picture.data.get(), desc));
                 sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, desc));
-
-                object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
 
                 object.AddComponent<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
@@ -424,7 +437,6 @@ public:
                 sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, desc));
 
                 object.Add<ColorMixingComponent>();
-
                 auto &transform = object.Get<TransformComponent>();
                 transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
             }
@@ -449,7 +461,8 @@ public:
         auto path = FileDialogs::OpenFile(FileFilter::Scene);
         if (path.has_value())
         {
-            scene.Reset(new Scene{});
+            scene.Reset(new Scene{ FileSystem::ExtractFileName(path.value()), true });
+            scene->SetViewportSize(viewportSize);
             scene->Deserialize(path.value());
         }
     }
@@ -468,6 +481,12 @@ public:
 
     bool OnKeyPressed(KeyPressedEvent &e)
     {
+        if (panels.tools.IsControlActive(Tools::Start))
+        {
+            scene->OnKeyPressed(e);
+            return false;
+        }
+
         if (e.RepeatCount() > 0)
         {
             return false;
@@ -552,6 +571,7 @@ public:
         default:
             return false;
         }
+
         return true;
     }
 
@@ -633,7 +653,7 @@ private:
 
     EventSink<RenderLayer> eventSink;
 
-    Ref<Scene> scene{ new Scene{} };
+    Ref<Scene> scene{ new Scene{ "RenderLayer", true }};
 
     Object triangle;
 

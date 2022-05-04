@@ -12,6 +12,7 @@
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -23,6 +24,7 @@ struct Configuration
     float FontSize{ 12.0f };
 };
 
+class ScriptEngine;
 class IMMORTAL_API Application
 {
 public:
@@ -102,6 +104,8 @@ private:
     std::unique_ptr<Window> window;
 
     std::unique_ptr<RenderContext> context;
+
+    Ref<ScriptEngine> scriptEngine;
 
     struct
     {

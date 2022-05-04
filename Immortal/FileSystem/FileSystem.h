@@ -46,7 +46,8 @@ enum class FileFormat : uint64_t
     JFIF  = MakeIdentifier('J', 'F', 'I', 'F'     ),
     JPG   = MakeIdentifier('J', 'P', 'G'          ),
     JPEG  = MakeIdentifier('J', 'P', 'E', 'G'     ),
-    IVF   = MakeIdentifier('I', 'V', 'F'          )
+    IVF   = MakeIdentifier('I', 'V', 'F'          ),
+    IML   = MakeIdentifier('I', 'M', 'L'          ),
 };
 
 namespace FileSystem
@@ -147,7 +148,7 @@ static std::string ExtractFileName(const std::string &path)
 
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
         
-    return path.substr(lastSlash, std::max(lastDot, path.size()) - lastSlash);
+    return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
 }
 
 static void MakeDirectory(const std::string &path)

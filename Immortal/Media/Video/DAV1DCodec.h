@@ -31,7 +31,7 @@ private:
 protected:
     Dav1dContext *handle;
 
-    std::shared_ptr<uint8_t> data;
+    Picture picture;
 
     const char *version;
 #endif
