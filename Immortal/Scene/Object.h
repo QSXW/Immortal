@@ -73,7 +73,7 @@ public:
     template <class T>
     bool HasComponent() const
     {
-        return scene->Registry().has<T>(handle);
+        return scene->Registry().any_of<T>(handle);
     }
 
     template <class T>

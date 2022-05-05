@@ -128,8 +128,6 @@ struct MeshComponent : public Component
 
     MeshComponent &operator=(const MeshComponent &other)
     {
-        ThrowIf(&other == this, SError::SelfAssignment)
-
         Mesh = other.Mesh;
         return *this;
     }
@@ -388,14 +386,17 @@ struct VideoPlayerComponent : public Component
 
     void Swap(VideoPlayerComponent &other)
     {
-        std::lock_guard lock{ *other.mutex };
-        mutex.swap(other.mutex);
-        thread.Swap(other.thread);
-        decoder.Swap(other.decoder);
-        demuxer.Swap(other.demuxer);
-        lastPicture.Swap(other.lastPicture);
-        fifo.Swap(other.fifo);
-        state.Swap(other.state);
+        if (other.mutex)
+        {
+            std::lock_guard lock{ *other.mutex };
+            mutex.swap(other.mutex);
+            thread.Swap(other.thread);
+            decoder.Swap(other.decoder);
+            demuxer.Swap(other.demuxer);
+            lastPicture.Swap(other.lastPicture);
+            fifo.Swap(other.fifo);
+            state.Swap(other.state);
+        }
     }
 
     Animator *GetAnimator() const

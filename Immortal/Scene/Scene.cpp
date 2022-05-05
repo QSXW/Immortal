@@ -87,7 +87,7 @@ void Scene::RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::ent
 
 void Scene::Init()
 {
-    registry.create();
+    auto self = registry.create();
 }
 
 Scene::Scene(const std::string &name) :
