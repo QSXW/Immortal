@@ -104,9 +104,9 @@ public:
 public:
     GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader);
 
-    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
-    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
     virtual void Set(std::shared_ptr<Buffer::Super> buffer) override;
 

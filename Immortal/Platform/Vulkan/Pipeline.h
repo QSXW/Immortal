@@ -10,7 +10,6 @@
 #include "PipelineLayout.h"
 #include "Descriptor.h"
 #include "DescriptorPool.h"
-#include "Texture.h"
 #include "Barrier.h"
 
 #include <queue>
@@ -47,7 +46,7 @@ public:
 
     virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0) override;
 
-    virtual void Bind(Texture::Super *texture, uint32_t slot = 0) override;
+    virtual void Bind(SuperTexture *texture, uint32_t slot = 0) override;
 
     virtual void Bind(Buffer::Super *buffer, uint32_t slot = 0) override;
 
@@ -128,9 +127,9 @@ public:
 
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
-    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget, Option option = Option{}) override;
+    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
 
     virtual void CopyState(Super &other) override;
 
@@ -180,13 +179,11 @@ public:
 
     virtual ~ComputePipeline();
 
-    virtual void Bind(Texture::Super *superTexture, uint32_t slot) override;
+    virtual void Bind(SuperTexture *texture, uint32_t slot) override;
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
     virtual void PushConstant(uint32_t size, const void *data, uint32_t offset) override;
-
-    virtual void ResetResource() override;
 
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 

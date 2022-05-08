@@ -373,6 +373,7 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         return;
     }
 
+    auto &desc = picture.desc;
     bitDepth    = data[0];
     desc.height = Word{ &data[1] };
     desc.width  = Word{ &data[3] };
@@ -438,7 +439,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
 {
     size_t size = 0;
 
-    auto planes = desc.format.ComponentCount();
+    auto planes = picture.desc.format.ComponentCount();
     std::array<uint32_t, 4> offsets{ 0 };
     for (size_t i = 0; i < planes; i++)
     {
@@ -555,6 +556,7 @@ int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
 
 void JpegCodec::ConvertColorSpace()
 {
+    auto &desc = picture.desc;
     auto spatial = desc.Spatial();
     ColorSpace::Vector<uint8_t> yuv;
     data.x = allocator.allocate(spatial * Format{ Format::RGBA8 }.ComponentCount());

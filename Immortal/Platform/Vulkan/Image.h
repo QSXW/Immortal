@@ -91,6 +91,11 @@ public:
         return subresource;
     }
 
+    const VkImageCreateInfo &Info() const
+    {
+        return info;
+    }
+
     std::unordered_set<ImageView *> &Views()
     {
         return views;

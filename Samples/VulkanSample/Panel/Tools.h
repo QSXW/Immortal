@@ -31,12 +31,18 @@ public:
     static inline float xOffset = 0.0;
     static inline float yOffset = 0.0f;
 
+    static inline Texture::Description textureDesc = {
+        Format::None,
+        Wrap::Wrap,
+        Filter::Nearest
+    };
+
 public:
     Tools() :
-        texture{ Render::Create<Texture>("Assets/Icon/Tools3000x200.png") }
+        texture{ Render::Create<Texture>("Assets/Icon/Tools300x60.png", textureDesc)}
     {
-        xOffset = 300.0f / texture->Width();
-        yOffset = 200.0f / texture->Height();
+        xOffset = 30.0f / texture->Width();
+        yOffset = 20.0f / texture->Height();
     }
 
     void OnUpdate(Object &object)

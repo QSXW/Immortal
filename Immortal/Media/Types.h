@@ -18,6 +18,14 @@ public:
 
     }
 
+    Description(uint32_t width, uint32_t height, Format format) :
+        width{ width },
+        height{ height },
+        format{ format }
+    {
+
+    }
+
     size_t Spatial() const
     {
         return width * height;
@@ -28,8 +36,8 @@ public:
         return Spatial() * format.ComponentCount();
     }
 
-    int32_t width;
-    int32_t height;
+    uint32_t width;
+    uint32_t height;
     Format  format;
 };
 

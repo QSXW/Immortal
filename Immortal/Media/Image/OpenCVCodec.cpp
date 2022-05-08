@@ -13,6 +13,9 @@ OpenCVCodec::~OpenCVCodec()
 
 CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 {
+    cv::Mat mat;
+
+    auto &desc = picture.desc;
     const auto &buf = codedFrame.buffer;
     cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
@@ -45,22 +48,21 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
         desc.format = Format::RGBA32F;
     }
 
-    return CodecError::Succeed;
-}
+    picture.data.reset(mat.data);
+    mat.data = nullptr;
 
-uint8_t *OpenCVCodec::Data() const
-{
-    return mat.data;
+    return CodecError::Succeed;
 }
 
 void OpenCVCodec::Swap(void *ptr)
 {
-    ptr = new uint8_t[desc.Size()];
+    size_t size = picture.desc.Size();
+    ptr = new uint8_t[size];
     if (!ptr)
     {
         return;
     }
-    memcpy(ptr, mat.data, desc.Size());
+    memcpy(ptr, picture.data.get(), size);
 }
 #endif
 

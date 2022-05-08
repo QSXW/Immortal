@@ -89,22 +89,17 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
         }
         else
         {
-            desc.format = Format::RGBA8;
-            desc.width  = dav1dPicture.p.w;
-            desc.height = dav1dPicture.p.h;
-
-            picture.desc = desc;
-            picture.data.reset(new uint8_t[desc.Size()]);
+            picture = Picture{ dav1dPicture.p.w, dav1dPicture.p.h, Format::RGBA8 };
 
             ColorSpace::Vector<uint8_t> dst{};
-            dst.x = picture.data.get();
+            dst.x = picture.Data();
 
             ColorSpace::Vector<uint8_t> src{};
             src.x = (uint8_t *)dav1dPicture.data[0];
             src.y = (uint8_t *)dav1dPicture.data[1];
             src.z = (uint8_t *)dav1dPicture.data[2];
 
-            ColorSpace::YUV420PToRGBA8(dst, src, desc.width, desc.height, dav1dPicture.stride[0], dav1dPicture.stride[1]);
+            ColorSpace::YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height, dav1dPicture.stride[0], dav1dPicture.stride[1]);
 
             dav1d_picture_unref(&dav1dPicture);
 

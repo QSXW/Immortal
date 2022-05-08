@@ -1,29 +1,25 @@
 #pragma once
 
-#include <cstdint>
-
 #include "Media/Interface/Codec.h"
-#include "Media/External/stb_image/stb_image.h"
 
 namespace Immortal
 {
 namespace Vision
 {
 
-class STBCodec : public Interface::Codec
+class PPMCodec : public Interface::Codec
 {
 public:
     using Super = Interface::Codec;
 
 public:
-    STBCodec()
-    {
+    PPMCodec();
 
-    }
-
-    virtual ~STBCodec() override;
+    virtual ~PPMCodec();
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
+
+    virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
 };
 
 }

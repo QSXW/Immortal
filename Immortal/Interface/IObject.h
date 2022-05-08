@@ -18,7 +18,7 @@ public:
         return --ref;
     }
 
-    uint32_t Ref() const
+    uint32_t RefCount() const
     {
         return ref;
     }

@@ -365,7 +365,7 @@ public:
             }
             auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
             sprite.texture = newTexture;
-            sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, Texture::Description{ Format::RGBA8 }));
+            sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, Texture::Description{ Format::RGBA8, Wrap::Clamp, Filter::Bilinear, false }));
 
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;
@@ -387,7 +387,9 @@ public:
     {
         Texture::Description desc = {
             Format::RGBA8,
-            Wrap::Clamp
+            Wrap::Clamp,
+            Filter::Bilinear,
+            false
         };
         auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())

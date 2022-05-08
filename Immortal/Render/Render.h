@@ -208,6 +208,10 @@ public:
         {
             return renderer->CreateTexture(std::forward<Args>(args)...);
         }
+        if constexpr (IsPrimitiveOf<TextureCube, T>())
+        {
+            return renderer->CreateTextureCube(std::forward<Args>(args)...);
+        }
         if constexpr (IsPrimitiveOf<GraphicsPipeline, T>())
         {
             return renderer->CreateGraphicsPipeline(std::forward<Args>(args)...);

@@ -11,6 +11,8 @@
 #include "GameObject.h"
 #include "Serializer/SceneSerializer.h"
 #include "String/LanguageSettings.h"
+#include "Utils/PlatformUtils.h"
+#include "ImGui/Utils.h"
 
 namespace Immortal
 {
@@ -90,6 +92,33 @@ void Scene::Init()
     auto self = registry.create();
 }
 
+void Scene::ReloadSkyBoxCube()
+{
+    textures.skyboxCube = Render::Create<TextureCube>(settings.environmentResolution, settings.environmentResolution, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Bilinear, false });
+}
+
+void Scene::LoadEnvironment()
+{
+    meshes.skybox.reset(new Mesh{ "Assets/Meshes/Skybox.obj" });
+
+    float black[] = {
+        0.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 0.0f, 1.0f,
+    };
+    textures.skybox = Render::Create<Texture>(2, 1, black, Texture::Description{ Format::RGBA32F, Wrap::Clamp, Filter::Bilinear, false });
+    
+    ReloadSkyBoxCube();
+    Equirect2Cube();
+}
+
+void Scene::Equirect2Cube()
+{
+    pipelines.equirect2Cube->AllocateDescriptorSet((uint64_t)textures.skybox.Get());
+    pipelines.equirect2Cube->Bind(textures.skybox,     0);
+    pipelines.equirect2Cube->Bind(textures.skyboxCube, 1);
+    pipelines.equirect2Cube->Dispatch(SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
+}
+
 Scene::Scene(const std::string &name) :
     name{ name }
 {
@@ -146,13 +175,26 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
         { Format::VECTOR3, "POSITION" }
     };
     outlineDesc.Stride = inputElementDescription.Stride;
+
     pipelines.outline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Outline")));
     pipelines.outline->Set(outlineDesc);
-    pipelines.outline->Create(renderTarget, { Pipeline::Feature::DepthDisabled });
+    pipelines.outline->Disable(Pipeline::State::Depth);
+    pipelines.outline->Create(renderTarget);
+
+    InputElementDescription skyboxDesc = {
+        { Format::VECTOR3, "POSITION" }
+    };
+    skyboxDesc.Stride = inputElementDescription.Stride;
+    pipelines.skybox.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Skybox")));
+    pipelines.skybox->Set(skyboxDesc);
+    // pipelines.skybox->Disable(Pipeline::State::Blend);
+    pipelines.skybox->Create(renderTarget);
 
     pipelines.colorMixing.reset(Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get()));
+    pipelines.equirect2Cube.reset(Render::Create<Pipeline::Compute>(Render::GetShader("Equirect2Cube").get()));
 
     Render2D::Setup(renderTarget);
+    LoadEnvironment();
 }
 
 Scene::~Scene()
@@ -171,6 +213,37 @@ void Scene::OnGuiRender()
 
     ImGui::DragFloat(WordsMap::Get("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
     ImGui::DragFloat(WordsMap::Get("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);
+
+    static int item = 5;
+    uint32_t resolutions[] = { 64, 128, 256, 512, 1024, 2048, 4096 };
+
+    if (ImGui::Combo(WordsMap::Get("Resolution").c_str(), &item, "64\000128\000256\000512\0001024\0002048\0004096\000"))
+    {
+        settings.environmentResolution = resolutions[item];
+        ReloadSkyBoxCube();
+        Equirect2Cube();
+    }
+
+    auto [x, y] = ImGui::GetContentRegionAvail();
+
+    ImVec2 size{};
+    size.x = x - 8;
+    size.y = size.x * textures.skybox->Height() / textures.skybox->Width();
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.4509f, 0.7882f, 0.8980f, 1.0f });
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 20.0f, 20.0f });
+    if (ImGui::ImageButton((ImTextureID)(uint64_t)*textures.skybox, size))
+    {
+        auto res = FileDialogs::OpenFile(FileFilter::Image);
+        if (res.has_value())
+        {
+            textures.skybox = Render::Create<Texture>(res.value());
+            Equirect2Cube();
+        }
+    }
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
 
     ImGui::End();
 }
@@ -270,7 +343,6 @@ void Scene::OnRender(const Camera &camera)
             if (color.Modified || !color.Initialized)
             {
                 pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
-                pipelines.colorMixing->ResetResource();
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.texture.get(), 0);
                 pipelines.colorMixing->Bind(sprite.final.get(), 1);
@@ -312,11 +384,26 @@ void Scene::OnRender(const Camera &camera)
             }
             i++;
         }
-        shading->CameraPosition = camera.View()[3];
+        shading->CameraPosition = Vector4{ camera.View()[3] };
         shading->Exposure = settings.exposure;
         shading->Gamma    = settings.gamma;
 
         uniforms.host->Update(sizeof(buffers), &buffers);
+    }
+
+    {
+        /* Update Skybox */
+        auto &nodeList = meshes.skybox->NodeList();
+        for (auto &node : nodeList)
+        {
+            pipelines.skybox->AllocateDescriptorSet((uint64_t)&node);
+            pipelines.skybox->Set(node.Vertex);
+            pipelines.skybox->Set(node.Index);
+            pipelines.skybox->Bind(uniforms.transform.get(), 0);
+            pipelines.skybox->Bind(textures.skyboxCube,      1);
+            pipelines.skybox->Bind(uniforms.shading.get(),   2);
+            Render::Draw(pipelines.skybox);
+        }
     }
 
     {

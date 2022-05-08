@@ -24,29 +24,62 @@
 #include <opencv2/imgcodecs.hpp>
 #endif
 
-void TestRef()
+class UnitTest
 {
-    using namespace Immortal;
-    class A : public IObject
+public:
+    UnitTest() = default;
+
+    UnitTest(const std::string &desc) :
+        desc{ desc }
     {
 
-    };
-
-    Ref<A> b = nullptr;
-
-    {
-        Ref<A> a = new A;
-        b = a;
     }
 
-    Ref<A> c = new A;
-    c = b;
-
+    virtual bool Conformance() const
     {
-        MonoRef<A> a = new A;
-        a.Reset(new A);
+        return true;
     }
-}
+
+public:
+    std::string desc;
+};
+
+class RefUnitTest : public UnitTest
+{
+public:
+    virtual bool Conformance() const
+    {
+        using namespace Immortal;
+        class A : public IObject
+        {
+
+        };
+
+        /* Contructor */
+        Ref<A> b = nullptr;
+
+        /* Copy Assignment */
+        {
+            Ref<A> a = new A;
+            b = a;
+        }
+
+        /* Move Constructor */
+        {
+            Ref<A> c = std::move(b);
+        }
+
+        Ref<A> c = new A;
+        c = b;
+
+        {
+            MonoRef<A> a = new A;
+            a.Reset(new A);
+        }
+
+        return true;
+    }
+};
 
 int main()
 {
@@ -85,7 +118,7 @@ int main()
     std::cout << img.rows << std::endl;
 #endif
 
-    TestRef();
+    RefUnitTest{}.Conformance();
 
     return 0;
 }

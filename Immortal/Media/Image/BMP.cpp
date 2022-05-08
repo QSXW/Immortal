@@ -19,18 +19,16 @@ CodecError BMPCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::UnsupportFormat;
     }
     
-    desc.width  = width;
-    desc.height = height;
+    picture = Picture{ width, height, Format::BGRA8 };
 
     auto src = buffer.data() + offset;
 
     auto padding  = width & 3;
-    auto linesize = width * desc.format.ComponentCount();
+    auto linesize = width * picture.desc.format.ComponentCount();
     
-    auto size = desc.Size();
-    data.reset(new uint8_t [size]);
+    auto size = picture.desc.Size();
 
-    uint8_t *ptr = data.get() + size - linesize;
+    uint8_t *ptr = picture.Data() + size - linesize;
 
     for (int y = 0; y < height; y++)
     {

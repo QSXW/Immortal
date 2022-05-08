@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Format.h"
 #include "Descriptor.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -26,7 +27,7 @@ enum class Filter
     Anisotropic
 };
 
-class IMMORTAL_API Texture
+class IMMORTAL_API Texture : public IObject
 {
 public:
     template<class T>
@@ -79,19 +80,21 @@ public:
 
         }
 
-        Description(Wrap wrap, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
+        Description(Wrap wrap, Filter filter = Filter::Nearest, bool mipLevels = true, Texture::Type type = Texture::Type::Texture2D) :
             wrap{ wrap },
             filter{ filter },
-            type{ type }
+            type{ type },
+            mipLevels{ mipLevels }
         {
 
         }
 
-        Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, Texture::Type type = Texture::Type::Texture2D) :
+        Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, bool mipLevels = true, Texture::Type type = Texture::Type::Texture2D) :
             format{ format },
             wrap{ wrap },
             filter{ filter },
-            type{ type }
+            type{ type },
+            mipLevels{ mipLevels }
         {
 
         }
@@ -106,6 +109,7 @@ public:
         Filter filter = Filter::Nearest;
         Type   type   = Type::Texture2D;
 
+        bool mipLevels = true;
         bool Anisotropic{ true };
     };
 
@@ -169,6 +173,11 @@ public:
         return mipLevels;
     }
 
+    virtual uint32_t LayerCount() const
+    {
+        return 1;
+    }
+
     virtual void Update(void *data) { }
 
     virtual void Map(uint32_t slot = 0) { }
@@ -188,17 +197,17 @@ public:
 protected:
     std::string source;
 
-    uint32_t width{ 0 };
+    uint32_t width = 0;
 
-    uint32_t height{ 0 };
+    uint32_t height = 0;
 
-    uint32_t mipLevels{ 1 };
+    uint32_t mipLevels = 1;
 };
 
 using Image = Texture;
 using SuperTexture = Texture;
 
-class IMMORTAL_API TextureCube : public Texture
+class IMMORTAL_API TextureCube : public virtual Texture
 {
 public:
     using Super = Texture;
@@ -212,6 +221,11 @@ public:
         Super{ source }
     {
 
+    }
+
+    virtual uint32_t LayerCount() const override
+    {
+        return 6;
     }
 };
 

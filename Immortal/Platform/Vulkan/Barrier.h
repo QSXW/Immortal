@@ -64,7 +64,6 @@ struct ImageBarrier : public VkImageMemoryBarrier
     {
         std::swap(Primitive::oldLayout, Primitive::newLayout);
         std::swap(Primitive::srcAccessMask, Primitive::dstAccessMask);
-        std::swap(Primitive::srcQueueFamilyIndex, Primitive::dstQueueFamilyIndex);
     }
 
     void To(VkAccessFlags dst)

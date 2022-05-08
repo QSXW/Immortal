@@ -37,9 +37,29 @@ struct Picture
 
     }
 
+    Picture(int width, int height, Format format, bool allocated = true) :
+        desc{ uint32_t(width), uint32_t(height), format },
+        pts{}
+    {
+        if (allocated)
+        {
+            data.reset(new uint8_t[desc.Size()]);
+        }
+    }
+
     bool Available() const
     {
         return !!data;
+    }
+
+    uint8_t *Data()
+    {
+        return data.get();
+    }
+
+    const uint8_t *Data() const
+    {
+        return data.get();
     }
 
     Description desc;
@@ -61,7 +81,7 @@ public:
     Codec(Type type, Format format) :
         type{ type }
     {
-        desc.format = format;
+        picture.desc.format = format;
     }
 
     virtual ~Codec()
@@ -101,7 +121,7 @@ public:
 
     virtual uint8_t *Data() const
     {
-        return nullptr;
+        return picture.data.get();
     }
 
     virtual void Swap(void *ptr)
@@ -111,18 +131,13 @@ public:
 
     virtual Picture GetPicture() const
     {
-        return Picture{ };
-    }
-
-    const Description &Desc() const
-    {
-        return desc;
+        return picture;
     }
 
 protected:
     Type type{ Type::Unspecifed };
 
-    Description desc;
+    Picture picture;
 };
 
 }

@@ -129,7 +129,6 @@ CommandBuffer *CommandPool::RequestBuffer(Level level)
 
 void CommandPool::DiscardBuffer(CommandBuffer *commandBuffer)
 {
-    SLASSERT(activeCommandBuffer == commandBuffer && "Just requested a command buffer but discard a different one");
     commandBuffer->reset(resetMode);
     primaryActiveCount--;
 }

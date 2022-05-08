@@ -8,7 +8,8 @@ namespace Vulkan
 
 PhysicalDevice::PhysicalDevice(Instance *instance, VkPhysicalDevice physicalDevice) :
     handle{ physicalDevice },
-    instance{ instance }
+    instance{ instance },
+    RequestedFeatures{}
 {
     GetFeatures(&Features);
     GetProperties(&Properties);
@@ -18,8 +19,6 @@ PhysicalDevice::PhysicalDevice(Instance *instance, VkPhysicalDevice physicalDevi
     GetQueueFamilyProperties(&count, nullptr);
     QueueFamilyProperties.resize(count);
     GetQueueFamilyProperties(&count, QueueFamilyProperties.data());
-
-    CleanUpObject(&RequestedFeatures);
 
     RequestedFeatures.textureCompressionBC       = Features.textureCompressionBC;
     RequestedFeatures.textureCompressionASTC_LDR = Features.textureCompressionASTC_LDR;

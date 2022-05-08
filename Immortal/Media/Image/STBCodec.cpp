@@ -7,50 +7,49 @@ namespace Vision
 
 STBCodec::~STBCodec()
 {
-    if (data)
-    {
-        stbi_image_free(data);
-    }
+
 }
 
 CodecError STBCodec::Decode(const CodedFrame &codedFrame)
 {
+    int width, height, depth;
     const auto &buf = codedFrame.buffer;
-    int depth  = 0;
-    int width  = static_cast<int>(desc.width);
-    int height = static_cast<int>(desc.height);
-    data = stbi_load_from_memory(
-                    buf.data(),
-                    static_cast<int>(buf.size()),
-                    &width,
-                    &height,
-                    &depth,
-                    4
-                );
 
+    Format format = Format::RGBA8;
+    uint8_t *data = nullptr;
+    if (stbi_is_hdr_from_memory(buf.data(), codedFrame.buffer.size()))
+    {
+        format = Format::RGBA32F;
+        data = (uint8_t *)stbi_loadf_from_memory(
+            buf.data(),
+            static_cast<int>(buf.size()),
+            &width,
+            &height,
+            &depth,
+            4
+        );
+    }
+    else
+    {
+        data = stbi_load_from_memory(
+            buf.data(),
+            static_cast<int>(buf.size()),
+            &width,
+            &height,
+            &depth,
+            4
+        );
+    }
+
+    if (stbi_image_free)
+    picture = Picture{ width, height, format, false };
+    picture.data.reset(data);
     if (!data)
     {
         return CodecError::CorruptedBitstream;
     }
 
-    desc.format = Format::RGBA8;
-    desc.width  = width;
-    desc.height = height;
-
     return CodecError::Succeed;
-}
-
-uint8_t *STBCodec::Data() const
-{
-    return data;
-}
-
-void STBCodec::Swap(void *ptr)
-{
-    void *tmp = nullptr;
-    tmp  = ptr;
-    ptr  = data;
-    data = reinterpret_cast<stbi_uc *>(tmp);
 }
 
 }

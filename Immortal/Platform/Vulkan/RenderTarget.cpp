@@ -303,7 +303,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     region.dstSubresource = subresourceLayers;
 
     device->Wait();
-    device->Transfer([&](CommandBuffer *copyCmdBuf) -> void {
+    device->TransferAsync([&](CommandBuffer *copyCmdBuf) -> void {
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.baseMipLevel = 0;

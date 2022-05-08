@@ -77,6 +77,16 @@ public:
         );
     }
 
+    void PipelineImageBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, const VkImageMemoryBarrier *pImageMemoryBarriers, uint32_t imageMemoryBarrerCount = 1)
+    {
+        PipelineBarrier(srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, imageMemoryBarrerCount, pImageMemoryBarriers);
+    }
+
+    void BlitImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter)
+    {
+        vkCmdBlitImage(handle, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    }
+
     void CopyImage(VkImage srcImage,
                    VkImageLayout srcImageLayout,
                    VkImage dstImage,

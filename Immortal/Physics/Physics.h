@@ -6,16 +6,24 @@
 namespace Immortal
 {
 
-namespace Physics
+struct Ray
 {
+public:
+    Ray() {}
 
-	struct RaycastHit
-	{
-		float Distance;
-		Vector3 Point;
-		Vector3 Normal;
-	};
+    Ray(const Vector3 &origin, const Vector3 &direction) :
+        origin{ origin },
+        direction{ direction }
+    {}
+
+    Vector3 At(float t) const
+    {
+        return origin + t * direction;
+    }
+
+public:
+    Vector3 origin;
+    Vector3 direction;
+};
+
 }
-
-}
-

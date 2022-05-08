@@ -48,6 +48,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 {
     Super::Decode(rbsp);
 
+    auto &desc = picture.desc;
     if (!session)
     {
         desc.width  = sps->pic_width_in_luma_samples;

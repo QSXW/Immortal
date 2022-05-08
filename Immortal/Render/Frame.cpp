@@ -20,8 +20,12 @@ static Vision::Interface::Codec *SelectSuitableCodec(const std::string &path)
     case FileFormat::JFIF:
         return new Vision::MFXJpegCodec{};
 
+    case FileFormat::HDR:
     case FileFormat::PNG:
         return new Vision::STBCodec{};
+
+    case FileFormat::PPM:
+        return new Vision::PPMCodec{};
 
     default:
         return new Vision::OpenCVCodec{};

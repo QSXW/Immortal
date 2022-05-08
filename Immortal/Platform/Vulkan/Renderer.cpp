@@ -2,6 +2,8 @@
 #include "Renderer.h"
 #include <array>
 
+#include "Texture.h"
+
 namespace Immortal
 {
 namespace Vulkan
@@ -115,18 +117,7 @@ void Renderer::SwapBuffers()
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.commandBufferCount   = 1;
         submitInfo.pCommandBuffers      = commandBuffers;
-
-        device->Compute([&](CommandBuffer *cmdbuf) {
-            cmdbuf->End();
-            waitDstStageFlags[0] = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            submitInfo.pSignalSemaphores = &signalSemaphores[0];
-            submitInfo.pWaitDstStageMask = waitDstStageFlags;
-            commandBuffers[0] = *cmdbuf;
-            });
-      
-        auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
-        computeQueue.Submit(submitInfo, nullptr);
-     
+  
         device->TransferAsync([&](CommandBuffer *cmdbuf) {
             cmdbuf->End();
             waitDstStageFlags[0]         = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -137,16 +128,27 @@ void Renderer::SwapBuffers()
         
         auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
         transferQueue.Submit(submitInfo, nullptr);
+
+        device->ComputeAsync([&](CommandBuffer *cmdbuf) {
+            cmdbuf->End();
+            waitDstStageFlags[0]          = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            submitInfo.pWaitSemaphores    = &signalSemaphores[1];
+            submitInfo.waitSemaphoreCount = 1;
+            submitInfo.pSignalSemaphores  = &signalSemaphores[0];
+            submitInfo.pWaitDstStageMask  = waitDstStageFlags;
+            commandBuffers[0] = *cmdbuf;
+            });
+
+        auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
+        computeQueue.Submit(submitInfo, nullptr);
     }
    
     VkSemaphore waitSemaphores[] = {
         semaphores[sync].compute,
-        semaphores[sync].transfer,
         semaphores[sync].acquiredImageReady
     };
 
     static VkPipelineStageFlags graphicsWaitDstStageMask[] = {
-        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
@@ -156,13 +158,13 @@ void Renderer::SwapBuffers()
         commandBuffers[0] = *cmdbuf;
         });
 
-    submitInfo.waitSemaphoreCount = SL_ARRAY_LENGTH(waitSemaphores);
-    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.waitSemaphoreCount   = SL_ARRAY_LENGTH(waitSemaphores);
+    submitInfo.pWaitSemaphores      = waitSemaphores;
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &semaphores[sync].renderComplete;
-    submitInfo.pWaitDstStageMask = graphicsWaitDstStageMask;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = commandBuffers;
+    submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
+    submitInfo.pWaitDstStageMask    = graphicsWaitDstStageMask;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = commandBuffers;
 
     queue->Submit(submitInfo, fences[sync]);
     SubmitFrame();
@@ -295,6 +297,61 @@ Descriptor *Renderer::CreateBufferDescriptor(uint32_t count)
     CleanUpObject(descriptor);
 
     return descriptor;
+}
+
+const char *Renderer::GraphicsRenderer()
+{
+    return context->GraphicsRenderer();
+}
+
+Shader::Super *Renderer::CreateShader(const std::string &filepath, Shader::Type type)
+{
+    return new Shader{ device, filepath, type };
+}
+
+GraphicsPipeline::Super *Renderer::CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader)
+{
+    return new GraphicsPipeline{ device, shader };
+}
+
+ComputePipeline::Super *Renderer::CreateComputePipeline(Shader::Super *shader)
+{
+    return new ComputePipeline{ device, shader };
+}
+
+Texture::Super *Renderer::CreateTexture(const std::string &filepath, const Texture::Description &description)
+{
+    return new Texture{ device, filepath, description };
+}
+
+Texture::Super *Renderer::CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
+{
+    return new Texture{ device, width, height, data, description };
+}
+
+TextureCube::Super *Renderer::CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description)
+{
+    return new TextureCube{ device, width, height, description };
+}
+
+Buffer::Super *Renderer::CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+{
+    return new Buffer{ device, size, data, type };
+}
+
+Buffer::Super *Renderer::CreateBuffer(const size_t size, Buffer::Type type)
+{
+    return new Buffer{ device, size, type };
+}
+
+Buffer::Super *Renderer::CreateBuffer(const size_t size, uint32_t binding)
+{
+    return new Buffer{ device, size, binding };
+}
+
+RenderTarget::Super *Renderer::CreateRenderTarget(const RenderTarget::Description &description)
+{
+    return new RenderTarget{ device, description };
 }
 
 }

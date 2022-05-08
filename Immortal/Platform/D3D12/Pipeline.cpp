@@ -141,12 +141,12 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
     bufferViews.vertex.StrideInBytes = desc.layout.Stride;
 }
 
-void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget, Option option)
+void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)
 {
     Reconstruct(renderTarget);
 }
 
-void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget, Option option)
+void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget)
 {
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     if (!shader)

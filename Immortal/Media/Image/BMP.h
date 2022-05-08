@@ -31,17 +31,7 @@ public:
 
     }
 
-    virtual uint8_t *Data() const override
-    {
-        return data.get();
-    }
-
     virtual CodecError Decode(const CodedFrame &codedFrame);
-
-    void Swap(std::unique_ptr<uint8_t> &other)
-    {
-        data.swap(other);
-    }
 
     size_t HeaderSize()
     {
@@ -70,8 +60,6 @@ private:
     uint32_t importantColours;
     uint16_t empty;
     #pragma pack(pop)
-
-    std::unique_ptr<uint8_t> data;
 };
 
 }

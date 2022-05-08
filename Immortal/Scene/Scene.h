@@ -9,7 +9,6 @@
 #include "ObserverCamera.h"
 #include "Interface/IObject.h"
 #include "Render/Texture.h"
-#include "Render/Environment.h"
 #include "Render/Mesh.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
@@ -114,6 +113,12 @@ public:
 private:
     void Init();
 
+    void LoadEnvironment();
+
+    void ReloadSkyBoxCube();
+
+    void Equirect2Cube();
+
 private:
     std::string name;
 
@@ -121,6 +126,7 @@ private:
 
     struct Settings
     {
+        uint32_t environmentResolution = 2048;
         float exposure = 4.5f;
         float gamma    = 2.2f;
     } settings;
@@ -130,15 +136,18 @@ private:
     } meshes;
 
     struct {
-        std::shared_ptr<TextureCube> skybox;
+        Ref<Texture> skybox;
+        Ref<TextureCube> skyboxCube;
     } textures;
 
     struct {
-        std::shared_ptr<GraphicsPipeline> tonemap;
-        std::shared_ptr<GraphicsPipeline> pbr;
-        std::shared_ptr<GraphicsPipeline> basic;
-        std::shared_ptr<GraphicsPipeline> outline;
-        std::shared_ptr<ComputePipeline>  colorMixing;
+       std::shared_ptr<GraphicsPipeline> tonemap;
+       std::shared_ptr<GraphicsPipeline> pbr;
+       std::shared_ptr<GraphicsPipeline> basic;
+       std::shared_ptr<GraphicsPipeline> outline;
+       std::shared_ptr<GraphicsPipeline> skybox;
+       std::shared_ptr<ComputePipeline>  colorMixing;
+       std::shared_ptr<ComputePipeline>  equirect2Cube;
     } pipelines;
 
     struct {
@@ -146,10 +155,6 @@ private:
         std::unique_ptr<Buffer> transform;
         std::unique_ptr<Buffer> shading;
     } uniforms;
-    
-    struct {
-        std::unique_ptr<Environment> global;
-    } environments;
 
     std::shared_ptr<RenderTarget> renderTarget;
 

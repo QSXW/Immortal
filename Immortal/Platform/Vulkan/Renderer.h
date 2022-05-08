@@ -5,7 +5,6 @@
 #include "Render/Renderer.h"
 #include "Common.h"
 #include "RenderContext.h"
-#include "Texture.h"
 #include "Shader.h"
 #include "Pipeline.h"
 #include "Buffer.h"
@@ -55,55 +54,27 @@ public:
         // Resize();
     }
 
-    virtual const char *GraphicsRenderer()
-    {
-        return context->GraphicsRenderer();
-    }
+    virtual const char *GraphicsRenderer();
 
-    virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override
-    {
-        return new Shader{ device, filepath, type };
-    }
+    virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override;
 
-    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader)
-    {
-        return new GraphicsPipeline{ device, shader };
-    }
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader);
 
-    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader)
-    {
-        return new ComputePipeline{ device, shader };
-    }
+    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader);
 
-    virtual Texture::Super *CreateTexture(const std::string &filepath, const Texture::Description &description = {})
-    {
-        return new Texture{ device, filepath, description };
-    }
+    virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {});
 
-    virtual Texture::Super *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override
-    {
-        return new Texture{ device, width, height, data, description };
-    }
+    virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override;
 
-    virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override
-    {
-        return new Buffer{ device, size, data, type };
-    }
+    virtual SuperTextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description) override;
 
-    virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override
-    {
-        return new Buffer{ device, size, type };
-    }
+    virtual Buffer::Super *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
 
-    virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override
-    {
-        return new Buffer{ device, size, binding };
-    }
+    virtual Buffer::Super *CreateBuffer(const size_t size, Buffer::Type type) override;
 
-    virtual RenderTarget::Super *CreateRenderTarget(const RenderTarget::Description &description) override
-    {
-        return new RenderTarget{ device, description };
-    }
+    virtual Buffer::Super *CreateBuffer(const size_t size, uint32_t binding) override;
+
+    virtual RenderTarget::Super *CreateRenderTarget(const RenderTarget::Description &description) override;
 
     virtual Descriptor *CreateImageDescriptor(uint32_t count) override;
 

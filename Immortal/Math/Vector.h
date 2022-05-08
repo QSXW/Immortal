@@ -16,9 +16,190 @@ namespace Immortal
 namespace Vector
 {
 
-using Vector2    = glm::vec2;
-using Vector3    = glm::vec3;
-using Vector4    = glm::vec4;
+struct Vector2 : public glm::vec2
+{
+    using Primitive = glm::vec2;
+
+    Vector2() :
+        Primitive{}
+    {}
+
+    Vector2(float v) :
+        Primitive{ v }
+    {}
+
+    template <class T, class U>
+    Vector2(T x, U y) :
+        Primitive{ (float)x, (float)y }
+    {}
+
+    Vector2(const Primitive &v) :
+        Primitive{ v }
+    {}
+
+    float &operator[](size_t i)
+    {
+        return Primitive{ *this } [i] ;
+    }
+
+    Vector2 &operator+=(const Vector2 &v)
+    {
+        Primitive{ *this } += Primitive{ v };
+        return *this;
+    }
+
+    float Length() const
+    {
+        return glm::length(Primitive{ *this });
+    }
+
+    Vector2 Degrees() const
+    {
+        return glm::degrees(Primitive{ *this });
+    }
+
+    Vector2 Radians() const
+    {
+        return glm::radians(Primitive{ *this });
+    }
+
+    float Distance(const Vector2 &distance) const
+    {
+        return glm::distance(Primitive{ *this }, distance);
+    }
+};
+
+struct Vector4;
+struct Vector3 : public glm::vec3
+{
+    using Primitive = glm::vec3;
+
+    Vector3() :
+        Primitive{}
+    {}
+
+    Vector3(float v) :
+        Primitive{ v }
+    {}
+
+    template <class T, class U, class V>
+    Vector3(T x, U y, V z) :
+        Primitive{ (float)x, (float)y, (float)z }
+    {}
+
+    Vector3(const Primitive &v) :
+        Primitive{ v }
+    {}
+
+    Vector3(const Vector4 &v);
+
+    float &operator[](size_t i)
+    {
+        Primitive &p = *this;
+        return p[i] ;
+    }
+
+    template <class T>
+    Vector3 &operator+=(T v)
+    {
+        Primitive &p = *this;
+
+        if constexpr (std::is_same_v<T, Vector3>)
+        {
+            p += Primitive{ v };
+        }
+        else
+        {
+            p += v;
+        }
+        return *this;
+    }
+
+    float Length() const
+    {
+        return glm::length(Primitive{ *this });
+    }
+
+    Vector3 Degrees() const
+    {
+        return glm::degrees(Primitive{ *this });
+    }
+
+    Vector3 Radians() const
+    {
+        return glm::radians(Primitive{ *this });
+    }
+
+    float Distance(const Vector3 &distance) const
+    {
+        return glm::distance(Primitive{ *this }, distance);
+    }
+};
+
+struct Vector4 : public glm::vec4
+{
+    using Primitive = glm::vec4;
+
+    Vector4() :
+        Primitive{}
+    {}
+
+    Vector4(float v) :
+        Primitive{ v }
+    {}
+
+    Vector4(float x, float y, float z, float w) :
+        Primitive{ x, y, z, w }
+    {}
+
+    Vector4(const Vector3 &v, float w) :
+        Primitive{ Vector3::Primitive{ v }, w }
+    {
+
+    }
+
+    Vector4(const Primitive &v) :
+        Primitive{ v }
+    {}
+
+    float &operator[](size_t i)
+    {
+        return Primitive{ *this } [i] ;
+    }
+
+    Vector4 &operator+=(const Vector4 &v)
+    {
+        Primitive{ *this } += Primitive{ v };
+        return *this;
+    }
+
+    float Length() const
+    {
+        return glm::length(Primitive{ *this });
+    }
+
+    Vector4 Degrees() const
+    {
+        return glm::degrees(Primitive{ *this });
+    }
+
+    Vector4 Radians() const
+    {
+        return glm::radians(Primitive{ *this });
+    }
+
+    float Distance(const Vector4 &distance) const
+    {
+        return glm::distance(Primitive{ *this }, distance);
+    }
+};
+
+inline Vector3::Vector3(const Vector4 &v) :
+    Primitive{ Vector4::Primitive{ v } }
+{
+
+}
+
 using Color      = glm::vec4;
 using mat3       = glm::mat3;
 using mat4       = glm::mat4;
@@ -43,17 +224,7 @@ inline auto Radians(float degrees)
     return glm::radians(degrees);
 }
 
-inline auto Radians(Vector3 degrees)
-{
-    return glm::radians(degrees);
-}
-
 inline auto Degrees(float radians)
-{
-    return glm::degrees(radians);
-}
-
-inline auto Degrees(Vector3 radians)
 {
     return glm::degrees(radians);
 }
@@ -141,7 +312,8 @@ inline auto Length(T &q)
 
 namespace Detail = glm::detail;
 
-bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotation, Vector3& scale);
+bool DecomposeTransform(const mat4 &transform, Vector3 &position, Vector3 &rotation, Vector3 &scale);
+
 }
 
 using Vector2    = Vector::Vector2;

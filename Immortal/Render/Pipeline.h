@@ -6,26 +6,41 @@
 #include "Descriptor.h"
 #include "Shader.h"
 #include "RenderTarget.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
 
 class GraphicsPipeline;
 class ComputePipeline;
-class IMMORTAL_API Pipeline
+class IMMORTAL_API Pipeline : public IObject
 {
 public:
-    enum class Feature
+    enum State : uint32_t
     {
-        None  = 0,
-        DepthDisabled = BIT(1),
-        BlendEnabled  = BIT(2)
+        Depth = BIT(0),
+        Blend = BIT(1),
     };
 
-    struct Option
+    enum class DrawType
     {
-        Feature flags = Feature::None;
+        None = 0,
+        Static,
+        Stream,
+        Dynamic
     };
+
+    enum class PrimitiveType
+    {
+        Point,
+        Line,
+        Triangles
+    };
+
+    using Type = Shader::Type;
+
+    using Graphics = GraphicsPipeline;
+    using Compute = ComputePipeline;
 
 public:
     virtual ~Pipeline()
@@ -63,25 +78,19 @@ public:
 
     }
 
-    enum class DrawType
+public:
+    void Enable(uint32_t request)
     {
-        None = 0,
-        Static,
-        Stream,
-        Dynamic
-    };
+        flags |= request;
+    }
 
-    enum class PrimitiveType
+    void Disable(uint32_t request)
     {
-        Point,
-        Line,
-        Triangles
-    };
+        flags &= ~request;
+    }
 
-    using Type = Shader::Type;
-
-    using Graphics = GraphicsPipeline;
-    using Compute  = ComputePipeline;
+protected:
+    uint32_t flags = State::Depth & State::Blend;
 };
 
 class IMMORTAL_API GraphicsPipeline : public virtual Pipeline
@@ -123,12 +132,12 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
+    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget)
     {
 
     }
 
-    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget, Option option = Option{})
+    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget)
     {
 
     }
@@ -181,18 +190,6 @@ class IMMORTAL_API ComputePipeline : public virtual Pipeline
 public:
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
 
-    virtual void ResetResource()
-    {
-
-    }
-
-    template <class T>
-    void Sumbmit(T &&func)
-    {
-        ResetResource();
-        func();
-    }
-
     virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0)
     {
 
@@ -203,6 +200,6 @@ using SuperPipeline         = Pipeline;
 using SuperComputePipeline  = ComputePipeline;
 using SuperGraphicsPipeline = GraphicsPipeline;
 
-SL_DEFINE_BITWISE_OPERATION(Pipeline::Feature, uint32_t)
+SL_DEFINE_BITWISE_OPERATION(Pipeline::State, uint32_t)
 
 }

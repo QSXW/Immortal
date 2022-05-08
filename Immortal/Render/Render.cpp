@@ -19,9 +19,11 @@ const Shader::Properties Render::ShaderProperties[] = {
     { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     { "Render2D",               U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     { "Outline",                U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
+    { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
     { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
 };
 
 std::shared_ptr<Shader> Render::GetShader(const std::string &name)

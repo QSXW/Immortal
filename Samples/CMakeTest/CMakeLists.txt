@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.16)
+
+project("CMakeTest" LANGUAGES CXX)
+
+set(SRC_FILES
+    CMakeTest.cpp)
+
+add_executable(${PROJECT_NAME}
+    ${SRC_FILES}
+)
+
+source_group("\\" FILES ${SRC_FILES})
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME}
+    Immortal
+)
+
+file(COPY ${ASSIMP_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${OPENCV_SHARED} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${DAV1D_SHARED}  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${MONO_SHARED}   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

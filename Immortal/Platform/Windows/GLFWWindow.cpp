@@ -55,10 +55,11 @@ void GLFWWindow::SetTitle(const std::string &title)
 void GLFWWindow::SetIcon(const std::string &filepath)
 {
     Frame frame{ filepath };
+    Vision::Picture pic = frame.GetPicture();
 
     GLFWimage image{};
-    image.height = ncast<int>(frame.Height());
-    image.width  = ncast<int>(frame.Width());
+    image.height = ncast<int>(pic.desc.height);
+    image.width  = ncast<int>(pic.desc.width);
     image.pixels = rcast<unsigned char *>(frame.Data());
 
     glfwSetWindowIcon(window, 1, &image);

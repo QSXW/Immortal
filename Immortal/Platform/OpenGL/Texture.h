@@ -185,11 +185,6 @@ public:
         return handle;
     }
 
-    virtual bool operator==(const Texture &other) const override
-    {
-        return handle == ((TextureCube&)other).handle;
-    }
-
     void Create(const uint32_t width, const uint32_t height, const Texture::Description &description, int levels = 0);
 
     virtual void BindImageTexture(bool layered = false) override;

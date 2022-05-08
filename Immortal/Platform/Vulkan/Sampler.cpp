@@ -13,7 +13,7 @@ Sampler::Sampler(Device *device, const VkSamplerCreateInfo &info) :
     Check(device->Create(&info, &handle));
 }
 
-Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
+Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc, uint32_t mipLevels) :
     device{ device }
 {
     VkSamplerCreateInfo createInfo{};
@@ -25,9 +25,13 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
     createInfo.addressModeV  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     createInfo.addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     createInfo.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    createInfo.minLod        = 0;
+    createInfo.maxLod        = mipLevels;
+    createInfo.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
     if (desc.filter == Filter::Bilinear || desc.filter == Filter::Linear)
     {
+        createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         createInfo.magFilter = VK_FILTER_LINEAR;;
         createInfo.minFilter = VK_FILTER_LINEAR;
     }
@@ -36,11 +40,11 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
         createInfo.anisotropyEnable = VK_TRUE;
         createInfo.maxAnisotropy = device->Get<PhysicalDevice>().Properties.limits.maxSamplerAnisotropy;
     }
-    if (desc.wrap == Wrap::Clamp)
+    if (desc.wrap == Wrap::Clamp || desc.wrap == Wrap::BorderColor)
     {
-        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     }
     if (desc.wrap == Wrap::Mirror || desc.wrap == Wrap::Repeat)
     {
@@ -48,12 +52,7 @@ Sampler::Sampler(Device *device, const Immortal::Texture::Description &desc) :
         createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
         createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
     }
-    if (desc.wrap == Wrap::BorderColor)
-    {
-        createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    }
+
     Check(device->Create(&createInfo, &handle));
 }
 

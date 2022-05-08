@@ -93,11 +93,11 @@ struct TransformComponent : public Component
         return Transform();
     }
 
-    static constexpr Vector3 Up{ 0.0f, 1.0f, 0.0f };
+    static inline Vector3 Up{ 0.0f, 1.0f, 0.0f };
 
-    static constexpr Vector3 Right{ 1.0f, 0.0f, 0.0f };
+    static inline Vector3 Right{ 1.0f, 0.0f, 0.0f };
 
-    static constexpr Vector3 Forward{ 0.0f, 0.0f, -1.0f };
+    static inline Vector3 Forward{ 0.0f, 0.0f, -1.0f };
 
     Vector3 Position{ 0.0f, 0.0f, 0.0f };
 

@@ -107,9 +107,10 @@ public:
         return fwrite(src, size, count, fp);
     }
 
-    size_t Write(const std::string &src)
+    template <class T>
+    size_t Write(const T &src)
     {
-        return Write(src.c_str(), src.size());
+        return Write(src.data(), src.size());
     }
 
     size_t Pos()

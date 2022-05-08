@@ -6,7 +6,7 @@ namespace Immortal
 {
 namespace Vector
 {
-bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotation, Vector3& scale)
+bool DecomposeTransform(const mat4 &transform, Vector3 &position, Vector3 &rotation, Vector3 &scale)
 {
     using T = float;
     mat4 localMatrix(transform);
@@ -27,27 +27,27 @@ bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotat
     }
 
     // Next take care of translation (easy).
-    position = Vector3(localMatrix[3]);
-    localMatrix[3] = Vector4(0, 0, 0, localMatrix[3].w);
+    position = Vector3{ Vector4{ localMatrix[3] } };
+    localMatrix[3] = Vector4{ 0, 0, 0, localMatrix[3].w };
 
-    Vector3 Row[3] = { Vector3(0.0f), Vector3(0.0f), Vector3(0.0f) };
+    Vector3 row[3] = { Vector3(0.0f), Vector3(0.0f), Vector3(0.0f) };
 
     // Now get scale and shear.
     for (int i = 0; i < 3; i++)
     {
         for (int j = 0; j < 3; j++)
         {
-            Row[i][j] = localMatrix[i][j];
+            row[i][j] = localMatrix[i][j];
         }
     }
 
     // Compute X scale factor and normalize first row.
-    scale.x = Length(Row[0]);
-    Row[0] = Detail::scale(Row[0], static_cast<T>(1));
-    scale.y = Length(Row[1]);
-    Row[1] = Detail::scale(Row[1], static_cast<T>(1));
-    scale.z = Length(Row[2]);
-    Row[2] = Detail::scale(Row[2], static_cast<T>(1));
+    scale.x = row[0].Length();
+    row[0] = Detail::scale(row[0], static_cast<T>(1));
+    scale.y = row[1].Length();
+    row[1] = Detail::scale(row[1], static_cast<T>(1));
+    scale.z = row[2].Length();
+    row[2] = Detail::scale(row[2], static_cast<T>(1));
 
     // At this point, the matrix (in rows[]) is orthonormal.
     // Check for a coordinate system flip.  If the determinant
@@ -66,15 +66,15 @@ bool DecomposeTransform(const mat4& transform, Vector3& position, Vector3& rotat
     }
 #endif
 
-    rotation.y = asin(-Row[0][2]);
+    rotation.y = asin(-row[0][2]);
     if (cos(rotation.y) != 0)
     {
-        rotation.x = atan2(Row[1][2], Row[2][2]);
-        rotation.z = atan2(Row[0][1], Row[0][0]);
+        rotation.x = atan2(row[1][2], row[2][2]);
+        rotation.z = atan2(row[0][1], row[0][0]);
     }
     else
     {
-        rotation.x = atan2(-Row[2][0], Row[1][1]);
+        rotation.x = atan2(-row[2][0], row[1][1]);
         rotation.z = 0;
     }
 

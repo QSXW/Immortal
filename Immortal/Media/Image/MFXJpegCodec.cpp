@@ -49,17 +49,18 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::ExternalFailed;
     }
 
-    desc.format  = Format::RGBA8;
-    desc.width   = videoParam.mfx.FrameInfo.CropW;
-    desc.height  = videoParam.mfx.FrameInfo.CropH;
-    MonoRef<uint8_t> temp = new uint8_t[desc.Size()];
+    picture = Picture{
+        videoParam.mfx.FrameInfo.CropW,
+        videoParam.mfx.FrameInfo.CropH,
+        Format::RGBA8
+    };
+
+    MonoRef<uint8_t> temp = new uint8_t[picture.desc.Size()];
 
     surface.Info = videoParam.mfx.FrameInfo;
     surface.Data.PitchLow = surface.Info.Width;
     surface.Data.Y  = &temp[0];
     surface.Data.UV = &temp[surface.Data.PitchLow * surface.Info.Height];
-
-    data = new uint8_t[desc.Size()];
 
     if ((status = handle->DecodeFrameAsync(&bitstream, &surface, &pOutSurface, &syncPoint)) != MFX_ERR_NONE)
     {
@@ -75,20 +76,15 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
     handle->Close();
 
     ColorSpace::Vector<uint8_t> dst{};
-    dst.r = data;
+    dst.r = picture.Data();
 
     ColorSpace::Vector<uint8_t> src{};
     src.x = pOutSurface->Data.Y;
     src.y = pOutSurface->Data.UV;
 
-    ColorSpace::NV12ToRGBA8(dst, src, desc.width, desc.height, pOutSurface->Data.PitchLow, pOutSurface->Data.PitchLow);
+    ColorSpace::NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height, pOutSurface->Data.PitchLow, pOutSurface->Data.PitchLow);
 
     return CodecError::Succeed;
-}
-
-uint8_t *MFXJpegCodec::Data() const
-{
-    return data;
 }
 
 }

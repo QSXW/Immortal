@@ -16,10 +16,12 @@ Texture::Texture(RenderContext *context, const std::string &filepath, const Desc
 {
     Frame frame{ filepath };
 
-    Super::Update(frame.Width(), frame.Height());
+    Vision::Picture picture = frame.GetPicture();
 
-    format = frame.Desc().format;
-    InternalCreate(frame.Data());
+    Super::Update(picture.desc.width, picture.desc.height);
+
+    format = picture.desc.format;
+    InternalCreate(picture.Data());
 }
 
 Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description) :
@@ -199,3 +201,5 @@ void Texture::Update(const void *data, uint32_t size)
 
 }
 }
+
+

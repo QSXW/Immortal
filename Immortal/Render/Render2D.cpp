@@ -52,7 +52,8 @@ void Render2D::Setup()
         }
         pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(data.MaxIndices * sizeof(uint32_t), rectIndices.get(), Buffer::Type::Index) });
     }
-    pipeline->Create(Render::Preset()->Target, Pipeline::Option{ Pipeline::Feature::BlendEnabled });
+    pipeline->Enable(Pipeline::State::Blend);
+    pipeline->Create(Render::Preset()->Target);
 
     data.WhiteTexture = Render::Preset()->Textures.White;
 
@@ -123,7 +124,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int obje
 {
     constexpr size_t RectVertexCount  = 4;
     constexpr float textureIndex      = 0.0f;
-    constexpr Vector2 textureCoords[] = {
+    static Vector2 textureCoords[] = {
         { 0.0f, 0.0f },
         { 1.0f, 0.0f },
         { 1.0f, 1.0f },
@@ -138,7 +139,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int obje
 
     for (size_t i = 0; i < RectVertexCount; i++, data.pRectVertex++)
     {
-        data.pRectVertex->Position     = transform * data.RectVertexPositions[i];
+        data.pRectVertex->Position     = Vector4{ transform * data.RectVertexPositions[i] };
         data.pRectVertex->Color        = color;
         data.pRectVertex->TexCoord     = textureCoords[i];
         data.pRectVertex->TexIndex     = textureIndex;
@@ -152,7 +153,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int obje
 void Render2D::DrawRect(const Matrix4 &transform, const std::shared_ptr<Texture> &texture, float tilingFactor, const Vector4 &tintColor, int object)
 {
     constexpr size_t RectVertexCount = 4;
-    constexpr Vector2 textureCoords[] = {
+    static Vector2 textureCoords[] = {
         { 0.0f, 0.0f },
         { 1.0f, 0.0f },
         { 1.0f, 1.0f },
@@ -182,7 +183,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const std::shared_ptr<Texture>
 
     for (size_t i = 0; i < RectVertexCount; i++, data.pRectVertex++)
     {
-        data.pRectVertex->Position     = transform * data.RectVertexPositions[i];
+        data.pRectVertex->Position     = Vector4{ transform * data.RectVertexPositions[i] };
         data.pRectVertex->Color        = tintColor;
         data.pRectVertex->TexCoord     = textureCoords[i];
         data.pRectVertex->TexIndex     = textureIndex;

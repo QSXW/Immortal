@@ -231,7 +231,7 @@ if (MONO_FOUND)
     target_link_directories("mono" INTERFACE ${MONO_LIBRARY_DIR})
     target_link_libraries("mono" INTERFACE ${MONO_LIB})
     if (WIN32)
-        set(MONO_SHARED "${MONO_BINARY_DIR}/${MONO_LIB}.dll")
+        set(MONO_SHARED "${MONO_BINARY_DIR}/${MONO_LIB}.dll" PARENT_SCOPE)
     endif()
 endif()
 

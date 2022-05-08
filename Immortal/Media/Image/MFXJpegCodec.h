@@ -23,11 +23,6 @@ public:
     virtual ~MFXJpegCodec();
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
-
-    virtual uint8_t *Data() const override;
-
-protected:
-    MonoRef<uint8_t> data;
 #endif
 };
 

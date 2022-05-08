@@ -371,6 +371,28 @@ public:
     }
 
     template <class T>
+    void Compute(T &&process)
+    {
+        auto *cmd = Begin();
+
+        process(cmd);
+
+        End<Queue::Type::Compute>(cmd);
+        Discard(cmd);
+    }
+
+    template <class T>
+    void SubmitSync(T &&process)
+    {
+        auto *cmd = Begin();
+
+        process(cmd);
+
+        End<Queue::Type::Graphics>(cmd);
+        Discard(cmd);
+    }
+
+    template <class T>
     void TransferAsync(T &&process)
     {
         CommandBuffer *cmdbuf = transfer->GetCurrentCommandBuffer();
@@ -385,15 +407,24 @@ public:
     }
 
     template <class T>
-    void Compute(T &&process)
+    void ComputeAsync(T &&process)
     {
-        process(compute->GetCurrentCommandBuffer());
+        CommandBuffer *cmdbuf = compute->GetCurrentCommandBuffer();
+        if (!cmdbuf->Recoding())
+        {
+            Compute(process);
+        }
+        else
+        {
+            process(cmdbuf);
+        }
     }
 
     template <class T>
     void Submit(T &&process)
     {
-        process(graphics->GetCurrentCommandBuffer());
+        CommandBuffer *cmdbuf = graphics->GetCurrentCommandBuffer();
+        process(cmdbuf);
     }
 
     void BeginComputeThread()

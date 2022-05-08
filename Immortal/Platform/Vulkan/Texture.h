@@ -13,7 +13,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-class Texture : public SuperTexture
+class Texture : public virtual SuperTexture
 {
 public:
     using Super = SuperTexture;
@@ -21,83 +21,64 @@ public:
 public:
     Texture(Device *device, const std::string &filepath, const Description &description = Description{});
 
-    Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
+    Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description, uint32_t layer = 1);
 
     ~Texture();
 
-    template <class T>
-    T Get()
-    {
-        if constexpr (IsPrimitiveOf<VkImage, T>())
-        {
-            return *image;
-        }
-    }
+    void Setup(const Description &description, uint32_t size, const void *data = nullptr, uint32_t layer = 1);
 
-    template <class T>
-    T *GetAddress()
-    {
-        if (IsPrimitiveOf<ImageView, T>())
-        {
-            return view.get();
-        }
-    }
-
-    void Setup(const Description &description, uint32_t size, const void *data = nullptr);
-
-    void SetupSampler(const Description &desc)
-    {
-        sampler = Sampler{ device, desc };
-    }
-
-    void SetupImageView(VkFormat format)
-    {
-        view.reset(new ImageView{
-            image.get(),
-            VK_IMAGE_VIEW_TYPE_2D
-            });
-    }
-
-    virtual operator uint64_t() const override
-    {
-        return *descriptorSet;
-    }
+    virtual operator uint64_t() const override;
 
     virtual void Update(void *data);
 
     virtual void As(Descriptor *descriptor, size_t index) override;
 
-    virtual void Map(uint32_t slot = 0) override
-    {
+    virtual bool operator==(const Texture::Super &super) const override;
 
-    }
-
+public:
     ImageDescriptor &DescriptorInfo()
     {
         return descriptor;
     }
 
-    virtual bool operator==(const Texture::Super &super) const override
+    operator VkImage() const
     {
-        auto other = dcast<const Texture *>(&super);
-        return image == other->image;
+        return *image;
     }
+
+private:
+    void InternalUpdate(void *data);
+
+    void Synchronize();
+
+    void GenerateMipMaps();
 
 private:
     Device *device{ nullptr };
 
-    Sampler sampler;
+    Description desc;
 
-    std::unique_ptr<Image> image;
+    MonoRef<Sampler> sampler;
 
-    std::unique_ptr<ImageView> view;
+    MonoRef<Image> image;
 
-    std::unique_ptr<DescriptorSet> descriptorSet;
+    MonoRef<ImageView> view;
+
+    MonoRef<DescriptorSet> descriptorSet;
 
     ImageDescriptor descriptor{};
 
 public:
     VkImageLayout Layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+};
+
+class TextureCube : public Vulkan::Texture, public SuperTextureCube
+{
+public:
+    using Super = SuperTextureCube;
+
+public:
+    TextureCube(Device *device, uint32_t width, uint32_t height, const Description &desc = {});
 };
 
 }

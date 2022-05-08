@@ -39,6 +39,8 @@ set(IMAGE_CODEC_FILES
     Image/STBCodec.h
     Image/MFXJpegCodec.cpp
     Image/MFXJpegCodec.h
+    Image/PPM.cpp
+    Image/PPM.h
     Image/OpenCVCodec.cpp
     Image/OpenCVCodec.h)
 

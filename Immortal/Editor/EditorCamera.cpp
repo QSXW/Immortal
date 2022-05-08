@@ -9,7 +9,7 @@ namespace Immortal
 EditorCamera::EditorCamera(const Matrix4 &projection) :
     Camera{ projection }
 {
-    distance = Vector::Distance(Vector3{ -0.8f, 0.8f, 0.8f }, focalPoint);
+    distance = Vector3{ -0.8f, 0.8f, 0.8f }.Distance(focalPoint);
 
     yaw = 0.0f;
     pitch = 0.0f;

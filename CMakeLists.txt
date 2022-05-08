@@ -15,7 +15,7 @@ set(ASSETS_DIR "${WORKSPACE}//Assets")
 
 add_subdirectory(3rdparty)
 add_subdirectory(Immortal)
-add_subdirectory(Samples/CmakeTest)
+add_subdirectory(Samples/CMakeTest)
 add_subdirectory(Samples/D3D12Sample)
 add_subdirectory(Samples/VulkanSample)
 add_subdirectory(Samples/OpenGLSample)

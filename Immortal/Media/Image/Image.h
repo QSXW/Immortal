@@ -10,3 +10,4 @@
 #include "OpenCVCodec.h"
 #include "JPEG.h"
 #include "MFXJpegCodec.h"
+#include "PPM.h"

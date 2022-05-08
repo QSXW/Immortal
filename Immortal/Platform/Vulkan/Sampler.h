@@ -20,7 +20,7 @@ public:
 
     Sampler(Device *device, const VkSamplerCreateInfo &info);
 
-    Sampler(Device *device, const Immortal::Texture::Description &desc);
+    Sampler(Device *device, const Texture::Description &desc, uint32_t mipLevels = 1);
 
     Sampler(Sampler &&other);
 

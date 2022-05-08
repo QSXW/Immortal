@@ -592,7 +592,7 @@ CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
 
     case NAL::Type::SPS:
         sps = new SequenceParameterSet{ bitTracker };
-        desc.format = SelectFormat(sps->bit_depth_luma, sps->chroma_format_idc);
+        picture.desc.format = SelectFormat(sps->bit_depth_luma, sps->chroma_format_idc);
         break;
 
     case NAL::Type::PPS:

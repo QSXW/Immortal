@@ -62,6 +62,11 @@ public:
         return nullptr;
     }
 
+    virtual TextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description = {})
+    {
+        return nullptr;
+    }
+
     virtual Buffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type)
     {
         return nullptr;

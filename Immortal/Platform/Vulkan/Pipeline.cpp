@@ -222,13 +222,13 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
     SetupLayout();
 }
 
-void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget, Option option)
+void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
 {
-    Reconstruct(superTarget, option);
+    Reconstruct(superTarget);
     NativeSuper::Update();
 }
 
-void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget, Option option)
+void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
 {
     Destroy();
 
@@ -250,7 +250,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
         auto &colorBlend = colorBlends[i];
         colorBlend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;;
 
-        if (!i)
+        if (!i && flags & Pipeline::State::Blend)
         {
             colorBlend.blendEnable         = VK_TRUE;
             colorBlend.colorBlendOp        = VK_BLEND_OP_ADD;
@@ -274,7 +274,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &sup
     state->colorBlend.blendConstants[3]   = 1.0f;
 
     state->depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    state->depthStencil.depthTestEnable       = option.flags & Feature::DepthDisabled ? VK_FALSE : VK_TRUE;
+    state->depthStencil.depthTestEnable       = flags & Pipeline::State::Depth ? VK_TRUE : VK_FALSE;
     state->depthStencil.depthWriteEnable      = VK_TRUE;
     state->depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     state->depthStencil.depthBoundsTestEnable = VK_FALSE;
@@ -370,47 +370,49 @@ void ComputePipeline::Update()
 
 void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 {
-    NativeSuper::Bind(superTexture, slot);
     auto texture = dynamic_cast<Texture *>(superTexture);
+    VkDescriptorImageInfo *descriptorInfo = (VkDescriptorImageInfo *)(&texture->DescriptorInfo());
 
-    for (auto &writeDescriptor : descriptor.setUpdater->WriteDescriptorSets)
+    auto &writeDescriptor = descriptor.setUpdater->WriteDescriptorSets[slot];
+    if (writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-        if (writeDescriptor.dstBinding == slot && writeDescriptor.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-        {
-            VkDescriptorImageInfo *descriptorInfo = rcast<VkDescriptorImageInfo *>(&texture->DescriptorInfo());
-            VkImageSubresourceRange subresourceRange{};
-            subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-            subresourceRange.baseMipLevel = 0;
-            subresourceRange.levelCount   = texture->MipLevels();
-            subresourceRange.layerCount   = 1;
+        VkImageSubresourceRange subresourceRange{};
+        subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel   = 0;
+        subresourceRange.baseArrayLayer = 0;
+        subresourceRange.levelCount     = texture->MipLevels();
+        subresourceRange.layerCount     = texture->LayerCount();
 
-            barriers.emplace_back(
-                texture->Get<VkImage>(),
-                subresourceRange,
-                texture->Layout,
-                VK_IMAGE_LAYOUT_GENERAL,
-                VK_ACCESS_SHADER_READ_BIT,
-                VK_ACCESS_SHADER_WRITE_BIT
-            );
-            descriptorInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-            break;
-        }
-    }
-
-    device->Compute([&](CommandBuffer *cmdbuf) -> void {
-        cmdbuf->PipelineBarrier(
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        ImageBarrier barrier = {
+            *texture,
+            subresourceRange,
+            texture->Layout,
+            VK_IMAGE_LAYOUT_GENERAL,
             0,
-            0, nullptr,
-            0, nullptr,
-            U32(barriers.size()), barriers.data()
-        );
-        });
+            VK_ACCESS_SHADER_WRITE_BIT,
+            //device->QueueFailyIndex(Queue::Type::Graphics),
+            //device->QueueFailyIndex(Queue::Type::Compute)
+        };
+
+        barriers.emplace_back(std::move(barrier));
+        descriptorInfo->imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+    writeDescriptor.pImageInfo = descriptorInfo;
+
+    Update();
 }
 
 void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
+    cmdbuf->PipelineImageBarrier(
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        barriers.data(),
+        U32(barriers.size())
+    );
+
+    cmdbuf->BindPipeline(handle, BindPoint);
+
     cmdbuf->BindDescriptorSets(
         BindPoint,
         layout,
@@ -419,45 +421,33 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         0, nullptr
     );
 
-    cmdbuf->BindPipeline(handle, BindPoint);
     cmdbuf->Dispatch(nGroupX, nGroupY, nGroupZ);
 
-    RenderContext::That->Submit([&](CommandBuffer *drawCmdbuf) {
-        VkImageLayout layouts[] = {
-            VK_IMAGE_LAYOUT_GENERAL
-        };
+    for (auto &b : barriers)
+    {
+        b.Swap();
+    }
 
-        for (size_t i = 0; i < SL_ARRAY_LENGTH(layouts); i++)
-        {
-            for (auto &b : barriers)
-            {
-                b.Swap();
-                b.To(layouts[i]);
-            }
+    cmdbuf->PipelineImageBarrier(
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        barriers.data(),
+        U32(barriers.size())
+    );
 
-            drawCmdbuf->PipelineBarrier(
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                U32(barriers.size()), barriers.data()
-            );
-        }
-        barriers.clear();
-        });
+    barriers.clear();
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
-    device->Compute([&](CommandBuffer *cmdbuf) {
+    device->ComputeAsync([&](CommandBuffer *cmdbuf) {
         Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
         });
 }
 
 void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
 {
-    device->Compute([&](CommandBuffer *cmdbuf) {
+    device->ComputeAsync([&](CommandBuffer *cmdbuf) {
         cmdbuf->PushConstants(
             layout,
             Shader::Stage::Compute,
@@ -466,11 +456,6 @@ void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t off
             data
         );
         });
-}
-
-void ComputePipeline::ResetResource()
-{
-
 }
 
 }

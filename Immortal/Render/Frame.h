@@ -19,21 +19,6 @@ public:
 
     virtual ~Frame();
 
-    virtual uint32_t Width() const
-    { 
-        return decoder->Desc().width;
-    }
-
-    virtual uint32_t Height() const
-    {
-        return decoder->Desc().height;
-    }
-
-    virtual const Vision::Description &Desc() const
-    { 
-        return decoder->Desc();
-    }
-
     virtual UINT8 *Data() const
     { 
         return decoder->Data();
@@ -44,9 +29,9 @@ public:
         return !!decoder && !!decoder->Data();
     }
 
-    virtual size_t Size() const
+    virtual Vision::Picture GetPicture() const
     {
-        return decoder->Desc().Size();
+        return decoder->GetPicture();
     }
 
 private:

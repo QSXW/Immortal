@@ -43,11 +43,13 @@ enum class FileFormat : uint64_t
     FBX   = MakeIdentifier('F', 'B', 'X'          ),
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
     PNG   = MakeIdentifier('P', 'N', 'G'          ),
+    PPM   = MakeIdentifier('P', 'P', 'M'          ),
     JFIF  = MakeIdentifier('J', 'F', 'I', 'F'     ),
     JPG   = MakeIdentifier('J', 'P', 'G'          ),
     JPEG  = MakeIdentifier('J', 'P', 'E', 'G'     ),
     IVF   = MakeIdentifier('I', 'V', 'F'          ),
     IML   = MakeIdentifier('I', 'M', 'L'          ),
+    HDR   = MakeIdentifier('H', 'D', 'R'          ),
 };
 
 namespace FileSystem
@@ -104,6 +106,8 @@ static inline bool IsImage(const std::string &path)
            IsFormat<FileFormat::JPEG>(id) ||
            IsFormat<FileFormat::JPG>(id)  ||
            IsFormat<FileFormat::PNG>(id)  ||
+           IsFormat<FileFormat::PPM>(id)  ||
+           IsFormat<FileFormat::HDR>(id)  ||
            IsFormat<FileFormat::JFIF>(id);
 }
 

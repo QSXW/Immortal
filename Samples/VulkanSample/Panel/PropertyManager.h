@@ -47,13 +47,13 @@ public:
                             // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing() - 8.0f);
 
                             auto &transform = object.GetComponent<TransformComponent>();
-                            auto rotation = Vector::Degrees(transform.Rotation);
+                            Vector3 rotation = transform.Rotation.Degrees();
 
                             UI::DrawVec3Control(WordsMap::Get("Position"), transform.Position, 0.01f);
                             UI::DrawVec3Control(WordsMap::Get("Rotation"), rotation, 1.0f);
                             UI::DrawVec3Control(WordsMap::Get("Scale"), transform.Scale, 0.01f);
 
-                            transform.Rotation = Vector::Radians(rotation);
+                            transform.Rotation = rotation.Radians();
                     });
                 }
 
