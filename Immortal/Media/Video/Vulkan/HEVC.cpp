@@ -107,7 +107,6 @@ void HEVCCodec::UpdateSequenceParameterSet()
     ps.sps.bit_depth_luma_minus8                          = sps->bit_depth_luma - 8;
     ps.sps.bit_depth_chroma_minus8                        = sps->bit_depth_chroma - 8;
     ps.sps.log2_max_pic_order_cnt_lsb_minus4              = sps->log2_max_pic_order_cnt_lsb_minus4;
-    ps.sps.sps_max_dec_pic_buffering_minus1               = vps->vps_max_dec_pic_buffering[0] + 1;
     ps.sps.log2_min_luma_coding_block_size_minus3         = sps->log2_min_luma_coding_block_size_minus3;
     ps.sps.log2_diff_max_min_luma_coding_block_size       = sps->log2_diff_max_min_luma_coding_block_size;
     ps.sps.log2_min_luma_transform_block_size_minus2      = sps->log2_min_luma_transform_block_size_minus2;
@@ -124,6 +123,11 @@ void HEVCCodec::UpdateSequenceParameterSet()
     ps.sps.conf_win_right_offset                          = sps->conf_win_right_offset ;
     ps.sps.conf_win_top_offset                            = sps->conf_win_top_offset;
     ps.sps.conf_win_bottom_offset                         = sps->conf_win_bottom_offset;
+
+    for (int i = 0; i < SL_ARRAY_LENGTH(vps->vps_max_dec_pic_buffering); i++)
+    {
+        ps.sps.sps_max_dec_pic_buffering_minus1[i] = vps->vps_max_dec_pic_buffering[i] + 1;
+    }
 
     StdVideoH265SpsFlags *flags = &ps.sps.flags;
     flags->sps_temporal_id_nesting_flag        = sps->sps_temporal_id_nesting_flag;
@@ -167,28 +171,28 @@ void HEVCCodec::UpdatePictureParameterSet()
     ps.pps.log2_parallel_merge_level_minus2      = pps->log2_parallel_merge_level_minus2;
 
     StdVideoH265PpsFlags *flags = &ps.pps.flags;
-    flags->dependent_slice_segments_enabled_flag       = pps->dependent_slice_segments_enabled_flag;                 
-    flags->output_flag_present_flag                    = pps->output_flag_present_flag;              
-    flags->sign_data_hiding_enabled_flag               = pps->sign_data_hiding_enabled_flag;                   
-    flags->cabac_init_present_flag                     = pps->cabac_init_present_flag;             
-    flags->constrained_intra_pred_flag                 = pps->constrained_intra_pred_flag;                 
-    flags->transform_skip_enabled_flag                 = pps->transform_skip_enabled_flag;                 
-    flags->cu_qp_delta_enabled_flag                    = pps->cu_qp_delta_enabled_flag;              
-    flags->pps_slice_chroma_qp_offsets_present_flag    = pps->pps_slice_chroma_qp_offsets_present_flag;                              
-    flags->weighted_pred_flag                          = pps->weighted_pred_flag;        
-    flags->weighted_bipred_flag                        = pps->weighted_bipred_flag;          
-    flags->transquant_bypass_enabled_flag              = pps->transquant_bypass_enabled_flag;                    
-    flags->tiles_enabled_flag                          = pps->tiles_enabled_flag;        
-    flags->entropy_coding_sync_enabled_flag            = pps->entropy_coding_sync_enabled_flag;                      
+    flags->dependent_slice_segments_enabled_flag       = pps->dependent_slice_segments_enabled_flag;
+    flags->output_flag_present_flag                    = pps->output_flag_present_flag;
+    flags->sign_data_hiding_enabled_flag               = pps->sign_data_hiding_enabled_flag;
+    flags->cabac_init_present_flag                     = pps->cabac_init_present_flag;
+    flags->constrained_intra_pred_flag                 = pps->constrained_intra_pred_flag;
+    flags->transform_skip_enabled_flag                 = pps->transform_skip_enabled_flag;
+    flags->cu_qp_delta_enabled_flag                    = pps->cu_qp_delta_enabled_flag;
+    flags->pps_slice_chroma_qp_offsets_present_flag    = pps->pps_slice_chroma_qp_offsets_present_flag;
+    flags->weighted_pred_flag                          = pps->weighted_pred_flag;
+    flags->weighted_bipred_flag                        = pps->weighted_bipred_flag;
+    flags->transquant_bypass_enabled_flag              = pps->transquant_bypass_enabled_flag;
+    flags->tiles_enabled_flag                          = pps->tiles_enabled_flag;
+    flags->entropy_coding_sync_enabled_flag            = pps->entropy_coding_sync_enabled_flag;
     flags->uniform_spacing_flag                        = pps->uniform_spacing_flag;
-    flags->loop_filter_across_tiles_enabled_flag       = pps->loop_filter_across_tiles_enabled_flag;                           
-    flags->pps_loop_filter_across_slices_enabled_flag  = pps->pps_loop_filter_across_slices_enabled_flag;                                
-    flags->deblocking_filter_control_present_flag      = pps->deblocking_filter_control_present_flag;                            
-    flags->deblocking_filter_override_enabled_flag     = pps->deblocking_filter_override_enabled_flag;                             
-    flags->pps_deblocking_filter_disabled_flag         = pps->pps_deblocking_filter_disabled_flag;                         
-    flags->pps_scaling_list_data_present_flag          = pps->pps_scaling_list_data_present_flag;                        
-    flags->lists_modification_present_flag             = pps->lists_modification_present_flag;                     
-    flags->slice_segment_header_extension_present_flag = pps->slice_segment_header_extension_present_flag;                                 
+    flags->loop_filter_across_tiles_enabled_flag       = pps->loop_filter_across_tiles_enabled_flag;
+    flags->pps_loop_filter_across_slices_enabled_flag  = pps->pps_loop_filter_across_slices_enabled_flag;
+    flags->deblocking_filter_control_present_flag      = pps->deblocking_filter_control_present_flag;
+    flags->deblocking_filter_override_enabled_flag     = pps->deblocking_filter_override_enabled_flag;
+    flags->pps_deblocking_filter_disabled_flag         = pps->pps_deblocking_filter_disabled_flag;
+    flags->pps_scaling_list_data_present_flag          = pps->pps_scaling_list_data_present_flag;
+    flags->lists_modification_present_flag             = pps->lists_modification_present_flag;
+    flags->slice_segment_header_extension_present_flag = pps->slice_segment_header_extension_present_flag;
     flags->pps_extension_present_flag                  = pps->pps_extension_present_flag;
 
     ps.pps.pScalingLists = &ps.ppsScalingLists;
