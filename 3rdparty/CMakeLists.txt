@@ -239,7 +239,7 @@ add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
-    vulkan imgui spdlog::spdlog
+    vulkan imgui spdlog::spdlog_header_only
     SPIRV spirv-cross-glsl
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>>

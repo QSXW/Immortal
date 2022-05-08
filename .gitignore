@@ -20,4 +20,3 @@ Config.h
 *.filters
 *.user
 *.vcxproj
-*log

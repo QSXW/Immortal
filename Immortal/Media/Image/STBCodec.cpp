@@ -41,7 +41,6 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         );
     }
 
-    if (stbi_image_free)
     picture = Picture{ width, height, format, false };
     picture.data.reset(data);
     if (!data)
