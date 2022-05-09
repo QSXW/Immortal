@@ -104,6 +104,7 @@ Mesh::Mesh(const std::string &filepath) :
 
         buffer.reset(Render::CreateBuffer(totalVertexSize + totalFaceSize, Buffer::Type{ Buffer::Type::Vertex | Buffer::Type::Index }));
 
+        nodes.reserve(scene->mNumMeshes);
         for (size_t i = 0; i < scene->mNumMeshes; i++)
         {
             auto mesh = scene->mMeshes[i];

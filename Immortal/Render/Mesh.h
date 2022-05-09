@@ -113,7 +113,7 @@ public:
         return path;
     }
 
-    std::list<Node> &NodeList()
+    std::vector<Node> &NodeList()
     {
         return nodes;
     }
@@ -128,7 +128,7 @@ private:
 
     std::string path;
 
-    std::list<Node> nodes;
+    std::vector<Node> nodes;
 
     struct
     {

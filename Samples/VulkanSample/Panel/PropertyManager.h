@@ -5,6 +5,21 @@
 namespace Immortal
 {
 
+struct UILock
+{
+    template <class T, class U>
+    UILock(T id, U &&process)
+    {
+        ImGui::PushID(id);
+        process();
+    }
+
+    ~UILock()
+    {
+        ImGui::PopID();
+    }
+};
+
 class PropertyManager : public Layer
 {
 public:
@@ -119,60 +134,85 @@ public:
                         WordsMap::Get("Material"),
                         [&]() -> void {
                             auto &material = object.GetComponent<MaterialComponent>();
-                            auto &mesh     = object.GetComponent<MeshComponent>();
+                            auto &mesh = object.GetComponent<MeshComponent>();
                             auto &nodeList = mesh.Mesh->NodeList();
-                            
-                            for (auto &node : nodeList)
-                            {
-                                auto &ref = material.Ref[node.MaterialIndex];
-                                ImGui::Text("%s", node.Name.c_str());
 
-                                UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
+                            static ImGuiComboFlags flags = 0;
+                            static int materialIndex = 0;
+                            const char *previewValue = nodeList[materialIndex].Name.c_str();
 
-                                float smoothness = 1.0f - ref.Roughness;
-                                DrawFloat(WordsMap::Get("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
-                                DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
-                                ref.Roughness = 1.0f - smoothness;
-
-                                ImGui::Columns(1);
-                                auto &textures = ref.Textures;
-                                ImVec2 size = { 64.0f, 64.0f };
-
-                                auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
-                                    ImGui::PushID((void*)(node.MaterialIndex + (uint64_t)label.c_str()));
-                                    ImGui::Columns(2);
-                                    ImGui::Text("%s", label.c_str());
-                                    ImGui::SetColumnWidth(0, 64);
-                                    ImGui::NextColumn();
-                                    ImGui::PushItemWidth(-1);
-                                    if (ImGui::ImageButton((ImTextureID)(uint64_t)*texture, size))
+                            UILock lock{
+                                "Material Combo",
+                                [&] {
+                                    ImGui::PushItemWidth(-2);
+                                    if (ImGui::BeginCombo("###", previewValue, flags))
                                     {
-                                        auto res = FileDialogs::OpenFile(FileFilter::Image);
-                                        if (res.has_value())
+                                        for (size_t i = 0; i < nodeList.size(); i++)
                                         {
-                                            texture.reset(Render::Create<Texture>(
-                                                res.value(),
-                                                Texture::Description{
-                                                    Format::None,
-                                                    Wrap::Mirror,
-                                                    Filter::Linear
-                                                }));
+                                            const bool isSelected = (materialIndex == i);
+                                            if (ImGui::Selectable(nodeList[i].Name.c_str(), &isSelected))
+                                            {
+                                                materialIndex = i;
+                                            }
+
+                                            if (isSelected)
+                                                ImGui::SetItemDefaultFocus();
                                         }
+
+                                        ImGui::EndCombo();
                                     }
-                                    ImGui::Columns(1);
-                                    ImGui::PopID();
-                                };
-                                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
-                                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
-                                ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+                                    ImGui::PopItemWidth();
+                            }};
 
-                                drawTexture(textures.Albedo,    WordsMap::Get("Albedo"));
-                                drawTexture(textures.Normal,    WordsMap::Get("Normal"));
-                                drawTexture(textures.Metallic,  WordsMap::Get("Metallic"));
-                                drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
+                            auto &node = nodeList[materialIndex];
+                            auto &ref = material.Ref[node.MaterialIndex];
 
-                                ImGui::PopStyleColor(3);
-                            }
+                            UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
+
+                            float smoothness = 1.0f - ref.Roughness;
+                            DrawFloat(WordsMap::Get("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
+                            DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
+                            ref.Roughness = 1.0f - smoothness;
+
+                            ImGui::Columns(1);
+                            auto &textures = ref.Textures;
+                            ImVec2 size = { 64.0f, 64.0f };
+
+                            auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
+                                ImGui::PushID((void*)(node.MaterialIndex + (uint64_t)label.c_str()));
+                                ImGui::Columns(2);
+                                ImGui::Text("%s", label.c_str());
+                                ImGui::SetColumnWidth(0, 64);
+                                ImGui::NextColumn();
+                                ImGui::PushItemWidth(-1);
+                                if (ImGui::ImageButton((ImTextureID)(uint64_t)*texture, size))
+                                {
+                                    auto res = FileDialogs::OpenFile(FileFilter::Image);
+                                    if (res.has_value())
+                                    {
+                                        texture.reset(Render::Create<Texture>(
+                                            res.value(),
+                                            Texture::Description{
+                                                Format::None,
+                                                Wrap::Mirror,
+                                                Filter::Linear
+                                            }));
+                                    }
+                                }
+                                ImGui::Columns(1);
+                                ImGui::PopID();
+                            };
+                            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
+                            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+                            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{ 1.0f, 1.0f, 1.0f, 0.2f });
+
+                            drawTexture(textures.Albedo,    WordsMap::Get("Albedo"));
+                            drawTexture(textures.Normal,    WordsMap::Get("Normal"));
+                            drawTexture(textures.Metallic,  WordsMap::Get("Metallic"));
+                            drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
+
+                            ImGui::PopStyleColor(3);
+
                         });
                 }
 
