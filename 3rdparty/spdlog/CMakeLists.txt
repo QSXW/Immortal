@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.10...3.21)
 
-project(spdlog VERSION ${SPDLOG_VERSION} LANGUAGES CXX)
+project(spdlog LANGUAGES CXX)
 message(STATUS "Build spdlog: ${SPDLOG_VERSION}")
 
 # ---------------------------------------------------------------------------------------
