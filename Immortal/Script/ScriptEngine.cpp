@@ -66,6 +66,22 @@ static void SetScale(uint64_t scene, int id, Vector3 *scale)
     object.GetComponent<TransformComponent>().Scale = *scale;
 }
 
+static void GetTransform(uint64_t scene, int id, Matrix4 *transform)
+{
+    Object object{ id, (Scene *)scene };
+    *transform = object.GetComponent<TransformComponent>();
+}
+
+static void SetTransform(uint64_t scene, int id, Matrix4 *value)
+{
+    Matrix4 &transform = *value;
+    Object object{ id, (Scene *)scene };
+    auto &c = object.GetComponent<TransformComponent>();
+    c.Position = Vector4{ transform[0] };
+    c.Rotation = Vector4{ transform[1] };
+    c.Scale    = Vector4{ transform[2] };
+}
+
 }
 
 namespace SceneObjectFunc
@@ -238,12 +254,14 @@ void ScriptEngine::Init()
     Register(NS(TagComponent::__Get), SceneComponentFunc::GetTag);
     Register(NS(TagComponent::__Set), SceneComponentFunc::SetTag);
 
-    Register(NS(TransformComponent::__GetPosition), SceneComponentFunc::GetPosition);
-    Register(NS(TransformComponent::__SetPosition), SceneComponentFunc::SetPosition);
-    Register(NS(TransformComponent::__GetRotation), SceneComponentFunc::GetRotation);
-    Register(NS(TransformComponent::__SetRotation), SceneComponentFunc::SetRotation);
-    Register(NS(TransformComponent::__GetScale   ), SceneComponentFunc::GetScale   );
-    Register(NS(TransformComponent::__SetScale   ), SceneComponentFunc::SetScale   );
+    Register(NS(TransformComponent::__GetPosition ), SceneComponentFunc::GetPosition);
+    Register(NS(TransformComponent::__SetPosition ), SceneComponentFunc::SetPosition);
+    Register(NS(TransformComponent::__GetRotation ), SceneComponentFunc::GetRotation);
+    Register(NS(TransformComponent::__SetRotation ), SceneComponentFunc::SetRotation);
+    Register(NS(TransformComponent::__GetScale    ), SceneComponentFunc::GetScale   );
+    Register(NS(TransformComponent::__SetScale    ), SceneComponentFunc::SetScale   );
+    Register(NS(TransformComponent::__GetTransform), SceneComponentFunc::GetTransform);
+    Register(NS(TransformComponent::__SetTransform), SceneComponentFunc::SetTransform);
 
     Register(NS(GameObject::__HasComponent), SceneObjectFunc::HasComponent);
     Register(NS(GameObject::__AddComponent), SceneObjectFunc::AddComponent);

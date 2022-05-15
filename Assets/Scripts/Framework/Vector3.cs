@@ -25,6 +25,13 @@ namespace Immortal
 			x = y = z = scalar;
 		}
 
+		public Vector3(Vector4 v)
+		{
+			x = v.x;
+			y = v.y;
+			z = v.z;
+		}
+
 		public static Vector3 operator*(Vector3 v, float scalar)
 		{
 			return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);

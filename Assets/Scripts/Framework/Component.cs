@@ -42,6 +42,12 @@ namespace Immortal
         [MethodImpl(MethodImplOptions.InternalCall)]
         public static extern void __SetScale(ulong scene, int id, ref Vector3 v);
 
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void __GetTransform(ulong scene, int id, out Matrix4 v);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public static extern void __SetTransform(ulong scene, int id, ref Matrix4 v);
+
         public Vector3 Position
         {
             get
@@ -78,6 +84,19 @@ namespace Immortal
             set
             {
                 __SetScale(GameObject.Scene, GameObject.Id, ref value);
+            }
+        }
+
+        public Matrix4 Transform
+		{
+            get
+            {
+                __GetTransform(GameObject.Scene, GameObject.Id, out Matrix4 transform);
+                return transform;
+            }
+            set
+            {
+                __SetTransform(GameObject.Scene, GameObject.Id, ref value);
             }
         }
     }

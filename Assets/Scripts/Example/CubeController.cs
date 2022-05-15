@@ -8,7 +8,8 @@ namespace Immortal
 
 		override public void Update(float deltaTime)
 		{
-			TransformComponent transform = GetComponent<TransformComponent>();
+			TransformComponent transformComponent = GetComponent<TransformComponent>();
+			var transform = transformComponent;
 			var pos = transform.Position;
 
 			if (Input.GetKeyDown(KeyCode.A))
