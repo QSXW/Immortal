@@ -13,12 +13,11 @@ struct FSInput
     vec3 WorldPos;
     vec3 Normal;
     vec3 Tangent;
-    vec3 BiTangent;
     vec2 TexCoord;
 };
 
 layout (location = 0) in FSInput fsInput;
-layout (location = 5) in flat ModelInfo inModel;
+layout (location = 4) in flat ModelInfo inModel;
 
 struct Light {
     vec3 position;
@@ -50,6 +49,18 @@ vec3 CalculateNormal(vec2 uv)
 	vec3 B = normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
 	return normalize(TBN * tangentNormal);
+}
+
+// From http://filmicgames.com/archives/75
+vec3 Uncharted2Tonemap(vec3 x)
+{
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
 void main()
@@ -88,6 +99,12 @@ void main()
         Lo += (ambient + diffuse + specular) * objectColor;
 	};
 
-	outColor    = vec4(Lo, 1.0);
+    vec3 color = Lo;
+    color = Uncharted2Tonemap(color * shading.exposure);
+	color = color * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+	// Gamma correction
+	color = pow(color, vec3(1.0f / shading.gamma));
+
+	outColor    = vec4(color, 1.0);
 	outObjectID = inModel.objectID;
 }

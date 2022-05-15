@@ -12,6 +12,10 @@ class Image;
 class ImageView
 {
 public:
+    using Primitive = VkImageView;
+    VKCPP_OPERATOR_HANDLE()
+
+public:
     ImageView(Image          *image,
               VkImageViewType viewType,
               VkFormat        format         = VK_FORMAT_UNDEFINED,
@@ -34,16 +38,6 @@ public:
 
     ~ImageView();
 
-    VkImageView Handle() const
-    {
-        return handle;
-    }
-
-    operator VkImageView() const
-    {
-        return handle;
-    }
-
     void Set(Image *image)
     {
         this->refImage = image;
@@ -53,8 +47,6 @@ private:
     void Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers);
 
 private:
-    VkImageView handle{ VK_NULL_HANDLE };
-
     Device *device{ nullptr };
 
     Image *refImage{ nullptr };

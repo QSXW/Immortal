@@ -162,7 +162,7 @@ Texture::~Texture()
     glDeleteTextures(1, &handle);
 }
 
-void Texture::Update(void * data)
+void Texture::Update(const void *data)
 {
     uint32_t bpp = type.DataFormat == GL_RGBA ? 4 : 3;
 
@@ -270,7 +270,7 @@ void TextureCube::Map(uint32_t slot) const
     glBindTextureUnit(slot, handle);
 }
 
-void TextureCube::Update(void * data)
+void TextureCube::Update(const void * data)
 {
 
 }

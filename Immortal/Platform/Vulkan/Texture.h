@@ -29,7 +29,7 @@ public:
 
     virtual operator uint64_t() const override;
 
-    virtual void Update(void *data);
+    virtual void Update(const void *data);
 
     virtual void As(Descriptor *descriptor, size_t index) override;
 
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    void InternalUpdate(void *data);
+    void InternalUpdate(const void *data);
 
     void Synchronize();
 

@@ -178,7 +178,7 @@ public:
         return 1;
     }
 
-    virtual void Update(void *data) { }
+    virtual void Update(const void *data) { }
 
     virtual void Map(uint32_t slot = 0) { }
 

@@ -13,12 +13,11 @@ struct FSInput
     vec3 WorldPos;
     vec3 Normal;
     vec3 Tangent;
-    vec3 Bitangent;
     vec2 TexCoord;
 };
 
 layout (location = 0) in FSInput fsInput;
-layout (location = 5) in flat ModelInfo inModel;
+layout (location = 4) in flat ModelInfo inModel;
 
 struct Light {
     vec3 position;

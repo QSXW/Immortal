@@ -33,6 +33,8 @@ public:
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
+    virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
+
     virtual void Swap(void *ptr);
 #endif
 };

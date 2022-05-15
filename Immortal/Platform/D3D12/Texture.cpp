@@ -81,7 +81,7 @@ void Texture::InternalCreate(const void *data)
 
     if (data)
     {
-        Update(data, 0);
+        Update(data);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -106,16 +106,13 @@ bool Texture::operator==(const Super &other) const
     return resource == dcast<const Texture &>(other).resource;
 }
 
-void Texture::Update(const void *data, uint32_t size)
+void Texture::Update(const void *data)
 {
-    (void)size;
-
     ID3D12Device *device = *context->GetAddress<Device>();
 
     D3D12_RESOURCE_DESC uploadDesc{};
-    CleanUpObject(&uploadDesc);
 
-    uint32_t uploadPitch          = SLALIGN(width * format.ComponentCount(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+    uint32_t uploadPitch          = SLALIGN(width * format.Size(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
     uint32_t uploadSize           = height * uploadPitch;
     uploadDesc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
     uploadDesc.Alignment          = 0;
@@ -130,7 +127,6 @@ void Texture::Update(const void *data, uint32_t size)
     uploadDesc.Flags              = D3D12_RESOURCE_FLAG_NONE;
 
     D3D12_HEAP_PROPERTIES props{};
-    CleanUpObject(&props);
     props.Type                 = D3D12_HEAP_TYPE_UPLOAD;
     props.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;

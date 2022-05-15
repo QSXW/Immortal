@@ -54,6 +54,24 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Succeed;
 }
 
+CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
+{
+    cv::Mat input{ cv::Size{ (int)picture.desc.width, (int)picture.desc.height }, CV_8UC4, picture.data.get() };
+    try
+    {
+        if (!cv::imencode(".jpg", input, codedFrame.buffer))
+        {
+            return CodecError::FailedToCallDecoder;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        LOG::ERR("{}", e.what());
+    }
+
+    return CodecError::Succeed;
+}
+
 void OpenCVCodec::Swap(void *ptr)
 {
     size_t size = picture.desc.Size();

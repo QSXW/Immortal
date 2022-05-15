@@ -13,18 +13,16 @@ struct FSInput
     vec3 WorldPos;
     vec3 Normal;
     vec3 Tangent;
-    vec3 BiTangent;
     vec2 TexCoord;
 };
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec3 inTangent;
-layout (location = 3) in vec3 inBiTangent;
-layout (location = 4) in vec2 inTexCoord;
+layout (location = 3) in vec2 inTexCoord;
 
 layout (location = 0) out FSInput fsInput;
-layout (location = 5) out flat ModelInfo outModel;
+layout (location = 4) out flat ModelInfo outModel;
 
 layout (binding = 0) uniform Transform
 {
@@ -60,7 +58,6 @@ void main()
     fsInput.WorldPos  = vec3(worldPos);
     fsInput.Normal    = mat3(model.transform) * inNormal;
     fsInput.Tangent   = inTangent;
-    fsInput.BiTangent = inBiTangent;
     fsInput.TexCoord  = inTexCoord;
 
 #if VULKAN

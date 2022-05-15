@@ -3,7 +3,6 @@ struct VSInput
     float4 position  : POSITION;
     float3 normal    : NORMAL;
     float3 tangent   : TANGENT;
-    float3 biTangent : BITANGENT;
     float2 uv        : TEXCOORD;
 };
 
@@ -13,7 +12,6 @@ struct PSInput
     float3 worldPos  : WORLD_POSITION;
     float3 normal    : NORMAL;
     float3 tangent   : TANGENT;
-    float3 biTangent : BITANGENT;
     float2 uv        : TEXCOORD;
     int    id        : OBJECT_ID;
 };
@@ -67,7 +65,6 @@ PSInput VSMain(VSInput input)
     result.position     = mul(viewProjection, worldPos);
     result.normal       = mul((float3x3)model.transform, input.normal);
     result.tangent      = input.tangent;
-    result.biTangent    = input.biTangent;
     result.uv           = input.uv;
     result.id           = model.objectID;
 

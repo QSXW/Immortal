@@ -122,7 +122,6 @@ Mesh::Mesh(const std::string &filepath) :
                 if (mesh->HasTangentsAndBitangents())
                 {
                     vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
-                    vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
                 }
                 if (mesh->HasTextureCoords(0))
                 {

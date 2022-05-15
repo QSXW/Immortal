@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Framework/Window.h"
-#include "Render/RenderContext.h"
 #include "NativeInput.h"
 
 #ifndef UNICODE

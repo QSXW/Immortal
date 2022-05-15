@@ -46,8 +46,17 @@ public:
         Vector3 Position;
         Vector3 Normal;
         Vector3 Tangent;
-        Vector3 Bitangent;
         Vector2 Texcoord;
+    };
+
+    struct SkeletonVertex
+    {
+        Vector3  Position;
+        Vector3  Normal;
+        Vector3  Tangent;
+        Vector2  Texcoord;
+        uint32_t BoneIds[4];
+        Vector4  Weights;
     };
 
     struct Face

@@ -59,8 +59,8 @@ set(PROCESSING_FILES
     Processing/ColorSpace.h)
 
 set(EXTERNAL_FILES
-    External/stb_image/stb_image.cpp
-    External/stb_image/stb_image.h)
+    External/External.cpp
+    External/stb_image.h)
 
 source_group("\\" FILES ${CORE_FILES})
 source_group("\\Common\\" FILES ${COMMON_FILES})

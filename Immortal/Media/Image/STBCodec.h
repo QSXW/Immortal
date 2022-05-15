@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "Media/Interface/Codec.h"
-#include "Media/External/stb_image/stb_image.h"
+#include "Media/External/stb_image.h"
 
 namespace Immortal
 {
@@ -24,6 +24,8 @@ public:
     virtual ~STBCodec() override;
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
+
+    virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
 };
 
 }

@@ -103,13 +103,13 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void Texture::Update(void *data)
+void Texture::Update(const void *data)
 {
     InternalUpdate(data);
     Synchronize();
 }
 
-void Texture::InternalUpdate(void *data)
+void Texture::InternalUpdate(const void *data)
 {
     size_t size = width * height * desc.format.Size();
     Buffer stagingBuffer{ device, size, data, Buffer::Type::TransferSource };

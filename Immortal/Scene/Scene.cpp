@@ -155,11 +155,10 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
     // renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
 
     InputElementDescription inputElementDescription = {
-        { Format::VECTOR3, "POSITION" },
-        { Format::VECTOR3, "NORMAL"   },
-        { Format::VECTOR3, "TANGENT"   },
+        { Format::VECTOR3, "POSITION"  },
+        { Format::VECTOR3, "NORMAL"    },
         { Format::VECTOR3, "BITANGENT" },
-        { Format::VECTOR2, "TEXCOORD" },
+        { Format::VECTOR2, "TEXCOORD"  },
     };
 
     pipelines.tonemap = nullptr;

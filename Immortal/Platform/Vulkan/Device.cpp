@@ -136,13 +136,13 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     }
 
     VkDeviceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = physicalDevice->LastRequestedExtensionFeature;
-    createInfo.queueCreateInfoCount = U32(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.enabledExtensionCount = U32(enabledExtensions.size());
+    createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext                   = physicalDevice->LastRequestedExtensionFeature;
+    createInfo.queueCreateInfoCount    = U32(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos       = queueCreateInfos.data();
+    createInfo.enabledExtensionCount   = U32(enabledExtensions.size());
     createInfo.ppEnabledExtensionNames = enabledExtensions.data();
-    createInfo.pEnabledFeatures = &physicalDevice->RequestedFeatures;
+    createInfo.pEnabledFeatures        = &physicalDevice->RequestedFeatures;
 
     Check(physicalDevice->CreateDevice(&createInfo, &handle));
 
