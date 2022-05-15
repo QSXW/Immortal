@@ -67,6 +67,11 @@ struct Vector2 : public glm::vec2
     {
         return glm::distance(Primitive{ *this }, distance);
     }
+
+    Vector2 Normalize() const
+    {
+        return glm::normalize(*this);
+    }
 };
 
 struct Vector4;
@@ -134,6 +139,11 @@ struct Vector3 : public glm::vec3
     {
         return glm::distance(Primitive{ *this }, distance);
     }
+
+    Vector3 Normalize() const
+    {
+        return glm::normalize(*this);
+    }
 };
 
 struct Vector4 : public glm::vec4
@@ -191,6 +201,11 @@ struct Vector4 : public glm::vec4
     float Distance(const Vector4 &distance) const
     {
         return glm::distance(Primitive{ *this }, distance);
+    }
+
+    Vector4 Normalize() const
+    {
+        return glm::normalize(*this);
     }
 };
 
