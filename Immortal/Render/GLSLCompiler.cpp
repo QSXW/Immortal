@@ -95,8 +95,7 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
 
 inline Shader::Resource GetDecoration(spirv_cross::CompilerGLSL &glsl, spirv_cross::Resource &resource)
 {
-    Shader::Resource ret;
-    CleanUpObject(&ret);
+    Shader::Resource ret{};
     ret.set      = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
     ret.binding  = glsl.get_decoration(resource.id, spv::DecorationBinding);
     ret.location = glsl.get_decoration(resource.id, spv::DecorationLocation);
@@ -126,7 +125,6 @@ bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shade
 
         spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
         resource.count = type.array.empty() ? 1 : type.array[0];
-
         resouces.emplace_back(std::move(resource));
     }
     for (auto &spirvResource : spirvResources->uniform_buffers)
