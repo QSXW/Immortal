@@ -26,7 +26,7 @@ public:
     }
 
     template<class T, class P>
-    void OnUpdate(std::shared_ptr<T> target, P process = []() -> void{ })
+    void OnUpdate(T *target, P process = []() -> void{ })
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
         ImGui::Begin(Super::Text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);

@@ -101,7 +101,7 @@ public:
 
     virtual void Draw(GraphicsPipeline::Super *pipeline) override;
 
-    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
+    virtual void Begin(RenderTarget::Super *renderTarget) override;
 
     virtual void End() override;
 

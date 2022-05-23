@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Format.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -186,7 +187,7 @@ public:
 
 using VertexLayout = InputElementDescription;
 
-class Buffer
+class Buffer : public IObject
 {
 public:
     using IndexType = uint32_t;
@@ -210,6 +211,11 @@ public:
 
     struct BindInfo
     {
+        void Increase()
+        {
+            offset += size;
+        }
+
         Buffer::Type type;
         uint32_t size;
         uint32_t offset;

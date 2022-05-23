@@ -1,6 +1,6 @@
 #version 450 core
 
-layout(set = 0, binding = 0) uniform TransformUniforms
+layout(binding = 0) uniform TransformUniforms
 {
 	mat4 viewProjectionMatrix;
 	mat4 skyProjectionMatrix;

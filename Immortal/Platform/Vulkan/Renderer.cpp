@@ -21,6 +21,10 @@ Renderer::Renderer(RenderContext::Super *c) :
 
 Renderer::~Renderer()
 {
+    if (!fences[0])
+    {
+        return;
+    }
     device->Wait(fences.data(), fences.size());
     for (auto &fence : fences)
     {
@@ -175,9 +179,9 @@ void Renderer::SwapBuffers()
     device->DestroyObjects();
 }
 
-void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+void Renderer::Begin(RenderTarget::Super *superRenderTarget)
 {
-    auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
+    auto renderTarget = dynamic_cast<RenderTarget *>(superRenderTarget);
 
     context->Submit([&](CommandBuffer *cmdbuf) {
         auto &desc = renderTarget->Desc();
@@ -253,7 +257,7 @@ void Renderer::Draw(GraphicsPipeline::Super *superPipeline)
              GraphicsPipeline::BindPoint
             );
 
-        auto buffer = pipeline->Get<Buffer::Type::Vertex>();
+        Ref<Buffer> buffer = pipeline->Get<Buffer::Type::Vertex>();
         VkBuffer vertex = *buffer;
         VkDeviceSize offsets = buffer->Offset();
         cmdbuf->BindVertexBuffers(

@@ -52,7 +52,7 @@ public:
         }
     }
 
-    VkRenderPass GetRenderPass()
+    VkRenderPass GetRenderPass() const
     {
         return *renderPass;
     }
@@ -81,7 +81,7 @@ public:
         SetupFramebuffer();
     }
 
-    uint32_t ColorAttachmentCount()
+    uint32_t ColorAttachmentCount() const
     {
         return attachments.colors.size();
     }

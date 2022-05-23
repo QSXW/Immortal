@@ -22,12 +22,12 @@ public:
 
     struct Data
     {
-        std::shared_ptr<RenderTarget> Target;
+        Ref<RenderTarget> Target;
         struct {
-            std::shared_ptr<Texture> Black;
-            std::shared_ptr<Texture> Transparent;
-            std::shared_ptr<Texture> White;
-            std::shared_ptr<Texture> Normal;
+            Ref<Texture> Black;
+            Ref<Texture> Transparent;
+            Ref<Texture> White;
+            Ref<Texture> Normal;
         } Textures;
     };
 
@@ -70,7 +70,7 @@ public:
 
     static void Release();
 
-    static void Setup(const std::shared_ptr<RenderTarget> &renderTarget);
+    static void Setup(Ref<RenderTarget> &renderTarget);
 
     static const char *Sringify(Render::Type type)
     {
@@ -113,13 +113,13 @@ public:
         renderer->Begin(data.Target);
     }
 
-    static void Begin(std::shared_ptr<RenderTarget> &renderTarget)
+    static void Begin(Ref<RenderTarget> &renderTarget)
     {
         user.renderTarget = renderTarget;
         renderer->Begin(user.renderTarget);
     }
 
-    static void Begin(std::shared_ptr<RenderTarget> &renderTarget, const Camera &camera)
+    static void Begin(Ref<RenderTarget> &renderTarget, const Camera &camera)
     {
         scene.viewProjectionMatrix = camera.ViewProjection();
         user.renderTarget = renderTarget;
@@ -247,9 +247,9 @@ public:
         renderer->PushConstant(pipeline, stage, size, data, offset);
     }
 
-    static void Draw(const std::shared_ptr<GraphicsPipeline> &pipeline)
+    static void Draw(GraphicsPipeline *pipeline)
     {
-        renderer->Draw(pipeline.get());
+        renderer->Draw(pipeline);
     }
 
     static void Dispatch(ComputePipeline *pipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
@@ -262,7 +262,7 @@ private:
 
     static inline struct
     {
-        std::shared_ptr<RenderTarget> renderTarget;
+        Ref<RenderTarget> renderTarget;
     } user;
 
     static Data data;

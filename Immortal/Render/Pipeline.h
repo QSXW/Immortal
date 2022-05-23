@@ -90,7 +90,7 @@ public:
     }
 
 protected:
-    uint32_t flags = State::Depth & State::Blend;
+    uint32_t flags = State::Depth;
 };
 
 class IMMORTAL_API GraphicsPipeline : public virtual Pipeline
@@ -113,7 +113,7 @@ public:
 
     virtual void Unmap() { }
 
-    virtual void Set(std::shared_ptr<Buffer> buffer)
+    virtual void Set(Ref<Buffer> buffer)
     {
         if (buffer->GetType() == Buffer::Type::Vertex)
         {
@@ -132,12 +132,12 @@ public:
         desc.layout = description;
     }
 
-    virtual void Create(const std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Create(const RenderTarget *renderTarget)
     {
 
     }
 
-    virtual void Reconstruct(const std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Reconstruct(const RenderTarget *renderTarget)
     {
 
     }
@@ -154,15 +154,15 @@ public:
     }
 
     template <class T>
-    std::shared_ptr<T> VertexBuffer(size_t index = 0)
+    Ref<T> VertexBuffer(size_t index = 0)
     {
-        return std::dynamic_pointer_cast<T>(desc.vertexBuffers(index));
+        return desc.vertexBuffers[index];
     }
 
     template <class T>
-    std::shared_ptr<T> IndexBuffer()
+    Ref<T> IndexBuffer()
     {
-        return std::dynamic_pointer_cast<T>(desc.indexBuffer);
+        return desc.indexBuffer;
     }
 
 protected:
@@ -170,9 +170,9 @@ protected:
     {
         std::shared_ptr<Shader> shader{ nullptr };
 
-        std::vector<std::shared_ptr<Buffer>> vertexBuffers;
+        std::vector<Ref<Buffer>> vertexBuffers;
 
-        std::shared_ptr<Buffer> indexBuffer;
+        Ref<Buffer> indexBuffer;
 
         InputElementDescription layout{};
 

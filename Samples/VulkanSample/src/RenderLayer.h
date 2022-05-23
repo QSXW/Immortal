@@ -62,7 +62,7 @@ public:
 
     void UpdateEditableArea()
     {
-        editableArea.OnUpdate(scene->Target(), [&]() -> void {
+        editableArea.OnUpdate(scene->Target().Get(), [&]() -> void {
 
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
@@ -355,7 +355,7 @@ public:
         auto res = FileDialogs::OpenFile(FileFilter::Image);
         if (res.has_value())
         {
-            std::shared_ptr<Texture> newTexture{ Render::Create<Texture>(res.value()) };
+            Ref<Texture> newTexture{ Render::Create<Texture>(res.value()) };
             auto &transform = selectedObject.GetComponent<TransformComponent>();
             transform.Scale = transform.Scale.z * Vector3{ newTexture->Ratio(), 1.0f, 1.0f };
 
@@ -364,8 +364,8 @@ public:
                 selectedObject.AddComponent<SpriteRendererComponent>();
             }
             auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
-            sprite.texture = newTexture;
-            sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, Texture::Description{ Format::RGBA8, Wrap::Clamp, Filter::Bilinear, false }));
+            sprite.Sprite = newTexture;
+            sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, Texture::Description{ Format::RGBA8, Wrap::Clamp, Filter::Bilinear, false });
 
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;
@@ -404,7 +404,7 @@ public:
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
 
                 auto &material = object.Add<MaterialComponent>();
-                material.Ref.resize(mesh.Mesh->NodeList().size());
+                material.References.resize(mesh.Mesh->NodeList().size());
             }
             else if (FileSystem::IsFormat<FileFormat::IVF>(res.value()))
             {
@@ -424,23 +424,22 @@ public:
                 videoPlayer.PopPicture();
 
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
-                sprite.texture.reset(Render::Create<Texture>(picture.desc.width, picture.desc.height, picture.data.get(), desc));
-                sprite.final.reset(Render::Create<Texture>(sprite.texture->Width(), sprite.texture->Height(), nullptr, desc));
+                sprite.Sprite = Render::Create<Texture>(picture.desc.width, picture.desc.height, picture.data.get(), desc);
+                sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, desc);
 
                 object.AddComponent<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
-                transform.Scale = Vector3{ sprite.texture->Ratio(), 1.0f, 1.0f };
+                transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
             }
             else if (FileSystem::IsImage(res.value()))
             {
-                std::shared_ptr<Texture> texture{ Render::Create<Texture>(res.value()) };
                 auto &sprite = object.Add<SpriteRendererComponent>();
-                sprite.texture = texture;
-                sprite.final.reset(Render::Create<Texture>(texture->Width(), texture->Height(), nullptr, desc));
+                sprite.Sprite = Render::Create<Texture>(res.value());
+                sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, desc);
 
                 object.Add<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
-                transform.Scale = Vector3{ texture->Ratio(), 1.0f, 1.0f };
+                transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
             }
 
             return true;

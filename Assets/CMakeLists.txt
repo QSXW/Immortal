@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 project("Shaders")
 
 set(GLSL_FILES
+    AnimatedBasic3D.frag
+    AnimatedBasic3D.vert
     Basic.frag
     Basic.vert
     Basic3D.frag
@@ -15,6 +17,8 @@ set(GLSL_FILES
     Render2D.frag
     Render2D.vert
     SimpleBlur.comp
+    Skybox.frag
+    Skybox.vert
     Texture.frag
     Texture.vert)
 

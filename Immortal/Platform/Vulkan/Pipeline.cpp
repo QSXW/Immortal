@@ -192,11 +192,6 @@ void GraphicsPipeline::SetupLayout()
     state->vertexInput.pVertexAttributeDescriptions    = inputAttributeDescriptions.data();
 }
 
-void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> buffer)
-{
-    Super::Set(buffer);
-}
-
 void GraphicsPipeline::Set(const InputElementDescription &description)
 {
     Super::Set(description);
@@ -222,17 +217,17 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
     SetupLayout();
 }
 
-void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &superTarget)
+void GraphicsPipeline::Create(const SuperRenderTarget *superTarget)
 {
     Reconstruct(superTarget);
     NativeSuper::Update();
 }
 
-void GraphicsPipeline::Reconstruct(const std::shared_ptr<SuperRenderTarget> &superTarget)
+void GraphicsPipeline::Reconstruct(const SuperRenderTarget *superTarget)
 {
     Destroy();
 
-    auto target = std::dynamic_pointer_cast<RenderTarget>(superTarget);
+    auto target = dynamic_cast<const RenderTarget*>(superTarget);
 
     state->rasterization.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     state->rasterization.polygonMode             = VK_POLYGON_MODE_FILL;

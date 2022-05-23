@@ -21,7 +21,7 @@ void Pipeline::Set(const InputElementDescription &description)
 {
     if (!desc.vertexBuffers.empty())
     {
-        handle.Set(std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get(), description);
+        handle.Set(dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get()), description);
     }
     else
     {
@@ -39,21 +39,21 @@ void Pipeline::Bind(Texture *texture, uint32_t slot)
 
 }
 
-void Pipeline::Set(std::shared_ptr<SuperBuffer> buffer)
+void Pipeline::Set(Ref<SuperBuffer> buffer)
 {
     if (buffer->GetType() == Buffer::Type::Vertex)
     {
         desc.vertexBuffers.emplace_back(buffer);
         if (!inputElementDesription.Empty())
         {
-            handle.Set(std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get(), inputElementDesription);
+            handle.Set(dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get()), inputElementDesription);
         }
     }
     if (buffer->GetType() == Buffer::Type::Index)
     {
         desc.indexBuffer = buffer;
     }
-    handle.Bind(std::dynamic_pointer_cast<Buffer>(buffer).get());
+    handle.Bind(dynamic_cast<Buffer *>(buffer.Get()));
 }
 
 void Pipeline::Bind(const Descriptor::Super *descriptors, uint32_t slot)

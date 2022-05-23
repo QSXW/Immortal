@@ -12,22 +12,22 @@ public:
     {
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
-        texture.reset(Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\wallhaven-pk7z5j.jpg)"));
-        texture2.reset(Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\out.jpg)"));
-        pipeline.reset(Render::Create<GraphicsPipeline>(Render::GetShader("Basic")));
-        renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }}));
+        texture = Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\wallhaven-pk7z5j.jpg)");
+        texture2 = Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\out.jpg)");
+        pipeline = Render::Create<GraphicsPipeline>(Render::GetShader("Basic"));
+        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }});
 
         auto &triangle = DataSet::Classic::Triangle;
-        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) });
-        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index) });
+        pipeline->Set(Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) );
+        pipeline->Set(Render::Create<Buffer>(triangle.Indices(), Buffer::Type::Index) );
 
         pipeline->Set(triangle.Description());
         pipeline->Reconstruct(renderTarget);
 
-        uniformBuffer.reset(Render::Create<Buffer>(sizeof(ubo), 0));
+        uniformBuffer = Render::Create<Buffer>(sizeof(ubo), 0);
         pipeline->AllocateDescriptorSet(0);
-        pipeline->Bind("ubo", uniformBuffer.get());
-        pipeline->Bind(texture.get(), 1);
+        pipeline->Bind("ubo", uniformBuffer);
+        pipeline->Bind(texture, 1);
 
         camera.SetPerspective(90.0f);
         transformComponent.Position.z = -0.5f;
@@ -67,8 +67,8 @@ public:
         ubo.viewProjection = camera.ViewProjection();
         uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        renderViewport.OnUpdate(renderTarget, [] {});
-        viewport.OnUpdate(texture, [] {});
+        renderViewport.OnUpdate(renderTarget.Get(), [] {});
+        viewport.OnUpdate(texture.Get(), [] {});
 
         ImGui::Begin("Control Panel");
         ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
@@ -86,7 +86,7 @@ public:
         auto res = FileDialogs::OpenFile(FileFilter::Image);
         if (res.has_value())
         {
-            texture.reset(Render::Create<Texture>(res.value()));
+            texture = Render::Create<Texture>(res.value());
             return true;
         }
 
@@ -132,16 +132,16 @@ public:
     }
 
 private:
-    std::shared_ptr<Texture> texture;
-    std::shared_ptr<Texture> texture2;
+    Ref<Texture> texture;
+    Ref<Texture> texture2;
     Widget::Viewport viewport{ "Texture Preview " };
 
     Widget::Viewport renderViewport{ "Render Target" };
 
     EventSink<RenderLayer> eventSink;
 
-    std::shared_ptr<RenderTarget> renderTarget;
-    std::shared_ptr<GraphicsPipeline> pipeline;
+    Ref<RenderTarget> renderTarget;
+    Ref<GraphicsPipeline> pipeline;
 
     SceneCamera camera;
     TransformComponent transformComponent;
@@ -152,7 +152,7 @@ private:
         Matrix4 modeTransform;
     } ubo;
 
-    std::shared_ptr<Buffer> uniformBuffer;
+    Ref<Buffer> uniformBuffer;
 };
 
 class D3D12Sample : public Application

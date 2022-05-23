@@ -40,7 +40,10 @@ VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLay
         return AllocateInternal(pDescriptorSetLayout, pDescriptorSet, count);
     }
 
-    result = AllocateInternal(pDescriptorSetLayout, pDescriptorSet, free);
+    if (free > 0)
+    {
+        result = AllocateInternal(pDescriptorSetLayout, pDescriptorSet, free);
+    }
     if (result != VK_SUCCESS)
     {
         return result;

@@ -4,6 +4,7 @@
 #include "GuiLayer.h"
 #include "Device.h"
 #include "RenderContext.h"
+#include "Barrier.h"
 
 namespace Immortal
 {

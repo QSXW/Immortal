@@ -6,6 +6,7 @@
 
 #include "Common.h"
 #include "PhysicalDevice.h"
+#include "DescriptorPool.h"
 #include "Framework/Async.h"
 
 namespace Immortal

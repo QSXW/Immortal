@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "Types.h"
 #include "Math/Vector.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -41,7 +42,7 @@ public:
     void *handle;
 };
 
-class RenderTarget
+class RenderTarget : public IObject
 {
 public:
     struct Description

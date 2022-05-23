@@ -6,13 +6,150 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Algorithm/LightVector.h"
 #include "Math/Vector.h"
 
 #include <vector>
-#include <list>
+#include <unordered_map>
 
+struct aiScene;
+struct aiMesh;
+struct aiNode;
 namespace Immortal
 {
+
+struct SkeletonVertex
+{
+    Vector3  Position;
+    Vector3  Normal;
+    Vector3  Tangent;
+    Vector2  Texcoord;
+    uint32_t BoneIds[4];
+    Vector4  Weights;
+
+    void AddBone(uint32_t id, float weight);
+};
+
+struct Animation
+{
+    std::string Name;
+    float TicksPerSeconds = 25.0f;
+    float Duration = 0;
+};
+
+struct VectorKey
+{
+    double Time;
+    Vector3 Value;
+};
+
+struct QuanternionKey
+{
+    double Time;
+    Quaternion Value;
+};
+
+enum AnimationBehavior : uint32_t
+{
+    /** The value from the default node transformation is taken*/
+    AnimationBehavior_Default = 0x0,
+
+    /** The nearest key value is used without interpolation */
+    AnimationBehavior_Constant = 0x1,
+
+    /** The value of the nearest two keys is linearly
+        *  extrapolated for the current time value.*/
+    AnimationBehavior_Linear = 0x2,
+
+    /** The animation is repeated.
+     *
+     *  If the animation key go from n to m and the current
+     *  time is t, use the value at (t-n) % (|m-n|).*/
+     AnimationBehavior_Repeat = 0x3,
+};
+
+struct AnimationNode
+{
+    /** The rotation keys of this animation channel. Rotations are
+     *  given as quaternions,  which are 4D vectors. The array is
+     *  mNumRotationKeys in size.
+     *
+     * If there are rotation keys, there will also be at least one
+     * scaling and one position key. */
+    LightVector<VectorKey> PositionKeys;
+
+    /** The rotation keys of this animation channel. Rotations are
+     *  given as quaternions,  which are 4D vectors. The array is
+     *  mNumRotationKeys in size.
+     *
+     * If there are rotation keys, there will also be at least one
+     * scaling and one position key. */
+    LightVector<QuanternionKey> RotationKeys;
+
+    /** The scaling keys of this animation channel. Scalings are
+     *  specified as 3D vector. The array is mNumScalingKeys in size.
+     *
+     * If there are scaling keys, there will also be at least one
+     * position and one rotation key.*/
+    LightVector<VectorKey> ScalingKeys;
+
+    /** Defines how the animation behaves before the first
+     *  key is encountered.
+     *
+     *  The default value is aiAnimBehaviour_DEFAULT (the original
+     *  transformation matrix of the affected node is used).*/
+    AnimationBehavior PreState;
+
+    /** Defines how the animation behaves after the last
+     *  key was processed.
+     *
+     *  The default value is aiAnimBehaviour_DEFAULT (the original
+     *  transformation matrix of the affected node is taken).*/
+    AnimationBehavior PostState;
+};
+
+struct BoneInfo
+{
+    BoneInfo() :
+        Id{},
+        OffsetMatrix{}
+    {}
+
+    BoneInfo(uint32_t id, const Matrix4 &matrix) :
+        Id{ id },
+        OffsetMatrix{ matrix }
+    {
+
+    }
+
+    uint32_t Id;
+    Matrix4 OffsetMatrix;
+};
+
+struct BoneNode
+{
+public:
+    BoneNode() :
+        Name{},
+        Transform{ 1.0f },
+        Parent{},
+        Children{},
+        Meshes{}
+    {}
+
+    ~BoneNode()
+    {
+
+    }
+
+public:
+    std::string Name;
+    Matrix4 Transform;
+
+    BoneNode *Parent;
+    LightVector<BoneNode> Children;
+    LightVector<uint32_t> Meshes;
+};
 
 class IMMORTAL_API Mesh
 {
@@ -47,16 +184,6 @@ public:
         Vector3 Normal;
         Vector3 Tangent;
         Vector2 Texcoord;
-    };
-
-    struct SkeletonVertex
-    {
-        Vector3  Position;
-        Vector3  Normal;
-        Vector3  Tangent;
-        Vector2  Texcoord;
-        uint32_t BoneIds[4];
-        Vector4  Weights;
     };
 
     struct Face
@@ -102,10 +229,11 @@ public:
         }
 
         std::string Name;
-        std::shared_ptr<Buffer> Vertex;
-        std::shared_ptr<Buffer> Index;
+        Ref<Buffer> Vertex;
+        Ref<Buffer> Index;
 
         uint32_t MaterialIndex = 0;
+        bool Animated = false;
     };
 
     using Index = Face;
@@ -127,30 +255,73 @@ public:
         return nodes;
     }
 
+    BoneNode *GetRootNode()
+    {
+        return rootNode;
+    }
+
     size_t Size() const
     {
         return nodes.size();
     }
 
+    std::vector<Animation> &GetAnimation()
+    {
+        return animations;
+    }
+
+    Ref<Buffer> GetTransforms() const
+    {
+        return transformBuffer;
+    }
+
+    bool IsAnimated() const
+    {
+        return !animations.empty();
+    }
+
+    uint32_t GetAnimationState() const;
+
+    void SwitchToAnimation(uint32_t index);
+
+    void ReadHierarchyBoneNode(float animationTime, const BoneNode *node, const Matrix4 &parentTransform);
+
+    void CalculatedBoneTransform(float timeInSeconds, const Matrix4 &parentTransform);
+
 private:
-    std::unique_ptr<Buffer> buffer;
+    void LoadModelData(const aiScene *scene);
+
+    void LoadAnimationData(const aiScene *scene);
+
+    bool LoadBoneData(const aiMesh *mesh, std::vector<SkeletonVertex> &vertex, uint32_t baseVertex, uint32_t &numBones);
+
+    void ReadAssimpNode(BoneNode *boneNode, const aiNode *src);
+
+private:
+    MonoRef<Buffer> buffer;
 
     std::string path;
 
     std::vector<Node> nodes;
 
+    std::unordered_map<std::string, BoneInfo> bones;
+
+    MonoRef<BoneNode> rootNode;
+
+    std::vector<Matrix4> transforms;
+
+    Ref<Buffer> transformBuffer;
+
+    std::vector<Animation> animations;
+
+    std::unordered_map<std::string, AnimationNode> animationNodes;
+
+    Matrix4 globalInverseTransform;
+
     struct
     {
-        float time = 0.0f;
-
-        float worldTime = 0.0f;
-
-        float timeMultiplier = 1.0f;
-
-        bool animated = false;
-
-        bool playing = true;
-    } animation;
+        uint32_t currentAnimation = 0;
+    } state;
 };
 
 }

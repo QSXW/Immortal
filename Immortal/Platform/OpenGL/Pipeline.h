@@ -28,7 +28,7 @@ public:
 
     virtual void Set(const InputElementDescription &description) override;
 
-    virtual void Set(std::shared_ptr<SuperBuffer> buffer) override;
+    virtual void Set(Ref<SuperBuffer> buffer) override;
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
@@ -37,15 +37,15 @@ public:
     virtual void Bind(const Descriptor::Super *descriptors, uint32_t slot) override;
 
     template <Buffer::Type type>
-    std::shared_ptr<Buffer> Get()
+    Ref<Buffer> Get()
     {
         if constexpr (type == Buffer::Type::Vertex)
         {
-            return std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]);
+            return dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get());
         }
         if constexpr (type == Buffer::Type::Index)
         {
-            return std::dynamic_pointer_cast<Buffer>(desc.indexBuffer);
+            return dynamic_cast<Buffer *>(desc.indexBuffer.Get());
         }
     }
 
@@ -56,8 +56,8 @@ public:
         shader->Map();
         handle.Bind();
 
-        auto vertexBuffer = std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]);
-        auto indexBuffer = std::dynamic_pointer_cast<Buffer>(desc.indexBuffer);
+        auto vertexBuffer = Get<Buffer::Type::Vertex>();
+        auto indexBuffer = Get<Buffer::Type::Index>();
 
         vertexBuffer->Bind();
         indexBuffer->Bind();

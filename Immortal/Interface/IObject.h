@@ -32,10 +32,11 @@ class Ref
 {
 public:
     using ObjectType = T;
+    using PointerType = ObjectType*;
 
 public:
     Ref() :
-        _obj{ nullptr}
+        _obj{ nullptr }
     {
         static_assert(std::is_base_of_v<IObject, T>);
     }
@@ -57,9 +58,9 @@ public:
 
     template <class U>
     Ref(Ref<U> &&other) :
-        _obj{ other._obj }
+        _obj{ nullptr }
     {
-        other._obj = nullptr;
+        other.Swap(*this);
     }
 
     Ref(const Ref &other) :
@@ -70,7 +71,7 @@ public:
 
     template <class U>
     Ref(const Ref<U> &other) :
-        _obj{ other._obj }
+        _obj{ dynamic_cast<PointerType>(other._obj) }
     {
         AddRef();
     }

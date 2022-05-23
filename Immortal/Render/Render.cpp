@@ -14,6 +14,7 @@ Render::Scene Render::scene{};
 Render::Data Render::data{};
 
 const Shader::Properties Render::ShaderProperties[] = {
+    { "AnimatedBasic3D",        U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "Basic",                  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     { "Basic3D",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
     { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
@@ -57,14 +58,14 @@ void Render::Setup(RenderContext *context)
         }
     }
 
-    data.Target.reset(Render::CreateRenderTarget({
+    data.Target = Render::CreateRenderTarget({
         viewport,
         {
             { Format::RGBA8 },
             { Format::R32   },
             { Format::Depth }
         }
-        }));
+        });
 
     {
         constexpr uint32_t white        = 0xffffffff;
@@ -73,27 +74,27 @@ void Render::Setup(RenderContext *context)
         constexpr uint32_t normal       = 0xffff7f7f;
         Texture::Description desc = { Format::RGBA8, Wrap::Repeat, Filter::Linear };
 
-        data.Textures.White       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &white, desc)        };
-        data.Textures.Black       = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &black, desc)        };
-        data.Textures.Transparent = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &transparency, desc) };
-        data.Textures.Normal      = std::shared_ptr<Texture>{ Render::Create<Texture>(1, 1, &normal, desc)       };
+        data.Textures.White       = Render::Create<Texture>(1, 1, &white, desc       );
+        data.Textures.Black       = Render::Create<Texture>(1, 1, &black, desc       );
+        data.Textures.Transparent = Render::Create<Texture>(1, 1, &transparency, desc);
+        data.Textures.Normal      = Render::Create<Texture>(1, 1, &normal,       desc);
     }
     Render2D::Setup();
 }
 
-void Render::Setup(const std::shared_ptr<RenderTarget> &renderTarget)
+void Render::Setup(Ref<RenderTarget> &renderTarget)
 {
     Render2D::Setup(renderTarget);
 }
 
 void Render::Release()
 {
-    data.Textures.White.reset();
-    data.Textures.Black.reset();
-    data.Textures.Transparent.reset();
-    data.Textures.Normal.reset();
-    data.Target.reset();
-    user.renderTarget.reset();
+    data.Textures.White.Reset();
+    data.Textures.Black.Reset();
+    data.Textures.Transparent.Reset();
+    data.Textures.Normal.Reset();
+    data.Target.Reset();
+    user.renderTarget.Reset();
     ShaderManager.clear();
 
     Render2D::Release();

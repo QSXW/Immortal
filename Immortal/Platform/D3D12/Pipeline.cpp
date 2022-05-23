@@ -103,11 +103,11 @@ Pipeline::~Pipeline()
     IfNotNullThenRelease(pipelineState);
 }
 
-void GraphicsPipeline::Set(std::shared_ptr<Buffer::Super> superBuffer)
+void GraphicsPipeline::Set(Ref<Buffer::Super> superBuffer)
 {
     Super::Set(superBuffer);
 
-    auto buffer = std::dynamic_pointer_cast<Buffer>(superBuffer);
+    auto buffer = dynamic_cast<Buffer *>(superBuffer.Get());
 
     if (buffer->GetType() == Buffer::Type::Vertex)
     {
@@ -141,12 +141,12 @@ void GraphicsPipeline::Set(const InputElementDescription &description)
     bufferViews.vertex.StrideInBytes = desc.layout.Stride;
 }
 
-void GraphicsPipeline::Create(const std::shared_ptr<RenderTarget::Super> &renderTarget)
+void GraphicsPipeline::Create(const RenderTarget::Super *renderTarget)
 {
     Reconstruct(renderTarget);
 }
 
-void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
 {
     auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
     if (!shader)
@@ -176,7 +176,7 @@ void GraphicsPipeline::Reconstruct(const std::shared_ptr<RenderTarget::Super> &s
     pipelineStateDesc.NumRenderTargets      = 1;
     pipelineStateDesc.SampleDesc.Count      = 1;
 
-    auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
+    auto renderTarget = dynamic_cast<const RenderTarget*>(superRenderTarget);
     auto &colorBuffers = renderTarget->GetColorBuffers();
 
     THROWIF(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);

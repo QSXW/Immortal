@@ -107,7 +107,7 @@ public:
 
     }
 
-    virtual void Begin(std::shared_ptr<RenderTarget> &renderTarget)
+    virtual void Begin(RenderTarget *renderTarget)
     {
 
     }

@@ -104,11 +104,11 @@ public:
 public:
     GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader);
 
-    virtual void Create(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Create(const SuperRenderTarget *renderTarget) override;
 
-    virtual void Reconstruct(const std::shared_ptr<SuperRenderTarget> &renderTarget) override;
+    virtual void Reconstruct(const SuperRenderTarget *renderTarget) override;
 
-    virtual void Set(std::shared_ptr<Buffer::Super> buffer) override;
+    virtual void Set(Ref<Buffer::Super> buffer) override;
 
     virtual void Set(const InputElementDescription &description) override;
 
@@ -139,11 +139,11 @@ public:
     {
         if constexpr (type == Buffer::Type::Vertex)
         {
-            return std::dynamic_pointer_cast<Buffer>(desc.vertexBuffers[0]).get();
+            return dynamic_cast<Buffer*>(desc.vertexBuffers[0].Get());
         }
         if constexpr (type == Buffer::Type::Index)
         {
-            return std::dynamic_pointer_cast<Buffer>(desc.indexBuffer).get();
+            return dynamic_cast<Buffer*>(desc.indexBuffer.Get());
         }
     }
 

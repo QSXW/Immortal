@@ -20,6 +20,22 @@ struct UILock
     }
 };
 
+static void DrawTreeNode(BoneNode *node)
+{
+    if (ImGui::TreeNode(node->Name.c_str()))
+    {
+        for (size_t i = 0; i < node->Children.Size(); i++)
+        {
+            if (ImGui::TreeNode((void*)(intptr_t)&node->Children[i], node->Children[i].Name.c_str(), i))
+            {
+                DrawTreeNode(&node->Children[i]);
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
+};
+
 class PropertyManager : public Layer
 {
 public:
@@ -156,7 +172,9 @@ public:
                                             }
 
                                             if (isSelected)
+                                            {
                                                 ImGui::SetItemDefaultFocus();
+                                            }
                                         }
 
                                         ImGui::EndCombo();
@@ -165,7 +183,7 @@ public:
                             }};
 
                             auto &node = nodeList[materialIndex];
-                            auto &ref = material.Ref[node.MaterialIndex];
+                            auto &ref = material.References[node.MaterialIndex];
 
                             UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *)&ref.AlbedoColor); });
 
@@ -178,7 +196,7 @@ public:
                             auto &textures = ref.Textures;
                             ImVec2 size = { 64.0f, 64.0f };
 
-                            auto drawTexture = [&](std::shared_ptr<Texture> &texture, const std::string &label) -> void {
+                            auto drawTexture = [&](Ref<Texture> &texture, const std::string &label) -> void {
                                 ImGui::PushID((void*)(node.MaterialIndex + (uint64_t)label.c_str()));
                                 ImGui::Columns(2);
                                 ImGui::Text("%s", label.c_str());
@@ -190,13 +208,13 @@ public:
                                     auto res = FileDialogs::OpenFile(FileFilter::Image);
                                     if (res.has_value())
                                     {
-                                        texture.reset(Render::Create<Texture>(
+                                        texture = Render::Create<Texture>(
                                             res.value(),
                                             Texture::Description{
                                                 Format::None,
                                                 Wrap::Mirror,
                                                 Filter::Linear
-                                            }));
+                                            });
                                     }
                                 }
                                 ImGui::Columns(1);
@@ -212,6 +230,47 @@ public:
                             drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
 
                             ImGui::PopStyleColor(3);
+
+                            UILock rootNodeLock{
+                                "Root Tree",
+                                [&] {
+                                    auto rootNode = mesh.Mesh->GetRootNode();
+                                    DrawTreeNode(rootNode);
+                                }
+                            };
+
+                            UILock animationLock{
+                                "Animation Information",
+                                [&] {
+                                    if (!mesh.Mesh->IsAnimated())
+                                    {
+                                        return;
+                                    }
+                                    auto &animations = mesh.Mesh->GetAnimation();
+                                    size_t index = mesh.Mesh->GetAnimationState();
+                                    ImGui::PushItemWidth(-2);
+                                    if (ImGui::BeginCombo("###", animations[index].Name.c_str(), 0))
+                                    {
+                                        for (size_t i = 0; i < animations.size(); i++)
+                                        {
+                                            const bool isSelected = (index == i);
+                                            if (ImGui::Selectable(animations[i].Name.c_str(), &isSelected))
+                                            {
+                                                index = i;
+                                            }
+                                            if (isSelected)
+                                            {
+                                                ImGui::SetItemDefaultFocus();
+                                            }
+                                        }
+
+                                        ImGui::EndCombo();
+                                    }
+                                    ImGui::PopItemWidth();
+
+                                    UI::DrawColumn(WordsMap::Get("Ticks Per Second"), [&]() -> bool { ImGui::Text("%f", animations[index].TicksPerSeconds);  return false; }, 128);
+                                    UI::DrawColumn(WordsMap::Get("Duration"), [&]() -> bool { ImGui::Text("%f", animations[index].Duration); return false; }, 128);
+                            } };
 
                         });
                 }

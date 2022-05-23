@@ -4,12 +4,15 @@
 #include "Allocator.h"
 
 #include <new>
+#include <ctime>
 
 namespace Immortal
 {
 
 struct AllocateInfo
 {
+    const char *name;
+    clock_t clock;
     size_t size;
 };
 

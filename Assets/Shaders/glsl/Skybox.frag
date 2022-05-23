@@ -4,7 +4,7 @@ layout(location = 0) in vec3  inUVW;
 layout(location = 0) out vec4 color;
 layout(location = 1) out int  outObjectID;
 
-layout(set = 0, binding = 1) uniform samplerCube envTexture;
+layout(binding = 1) uniform samplerCube envTexture;
 
 struct Light {
     vec3 position;

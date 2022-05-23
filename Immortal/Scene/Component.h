@@ -141,7 +141,7 @@ struct MaterialComponent : public Component
 
     MaterialComponent()
     {
-        Ref.resize(1);
+        References.resize(1);
     }
 
     struct Reference
@@ -157,12 +157,13 @@ struct MaterialComponent : public Component
             Textures.Roughness = Textures.Albedo;
             Textures.AO = Textures.Albedo;
         }
+
         struct {
-            std::shared_ptr<Texture> Albedo;
-            std::shared_ptr<Texture> Normal;
-            std::shared_ptr<Texture> Metallic;
-            std::shared_ptr<Texture> Roughness;
-            std::shared_ptr<Texture> AO;
+            Ref<Texture> Albedo;
+            Ref<Texture> Normal;
+            Ref<Texture> Metallic;
+            Ref<Texture> Roughness;
+            Ref<Texture> AO;
         } Textures;
 
         Vector4 AlbedoColor;
@@ -170,7 +171,7 @@ struct MaterialComponent : public Component
         float   Roughness;
     };
 
-    std::vector<Reference> Ref;
+    std::vector<Reference> References;
 };
 
 struct LightComponent : public Component
@@ -201,14 +202,14 @@ struct SpriteRendererComponent : public Component
 
     }
 
-    SpriteRendererComponent(std::shared_ptr<Texture> texture) :
-        texture{ texture }
+    SpriteRendererComponent(Ref<Texture> texture) :
+        Sprite{ texture }
     {
 
     }
 
-    SpriteRendererComponent(std::shared_ptr<Texture> texture, const Vector4 color) :
-        texture{ texture },
+    SpriteRendererComponent(Ref<Texture> texture, const Vector4 &color) :
+        Sprite{ texture },
         Color{ color }
     {
 
@@ -216,9 +217,9 @@ struct SpriteRendererComponent : public Component
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    std::shared_ptr<Immortal::Texture> texture = Render::Preset()->Textures.White;
+    Ref<Texture> Sprite = Render::Preset()->Textures.White;
 
-    std::shared_ptr<Immortal::Texture> final = texture;
+    Ref<Texture> Result = Sprite;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 

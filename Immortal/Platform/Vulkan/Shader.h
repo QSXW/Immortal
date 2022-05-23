@@ -22,7 +22,7 @@ public:
 public:
     Shader(Device *device, const std::string &filename, Type type = Type::Graphics);
 
-    ~Shader();
+    virtual ~Shader();
 
     VkShaderModule Load(const std::string &filename, Stage stage);
 

@@ -88,7 +88,7 @@ public:
 
     virtual void Dispatch(ComputePipeline::Super *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
-    virtual void Begin(std::shared_ptr<RenderTarget::Super> &renderTarget) override;
+    virtual void Begin(SuperRenderTarget *renderTarget) override;
 
     virtual void End() override;
 

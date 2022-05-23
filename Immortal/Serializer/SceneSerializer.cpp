@@ -112,7 +112,7 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
             auto &sprite     = objectData["SpriteRenderer"];
             const auto &s    = object.GetComponent<SpriteRendererComponent>();
             ns::to_json(sprite["Color"], s.Color);
-            sprite["Source"]          = s.texture->Source();
+            sprite["Source"]          = s.Sprite->Source();
             sprite["TilingFactor"] = s.TilingFactor;
         }
         if (object.HasComponent<MeshComponent>())
@@ -125,7 +125,7 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
             {
                 auto &materialObject = objectData["Material"];
                 const auto &materialComponent = object.GetComponent<MaterialComponent>();
-                for (auto &material : materialComponent.Ref)
+                for (auto &material : materialComponent.References)
                 {
                     json j;
                     ns::to_json(j["Albedo"], material.AlbedoColor);
@@ -202,11 +202,11 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
             auto &s = object.AddComponent<SpriteRendererComponent>();
             ns::from_json(sprite["Color"], s.Color);
             s.TilingFactor = sprite["TilingFactor"];
-            s.texture.reset(Render::Create<Texture>(sprite["Source"]));
-            s.final.reset(Render::Create<Texture>(s.texture->Width(), s.texture->Height(), nullptr, Texture::Description{
-                    Format::RGBA8,
-                    Wrap::Clamp
-                }));
+            s.Sprite = Render::Create<Texture>(sprite["Source"]);
+            s.Result = Render::Create<Texture>(s.Sprite->Width(), s.Sprite->Height(), nullptr, Texture::Description{
+                Format::RGBA8,
+                Wrap::Clamp
+                });
 
             object.AddComponent<ColorMixingComponent>();
         }
@@ -223,18 +223,18 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
         {
             auto &meshComponent = object.GetComponent<MeshComponent>();
             auto &material = object.AddComponent<MaterialComponent>();
-            material.Ref.resize(meshComponent.Mesh->Size());
+            material.References.resize(meshComponent.Mesh->Size());
 
-            auto LoadTexture = [&](std::shared_ptr<Texture> &texture, const std::string &path) {
+            auto LoadTexture = [&](Ref<Texture> &texture, const std::string &path) {
                 if (!path.empty())
                 {
                     Texture::Description desc{ Format::None, Wrap::Mirror, Filter::Linear };
-                    texture.reset(Render::Create<Texture>(path, desc));
+                    texture = Render::Create<Texture>(path, desc);
                 }
             };
             for (size_t i = 0; i < materialObject.size(); i++)
             {
-                auto &ref = material.Ref[i];
+                auto &ref = material.References[i];
                 const auto &m = materialObject[i];
 
                 ns::from_json(m["Albedo"], ref.AlbedoColor);

@@ -10,17 +10,17 @@ namespace Immortal
 
 Render2D::Data Render2D::data;
 
-std::shared_ptr<GraphicsPipeline> Render2D::pipeline{ nullptr };
+Ref<GraphicsPipeline> Render2D::pipeline{ nullptr };
 
-std::shared_ptr<Buffer> Render2D::uniform{ nullptr };
+Ref<Buffer> Render2D::uniform;
 
 void Render2D::Setup()
 {
     data.textureDescriptors.reset(Render::CreateDescriptor<Texture>(Data::MaxTextureSlots));
 
     data.RectVertexBuffer.resize(data.MaxVertices);
-    pipeline.reset(Render::Create<Pipeline::Graphics>(Render::GetShader("Render2D")));
-    uniform.reset(Render::Create<Buffer>(sizeof(Matrix4), 0));
+    pipeline = Render::Create<Pipeline::Graphics>(Render::GetShader("Render2D"));
+    uniform = Render::Create<Buffer>(sizeof(Matrix4), 0);
 
     pipeline->Set({
         { Format::VECTOR3, "POSITION"      },
@@ -31,7 +31,7 @@ void Render2D::Setup()
         { Format::R32,     "OBJECT_ID"     }
     });
 
-    pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(data.MaxVertices * sizeof(RectVertex), Buffer::Type::Vertex) });
+    pipeline->Set(Render::Create<Buffer>(data.MaxVertices * sizeof(RectVertex), Buffer::Type::Vertex));
 
     {
         std::unique_ptr<uint32_t> rectIndices;
@@ -50,7 +50,7 @@ void Render2D::Setup()
 
             offset += 4;
         }
-        pipeline->Set(std::shared_ptr<Buffer>{ Render::Create<Buffer>(data.MaxIndices * sizeof(uint32_t), rectIndices.get(), Buffer::Type::Index) });
+        pipeline->Set(Render::Create<Buffer>(data.MaxIndices * sizeof(uint32_t), rectIndices.get(), Buffer::Type::Index));
     }
     pipeline->Enable(Pipeline::State::Blend);
     pipeline->Create(Render::Preset()->Target);
@@ -73,14 +73,14 @@ void Render2D::Setup()
 
 void Render2D::Release()
 {
-    uniform.reset();
-    data.WhiteTexture.reset();
+    uniform.Reset();
+    data.WhiteTexture.Reset();
     data.RectVertexBuffer.clear();
-    pipeline.reset();
+    pipeline.Reset();
 
     for (auto &t : data.ActiveTextures)
     {
-        t.reset();
+        t.Reset();
     }
 }
 
@@ -102,7 +102,7 @@ void Render2D::Flush()
     if (isTextureChanged)
     {
         pipeline->AllocateDescriptorSet((uint64_t)&data);
-        pipeline->Bind(uniform.get(),                 0);
+        pipeline->Bind(uniform,                       0);
         pipeline->Bind(data.textureDescriptors.get(), 1);
         isTextureChanged = false;
     }
@@ -150,7 +150,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int obje
     data.Stats.RectCount++;
 }
 
-void Render2D::DrawRect(const Matrix4 &transform, const std::shared_ptr<Texture> &texture, float tilingFactor, const Vector4 &tintColor, int object)
+void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, float tilingFactor, const Vector4 &tintColor, int object)
 {
     constexpr size_t RectVertexCount = 4;
     static Vector2 textureCoords[] = {

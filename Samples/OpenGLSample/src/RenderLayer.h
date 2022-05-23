@@ -20,7 +20,7 @@ public:
 
 	void OnAttach()
 	{
-		renderTarget.reset(Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } }));
+		renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } });
 		texture = Render::Preset()->Textures.White;
 
 		renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
@@ -68,7 +68,7 @@ public:
 		}
 
 
-		offline.OnUpdate(renderTarget, []{});
+		offline.OnUpdate(renderTarget.Get(), [] {});
 	}
 
 	void OnEvent(Event &e)
@@ -78,13 +78,13 @@ public:
 	}
 
 private:
-	std::shared_ptr<RenderTarget> renderTarget;
+	Ref<RenderTarget> renderTarget;
 
-	std::shared_ptr<Shader> shader;
+	Ref<Shader> shader;
 
-	std::shared_ptr<Pipeline> pipeline;
+	Ref<Pipeline> pipeline;
 
-	std::shared_ptr<Texture> texture;
+	Ref<Texture> texture;
 	
 	OrthographicCamera camera;
 

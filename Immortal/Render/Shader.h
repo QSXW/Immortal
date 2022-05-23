@@ -7,7 +7,7 @@
 namespace Immortal
 {
 
-class IMMORTAL_API Shader
+class IMMORTAL_API Shader : public IObject
 {
 public:
     enum class API

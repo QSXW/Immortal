@@ -71,7 +71,9 @@ public:
 
     void DestroyObject(Object &object);
 
-    void RenderObject(std::shared_ptr<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
+    void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
+
+    void RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
 
     void SetViewportSize(const Vector2 &size);
 
@@ -105,7 +107,7 @@ public:
         return primaryCamera;
     }
 
-    std::shared_ptr<RenderTarget> Target() const
+    Ref<RenderTarget> Target() const
     {
         return renderTarget;
     }
@@ -141,22 +143,23 @@ private:
     } textures;
 
     struct {
-       std::shared_ptr<GraphicsPipeline> tonemap;
-       std::shared_ptr<GraphicsPipeline> pbr;
-       std::shared_ptr<GraphicsPipeline> basic;
-       std::shared_ptr<GraphicsPipeline> outline;
-       std::shared_ptr<GraphicsPipeline> skybox;
-       std::shared_ptr<ComputePipeline>  colorMixing;
-       std::shared_ptr<ComputePipeline>  equirect2Cube;
+       Ref<GraphicsPipeline> tonemap;
+       Ref<GraphicsPipeline> pbr;
+       Ref<GraphicsPipeline> basic;
+       Ref<GraphicsPipeline> outline;
+       Ref<GraphicsPipeline> skybox;
+       Ref<GraphicsPipeline> animatedBasic;
+       Ref<ComputePipeline>  colorMixing;
+       Ref<ComputePipeline>  equirect2Cube;
     } pipelines;
 
     struct {
-        std::unique_ptr<Buffer> host;
-        std::unique_ptr<Buffer> transform;
-        std::unique_ptr<Buffer> shading;
+        Ref<Buffer> host;
+        Ref<Buffer> transform;
+        Ref<Buffer> shading;
     } uniforms;
 
-    std::shared_ptr<RenderTarget> renderTarget;
+    Ref<RenderTarget> renderTarget;
 
     Vector2 viewportSize{ 0.0f, 0.0f };
 

@@ -90,9 +90,9 @@ void Renderer::Draw(Pipeline::Super *superPipeline)
    pipeline->Draw();
 }
 
-void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+void Renderer::Begin(RenderTarget::Super *superRenderTarget)
 {
-    auto target = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
+    auto target = dynamic_cast<RenderTarget *>(superRenderTarget);
     target->Map();
 }
 

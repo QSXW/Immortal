@@ -11,6 +11,9 @@ set(CORE_FILES
     Core.h
     Format.h)
 
+set(ALGORITHM_FILES
+    Algorithm/LightVector.h)
+
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
@@ -295,6 +298,7 @@ set(NET_FILES
     Net/Socket.h)
 
 source_group("\\" FILES ${CORE_FILES})
+source_group("Framework\\" FILES ${ALGORITHM_FILES})
 source_group("Framework\\" FILES ${FRAMEWORK_FILES})
 source_group("Editor\\" FILES ${EDITOR_FILES})
 source_group("Event\\" FILES ${EVENT_FILES})
@@ -321,6 +325,7 @@ source_group("Net\\" FILES ${NET_FILES})
 
 set(PROJECT_FILES
     ${CORE_FILES}
+    ${ALGORITHM_FILES}
     ${FRAMEWORK_FILES}
     ${EDITOR_FILES}
     ${EVENT_FILES}

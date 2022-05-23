@@ -45,13 +45,11 @@ void Texture::InternalCreate(const void *data)
     descriptor.invisible = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
 
     D3D12_HEAP_PROPERTIES props{};
-    CleanUpObject(&props);
     props.Type                 = D3D12_HEAP_TYPE_DEFAULT;
     props.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
     D3D12_RESOURCE_DESC resourceDesc{};
-    CleanUpObject(&resourceDesc);
     resourceDesc.Format             = format;
     resourceDesc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.Alignment          = 0;

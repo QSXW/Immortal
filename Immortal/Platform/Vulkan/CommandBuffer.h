@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "Buffer.h"
-#include "Pipeline.h"
+#include "Shader.h"
 
 namespace Immortal
 {

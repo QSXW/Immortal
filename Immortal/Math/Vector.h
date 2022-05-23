@@ -174,7 +174,7 @@ struct Vector4 : public glm::vec4
 
     float &operator[](size_t i)
     {
-        return Primitive{ *this } [i] ;
+        return ((Primitive&)*this)[i] ;
     }
 
     Vector4 &operator+=(const Vector4 &v)

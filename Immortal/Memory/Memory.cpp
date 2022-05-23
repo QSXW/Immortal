@@ -22,16 +22,19 @@ void *MemoryAllocator::Allocate(size_t size)
         return malloc(size);
     }
 
-    Anonymous address = nullptr;
-    AllocateInfo info{};
-    info.size = size;
-    allocatedSize += size;
+    Anonymous address = malloc(size);
 
-    address = malloc(size);
+    AllocateInfo info{};
+    info.clock = clock();
+    info.size  = size;
+    info.name  = (const char *)address;
+
     {
         std::lock_guard lock{ mutex };
         allocation->insert({ (uint64_t)address, info });
     }
+    allocatedSize += size;
+
     return address;
 }
 

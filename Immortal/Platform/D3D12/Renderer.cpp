@@ -80,9 +80,9 @@ void Renderer::Draw(GraphicsPipeline::Super *super)
     commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
 }
 
-void Renderer::Begin(std::shared_ptr<RenderTarget::Super> &superRenderTarget)
+void Renderer::Begin(RenderTarget::Super *superRenderTarget)
 {
-    auto renderTarget = std::dynamic_pointer_cast<RenderTarget>(superRenderTarget);
+    auto renderTarget = dynamic_cast<RenderTarget *>(superRenderTarget);
 
     auto width  = renderTarget->Width();
     auto height = renderTarget->Height();

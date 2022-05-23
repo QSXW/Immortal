@@ -60,14 +60,13 @@ public:
         static constexpr uint32_t MaxIndices      = MaxRects * 6;
         static constexpr uint32_t MaxTextureSlots = 32;
 
-        std::shared_ptr<Texture> WhiteTexture;
-        std::shared_ptr<Shader> TextureShader;
+        Ref<Texture> WhiteTexture;
         std::unique_ptr<Descriptor> textureDescriptors;
 
         uint32_t RectIndexCount = 0;
         std::vector<RectVertex> RectVertexBuffer;
 
-        std::array<std::shared_ptr<Texture>, MaxTextureSlots> ActiveTextures;
+        std::array<Ref<Texture>, MaxTextureSlots> ActiveTextures;
         uint32_t TextureSlotIndex = 1; // 0 = white texture
 
         Vector4 RectVertexPositions[4];
@@ -82,7 +81,7 @@ public:
 
     static void Release();
 
-    static void Setup(const std::shared_ptr<RenderTarget> &renderTarget)
+    static void Setup(const Ref<RenderTarget> &renderTarget)
     {
         pipeline->Reconstruct(renderTarget);
     }
@@ -132,7 +131,7 @@ public:
 
     static void DrawRect(const Matrix4 &transform, const Vector4 &color, int object = -1);
 
-    static void DrawRect(const Matrix4 &transform, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f), int object = -1);
+    static void DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f), int object = -1);
 
     static void DrawRect(const Vector2 &position, const Vector2 &size, const Vector4 &color)
     {
@@ -146,12 +145,12 @@ public:
         DrawRect(transform, color);
     }
 
-    static void DrawRect(const Vector2 &position, const Vector2 &size, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f))
+    static void DrawRect(const Vector2 &position, const Vector2 &size, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f))
     {
         DrawRect({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
     }
 
-    static void DrawRect(const Vector3 &position, const Vector2 &size, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f))
+    static void DrawRect(const Vector3 &position, const Vector2 &size, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f))
     {
         Matrix4 transform = Vector::Translate(position) * Vector::Scale({ size.x, size.y, 1.0f });
         DrawRect(transform, texture, tilingFactor, tintColor);
@@ -170,12 +169,12 @@ public:
         DrawRect(transform, color);
     }
 
-    static void DrawRotatedRect(const Vector2 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
+    static void DrawRotatedRect(const Vector2 &position, const Vector2 &size, float rotation, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
     {
         DrawRotatedRect({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
     }
 
-    static void DrawRotatedRect(const Vector3 &position, const Vector2 &size, float rotation, const std::shared_ptr<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
+    static void DrawRotatedRect(const Vector3 &position, const Vector2 &size, float rotation, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4{ 1.0f })
     {
         Matrix4 transform = Vector::Translate(position) * Vector::Rotate(rotation, { 0.0f, 0.0f, 1.0f }) * Vector::Scale({ size.x, size.y, 1.0f });
         DrawRect(transform, texture, tilingFactor, tintColor);
@@ -183,7 +182,7 @@ public:
 
     static void DrawSprite(const Matrix4 &transform, SpriteRendererComponent &src, int object)
     {
-        DrawRect(transform, src.texture, src.TilingFactor, src.Color, object);
+        DrawRect(transform, src.Sprite, src.TilingFactor, src.Color, object);
     }
 
 public:
@@ -191,9 +190,9 @@ public:
 
     static Statistics Stats();
 
-    static std::shared_ptr<GraphicsPipeline> pipeline;
+    static Ref<GraphicsPipeline> pipeline;
 
-    static std::shared_ptr<Buffer> uniform;
+    static Ref<Buffer> uniform;
 
     static inline bool isTextureChanged = false;
 };

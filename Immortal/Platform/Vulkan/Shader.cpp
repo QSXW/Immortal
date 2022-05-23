@@ -117,8 +117,6 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 {
     constexpr const char *tmpPath = "SpirvCache/";
 
-    GLSLCompiler compiler{};
-
     auto src = FileSystem::ReadString(filename);
 
     std::vector<uint32_t> spirv;
@@ -146,7 +144,6 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
 
     Check(device->Create(&createInfo, &shaderModule));
 
-    // Reflect(src);
     SetupDescriptorSetLayout(stage);
     resources.clear();
 
