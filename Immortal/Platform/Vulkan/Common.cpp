@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Common.h"
 
 #define VOLK_IMPLEMENTATION

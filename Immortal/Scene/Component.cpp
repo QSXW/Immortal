@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Component.h"
 #include "Script/ScriptEngine.h"
 #include "FileSystem/FileSystem.h"

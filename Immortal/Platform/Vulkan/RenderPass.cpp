@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "RenderPass.h"
 #include "Device.h"
 

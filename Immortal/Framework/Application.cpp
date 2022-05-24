@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Application.h"
 
 #include "Log.h"
@@ -34,7 +33,7 @@ Application::Application(const Window::Description &description) :
         desc.Height
         });
 
-    scriptEngine = new ScriptEngine{ description.Title, "Script.dll" };
+    scriptEngine = new ScriptEngine{ description.Title, R"(C:\Users\qsxw\source\repos\ConsoleApp2\ConsoleApp2\bin\Debug\net6.0\ConsoleApp2.dll)" };
 
     Async::Execute([&](){
         gui = context->CreateGuiLayer();

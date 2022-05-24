@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <vulkan/vulkan_core.h>
 
-#if defined(_MSC_VER)
+#ifdef _WIN32
 #include <dxgiformat.h>
 #define DXF(x) x
 #else

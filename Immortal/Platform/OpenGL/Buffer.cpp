@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Buffer.h"
 
 #include "Common.h"

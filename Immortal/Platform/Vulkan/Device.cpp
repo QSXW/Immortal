@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Device.h"
 
 #define VMA_IMPLEMENTATION

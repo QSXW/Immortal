@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Swapchain.h"
 
 #include "Framework/Utils.h"

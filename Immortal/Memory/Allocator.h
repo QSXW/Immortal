@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdlib>
-#include "sl/slapi.h"
+#include "Core.h"
 
 namespace Immortal
 {

@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Window.h"
 
 #include "Render/Render.h"

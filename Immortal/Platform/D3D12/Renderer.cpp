@@ -57,16 +57,19 @@ Descriptor::Super *Renderer::CreateBufferDescriptor(uint32_t count)
 
 void Renderer::Draw(GraphicsPipeline::Super *super)
 {
-    auto pipeline       = dynamic_cast<GraphicsPipeline *>(super);
-    auto indexBuffer    = pipeline->GetBuffer<Buffer::Type::Index>();
+    auto pipeline = dynamic_cast<GraphicsPipeline *>(super);
     auto descriptorHeap = pipeline->GetAddress<DescriptorHeap>();
 
     commandList->SetPipelineState(*pipeline);
     commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
     commandList->SetDescriptorHeaps(descriptorHeap->AddressOf(), 1);
     commandList->SetPrimitiveTopology(pipeline->Get<D3D12_PRIMITIVE_TOPOLOGY>());
-    commandList->SetVertexBuffers(&pipeline->Get<Buffer::VertexView>());
-    commandList->SetIndexBuffer(&pipeline->Get<Buffer::IndexView>());
+
+    auto vertexView = pipeline->Get<Buffer::VertexView>();
+    commandList->SetVertexBuffers(&vertexView);
+
+    auto indexView = pipeline->Get<Buffer::IndexView>();
+    commandList->SetIndexBuffer(&indexView);
 
     GPUDescriptor descriptors{ descriptorHeap->StartOfGPU() };
     auto &descriptorTables = pipeline->GetDescriptorTables();

@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Texture.h"
 
 #include "Render/Frame.h"

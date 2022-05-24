@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Framebuffer.h"
 
 #include "Device.h"

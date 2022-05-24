@@ -1,8 +1,7 @@
-#include "impch.h"
 #include "Frame.h"
 
 #include "Texture.h"
-#include "Media/Image/Image.h"
+#include "Vision/Image/Image.h"
 #include "FileSystem/FileSystem.h"
 
 namespace Immortal

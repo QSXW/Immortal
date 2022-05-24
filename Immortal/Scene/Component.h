@@ -8,10 +8,10 @@
 #include "Render/Mesh.h"
 #include "Render/Texture.h"
 #include "SceneCamera.h"
-#include "Media/Interface/Codec.h"
-#include "Media/Interface/Demuxer.h"
+#include "Vision/Interface/Codec.h"
+#include "Vision/Interface/Demuxer.h"
 
-namespace IMMORTAL_API Immortal
+namespace Immortal
 {
 
 class Scene;

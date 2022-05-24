@@ -91,7 +91,7 @@ public:
         }
     }
 
-    DXGI_FORMAT PixelBuffer::GetDepthFormat(DXGI_FORMAT defaultFormat)
+    DXGI_FORMAT GetDepthFormat(DXGI_FORMAT defaultFormat)
     {
         switch (defaultFormat)
         {

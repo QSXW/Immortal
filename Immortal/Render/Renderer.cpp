@@ -1,11 +1,10 @@
-#include "impch.h"
 #include "Renderer.h"
 
 #include "Render.h"
 #include "Platform/Vulkan/Renderer.h"
 #include "Platform/OpenGL/Renderer.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #include "Platform/D3D12/Renderer.h"
 #endif
 
@@ -22,7 +21,7 @@ std::unique_ptr<Renderer> Renderer::Create(RenderContext *context)
     {
          return std::make_unique<OpenGL::Renderer>(context);
     }
-#ifdef _WIN32
+#ifdef _MSC_VER
     if (Render::API == Render::Type::D3D12)
     {
         return std::make_unique<D3D12::Renderer>(context);

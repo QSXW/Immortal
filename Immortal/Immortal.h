@@ -3,7 +3,7 @@
 #include <cstdio>
 
 #include <imgui.h>
-#include "imgui_internal.h"
+#include <imgui_internal.h>
 
 #include "Core.h"
 #include "Config.h"
@@ -27,8 +27,8 @@
 
 #include "Memory/Memory.h"
 
-#include "Media/Demux/IVFDemuxer.h"
-#include "Media/Video/DAV1DCodec.h"
+#include "Vision/Image/Image.h"
+#include "Vision/Video/Video.h"
 
 #include "Utils/PlatformUtils.h"
 #include "Utils/json.h"

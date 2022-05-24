@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "SceneCamera.h"
 
 namespace Immortal

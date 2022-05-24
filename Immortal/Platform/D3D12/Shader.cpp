@@ -15,8 +15,8 @@ Shader::Shader(const std::string &filepath, Type type) :
 
     std::wstring wfilepath = Utils::s2ws(filepath) + std::wstring{ L".hlsl" };
 
-    char *target     = "vs_5_1";
-    char *entryPoint = "VSMain";
+    const char *target     = "vs_5_1";
+    const char *entryPoint = "VSMain";
     if (type == Type::Compute)
     {
         target = "cs_5_1";

@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "GuiLayer.h"
 
 #ifndef _UNICODE

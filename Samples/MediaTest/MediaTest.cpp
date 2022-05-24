@@ -1,10 +1,9 @@
 #include <iostream>
+
 #include "Immortal.h"
-#include "Media/Stream.h"
-#include "Media/Interface/Codec.h"
-#include "Media/Video/HEVC.h"
-#include "Media/Common/BitTracker.h"
-#include "Media/Image/JPEG.h"
+#include "FileSystem/Stream.h"
+#include "Vision/Image/Image.h"
+#include "Vision/Video/Video.h"
 
 using namespace Immortal;
 

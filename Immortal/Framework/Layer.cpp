@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Layer.h"
 
 namespace Immortal

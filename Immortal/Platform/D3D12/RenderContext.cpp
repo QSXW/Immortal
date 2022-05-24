@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "RenderContext.h"
 
 #include "Framework/Utils.h"
@@ -37,7 +36,7 @@ RenderContext::RenderContext(const void *handle)
 
 RenderContext::~RenderContext()
 {
-    IfNotNullThen<FreeLibrary>(hModule);
+
 }
 
 void RenderContext::Setup()

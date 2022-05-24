@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "ImageView.h"
 #include "Image.h"
 #include "Device.h"

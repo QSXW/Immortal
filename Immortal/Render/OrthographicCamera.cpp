@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "OrthographicCamera.h"
 
 #include "Framework/Input.h"

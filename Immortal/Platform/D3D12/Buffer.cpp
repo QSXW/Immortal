@@ -74,8 +74,9 @@ void Buffer::InternelCreate(Device *device)
 
     if (type & Type::Uniform)
     {
+        D3D12_CONSTANT_BUFFER_VIEW_DESC desc = Desc();
         descriptor = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
-        device->CreateView(&Desc(), descriptor);
+        device->CreateView(&desc, descriptor);
     }
 }
 

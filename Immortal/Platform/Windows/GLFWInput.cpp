@@ -1,5 +1,3 @@
-#include "impch.h"
-
 #include "GLFWInput.h"
 #include <GLFW/glfw3.h>
 

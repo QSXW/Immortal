@@ -1,5 +1,3 @@
-#include "impch.h"
-
 #include "GLFWWindow.h"
 #include "GLFWInput.h"
 #include "Event/ApplicationEvent.h"

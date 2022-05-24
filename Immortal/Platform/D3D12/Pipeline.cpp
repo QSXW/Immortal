@@ -25,7 +25,6 @@ static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopologyType(const Pipeline
     }
 }
 
-
 void Pipeline::InitRootSignature(const Shader *shader)
 {
     auto &descriptorRanges = shader->DescriptorRanges();
@@ -196,7 +195,7 @@ void Pipeline::Bind(Buffer *buffer, uint32_t binding)
 {
     DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
 
-    auto &cbvDescriptor = descriptorHeap.active->StartOfCPU();
+    auto cbvDescriptor = descriptorHeap.active->StartOfCPU();
     cbvDescriptor.Offset(descriptorTable.Offset + binding, descriptorHeap.active->GetIncrement());
     device->CopyDescriptors(
         1, cbvDescriptor,
@@ -225,7 +224,7 @@ void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
     auto increment = descriptorHeap.active->GetIncrement();
 
     DescriptorTable &descriptorTable = descriptorTables[binding];
-    auto &srvDescriptor = descriptorHeap.active->StartOfCPU();
+    auto srvDescriptor = descriptorHeap.active->StartOfCPU();
     srvDescriptor.Offset(descriptorTable.Offset, increment);
     for (size_t i = 0; i < descriptorTable.DescriptorCount; i++)
     {
@@ -242,7 +241,7 @@ void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 {
     DescriptorTable &descriptorTable = descriptorTables[textureIndexInDescriptorTable];
     Texture *texture = dcast<Texture *>(super);
-    auto &srvDescriptor = descriptorHeap.active->StartOfCPU();
+    auto srvDescriptor = descriptorHeap.active->StartOfCPU();
     srvDescriptor.Offset(descriptorTable.Offset + binding, descriptorHeap.active->GetIncrement());
     device->CopyDescriptors(
         1, srvDescriptor,

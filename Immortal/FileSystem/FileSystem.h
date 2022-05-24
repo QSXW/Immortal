@@ -3,8 +3,7 @@
 #include <filesystem>
 
 #include "Core.h"
-#include "Media/Stream.h"
-
+#include "Stream.h"
 
 namespace Immortal
 {

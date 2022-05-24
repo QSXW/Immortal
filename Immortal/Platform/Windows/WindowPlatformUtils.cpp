@@ -1,9 +1,9 @@
+#include "Framework/Application.h"
+#include "Utils/PlatformUtils.h"
+
 #ifdef _WIN32
 #include <commdlg.h>
 #endif
-
-#include "Framework/Application.h"
-#include "Utils/PlatformUtils.h"
 
 namespace Immortal
 {

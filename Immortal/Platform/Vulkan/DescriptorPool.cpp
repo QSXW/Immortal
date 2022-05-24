@@ -1,5 +1,3 @@
-#include "impch.h"
-
 #include "DescriptorPool.h"
 #include "Device.h"
 

@@ -1,5 +1,3 @@
-
-#include "impch.h"
 #include "Vector.h"
 
 namespace Immortal

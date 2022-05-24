@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Shader.h"
 
 #include "Common.h"

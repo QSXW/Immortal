@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Mesh.h"
 
 #include "Render.h"

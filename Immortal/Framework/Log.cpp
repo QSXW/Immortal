@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Log.h"
 
 #include <spdlog/async.h>

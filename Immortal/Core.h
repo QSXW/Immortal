@@ -11,13 +11,18 @@
 #include <iostream>
 #include <algorithm>
 
-#include "sl.h"
+#include "slapi.h"
 
 #pragma warning( disable: 4251  )
 #pragma warning( disable: 4996  )
 #pragma warning( disable: 4006  )
 #pragma warning( disable: 26812 )
 #pragma warning( disable: 26439 )
+
+#ifdef  _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
 
 #ifdef _WIN32
     #if defined IML_DLL_EXPORT

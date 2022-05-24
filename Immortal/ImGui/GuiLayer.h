@@ -18,7 +18,7 @@ namespace ImGui
 {
 
 template <class T>
-inline constexpr ImVec4 ConvertColor(T r, T g, T b, T a)
+inline ImVec4 ConvertColor(T r, T g, T b, T a)
 {
     ImVec4 ret;
 

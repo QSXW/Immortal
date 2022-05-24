@@ -3,7 +3,7 @@
 
 #include "Texture.h"
 #include "Format.h"
-#include "Media/Image/Image.h"
+#include "Vision/Interface/Codec.h"
 
 namespace Immortal 
 {

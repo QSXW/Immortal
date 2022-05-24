@@ -23,7 +23,7 @@ DLLLoader::~DLLLoader()
 
 void *DLLLoader::GetProcessAddress(const std::string &func)
 {
-    return GetProcAddress(handle, func.c_str());
+    return (void *)GetProcAddress(handle, func.c_str());
 }
 
 #else

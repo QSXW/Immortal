@@ -247,4 +247,4 @@ target_link_libraries("external" INTERFACE
     $<$<BOOL:${MONO_FOUND}>:mono>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>)
 
-configure_file(Config.h.in ${CMAKE_SOURCE_DIR}/Immortal/Config.h)
+configure_file(Config.h.in ${WORKSPACE}/Immortal/Config.h)

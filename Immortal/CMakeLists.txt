@@ -75,7 +75,9 @@ set(MEMORY_FILES
 
 set(FS_FILES
     FileSystem/FileSystem.cpp
-    FileSystem/FileSystem.h)
+    FileSystem/FileSystem.h
+    FileSystem/RF.h
+    FileSystem/Stream.h)
 
 set(PHYSICS_FILES
     Physics/Physics.cpp
@@ -228,8 +230,6 @@ set(RENDER_FILES
     Render/CommandBuffer.h
     Render/DataSet.h
     Render/Descriptor.h
-    Render/Environment.cpp
-    Render/Environment.h
     Render/Frame.cpp
     Render/Frame.h
     Render/RenderTarget.h
@@ -297,31 +297,114 @@ set(WIDGET_FILES
 set(NET_FILES
     Net/Socket.h)
 
-source_group("\\" FILES ${CORE_FILES})
-source_group("Framework\\" FILES ${ALGORITHM_FILES})
-source_group("Framework\\" FILES ${FRAMEWORK_FILES})
-source_group("Editor\\" FILES ${EDITOR_FILES})
-source_group("Event\\" FILES ${EVENT_FILES})
-source_group("Image\\" FILES ${IMAGE_FILES})
-source_group("ImGui\\" FILES ${GUI_FILES})
-source_group("Interface\\" FILES ${INTERFACE_FILES})
-source_group("Math\\" FILES ${MATH_FILES})
-source_group("Memory\\" FILES ${MEMORY_FILES})
-source_group("FileSystem\\" FILES ${FS_FILES})
-source_group("Physics\\" FILES ${PHYSICS_FILES})
-source_group("Platform\\D3D12\\" FILES ${D3D12_FILES})
-source_group("Platform\\Vulkan\\" FILES ${VULKAN_FILES})
-source_group("Platform\\OpenGL\\" FILES ${OPENGL_FILES})
-source_group("Platform\\Windows\\" FILES ${WINDOWS_FILES})
-source_group("Render\\" FILES ${RENDER_FILES})
-source_group("Scene\\" FILES ${SCENE_FILES})
-source_group("Script\\" FILES ${SCRIPT_FILES})
-source_group("Serializer\\" FILES ${SERIALIZER_FILES})
-source_group("String\\" FILES ${STRING_FILES})
-source_group("Sync\\" FILES ${SYNC_FILES})
-source_group("Utils\\" FILES ${UTILS_FILES})
-source_group("Widget\\" FILES ${WIDGET_FILES})
-source_group("Net\\" FILES ${NET_FILES})
+source_group("\\"                  FILES ${CORE_FILES}      )
+source_group("Framework\\"         FILES ${ALGORITHM_FILES} )
+source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
+source_group("Editor\\"            FILES ${EDITOR_FILES}    )
+source_group("Event\\"             FILES ${EVENT_FILES}     )
+source_group("Image\\"             FILES ${IMAGE_FILES}     )
+source_group("ImGui\\"             FILES ${GUI_FILES}       )
+source_group("Interface\\"         FILES ${INTERFACE_FILES} )
+source_group("Math\\"              FILES ${MATH_FILES}      )
+source_group("Memory\\"            FILES ${MEMORY_FILES}    )
+source_group("FileSystem\\"        FILES ${FS_FILES}        )
+source_group("Physics\\"           FILES ${PHYSICS_FILES}   )
+source_group("Platform\\D3D12\\"   FILES ${D3D12_FILES}     )
+source_group("Platform\\Vulkan\\"  FILES ${VULKAN_FILES}    )
+source_group("Platform\\OpenGL\\"  FILES ${OPENGL_FILES}    )
+source_group("Platform\\Windows\\" FILES ${WINDOWS_FILES}   )
+source_group("Render\\"            FILES ${RENDER_FILES}    )
+source_group("Scene\\"             FILES ${SCENE_FILES}     )
+source_group("Script\\"            FILES ${SCRIPT_FILES}    )
+source_group("Serializer\\"        FILES ${SERIALIZER_FILES})
+source_group("String\\"            FILES ${STRING_FILES}    )
+source_group("Sync\\"              FILES ${SYNC_FILES}      )
+source_group("Utils\\"             FILES ${UTILS_FILES}     )
+source_group("Widget\\"            FILES ${WIDGET_FILES}    )
+source_group("Net\\"               FILES ${NET_FILES}       )
+
+set(VISION_CORE_FILES
+    Vision/Types.h)
+
+set(COMMON_FILES
+    Vision/Common/Animator.h
+    Vision/Common/BitTracker.h
+    Vision/Common/Checksum.cpp
+    Vision/Common/Checksum.h
+    Vision/Common/Error.h
+    Vision/Common/NetworkAbstractionLayer.h)
+
+set(DEMUX_FILES
+    Vision/Demux/IVFDemuxer.h
+    Vision/Demux/IVFDemuxer.cpp)
+
+set(VISION_INTERFACE_FILES
+    Vision/Interface/Codec.h
+    Vision/Interface/Demuxer.h
+    Vision/Interface/MFXCodec.cpp
+    Vision/Interface/MFXCodec.h)
+
+set(LOOKUP_TABLE_FILE
+    Vision/LookupTable/LookupTable.cpp
+    Vision/LookupTable/LookupTable.h)
+
+set(IMAGE_CODEC_FILES
+    Vision/Image/BMP.cpp
+    Vision/Image/BMP.h
+    Vision/Image/Image.h
+    Vision/Image/JPEG.cpp
+    Vision/Image/JPEG.h
+    Vision/Image/STBCodec.cpp
+    Vision/Image/STBCodec.h
+    Vision/Image/MFXJpegCodec.cpp
+    Vision/Image/MFXJpegCodec.h
+    Vision/Image/PPM.cpp
+    Vision/Image/PPM.h
+    Vision/Image/OpenCVCodec.cpp
+    Vision/Image/OpenCVCodec.h)
+
+set(VIDEO_CODEC_FILES
+    Vision/Video/DAV1DCodec.cpp
+    Vision/Video/DAV1DCodec.h
+    Vision/Video/HEVC.cpp
+    Vision/Video/HEVC.h
+    Vision/Video/Video.h)
+
+set(VULKAN_VIDEO_FILES
+    Vision/Video/Vulkan/HEVC.cpp
+    Vision/Video/Vulkan/HEVC.h)
+
+set(PROCESSING_FILES
+    Vision/Processing/ColorSpace.cpp
+    Vision/Processing/ColorSpace.h)
+
+set(EXTERNAL_FILES
+    Vision/External/External.cpp
+    Vision/External/stb_image.h)
+
+source_group("\\Vision\\"                FILES ${MEDIA_CORE_FILES}      )
+source_group("\\Vision\\Common\\"        FILES ${COMMON_FILES}          )
+source_group("\\Vision\\Demux\\"         FILES ${DEMUX_FILES}           )
+source_group("\\Vision\\Interface\\"     FILES ${VISION_INTERFACE_FILES})
+source_group("\\Vision\\LookupTable\\"   FILES ${LOOKUP_TABLE_FILE}     )
+source_group("\\Vision\\Image\\"         FILES ${IMAGE_CODEC_FILES}     )
+source_group("\\Vision\\Video\\"         FILES ${VIDEO_CODEC_FILES}     )
+source_group("\\Vision\\Video\\Vulkan\\" FILES ${VULKAN_VIDEO_FILES}    )
+source_group("\\Vision\\External\\"      FILES ${EXTERNAL_FILES}        )
+source_group("\\Vision\\Processing\\"    FILES ${PROCESSING_FILES}      )
+
+set(VISION_FILES
+    ${VISION_CORE_FILES}
+    ${COMMON_FILES}
+    ${DEMUX_FILES}
+    ${EXTERNAL_FILES}
+    ${VISION_INTERFACE_FILES}
+    ${LOOKUP_TABLE_FILE}
+    ${IMAGE_CODEC_FILES}
+    ${VIDEO_CODEC_FILES}
+    ${VULKAN_VIDEO_FILES}
+    ${PROCESSING_FILES}
+)
 
 set(PROJECT_FILES
     ${CORE_FILES}
@@ -349,6 +432,7 @@ set(PROJECT_FILES
     ${UTILS_FILES}
     ${WIDGET_FILES}
     ${NET_FILES}
+    ${VISION_FILES}
     $<$<C_COMPILER_ID:MSVC>:${D3D12_FILES}>
 )
 
@@ -364,11 +448,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
 
-add_subdirectory(sl)
-add_subdirectory(Media)
+add_subdirectory(slapi)
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
-    Vision
     external
 )

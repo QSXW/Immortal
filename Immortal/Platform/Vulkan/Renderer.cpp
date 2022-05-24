@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Renderer.h"
 #include <array>
 

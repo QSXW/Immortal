@@ -138,8 +138,6 @@ public:
 private:
     Super::Description desc{};
 
-    HMODULE hModule{ nullptr };
-
     ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
 
     std::unique_ptr<Device> device;

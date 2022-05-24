@@ -1,7 +1,5 @@
 #pragma once
 
-#include "impch.h"
-
 #include "Core.h"
 #include "Event/Event.h"
 

@@ -1,6 +1,4 @@
-#include "impch.h"
 #include "GuiLayer.h"
-
 
 #include "Framework/Application.h"
 #include "Common.h"

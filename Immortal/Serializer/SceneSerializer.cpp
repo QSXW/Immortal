@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "SceneSerializer.h"
 
 #include "FileSystem/FileSystem.h"

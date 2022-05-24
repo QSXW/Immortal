@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "ObserverCamera.h"
 
 #include "Math/Math.h"

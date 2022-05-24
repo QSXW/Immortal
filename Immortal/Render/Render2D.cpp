@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "Render2D.h"
 
 #include "Render.h"

@@ -1,4 +1,3 @@
-#include "impch.h"
 #include "EditorCamera.h"
 #include "Framework/Input.h"
 #include "Math/Math.h"
