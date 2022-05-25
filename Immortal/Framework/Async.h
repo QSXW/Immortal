@@ -123,6 +123,12 @@ public:
         threadPool->Join();
     }
 
+    static void Release()
+    {
+        Wait();
+        threadPool.reset();
+    }
+
 public:
     static std::unique_ptr<ThreadPool> threadPool;
 };

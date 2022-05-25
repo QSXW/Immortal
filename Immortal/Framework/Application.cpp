@@ -117,7 +117,7 @@ void Application::OnEvent(Event &e)
 bool Application::OnWindowClosed(WindowCloseEvent &e)
 {
     /* Wait all threads to finish before closing */
-    Async::Wait();
+    Async::Release();
 
     runtime.running = false;
     return !runtime.running;
