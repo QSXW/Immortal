@@ -101,6 +101,11 @@ public:
         return size;
     }
 
+    bool Empty() const
+    {
+        return !size;
+    }
+
     void AllocateMemory()
     {
         THROWIF(data, "The size changing is not permitted in Light Vector, try std::vector instead!");

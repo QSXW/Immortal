@@ -267,6 +267,7 @@ public:
                                         ImGui::EndCombo();
                                     }
                                     ImGui::PopItemWidth();
+                                    mesh.Mesh->SwitchToAnimation(index);
 
                                     UI::DrawColumn(WordsMap::Get("Ticks Per Second"), [&]() -> bool { ImGui::Text("%f", animations[index].TicksPerSeconds);  return false; }, 128);
                                     UI::DrawColumn(WordsMap::Get("Duration"), [&]() -> bool { ImGui::Text("%f", animations[index].Duration); return false; }, 128);

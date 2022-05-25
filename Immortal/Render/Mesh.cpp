@@ -72,17 +72,22 @@ inline constexpr T Interpolate(const LightVector<U> &keys, float animationTime)
 
     if (keys.Size() == 1)
     {
-        ret = keys[0].Value;
-        return ret;
+        return keys[0].Value;
     }
 
     size_t current = 0;
-    for (; current < keys.Size(); current++)
+    size_t size = keys.Size() - 1;
+    for (; current < size; current++)
     {
         if (animationTime < keys[current + 1].Time)
         {
             break;
         }
+    }
+
+    if (current == size)
+    {
+        return keys[current].Value;
     }
     size_t next = current + 1;
 
@@ -234,6 +239,13 @@ void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, cons
         auto &boneInfo = boneIt->second;
         transforms[boneInfo.Id] = globalInverseTransform * globalTransform * boneInfo.OffsetMatrix;
     }
+    else
+    {
+        if (!node->Meshes.Empty())
+        {
+            transforms[node->Meshes[0]] = globalInverseTransform * globalTransform;
+        }
+    }
 
     auto &children = node->Children;
     for (auto &child : children)
@@ -311,12 +323,13 @@ void Mesh::LoadModelData(const aiScene *scene)
         vertexBindInfo.size = mesh->mNumVertices * sizeof(SkeletonVertex);
 
         uint32_t baseVertex = vertexBindInfo.offset / sizeof(SkeletonVertex);
-        node.Animated = LoadBoneData(mesh, vertices, baseVertex, numBones);
+        bool hasBone = LoadBoneData(mesh, vertices, baseVertex, numBones);
 
-        for (size_t j = baseVertex; j < vertices.size(); j++)
+        if (!hasBone && scene->HasAnimations())
         {
-            if (vertices[j].BoneIds[0] == 0)
+            for (size_t j = baseVertex; j < vertices.size(); j++)
             {
+                vertices[j].BoneIds[0] = i;
                 vertices[j].Weights[0] = 1.0f;
             }
         }
@@ -337,14 +350,14 @@ void Mesh::LoadModelData(const aiScene *scene)
         faceBindInfo.Increase();
     }
 
-    transforms.resize(bones.size() + 1);
+    LoadAnimationData(scene);
+
+    transforms.resize(bones.empty() ? scene->mNumMeshes : bones.size() + 1);
     transformBuffer = Render::CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type{ Buffer::Type::Uniform });
 
     rootNode = new BoneNode{};
     ReadAssimpNode(rootNode, scene->mRootNode);
     globalInverseTransform = Vector::Inverse(rootNode->Transform);
-
-    LoadAnimationData(scene);
 
     buffer->Update(vertices);
     buffer->Update(faces, vertices.size() * sizeof(SkeletonVertex));
