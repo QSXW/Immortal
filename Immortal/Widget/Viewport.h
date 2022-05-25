@@ -8,14 +8,10 @@
 namespace Immortal
 {
 
-namespace Widget
-{
-
-class Viewport : public Super
+class Viewport : public Widget
 {
 public:
-    Viewport(const std::string &name) :
-        Super(name)
+    Viewport(const std::string &name)
     {
 
     }
@@ -29,7 +25,7 @@ public:
     void OnUpdate(T *target, P process = []() -> void{ })
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
-        ImGui::Begin(Super::Text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
+        ImGui::Begin(props.text.c_str(), NULL, ImGuiWindowFlags_NoTitleBar);
         ImGui::BeginChild("###");
 
         auto [x, y] = ImGui::GetContentRegionAvail();
@@ -91,5 +87,4 @@ private:
     bool isFocused = false;
 };
 
-}
 }

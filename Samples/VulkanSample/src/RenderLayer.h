@@ -9,14 +9,27 @@
 namespace Immortal
 {
 
+class WImGuizmo : public Widget
+{
+public:
+    WImGuizmo(Widget *parent = nullptr) :
+        Widget { parent }
+    {
+
+    }
+};
+
 class RenderLayer : public Layer
 {
 public:
-    RenderLayer(Vector2 viewport, const std::string &label) :
+    RenderLayer(Vector2 viewportSize, const std::string &label) :
         Layer{ label },
         eventSink{ this },
         selectedObject{},
-        viewportSize{ viewport }
+        viewportSize{ viewportSize },
+        viewport{ new WFrame{} },
+        editableArea{ new WImage{} },
+        imguizmoWidget{ new WImGuizmo{} }
     {
         camera.primary = &camera.editor;
         camera.editor = { Vector::PerspectiveFOV(Vector::Radians(90.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f) };
@@ -26,44 +39,12 @@ public:
         eventSink.Listen(&RenderLayer::OnMouseScrolled, Event::Type::MouseScrolled);
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
-    }
 
-    virtual void OnDetach() override
-    {
+        viewport->AddChild(editableArea)->AddChild(imguizmoWidget);
+        viewport->Text(WordsMap::Get("Offline Render"));
+        editableArea->Resize(viewportSize).Anchors(viewport);
 
-    }
-
-    virtual void OnUpdate() override
-    {
-        Vector2 size = editableArea.Size();
-        if ((size.x != viewportSize.x || size.y != viewportSize.y) &&
-            (size.x != 0 && size.y != 0))
-        {
-            viewportSize = size;
-            camera.editor.SetViewportSize(viewportSize);
-            camera.orthographic.SetViewportSize(viewportSize);
-            scene->SetViewportSize(viewportSize);
-        }
-
-        scene->Select(&selectedObject);
-        if (panels.tools.IsControlActive(Tools::Start))
-        {
-            scene->OnRenderRuntime();
-        }
-        else
-        {
-            if (editableArea.IsHovered())
-            {
-                camera.primary->OnUpdate();
-            }
-            scene->OnRenderEditor(*camera.primary);
-        }
-    }
-
-    void UpdateEditableArea()
-    {
-        editableArea.OnUpdate(scene->Target().Get(), [&]() -> void {
-
+        imguizmoWidget->Connect([&]() {
             if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
             {
                 auto [x, y] = ImGui::GetWindowPos();
@@ -87,7 +68,7 @@ public:
 
                 Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
                 Matrix4 cameraViewMatrix = primaryCamera->View();
-                 
+
                 bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
                 float snapValues[][3] = {
                     {  0.5f,  0.5f,  0.5f },
@@ -113,7 +94,45 @@ public:
                     transform.Rotation += deltaRotation;
                 }
             }
-        });
+            });
+    }
+
+    virtual void OnDetach() override
+    {
+
+    }
+
+    virtual void OnUpdate() override
+    {
+        Vector2 size = editableArea->Size();
+        if ((size.x != viewportSize.x || size.y != viewportSize.y) &&
+            (size.x != 0 && size.y != 0))
+        {
+            viewportSize = size;
+            camera.editor.SetViewportSize(viewportSize);
+            camera.orthographic.SetViewportSize(viewportSize);
+            scene->SetViewportSize(viewportSize);
+        }
+
+        scene->Select(&selectedObject);
+        if (panels.tools.IsControlActive(Tools::Start))
+        {
+            scene->OnRenderRuntime();
+        }
+        else
+        {
+            if (editableArea->IsHovered())
+            {
+                camera.primary->OnUpdate();
+            }
+            scene->OnRenderEditor(*camera.primary);
+        }
+    }
+
+    void UpdateEditableArea()
+    {
+        editableArea->Descriptor(*scene->Target());
+        viewport->Render();
     }
 
     void UpdateMenuBar()
@@ -215,7 +234,7 @@ public:
     void UpdateRightClickMenu()
     {
         static ImVec2 pos;
-        if (editableArea.IsHovered() && !ImGuizmo::IsOver() &&
+        if (editableArea->IsHovered() && !ImGuizmo::IsOver() &&
             Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt)
             && !panels.tools.IsControlActive(Tools::Start))
         {
@@ -374,8 +393,8 @@ public:
 
     void SelectObject(float x, float y)
     {
-        x -= editableArea.MinBound().x;
-        y -= editableArea.MinBound().y;
+        x -= editableArea->MinBound().x;
+        y -= editableArea->MinBound().y;
 
         uint64_t pixel = scene->Target()->PickPixel(1, x, y, Format::R32);
 
@@ -522,7 +541,7 @@ public:
             {
                 scene->Target()->PickPixel(0, 0, 0, Format::RGBA8);
                 Async::Execute([&]() -> void {
-                    auto size = editableArea.Size();
+                    auto size = editableArea->Size();
                     uint32_t width = U32(size.x);
                     uint32_t height = U32(size.y);
 
@@ -578,7 +597,7 @@ public:
 
     bool OnMouseDown(MouseButtonPressedEvent &e)
     {
-        if (editableArea.IsHovered() && !ImGuizmo::IsOver())
+        if (editableArea->IsHovered() && !ImGuizmo::IsOver())
         {
             if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control))
             {
@@ -593,7 +612,7 @@ public:
 
     bool OnMouseScrolled(MouseScrolledEvent &e)
     {
-        if (editableArea.IsHovered())
+        if (editableArea->IsHovered())
         {
             return camera.primary->OnMouseScrolled(e);
         }
@@ -639,8 +658,11 @@ private:
         bool showDemoWindow{ true };
     } Settings;
 
-    Widget::Viewport editableArea{ WordsMap::Get("Offline Render") };
-    Widget::MenuBar menuBar;
+    Ref<WFrame> viewport;
+
+    Ref<WImage> editableArea;
+
+    MenuBar menuBar;
 
     struct
     {
@@ -659,6 +681,8 @@ private:
     Object triangle;
 
     ImGuizmo::OPERATION guizmoType = ImGuizmo::OPERATION::INVALID;
+
+    Ref<WImGuizmo> imguizmoWidget;
 };
 
 }

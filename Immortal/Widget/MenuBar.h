@@ -7,10 +7,7 @@
 namespace Immortal
 {
 
-namespace Widget
-{
-
-class MenuBar : public Super
+class MenuBar : public Widget
 {
 public:
     MenuBar()
@@ -18,8 +15,7 @@ public:
     
     }
 
-    MenuBar(const std::string &name) :
-        Super(name)
+    MenuBar(const std::string &name)
     {
 
     }
@@ -36,5 +32,4 @@ public:
     }
 };
 
-}
 }

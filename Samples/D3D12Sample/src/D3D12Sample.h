@@ -8,8 +8,12 @@ class RenderLayer : public Layer
 {
 public:
     RenderLayer() :
-        eventSink{ this }
+        eventSink{ this },
+        viewportFrame{ new WFrame },
+        renderViewport{ new WImage{ viewportFrame }}
     {
+        viewportFrame->Text("Render Target");
+
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
         texture = Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\wallhaven-pk7z5j.jpg)");
@@ -55,7 +59,7 @@ public:
 
     void OnGuiRender()
     {
-        Vector2 viewportSize = renderViewport.Size();
+        Vector2 viewportSize = viewportFrame->Size();
         if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
             (viewportSize.x != 0 && viewportSize.y != 0))
         {
@@ -67,7 +71,7 @@ public:
         ubo.viewProjection = camera.ViewProjection();
         uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        renderViewport.OnUpdate(renderTarget.Get(), [] {});
+        renderViewport->Descriptor(*renderTarget);
         viewport.OnUpdate(texture.Get(), [] {});
 
         ImGui::Begin("Control Panel");
@@ -77,6 +81,7 @@ public:
         Immortal::UI::DrawVec3Control("Scale", transformComponent.Scale);
         ImGui::End();
 
+        viewportFrame->Render();
         auto gui = Application::App()->GetGuiLayer();
         gui->BlockEvent(false);
     }
@@ -134,9 +139,12 @@ public:
 private:
     Ref<Texture> texture;
     Ref<Texture> texture2;
-    Widget::Viewport viewport{ "Texture Preview " };
 
-    Widget::Viewport renderViewport{ "Render Target" };
+    Ref<WFrame> viewportFrame;
+
+    Viewport viewport{ "Texture Preview " };
+
+    Ref<WImage> renderViewport{};
 
     EventSink<RenderLayer> eventSink;
 

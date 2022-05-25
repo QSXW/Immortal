@@ -8,9 +8,12 @@ class RenderLayer : public Layer
 {
 public:
 	RenderLayer() :
-		Layer{ "OpenGLSample2D" }
+		Layer{ "OpenGLSample2D" },
+		frame{ new WFrame },
+		image{ new WImage{ frame } }
 	{
 		camera.SetViewportSize({ 1920.0f, 1080.0f });
+		frame->Text("Text Frame").Color(ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f });
 	}
 
 	~RenderLayer()
@@ -23,6 +26,7 @@ public:
 		renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } });
 		texture = Render::Preset()->Textures.White;
 
+		image->Width(1920).Height(1080).Descriptor(*texture);
 		renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 		Render2D::Setup(renderTarget);
 	}
@@ -50,7 +54,7 @@ public:
 		{
 			for (float x = -5.0f; x < 5.0f; x += 0.5f)
 			{
-				Vector4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
+				Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };// { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
 				Render2D::DrawRect({ x, y }, { 0.45f, 0.45f }, color);
 			}
 		}
@@ -67,14 +71,17 @@ public:
 			ImGui::ShowDemoWindow(&show_demo_window);
 		}
 
-
+		frame->Render();
+		LOG::DEBUG("Width:{}, Height:{}", frame->Width(), frame->Height());
 		offline.OnUpdate(renderTarget.Get(), [] {});
 	}
 
 	void OnEvent(Event &e)
 	{
-		LOG::INFO(e);
-		// camera.OnMouseScrolled(e);
+		if (e.GetType() == MouseScrolledEvent::GetStaticType())
+		{
+			camera.OnMouseScrolled(dynamic_cast<MouseScrolledEvent &>(e));
+		}
 	}
 
 private:
@@ -88,9 +95,13 @@ private:
 	
 	OrthographicCamera camera;
 
-	Widget::Viewport offline{ WordsMap::Get("offlineRender") };
+	Viewport offline{ WordsMap::Get("Offline Render") };
 
 	float luminance{ 0 };
 
 	Vector4 color{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+	Ref<WFrame> frame;
+
+	Ref<WImage> image;
 };
