@@ -15,7 +15,7 @@
 namespace Immortal
 {
 
-inline void InterpolateQuanternion(Quaternion &pOut, const Quaternion &pStart, const Quaternion &pEnd, float pFactor)
+inline void InterpolateQuaternion(Quaternion &pOut, const Quaternion &pStart, const Quaternion &pEnd, float pFactor)
 {
     using TReal = float;
 
@@ -66,46 +66,40 @@ inline void InterpolateVector3(Vector3 &pOut, const Vector3 &pStart, const Vecto
 }
 
 template <class T, class U>
-inline constexpr T Interpolate(const LightVector<U> &keys, float animationTime)
+inline constexpr T Interpolate(const std::set<U> &keys, float animationTime)
 {
     T ret{};
 
-    if (keys.Size() == 1)
+    if (keys.size() == 1)
     {
-        return keys[0].Value;
+        return keys.begin()->Value;
     }
 
-    size_t current = 0;
-    size_t size = keys.Size() - 1;
-    for (; current < size; current++)
+    auto it = keys.lower_bound(animationTime);
+    if (it == keys.end())
     {
-        if (animationTime < keys[current + 1].Time)
-        {
-            break;
-        }
+        return keys.rbegin()->Value;
+    }
+    if (it == keys.begin())
+    {
+        return it->Value;
     }
 
-    if (current == size)
-    {
-        return keys[current].Value;
-    }
-    size_t next = current + 1;
+    const U &end   = *it;
+    const U &start = *--it;
 
-    float deltaTime = keys[next].Time - keys[current].Time;
-    float factor = std::abs((animationTime - (float)keys[current].Time) / deltaTime);
-
+    float deltaTime = start.Time - end.Time;
+    float factor = std::abs((animationTime - (float)start.Time) / deltaTime);
     SLASSERT(factor >= 0.0f && factor <= 1.0f);
-    const T &start = keys[current].Value;
-    const T &end   = keys[next].Value;
 
-    if constexpr (IsPrimitiveOf<QuanternionKey, U>())
+    if constexpr (IsPrimitiveOf<QuaternionKey, U>())
     {
-        InterpolateQuanternion(ret, start, end, factor);
+        InterpolateQuaternion(ret, start.Value, end.Value, factor);
         return T{ Vector::Normalize(ret) };
     }
     else
     {
-        InterpolateVector3(ret, start, end, factor);
+        InterpolateVector3(ret, start.Value, end.Value, factor);
         return ret;
     }
 }
@@ -227,25 +221,22 @@ void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, cons
         AnimationNode &node = it->second;
         Vector3 position    = Interpolate<Vector3, VectorKey>(node.PositionKeys, animationTime);
         Vector3 scaling     = Interpolate<Vector3, VectorKey>(node.ScalingKeys, animationTime);
-        Quaternion rotation = Interpolate<Quaternion, QuanternionKey>(node.RotationKeys, animationTime);
+        Quaternion rotation = Interpolate<Quaternion, QuaternionKey>(node.RotationKeys, animationTime);
 
         nodeTransform = Vector::Translate(position) * Vector::ToMatrix4(rotation) * Vector::Scale(scaling);
     }
 
     globalTransform  = parentTransform * nodeTransform;
-    const auto &boneIt = bones.find(node->Name);
-    if (boneIt != bones.end())
+    
+    if (auto it = bones.find(node->Name); it != bones.end())
     {
-        auto &boneInfo = boneIt->second;
+        auto &boneInfo = it->second;
         transforms[boneInfo.Id] = globalInverseTransform * globalTransform * boneInfo.OffsetMatrix;
     }
-    else
+    for (const auto &mesh : node->Meshes)
     {
-        if (!node->Meshes.Empty())
-        {
-            transforms[node->Meshes[0]] = globalInverseTransform * globalTransform;
-        }
-    }
+        transforms[mesh] = globalInverseTransform * globalTransform;
+    }       
 
     auto &children = node->Children;
     for (auto &child : children)
@@ -275,9 +266,9 @@ void Mesh::LoadModelData(const aiScene *scene)
     std::vector<SkeletonVertex> vertices;
     std::vector<Face> faces;
 
+    uint32_t numBones = scene->mNumMeshes;
     uint32_t totalVertices = 0;
     uint32_t totalFaces = 0;
-    uint32_t numBones = 1;
 
     Buffer::BindInfo vertexBindInfo{ Buffer::Type::Vertex, 0, 0 };
     Buffer::BindInfo faceBindInfo{ Buffer::Type::Index, 0, 0 };
@@ -296,7 +287,7 @@ void Mesh::LoadModelData(const aiScene *scene)
     buffer = Render::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
 
     nodes.resize(scene->mNumMeshes);
-    for (size_t i = 0; i < scene->mNumMeshes; i++)
+    for (uint32_t i = 0; i < scene->mNumMeshes; i++)
     {
         auto mesh = scene->mMeshes[i];
         auto &node = nodes[i];
@@ -352,7 +343,7 @@ void Mesh::LoadModelData(const aiScene *scene)
 
     LoadAnimationData(scene);
 
-    transforms.resize(bones.empty() ? scene->mNumMeshes : bones.size() + 1);
+    transforms.resize(numBones + scene->mNumMeshes);
     transformBuffer = Render::CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type{ Buffer::Type::Uniform });
 
     rootNode = new BoneNode{};
@@ -412,20 +403,22 @@ void Mesh::ReadAssimpNode(BoneNode *node, const aiNode *src)
 }
 
 template <class T, class U>
-static void CopyAssimpAnimationKey(LightVector<T> &dst, const U *src, uint32_t size)
+static void CopyAssimpAnimationKey(std::set<T> &dst, const U *src, uint32_t size)
 {
-    dst.Resize(size);
     for (size_t i = 0; i < size; i++)
     {
-        if constexpr (IsPrimitiveOf<QuanternionKey, T>())
+        T element{};
+        if constexpr (IsPrimitiveOf<QuaternionKey, T>())
         {
-            dst[i].Value.w = src[i].mValue.w;
+            element.Value.w = src[i].mValue.w;
         }
 
-        dst[i].Time = src[i].mTime;
-        dst[i].Value.x = src[i].mValue.x;
-        dst[i].Value.y = src[i].mValue.y;
-        dst[i].Value.z = src[i].mValue.z;
+        element.Time    = src[i].mTime;
+        element.Value.x = src[i].mValue.x;
+        element.Value.y = src[i].mValue.y;
+        element.Value.z = src[i].mValue.z;
+
+        dst.insert(std::move(element));
     }
 }
 

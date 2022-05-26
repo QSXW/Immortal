@@ -10,6 +10,7 @@
 #include "Math/Vector.h"
 
 #include <vector>
+#include <set>
 #include <unordered_map>
 
 struct aiScene;
@@ -37,17 +38,40 @@ struct Animation
     float Duration = 0;
 };
 
-struct VectorKey
+template <class T>
+struct TemporalKey
 {
+    TemporalKey() :
+        Time{},
+        Value{}
+    {}
+
+    TemporalKey(float time) :
+        Time{ (double)time }
+    {}
+
     double Time;
-    Vector3 Value;
+    T Value;
+
+    bool operator==(const TemporalKey &other) const
+    {
+        return Time == other.Time;
+    }
+
+    bool operator<(const TemporalKey &other) const
+    {
+        return Time < other.Time;
+    }
+
+    bool operator>(const TemporalKey &other) const
+    {
+        return Time > other.Time;
+    }
 };
 
-struct QuanternionKey
-{
-    double Time;
-    Quaternion Value;
-};
+using VectorKey = TemporalKey<Vector3>;
+
+using QuaternionKey = TemporalKey<Quaternion>;
 
 enum AnimationBehavior : uint32_t
 {
@@ -76,7 +100,7 @@ struct AnimationNode
      *
      * If there are rotation keys, there will also be at least one
      * scaling and one position key. */
-    LightVector<VectorKey> PositionKeys;
+    std::set<VectorKey> PositionKeys;
 
     /** The rotation keys of this animation channel. Rotations are
      *  given as quaternions,  which are 4D vectors. The array is
@@ -84,14 +108,14 @@ struct AnimationNode
      *
      * If there are rotation keys, there will also be at least one
      * scaling and one position key. */
-    LightVector<QuanternionKey> RotationKeys;
+    std::set<QuaternionKey> RotationKeys;
 
     /** The scaling keys of this animation channel. Scalings are
      *  specified as 3D vector. The array is mNumScalingKeys in size.
      *
      * If there are scaling keys, there will also be at least one
      * position and one rotation key.*/
-    LightVector<VectorKey> ScalingKeys;
+    std::set<VectorKey> ScalingKeys;
 
     /** Defines how the animation behaves before the first
      *  key is encountered.
