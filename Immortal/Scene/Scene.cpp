@@ -376,7 +376,7 @@ void Scene::OnRender(const Camera &camera)
             if (picture.Available())
             {
                 videoPlayer.PopPicture();
-                sprite.Result->Update(picture.data.get());
+                sprite.Sprite->Update(picture.data.get());
                 color.Modified = true;
             }
         }
