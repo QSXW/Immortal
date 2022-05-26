@@ -51,10 +51,7 @@ inline void InterpolateQuaternion(Quaternion &pOut, const Quaternion &pStart, co
         sclq = pFactor;
     }
 
-    pOut.x = sclp * pStart.x + sclq * end.x;
-    pOut.y = sclp * pStart.y + sclq * end.y;
-    pOut.z = sclp * pStart.z + sclq * end.z;
-    pOut.w = sclp * pStart.w + sclq * end.w;
+    pOut = sclp * pStart + sclq * end;
 }
 
 inline void InterpolateVector3(Vector3 &pOut, const Vector3 &pStart, const Vector3 &pEnd, float pFactor)
@@ -88,8 +85,8 @@ inline constexpr T Interpolate(const std::set<U> &keys, float animationTime)
     const U &end   = *it;
     const U &start = *--it;
 
-    float deltaTime = start.Time - end.Time;
-    float factor = std::abs((animationTime - (float)start.Time) / deltaTime);
+    float deltaTime = end.Time - start.Time;
+    float factor = (animationTime - (float)start.Time) / deltaTime;
     SLASSERT(factor >= 0.0f && factor <= 1.0f);
 
     if constexpr (IsPrimitiveOf<QuaternionKey, U>())
@@ -431,7 +428,7 @@ void Mesh::LoadAnimationData(const aiScene *scene)
         auto pAnimation = scene->mAnimations[i];
         animations[i].Name            = pAnimation->mName.C_Str();
         animations[i].TicksPerSeconds = pAnimation->mTicksPerSecond;
-        animations[i].Duration        = std::floorf(pAnimation->mDuration);
+        animations[i].Duration        = pAnimation->mDuration;
 
         for (size_t j = 0; j < pAnimation->mNumChannels; j++)
         {
