@@ -62,10 +62,8 @@ void Scene::RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity 
     UniformBuffer::Model model;
 
     auto &animation = mesh.Mesh->GetAnimation()[mesh.Mesh->GetAnimationState()];
-    static float time = 0.0f;
-    mesh.Mesh->CalculatedBoneTransform(time, transform);
-    time += Application::DeltaTime();
-    time = fmodf(time, animation.Duration / animation.TicksPerSeconds);
+    animation.Ticks(Application::DeltaTime());
+    mesh.Mesh->CalculatedBoneTransform(transform);
 
     auto transforms = mesh.Mesh->GetTransforms();
 

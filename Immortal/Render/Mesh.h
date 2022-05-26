@@ -9,6 +9,7 @@
 #include "Algorithm/LightVector.h"
 #include "Math/Vector.h"
 
+#include <cmath>
 #include <vector>
 #include <set>
 #include <unordered_map>
@@ -29,13 +30,6 @@ struct SkeletonVertex
     Vector4  Weights;
 
     void AddBone(uint32_t id, float weight);
-};
-
-struct Animation
-{
-    std::string Name;
-    float TicksPerSeconds = 25.0f;
-    float Duration = 0;
 };
 
 template <class T>
@@ -130,6 +124,22 @@ struct AnimationNode
      *  The default value is aiAnimBehaviour_DEFAULT (the original
      *  transformation matrix of the affected node is taken).*/
     AnimationBehavior PostState;
+};
+
+struct Animation
+{
+    std::string Name;
+    std::unordered_map<std::string, AnimationNode> Nodes;
+
+    float Timestamp;
+    float TicksPerSeconds = 25.0f;
+    float Duration = 0;
+
+    void Ticks(float deltaTime)
+    {
+        Timestamp += deltaTime * TicksPerSeconds;
+        Timestamp = fmodf(Timestamp, Duration);
+    }
 };
 
 struct BoneInfo
@@ -310,7 +320,7 @@ public:
 
     void ReadHierarchyBoneNode(float animationTime, const BoneNode *node, const Matrix4 &parentTransform);
 
-    void CalculatedBoneTransform(float timeInSeconds, const Matrix4 &parentTransform);
+    void CalculatedBoneTransform(const Matrix4 &parentTransform);
 
 private:
     void LoadModelData(const aiScene *scene);
@@ -337,8 +347,6 @@ private:
     Ref<Buffer> transformBuffer;
 
     std::vector<Animation> animations;
-
-    std::unordered_map<std::string, AnimationNode> animationNodes;
 
     Matrix4 globalInverseTransform;
 

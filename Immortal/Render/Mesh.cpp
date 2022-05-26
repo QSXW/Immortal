@@ -215,8 +215,8 @@ void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, cons
     Matrix4 globalTransform{};
     Matrix4 nodeTransform = node->Transform;
 
-    auto it = animationNodes.find(node->Name);
-    if (it != animationNodes.end())
+    auto &animationsNode = animations[state.currentAnimation].Nodes;   
+    if (auto it = animationsNode.find(node->Name); it != animationsNode.end())
     {
         AnimationNode &node = it->second;
         Vector3 position    = Interpolate<Vector3, VectorKey>(node.PositionKeys, animationTime);
@@ -226,17 +226,19 @@ void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, cons
         nodeTransform = Vector::Translate(position) * Vector::ToMatrix4(rotation) * Vector::Scale(scaling);
     }
 
-    globalTransform  = parentTransform * nodeTransform;
-    
+    globalTransform  = parentTransform * nodeTransform;  
     if (auto it = bones.find(node->Name); it != bones.end())
     {
         auto &boneInfo = it->second;
         transforms[boneInfo.Id] = globalInverseTransform * globalTransform * boneInfo.OffsetMatrix;
     }
-    for (const auto &mesh : node->Meshes)
+    else
     {
-        transforms[mesh] = globalInverseTransform * globalTransform;
-    }       
+        for (const auto &mesh : node->Meshes)
+        {
+            transforms[mesh] = globalInverseTransform * globalTransform;
+        }
+    }
 
     auto &children = node->Children;
     for (auto &child : children)
@@ -245,18 +247,17 @@ void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, cons
     }
 }
 
-void Mesh::CalculatedBoneTransform(float timeInSeconds, const Matrix4 &parentTransform)
+void Mesh::CalculatedBoneTransform(const Matrix4 &parentTransform)
 {
     transforms[0] = parentTransform;
 
-    float animationTime = 0.0f;
+    float timestamp = 0.0f;
     if (IsAnimated())
     {
-        float timeInTicks = timeInSeconds * animations[state.currentAnimation].TicksPerSeconds;
-        animationTime = fmod(timeInTicks, animations[state.currentAnimation].Duration);
-    } 
+        timestamp = animations[state.currentAnimation].Timestamp;
+    }
 
-    ReadHierarchyBoneNode(animationTime, rootNode, parentTransform);
+    ReadHierarchyBoneNode(timestamp, rootNode, parentTransform);
     transformBuffer->Update(transforms);
 }
 
@@ -441,7 +442,7 @@ void Mesh::LoadAnimationData(const aiScene *scene)
             CopyAssimpAnimationKey(node.PositionKeys, pChannel->mPositionKeys, pChannel->mNumPositionKeys);
             CopyAssimpAnimationKey(node.RotationKeys, pChannel->mRotationKeys, pChannel->mNumRotationKeys);
             CopyAssimpAnimationKey(node.ScalingKeys,  pChannel->mScalingKeys,  pChannel->mNumScalingKeys );
-            animationNodes.insert({ pChannel->mNodeName.C_Str(), std::move(node)});
+            animations[i].Nodes.insert({ pChannel->mNodeName.C_Str(), std::move(node) });
         }
     }
 }
