@@ -36,19 +36,32 @@ enum class FileType
 
 enum class FileFormat : uint64_t
 {
+    /** 3D Model formats supported by Assimp */
     BLEND = MakeIdentifier('B', 'L', 'E', 'N', 'D'),
     GLTF  = MakeIdentifier('G', 'L', 'T', 'F'     ),
-    BMP   = MakeIdentifier('B', 'M', 'P'          ),
     FBX   = MakeIdentifier('F', 'B', 'X'          ),
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
-    PNG   = MakeIdentifier('P', 'N', 'G'          ),
-    PPM   = MakeIdentifier('P', 'P', 'M'          ),
-    JFIF  = MakeIdentifier('J', 'F', 'I', 'F'     ),
-    JPG   = MakeIdentifier('J', 'P', 'G'          ),
-    JPEG  = MakeIdentifier('J', 'P', 'E', 'G'     ),
-    IVF   = MakeIdentifier('I', 'V', 'F'          ),
-    IML   = MakeIdentifier('I', 'M', 'L'          ),
-    HDR   = MakeIdentifier('H', 'D', 'R'          ),
+
+    /** Still Image formats */
+    BMP   = MakeIdentifier('B', 'M', 'P'     ),
+    PNG   = MakeIdentifier('P', 'N', 'G'     ),
+    PPM   = MakeIdentifier('P', 'P', 'M'     ),
+    JFIF  = MakeIdentifier('J', 'F', 'I', 'F'),
+    JPG   = MakeIdentifier('J', 'P', 'G'     ),
+    JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
+    HDR   = MakeIdentifier('H', 'D', 'R'     ),
+
+    /** Video file format extensions */
+    IVF   = MakeIdentifier('I', 'V', 'F'     ),
+    MP4   = MakeIdentifier('M', 'P', '4'     ),
+    H264  = MakeIdentifier('H', '2', '6', '4'),
+    H265  = MakeIdentifier('H', '2', '6', '5'),
+    MKV   = MakeIdentifier('M', 'K', 'V'     ),
+    TS    = MakeIdentifier('T', 'S'          ),
+    M2TS  = MakeIdentifier('M', '2', 'T', 'S'),
+
+    /** Immortal Scene */
+    IML = MakeIdentifier('I', 'M', 'L'),
 };
 
 namespace FileSystem
@@ -108,6 +121,19 @@ static inline bool IsImage(const std::string &path)
            IsFormat<FileFormat::PPM>(id)  ||
            IsFormat<FileFormat::HDR>(id)  ||
            IsFormat<FileFormat::JFIF>(id);
+}
+
+static inline bool IsVideo(const std::string &path)
+{
+    auto id = MakeIdentifier(path);
+
+    return IsFormat<FileFormat::IVF>(id) ||
+        IsFormat<FileFormat::MP4>(id) ||
+        IsFormat<FileFormat::H264>(id) ||
+        IsFormat<FileFormat::H265>(id) ||
+        IsFormat<FileFormat::MKV>(id) ||
+        IsFormat<FileFormat::M2TS>(id) ||
+        IsFormat<FileFormat::TS>(id);
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint32_t align = sizeof(void*))
