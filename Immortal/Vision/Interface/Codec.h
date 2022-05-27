@@ -22,6 +22,19 @@ struct CodedFrame
         buffer = std::move(other);
     }
 
+    template <class T>
+    void RefTo(const T *ptr)
+    {
+        buffer.resize(sizeof(T *));
+        memcpy(buffer.data(), &ptr, sizeof(T *));
+    }
+
+    template <class T>
+    T *DeRef() const
+    {
+        return *(T **)buffer.data();
+    }
+
     std::vector<uint8_t> buffer;
 };
 
