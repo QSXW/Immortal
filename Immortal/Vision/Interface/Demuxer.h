@@ -18,6 +18,9 @@ namespace Interface
 class Demuxer : public IObject
 {
 public:
+    virtual ~Demuxer()
+    {}
+
     virtual CodecError Open(const std::string &filepath, VideoCodec *codec)
     {
         return CodecError::FailedToCallDecoder;
