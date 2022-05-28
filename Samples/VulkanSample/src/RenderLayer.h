@@ -413,11 +413,12 @@ public:
         auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())
         {
+            const auto &filepath = res.value();
             auto object = scene->CreateObject(res.value());
 
             panels.hierarchyGraphics.Select(object);
 
-            if (FileSystem::Is3DModel(res.value()))
+            if (FileSystem::Is3DModel(filepath))
             {
                 auto &mesh = object.Add<MeshComponent>();
                 mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
@@ -425,12 +426,22 @@ public:
                 auto &material = object.Add<MaterialComponent>();
                 material.References.resize(mesh.Mesh->NodeList().size());
             }
-            else if (FileSystem::IsFormat<FileFormat::IVF>(res.value()))
+            else if (FileSystem::IsVideo(filepath))
             {
-                Ref<Vision::IVFDemuxer> demuxer{ new Vision::IVFDemuxer{} };
-                Ref<Vision::VideoCodec> decoder{ new Vision::DAV1DCodec{} };
+                Ref<Vision::Interface::Demuxer> demuxer;
+                Ref<Vision::VideoCodec> decoder;
+                if (FileSystem::IsFormat<FileFormat::IVF>(filepath))
+                {
+                    demuxer = new Vision::IVFDemuxer{};
+                    decoder = new Vision::DAV1DCodec{};
+                }
+                else
+                {
+                    demuxer = new Vision::FFDemuxer{};
+                    decoder = new Vision::FFCodec{};
+                }
 
-                demuxer->Open(res.value(), decoder);
+                demuxer->Open(filepath, decoder);
                 Vision::CodedFrame codedFrame;
 
                 auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
@@ -450,10 +461,10 @@ public:
                 auto &transform = object.Get<TransformComponent>();
                 transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
             }
-            else if (FileSystem::IsImage(res.value()))
+            else if (FileSystem::IsImage(filepath))
             {
                 auto &sprite = object.Add<SpriteRendererComponent>();
-                sprite.Sprite = Render::Create<Texture>(res.value());
+                sprite.Sprite = Render::Create<Texture>(filepath);
                 sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, desc);
 
                 object.Add<ColorMixingComponent>();

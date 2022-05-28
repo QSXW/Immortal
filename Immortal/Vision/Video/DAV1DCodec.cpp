@@ -91,20 +91,22 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
         {
             picture = Picture{ dav1dPicture.p.w, dav1dPicture.p.h, Format::RGBA8 };
 
-            ColorSpace::Vector<uint8_t> dst{};
+            CVector<uint8_t> dst{};
             dst.x = picture.Data();
 
-            ColorSpace::Vector<uint8_t> src{};
+            CVector<uint8_t> src{};
             src.x = (uint8_t *)dav1dPicture.data[0];
             src.y = (uint8_t *)dav1dPicture.data[1];
             src.z = (uint8_t *)dav1dPicture.data[2];
+            src.linesize[0] = dav1dPicture.stride[0];
+            src.linesize[1] = dav1dPicture.stride[1];
 
-            ColorSpace::YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height, dav1dPicture.stride[0], dav1dPicture.stride[1]);
+            ColorSpace::YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
             dav1d_picture_unref(&dav1dPicture);
 
             picture.pts = codedFrame.timestamp;
-            animator.timestamps.current = codedFrame.timestamp;
+            animator.Timestamps.Current = codedFrame.timestamp;
         }      
     } while (dav1dData.sz > 0);
 

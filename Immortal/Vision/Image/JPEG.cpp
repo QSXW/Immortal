@@ -558,7 +558,7 @@ void JpegCodec::ConvertColorSpace()
 {
     auto &desc = picture.desc;
     auto spatial = desc.Spatial();
-    ColorSpace::Vector<uint8_t> yuv;
+    CVector<uint8_t> yuv;
     data.x = allocator.allocate(spatial * Format{ Format::RGBA8 }.ComponentCount());
 
     for (size_t i = 0, offset = 0; i < components.size(); i++)
@@ -569,11 +569,14 @@ void JpegCodec::ConvertColorSpace()
 
     if (desc.format == Format::YUV444P)
     {
-        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height, SLALIGN(desc.width, 8));
+        yuv.linesize[0] = SLALIGN(desc.width, 8);
+        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height);
     }
     else if (desc.format == Format::YUV420P)
     {
-        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height, SLALIGN(desc.width, 8), SLALIGN(desc.width, 8) / 2);
+        yuv.linesize[0] = SLALIGN(desc.width, 8);
+        yuv.linesize[1] = yuv.linesize[0] / 2;
+        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height);
     }
     desc.format = Format::RGBA8;
 }

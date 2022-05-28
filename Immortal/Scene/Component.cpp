@@ -79,10 +79,11 @@ VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<
             Vision::CodedFrame codedFrame;
             while (tpack.fifo->size() < 7 && !tpack.demuxer->Read(&codedFrame))
             {
-                if (tpack.decoder->Decode(codedFrame) == CodecError::Succeed)
+                auto error = tpack.decoder->Decode(codedFrame);
+                if (error == CodecError::Succeed)
                 {
                     Vision::Picture picture = tpack.decoder->GetPicture();
-                    size_t frame = picture.pts - tpack.lastPicture->pts;
+                    int frame = picture.pts - tpack.lastPicture->pts;
 
                     std::lock_guard lock{ *tpack.mutex };
                     if (!tpack.lastPicture->data)
@@ -91,13 +92,17 @@ VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<
                         tpack.lastPicture->pts = 0;
                         tpack.fifo->push(*tpack.lastPicture);
                     }
-                    for (size_t i = 0; i < frame - 1; i++)
+                    for (int i = 0; i < frame - 1; i++)
                     {
                         tpack.lastPicture->pts++;
                         tpack.fifo->push(*tpack.lastPicture);
                     }
                     tpack.fifo->push(picture);
                     *tpack.lastPicture = picture;
+                }
+                else if (error != CodecError::Again)
+                {
+                    continue;
                 }
             }
         } while (!*tpack.exited);

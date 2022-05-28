@@ -118,7 +118,23 @@ public:
                             auto &v = object.GetComponent<VideoPlayerComponent>();
                             auto animator = v.GetAnimator();
 
-                            float progress = (float)animator->timestamps.current / animator->frameNumber;
+                            auto current = animator->Timestamps.Current;
+                            auto duration = animator->Duration;
+                            float progress = (float)current / (duration * animator->FramesPerSecond);
+
+                            int startSeconds = current / animator->FramesPerSecond;
+                            int startMinutes = startSeconds / 60;
+                            int startHours   = startMinutes / 60;
+                            startSeconds %= 60;
+                            startMinutes %= 60;
+
+                            int seconds = duration;
+                            int minutes = seconds / 60;
+                            int hours = minutes / 60;
+                            seconds %= 60;
+                            minutes %= 60;
+                            ImGui::Text("Start Time: 00:%02d:%02d:%02d", startHours, startMinutes, startSeconds);
+                            ImGui::Text("End Time:   00:%02d:%02d:%02d", hours, minutes, seconds, minutes);
                             UI::DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
                         });
                 }

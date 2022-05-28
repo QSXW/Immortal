@@ -75,14 +75,16 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
 
     handle->Close();
 
-    ColorSpace::Vector<uint8_t> dst{};
+    CVector<uint8_t> dst{};
     dst.r = picture.Data();
 
-    ColorSpace::Vector<uint8_t> src{};
+    CVector<uint8_t> src{};
     src.x = pOutSurface->Data.Y;
     src.y = pOutSurface->Data.UV;
+    src.linesize[0] = pOutSurface->Data.PitchLow;
+    src.linesize[1] = pOutSurface->Data.PitchLow;
 
-    ColorSpace::NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height, pOutSurface->Data.PitchLow, pOutSurface->Data.PitchLow);
+    ColorSpace::NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
     return CodecError::Succeed;
 }

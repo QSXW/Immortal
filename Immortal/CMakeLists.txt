@@ -335,8 +335,10 @@ set(COMMON_FILES
     Vision/Common/NetworkAbstractionLayer.h)
 
 set(DEMUX_FILES
-    Vision/Demux/IVFDemuxer.h
-    Vision/Demux/IVFDemuxer.cpp)
+    Vision/Demux/FFDemuxer.cpp
+    Vision/Demux/FFDemuxer.h
+    Vision/Demux/IVFDemuxer.cpp
+    Vision/Demux/IVFDemuxer.h)
 
 set(VISION_INTERFACE_FILES
     Vision/Interface/Codec.h
@@ -366,6 +368,8 @@ set(IMAGE_CODEC_FILES
 set(VIDEO_CODEC_FILES
     Vision/Video/DAV1DCodec.cpp
     Vision/Video/DAV1DCodec.h
+    Vision/Video/FFCodec.cpp
+    Vision/Video/FFCodec.h
     Vision/Video/HEVC.cpp
     Vision/Video/HEVC.h
     Vision/Video/Video.h)

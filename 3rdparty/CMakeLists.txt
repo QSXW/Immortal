@@ -5,6 +5,7 @@ project(3rdparty LANGUAGES CXX)
 set(LIB_FOUND     1)
 set(LIB_NOT_FOUND 0)
 set(HAVE_ASSIMP ${LIB_NOT_FOUND})
+set(HAVE_FFMPEG ${LIB_NOT_FOUND})
 set(HAVE_OPENCV ${LIB_NOT_FOUND})
 set(HAVE_DAV1D  ${LIB_NOT_FOUND})
 set(HAVE_MFX    ${LIB_NOT_FOUND})
@@ -235,6 +236,24 @@ if (MONO_FOUND)
     endif()
 endif()
 
+# FFmpeg
+set(FFMPEG_LIB avcodec avdevice avfilter avformat avutil)
+set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg")
+find_path(FFmpeg_FOUND HINTS ${FFMPEG_DIR})
+if (FFmpeg_FOUND)
+    set(FFMPEG_LIBRARY_DIR "${FFmpeg_FOUND}/lib")
+    set(FFMPEG_BINARY_DIR  "${FFmpeg_FOUND}/bin")
+    set(FFMPEG_INCLUDE_DIR "${FFmpeg_FOUND}/include")
+    set(HAVE_FFMPEG ${LIB_FOUND})
+    add_library("FFmpeg" INTERFACE)
+    target_include_directories("FFmpeg" INTERFACE ${FFMPEG_INCLUDE_DIR})
+    target_link_directories("FFmpeg" INTERFACE ${FFMPEG_LIBRARY_DIR})
+    target_link_libraries("FFmpeg" INTERFACE avcodec avdevice avfilter avformat avutil)
+    if (WIN32)
+        set(FFMPEG_SHARED "${FFMPEG_BINARY_DIR}/" PARENT_SCOPE)
+    endif()
+endif()
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
@@ -245,6 +264,7 @@ target_link_libraries("external" INTERFACE
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
     $<$<BOOL:${MONO_FOUND}>:mono>
-    $<$<BOOL:${OpenCV_FOUND}>:opencv_world>)
+    $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
+    $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>)
 
 configure_file(Config.h.in ${WORKSPACE}/Immortal/Config.h)

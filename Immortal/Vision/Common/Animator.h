@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include <cmath>
 
 namespace Immortal
 {
@@ -8,22 +9,29 @@ namespace Immortal
 class Animator
 {
 public:
-    Animator()
+    Animator() :
+        Timestamps{},
+        Accumulator{},
+        Timebase{},
+        SecondsPerFrame{},
+        FramesPerSecond{},
+        Duration{},
+        Step{}
     {
-        memset(this, 0, sizeof(*this));
     }
 
 public:
     struct {
-        int64_t last;
-        int64_t current;
-    } timestamps;
+        int64_t Last;
+        int64_t Current;
+    } Timestamps;
 
-    double accumulator;
-    double timebase;
-    double spf;
-    uint32_t step;
-    uint32_t frameNumber;
+    double Accumulator;
+    double Timebase;
+    double SecondsPerFrame;
+    double FramesPerSecond;
+    int64_t Duration;
+    uint32_t Step;
 };
 
 }

@@ -52,5 +52,13 @@ enum class Type
     HEVC
 };
 
+enum class MediaType
+{
+    Video    = 0,
+    Audio    = 1,
+    Data     = 2,
+    Subtitle = 3
+};
+
 }
 }

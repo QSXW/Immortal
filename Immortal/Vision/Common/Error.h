@@ -11,12 +11,14 @@ namespace Immortal
 enum CodecError
 {
     CorruptedBitstream = NEG(1114),
+    OutOfMemory,
     UnsupportFormat,
     ExternalFailed,
     FailedToOpenFile,
     FailedToCallDecoder,
     EndOfFile,
     Repeat,
+    Again,
     Succeed = 0,
     Preparing
 };

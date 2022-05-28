@@ -15,7 +15,7 @@ Application::Application(const Window::Description &description) :
     eventSink{ this }
 {
     !!That ? throw Exception(SError::InvalidSingleton) : That = this;
-    
+
     eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
 

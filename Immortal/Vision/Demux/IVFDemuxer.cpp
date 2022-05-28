@@ -66,11 +66,11 @@ CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
         (uint32_t)DoubleWord{ &data[16] },
         (uint32_t)DoubleWord{ &data[20] }
     };
-    animator->timebase = timebase.Normalize();
+    animator->Timebase = timebase.Normalize();
 
     uint32_t duration = DoubleWord{ &data[24] };
     uint32_t lastTimestamp = 0;
-    for (animator->frameNumber = 0; ; animator->frameNumber++)
+    for (animator->Duration = 0; ; animator->Duration++)
     {
         if (stream.Read(data, 4, 1) != 1)
         {
@@ -83,7 +83,7 @@ CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
             break;
         }
         uint64_t timestamp = QuardWord{ data };
-        if (animator->frameNumber && timestamp <= lastTimestamp)
+        if (animator->Duration && timestamp <= lastTimestamp)
         {
             return CodecError::CorruptedBitstream;
         }
@@ -92,12 +92,12 @@ CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
     }
 
     Rational fps{
-        timebase.numerator * animator->frameNumber,
+        timebase.numerator * animator->Duration,
         duration
     };
 
-    animator->step = duration / animator->frameNumber;
-    animator->spf  = (double)fps.denominator / fps.numerator;
+    animator->Step = duration / animator->Duration;
+    animator->SecondsPerFrame  = (double)fps.denominator / fps.numerator;
 
     stream.Locate(32);
     return CodecError::Succeed;

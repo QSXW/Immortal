@@ -365,13 +365,13 @@ void Scene::OnRender(const Camera &camera)
             auto [sprite, videoPlayer, color] = view.get<SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>(object);
 
             auto animator = videoPlayer.GetAnimator();
-            animator->accumulator += deltaTime;
-            if (animator->accumulator < animator->spf)
+            animator->Accumulator += deltaTime;
+            if (animator->Accumulator < animator->SecondsPerFrame)
             {
                 continue;
             }
 
-            animator->accumulator = 0;
+            animator->Accumulator = fmodf(animator->Accumulator, animator->SecondsPerFrame);
             auto picture = videoPlayer.GetPicture();
             if (picture.Available())
             {

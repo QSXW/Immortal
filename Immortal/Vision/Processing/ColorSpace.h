@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2021-2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -9,19 +15,29 @@ namespace Immortal
 namespace Vision
 {
 
-namespace ColorSpace
-{
-
-#define PAD(x, a) (x) & ((a) - 1)
-
+/** Vector in Color Space: 
+ * 
+ * Use to identifier a vector in color space
+ * [x, y, z, w] <-> [r, g, b, a] <-> [c, m, y, k] <-> [h, l, s, #]
+ */
 template <class T>
-struct Vector
+struct CVector
 {
+    CVector() :
+        x{},
+        y{},
+        z{},
+        w{},
+        linesize{}
+    {}
+
     using Ref = T*;
     union { Ref x, r; };
     union { Ref y, g; };
     union { Ref z, b; };
     union { Ref w, a;    };
+
+    int linesize[3];
 
     Ref &operator[](size_t index)
     {
@@ -35,6 +51,11 @@ struct Vector
         }
     }
 };
+
+namespace ColorSpace
+{
+
+#define PAD(x, a) (x) & ((a) - 1)
 
 enum class CoefficientType : size_t
 {
@@ -69,9 +90,9 @@ inline constexpr void yuv2rgb(T &r, T &g, T &b, const T &y, const T &u, const T 
 
     double cb = u - 128;
     double cr = v - 128;
-    r = CLIP(y + 1.402   * cr);
+    r = CLIP(y + 1.402 * cr);
     g = CLIP(y - 0.34414 * cb - 0.71414 * cr);
-    b = CLIP(y + 1.772   * cb);
+    b = CLIP(y + 1.772 * cb);
 }
 
 void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size);
@@ -79,7 +100,7 @@ void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size);
 void RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size);
 
 template <class T, class U>
-void YUV444PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height, size_t stride)
+void YUV444PToRGBA8(CVector<T> &dst, CVector<U> &src, size_t width, size_t height, CoefficientType type = CoefficientType::REC601)
 {
     auto y = src.x, u = src.y, v = src.z;
     auto dstptr   = dst.x;
@@ -91,14 +112,14 @@ void YUV444PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height,
             yuv2rgb(dstptr[0], dstptr[1], dstptr[2], y[j], u[j], v[j]);
             dstptr[3] = 0xff;
         }
-        y += stride;
-        u += stride;
-        v += stride;
+        y += src.linesize[0];
+        u += src.linesize[0];
+        v += src.linesize[0];
     }
 }
 
 template <class T, class U>
-void YUV420PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height, size_t ystride, size_t uvstride)
+void YUV420PToRGBA8(CVector<T> &dst, CVector<U> &src, size_t width, size_t height, CoefficientType type = CoefficientType::REC601)
 {
     auto y = src.x, u = src.y, v = src.z;
     auto dstptr = dst.x;
@@ -113,19 +134,19 @@ void YUV420PToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height,
         {
             auto r1 = dstptr;
             auto r2 = dstptr + linesize;
-            yuv2rgb(r1[0], r1[1], r1[2], y[2 * j           + 0], u[j], v[j]); r1[3] = 0xff;
-            yuv2rgb(r1[4], r1[5], r1[6], y[2 * j           + 1], u[j], v[j]); r1[7] = 0xff;
-            yuv2rgb(r2[0], r2[1], r2[2], y[2 * j + ystride + 0], u[j], v[j]); r2[3] = 0xff;
-            yuv2rgb(r2[4], r2[5], r2[6], y[2 * j + ystride + 1], u[j], v[j]); r2[7] = 0xff;
+            yuv2rgb(r1[0], r1[1], r1[2], y[2 * j                   + 0], u[j], v[j]); r1[3] = 0xff;
+            yuv2rgb(r1[4], r1[5], r1[6], y[2 * j                   + 1], u[j], v[j]); r1[7] = 0xff;
+            yuv2rgb(r2[0], r2[1], r2[2], y[2 * j + src.linesize[0] + 0], u[j], v[j]); r2[3] = 0xff;
+            yuv2rgb(r2[4], r2[5], r2[6], y[2 * j + src.linesize[0] + 1], u[j], v[j]); r2[7] = 0xff;
         }
-        y += ystride * 2;
-        u += uvstride;
-        v += uvstride;
+        y += src.linesize[0] * 2;
+        u += src.linesize[1];
+        v += src.linesize[1];
     }
 }
 
-template <class T, class U>
-void NV12ToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height, size_t ystride, size_t uvstride)
+template <class T, class U, bool precise = true>
+void NV12ToRGBA8(CVector<T> &dst, CVector<U> &src, size_t width, size_t height, CoefficientType type = CoefficientType::REC601)
 {
     auto y = src.x, uv = src.y;
     auto dstptr = dst.x;
@@ -142,13 +163,13 @@ void NV12ToRGBA8(Vector<T> &dst, Vector<U> &src, size_t width, size_t height, si
             auto r2 = dstptr + linesize;
             auto u = uv[2 * j + 0];
             auto v = uv[2 * j + 1];
-            yuv2rgb(r1[0], r1[1], r1[2], y[2 * j           + 0], u, v); r1[3] = 0xff;
-            yuv2rgb(r1[4], r1[5], r1[6], y[2 * j           + 1], u, v); r1[7] = 0xff;
-            yuv2rgb(r2[0], r2[1], r2[2], y[2 * j + ystride + 0], u, v); r2[3] = 0xff;
-            yuv2rgb(r2[4], r2[5], r2[6], y[2 * j + ystride + 1], u, v); r2[7] = 0xff;
+            yuv2rgb(r1[0], r1[1], r1[2], y[2 * j                   + 0], u, v); r1[3] = 0xff;
+            yuv2rgb(r1[4], r1[5], r1[6], y[2 * j                   + 1], u, v); r1[7] = 0xff;
+            yuv2rgb(r2[0], r2[1], r2[2], y[2 * j + src.linesize[0] + 0], u, v); r2[3] = 0xff;
+            yuv2rgb(r2[4], r2[5], r2[6], y[2 * j + src.linesize[0] + 1], u, v); r2[7] = 0xff;
         }
-        y += ystride * 2;
-        uv += uvstride;
+        y  += src.linesize[0] * 2;
+        uv += src.linesize[1];
     }
 }
 

@@ -228,7 +228,7 @@ private:
 private:
     AAllocator<uint8_t, BLOCK_SIZE> allocator;
 
-    ColorSpace::Vector<uint8_t> data;
+    CVector<uint8_t> data;
 
     std::vector<Component> components;
 
