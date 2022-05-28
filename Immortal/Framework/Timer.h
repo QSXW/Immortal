@@ -4,6 +4,13 @@
 
 namespace Immortal
 {
+
+class Time
+{
+public:
+    static inline float DeltaTime = 0.0f;
+};
+
 class Timer
 {
 

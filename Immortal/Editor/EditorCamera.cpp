@@ -1,4 +1,5 @@
 #include "EditorCamera.h"
+#include "Framework/Timer.h"
 #include "Framework/Input.h"
 #include "Math/Math.h"
 
@@ -88,7 +89,7 @@ void EditorCamera::UpdateView()
 
 bool EditorCamera::OnMouseScroll(MouseScrolledEvent & e)
 {
-    float delta = e.GetOffsetY() * 0.1f;
+    float delta = e.GetOffsetY() * Time::DeltaTime;
     MouseZoom(delta);
     UpdateView();
     return false;
@@ -103,9 +104,10 @@ void EditorCamera::MousePan(const Vector::Vector2 & delta)
 
 void EditorCamera::MouseRotate(const Vector::Vector2 & delta)
 {
+    float speed = 115.0f * Time::DeltaTime;
     float yawSign = UpDirection().y < 0 ? -1.0f : 1.0f;
-    yaw += yawSign * delta.x * RotateSpeed();
-    pitch += delta.y * RotateSpeed();
+    yaw += yawSign * delta.x * speed;
+    pitch += delta.y * speed;
 }
 
 void EditorCamera::MouseZoom(float delta)
@@ -131,18 +133,21 @@ inline float SpeedFactor(T &x)
 
 Vector2 EditorCamera::PanSpeed() const
 {
-    float x = std::min(viewportSize.x / 1000.0f, 2.4f);
+    float deltaTime = Time::DeltaTime;
+    float x = std::min(viewportSize.x, 240.0f) * deltaTime;
     float xFactor = SpeedFactor(x);
+    xFactor = Math::Lerp(0.0f, 1.5f, xFactor);
 
-    float y = std::min(viewportSize.y / 1000.0f, 2.4f);
+    float y = std::min(viewportSize.y, 240.0f) *deltaTime;
     float yFactor = SpeedFactor(y);
+    yFactor = Math::Lerp(0.0f, 1.5f, yFactor);
 
     return { xFactor, yFactor };
 }
 
 float EditorCamera::ZoomSpeed() const
 {
-    float speed = distance * 0.3f;
+    float speed = distance * 50.0f * Time::DeltaTime;
     speed = std::max(speed, 0.0f);
     return std::min(speed * speed, 100.0f);
 }

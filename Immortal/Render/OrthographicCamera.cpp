@@ -1,7 +1,7 @@
 #include "OrthographicCamera.h"
 
 #include "Framework/Input.h"
-#include "Framework/Application.h"
+#include "Framework/Timer.h"
 
 namespace Immortal
 {
@@ -14,7 +14,7 @@ void OrthographicCamera::SetViewportSize(Vector2 size)
 
 void OrthographicCamera::OnUpdate()
 {
-    float deltaTime = Application::DeltaTime();
+    float deltaTime = Time::DeltaTime;
 
     if (Input::IsKeyPressed(KeyCode::A))
     {
@@ -67,7 +67,7 @@ void OrthographicCamera::OnUpdate()
 
 bool OrthographicCamera::OnMouseScrolled(MouseScrolledEvent & e)
 {
-    zoomLevel -= e.GetOffsetY() * 20.0f * Application::DeltaTime();
+    zoomLevel -= e.GetOffsetY() * 20.0f * Time::DeltaTime;
     zoomLevel = std::max(zoomLevel, 0.01f);
     SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
     return false;

@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-#include "Framework/Application.h"
+#include "Framework/Timer.h"
 
 #include "Render/Render.h"
 #include "Render/Render2D.h"
@@ -62,7 +62,7 @@ void Scene::RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity 
     UniformBuffer::Model model;
 
     auto &animation = mesh.Mesh->GetAnimation()[mesh.Mesh->GetAnimationState()];
-    animation.Ticks(Application::DeltaTime());
+    animation.Ticks(Time::DeltaTime);
     mesh.Mesh->CalculatedBoneTransform(transform);
 
     auto transforms = mesh.Mesh->GetTransforms();
@@ -314,7 +314,7 @@ void Scene::OnRenderRuntime()
     // Update Script
     {
         registry.view<ScriptComponent>().each([=](auto object, ScriptComponent &script) {
-                script.Update((int)object, this, Application::DeltaTime());
+                script.Update((int)object, this, Time::DeltaTime);
             });
     }
 
@@ -337,7 +337,7 @@ void Scene::OnRenderRuntime()
     if (!sceneCamera)
     {
         primaryCamera = dynamic_cast<SceneCamera*>(&observerCamera);
-        observerCamera.OnUpdate(Application::DeltaTime());
+        observerCamera.OnUpdate(Time::DeltaTime);
     }
     else
     {
@@ -355,7 +355,7 @@ void Scene::OnRenderEditor(const Camera &editorCamera)
 
 void Scene::OnRender(const Camera &camera)
 {
-    float deltaTime = Application::DeltaTime();
+    float deltaTime = Time::DeltaTime;
 
     /* Update Video Player Component */
     {

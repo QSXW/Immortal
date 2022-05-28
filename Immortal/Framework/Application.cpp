@@ -76,8 +76,8 @@ void Application::Run()
     while (runtime.running)
     {
         Render::PrepareFrame();
-        deltaTime = timer.tick<Timer::Seconds>();
-
+        Time::DeltaTime = timer.tick<Timer::Seconds>();
+        
         for (Layer *layer : layerStack)
         {
             layer->OnUpdate();
