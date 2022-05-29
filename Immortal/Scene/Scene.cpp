@@ -265,7 +265,7 @@ void Scene::OnUpdate()
 
 void Scene::OnGuiRender()
 {
-    ImGui::Begin(WordsMap::Get("Scene Editor"));
+    ImGui::Begin(WordsMap::Get("Scene Editor").c_str());
 
     ImGui::DragFloat(WordsMap::Get("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
     ImGui::DragFloat(WordsMap::Get("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);

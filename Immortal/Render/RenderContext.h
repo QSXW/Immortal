@@ -2,12 +2,12 @@
 
 #include "Core.h"
 #include "Framework/Window.h"
-#include "ImGui/GuiLayer.h"
 #include "Shader.h"
 
 namespace Immortal
 {
 
+class GuiLayer;
 class Swapchain
 {
 public:

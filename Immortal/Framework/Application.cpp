@@ -37,6 +37,7 @@ Application::Application(const Window::Description &description) :
 
     Async::Execute([&](){
         gui = context->CreateGuiLayer();
+        gui->OnAttach();
         timer.Start();
     });
 
@@ -45,8 +46,6 @@ Application::Application(const Window::Description &description) :
     Async::Wait();
 
     window->Show();
-
-    PushOverlay(gui);
 }
 
 Application::~Application()
@@ -59,6 +58,7 @@ Layer *Application::PushLayer(Layer *layer)
 {
     layerStack.PushLayer(layer);
     layer->OnAttach();
+    gui->AddLayer(layer);
 
     return layer;
 }
@@ -70,7 +70,7 @@ Layer *Application::PushOverlay(Layer *overlay)
 
     return overlay;
 }
-
+ 
 void Application::Run()
 {
     while (runtime.running)
@@ -82,12 +82,10 @@ void Application::Run()
         {
             layer->OnUpdate();
         }
+
         gui->Begin();
-        for (Layer *layer : layerStack)
-        {
-            layer->OnGuiRender();
-        }
-        gui->End();     
+        gui->OnGuiRender();
+        gui->End();
 
         Render::SwapBuffers();
 

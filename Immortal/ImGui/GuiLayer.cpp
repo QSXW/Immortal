@@ -22,9 +22,10 @@ FontContext GuiLayer::NotoSans;
 FontContext GuiLayer::SimSun;
 
 GuiLayer::GuiLayer() :
-    Layer{ "GuiLayer" }
+    Layer{ "Immortal Graphics User Interface Layer" },
+    dockspace{ new WDockerSpace{} }
 {
-
+    
 }
 
 GuiLayer::~GuiLayer()
@@ -237,6 +238,8 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::OnGuiRender()
 {
+    dockspace->Render();
+
     static char title[128] = { 0 };
 
     const auto &io = ImGui::GetIO();
@@ -250,6 +253,15 @@ void GuiLayer::OnGuiRender()
         io.Framerate
     );
     Application::SetTitle(title);
+}
+
+void GuiLayer::AddLayer(Layer *layer)
+{
+   layers.emplace_back(new WLayer{})
+       ->Connect([=] {
+            layer->OnGuiRender();
+           })
+       .AddParent(dockspace);
 }
 
 static inline std::string ThemePath = { "Assets/json/theme.json" };

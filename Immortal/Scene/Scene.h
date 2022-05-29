@@ -13,6 +13,7 @@
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Component.h"
+#include "Event/KeyEvent.h"
 
 namespace Immortal
 {

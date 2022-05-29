@@ -115,7 +115,7 @@ private:
 
     LayerStack layerStack;
 
-    GuiLayer *gui;
+    MonoRef<GuiLayer> gui;
 
     Window::Description desc;
 
