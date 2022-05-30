@@ -63,7 +63,7 @@ private:
 
     BufferDescriptor descriptor;
 
-    void *mappedData{ nullptr };
+    uint8_t *mappedData{ nullptr };
 
     bool persistent{ false };
 };

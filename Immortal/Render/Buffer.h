@@ -201,6 +201,7 @@ public:
         PushConstant        = BIT(4),
         TransferSource      = BIT(5),
         TransferDestination = BIT(6),
+        Storage             = BIT(7),
         Unspecified         = BIT(31)
     };
 

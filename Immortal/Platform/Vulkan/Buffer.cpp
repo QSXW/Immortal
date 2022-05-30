@@ -16,7 +16,11 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     }
     if (type & Buffer::Type::Uniform)
     {
-        flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    }
+    if (type & Buffer::Type::Storage)
+    {
+        flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
     if (type & Buffer::Type::Vertex)
     {
@@ -128,7 +132,7 @@ void Buffer::Map()
 {
     if (!mappedData)
     {
-        vmaMapMemory(device->MemoryAllocator(), memory, &mappedData);
+        vmaMapMemory(device->MemoryAllocator(), memory, (void **)&mappedData);
     }
 }
 
@@ -150,13 +154,13 @@ void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
 {
     if (persistent)
     {
-        memcpy(rcast<uint8_t *>(mappedData) + offset, data, size);
+        memcpy(mappedData + offset, data, size);
         Flush();
     }
     else
     {
         Map();
-        memcpy(rcast<uint8_t *>(mappedData) + offset, data, size);
+        memcpy(mappedData + offset, data, size);
         Flush();
         Unmap();
     }
