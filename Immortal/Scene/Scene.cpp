@@ -12,6 +12,7 @@
 #include "String/LanguageSettings.h"
 #include "Utils/PlatformUtils.h"
 #include "ImGui/Utils.h"
+#include "Math/Math.h"
 
 #include <cmath>
 
@@ -132,6 +133,41 @@ void Scene::RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, 
     }
 }
 
+void Scene::ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma, int kernalSize)
+{
+    struct {
+        float blurDirection;
+        float kernalSize;
+    } properties{
+        1,
+        static_cast<float>(kernalSize)
+    };
+
+    auto width  = input->Width();
+    auto height = input->Height();
+    Ref<Image> tmp = Render::Create<Image>(width, height, nullptr, Image::Description{Format::RGBA8, Wrap::Repeat, Filter::Bilinear});
+
+    std::vector<float> kernal;
+    kernal.resize(properties.kernalSize);
+    Math::GenerateGaussianKernal(kernal, sigma);
+    uniforms.gaussianKernal->Update(kernal);
+
+    pipelines.horizontalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
+    pipelines.horizontalGaussianBlur->PushConstant(sizeof(properties), &properties);
+    pipelines.horizontalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
+    pipelines.horizontalGaussianBlur->Bind(input, 0);
+    pipelines.horizontalGaussianBlur->Bind(tmp, 1);
+    pipelines.horizontalGaussianBlur->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+
+    properties.blurDirection = 0;
+    pipelines.verticalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
+    pipelines.verticalGaussianBlur->PushConstant(sizeof(properties), &properties);
+    pipelines.verticalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
+    pipelines.verticalGaussianBlur->Bind(tmp, 0);
+    pipelines.verticalGaussianBlur->Bind(output, 1);
+    pipelines.verticalGaussianBlur->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+}
+
 void Scene::Init()
 {
     auto self = registry.create();
@@ -247,7 +283,11 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
     pipelines.skybox->Create(renderTarget);
 
     pipelines.colorMixing = Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get());
+    pipelines.horizontalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur").get());
+    pipelines.verticalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur").get());
     pipelines.equirect2Cube = Render::Create<Pipeline::Compute>(Render::GetShader("Equirect2Cube").get());
+
+    uniforms.gaussianKernal = Render::CreateBuffer(Limit::MaxGaussianKernalSize * sizeof(float), Buffer::Type{ Buffer::Type::Storage });
 
     Render2D::Setup(renderTarget);
     LoadEnvironment();
@@ -269,6 +309,8 @@ void Scene::OnGuiRender()
 
     ImGui::DragFloat(WordsMap::Get("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
     ImGui::DragFloat(WordsMap::Get("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);
+    settings.changed |= ImGui::SliderFloat(WordsMap::Get("Sigma").c_str(), &settings.sigma, 0.1f, 1024.0f);
+    settings.changed |= ImGui::SliderInt(WordsMap::Get("KernalSize").c_str(), &settings.kernalSize, 3, Limit::MaxGaussianKernalSize);
 
     static int item = 5;
     uint32_t resolutions[] = { 64, 128, 256, 512, 1024, 2048, 4096 };
@@ -402,9 +444,14 @@ void Scene::OnRender(const Camera &camera)
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Sprite, 0);
                 pipelines.colorMixing->Bind(sprite.Result, 1);
-                pipelines.colorMixing->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
-
+                pipelines.colorMixing->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);     
                 color.Initialized = true;
+            }
+
+            if (settings.changed)
+            {
+                ApplyGaussianBlur(sprite.Sprite, sprite.Result, settings.sigma, settings.kernalSize);
+                settings.changed = false;
             }
         }
     }

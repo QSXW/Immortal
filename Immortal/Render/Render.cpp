@@ -22,6 +22,7 @@ const Shader::Properties Render::ShaderProperties[] = {
     { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
     { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
 };

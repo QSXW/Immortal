@@ -47,6 +47,7 @@ public:
     struct Limit
     {
         static constexpr int MaxLightNumber = 4;
+        static constexpr int MaxGaussianKernalSize = 128;
     };
 
 public:
@@ -75,6 +76,8 @@ public:
     void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
 
     void RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
+
+    void ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma, int kernalSize);
 
     void SetViewportSize(const Vector2 &size);
 
@@ -132,6 +135,9 @@ private:
         uint32_t environmentResolution = 2048;
         float exposure = 4.5f;
         float gamma    = 2.2f;
+        int kernalSize = 3;
+        float sigma = 1.5;
+        bool changed   = true;
     } settings;
 
     struct {
@@ -151,6 +157,8 @@ private:
        Ref<GraphicsPipeline> skybox;
        Ref<GraphicsPipeline> animatedBasic;
        Ref<ComputePipeline>  colorMixing;
+       Ref<ComputePipeline>  horizontalGaussianBlur;
+       Ref<ComputePipeline>  verticalGaussianBlur;
        Ref<ComputePipeline>  equirect2Cube;
     } pipelines;
 
@@ -158,6 +166,7 @@ private:
         Ref<Buffer> host;
         Ref<Buffer> transform;
         Ref<Buffer> shading;
+        Ref<Buffer> gaussianKernal;
     } uniforms;
 
     Ref<RenderTarget> renderTarget;

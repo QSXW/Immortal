@@ -1,9 +1,15 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
 #version 450
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout (binding = 0, rgba8) uniform readonly image2D inputImage;
-layout (binding = 1, rgba8) uniform writeonly image2D outputImage;
+layout (binding = 0) uniform sampler2D InputImage;
+layout (binding = 1, rgba8) uniform writeonly image2D OutputImage;
 
 layout (push_constant) uniform Properties
 {
@@ -48,7 +54,9 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-    vec4 res = imageLoad(inputImage, ivec2(gl_GlobalInvocationID.x , gl_GlobalInvocationID.y));
+    const ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = vec2(pos) / imageSize(OutputImage);
+    vec4 res = texture(InputImage, uv);
 
     res += properties.Color;
 
@@ -75,5 +83,5 @@ void main()
 
     res.rgb = pow(res.rgb, vec3(1 / (1.0 + factor * (properties.Exposure - properties.Contrast))));
 
-    imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), res);
+    imageStore(OutputImage, pos, res);
 }

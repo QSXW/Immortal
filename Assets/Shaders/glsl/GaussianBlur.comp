@@ -1,0 +1,61 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
+#version 450 core
+
+layout (binding = 0) uniform sampler2D InputImage;
+layout (binding = 1, rgba8) restrict uniform writeonly image2D OutputImage;
+
+#define MAX_WEIGHTS 128
+layout(std430, binding = 2) readonly buffer Kernal
+{
+    float Weights[];
+} uKernal;
+
+layout (push_constant) uniform Properties
+{
+    float blurDirection;
+    float kernalSize;
+} uProperties;
+
+#define HOFFSET vec2(i * offset, 0.0)
+#define VOFFSET vec2(0.0, i * offset)
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+void main()
+{
+    const vec2 size = vec2(imageSize(OutputImage));
+    const ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = vec2(pos) / size;
+
+    vec4 res = vec4(0, 0, 0, 1);
+    if (uProperties.blurDirection == 1)
+    {
+        /* horizontal */
+        float offset = 1.0f / size.x * 0.5f;
+        res = texture(InputImage, uv) * uKernal.Weights[0];
+        for (int i = 1; i < uProperties.kernalSize; i++)
+        {
+            const float weight = uKernal.Weights[i];
+            res += texture(InputImage, uv + HOFFSET) * weight;
+            res += texture(InputImage, uv - HOFFSET) * weight;
+        }
+    }
+    else
+    {
+        /* vertical */
+        float offset = 1.0f / size.y * 0.5f;
+        res = texture(InputImage, uv) * uKernal.Weights[0];
+        for (int i = 1; i < uProperties.kernalSize; i++)
+        {
+            const float weight = uKernal.Weights[i];
+            res += texture(InputImage, uv + VOFFSET) * weight;
+            res += texture(InputImage, uv - VOFFSET) * weight;
+        }
+    }
+
+    imageStore(OutputImage, pos, res);
+}
