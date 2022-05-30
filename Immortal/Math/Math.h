@@ -56,6 +56,59 @@ struct Rational
     int64_t denominator;
 };
 
+/** Gaussian Function
+ * 
+ *  @ret The probability
+ */
+static inline float Gaussian(float sigma, float x)
+{
+    return 1.0 / (sqrt(2.0 * PI) * sigma) * exp(-(x * x) / (2.0 * sigma * sigma));
+}
+
+/** Integrate based on Simpson Rule
+ */
+template <class T>
+static inline float Integrate(float sigma, float a, float b, T &&func)
+{
+    return (b - a) * (1.0 / 6.0) * ((func(a) + 4.0 * func((a + b) * 0.5) + func(b)));
+}
+
+/** Generate Gaussian Kernel
+ *  
+ *  @kernal the size should be half the required convolution kernal size
+ *  @sigma needed for gaussian function
+ * 
+ */
+static inline void GenerateGaussianKernal(std::vector<float> &kernal, float sigma)
+{
+    auto gaussian = [=](float x) { return Gaussian(sigma, x);  };
+
+    float sum = 0;
+    for (int i = 0; i < kernal.size(); i++)
+    {
+        kernal[i] = Integrate(sigma, i - 0.5f, i + 0.5f, gaussian);
+        if (i)
+        {
+            sum += kernal[i] * 2.0f;
+        }
+        else
+        {
+            sum += kernal[i];
+        }
+    }
+
+    /** Normalize
+     *  For the integral upper bound and lower bound are limited form (-INF, +INF)
+     *  to (-KernalSize, +KernalSize), so cumulative probability is not able to
+     *  reach 1.0f.
+     */
+    sum = 1.0f / sum;
+    for (auto &p : kernal)
+    {
+        p *= sum;
+    }
+}
+
 }
 
 using Rational = Math::Rational;
