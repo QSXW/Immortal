@@ -396,6 +396,11 @@ void Shader::SetupDescriptorSetLayout(Stage stage)
             writeDescriptor.descriptorCount = resource.count;
             writeDescriptor.dstBinding      = resource.binding;
 
+            if (resource.type & Resource::Type::Storage)
+            {
+                bindingInfo.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                writeDescriptor.pBufferInfo = nullptr;
+            }
             if (resource.type & Resource::Type::ImageSampler)
             {
                 bindingInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

@@ -158,6 +158,16 @@ bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shade
 
         resouces.emplace_back(std::move(resource));
     }
+    for (auto &spirvResource : spirvResources->storage_buffers)
+    {
+        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
+        resource.type = Shader::Resource::Type::Storage | Shader::Resource::Type::Uniform;
+
+        spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
+        resource.count = type.array.empty() ? 1 : type.array[0];
+
+        resouces.emplace_back(std::move(resource));
+    }
 
     return true;
 }
