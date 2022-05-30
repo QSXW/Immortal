@@ -158,27 +158,12 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         }
     }
 
-    vmaVulkanFunc.vkAllocateMemory = vkAllocateMemory;
-    vmaVulkanFunc.vkBindBufferMemory = vkBindBufferMemory;
-    vmaVulkanFunc.vkBindImageMemory = vkBindImageMemory;
-    vmaVulkanFunc.vkCreateBuffer = vkCreateBuffer;
-    vmaVulkanFunc.vkCreateImage = vkCreateImage;
-    vmaVulkanFunc.vkDestroyBuffer = vkDestroyBuffer;
-    vmaVulkanFunc.vkDestroyImage = vkDestroyImage;
-    vmaVulkanFunc.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
-    vmaVulkanFunc.vkFreeMemory = vkFreeMemory;
-    vmaVulkanFunc.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
-    vmaVulkanFunc.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
-    vmaVulkanFunc.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-    vmaVulkanFunc.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
-    vmaVulkanFunc.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
-    vmaVulkanFunc.vkMapMemory = vkMapMemory;
-    vmaVulkanFunc.vkUnmapMemory = vkUnmapMemory;
-    vmaVulkanFunc.vkCmdCopyBuffer = vkCmdCopyBuffer;
+    vmaVulkanFunc.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vmaVulkanFunc.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
-    allocatorInfo.physicalDevice = *physicalDevice;
-    allocatorInfo.device = handle;
-    allocatorInfo.instance = physicalDevice->Get<Instance&>();
+    allocatorInfo.device           = handle;
+    allocatorInfo.instance         = physicalDevice->Get<Instance&>();
+    allocatorInfo.physicalDevice   = *physicalDevice;
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
     if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
@@ -256,11 +241,11 @@ Device::~Device()
 
     if (memoryAllocator != VK_NULL_HANDLE)
     {
-        VmaStats stats;
-        vmaCalculateStats(memoryAllocator, &stats);
+        VmaTotalStatistics stats;
+        vmaCalculateStatistics(memoryAllocator, &stats);
         LOG::INFO("Total device memory leaked: {} Bytes({} MB).",
-            stats.total.usedBytes,
-            stats.total.usedBytes / (1024.0f * 1024.0f)
+            stats.total.statistics.allocationBytes,
+            stats.total.statistics.allocationBytes / (1024.0f * 1024.0f)
         );
         vmaDestroyAllocator(memoryAllocator);
     }
