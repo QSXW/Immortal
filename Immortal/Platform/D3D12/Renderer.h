@@ -60,7 +60,7 @@ public:
         return new Shader{ filepath, type };
     }
 
-    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader) override
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(Ref<Shader::Super> shader) override
     {
         return new GraphicsPipeline{ context->GetAddress<Device>(), shader };
     }

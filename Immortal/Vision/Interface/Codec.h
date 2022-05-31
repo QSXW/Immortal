@@ -40,11 +40,49 @@ struct CodedFrame
 
 using TimeStamp = uint64_t;
 
+struct PictureExtension : public IObject
+{
+    ColorSpace colorSpace;
+};
+
+/** Shared Picture Data
+ *
+ *  This struct only can used as a shared pointer
+ *  Constructor once and Deconstructor once
+ */
+struct SharedPictureData : IObject
+{
+    SharedPictureData() :
+        data{},
+        linesize{},
+        destory{}
+    {
+
+    }
+
+    SharedPictureData(int width, int height, Format format) :
+        data{},
+        linesize{},
+        destory{}
+    {
+        data[0] = new uint8_t[width * height * format.Size()];
+    }
+
+    ~SharedPictureData()
+    {
+        destory ? destory() : delete[]data[0];
+    }
+
+    uint8_t *data[8];
+    uint8_t linesize[8];
+    std::function<void()> destory;
+};
+
 struct Picture
 {
     Picture() :
         desc{},
-        data{},
+        shared{},
         pts{}
     {
 
@@ -54,30 +92,74 @@ struct Picture
         desc{ uint32_t(width), uint32_t(height), format },
         pts{}
     {
+        if (format == Format::YUV420P || format == Format::YUV422P || format == Format::YUV444P)
+        {
+            extension = new PictureExtension;
+        }
         if (allocated)
         {
-            data.reset(new uint8_t[desc.Size()]);
+            shared = new SharedPictureData{ width, height, format };
+        }
+        else
+        {
+            shared = new SharedPictureData{};
+        }
+    }
+
+    void SetProperty(ColorSpace colorSpace)
+    {
+        extension.DeRef<PictureExtension>().colorSpace = colorSpace;
+    }
+
+    template <class T>
+    const T &GetProperty() const
+    {
+        if constexpr (IsPrimitiveOf<ColorSpace, T>())
+        {
+            return extension.DeRef<PictureExtension>().colorSpace;
         }
     }
 
     bool Available() const
     {
-        return !!data;
+        return !!shared;
     }
 
-    uint8_t *Data()
+    template <class T = uint8_t>
+    T *&operator[](size_t index)
     {
-        return data.get();
+        return (T *)shared->data[index];
     }
 
-    const uint8_t *Data() const
+    template <class T = uint8_t>
+    auto operator[](size_t index) const
     {
-        return data.get();
+        return (T *)shared->data[index];
+    }
+
+    template <class T>
+    void Connect(T &&destory)
+    {
+        shared->destory = destory;
+    }
+
+    uint8_t *Data() const
+    {
+        return shared->data[0];
+    }
+
+    void Reset(const void *ptr) const
+    {
+        shared->data[0] = (uint8_t *)ptr;
     }
 
     Description desc;
-    std::shared_ptr<uint8_t> data;
+
+    Ref<SharedPictureData> shared;
+
     TimeStamp pts;
+
+    Ref<IObject> extension;
 };
 
 namespace Interface
@@ -134,7 +216,7 @@ public:
 
     virtual uint8_t *Data() const
     {
-        return picture.data.get();
+        return picture.Data();
     }
 
     virtual void Swap(void *ptr)

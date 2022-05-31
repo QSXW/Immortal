@@ -180,6 +180,8 @@ public:
 
     virtual void Update(const void *data) { }
 
+    virtual void Blit() {}
+
     virtual void Map(uint32_t slot = 0) { }
 
     virtual const std::string &Source() const

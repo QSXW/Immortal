@@ -570,13 +570,13 @@ void JpegCodec::ConvertColorSpace()
     if (desc.format == Format::YUV444P)
     {
         yuv.linesize[0] = SLALIGN(desc.width, 8);
-        ColorSpace::YUV444PToRGBA8(data, yuv, desc.width, desc.height);
+        YUV444PToRGBA8(data, yuv, desc.width, desc.height);
     }
     else if (desc.format == Format::YUV420P)
     {
         yuv.linesize[0] = SLALIGN(desc.width, 8);
         yuv.linesize[1] = yuv.linesize[0] / 2;
-        ColorSpace::YUV420PToRGBA8(data, yuv, desc.width, desc.height);
+        YUV420PToRGBA8(data, yuv, desc.width, desc.height);
     }
     desc.format = Format::RGBA8;
 }

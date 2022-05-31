@@ -12,9 +12,19 @@
 namespace Immortal
 {
 
+struct Pipelines
+{
+
+static Ref<ComputePipeline> ColorSpace;
+
+};
+
+
 class Render
 {
 public:
+    using Pipelines = Immortal::Pipelines;
+
     struct Scene
     {
         Matrix4 viewProjectionMatrix;
@@ -58,7 +68,7 @@ public:
 
     static Shader::Manager ShaderManager;
 
-    static std::shared_ptr<Shader> GetShader(const std::string &name);
+    static Ref<Shader> GetShader(const std::string &name);
 
     static auto *Preset()
     {

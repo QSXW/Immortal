@@ -98,7 +98,7 @@ public:
         Shader::Type Type;
     };
 
-    using Manager = std::map<std::string, std::shared_ptr<Shader>>;
+    using Manager = std::map<std::string, Ref<Shader>>;
 
 public:
     static Resource::Type GetResourceType(const std::string &key)

@@ -5,7 +5,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-Pipeline::Pipeline(std::shared_ptr<Shader::Super> &shader) :
+Pipeline::Pipeline(Ref<Shader::Super> shader) :
     Super{ shader },
     handle{ }
 {

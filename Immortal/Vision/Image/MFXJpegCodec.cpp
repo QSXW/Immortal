@@ -84,7 +84,7 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
     src.linesize[0] = pOutSurface->Data.PitchLow;
     src.linesize[1] = pOutSurface->Data.PitchLow;
 
-    ColorSpace::NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height);
+    NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
     return CodecError::Succeed;
 }

@@ -55,7 +55,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
         desc.format = Format::RGBA32F;
     }
 
-    picture.data.reset(mat.data);
+    picture.Reset(mat.data);
     mat.data = nullptr;
 
     return CodecError::Succeed;
@@ -63,7 +63,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-    cv::Mat input{ cv::Size{ (int)picture.desc.width, (int)picture.desc.height }, CV_8UC4, picture.data.get() };
+    cv::Mat input{ cv::Size{ (int)picture.desc.width, (int)picture.desc.height }, CV_8UC4, picture.Data()};
     try
     {
         if (!cv::imencode(".jpg", input, codedFrame.buffer))
@@ -87,7 +87,7 @@ void OpenCVCodec::Swap(void *ptr)
     {
         return;
     }
-    memcpy(ptr, picture.data.get(), size);
+    memcpy(ptr, picture.Data(), size);
 }
 #endif
 

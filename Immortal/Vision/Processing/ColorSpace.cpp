@@ -6,9 +6,6 @@ namespace Immortal
 namespace Vision
 {
 
-namespace ColorSpace
-{
-
 void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size)
 {
     auto *srcptr = src;
@@ -29,8 +26,6 @@ void RGBA8ToYUVA4444(uint8_t *dst, const uint8_t *src, size_t size)
 
 void RGBA8ToYUVA4444_AVX2(uint8_t *dst, const uint8_t *src, size_t size)
 {
-    auto coeffients = ColorSpace::Get<CoefficientType::REC601>();
-}
 
 }
 

@@ -159,9 +159,9 @@ void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
     Update();
 }
 
-GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> &shader) :
+GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> shader) :
     Super{ shader },
-    NativeSuper{ device, std::dynamic_pointer_cast<Shader>(shader).get() }
+    NativeSuper{ device, shader.InterpretAs<Shader>() }
 {
     state = std::make_unique<State>();
     CleanUpObject(state.get(), 0, offsetof(State, inputAttributeDescriptions));
@@ -296,7 +296,7 @@ void GraphicsPipeline::Reconstruct(const SuperRenderTarget *superTarget)
     state->dynamic.dynamicStateCount = dynamic.size();
     state->dynamic.pDynamicStates = dynamic.data();
 
-    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    auto shader = desc.shader.InterpretAs<Shader>();
 
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

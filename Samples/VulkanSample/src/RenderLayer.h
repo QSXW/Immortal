@@ -454,8 +454,7 @@ public:
                 videoPlayer.PopPicture();
 
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
-                sprite.Sprite = Render::Create<Texture>(picture.desc.width, picture.desc.height, picture.data.get(), desc);
-                sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, desc);
+                sprite.UpdateSprite(picture);
 
                 object.AddComponent<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();

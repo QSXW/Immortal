@@ -58,7 +58,7 @@ public:
 
     virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override;
 
-    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader);
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(Ref<Shader::Super> shader);
 
     virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader);
 

@@ -102,7 +102,7 @@ public:
     };
 
 public:
-    GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader);
+    GraphicsPipeline(Device *device, Ref<Shader::Super> shader);
 
     virtual void Create(const SuperRenderTarget *renderTarget) override;
 

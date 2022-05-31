@@ -65,7 +65,7 @@ public:
         return new Buffer{ U32(size), type };
     }
 
-    virtual Pipeline::Super *CreateGraphicsPipeline(std::shared_ptr<SuperShader> shader)
+    virtual Pipeline::Super *CreateGraphicsPipeline(Ref<SuperShader> shader)
     {
         return new Pipeline{ shader };
     }

@@ -101,7 +101,7 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
             src.linesize[0] = dav1dPicture.stride[0];
             src.linesize[1] = dav1dPicture.stride[1];
 
-            ColorSpace::YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height);
+            YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
             dav1d_picture_unref(&dav1dPicture);
 
@@ -116,7 +116,7 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
 
 uint8_t * DAV1DCodec::Data() const
 {
-    return picture.data.get();
+    return picture.Data();
 }
 
 Picture DAV1DCodec::GetPicture() const

@@ -52,9 +52,6 @@ struct CVector
     }
 };
 
-namespace ColorSpace
-{
-
 #define PAD(x, a) (x) & ((a) - 1)
 
 enum class CoefficientType : size_t
@@ -68,16 +65,10 @@ static float Coefficients[][4] = {
     { 0.2125, 0.7157, 0.721, 0 }, /* ITU-R Rec. 709 (1990) */
 };
 
-template <CoefficientType type>
-float* Get()
-{
-    return Coefficients[static_cast<size_t>(type)];
-}
-
-template <class T, ColorSpace::CoefficientType C>
+template <class T, CoefficientType C>
 inline constexpr void rgb2yuv(T &y, T &u, T &v, const T &r, const T &g, const T &b)
 {
-    auto &[lr, lg, lb, la] = ColorSpace::Coefficients[static_cast<size_t>(C)];
+    auto &[lr, lg, lb, la] = Coefficients[static_cast<size_t>(C)];
     y = lr * r + lg * g + lb * b;
     u = (((T)(~0)) >> 1) + (b - y) / (2 - 2 * lb);
     v = (((T)(~0)) >> 1) + (r - y) / (2 - 2 * lr);
@@ -175,5 +166,4 @@ void NV12ToRGBA8(CVector<T> &dst, CVector<U> &src, size_t width, size_t height, 
 
 };
 
-}
 }

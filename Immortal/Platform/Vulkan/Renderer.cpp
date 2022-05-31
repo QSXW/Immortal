@@ -312,7 +312,7 @@ Shader::Super *Renderer::CreateShader(const std::string &filepath, Shader::Type 
     return new Shader{ device, filepath, type };
 }
 
-GraphicsPipeline::Super *Renderer::CreateGraphicsPipeline(std::shared_ptr<Shader::Super> shader)
+GraphicsPipeline::Super *Renderer::CreateGraphicsPipeline(Ref<Shader::Super> shader)
 {
     return new GraphicsPipeline{ device, shader };
 }

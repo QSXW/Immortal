@@ -42,7 +42,7 @@ public:
         return nullptr;
     }
 
-    virtual GraphicsPipeline *CreateGraphicsPipeline(std::shared_ptr<Shader> shader)
+    virtual GraphicsPipeline *CreateGraphicsPipeline(Ref<Shader> shader)
     {
         return nullptr;
     }

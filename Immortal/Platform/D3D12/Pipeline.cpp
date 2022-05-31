@@ -90,7 +90,7 @@ void Pipeline::InitRootSignature(const Shader *shader)
     device->Create(0, signature.Get(), &rootSignature);
 }
 
-GraphicsPipeline::GraphicsPipeline(Device *device, std::shared_ptr<Shader::Super> shader) :
+GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> shader) :
     Super{ shader },
     state{ new State{} }
 {
@@ -147,14 +147,14 @@ void GraphicsPipeline::Create(const RenderTarget::Super *renderTarget)
 
 void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
 {
-    auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+    auto shader = desc.shader.InterpretAs<Shader>();
     if (!shader)
     {
         return;
     }
 
     auto &bytesCodes = shader->ByteCodes();
-    InitRootSignature(shader.get());
+    InitRootSignature(shader);
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = { 
         state->InputElementDescription.data(),

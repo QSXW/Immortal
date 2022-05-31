@@ -30,6 +30,7 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 };
 
 static std::vector<const char *> ValidationLayers = {
+#ifdef _DEBUG
     "VK_LAYER_KHRONOS_validation",
     "VK_LAYER_KHRONOS_synchronization2",
     // "VK_LAYER_LUNARG_api_dump",
@@ -38,6 +39,7 @@ static std::vector<const char *> ValidationLayers = {
     // "VK_LAYER_LUNARG_monitor",
     // "VK_LAYER_LUNARG_screenshot",
     // "VK_LAYER_RENDERDOC_Capture",
+#endif
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc) :

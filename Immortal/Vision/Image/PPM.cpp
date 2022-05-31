@@ -32,7 +32,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
     picture = Picture{ width, height, Format::RGBA8 };
     for (int i = 0; i < height; i++)
     {
-        auto dst = picture.data.get() + i * width * picture.desc.format.ComponentCount();
+        auto dst = picture.Data() + i * width * picture.desc.format.ComponentCount();
         for (int j = 0; j < width; j++, dst += 4)
         {
             size_t size = n;
@@ -62,7 +62,7 @@ CodecError PPMCodec::Encode(const Picture &picture, CodedFrame & codedFrame)
 
     for (int i = 0; i < picture.desc.height; i++)
     {
-        auto src = picture.data.get() + i * picture.desc.width * picture.desc.format.ComponentCount();
+        auto src = picture.Data() + i * picture.desc.width * picture.desc.format.ComponentCount();
         for (int j = 0; j < picture.desc.width; j++, src += 4)
         {
             size_t size = codedFrame.buffer.size();

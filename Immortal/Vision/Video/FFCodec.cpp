@@ -15,6 +15,52 @@ namespace Immortal
 namespace Vision
 {
 
+static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
+{
+    ColorSpace ret = ColorSpace::YUV;
+
+    switch (v)
+    {
+    case AVCOL_SPC_RGB:
+        break;
+    case AVCOL_SPC_BT709:
+        ret = ColorSpace::YUV_BT709;
+        break;
+    case AVCOL_SPC_UNSPECIFIED:
+        break;
+    case AVCOL_SPC_RESERVED:
+        break;
+    case AVCOL_SPC_FCC:
+        break;
+    case AVCOL_SPC_BT470BG:
+        break;
+    case AVCOL_SPC_SMPTE170M:
+        break;
+    case AVCOL_SPC_SMPTE240M:
+        break;
+    case AVCOL_SPC_YCGCO:
+        break;
+    case AVCOL_SPC_BT2020_NCL:
+        break;
+    case AVCOL_SPC_BT2020_CL:
+        break;
+    case AVCOL_SPC_SMPTE2085:
+        break;
+    case AVCOL_SPC_CHROMA_DERIVED_NCL:
+        break;
+    case AVCOL_SPC_CHROMA_DERIVED_CL:
+        break;
+    case AVCOL_SPC_ICTCP:
+        break;
+    case AVCOL_SPC_NB:
+        break;
+    default:
+        break;
+    }
+
+    return ret;
+}
+
 FFCodec::FFCodec()
 {
     handle = avcodec_alloc_context3(nullptr);
@@ -50,26 +96,22 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::Again;
     }
 
-    picture = Picture{ frame->width, frame->height, Format::RGBA8 };
+    picture = Picture{ frame->width, frame->height, Format::YUV420P, false };
 
-    CVector<uint8_t> dst{};
-    dst.x = picture.Data();
+    picture[0] = (uint8_t *)frame->data[0];
+    picture[1] = (uint8_t *)frame->data[1];
+    picture[2] = (uint8_t *)frame->data[2];
 
-    CVector<uint8_t> src{};
-    src.x = (uint8_t *)frame->data[0];
-    src.y = (uint8_t *)frame->data[1];
-    src.z = (uint8_t *)frame->data[2];
-    src.linesize[0] = frame->linesize[0];
-    src.linesize[1] = frame->linesize[1];
+    AVFrame *ref = av_frame_clone(frame);
+    picture.Connect([ref] {
+        av_frame_unref(ref);
+        av_frame_free((AVFrame**)&ref);
+    });
+    picture.SetProperty(ColorSpaceConverter(handle->colorspace));
 
-    auto coefficientType = handle->colorspace == AVCOL_SPC_BT709 ? ColorSpace::CoefficientType::REC709 : ColorSpace::CoefficientType::REC601;
-    ColorSpace::YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height, coefficientType);
-
-    picture.pts = frame->pts / frame->pkt_duration;
+    // picture.pts = frame->pts * av_q2d(packet->time_base) * animator.FramesPerSecond;
     animator.Timestamps.Current = picture.pts;
-
     av_packet_unref(packet);
-    av_frame_unref(frame);
 
     return CodecError::Succeed;
 }

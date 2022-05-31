@@ -197,29 +197,25 @@ struct SpriteRendererComponent : public Component
         Filter::Linear
     };
 
+    struct Extension : public IObject
+    {
+        Ref<Image> input[3];
+    };
+
     SpriteRendererComponent()
     {
 
     }
 
-    SpriteRendererComponent(Ref<Texture> texture) :
-        Sprite{ texture }
-    {
-
-    }
-
-    SpriteRendererComponent(Ref<Texture> texture, const Vector4 &color) :
-        Sprite{ texture },
-        Color{ color }
-    {
-
-    }
+    void UpdateSprite(const Vision::Picture &picture);
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
     Ref<Texture> Sprite = Render::Preset()->Textures.White;
 
     Ref<Texture> Result = Sprite;
+
+    Ref<Extension> pNext;
 
     Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 

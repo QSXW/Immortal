@@ -7,6 +7,12 @@ namespace Immortal
 namespace Vision
 {
 
+enum class ColorSpace
+{
+    YUV,
+    YUV_BT709,
+};
+
 struct Description
 {
 public:

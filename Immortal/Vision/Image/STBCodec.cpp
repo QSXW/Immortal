@@ -42,7 +42,7 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
     }
 
     picture = Picture{ width, height, format, false };
-    picture.data.reset(data);
+    picture.Reset(data);
     if (!data)
     {
         return CodecError::CorruptedBitstream;

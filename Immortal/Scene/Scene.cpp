@@ -282,10 +282,10 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
     pipelines.skybox->Set(skyboxDesc);
     pipelines.skybox->Create(renderTarget);
 
-    pipelines.colorMixing = Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing").get());
-    pipelines.horizontalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur").get());
-    pipelines.verticalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur").get());
-    pipelines.equirect2Cube = Render::Create<Pipeline::Compute>(Render::GetShader("Equirect2Cube").get());
+    pipelines.colorMixing = Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing"));
+    pipelines.horizontalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur"));
+    pipelines.verticalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur"));
+    pipelines.equirect2Cube = Render::Create<Pipeline::Compute>(Render::GetShader("Equirect2Cube"));
 
     uniforms.gaussianKernal = Render::CreateBuffer(Limit::MaxGaussianKernalSize * sizeof(float), Buffer::Type{ Buffer::Type::Storage });
 
@@ -418,7 +418,7 @@ void Scene::OnRender(const Camera &camera)
             if (picture.Available())
             {
                 videoPlayer.PopPicture();
-                sprite.Sprite->Update(picture.data.get());
+                sprite.UpdateSprite(picture);
                 color.Modified = true;
             }
         }
@@ -445,6 +445,7 @@ void Scene::OnRender(const Camera &camera)
                 pipelines.colorMixing->Bind(sprite.Sprite, 0);
                 pipelines.colorMixing->Bind(sprite.Result, 1);
                 pipelines.colorMixing->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);     
+                sprite.Result->Blit();
                 color.Initialized = true;
             }
 

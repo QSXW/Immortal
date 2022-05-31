@@ -4,6 +4,8 @@
 namespace Immortal
 {
 
+Ref<ComputePipeline> Pipelines::ColorSpace;
+
 std::unique_ptr<Renderer> Render::renderer;
 
 Shader::Manager Render::ShaderManager;
@@ -22,15 +24,15 @@ const Shader::Properties Render::ShaderProperties[] = {
     { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
     { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "ColorSpace",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
 };
 
-std::shared_ptr<Shader> Render::GetShader(const std::string &name)
+Ref<Shader> Render::GetShader(const std::string &name)
 {
-    const decltype(ShaderManager)::iterator &it = ShaderManager.find(name);
-    if (it != ShaderManager.end())
+    if (auto it = ShaderManager.find(name); it != ShaderManager.end())
     {
         return it->second;
     }
@@ -52,11 +54,13 @@ void Render::Setup(RenderContext *context)
         {
             if (ncast<Render::Type>(ShaderProperties[i].API) & API)
             {
-                auto &&shader = std::shared_ptr<Shader>{ Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Name, ShaderProperties[i].Type) };
+                Ref<Shader> shader = Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Name, ShaderProperties[i].Type);
                 ShaderManager.emplace(ShaderProperties[i].Name, std::move(shader));
             }
         }
     }
+
+    Pipelines::ColorSpace = Create<ComputePipeline>(GetShader("ColorSpace"));
 
     data.Target = Render::CreateRenderTarget({
         viewport,
@@ -89,6 +93,7 @@ void Render::Setup(Ref<RenderTarget> &renderTarget)
 
 void Render::Release()
 {
+    Pipelines::ColorSpace.Reset();
     data.Textures.White.Reset();
     data.Textures.Black.Reset();
     data.Textures.Transparent.Reset();

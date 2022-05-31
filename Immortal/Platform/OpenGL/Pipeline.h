@@ -22,7 +22,7 @@ public:
     using Super = SuperGraphicsPipeline;
 
 public:
-    Pipeline(std::shared_ptr<Shader::Super> &shader);
+    Pipeline(Ref<Shader::Super> shader);
 
     virtual ~Pipeline();
 
@@ -51,7 +51,7 @@ public:
 
     void Draw()
     {
-        auto shader = std::dynamic_pointer_cast<Shader>(desc.shader);
+        auto shader = desc.shader.InterpretAs<Shader>();
 
         shader->Map();
         handle.Bind();

@@ -101,7 +101,7 @@ public:
 
     }
 
-    GraphicsPipeline(std::shared_ptr<Shader> &shader) :
+    GraphicsPipeline(Ref<Shader> shader) :
         desc{ shader }
     {
 
@@ -168,7 +168,7 @@ public:
 protected:
     struct Description
     {
-        std::shared_ptr<Shader> shader{ nullptr };
+        Ref<Shader> shader;
 
         std::vector<Ref<Buffer>> vertexBuffers;
 

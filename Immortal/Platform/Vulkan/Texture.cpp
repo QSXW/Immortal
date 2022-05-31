@@ -84,8 +84,12 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     if (data)
     {
         InternalUpdate((void*)data);
+        Synchronize(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
-    Synchronize();
+    else
+    {
+        Synchronize(VK_IMAGE_LAYOUT_GENERAL);
+    }
 
     sampler = new Sampler{ device, desc, mipLevels };
 
@@ -106,8 +110,9 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
 
 void Texture::Update(const void *data)
 {
+    auto backup = Layout;
     InternalUpdate(data);
-    Synchronize();
+    Synchronize(backup);
 }
 
 void Texture::InternalUpdate(const void *data)
@@ -177,10 +182,42 @@ void Texture::InternalUpdate(const void *data)
     GenerateMipMaps();
 }
 
+/** Generate Mipmaps
+ *
+ * @InputImageLayout:  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+ * @OutputImageLayout: VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+ * 
+ */
 void Texture::GenerateMipMaps()
 {
     uint32_t layers = image->Info().arrayLayers;
     device->TransferAsync([&](CommandBuffer *cmdbuf) {
+        if (Layout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            VkImageSubresourceRange subresourceRange{};
+            subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subresourceRange.baseMipLevel = 0;
+            subresourceRange.baseArrayLayer = 0;
+            subresourceRange.levelCount = 1;
+            subresourceRange.layerCount = 1;
+
+            ImageBarrier barrier{
+                *image,
+                subresourceRange,
+                Layout,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                0,
+                VK_ACCESS_TRANSFER_READ_BIT
+            };
+
+            Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            cmdbuf->PipelineImageBarrier(
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                &barrier
+            );
+        }
+
         for (uint32_t i = 1; i < mipLevels; i++)
         {
             VkImageBlit imageBlit{};
@@ -248,37 +285,13 @@ void Texture::GenerateMipMaps()
     });
 }
 
-void Texture::Synchronize()
+/** Synchronize the desired new image layout
+ *
+ */
+void Texture::Synchronize(VkImageLayout newLayout)
 {
     const auto &info = image->Info();
     device->TransferAsync([&](CommandBuffer *cmdbuf) {
-        VkImageLayout newLayout =  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        if (Layout == VK_IMAGE_LAYOUT_UNDEFINED /* Which means the image is not created with data updated */)
-        {
-            newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            VkImageSubresourceRange subresourceRange{};
-            subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            subresourceRange.baseMipLevel   = 0;
-            subresourceRange.baseArrayLayer = 0;
-            subresourceRange.levelCount     = 1;
-            subresourceRange.layerCount     = info.arrayLayers;
-
-            ImageBarrier barrier{
-                *image,
-                subresourceRange,
-                Layout,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                0,
-                VK_ACCESS_TRANSFER_WRITE_BIT
-            };
-
-            cmdbuf->PipelineImageBarrier(
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                &barrier
-            );
-        }
-
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.levelCount = mipLevels;
@@ -318,6 +331,13 @@ bool Texture::operator==(const Texture::Super &super) const
 {
     const Texture &other = dynamic_cast<const Texture &>(super);
     return image == other.image;
+}
+
+void Texture::Blit()
+{
+    auto backup = Layout;
+    GenerateMipMaps();
+    Synchronize(backup);
 }
 
 TextureCube::TextureCube(Device * device, uint32_t width, uint32_t height, const Description &desc) :

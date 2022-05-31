@@ -29,7 +29,9 @@ public:
 
     virtual operator uint64_t() const override;
 
-    virtual void Update(const void *data);
+    virtual void Update(const void *data) override;
+
+    virtual void Blit() override;
 
     virtual void As(Descriptor *descriptor, size_t index) override;
 
@@ -49,7 +51,7 @@ public:
 private:
     void InternalUpdate(const void *data);
 
-    void Synchronize();
+    void Synchronize(VkImageLayout newLayout);
 
     void GenerateMipMaps();
 

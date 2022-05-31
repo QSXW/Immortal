@@ -96,6 +96,8 @@ CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
         duration
     };
 
+    animator->FramesPerSecond = fps.Normalize();
+    animator->Duration = duration;
     animator->Step = duration / animator->Duration;
     animator->SecondsPerFrame  = (double)fps.denominator / fps.numerator;
 

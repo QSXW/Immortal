@@ -152,6 +152,25 @@ public:
         return _obj;
     }
 
+    template <class U>
+    U *InterpretAs() const
+    {
+        if constexpr ((std::is_base_of_v<T, U> || std::is_base_of_v<U, T>) && !std::is_class_v<IObject>)
+        {
+            return dynamic_cast<U*>(_obj);
+        }
+        else
+        {
+            return (U *)_obj;
+        }
+    }
+
+    template <class U>
+    U &DeRef() const
+    {
+        return *InterpretAs<U>();
+    }
+
     T *const* GetAddress() const
     {
         return &_obj;
@@ -263,6 +282,25 @@ public:
     {
         MonoRef(other).Swap(*this);
         return *this;
+    }
+
+    template <class U>
+    U *InterpretAs() const
+    {
+        if constexpr (std::is_base_of_v<T, U> || std::is_base_of_v<U, T>)
+        {
+            return dynamic_cast<U*>(_obj);
+        }
+        else
+        {
+            return (U *)_obj;
+        }
+    }
+
+    template <class U>
+    U &DeRef() const
+    {
+        return *InterpretAs<U>();
     }
 
 protected:
