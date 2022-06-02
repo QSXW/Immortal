@@ -108,16 +108,16 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void Texture::Update(const void *data)
+void Texture::Update(const void *data, uint32_t pitchX)
 {
     auto backup = Layout;
-    InternalUpdate(data);
+    InternalUpdate(data, pitchX);
     Synchronize(backup);
 }
 
-void Texture::InternalUpdate(const void *data)
+void Texture::InternalUpdate(const void *data, uint32_t pitchX)
 {
-    size_t size = width * height * desc.format.Size();
+    size_t size = (pitchX ? pitchX : width) * height * desc.format.Size();
     Buffer stagingBuffer{ device, size, data, Buffer::Type::TransferSource };
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
@@ -125,7 +125,7 @@ void Texture::InternalUpdate(const void *data)
     uint32_t layers = LayerCount();
     VkBufferImageCopy bufferCopyRegion{};
     bufferCopyRegion.bufferOffset                    = 0;
-    bufferCopyRegion.bufferRowLength                 = 0;
+    bufferCopyRegion.bufferRowLength                 = pitchX;
     bufferCopyRegion.bufferImageHeight               = 0;
     bufferCopyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     bufferCopyRegion.imageSubresource.mipLevel       = 0;

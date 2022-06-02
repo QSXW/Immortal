@@ -161,12 +161,12 @@ Texture::~Texture()
     glDeleteTextures(1, &handle);
 }
 
-void Texture::Update(const void *data)
+void Texture::Update(const void *data, uint32_t pitchX)
 {
     uint32_t bpp = type.DataFormat == GL_RGBA ? 4 : 3;
 
     // glTextureStorage2D(handle, 1, mInternalFormat, width, height);
-    glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
+    glTextureSubImage2D(handle, 0, pitchX, 0, width, height, type.DataFormat, type.BinaryType, data);
 }
 
 void Texture::Map(uint32_t slot)
@@ -269,7 +269,7 @@ void TextureCube::Map(uint32_t slot) const
     glBindTextureUnit(slot, handle);
 }
 
-void TextureCube::Update(const void * data)
+void TextureCube::Update(const void *data, uint32_t pitchX)
 {
 
 }

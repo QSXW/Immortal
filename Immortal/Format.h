@@ -61,6 +61,9 @@ public:
         YUV420P,
         YUV422P,
         YUV444P,
+        YUV420P10,
+        YUV422P10,
+        YUV444P10,
         Depth = Depth32F,
         None
     };
@@ -82,7 +85,11 @@ public:
         return v;
     }
 
-    size_t ComponentCount() const;
+    int ComponentCount() const;
+
+    int ElementSize() const;
+
+    int BytesPerPixel() const;
 
     size_t Size() const;
 
@@ -101,11 +108,11 @@ namespace StaticSpace
 
 struct FormatElement
 {
-    FormatElement(Format format, VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, uint32_t size, uint32_t count) :
+    FormatElement(Format format, VkFormat vkFormat, DXGI_FORMAT dxFormat, GLenum glFormat, int size, int count) :
         Vulkan{ vkFormat },
         DXGI{ dxFormat },
         OpenGL{ glFormat },
-        Size{ size },
+        ElementSize{ size },
         ComponentCount{ count }
     {
 
@@ -129,12 +136,12 @@ struct FormatElement
     VkFormat    Vulkan;
     DXGI_FORMAT DXGI;
     GLenum      OpenGL;
-    uint32_t    Size;
-    uint32_t    ComponentCount;
+    int         ElementSize;
+    int         ComponentCount;
 };
 
 using bfloat = uint16_t;
-#define FS_C(T, CC) (sizeof(T) * (CC)), CC
+#define FS_C(T, CC) (sizeof(T)), CC
 
 static inline FormatElement FormatElementTable[] = {
     { Format::INT,             VK_FORMAT_R32_SINT,            DXF(DXGI_FORMAT_R32_SINT           ),  GL_INT,               FS_C(int,      1)     },
@@ -171,11 +178,14 @@ static inline FormatElement FormatElementTable[] = {
     { Format::YUV420P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
     { Format::YUV422P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
     { Format::YUV444P,         VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint8_t,  3)     },
+    { Format::YUV420P10,       VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint16_t, 3)     },
+    { Format::YUV422P10,       VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint16_t, 3)     },
+    { Format::YUV444P10,       VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(uint16_t, 3)     },
 };
 
 }
 
-inline size_t Format::ComponentCount() const
+inline int Format::ComponentCount() const
 {
     return StaticSpace::FormatElementTable[v].ComponentCount;
 }
@@ -195,9 +205,19 @@ inline Format::operator GLenum() const
     return StaticSpace::FormatElementTable[v];
 }
 
+inline int Format::ElementSize() const
+{
+    return StaticSpace::FormatElementTable[v].ElementSize;
+}
+
+inline int Format::BytesPerPixel() const
+{
+    return ElementSize();
+}
+
 inline size_t Format::Size() const
 {
-    return StaticSpace::FormatElementTable[v].Size;
+    return ElementSize() * ComponentCount();
 }
 
 }

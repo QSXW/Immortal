@@ -39,7 +39,7 @@ public:
 
     virtual void As(Descriptor::Super *descriptors, size_t index) override;
 
-    virtual void Update(const void *data) override;
+    virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
 private:
     void InternalCreate(const void *data);

@@ -61,6 +61,28 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
     return ret;
 }
 
+static inline Format FormatConverter(AVPixelFormat v)
+{
+    Format ret = Format::YUV420P;
+    switch (v)
+    {
+    case AV_PIX_FMT_YUV420P10LE:
+        ret = Format::YUV420P10;
+        break;
+    case AV_PIX_FMT_YUV422P10LE:
+        ret = Format::YUV422P10;
+        break;
+    case AV_PIX_FMT_YUV444P10:
+        ret = Format::YUV444P10;
+        break;
+    default:
+        ret = Format::YUV420P;
+        break;
+    }
+
+    return ret;
+}
+
 FFCodec::FFCodec()
 {
     handle = avcodec_alloc_context3(nullptr);
@@ -96,11 +118,13 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::Again;
     }
 
-    picture = Picture{ frame->width, frame->height, Format::YUV420P, false };
+    picture = Picture{ frame->width, frame->height, FormatConverter(handle->pix_fmt), false };
 
     picture[0] = (uint8_t *)frame->data[0];
     picture[1] = (uint8_t *)frame->data[1];
     picture[2] = (uint8_t *)frame->data[2];
+
+    memcpy(picture.shared->linesize, frame->linesize, sizeof(frame->linesize));
 
     AVFrame *ref = av_frame_clone(frame);
     picture.Connect([ref] {

@@ -178,7 +178,7 @@ public:
         return 1;
     }
 
-    virtual void Update(const void *data) { }
+    virtual void Update(const void *data, uint32_t pitchX = 0) {}
 
     virtual void Blit() {}
 

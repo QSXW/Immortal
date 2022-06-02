@@ -74,7 +74,7 @@ struct SharedPictureData : IObject
     }
 
     uint8_t *data[8];
-    uint8_t linesize[8];
+    int linesize[8];
     std::function<void()> destory;
 };
 
@@ -92,7 +92,7 @@ struct Picture
         desc{ uint32_t(width), uint32_t(height), format },
         pts{}
     {
-        if (format == Format::YUV420P || format == Format::YUV422P || format == Format::YUV444P)
+        if (format == Format::YUV420P || format == Format::YUV422P || format == Format::YUV444P || format == Format::YUV420P10)
         {
             extension = new PictureExtension;
         }
@@ -106,9 +106,13 @@ struct Picture
         }
     }
 
-    void SetProperty(ColorSpace colorSpace)
+    template <class T>
+    void SetProperty(const T &v)
     {
-        extension.DeRef<PictureExtension>().colorSpace = colorSpace;
+        if (IsPrimitiveOf<ColorSpace, T>())
+        {
+            extension.DeRef<PictureExtension>().colorSpace = v;
+        }    
     }
 
     template <class T>

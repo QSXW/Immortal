@@ -29,7 +29,7 @@ public:
 
     virtual operator uint64_t() const override;
 
-    virtual void Update(const void *data) override;
+    virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
     virtual void Blit() override;
 
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    void InternalUpdate(const void *data);
+    void InternalUpdate(const void *data, uint32_t pitchX = 0);
 
     void Synchronize(VkImageLayout newLayout);
 

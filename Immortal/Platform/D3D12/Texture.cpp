@@ -104,14 +104,19 @@ bool Texture::operator==(const Super &other) const
     return resource == dcast<const Texture &>(other).resource;
 }
 
-void Texture::Update(const void *data)
+void Texture::Update(const void *data, uint32_t pitchX)
 {
     ID3D12Device *device = *context->GetAddress<Device>();
 
-    D3D12_RESOURCE_DESC uploadDesc{};
-
     uint32_t uploadPitch          = SLALIGN(width * format.Size(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
     uint32_t uploadSize           = height * uploadPitch;
+
+    if (!pitchX)
+    {
+        pitchX = width;
+    }
+
+    D3D12_RESOURCE_DESC uploadDesc{};
     uploadDesc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
     uploadDesc.Alignment          = 0;
     uploadDesc.Width              = uploadSize;
@@ -155,7 +160,7 @@ void Texture::Update(const void *data)
     {
         memcpy(
             (void *)((uintptr_t)mapped + y * uploadPitch),
-            imageData + y * width * 4,
+            imageData + y * pitchX * 4,
             width * 4
             );
     }

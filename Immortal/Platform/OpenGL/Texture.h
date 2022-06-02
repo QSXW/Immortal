@@ -124,7 +124,7 @@ public:
         return ncast<uint64_t>(handle);
     }
 
-    virtual void Update(const void* data) override;
+    virtual void Update(const void* data, uint32_t pitchX = 0) override;
 
     virtual void Map(uint32_t slot = 0) override;
 
@@ -178,7 +178,7 @@ public:
         return (float)width / (float)height;
     }
 
-    virtual void Update(const void *data) override;
+    virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
     virtual operator uint64_t() const override
     {
