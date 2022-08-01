@@ -10,8 +10,6 @@ std::unique_ptr<Renderer> Render::renderer;
 
 Shader::Manager Render::ShaderManager;
 
-Render::Scene Render::scene{};
-
 Render::Data Render::data{};
 
 const Shader::Properties Render::ShaderProperties[] = {
@@ -99,7 +97,6 @@ void Render::Release()
     data.Textures.Transparent.Reset();
     data.Textures.Normal.Reset();
     data.Target.Reset();
-    user.renderTarget.Reset();
     ShaderManager.clear();
 
     Render2D::Release();

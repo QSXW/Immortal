@@ -25,11 +25,6 @@ class Render
 public:
     using Pipelines = Immortal::Pipelines;
 
-    struct Scene
-    {
-        Matrix4 viewProjectionMatrix;
-    };
-
     struct Data
     {
         Ref<RenderTarget> Target;
@@ -117,24 +112,14 @@ public:
         renderer->Clear();
     }
 
-    static void Begin(const Camera &camera)
-    {
-        scene.viewProjectionMatrix = camera.ViewProjection();
-        renderer->Begin(data.Target);
-    }
-
     static void Begin(Ref<RenderTarget> &renderTarget)
     {
-        user.renderTarget = renderTarget;
-        renderer->Begin(user.renderTarget);
+        renderer->Begin(renderTarget);
     }
 
     static void Begin(Ref<RenderTarget> &renderTarget, const Camera &camera)
     {
-        scene.viewProjectionMatrix = camera.ViewProjection();
-        user.renderTarget = renderTarget;
-
-        renderer->Begin(user.renderTarget);
+        renderer->Begin(renderTarget);
     }
 
     static void End()
@@ -270,14 +255,7 @@ public:
 private:
     static std::unique_ptr<Renderer> renderer;
 
-    static inline struct
-    {
-        Ref<RenderTarget> renderTarget;
-    } user;
-
     static Data data;
-
-    static Scene scene;
 
     static inline Vector2 viewport{ 1, 1 };
 

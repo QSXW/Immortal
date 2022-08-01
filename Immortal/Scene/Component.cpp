@@ -168,7 +168,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
         return;
     }
 
-    if (picture.desc.format == Format::YUV420P10)
+    if (picture.desc.format == Format::YUV420P10 || picture.desc.format == Format::YUV422P10)
     {
         desc.format = Format::R16;
         properties._10Bits = 1;
@@ -181,9 +181,18 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
     if (!pNext)
     {
         pNext = new Extension;
+
+        int widthFactor = 2;
+        int heightFactor = 2;
+        if (picture.desc.format == Format::YUV422P10 || picture.desc.format == Format::YUV422P)
+        {
+            heightFactor = 1;
+        }
+        auto width = picture.desc.width / widthFactor;
+        auto height = picture.desc.height / heightFactor;
         pNext->input[0] = Render::Create<Image>(picture.desc.width, picture.desc.height, nullptr, desc);
-        pNext->input[1] = Render::Create<Image>(picture.desc.width / 2, picture.desc.height / 2, nullptr, desc);
-        pNext->input[2] = Render::Create<Image>(picture.desc.width / 2, picture.desc.height / 2, nullptr, desc);
+        pNext->input[1] = Render::Create<Image>(width, height, nullptr, desc);
+        pNext->input[2] = Render::Create<Image>(width, height, nullptr, desc);
     }
 
     pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
