@@ -50,6 +50,9 @@ enum class FileFormat : uint64_t
     JPG   = MakeIdentifier('J', 'P', 'G'     ),
     JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
     HDR   = MakeIdentifier('H', 'D', 'R'     ),
+    ARW   = MakeIdentifier('A', 'R', 'W'     ),
+    NEF   = MakeIdentifier('N', 'E', 'F'     ),
+    CR2   = MakeIdentifier('C', 'R', '2'     ),
 
     /** Video file format extensions */
     IVF   = MakeIdentifier('I', 'V', 'F'     ),
@@ -120,6 +123,9 @@ static inline bool IsImage(const std::string &path)
            IsFormat<FileFormat::PNG>(id)  ||
            IsFormat<FileFormat::PPM>(id)  ||
            IsFormat<FileFormat::HDR>(id)  ||
+           IsFormat<FileFormat::ARW>(id)  ||
+           IsFormat<FileFormat::NEF>(id)  ||
+           IsFormat<FileFormat::CR2>(id)  ||
            IsFormat<FileFormat::JFIF>(id);
 }
 

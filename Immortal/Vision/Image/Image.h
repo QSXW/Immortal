@@ -9,3 +9,4 @@
 #include "JPEG.h"
 #include "MFXJpegCodec.h"
 #include "PPM.h"
+#include "Raw.h"

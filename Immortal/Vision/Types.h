@@ -39,7 +39,7 @@ public:
 
     size_t Size() const
     {
-        return Spatial() * format.ComponentCount();
+        return Spatial() * format.ComponentCount() * format.ElementSize();
     }
 
     uint32_t width;

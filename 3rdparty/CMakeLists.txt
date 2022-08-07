@@ -254,12 +254,16 @@ if (FFmpeg_FOUND)
     endif()
 endif()
 
+# LibRaw
+set(LIBRAW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibRaw/")
+add_subdirectory(LibRaw-cmake)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     vulkan imgui spdlog::spdlog_header_only
-    SPIRV spirv-cross-glsl
+    SPIRV spirv-cross-glsl libraw::libraw
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>

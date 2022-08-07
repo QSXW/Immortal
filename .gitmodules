@@ -11,3 +11,9 @@
 [submodule "3rdparty/SPIRV-Cross"]
 	path = 3rdparty/SPIRV-Cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross.git
+[submodule "3rdparty/LibRaw-cmake"]
+	path = 3rdparty/LibRaw-cmake
+	url = https://github.com/LibRaw/LibRaw-cmake.git
+[submodule "3rdparty/LibRaw"]
+	path = 3rdparty/LibRaw
+	url = https://github.com/LibRaw/LibRaw.git

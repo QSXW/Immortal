@@ -12,22 +12,25 @@ static Vision::Interface::Codec *SelectSuitableCodec(const std::string &path)
     switch (FileSystem::DumpFileId(path))
     {
     case FileFormat::BMP:
-        return new Vision::BMPCodec{};
+        return new Vision::BMPCodec;
 
     case FileFormat::JPG:
     case FileFormat::JPEG:
     case FileFormat::JFIF:
-        return new Vision::MFXJpegCodec{};
-
     case FileFormat::HDR:
     case FileFormat::PNG:
-        return new Vision::STBCodec{};
+        return new Vision::STBCodec;
 
     case FileFormat::PPM:
-        return new Vision::PPMCodec{};
+        return new Vision::PPMCodec;
+
+    case FileFormat::ARW:
+    case FileFormat::NEF:
+    case FileFormat::CR2:
+        return new Vision::RawCodec;
 
     default:
-        return new Vision::OpenCVCodec{};
+        return new Vision::OpenCVCodec;
         break;
     }
 }

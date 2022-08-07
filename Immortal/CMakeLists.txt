@@ -362,6 +362,8 @@ set(IMAGE_CODEC_FILES
     Vision/Image/MFXJpegCodec.h
     Vision/Image/PPM.cpp
     Vision/Image/PPM.h
+    Vision/Image/Raw.cpp
+    Vision/Image/Raw.h
     Vision/Image/OpenCVCodec.cpp
     Vision/Image/OpenCVCodec.h)
 

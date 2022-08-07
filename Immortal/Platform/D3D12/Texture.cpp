@@ -156,13 +156,10 @@ void Texture::Update(const void *data, uint32_t pitchX)
         );
 
     auto imageData = rcast<const uint8_t *>(data);
+    auto formatSize = format.Size();
     for (int y = 0; y < height; y++)
     {
-        memcpy(
-            (void *)((uintptr_t)mapped + y * uploadPitch),
-            imageData + y * pitchX * 4,
-            width * 4
-            );
+        memcpy((void*)((uintptr_t)mapped + y * uploadPitch), imageData + y * pitchX * formatSize, width * formatSize);
     }
     uploadBuffer->Unmap(0, &range);
 
