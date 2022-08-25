@@ -7,6 +7,12 @@ namespace Immortal
 namespace Vision
 {
 
+enum class RawBitDepth
+{
+    _8  = 8,
+    _16 = 16,
+};
+
 class RawCodec : public Interface::Codec
 {
 public:
@@ -19,6 +25,14 @@ public:
     }
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
+
+    void SetBits(RawBitDepth v)
+    {
+        bitDepth = v;
+    }
+
+private:
+    RawBitDepth bitDepth = RawBitDepth::_16;
 };
 
 }

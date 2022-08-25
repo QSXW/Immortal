@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 project("Immortal Engine")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(WORKSPACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -21,4 +21,5 @@ add_subdirectory(Samples/VulkanSample)
 add_subdirectory(Samples/OpenGLSample)
 add_subdirectory(Samples/MediaTest)
 add_subdirectory(Samples/ScriptBenchmark)
+add_subdirectory(Samples/RawExtractor)
 add_subdirectory(Assets)

@@ -51,9 +51,16 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Succeed;
 }
 
-CodecError STBCodec::Encode(const Picture & picture, CodedFrame & codedFrame)
+CodecError STBCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-    return CodecError();
+
+    return CodecError::NotImplement;
+}
+
+CodecError STBCodec::Encode(const std::string &filepath, const Picture &picture)
+{
+
+    return CodecError::NotImplement;
 }
 
 }

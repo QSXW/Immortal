@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Immortal LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -12,7 +12,14 @@ set(CORE_FILES
     Format.h)
 
 set(ALGORITHM_FILES
+    Algorithm/LightArray.h
     Algorithm/LightVector.h)
+
+set(AUDIO_FILES
+    Audio/AudioSource.cpp
+    Audio/AudioSource.h
+    Audio/Device.cpp
+    Audio/Device.h)
 
 set(FRAMEWORK_FILES
     Framework/Application.cpp
@@ -175,6 +182,7 @@ set(VULKAN_FILES
    Platform/Vulkan/Sampler.h
    Platform/Vulkan/Shader.cpp
    Platform/Vulkan/Shader.h
+   Platform/Vulkan/Submitter.h
    Platform/Vulkan/Texture.cpp
    Platform/Vulkan/Texture.h
    Platform/Vulkan/VideoSession.cpp
@@ -298,7 +306,8 @@ set(NET_FILES
     Net/Socket.h)
 
 source_group("\\"                  FILES ${CORE_FILES}      )
-source_group("Framework\\"         FILES ${ALGORITHM_FILES} )
+source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )
+source_group("Audio\\"             FILES ${AUDIO_FILES} )
 source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
 source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Event\\"             FILES ${EVENT_FILES}     )
@@ -325,6 +334,10 @@ source_group("Net\\"               FILES ${NET_FILES}       )
 
 set(VISION_CORE_FILES
     Vision/Types.h)
+
+set(VISION_AUDIO_FILES
+    Vision/Audio/WAV.cpp
+    Vision/Audio/WAV.h)
 
 set(COMMON_FILES
     Vision/Common/Animator.h
@@ -386,9 +399,11 @@ set(PROCESSING_FILES
 
 set(EXTERNAL_FILES
     Vision/External/External.cpp
-    Vision/External/stb_image.h)
+    Vision/External/stb_image.h
+    Vision/External/stb_image_write.h)
 
 source_group("\\Vision\\"                FILES ${MEDIA_CORE_FILES}      )
+source_group("\\Vision\\Audio\\"         FILES ${VISION_AUDIO_FILES}    )
 source_group("\\Vision\\Common\\"        FILES ${COMMON_FILES}          )
 source_group("\\Vision\\Demux\\"         FILES ${DEMUX_FILES}           )
 source_group("\\Vision\\Interface\\"     FILES ${VISION_INTERFACE_FILES})
@@ -401,6 +416,7 @@ source_group("\\Vision\\Processing\\"    FILES ${PROCESSING_FILES}      )
 
 set(VISION_FILES
     ${VISION_CORE_FILES}
+    ${VISION_AUDIO_FILES}
     ${COMMON_FILES}
     ${DEMUX_FILES}
     ${EXTERNAL_FILES}
@@ -415,6 +431,7 @@ set(VISION_FILES
 set(PROJECT_FILES
     ${CORE_FILES}
     ${ALGORITHM_FILES}
+    ${AUDIO_FILES}
     ${FRAMEWORK_FILES}
     ${EDITOR_FILES}
     ${EVENT_FILES}

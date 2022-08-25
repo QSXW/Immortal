@@ -26,39 +26,39 @@ public:
     }
 
     template <bool On = true, class... Args>
-    static inline constexpr void WARN(Args&& ... args)
+    static inline void WARN(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
         if constexpr (On)
         {
-            logger->warn(std::forward<Args>(args)...);
+            logger->warn(fmt, std::forward<Args>(args)...);
         }
     }
 
     template <class... Args>
-    static inline constexpr void INFO(Args&& ... args)
+    static inline void INFO(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
-        logger->info(std::forward<Args>(args)...);
+        logger->info(fmt, std::forward<Args>(args)...);
     }
 
     template <bool On = true, class... Args>
-    static inline constexpr void DEBUG(Args&& ... args)
+    static inline void DEBUG(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
         if constexpr (On)
         {
-            logger->debug(std::forward<Args>(args)...);
+            logger->debug(fmt, std::forward<Args>(args)...);
         }
     }
 
     template <class... Args>
-    static inline constexpr void ERR(Args&& ... args)
+    static inline void ERR(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
-        logger->error(std::forward<Args>(args)...);
+        logger->error(fmt, std::forward<Args>(args)...);
     }
 
     template <class... Args>
-    static inline constexpr void FATAL(Args&& ... args)
+    static inline void FATAL(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
-        logger->critical(std::forward<Args>(args)...);
+        logger->critical(fmt, std::forward<Args>(args)...);
     }
 
 private:

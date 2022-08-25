@@ -99,7 +99,7 @@ RenderTarget::~RenderTarget()
 
 RenderTarget &RenderTarget::operator=(RenderTarget &&other)
 {
-    LOG::WARN(&other == this && "You are trying to self-assigments, which is not acceptable.");
+    SLASSERT(&other == this && "You are trying to self-assigments, which is not acceptable.");
     device             = other.device;
     desc               = other.desc;
     attachments.colors = std::move(other.attachments.colors);
@@ -243,7 +243,7 @@ void RenderTarget::Create()
     renderPassInfo.dependencyCount = U32(dependencies.size());
     renderPassInfo.pDependencies   = dependencies.data();
 
-    renderPass.reset(new RenderPass(device, &renderPassInfo));
+    renderPass = new RenderPass(device, &renderPassInfo);
 
     SetupFramebuffer();
     SetupDescriptor();
@@ -253,13 +253,13 @@ void RenderTarget::SetupDescriptor()
 {
     if (!descriptor)
     {
-       descriptor.reset(new ImageDescriptor{});
+       descriptor = new ImageDescriptor{};
     }
     descriptor->Update(sampler, *attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     if (!descriptorSet)
     {
-        descriptorSet.reset(new DescriptorSet{ device, RenderContext::DescriptorSetLayout });
+        descriptorSet = new DescriptorSet{ device, RenderContext::DescriptorSetLayout };
     }
     descriptorSet->Update(*descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }

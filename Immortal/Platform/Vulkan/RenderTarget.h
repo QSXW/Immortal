@@ -40,15 +40,30 @@ public:
     RenderTarget &operator=(RenderTarget &&other);
 
     template <class T>
+    requires std::is_same_v<T, RenderPass> || std::is_same_v<T, Framebuffer>
+    T &Get()
+    {
+        if constexpr (IsPrimitiveOf<RenderPass, T>())
+        {
+            return *renderPass;
+        }
+        if constexpr (IsPrimitiveOf<Framebuffer, T>())
+        {
+            return *framebuffer;
+        }
+    }
+
+    template <class T>
+    requires std::is_same_v<T, RenderPass> || std::is_same_v<T, Framebuffer>
     T *GetAddress()
     {
         if constexpr (IsPrimitiveOf<RenderPass, T>())
         {
-            return renderPass.get();
+            return renderPass;
         }
         if constexpr (IsPrimitiveOf<Framebuffer, T>())
         {
-            return framebuffer.get();
+            return framebuffer;
         }
     }
 
@@ -72,10 +87,10 @@ public:
         }
         views.emplace_back(attachments.depth.view->Handle());
 
-        framebuffer.reset(new Framebuffer{ device, *renderPass, views, VkExtent2D{ desc.Width, desc.Height }});
+        framebuffer = new Framebuffer{ device, *renderPass, views, VkExtent2D{ desc.Width, desc.Height }};
     }
 
-    void Set(std::shared_ptr<RenderPass> &value)
+    void Set(Ref<RenderPass> value)
     {
         renderPass = value;
         SetupFramebuffer();
@@ -115,13 +130,13 @@ public:
 private:
     Device *device{ nullptr };
 
-    std::shared_ptr<RenderPass> renderPass;
+    Ref<RenderPass> renderPass;
 
-    std::unique_ptr<Framebuffer> framebuffer;
+    MonoRef<Framebuffer> framebuffer;
 
-    std::unique_ptr<DescriptorSet> descriptorSet;
+    MonoRef<DescriptorSet> descriptorSet;
 
-    std::unique_ptr<ImageDescriptor> descriptor;
+    MonoRef<ImageDescriptor> descriptor;
 
     Sampler sampler;
 

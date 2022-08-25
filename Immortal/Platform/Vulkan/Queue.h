@@ -27,9 +27,14 @@ public:
 
     virtual ~Queue();
 
-    VkResult Submit(VkSubmitInfo &submitInfo, VkFence fence)
+    VkResult Submit(uint32_t submitCount, const VkSubmitInfo *pSubmitInfo, VkFence fence)
     {
-        return vkQueueSubmit(handle, 1, &submitInfo, fence);
+        return vkQueueSubmit(handle, submitCount, pSubmitInfo, fence);
+    }
+
+    VkResult Submit(const VkSubmitInfo &submitInfo, VkFence fence)
+    {
+        return Submit(1, &submitInfo, fence);
     }
 
     void Wait()
@@ -56,7 +61,7 @@ public:
         return presented;
     }
 
-    VkResult Present(VkPresentInfoKHR &presentInfo)
+    VkResult Present(const VkPresentInfoKHR &presentInfo)
     {
         if (!presented)
         {
@@ -81,5 +86,6 @@ private:
     //Queue &operator=(const Queue &) = delete;
     Queue &operator=(Queue &&) = delete;
 };
+
 }
 }

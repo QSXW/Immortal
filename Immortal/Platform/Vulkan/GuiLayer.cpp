@@ -55,7 +55,9 @@ void GuiLayer::OnAttach()
     initInfo.CheckVkResultFn = &Check;
 
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
-    if (ImGui_ImplVulkan_Init(&initInfo, *context->GetAddress<RenderPass>()))
+
+    auto renderTarget = context->GetAddress<RenderTarget>();
+    if (ImGui_ImplVulkan_Init(&initInfo, renderTarget->Get<RenderPass>()))
     {
         LOG::INFO("Initialized GUI with success");
     }
@@ -114,11 +116,12 @@ void GuiLayer::End()
     };
 
     context->Record([&](CommandBuffer *cmdbuf) -> void {
+        auto renderTarget = context->GetAddress<RenderTarget>();
         VkRenderPassBeginInfo beginInfo{};
         beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         beginInfo.pNext                    = nullptr;
-        beginInfo.renderPass               = *context->GetAddress<RenderPass>();
-        beginInfo.framebuffer              = *context->GetAddress<Framebuffer>();
+        beginInfo.renderPass               = renderTarget->Get<RenderPass>();
+        beginInfo.framebuffer              = renderTarget->Get<Framebuffer>();
         beginInfo.clearValueCount          = 2;
         beginInfo.pClearValues             = clearValues;
         beginInfo.renderArea.extent.width  = io.DisplaySize.x;

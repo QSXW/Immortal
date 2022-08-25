@@ -19,7 +19,12 @@ public:
 
     VkSemaphore Request();
 
+    VkSemaphore Request(uint64_t initialValue);
+
     void Reset();
+
+private:
+    VkSemaphore InternalRequest(const VkSemaphoreCreateInfo &createInfo);
 
 private:
     Device *device{ nullptr };

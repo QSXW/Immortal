@@ -19,6 +19,7 @@ enum CodecError
     EndOfFile,
     Repeat,
     Again,
+    NotImplement,
     Succeed = 0,
     Preparing
 };

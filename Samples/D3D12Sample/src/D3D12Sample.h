@@ -16,8 +16,7 @@ public:
 
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
-        texture = Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\wallhaven-pk7z5j.jpg)");
-        texture2 = Render::Create<Texture>(R"(C:\SDK\Assets\jpeg\out.jpg)");
+        texture2 = Render::Preset()->Textures.White;
         pipeline = Render::Create<GraphicsPipeline>(Render::GetShader("Basic"));
         renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }});
 
@@ -132,7 +131,7 @@ public:
 
     virtual void OnEvent(Event &e) override
     {
-        LOG::INFO(e);
+        LOG::INFO("{}", e);
         eventSink.Dispatch(e);
     }
 
@@ -166,7 +165,7 @@ private:
 class D3D12Sample : public Application
 {
 public:
-    D3D12Sample() : Application({ U8("D3D12 Sample"), 1920, 1080 })
+    D3D12Sample() : Application({ "D3D12 Sample", 1920, 1080 })
     {
         PushLayer(new RenderLayer());
     }

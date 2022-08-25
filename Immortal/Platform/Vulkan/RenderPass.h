@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -8,7 +9,7 @@ namespace Vulkan
 {
 
 class Device;
-class RenderPass
+class RenderPass : public IObject
 {
 public:
     using Primitive = VkRenderPass;

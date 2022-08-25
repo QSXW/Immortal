@@ -18,6 +18,18 @@ class Window;
 namespace Vulkan
 {
 
+template <class T>
+concept ExposedType = (
+    std::is_same_v<T, Instance>       || std::is_same_v<T, Instance&>       ||
+    std::is_same_v<T, PhysicalDevice> || std::is_same_v<T, PhysicalDevice&> ||
+    std::is_same_v<T, Device>         || std::is_same_v<T, Device&>         ||
+    std::is_same_v<T, Queue>          || std::is_same_v<T, Queue&>          ||
+    std::is_same_v<T, RenderPass>     || std::is_same_v<T, RenderPass&>     ||
+    std::is_same_v<T, RenderTarget>   || std::is_same_v<T, RenderTarget&>   ||
+    std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain&>      ||
+    std::is_same_v<T, Extent2D>       || std::is_same_v<T, Extent2D&>       
+    );
+
 class RenderContext : public SuperRenderContext
 {
 public:
@@ -64,7 +76,12 @@ public:
 
     void SetupDescriptorSetLayout();
 
-    template <class T>
+    VkExtent2D GetViewport() const
+    {
+        return surfaceExtent;
+    }
+
+    template <ExposedType T>
     inline constexpr T Get()
     {
         if constexpr (IsPrimitiveOf<Instance, T>())
@@ -91,26 +108,18 @@ public:
         {
             return surfaceExtent;
         }
-        if constexpr (IsPrimitiveOf<VkFormat, T>())
-        {
-            return swapchain->Get<VkFormat>();
-        }
     }
 
-    template <class T>
+    template <ExposedType T>
     T *GetAddress()
     {
         if constexpr (IsPrimitiveOf<Device, T>())
         {
             return device;
         }
-        if constexpr (IsPrimitiveOf<Framebuffer, T>())
-        {
-            return GetFramebuffer();
-        }
         if constexpr (IsPrimitiveOf<RenderPass, T>())
         {
-            return renderPass.get();
+            return renderPass;
         }
         if constexpr (IsPrimitiveOf<Queue, T>())
         {
@@ -118,7 +127,11 @@ public:
         }
         if constexpr (IsPrimitiveOf<Swapchain, T>())
         {
-            return swapchain.get();
+            return swapchain;
+        }
+        if constexpr (IsPrimitiveOf<RenderTarget, T>())
+        {
+            return GetRenderTarget();
         }
     }
 
@@ -132,9 +145,14 @@ public:
         present.bufferIndex = index;
     }
 
+    RenderTarget *GetRenderTarget()
+    {
+        return present.renderTargets[present.bufferIndex].get();
+    }
+
     Framebuffer *GetFramebuffer()
     {
-        return present.renderTargets[present.bufferIndex]->GetAddress<Framebuffer>();
+        return GetRenderTarget()->GetAddress<Framebuffer>();
     }
 
     constexpr size_t FrameSize()
@@ -157,15 +175,15 @@ public:
 private:
     Window *window{ nullptr };
 
-    std::unique_ptr<Instance> instance;
+    MonoRef<Instance> instance;
     
     MonoRef<Device> device;
 
-    std::unique_ptr<Swapchain> swapchain;
+    MonoRef<Swapchain> swapchain;
 
     Queue *queue{ nullptr };
 
-    std::shared_ptr<RenderPass> renderPass;
+    Ref<RenderPass> renderPass;
 
     struct
     {

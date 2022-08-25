@@ -87,6 +87,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         LOG::DEBUG<isLogNeed>("Performance query enabled");
     }
 
+    if (IsExtensionSupport("VK_KHR_timeline_semaphore"))
+    {
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceTimelineSemaphoreFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR);
+    }
+
     std::vector<const char*> unsupportedExtensions{};
     for (auto &ext : requestedExtensions)
     {

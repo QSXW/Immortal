@@ -22,6 +22,8 @@ public:
 #else
 
 #include <array>
+#include <concepts>
+
 #include "Common.h"
 #include "Device.h"
 #include "Swapchain.h"
@@ -58,17 +60,16 @@ public:
     template <class T>
     T Get()
     {
-        if constexpr (IsPrimitiveOf<HWND, T>())
-        {
-            return hWnd;
-        }
         if constexpr (IsPrimitiveOf<DXGI_FORMAT, T>())
         {
             return desc.format;
         }
     }
 
-    template <class T>
+    template <class T>                      
+    requires std::is_same_v<T, Device> || std::is_same_v<T, Swapchain>   ||
+             std::is_same_v<T, Queue>  || std::is_same_v<T, CommandList> ||
+             std::is_same_v<T, Window> || std::is_same_v<T, ID3D12CommandAllocator*>
     inline constexpr T *GetAddress()
     {
         if constexpr (IsPrimitiveOf<Device, T>())
@@ -90,10 +91,6 @@ public:
         if constexpr (IsPrimitiveOf<Window, T>())
         {
             return desc.WindowHandle;
-        }
-        if constexpr (IsPrimitiveOf<ID3D12Fence, T>())
-        {
-            return fence.Get();
         }
         if constexpr (IsPrimitiveOf<ID3D12CommandAllocator*, T>())
         {

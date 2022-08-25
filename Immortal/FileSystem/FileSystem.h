@@ -42,6 +42,9 @@ enum class FileFormat : uint64_t
     FBX   = MakeIdentifier('F', 'B', 'X'          ),
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
 
+    /** Audio formats */
+    WAV = MakeIdentifier('W', 'A', 'V' ),
+
     /** Still Image formats */
     BMP   = MakeIdentifier('B', 'M', 'P'     ),
     PNG   = MakeIdentifier('P', 'N', 'G'     ),
@@ -53,6 +56,7 @@ enum class FileFormat : uint64_t
     ARW   = MakeIdentifier('A', 'R', 'W'     ),
     NEF   = MakeIdentifier('N', 'E', 'F'     ),
     CR2   = MakeIdentifier('C', 'R', '2'     ),
+    CR3   = MakeIdentifier('C', 'R', '3'     ),
 
     /** Video file format extensions */
     IVF   = MakeIdentifier('I', 'V', 'F'     ),

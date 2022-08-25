@@ -129,10 +129,9 @@ struct Picture
         return !!shared;
     }
 
-    template <class T = uint8_t>
-    T *&operator[](size_t index)
+    uint8_t*&operator[](size_t index)
     {
-        return (T *)shared->data[index];
+        return shared->data[index];
     }
 
     template <class T = uint8_t>
@@ -209,6 +208,11 @@ public:
     }
 
     virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError Encode(const std::string &filepath, const Picture &picture)
     {
         return CodecError::FailedToCallDecoder;
     }

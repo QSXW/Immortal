@@ -26,6 +26,8 @@ public:
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
     virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
+
+    virtual CodecError Encode(const std::string& filepath, const Picture& picture) override;
 };
 
 }

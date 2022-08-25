@@ -285,6 +285,35 @@ public:
         return vkWaitForFences(handle, fenceCount, pFences, waitAll, timeout);
     }
 
+    VkResult Wait(const VkSemaphore *pSemaphore, uint64_t *pValue, uint32_t semaphoreCount = 1, uint64_t timeout = std::numeric_limits<uint64_t>::max()) const
+    {
+        VkSemaphoreWaitInfo waitInfo{};
+        waitInfo.sType          = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+        waitInfo.pNext          = nullptr;
+        waitInfo.flags          = 0;
+        waitInfo.semaphoreCount = semaphoreCount;
+        waitInfo.pValues        = pValue;
+        waitInfo.pSemaphores    = pSemaphore;
+
+        return vkWaitSemaphoresKHR(*this, &waitInfo, timeout);
+    }
+
+    VkResult Signal(VkSemaphore semaphore, uint64_t value) const
+    {
+        VkSemaphoreSignalInfo signalInfo{};
+        signalInfo.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+        signalInfo.pNext     = nullptr;
+        signalInfo.semaphore = semaphore;
+        signalInfo.value     = value;
+
+        return vkSignalSemaphoreKHR(*this, &signalInfo);
+    }
+
+    VkResult GetCompletion(VkSemaphore semaphore, uint64_t *pValue) const
+    {
+        return vkGetSemaphoreCounterValueKHR(*this, semaphore, pValue);
+    }
+
     VkResult Reset(VkFence *pFence, uint32_t fenceCount = 1)
     {
         return vkResetFences(handle, 1, pFence);

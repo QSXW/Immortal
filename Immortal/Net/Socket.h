@@ -153,11 +153,6 @@ public:
         WSACleanup();
     }
 
-    operator SOCKET&()
-    {
-        return handle;
-    }
-
     operator SOCKET() const
     {
         return handle;
@@ -178,8 +173,10 @@ public:
         return !(handle == Status::Invalid);
     }
 
+    /** Send for CPP Standard Containers
+     */
     template <class T>
-    int Send(const std::vector<T> &data)
+    int Send(const T &data)
     {
         return send(handle, reinterpret_cast<const char *>(data.data()), data.size(), 0);
     }
@@ -196,48 +193,24 @@ public:
         return recv(handle, reinterpret_cast<char *>(out), sizeof(T) * size, 0);
     }
 
+    /** Receive for CPP Standard Containers
+     * 
+     */
     template <class T>
-    int Receive(std::vector<T> *out)
+    int Receive(T &out)
     {
         int status = 0;
-        std::vector<char> buffer;
-        buffer.resize(65536);
+        uint8_t buffer[4096];
 
         while(true)
         {
-            status = Receive(buffer.data(), buffer.size());
-            if (status > 0)
-            {
-                out->resize(out->size() + status);
-                std::copy(buffer.begin(), buffer.begin() + status, out->end() - status);
-            }
-            else
+            status = Receive(buffer, SL_ARRAY_LENGTH(buffer));
+            if (status <= 0)
             {
                 break;
             }
-        };
-
-        return status;
-    }
-
-    template <class Callback>
-    int Receive(Callback callback)
-    {
-        int status = 0;
-        std::vector<char> buffer;
-        buffer.resize(65536);
-
-        while (true)
-        {
-            status = Receive(buffer.data(), buffer.size());
-            if (status > 0)
-            {
-                callback(buffer, status);
-            }
-            else
-            {
-                break;
-            }
+            out.resize(out.size() + status);
+            std::copy(buffer, buffer + status, out.end() - status);
         };
 
         return status;

@@ -59,7 +59,7 @@ void MemoryAllocator::Release()
     {
         return;
     }
-    printf("Total Size Allocated: %zd\n", allocatedSize);
+    printf("Total Size Allocated: %zd (Bytes), %g (Mb)\n", allocatedSize, allocatedSize / 1048576.0);
     size_t leakSize = 0;
 
     for (auto &alloc : *allocation)

@@ -2,6 +2,7 @@
 #include <array>
 
 #include "Texture.h"
+#include "Submitter.h"
 
 namespace Immortal
 {
@@ -41,19 +42,34 @@ void Renderer::Setup()
         semaphores[i].compute            = semaphorePool.Request();
         semaphores[i].transfer           = semaphorePool.Request();
     }
+
+    timelineSemaphore = semaphorePool.Request(0);
 }
 
 void Renderer::PrepareFrame()
 {
+    LOG::INFO("PrepareFrame");
+    VkResult ret = VK_SUCCESS;
     if (!swapchain)
     {
-        return;
+        VkSurfaceCapabilitiesKHR properties;
+        Check(device->GetSurfaceCapabilities(&properties));
+        if (properties.currentExtent.width > 0 && properties.currentExtent.height > 0)
+        {
+            Resize();
+        }
     }
 
-    auto error = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
-    context->MoveToFrame(currentBuffer);
+    if (swapchain)
+    {
+        ret = swapchain->AcquireNextImage(&currentBuffer, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
+        context->MoveToFrame(currentBuffer);
+    }
+
+    syncValues[sync] = lastSync;
     if (fences[sync] != VK_NULL_HANDLE)
     {
+        LOG::INFO("Wait Fence={}", (void*)fences[sync]);
         device->WaitAndReset(&fences[sync]);
     }
     else
@@ -61,13 +77,13 @@ void Renderer::PrepareFrame()
         fences[sync] = device->RequestFence();
     }
 
-    if ((error == VK_ERROR_OUT_OF_DATE_KHR) || (error == VK_SUBOPTIMAL_KHR))
+    if ((ret == VK_ERROR_OUT_OF_DATE_KHR) || (ret == VK_SUBOPTIMAL_KHR))
     {
         Resize();
     }
     else
     {
-        Check(error);
+        Check(ret);
     }
 
     device->BeginComputeThread();
@@ -81,97 +97,97 @@ void Renderer::Resize()
 
 void Renderer::SubmitFrame()
 {
-    VkResult error{ VK_SUCCESS };
+    PresentSubmitter submitter{};
+    submitter.Wait(semaphores[sync].renderComplete);
+    submitter.Present(*swapchain, currentBuffer);
 
-    VkSwapchainKHR swapchainKHR = *swapchain;
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext              = nullptr;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores    = &semaphores[sync].renderComplete;
-    presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = &swapchainKHR;
-    presentInfo.pImageIndices      = &currentBuffer;
-    presentInfo.pResults           = nullptr;
-
-    error = queue->Present(presentInfo);
-    if (error == VK_ERROR_OUT_OF_DATE_KHR || error == VK_SUBOPTIMAL_KHR)
+    VkResult ret = queue->Present(submitter);
+    if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
     {
         Resize();
         return;
     }
-    Check(error);
+    Check(ret);
 }
 
 void Renderer::SwapBuffers()
 {
-    VkCommandBuffer commandBuffers[1] = { 0 };
+    LOG::INFO("SwapBuffers");
+    LOG::INFO("queue={}, sync={}, semaphore={}, fence={}", (void*)queue->Handle(), sync, (void*)semaphores[sync].renderComplete, (void*)fences[sync]);
+    
+    uint64_t signalValues[3] = { 0 };
 
     {
-        VkPipelineStageFlags waitDstStageFlags[1] = {};
-
-        VkSemaphore signalSemaphores[] = {
-            semaphores[sync].compute,
-            semaphores[sync].transfer,
-        };
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = commandBuffers;
-  
         device->TransferAsync([&](CommandBuffer *cmdbuf) {
             cmdbuf->End();
-            waitDstStageFlags[0]         = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            submitInfo.pSignalSemaphores = &signalSemaphores[1];
-            submitInfo.pWaitDstStageMask = waitDstStageFlags;
-            commandBuffers[0] = *cmdbuf;
+
+            signalValues[0] = ++syncValues[sync];
+
+            TimelineSubmitter timelineSubmitter{};
+            timelineSubmitter.Signal(signalValues[0]);
+
+            Submitter submitter{};
+            submitter.SignalSemaphore(timelineSemaphore);
+            submitter.Execute(cmdbuf);
+            submitter.Trampoline(timelineSubmitter);
+
+            auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
+            transferQueue.Submit(submitter, nullptr);
+            transferQueue.Wait();
             });
-        
-        auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
-        transferQueue.Submit(submitInfo, nullptr);
 
         device->ComputeAsync([&](CommandBuffer *cmdbuf) {
             cmdbuf->End();
-            waitDstStageFlags[0]          = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            submitInfo.pWaitSemaphores    = &signalSemaphores[1];
-            submitInfo.waitSemaphoreCount = 1;
-            submitInfo.pSignalSemaphores  = &signalSemaphores[0];
-            submitInfo.pWaitDstStageMask  = waitDstStageFlags;
-            commandBuffers[0] = *cmdbuf;
+            signalValues[1] = ++syncValues[sync];
+
+            TimelineSubmitter timelineSubmitter{};
+            timelineSubmitter.Wait(signalValues[0]);
+            timelineSubmitter.Signal(signalValues[1]);
+
+            Submitter submitter{};
+            submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+            submitter.SignalSemaphore(timelineSemaphore);
+            submitter.Execute(cmdbuf);
+            submitter.Trampoline(timelineSubmitter);
+
+            auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
+            computeQueue.Submit(submitter, nullptr);
             });
-
-        auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
-        computeQueue.Submit(submitInfo, nullptr);
     }
-   
-    VkSemaphore waitSemaphores[] = {
-        semaphores[sync].compute,
-        semaphores[sync].acquiredImageReady
-    };
-
-    static VkPipelineStageFlags graphicsWaitDstStageMask[] = {
-        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    };
 
     context->Submit([&](CommandBuffer *cmdbuf) {
         cmdbuf->End();
-        commandBuffers[0] = *cmdbuf;
+
+        uint64_t graphicsSignalValue = ++syncValues[sync];
+
+        TimelineSubmitter timelineSubmitter{};
+        timelineSubmitter.Wait(signalValues[1]);
+        timelineSubmitter.Signal(graphicsSignalValue);
+
+        Submitter submitter{};
+        submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+        submitter.SignalSemaphore(timelineSemaphore);
+        submitter.Execute(*cmdbuf);
+
+        if (swapchain)
+        {
+            timelineSubmitter.Wait(0);
+            timelineSubmitter.Signal(0);
+
+            submitter.WaitSemaphore(semaphores[sync].acquiredImageReady, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+            submitter.SignalSemaphore(semaphores[sync].renderComplete);
+        }
+
+        submitter.Trampoline(timelineSubmitter);
+        queue->Submit(submitter, fences[sync]);
         });
 
-    submitInfo.waitSemaphoreCount   = SL_ARRAY_LENGTH(waitSemaphores);
-    submitInfo.pWaitSemaphores      = waitSemaphores;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    = &semaphores[sync].renderComplete;
-    submitInfo.pWaitDstStageMask    = graphicsWaitDstStageMask;
-    submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = commandBuffers;
+    if (swapchain)
+    {
+        SubmitFrame();
+    }
 
-    queue->Submit(submitInfo, fences[sync]);
-    SubmitFrame();
-
+    lastSync = syncValues[sync];
     SLROTATE(sync, context->FrameSize());
 
     device->ExecuteComputeThread();
@@ -188,10 +204,10 @@ void Renderer::Begin(RenderTarget::Super *superRenderTarget)
         VkRenderPassBeginInfo beginInfo{};
         beginInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         beginInfo.pNext                    = nullptr;
-        beginInfo.framebuffer              = renderTarget->GetFramebuffer();
+        beginInfo.framebuffer              = renderTarget->Get<Framebuffer>();
         beginInfo.clearValueCount          = renderTarget->ColorAttachmentCount() + 1;
         beginInfo.pClearValues             = rcast<VkClearValue*>(&renderTarget->clearValues);
-        beginInfo.renderPass               = renderTarget->GetRenderPass();
+        beginInfo.renderPass               = renderTarget->Get<RenderPass>();
         beginInfo.renderArea.extent.width  = desc.Width;
         beginInfo.renderArea.extent.height = desc.Height;
         beginInfo.renderArea.offset        = { 0, 0 };

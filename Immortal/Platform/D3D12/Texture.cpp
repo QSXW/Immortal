@@ -17,9 +17,12 @@ Texture::Texture(RenderContext *context, const std::string &filepath, const Desc
     Frame frame{ filepath };
 
     Vision::Picture picture = frame.GetPicture();
+    if (!picture.Available())
+    {
+        return;
+    }
 
     Super::Update(picture.desc.width, picture.desc.height);
-
     format = picture.desc.format;
     InternalCreate(picture.Data());
 }

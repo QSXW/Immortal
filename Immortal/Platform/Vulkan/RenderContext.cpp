@@ -26,7 +26,8 @@ std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
 };
 
 std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
-    { VK_KHR_SWAPCHAIN_EXTENSION_NAME, false }
+    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,          false },
+    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, false }
 };
 
 static std::vector<const char *> ValidationLayers = {
@@ -45,7 +46,7 @@ static std::vector<const char *> ValidationLayers = {
 RenderContext::RenderContext(const RenderContext::Description &desc) :
     window{ desc.WindowHandle }
 {
-    instance = std::make_unique<Instance>(desc.ApplicationName, InstanceExtensions, ValidationLayers);
+    instance = new Instance{ desc.ApplicationName, InstanceExtensions, ValidationLayers };
     if (!instance->Ready())
     {
         LOG::ERR("Vulkan Not Supported!");
@@ -65,7 +66,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
     depthFormat = physicalDevice.GetSuitableDepthFormat();
 
-    device.Reset(new Device{ &physicalDevice, surface, DeviceExtensions });
+    device = new Device{ &physicalDevice, surface, DeviceExtensions };
     queue  = device->SuitableGraphicsQueuePtr();
 
     surfaceExtent = VkExtent2D{ desc.Width, desc.Height };
@@ -76,11 +77,11 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
         if (surfaceProperties.currentExtent.width == 0xFFFFFFFF)
         {
-            swapchain = std::make_unique<Swapchain>(device, surfaceExtent);
+            swapchain = new Swapchain{ device, surfaceExtent };
         }
         else
         {
-            swapchain = std::make_unique<Swapchain>(device);
+            swapchain = new Swapchain{ device };
         }
 
         Prepare();
@@ -98,8 +99,8 @@ RenderContext::~RenderContext()
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
     present.renderTargets.clear();
-    renderPass.reset();
-    swapchain.reset();
+    renderPass.Reset();
+    swapchain.Reset();
 
     instance->DestroySurface(surface, nullptr);
 }
@@ -115,7 +116,7 @@ void RenderContext::Prepare(size_t threadCount)
 
     swapchain->Create();
 
-    renderPass.reset(new RenderPass{ device, swapchain->Get<VkFormat>(), depthFormat });
+    renderPass = new RenderPass{ device, swapchain->Get<VkFormat>(), depthFormat };
 
     surfaceExtent = swapchain->Get<VkExtent2D>();
     VkExtent3D extent{ surfaceExtent.width, surfaceExtent.height, 1 };
@@ -144,18 +145,13 @@ void RenderContext::Prepare(size_t threadCount)
 
 Swapchain *RenderContext::UpdateSurface()
 {
-    if (!swapchain)
-    {
-        goto end;
-    }
-
     VkSurfaceCapabilitiesKHR properties;
     Check(device->GetSurfaceCapabilities(&properties));
 
     if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.width <= 0 || properties.currentExtent.height <= 0))
     {
         surfaceExtent = properties.currentExtent;
-        goto end;
+        return nullptr;
     }
     if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
     {
@@ -164,8 +160,7 @@ Swapchain *RenderContext::UpdateSurface()
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
     }
 
-end:
-    return swapchain.get();
+    return swapchain;
 }
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
@@ -175,11 +170,11 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
 
     if (transform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
     {
-        swapchain = std::make_unique<Swapchain>(*swapchain, VkExtent2D{ extent.height, extent.width }, transform);
+        swapchain = new Swapchain{ *swapchain, VkExtent2D{ extent.height, extent.width }, transform };
     }
     else
     {
-        swapchain = std::make_unique<Swapchain>(*swapchain, extent, transform);;
+        swapchain = new Swapchain{ *swapchain, extent, transform };;
     }
     regisry.preTransform = transform;
 

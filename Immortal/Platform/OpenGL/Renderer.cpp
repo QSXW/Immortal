@@ -18,16 +18,16 @@ void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned
     {
     case GL_DEBUG_SEVERITY_HIGH:
     case GL_DEBUG_SEVERITY_MEDIUM:
-        LOG::ERR(message);
+        LOG::ERR("{}", message);
         break;
 
     case GL_DEBUG_SEVERITY_LOW:
-        LOG::WARN(message);
+        LOG::WARN("{}", message);
         break;
 
     case GL_DEBUG_SEVERITY_NOTIFICATION:
     default:
-        LOG::INFO(message);
+        LOG::INFO("{}", message);
         break;
     }
 }

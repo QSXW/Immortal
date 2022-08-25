@@ -61,6 +61,7 @@ void Render2D::Setup()
         data.WhiteTexture->As(data.textureDescriptors.get(), i);
         data.ActiveTextures[i] = data.WhiteTexture;
     }
+    isTextureChanged = true;
 
     data.RectVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
     data.RectVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };

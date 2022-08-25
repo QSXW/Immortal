@@ -8,9 +8,9 @@ using namespace Immortal;
 class VulkanSample : public Application
 {
 public:
-    VulkanSample() : Application({ U8("Immortal Editor"), 1920, 1080 })
+    VulkanSample() : Application({ "Immortal Editor", 1920, 1080 })
     {
-        PushLayer(new NetLayer("Debug Layer for Net"));
+        // PushLayer(new NetLayer("Debug Layer for Net"));
 
         auto renderLayer = new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render");
         PushLayer(renderLayer);

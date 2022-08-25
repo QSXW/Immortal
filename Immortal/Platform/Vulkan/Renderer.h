@@ -106,6 +106,12 @@ private:
 
     SemaphorePool semaphorePool;
 
+    VkSemaphore timelineSemaphore{ VK_NULL_HANDLE };
+
+    uint64_t syncValues[3] = { 0, 0, 0 };
+
+    uint64_t lastSync = 0;
+
     std::array<Semaphores, 3> semaphores;
 
     std::array<VkFence, 3> fences{ VK_NULL_HANDLE };
