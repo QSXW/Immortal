@@ -16,6 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Update CMake
+      run: cmake --version
+
     - name: Install Dependencies
       run: sudo apt-get install libxrandr-dev xorg-dev ninja-build
 
@@ -23,7 +26,7 @@ jobs:
       run: git submodule update --init
 
     - name: Configure CMake
-      run: cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: ls && cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
 
     - name: Build
       run: cd ${{github.workspace}}/build && ninja

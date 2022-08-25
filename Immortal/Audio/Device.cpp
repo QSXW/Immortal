@@ -29,10 +29,6 @@ namespace Immortal
 {
 
 AudioDevice::AudioDevice() :
-    pEnumerator{},
-    handle{},
-    pAudioClient{},
-    pRenderClient{},
     bufferFrameCount{},
     stopping{ false }
 {

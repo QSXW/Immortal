@@ -399,8 +399,7 @@ set(PROCESSING_FILES
 
 set(EXTERNAL_FILES
     Vision/External/External.cpp
-    Vision/External/stb_image.h
-    Vision/External/stb_image_write.h)
+    Vision/External/stb_image.h)
 
 source_group("\\Vision\\"                FILES ${MEDIA_CORE_FILES}      )
 source_group("\\Vision\\Audio\\"         FILES ${VISION_AUDIO_FILES}    )
