@@ -9,17 +9,18 @@ namespace Vision
 
 static inline void Dequantize(int16_t *block, int16_t *table)
 {
-    int16x32 b1{ block };
-    int16x32 b2{ block + 32 };
+    INT16X32 b1, b2, t1, t2;
 
-    int16x32 t1{ table };
-    int16x32 t2{ table + 32 };
+    b1.load(block);
+    b2.load(block + 32);
+    t1.load(table);
+    t2.load(table + 32);
 
     b1 = b1 * t1;
     b2 = b2 * t2;
 
-    b1.aligned_store(block);
-    b2.aligned_store(block + 32);
+    b1.store(block);
+    b2.store(block + 32);
 }
 
 static const double A[] = {
@@ -115,15 +116,17 @@ inline constexpr void InverseDCT8x8(T *block)
 
 static inline void Levelup(int16_t *block)
 {
-    int16x32 b1{ block };
-    int16x32 b2{ block + 32 };
+    INT16X32 level(int16_t(128));
+    INT16X32 b1, b2;
 
-    int16x32 level{ int16_t(128) };
+    b1.loadu(block);
+    b2.loadu(block + 32);
+
     b1 = b1 + level;
     b2 = b2 + level;
-
-    b1.convert<uint8x32>().aligned_store(block);
-    b2.convert<uint8x32>().aligned_store(block + 16);
+    
+    UINT8X32(b1.cvt2uint8()).storeu((uint8_t *)block);
+    UINT8X32(b2.cvt2uint8()).storeu((uint8_t *)(block + 16));
 }
 
 #define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
@@ -487,8 +490,8 @@ void JpegCodec::DecodeMCU()
             }
             if (bitTracker.RestartMarker)
             {
-                int32x4 zero{ 0 };
-                zero.aligned_store(pred);
+                INT32X4 zero{ 0 };
+                zero.store(pred);
                 bitTracker.RestartMarker = false;
                 break;
             }
