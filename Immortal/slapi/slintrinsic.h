@@ -28,7 +28,7 @@ public:
     }
 
     FLOATX4(float _0, float _1, float _2, float _3) noexcept :
-        v{ _mm_set_ps(_0, _1, _2, _3) }
+        v{ _mm_set_ps(_3, _2, _1, _0) }
     {
     }
 
@@ -82,6 +82,38 @@ public:
         _mm_storeu_ps(dst, v);
     }
 
+    __m128i cvt2int32() const noexcept
+    {
+        return _mm_cvtps_epi32(v);
+    }
+
+    FLOATX4 fmadd(const FLOATX4 &a, const FLOATX4 &b) const noexcept
+    {
+        return _mm_fmadd_ps(v, a, b);
+    }
+
+    template <int imm8>
+    FLOATX4 shuffle(const FLOATX4 &a) const noexcept
+    {
+        return _mm_shuffle_ps(v, a, imm8);
+    }
+
+    template <int rounding>
+    FLOATX4 round() const noexcept
+    {
+        return _mm_round_ps(v, rounding);
+    }
+
+    FLOATX4 floor() const noexcept
+    {
+        return round<_MM_FROUND_FLOOR>();
+    }
+
+    FLOATX4 ceil() const noexcept
+    {
+        return round<_MM_FROUND_CEIL>();
+    }
+
 public:
     __m128 v;
 };
@@ -106,7 +138,7 @@ public:
     }
 
     FLOATX8(float _0, float _1, float _2, float _3, float _4, float _5, float _6, float _7) noexcept :
-        v{ _mm256_set_ps(_0, _1, _2, _3, _4, _5, _6, _7) }
+        v{ _mm256_set_ps(_7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -158,6 +190,38 @@ public:
     void storeu(float *dst) noexcept
     {
         _mm256_storeu_ps(dst, v);
+    }
+
+    __m256i cvt2int32() const noexcept
+    {
+        return _mm256_cvtps_epi32(v);
+    }
+
+    FLOATX8 fmadd(const FLOATX8 &a, const FLOATX8 &b) const noexcept
+    {
+        return _mm256_fmadd_ps(v, a, b);
+    }
+
+    template <int imm8>
+    FLOATX8 shuffle(const FLOATX8 &a) const noexcept
+    {
+        return _mm256_shuffle_ps(v, a, imm8);
+    }
+
+    template <int rounding>
+    FLOATX8 round() const noexcept
+    {
+        return _mm256_round_ps(v, rounding);
+    }
+
+    FLOATX8 floor() const noexcept
+    {
+        return _mm256_floor_ps(v);
+    }
+
+    FLOATX8 ceil() const noexcept
+    {
+        return _mm256_ceil_ps(v);
     }
 
 public:
@@ -233,6 +297,32 @@ public:
         _mm512_storeu_ps(dst, v);
     }
 
+    __m512i cvt2int32() const noexcept
+    {
+        return _mm512_cvtps_epi32(v);
+    }
+
+    FLOATX16 fmadd(const FLOATX16 &a, const FLOATX16 &b) const noexcept
+    {
+        return _mm512_fmadd_ps(v, a, b);
+    }
+
+    template <int imm8>
+    FLOATX16 shuffle(const FLOATX16 &a) const noexcept
+    {
+        return _mm512_shuffle_ps(v, a, imm8);
+    }
+
+    FLOATX16 floor() const noexcept
+    {
+        return _mm512_floor_ps(v);
+    }
+
+    FLOATX16 ceil() const noexcept
+    {
+        return _mm512_ceil_ps(v);
+    }
+
 public:
     __m512 v;
 };
@@ -257,7 +347,7 @@ public:
     }
 
     DOUBLEX2(double _0, double _1) noexcept :
-        v{ _mm_set_pd(_0, _1) }
+        v{ _mm_set_pd(_1, _0) }
     {
     }
 
@@ -311,6 +401,28 @@ public:
         _mm_storeu_pd(dst, v);
     }
 
+    template <int imm8>
+    DOUBLEX2 shuffle(const DOUBLEX2 &a) const noexcept
+    {
+        return _mm_shuffle_pd(v, a, imm8);
+    }
+
+    template <int rounding>
+    DOUBLEX2 round() const noexcept
+    {
+        return _mm_round_pd(v, rounding);
+    }
+
+    DOUBLEX2 floor() const noexcept
+    {
+        return round<_MM_FROUND_FLOOR>();
+    }
+
+    DOUBLEX2 ceil() const noexcept
+    {
+        return round<_MM_FROUND_CEIL>();
+    }
+
 public:
     __m128d v;
 };
@@ -335,7 +447,7 @@ public:
     }
 
     DOUBLEX4(double _0, double _1, double _2, double _3) noexcept :
-        v{ _mm256_set_pd(_0, _1, _2, _3) }
+        v{ _mm256_set_pd(_3, _2, _1, _0) }
     {
     }
 
@@ -387,6 +499,28 @@ public:
     void storeu(double *dst) noexcept
     {
         _mm256_storeu_pd(dst, v);
+    }
+
+    template <int imm8>
+    DOUBLEX4 shuffle(const DOUBLEX4 &a) const noexcept
+    {
+        return _mm256_shuffle_pd(v, a, imm8);
+    }
+
+    template <int rounding>
+    DOUBLEX4 round() const noexcept
+    {
+        return _mm256_round_pd(v, rounding);
+    }
+
+    DOUBLEX4 floor() const noexcept
+    {
+        return _mm256_floor_pd(v);
+    }
+
+    DOUBLEX4 ceil() const noexcept
+    {
+        return _mm256_ceil_pd(v);
     }
 
 public:
@@ -462,6 +596,22 @@ public:
         _mm512_storeu_pd(dst, v);
     }
 
+    template <int imm8>
+    DOUBLEX8 shuffle(const DOUBLEX8 &a) const noexcept
+    {
+        return _mm512_shuffle_pd(v, a, imm8);
+    }
+
+    DOUBLEX8 floor() const noexcept
+    {
+        return _mm512_floor_pd(v);
+    }
+
+    DOUBLEX8 ceil() const noexcept
+    {
+        return _mm512_ceil_pd(v);
+    }
+
 public:
     __m512d v;
 };
@@ -486,7 +636,7 @@ public:
     }
 
     INT8X16(int8_t _0, int8_t _1, int8_t _2, int8_t _3, int8_t _4, int8_t _5, int8_t _6, int8_t _7, int8_t _8, int8_t _9, int8_t _10, int8_t _11, int8_t _12, int8_t _13, int8_t _14, int8_t _15) noexcept :
-        v{ _mm_set_epi8(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) }
+        v{ _mm_set_epi8(_15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -559,7 +709,7 @@ public:
     }
 
     UINT8X16(uint8_t _0, uint8_t _1, uint8_t _2, uint8_t _3, uint8_t _4, uint8_t _5, uint8_t _6, uint8_t _7, uint8_t _8, uint8_t _9, uint8_t _10, uint8_t _11, uint8_t _12, uint8_t _13, uint8_t _14, uint8_t _15) noexcept :
-        v{ _mm_set_epi8(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) }
+        v{ _mm_set_epi8(_15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -632,7 +782,7 @@ public:
     }
 
     INT16X8(int16_t _0, int16_t _1, int16_t _2, int16_t _3, int16_t _4, int16_t _5, int16_t _6, int16_t _7) noexcept :
-        v{ _mm_set_epi16(_0, _1, _2, _3, _4, _5, _6, _7) }
+        v{ _mm_set_epi16(_7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -715,7 +865,7 @@ public:
     }
 
     UINT16X8(uint16_t _0, uint16_t _1, uint16_t _2, uint16_t _3, uint16_t _4, uint16_t _5, uint16_t _6, uint16_t _7) noexcept :
-        v{ _mm_set_epi16(_0, _1, _2, _3, _4, _5, _6, _7) }
+        v{ _mm_set_epi16(_7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -798,7 +948,7 @@ public:
     }
 
     INT32X4(int32_t _0, int32_t _1, int32_t _2, int32_t _3) noexcept :
-        v{ _mm_set_epi32(_0, _1, _2, _3) }
+        v{ _mm_set_epi32(_3, _2, _1, _0) }
     {
     }
 
@@ -876,7 +1026,7 @@ public:
     }
 
     UINT32X4(uint32_t _0, uint32_t _1, uint32_t _2, uint32_t _3) noexcept :
-        v{ _mm_set_epi32(_0, _1, _2, _3) }
+        v{ _mm_set_epi32(_3, _2, _1, _0) }
     {
     }
 
@@ -954,7 +1104,7 @@ public:
     }
 
     INT64X2(int64_t _0, int64_t _1) noexcept :
-        v{ _mm_set_epi64x(_0, _1) }
+        v{ _mm_set_epi64x(_1, _0) }
     {
     }
 
@@ -1027,7 +1177,7 @@ public:
     }
 
     UINT64X2(uint64_t _0, uint64_t _1) noexcept :
-        v{ _mm_set_epi64x(_0, _1) }
+        v{ _mm_set_epi64x(_1, _0) }
     {
     }
 
@@ -1100,7 +1250,7 @@ public:
     }
 
     INT8X32(int8_t _0, int8_t _1, int8_t _2, int8_t _3, int8_t _4, int8_t _5, int8_t _6, int8_t _7, int8_t _8, int8_t _9, int8_t _10, int8_t _11, int8_t _12, int8_t _13, int8_t _14, int8_t _15, int8_t _16, int8_t _17, int8_t _18, int8_t _19, int8_t _20, int8_t _21, int8_t _22, int8_t _23, int8_t _24, int8_t _25, int8_t _26, int8_t _27, int8_t _28, int8_t _29, int8_t _30, int8_t _31) noexcept :
-        v{ _mm256_set_epi8(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) }
+        v{ _mm256_set_epi8(_31, _30, _29, _28, _27, _26, _25, _24, _23, _22, _21, _20, _19, _18, _17, _16, _15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1173,7 +1323,7 @@ public:
     }
 
     UINT8X32(uint8_t _0, uint8_t _1, uint8_t _2, uint8_t _3, uint8_t _4, uint8_t _5, uint8_t _6, uint8_t _7, uint8_t _8, uint8_t _9, uint8_t _10, uint8_t _11, uint8_t _12, uint8_t _13, uint8_t _14, uint8_t _15, uint8_t _16, uint8_t _17, uint8_t _18, uint8_t _19, uint8_t _20, uint8_t _21, uint8_t _22, uint8_t _23, uint8_t _24, uint8_t _25, uint8_t _26, uint8_t _27, uint8_t _28, uint8_t _29, uint8_t _30, uint8_t _31) noexcept :
-        v{ _mm256_set_epi8(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31) }
+        v{ _mm256_set_epi8(_31, _30, _29, _28, _27, _26, _25, _24, _23, _22, _21, _20, _19, _18, _17, _16, _15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1246,7 +1396,7 @@ public:
     }
 
     INT16X16(int16_t _0, int16_t _1, int16_t _2, int16_t _3, int16_t _4, int16_t _5, int16_t _6, int16_t _7, int16_t _8, int16_t _9, int16_t _10, int16_t _11, int16_t _12, int16_t _13, int16_t _14, int16_t _15) noexcept :
-        v{ _mm256_set_epi16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) }
+        v{ _mm256_set_epi16(_15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1329,7 +1479,7 @@ public:
     }
 
     UINT16X16(uint16_t _0, uint16_t _1, uint16_t _2, uint16_t _3, uint16_t _4, uint16_t _5, uint16_t _6, uint16_t _7, uint16_t _8, uint16_t _9, uint16_t _10, uint16_t _11, uint16_t _12, uint16_t _13, uint16_t _14, uint16_t _15) noexcept :
-        v{ _mm256_set_epi16(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) }
+        v{ _mm256_set_epi16(_15, _14, _13, _12, _11, _10, _9, _8, _7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1412,7 +1562,7 @@ public:
     }
 
     INT32X8(int32_t _0, int32_t _1, int32_t _2, int32_t _3, int32_t _4, int32_t _5, int32_t _6, int32_t _7) noexcept :
-        v{ _mm256_set_epi32(_0, _1, _2, _3, _4, _5, _6, _7) }
+        v{ _mm256_set_epi32(_7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1490,7 +1640,7 @@ public:
     }
 
     UINT32X8(uint32_t _0, uint32_t _1, uint32_t _2, uint32_t _3, uint32_t _4, uint32_t _5, uint32_t _6, uint32_t _7) noexcept :
-        v{ _mm256_set_epi32(_0, _1, _2, _3, _4, _5, _6, _7) }
+        v{ _mm256_set_epi32(_7, _6, _5, _4, _3, _2, _1, _0) }
     {
     }
 
@@ -1568,7 +1718,7 @@ public:
     }
 
     INT64X4(int64_t _0, int64_t _1, int64_t _2, int64_t _3) noexcept :
-        v{ _mm256_set_epi64x(_0, _1, _2, _3) }
+        v{ _mm256_set_epi64x(_3, _2, _1, _0) }
     {
     }
 
@@ -1641,7 +1791,7 @@ public:
     }
 
     UINT64X4(uint64_t _0, uint64_t _1, uint64_t _2, uint64_t _3) noexcept :
-        v{ _mm256_set_epi64x(_0, _1, _2, _3) }
+        v{ _mm256_set_epi64x(_3, _2, _1, _0) }
     {
     }
 
@@ -2293,6 +2443,16 @@ static inline FLOATX4 acos(const FLOATX4 &a) noexcept
     return _mm_acos_ps(a);
 }
 
+static inline FLOATX4 min(const FLOATX4 &a, const FLOATX4 &b) noexcept
+{
+    return _mm_min_ps(a, b);
+}
+
+static inline FLOATX4 max(const FLOATX4 &a, const FLOATX4 &b) noexcept
+{
+    return _mm_max_ps(a, b);
+}
+
 static inline FLOATX8 pow(const FLOATX8 &a, const FLOATX8 &b) noexcept
 {
     return _mm256_pow_ps(a, b);
@@ -2316,6 +2476,16 @@ static inline FLOATX8 asin(const FLOATX8 &a) noexcept
 static inline FLOATX8 acos(const FLOATX8 &a) noexcept
 {
     return _mm256_acos_ps(a);
+}
+
+static inline FLOATX8 min(const FLOATX8 &a, const FLOATX8 &b) noexcept
+{
+    return _mm256_min_ps(a, b);
+}
+
+static inline FLOATX8 max(const FLOATX8 &a, const FLOATX8 &b) noexcept
+{
+    return _mm256_max_ps(a, b);
 }
 
 static inline FLOATX16 pow(const FLOATX16 &a, const FLOATX16 &b) noexcept
@@ -2343,36 +2513,322 @@ static inline FLOATX16 acos(const FLOATX16 &a) noexcept
     return _mm512_acos_ps(a);
 }
 
+static inline FLOATX16 min(const FLOATX16 &a, const FLOATX16 &b) noexcept
+{
+    return _mm512_min_ps(a, b);
+}
+
+static inline FLOATX16 max(const FLOATX16 &a, const FLOATX16 &b) noexcept
+{
+    return _mm512_max_ps(a, b);
+}
+
+static inline DOUBLEX2 min(const DOUBLEX2 &a, const DOUBLEX2 &b) noexcept
+{
+    return _mm_min_pd(a, b);
+}
+
+static inline DOUBLEX2 max(const DOUBLEX2 &a, const DOUBLEX2 &b) noexcept
+{
+    return _mm_max_pd(a, b);
+}
+
+static inline DOUBLEX4 min(const DOUBLEX4 &a, const DOUBLEX4 &b) noexcept
+{
+    return _mm256_min_pd(a, b);
+}
+
+static inline DOUBLEX4 max(const DOUBLEX4 &a, const DOUBLEX4 &b) noexcept
+{
+    return _mm256_max_pd(a, b);
+}
+
+static inline DOUBLEX8 min(const DOUBLEX8 &a, const DOUBLEX8 &b) noexcept
+{
+    return _mm512_min_pd(a, b);
+}
+
+static inline DOUBLEX8 max(const DOUBLEX8 &a, const DOUBLEX8 &b) noexcept
+{
+    return _mm512_max_pd(a, b);
+}
+
+static inline INT8X16 min(const INT8X16 &a, const INT8X16 &b) noexcept
+{
+    return _mm_min_epi8(a, b);
+}
+
+static inline INT8X16 max(const INT8X16 &a, const INT8X16 &b) noexcept
+{
+    return _mm_max_epi8(a, b);
+}
+
+static inline UINT8X16 min(const UINT8X16 &a, const UINT8X16 &b) noexcept
+{
+    return _mm_min_epi8(a, b);
+}
+
+static inline UINT8X16 max(const UINT8X16 &a, const UINT8X16 &b) noexcept
+{
+    return _mm_max_epi8(a, b);
+}
+
+static inline INT16X8 min(const INT16X8 &a, const INT16X8 &b) noexcept
+{
+    return _mm_min_epi16(a, b);
+}
+
+static inline INT16X8 max(const INT16X8 &a, const INT16X8 &b) noexcept
+{
+    return _mm_max_epi16(a, b);
+}
+
+static inline UINT16X8 min(const UINT16X8 &a, const UINT16X8 &b) noexcept
+{
+    return _mm_min_epi16(a, b);
+}
+
+static inline UINT16X8 max(const UINT16X8 &a, const UINT16X8 &b) noexcept
+{
+    return _mm_max_epi16(a, b);
+}
+
+static inline INT32X4 min(const INT32X4 &a, const INT32X4 &b) noexcept
+{
+    return _mm_min_epi32(a, b);
+}
+
+static inline INT32X4 max(const INT32X4 &a, const INT32X4 &b) noexcept
+{
+    return _mm_max_epi32(a, b);
+}
+
+static inline UINT32X4 min(const UINT32X4 &a, const UINT32X4 &b) noexcept
+{
+    return _mm_min_epi32(a, b);
+}
+
+static inline UINT32X4 max(const UINT32X4 &a, const UINT32X4 &b) noexcept
+{
+    return _mm_max_epi32(a, b);
+}
+
+static inline INT64X2 min(const INT64X2 &a, const INT64X2 &b) noexcept
+{
+    return _mm_min_epi64(a, b);
+}
+
+static inline INT64X2 max(const INT64X2 &a, const INT64X2 &b) noexcept
+{
+    return _mm_max_epi64(a, b);
+}
+
+static inline UINT64X2 min(const UINT64X2 &a, const UINT64X2 &b) noexcept
+{
+    return _mm_min_epi64(a, b);
+}
+
+static inline UINT64X2 max(const UINT64X2 &a, const UINT64X2 &b) noexcept
+{
+    return _mm_max_epi64(a, b);
+}
+
+static inline INT8X32 min(const INT8X32 &a, const INT8X32 &b) noexcept
+{
+    return _mm256_min_epi8(a, b);
+}
+
+static inline INT8X32 max(const INT8X32 &a, const INT8X32 &b) noexcept
+{
+    return _mm256_max_epi8(a, b);
+}
+
+static inline UINT8X32 min(const UINT8X32 &a, const UINT8X32 &b) noexcept
+{
+    return _mm256_min_epi8(a, b);
+}
+
+static inline UINT8X32 max(const UINT8X32 &a, const UINT8X32 &b) noexcept
+{
+    return _mm256_max_epi8(a, b);
+}
+
+static inline INT16X16 min(const INT16X16 &a, const INT16X16 &b) noexcept
+{
+    return _mm256_min_epi16(a, b);
+}
+
+static inline INT16X16 max(const INT16X16 &a, const INT16X16 &b) noexcept
+{
+    return _mm256_max_epi16(a, b);
+}
+
+static inline UINT16X16 min(const UINT16X16 &a, const UINT16X16 &b) noexcept
+{
+    return _mm256_min_epi16(a, b);
+}
+
+static inline UINT16X16 max(const UINT16X16 &a, const UINT16X16 &b) noexcept
+{
+    return _mm256_max_epi16(a, b);
+}
+
+static inline INT32X8 min(const INT32X8 &a, const INT32X8 &b) noexcept
+{
+    return _mm256_min_epi32(a, b);
+}
+
+static inline INT32X8 max(const INT32X8 &a, const INT32X8 &b) noexcept
+{
+    return _mm256_max_epi32(a, b);
+}
+
+static inline UINT32X8 min(const UINT32X8 &a, const UINT32X8 &b) noexcept
+{
+    return _mm256_min_epi32(a, b);
+}
+
+static inline UINT32X8 max(const UINT32X8 &a, const UINT32X8 &b) noexcept
+{
+    return _mm256_max_epi32(a, b);
+}
+
+static inline INT64X4 min(const INT64X4 &a, const INT64X4 &b) noexcept
+{
+    return _mm256_min_epi64(a, b);
+}
+
+static inline INT64X4 max(const INT64X4 &a, const INT64X4 &b) noexcept
+{
+    return _mm256_max_epi64(a, b);
+}
+
+static inline UINT64X4 min(const UINT64X4 &a, const UINT64X4 &b) noexcept
+{
+    return _mm256_min_epi64(a, b);
+}
+
+static inline UINT64X4 max(const UINT64X4 &a, const UINT64X4 &b) noexcept
+{
+    return _mm256_max_epi64(a, b);
+}
+
+static inline INT8X64 min(const INT8X64 &a, const INT8X64 &b) noexcept
+{
+    return _mm512_min_epi8(a, b);
+}
+
+static inline INT8X64 max(const INT8X64 &a, const INT8X64 &b) noexcept
+{
+    return _mm512_max_epi8(a, b);
+}
+
+static inline UINT8X64 min(const UINT8X64 &a, const UINT8X64 &b) noexcept
+{
+    return _mm512_min_epi8(a, b);
+}
+
+static inline UINT8X64 max(const UINT8X64 &a, const UINT8X64 &b) noexcept
+{
+    return _mm512_max_epi8(a, b);
+}
+
+static inline INT16X32 min(const INT16X32 &a, const INT16X32 &b) noexcept
+{
+    return _mm512_min_epi16(a, b);
+}
+
+static inline INT16X32 max(const INT16X32 &a, const INT16X32 &b) noexcept
+{
+    return _mm512_max_epi16(a, b);
+}
+
+static inline UINT16X32 min(const UINT16X32 &a, const UINT16X32 &b) noexcept
+{
+    return _mm512_min_epi16(a, b);
+}
+
+static inline UINT16X32 max(const UINT16X32 &a, const UINT16X32 &b) noexcept
+{
+    return _mm512_max_epi16(a, b);
+}
+
+static inline INT32X16 min(const INT32X16 &a, const INT32X16 &b) noexcept
+{
+    return _mm512_min_epi32(a, b);
+}
+
+static inline INT32X16 max(const INT32X16 &a, const INT32X16 &b) noexcept
+{
+    return _mm512_max_epi32(a, b);
+}
+
+static inline UINT32X16 min(const UINT32X16 &a, const UINT32X16 &b) noexcept
+{
+    return _mm512_min_epi32(a, b);
+}
+
+static inline UINT32X16 max(const UINT32X16 &a, const UINT32X16 &b) noexcept
+{
+    return _mm512_max_epi32(a, b);
+}
+
+static inline INT64X8 min(const INT64X8 &a, const INT64X8 &b) noexcept
+{
+    return _mm512_min_epi64(a, b);
+}
+
+static inline INT64X8 max(const INT64X8 &a, const INT64X8 &b) noexcept
+{
+    return _mm512_max_epi64(a, b);
+}
+
+static inline UINT64X8 min(const UINT64X8 &a, const UINT64X8 &b) noexcept
+{
+    return _mm512_min_epi64(a, b);
+}
+
+static inline UINT64X8 max(const UINT64X8 &a, const UINT64X8 &b) noexcept
+{
+    return _mm512_max_epi64(a, b);
+}
+
 template <class T>
-concept IntrinsicType = requires{
-    {T{}} -> std::convertible_to<FLOATX4>;
-    {T{}} -> std::convertible_to<FLOATX8>;
-    {T{}} -> std::convertible_to<FLOATX16>;
-    {T{}} -> std::convertible_to<DOUBLEX2>;
-    {T{}} -> std::convertible_to<DOUBLEX4>;
-    {T{}} -> std::convertible_to<DOUBLEX8>;
-    {T{}} -> std::convertible_to<INT8X16>;
-    {T{}} -> std::convertible_to<UINT8X16>;
-    {T{}} -> std::convertible_to<INT16X8>;
-    {T{}} -> std::convertible_to<UINT16X8>;
-    {T{}} -> std::convertible_to<INT32X4>;
-    {T{}} -> std::convertible_to<UINT32X4>;
-    {T{}} -> std::convertible_to<INT64X2>;
-    {T{}} -> std::convertible_to<UINT64X2>;
-    {T{}} -> std::convertible_to<INT8X32>;
-    {T{}} -> std::convertible_to<UINT8X32>;
-    {T{}} -> std::convertible_to<INT16X16>;
-    {T{}} -> std::convertible_to<UINT16X16>;
-    {T{}} -> std::convertible_to<INT32X8>;
-    {T{}} -> std::convertible_to<UINT32X8>;
-    {T{}} -> std::convertible_to<INT64X4>;
-    {T{}} -> std::convertible_to<UINT64X4>;
-    {T{}} -> std::convertible_to<INT8X64>;
-    {T{}} -> std::convertible_to<UINT8X64>;
-    {T{}} -> std::convertible_to<INT16X32>;
-    {T{}} -> std::convertible_to<UINT16X32>;
-    {T{}} -> std::convertible_to<INT32X16>;
-    {T{}} -> std::convertible_to<UINT32X16>;
-    {T{}} -> std::convertible_to<INT64X8>;
-    {T{}} -> std::convertible_to<UINT64X8>;
-};
+concept IntrinsicType = (
+    std::is_same_v<T, FLOATX4> ||
+    std::is_same_v<T, FLOATX8> ||
+    std::is_same_v<T, FLOATX16> ||
+    std::is_same_v<T, DOUBLEX2> ||
+    std::is_same_v<T, DOUBLEX4> ||
+    std::is_same_v<T, DOUBLEX8> ||
+    std::is_same_v<T, INT8X16> ||
+    std::is_same_v<T, UINT8X16> ||
+    std::is_same_v<T, INT16X8> ||
+    std::is_same_v<T, UINT16X8> ||
+    std::is_same_v<T, INT32X4> ||
+    std::is_same_v<T, UINT32X4> ||
+    std::is_same_v<T, INT64X2> ||
+    std::is_same_v<T, UINT64X2> ||
+    std::is_same_v<T, INT8X32> ||
+    std::is_same_v<T, UINT8X32> ||
+    std::is_same_v<T, INT16X16> ||
+    std::is_same_v<T, UINT16X16> ||
+    std::is_same_v<T, INT32X8> ||
+    std::is_same_v<T, UINT32X8> ||
+    std::is_same_v<T, INT64X4> ||
+    std::is_same_v<T, UINT64X4> ||
+    std::is_same_v<T, INT8X64> ||
+    std::is_same_v<T, UINT8X64> ||
+    std::is_same_v<T, INT16X32> ||
+    std::is_same_v<T, UINT16X32> ||
+    std::is_same_v<T, INT32X16> ||
+    std::is_same_v<T, UINT32X16> ||
+    std::is_same_v<T, INT64X8> ||
+    std::is_same_v<T, UINT64X8>
+);
+
+template <IntrinsicType T>
+static inline T clip(const T &a, const T &b, const T &c) noexcept
+{
+    return min(max(a, b), c);
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include "Log.h"
 
 namespace Immortal
 {
@@ -99,6 +100,25 @@ private:
     Clock::time_point start;
     Clock::time_point lap;
     Clock::time_point previousTick;
+};
+
+struct Profiler
+{
+
+    Profiler(const char *msg = "") : start{clock()}, end{0}
+    {
+        LOG::INFO("-> {0}", msg);
+    }
+
+    ~Profiler()
+    {
+        end = clock();
+        double duration = ((double)end - (double)start) / CLOCKS_PER_SEC;
+        LOG::INFO("<- {} (ms), {} (s)", end - start, duration);
+    }
+
+    time_t start;
+    time_t end;
 };
 
 }

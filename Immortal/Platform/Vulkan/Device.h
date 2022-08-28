@@ -66,7 +66,7 @@ public:
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
         {
             std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex };
-            destroyCoroutine.queues[destroyCoroutine.working].push([=]() -> void {
+            destroyCoroutine.queues[destroyCoroutine.working].push([=, this]() -> void {
                 (*wrapper)();
                 });
         }
@@ -123,7 +123,7 @@ public:
         if (object != VK_NULL_HANDLE) \
         { \
             std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex }; \
-            destroyCoroutine.queues[destroyCoroutine.working].push([=]{ \
+            destroyCoroutine.queues[destroyCoroutine.working].push([=, this]{ \
                 vkDestroy##T(handle, object, pAllocator); \
             }); \
         } \

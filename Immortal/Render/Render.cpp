@@ -1,5 +1,6 @@
 #include "Render.h"
 #include "Render2D.h"
+#include "Framework/Timer.h"
 
 namespace Immortal
 {

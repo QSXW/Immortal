@@ -174,8 +174,6 @@ private:
 
     Rect windowBounds;
 
-    ErrorHandle error;
-
 public:
     static Device *UnlimitedDevice;
 

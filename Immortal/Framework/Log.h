@@ -65,48 +65,4 @@ private:
     static std::shared_ptr<spdlog::logger> logger;
 };
 
-struct Profiler
-{
-
-Profiler(const char *msg = "") :
-    start{ clock() },
-    end{ 0 }
-{
-    LOG::INFO("-> {0}", msg);
-}
-
-~Profiler()
-{
-    end = clock();
-    double duration = ((double)end - (double)start) / CLOCKS_PER_SEC;
-    LOG::INFO("<- {0} (s)", duration);
-}
-
-time_t start;
-time_t end;
-
-};
-
-struct ErrorHandle
-{
-public:
-    void Upload(const std::string &s)
-    {
-        buffer.append(s);
-    }
-
-    const std::string &Retrieve() const
-    {
-        return buffer;
-    }
-
-    const char *Raw()
-    {
-        return buffer.c_str();
-    }
-
-private:
-    std::string buffer;
-};
-
 }

@@ -108,7 +108,7 @@ class Async
 public:
     static void Setup()
     {
-        Profiler p{ "Initializing Asynchronous Library" };
+        LOG::INFO("Initializing Asynchronous Library");
         threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
     }
 
