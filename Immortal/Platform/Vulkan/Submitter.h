@@ -9,6 +9,12 @@ namespace Immortal
 namespace Vulkan
 {
 
+struct Timeline
+{
+    VkSemaphore semaphore;
+    uint64_t value;
+};
+
 struct TimelineSubmitter
 {
     TimelineSubmitter() :

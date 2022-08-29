@@ -19,7 +19,21 @@ DescriptorSet::DescriptorSet(const VkDescriptorSet other)
 
 DescriptorSet::~DescriptorSet()
 {
+    if (handle)
+    {
+        struct
+        {
+            Device *device = nullptr;
+            VkDescriptorSet handle = VK_NULL_HANDLE;
+        } dpack {
+            device,
+            handle
+        };
 
+        device->DestroyAsync([=]() {
+            dpack.device->FreeDescriptorSet(dpack.handle);
+            });
+    }
 }
 
 void DescriptorSet::Update(VkWriteDescriptorSet *desc)

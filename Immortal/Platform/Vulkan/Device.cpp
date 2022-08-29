@@ -232,7 +232,7 @@ Device::~Device()
     transfer.Reset();
     commandPool.reset();
     fencePool.reset();
-    descriptorPool.reset();
+    descriptorPool->Destroy();
 
     for (auto &queue : destroyCoroutine.queues)
     {
@@ -243,6 +243,8 @@ Device::~Device()
             func();
         }
     }
+
+    descriptorPool.reset();
 
     if (memoryAllocator != VK_NULL_HANDLE)
     {
@@ -356,10 +358,7 @@ VkResult Device::AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorS
 
 void Device::FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size)
 {
-    if (pDescriptorSets != nullptr)
-    {
-        descriptorPool->Free(pDescriptorSets, size);
-    }
+    descriptorPool->Free(pDescriptorSets, size);
 }
 
 }

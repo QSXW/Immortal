@@ -21,9 +21,20 @@ DescriptorPool::DescriptorPool(Device *device, const std::vector<VkDescriptorPoo
 
 DescriptorPool::~DescriptorPool()
 {
+    Destroy();
+}
+
+void DescriptorPool::Destroy()
+{
     for (auto &handle : handles)
     {
         device->DestroyAsync(handle);
+    }
+    handles.clear();
+
+    while (!cache.empty())
+    {
+        cache.pop();
     }
 }
 
@@ -54,7 +65,13 @@ VkResult DescriptorPool::Allocate(const VkDescriptorSetLayout *pDescriptorSetLay
 
 void DescriptorPool::Free(VkDescriptorSet *pDescriptorSet, uint32_t size)
 {
-
+    if (!handles.empty())
+    {
+        for (size_t i = 0; i < size; i++)
+        {
+            cache.push(pDescriptorSet[i]);
+        }
+    }
 }
 
 void DescriptorPool::Reset()
@@ -77,8 +94,19 @@ VkDescriptorPool DescriptorPool::Create()
     return handle;
 }
 
-VkResult DescriptorPool::AllocateInternal(const VkDescriptorSetLayout * pDescriptorSetLayout, VkDescriptorSet * pDescriptorSet, uint32_t count)
+VkResult DescriptorPool::AllocateInternal(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSet, uint32_t count)
 {
+    if (count < cache.size())
+    {
+        for (uint32_t i = 0; i < count; i++)
+        {
+            pDescriptorSet[i] = cache.front();
+            cache.pop();
+        }
+
+        return VK_SUCCESS;
+    }
+
     VkDescriptorSetAllocateInfo createInfo{};
     createInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     createInfo.descriptorPool     = handles.back();

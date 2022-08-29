@@ -17,6 +17,8 @@ class DescriptorPool
 public:
     static constexpr uint32_t MaxSetsPerPool = 1000;
 
+    using Primitive = VkDescriptorPool;
+
 public:
     DescriptorPool(Device *device, const DescriptorSetLayout &layout, uint32_t poolSize = MaxSetsPerPool);
 
@@ -30,12 +32,14 @@ public:
 
     void Reset();
 
-    VkDescriptorPool Handle() const
+    void Destroy();
+
+    Primitive Handle() const
     {
         return handles.back();
     }
 
-    operator VkDescriptorPool() const
+    operator Primitive() const
     {
         return Handle();
     }
@@ -51,6 +55,8 @@ protected:
     std::vector<VkDescriptorPool> handles{ VK_NULL_HANDLE };
 
     std::vector<VkDescriptorPoolSize> poolSize;
+
+    std::queue<VkDescriptorSet> cache;
 
     uint32_t allocatedCount = 0;
 };

@@ -91,8 +91,13 @@ void Renderer::PrepareFrame()
 
 void Renderer::Resize()
 {
+    device->WaitAndReset(fences.data(), fences.size());
+    for (auto &f : fences) 
+    {
+        device->Discard(&f);
+        f = nullptr;
+    }
     swapchain = context->UpdateSurface();
-    device->Wait();
 }
 
 void Renderer::SubmitFrame()
@@ -197,6 +202,7 @@ void Renderer::SwapBuffers()
 void Renderer::Begin(RenderTarget::Super *superRenderTarget)
 {
     auto renderTarget = dynamic_cast<RenderTarget *>(superRenderTarget);
+    renderTarget->IssueTimeline({timelineSemaphore, syncValues[sync] + 3});
 
     context->Submit([&](CommandBuffer *cmdbuf) {
         auto &desc = renderTarget->Desc();

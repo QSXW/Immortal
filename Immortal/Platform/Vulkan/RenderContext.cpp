@@ -155,7 +155,6 @@ Swapchain *RenderContext::UpdateSurface()
     }
     if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
     {
-        device->Wait();
         surfaceExtent = properties.currentExtent;
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
     }

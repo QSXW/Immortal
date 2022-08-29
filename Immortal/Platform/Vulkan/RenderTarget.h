@@ -7,6 +7,7 @@
 #include "Attachment.h"
 #include "DescriptorSet.h"
 #include "Framebuffer.h"
+#include "Submitter.h"
 
 namespace Immortal
 {
@@ -116,6 +117,11 @@ public:
         desc.Height = extent.height;
     }
 
+    void IssueTimeline(const Timeline &value)
+    { 
+        timeline = value;
+    }
+
 public:
     virtual operator uint64_t() const override;
 
@@ -148,6 +154,8 @@ private:
     } attachments;
 
     std::vector<std::unique_ptr<Image>> stagingImages;
+
+    Timeline timeline;
 };
 
 }

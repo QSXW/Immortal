@@ -257,10 +257,7 @@ void RenderTarget::SetupDescriptor()
     }
     descriptor->Update(sampler, *attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    if (!descriptorSet)
-    {
-        descriptorSet = new DescriptorSet{ device, RenderContext::DescriptorSetLayout };
-    }
+    descriptorSet = new DescriptorSet{ device, RenderContext::DescriptorSetLayout };
     descriptorSet->Update(*descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
@@ -274,7 +271,6 @@ void RenderTarget::Resize(uint32_t x, uint32_t y)
     desc.Width  = x;
     desc.Height = y;
 
-    device->Wait();
     Create();
 }
 
@@ -301,7 +297,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     region.dstOffset      = VkOffset3D{ 0, 0, 0 };
     region.dstSubresource = subresourceLayers;
 
-    device->Wait();
+    device->Wait(&timeline.semaphore, &timeline.value);
     device->TransferAsync([&](CommandBuffer *copyCmdBuf) -> void {
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;

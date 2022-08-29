@@ -41,10 +41,6 @@ public:
 
     ~Device();
 
-    VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets);
-
-    void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1);
-
     uint32_t QueueFailyIndex(VkQueueFlagBits queueFlag);
 
     uint32_t QueueFailyIndex(Queue::Type type)
@@ -273,6 +269,15 @@ public:
         {
             return *commandPool;
         }
+    }
+
+    VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets);
+
+    void FreeDescriptorSet(VkDescriptorSet *pDescriptorSets, uint32_t size = 1);
+
+    void FreeDescriptorSet(VkDescriptorSet descriptorSet)
+    {
+        FreeDescriptorSet(&descriptorSet, 1);
     }
 
     VkResult Wait()
