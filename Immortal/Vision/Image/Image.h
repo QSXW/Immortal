@@ -3,6 +3,7 @@
 #include "Vision/Common/Error.h"
 #include "Vision/Interface/Codec.h"
 
+#include "Helper.h"
 #include "BMP.h"
 #include "STBCodec.h"
 #include "OpenCVCodec.h"

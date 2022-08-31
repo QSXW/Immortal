@@ -3,7 +3,7 @@
 layout(location = 0) in vec3 inPos;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out flat int  objectID;
+layout(location = 1) out flat int outObjectID;
 
 layout (binding = 0) uniform Transform
 {
@@ -26,7 +26,8 @@ void main()
 {
 	gl_Position = ubo.viewProjection * model.transform * vec4(inPos, 1.0);
     outColor    = model.color;
-
+    outObjectID = model.objectID;
+    
 #if VULKAN
 	gl_Position.y = -gl_Position.y;
 #endif

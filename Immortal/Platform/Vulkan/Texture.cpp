@@ -125,7 +125,7 @@ void Texture::InternalUpdate(const void *data, uint32_t pitchX)
     uint32_t layers = LayerCount();
     VkBufferImageCopy bufferCopyRegion{};
     bufferCopyRegion.bufferOffset                    = 0;
-    bufferCopyRegion.bufferRowLength                 = pitchX;
+    bufferCopyRegion.bufferRowLength                 = 0;
     bufferCopyRegion.bufferImageHeight               = 0;
     bufferCopyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     bufferCopyRegion.imageSubresource.mipLevel       = 0;

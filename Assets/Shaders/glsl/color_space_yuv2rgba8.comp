@@ -6,17 +6,6 @@
 
 #version 450 core
 
-layout (binding = 0) uniform sampler2D InputImage0;
-layout (binding = 1) uniform sampler2D InputImage1;
-layout (binding = 2) uniform sampler2D InputImage2;
-layout (binding = 3, rgba8) restrict uniform writeonly image2D OutputImage;
-
-layout (push_constant) uniform Properties
-{
-    int ColorSpace;
-    int _10Bits;
-} uProperties;
-
 mat3 T_MAT3 = mat3(
     1.0f,      0.0f,    1.402f,
     1.0f, -0.34414f, -0.71414f,
@@ -56,6 +45,17 @@ mat4 T_MAT4_BT709_FULL_RANGE = mat4(
     1.00000000e+00,  1.85560969e+00,  1.05739981e-04, -9.27857713e-01,
     0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
 );
+
+layout (binding = 0) uniform sampler2D InputImage0;
+layout (binding = 1) uniform sampler2D InputImage1;
+layout (binding = 2) uniform sampler2D InputImage2;
+layout (binding = 3, rgba8) restrict uniform writeonly image2D OutputImage;
+
+layout (push_constant) uniform Properties
+{
+    int ColorSpace;
+    int _10Bits;
+} uProperties;
 
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 void main()

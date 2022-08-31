@@ -40,12 +40,10 @@ public:
     }
 
     template <class T>
+	requires std::is_same_v<IDXGIFactory4, T>
     T *GetAddress() const
     {
-        if (IsPrimitiveOf<IDXGIFactory4, T>())
-        {
-            return dxgiFactory;
-        }
+        return dxgiFactory;
     }
 
 #define DEFINE_CRETE_FUNC(U, T, O) \

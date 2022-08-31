@@ -104,12 +104,55 @@ public:
         return options;
     }
 
+    static const char *GetHardwareDecoderNameById(const AVCodecID id)
+    {
+        switch (id)
+        {
+        case AV_CODEC_ID_H264:
+            return "h264_cuvid";
+
+        case AV_CODEC_ID_HEVC:
+            return "hevc_cuvid";
+
+        case AV_CODEC_ID_AV1:
+			return "av1_nvdec";
+
+        case AV_CODEC_ID_MJPEG:
+			return "mjpeg_nvdec";
+
+        case AV_CODEC_ID_MPEG4:
+			return "mpeg4_nvdec";
+
+        case AV_CODEC_ID_MPEG1VIDEO:
+			return "mpeg1_nvdec";
+
+        case AV_CODEC_ID_MPEG2VIDEO:
+			return "mpeg2_nvdec";
+
+        case AV_CODEC_ID_VC1:
+			return "vc1_nvdec";
+
+        case AV_CODEC_ID_WMV3:
+			return "wmv3_nvdec";
+
+        case AV_CODEC_ID_VP8:
+			return "vp8_nvdec";
+
+        case AV_CODEC_ID_VP9:
+			return "vp9_nvdec";
+
+        default:
+            return nullptr;
+        }
+    }
+
     int OpenStream(FFCodec *ffCodec, MediaType type)
     {
         int ret = 0;
         auto stream = handle->streams[GetIndex(type)];
 
-        auto codec = avcodec_find_decoder(stream->codecpar->codec_id);
+        auto name = GetHardwareDecoderNameById(stream->codecpar->codec_id);
+        auto codec = !name ? avcodec_find_decoder(stream->codecpar->codec_id) : avcodec_find_decoder_by_name(name);
         if (!codec)
         {
             LOG::ERR("There is not suitable codec for {}", handle->url);

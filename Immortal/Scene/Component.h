@@ -200,6 +200,8 @@ struct SpriteRendererComponent : public Component
     struct Extension : public IObject
     {
         Ref<Image> input[3];
+
+		Format chromaFormat;
     };
 
     SpriteRendererComponent()

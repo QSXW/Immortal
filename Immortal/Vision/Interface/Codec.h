@@ -92,7 +92,7 @@ struct Picture
         desc{ uint32_t(width), uint32_t(height), format },
         pts{}
     {
-        if (format == Format::YUV420P || format == Format::YUV422P || format == Format::YUV444P || format == Format::YUV420P10 || format == Format::YUV422P10)
+		if (desc.format.IsType(Format::YUV))
         {
             extension = new PictureExtension;
         }

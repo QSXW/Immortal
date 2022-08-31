@@ -95,7 +95,7 @@ struct DescriptorSetUpdater
     {
         for (auto &writeDescriptor : WriteDescriptorSets)
         {
-            if (!writeDescriptor.pImageInfo && !writeDescriptor.pBufferInfo)
+			if (writeDescriptor.sType == VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET && !writeDescriptor.pImageInfo && !writeDescriptor.pBufferInfo)
             {
                 LOG::WARN<false>("There is a(n) \"{0}\" binding on slot \"{1}\" but no input yet",
                     writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ? 

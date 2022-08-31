@@ -297,7 +297,6 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     region.dstOffset      = VkOffset3D{ 0, 0, 0 };
     region.dstSubresource = subresourceLayers;
 
-    device->Wait(&timeline.semaphore, &timeline.value);
     device->TransferAsync([&](CommandBuffer *copyCmdBuf) -> void {
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;

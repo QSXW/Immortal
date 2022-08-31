@@ -10,7 +10,8 @@ set(GLSL_FILES
     Basic3D.frag
     Basic3D.vert
     ColorMixing.comp
-    ColorSpace.comp
+    color_space_nv122rgba8.comp
+    color_space_yuv2rgba8.comp
     Equirect2Cube.comp
     GaussianBlur.comp
     Outline.frag

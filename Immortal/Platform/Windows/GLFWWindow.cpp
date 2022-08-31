@@ -67,7 +67,7 @@ void GLFWWindow::Setup(const Description &description)
 {
     desc = description;
 
-    LOG::INFO("Creating window {0} ({1}, {2})", desc.Title, desc.Width, desc.Height);
+    LOG::INFO("Creating window {} ({}, {})", desc.Title, desc.Width, desc.Height);
 
     if (GLFWWindowCount == 0)
     {

@@ -1,0 +1,76 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
+#version 450 core
+
+mat3 T_MAT3 = mat3(
+    1.0f,      0.0f,    1.402f,
+    1.0f, -0.34414f, -0.71414f,
+    1.0f,    1.772f,      0.0f
+);
+
+mat3 T_MAT3_BT709 = mat3(
+    1.0f,     0.0f,  1.5748f,
+    1.0f, -0.1873f, -0.4681f,
+    1.0f,  1.8556f,     0.0f
+);
+
+mat4 T_MAT4 = mat4(
+    1.00000000e+00, -1.21889419e-06,  1.40199959e+00, -7.63744283e-01,
+    1.00000000e+00, -3.44135678e-01, -7.14136156e-01,  4.66390819e-01,
+    1.00000000e+00,  1.77200007e+00,  4.06298063e-07, -9.48745334e-01,
+    0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
+);
+
+mat4 T_MAT4_FULL_RANGE = mat4(
+   1.00000000e+00, -1.21889419e-06,  1.40199959e+00, -7.00999185e-01,
+   1.00000000e+00, -3.44135678e-01, -7.14136156e-01,  5.29135917e-01,
+   1.00000000e+00,  1.77200007e+00,  4.06298063e-07, -8.86000236e-01,
+   0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
+);
+
+mat4 T_MAT4_BT709 = mat4(
+    1.00000000e+00, -1.51500715e-04,  1.57476528e+00, -8.50051986e-01,
+    1.00000000e+00, -1.87280216e-01, -4.68124625e-01,  2.64957323e-01,
+    1.00000000e+00,  1.85560969e+00,  1.05739981e-04, -9.90602811e-01,
+    0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
+);
+
+mat4 T_MAT4_BT709_FULL_RANGE = mat4(
+    1.00000000e+00, -1.51500715e-04,  1.57476528e+00, -7.87306888e-01,
+    1.00000000e+00, -1.87280216e-01, -4.68124625e-01,  3.27702421e-01,
+    1.00000000e+00,  1.85560969e+00,  1.05739981e-04, -9.27857713e-01,
+    0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
+);
+
+layout (binding = 0) uniform sampler2D InputImage0;
+layout (binding = 1) uniform sampler2D InputImage1;
+layout (binding = 2, rgba8) restrict uniform writeonly image2D OutputImage;
+
+layout (push_constant) uniform Properties
+{
+    int ColorSpace;
+    int _10Bits;
+} uProperties;
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+void main()
+{
+    const ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    const ivec2 size = imageSize(OutputImage);
+
+    vec4 pixel = vec4(0, 0, 0, 1.0f);
+    vec2 uv = vec2(pos) / vec2(size);
+
+    pixel.x = texture(InputImage0, uv).r;
+    pixel.yz = texture(InputImage1, uv).rg;
+
+    vec4 res = vec4(0, 0, 0, 1);
+    res = pixel  * T_MAT4_BT709;
+
+    imageStore(OutputImage, pos, res);
+}
+

@@ -35,16 +35,19 @@ Application::Application(const Window::Description &description) :
 
     scriptEngine = new ScriptEngine{ description.Title, R"(C:\Users\qsxw\source\repos\ConsoleApp2\ConsoleApp2\bin\Debug\net6.0\ConsoleApp2.dll)" };
 
-    Async::Execute([&](){
-        gui = context->CreateGuiLayer();
-        gui->OnAttach();
-        timer.Start();
-    });
+    if (Render::API == Render::Type::OpenGL)
+    {
+		Render::Setup(context.get());
+    }
+    else
+    {
+		Async::Execute([&]() { Render::Setup(context.get()); timer.Start(); });
+    }
 
-    Render::Setup(context.get());
+	gui = context->CreateGuiLayer();
+	gui->OnAttach();
 
-    Async::Wait();
-
+	Async::Wait();
     window->Show();
 }
 

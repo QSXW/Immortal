@@ -23,7 +23,7 @@ public:
 
 	void OnAttach()
 	{
-		renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth } } });
+		renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth32F } } });
 		texture = Render::Preset()->Textures.White;
 
 		image->Width(1920).Height(1080).Descriptor(*texture);

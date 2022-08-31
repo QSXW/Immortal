@@ -15,6 +15,21 @@ using DXGI_FORMAT = int;
 namespace Immortal
 {
 
+constexpr uint32_t BITS(uint32_t a, uint32_t b)
+{
+	return a | b;
+}
+
+constexpr uint32_t BITS(uint32_t a, uint32_t b, uint32_t c)
+{
+	return a | b | c;
+}
+
+constexpr uint32_t BITS(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+	return a | b | c | d;
+}
+
 /**
  * @brief: FLOAT here represents 32-bits floating points
  *         INT represents 32-bits signed integers
@@ -22,50 +37,58 @@ namespace Immortal
 struct Format
 {
 public:
-    enum ValueType : uint32_t
-    {
-        R8G8B8A8_UNORM = 0,
-        R8G8B8A8_SRGB = 1,
-        INT = 0,
-        IVECTOR2,
-        IVECTOR3,
-        IVECTOR4,
-        FLOAT,
-        VECTOR2,
-        VECTOR3,
-        VECTOR4,
-        COLOUR = VECTOR4,
-        MATRIX4,
-        R8,
-        R16,
-        R16F,
-        R32,
-        R32F,
-        RG8,
-        RG16,
-        RG16F,
-        RG32,
-        RG32F,
-        RGB8,
-        RGB32,
-        RGB32F,
-        RGBA8,
-        RGBA16,
-        RGBA16F,
-        RGBA32,
-        RGBA32F,
-        BGRA8,
-        SRGB,
-        Depth32F,
-        Depth24Stencil8,
-        YUV420P,
-        YUV422P,
-        YUV444P,
-        YUV420P10,
-        YUV422P10,
-        YUV444P10,
-        Depth = Depth32F,
-        None
+	enum ValueType : uint32_t
+	{
+		None = 0,
+		INT,
+		IVECTOR2,
+		IVECTOR3,
+		IVECTOR4,
+		FLOAT,
+		VECTOR2,
+		VECTOR3,
+		VECTOR4,
+		COLOUR = VECTOR4,
+		MATRIX4,
+		R8,
+		R16,
+		R16F,
+		R32,
+		R32F,
+		RG8,
+		RG16,
+		RG16F,
+		RG32,
+		RG32F,
+		RGB8,
+		RGB32,
+		RGB32F,
+		RGBA8,
+		RGBA16,
+		RGBA16F,
+		RGBA32,
+		RGBA32F,
+		BGRA8,
+		SRGB,
+		Depth32F,
+		Depth24Stencil8,
+
+		YUV     = BIT(10),
+		NV      = BIT(11),
+		_10Bits = BIT(12),
+		_16Bits = BIT(13),
+
+		YUV420P = BITS(YUV, 1),
+		YUV422P = BITS(YUV, 2),
+		YUV444P = BITS(YUV, 3),
+
+		YUV420P10 = BITS(YUV, _10Bits, 1),
+		YUV422P10 = BITS(YUV, _10Bits, 2),
+		YUV444P10 = BITS(YUV, _10Bits, 3),
+
+		NV12   = BITS(YUV, NV, 1),
+		P010LE = BITS(YUV, NV, _10Bits, 1),
+		P016LE = BITS(YUV, NV, _16Bits, 1),
     };
 
     Format() :
@@ -80,9 +103,24 @@ public:
 
     }
 
+    bool IsType(const Format other) const
+    {
+		return (other & v) != Format::None;
+    }
+
     operator ValueType() const
     {
         return v;
+    }
+
+    Format operator&(const ValueType other) const
+	{
+		return Format(ValueType(other & v));
+	}
+
+    Format operator &(const Format other) const
+    {
+		return Format(ValueType(other.v & v));
     }
 
     int ComponentCount() const;
@@ -144,6 +182,7 @@ using bfloat = uint16_t;
 #define FS_C(T, CC) (sizeof(T)), CC
 
 static inline FormatElement FormatElementTable[] = {
+    { Format::None,            VK_FORMAT_UNDEFINED,           DXF(DXGI_FORMAT_UNKNOWN            ),  GL_INVALID_ENUM,      FS_C(int,      0)     },
     { Format::INT,             VK_FORMAT_R32_SINT,            DXF(DXGI_FORMAT_R32_SINT           ),  GL_INT,               FS_C(int,      1)     },
     { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,         DXF(DXGI_FORMAT_R32G32_SINT        ),  GL_INT,               FS_C(int,      2)     },
     { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,      DXF(DXGI_FORMAT_R32G32B32_SINT     ),  GL_INT,               FS_C(int,      3)     },

@@ -6,6 +6,7 @@ namespace Immortal
 {
 
 Ref<ComputePipeline> Pipelines::ColorSpace;
+Ref<ComputePipeline> Pipelines::ColorSpaceNV122RGBA8;
 
 std::unique_ptr<Renderer> Render::renderer;
 
@@ -23,7 +24,8 @@ const Shader::Properties Render::ShaderProperties[] = {
     { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
     { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
     { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
-    { "ColorSpace",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "color_space_yuv2rgba8",  U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "color_space_nv122rgba8", U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
     { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
@@ -59,14 +61,15 @@ void Render::Setup(RenderContext *context)
         }
     }
 
-    Pipelines::ColorSpace = Create<ComputePipeline>(GetShader("ColorSpace"));
+    Pipelines::ColorSpace = Create<ComputePipeline>(GetShader("color_space_yuv2rgba8"));
+	Pipelines::ColorSpaceNV122RGBA8 = Create<ComputePipeline>(GetShader("color_space_nv122rgba8"));
 
     data.Target = Render::CreateRenderTarget({
         viewport,
         {
-            { Format::RGBA8 },
-            { Format::R32   },
-            { Format::Depth }
+            { Format::RGBA8    },
+            { Format::R32      },
+            { Format::Depth32F }
         }
         });
 
@@ -93,6 +96,8 @@ void Render::Setup(Ref<RenderTarget> &renderTarget)
 void Render::Release()
 {
     Pipelines::ColorSpace.Reset();
+	Pipelines::ColorSpaceNV122RGBA8.Reset();
+
     data.Textures.White.Reset();
     data.Textures.Black.Reset();
     data.Textures.Transparent.Reset();

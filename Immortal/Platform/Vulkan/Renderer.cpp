@@ -48,7 +48,6 @@ void Renderer::Setup()
 
 void Renderer::PrepareFrame()
 {
-    LOG::INFO("PrepareFrame");
     VkResult ret = VK_SUCCESS;
     if (!swapchain)
     {
@@ -69,7 +68,6 @@ void Renderer::PrepareFrame()
     syncValues[sync] = lastSync;
     if (fences[sync] != VK_NULL_HANDLE)
     {
-        LOG::INFO("Wait Fence={}", (void*)fences[sync]);
         device->WaitAndReset(&fences[sync]);
     }
     else
@@ -116,10 +114,7 @@ void Renderer::SubmitFrame()
 }
 
 void Renderer::SwapBuffers()
-{
-    LOG::INFO("SwapBuffers");
-    LOG::INFO("queue={}, sync={}, semaphore={}, fence={}", (void*)queue->Handle(), sync, (void*)semaphores[sync].renderComplete, (void*)fences[sync]);
-    
+{   
     uint64_t signalValues[3] = { 0 };
 
     {

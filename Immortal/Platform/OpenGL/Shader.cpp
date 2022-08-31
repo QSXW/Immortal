@@ -60,14 +60,14 @@ void Shader::Link(const std::vector<GLuint> &shaders)
     if (status == GL_FALSE)
     {
         GLint maxLength = 0;
-        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &status);
+		glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &maxLength);
 
         std::vector<GLchar> error;
         error.resize(maxLength);
         glGetProgramInfoLog(handle, maxLength, &maxLength, error.data());
 
-        LOG::ERR("Shader program link failure!");
-        LOG::ERR("{0}", error.data());
+        LOG::ERR("ShaderProgram::{} link failure!", name);
+        LOG::ERR("{}", error.data());
     }
 
     for (auto &shader : shaders)
@@ -84,7 +84,7 @@ uint32_t Shader::CompileShader(GLenum type, const char *src)
     glShaderSource(shader, 1, &src, 0);
     glCompileShader(shader);
 
-    GLint isCompiled = 0;
+    GLint isCompiled = GL_TRUE;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
     if (isCompiled == GL_FALSE)
     {

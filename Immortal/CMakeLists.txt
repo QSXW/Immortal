@@ -364,6 +364,7 @@ set(LOOKUP_TABLE_FILE
     Vision/LookupTable/LookupTable.h)
 
 set(IMAGE_CODEC_FILES
+    Vision/Image/Helper.h
     Vision/Image/BMP.cpp
     Vision/Image/BMP.h
     Vision/Image/Image.h

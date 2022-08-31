@@ -3,9 +3,9 @@
 #include "Framework/Application.h"
 #include "Common.h"
 
-#include <GLFW/glfw3.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <GLFW/glfw3.h>
 
 namespace Immortal
 {
@@ -52,7 +52,6 @@ void GuiLayer::OnGuiRender()
 void GuiLayer::Begin()
 {
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
     Super::Begin();

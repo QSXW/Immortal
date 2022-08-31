@@ -101,10 +101,10 @@ public:
 
         bool IsDepth() const
         {
-            return format == Format::Depth || format == Format::Depth24Stencil8;
+            return format == Format::Depth32F || format == Format::Depth24Stencil8;
         }
 
-        Format format = Format::R8G8B8A8_UNORM;
+        Format format = Format::RGBA8;
         Wrap   wrap   = Wrap::Clamp;
         Filter filter = Filter::Nearest;
         Type   type   = Type::Texture2D;

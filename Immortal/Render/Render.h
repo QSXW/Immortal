@@ -17,6 +17,8 @@ struct Pipelines
 
 static Ref<ComputePipeline> ColorSpace;
 
+static Ref<ComputePipeline> ColorSpaceNV122RGBA8;
+
 };
 
 

@@ -18,7 +18,7 @@ public:
         texture = Render::Preset()->Textures.White;
         texture2 = Render::Preset()->Textures.White;
         pipeline = Render::Create<GraphicsPipeline>(Render::GetShader("Basic"));
-        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth } }});
+        renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ Vector2{ 1920, 1080 }, { { Format::RGBA8 }, { Format::Depth32F } }});
 
         auto &triangle = DataSet::Classic::Triangle;
         pipeline->Set(Render::Create<Buffer>(triangle.Vertices(), Buffer::Type::Vertex) );

@@ -63,24 +63,26 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 
 static inline Format FormatConverter(AVPixelFormat v)
 {
-    Format ret = Format::YUV420P;
     switch (v)
     {
     case AV_PIX_FMT_YUV420P10LE:
-        ret = Format::YUV420P10;
-        break;
-    case AV_PIX_FMT_YUV422P10LE:
-        ret = Format::YUV422P10;
-        break;
-    case AV_PIX_FMT_YUV444P10:
-        ret = Format::YUV444P10;
-        break;
-    default:
-        ret = Format::YUV420P;
-        break;
-    }
+		return Format::YUV420P10;
 
-    return ret;
+    case AV_PIX_FMT_YUV422P10LE:
+		return Format::YUV422P10;
+
+    case AV_PIX_FMT_YUV444P10LE:
+		return Format::YUV444P10;
+
+	case AV_PIX_FMT_NV12:
+		return Format::NV12;
+
+    case AV_PIX_FMT_P010LE:
+		return Format::P010LE;
+
+    default:
+        return Format::YUV420P;
+    }
 }
 
 FFCodec::FFCodec()
@@ -160,6 +162,7 @@ void FFCodec::SetCodecContext(const AVCodec *codec, const AVCodecParameters *par
 
     AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
     av_dict_set(opts, "threads", "auto", 0);
+    av_dict_set(opts, "vsync", "1", 0);
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");
