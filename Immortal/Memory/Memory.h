@@ -64,16 +64,8 @@ private:
 
 }
 
-#if SLDEBUG
-inline void *operator new(size_t size)
-{
-    auto &allocator = Immortal::MemoryAllocator::Primary;
-    return allocator.Allocate(size);
-}
+#ifdef _DEBUG
+void *operator new(size_t size);
 
-inline void operator delete(void *ptr)
-{
-    auto &allocator = Immortal::MemoryAllocator::Primary;
-    allocator.Free(ptr);
-}
+void operator delete(void *ptr);
 #endif

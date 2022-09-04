@@ -65,7 +65,7 @@ public:
         return new Buffer{ U32(size), type };
     }
 
-    virtual Pipeline::Super *CreateGraphicsPipeline(Ref<SuperShader> shader)
+    virtual Pipeline::Super *CreateGraphicsPipeline(Ref<SuperShader> shader) override
     {
         return new Pipeline{ shader };
     }

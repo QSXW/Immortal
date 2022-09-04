@@ -74,7 +74,7 @@ Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
 Buffer::Buffer(const Buffer *host, const BindInfo &bindInfo) :
     Super{ bindInfo.type, bindInfo.size }
 {
-    THROWIF(!(bindInfo.type & host->type), "The type requested is not one of host buffer")
+    THROWIF(!(bindInfo.type & host->type), "The type requested is not one of host buffer");
     descriptor.buffer = host->descriptor.buffer;
     descriptor.offset = bindInfo.offset;
     descriptor.range  = bindInfo.size;

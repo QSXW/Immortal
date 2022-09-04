@@ -5,9 +5,9 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "Core.h"
 #include "volk.h"
 #include "vk_mem_alloc.h"
-#include "Core.h"
 
 namespace Immortal
 {
@@ -147,6 +147,7 @@ inline const char *Stringify(VkResult err)
         VK_CASE(VK_OPERATION_DEFERRED_KHR)
         VK_CASE(VK_OPERATION_NOT_DEFERRED_KHR)
         VK_CASE(VK_PIPELINE_COMPILE_REQUIRED_EXT)
+        VK_CASE(VK_RESULT_MAX_ENUM)
     }
     return "";
 }
@@ -172,7 +173,7 @@ inline const std::string Stringify(VkSurfaceFormatKHR surfaceFormat)
     return surfaceFormatString;
 }
 
-#if defined( DEBUG ) || defined( _DEBUG )
+#if defined( _DEBUG )
 inline void Check(VkResult status)
 {
     auto msg = Stringify(status);

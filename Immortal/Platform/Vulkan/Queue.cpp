@@ -22,7 +22,7 @@ Queue::Queue(Queue &&other) :
     familyIndex{ other.familyIndex },
     index{ other.index },
     presented{ other.presented },
-    properties{ properties }
+    properties{ other.properties }
 {
 
 }

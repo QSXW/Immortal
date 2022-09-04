@@ -23,12 +23,12 @@ public:
 
     using Semaphore = State;
 
-    static int Self()
+    static long Self()
     {
 #ifndef __GNUC__
         return GetCurrentThreadId();
 #else 
-        return (int)pthread_self();
+        return (long)pthread_self();
 #endif
     }
 

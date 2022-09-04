@@ -181,7 +181,7 @@ Image::~Image()
 
 Image &Image::operator=(Image &&other)
 {
-    SLASSERT(&other != this && SError::SelfAssignment);
+    THROWIF(&other != this, SError::SelfAssignment);
 
     device          = other.device;
     handle          = other.handle;
@@ -205,7 +205,7 @@ Image &Image::operator=(Image &&other)
 
 Image &Image::operator=(const Image &other)
 {
-    SLASSERT(&other != this && SError::SelfAssignment);
+    THROWIF(&other != this, SError::SelfAssignment);
 
     device          = other.device;
     handle          = other.handle;

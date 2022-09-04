@@ -322,7 +322,7 @@ uint32_t Device::GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, 
     }
     else
     {
-        SLASSERT(nullptr && "Could not find a matching memory type");
+        SLASSERT(false && "Could not find a matching memory type");
         return -1;
     }
 }
@@ -335,19 +335,13 @@ void Device::DestroyObjects()
     SLROTATE(destroyCoroutine.working, destroyCoroutine.queues.size());
     SLROTATE(destroyCoroutine.freeing, destroyCoroutine.queues.size());
 
-    /* all objects in queue is safe to destory now */
-    //Async::Execute([&] {
-        while (!queue.empty())
-        {
-            std::function<void()> func;
-            {
-                // std::unique_lock<std::mutex> lock{ mutex };
-                func = queue.front();
-                queue.pop();
-            }
-            func();
-        }
-        //});
+    while (!queue.empty())
+    {
+        std::function<void()> func;
+        func = queue.front();
+        queue.pop();
+        func();
+    }
 }
 
 VkResult Device::AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)

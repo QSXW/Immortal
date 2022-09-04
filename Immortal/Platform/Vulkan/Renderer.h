@@ -54,15 +54,15 @@ public:
         Resize();
     }
 
-    virtual const char *GraphicsRenderer();
+    virtual const char *GraphicsRenderer() override;
 
     virtual Shader::Super *CreateShader(const std::string &filepath, Shader::Type type) override;
 
-    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(Ref<Shader::Super> shader);
+    virtual GraphicsPipeline::Super *CreateGraphicsPipeline(Ref<Shader::Super> shader) override;
 
-    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader);
+    virtual ComputePipeline::Super *CreateComputePipeline(Shader::Super *shader) override;
 
-    virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {});
+    virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override;
 
     virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override;
 
@@ -82,7 +82,7 @@ public:
 
     virtual void PushConstant(GraphicsPipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
-    virtual void PushConstant(ComputePipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+    virtual void PushConstant(ComputePipeline::Super *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
     virtual void Draw(GraphicsPipeline::Super *pipeline) override;
 

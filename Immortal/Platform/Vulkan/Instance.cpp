@@ -114,9 +114,9 @@ Instance::Instance(const char                                   *applicationName
 
     uint64_t extensionsFlags = 0;
     static std::vector<const char*> utilsExtensions = {
-        { VK_EXT_DEBUG_UTILS_EXTENSION_NAME                      },
-        { VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME                 },
-        { VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME },
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+        VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
+        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
     };
 
     for (size_t i = 0; i < utilsExtensions.size(); i++)
@@ -201,16 +201,21 @@ Instance::Instance(const char                                   *applicationName
     appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion         = apiVersion;
 
-    VkInstanceCreateInfo instanceInfo{};
-    instanceInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceInfo.pNext                   = nullptr;
-    instanceInfo.pApplicationInfo        = &appInfo;
-    instanceInfo.enabledExtensionCount   = U32(enabledExtensions.size());
-    instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
-    instanceInfo.enabledLayerCount       = U32(requiredValidationLayers.size());
-    instanceInfo.ppEnabledLayerNames     = requiredValidationLayers.data();
+    VkInstanceCreateInfo instanceInfo = {
+        .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        .pNext                   = nullptr,
+#ifdef VK_KHR_portability_enumeration
+        .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+#endif
+        .pApplicationInfo        = &appInfo,
+        .enabledExtensionCount   = U32(enabledExtensions.size()),
+        .ppEnabledExtensionNames = enabledExtensions.data(),
+        .enabledLayerCount       = U32(requiredValidationLayers.size()),
+        .ppEnabledLayerNames     = requiredValidationLayers.data(),
+    };
 
-#ifdef SLDEBUG
+
+#ifdef _DEBUG
     VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
     VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT };
 
@@ -234,7 +239,7 @@ Instance::Instance(const char                                   *applicationName
     Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
     volkLoadInstance(handle);
 
-#ifdef SLDEBUG
+#ifdef _DEBUG
     if (extensionsFlags & BIT(0))
     {
         SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
@@ -261,7 +266,7 @@ Instance::Instance(VkInstance instance) :
 
 Instance::~Instance()
 {
-#ifdef SLDEBUG
+#ifdef _DEBUG
     if (debugUtilsMessengers)
     {
         vkDestroyDebugUtilsMessengerEXT(handle, debugUtilsMessengers, nullptr);
@@ -335,9 +340,8 @@ VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const V
         createInfo.hinstance = GetModuleHandle(NULL);
         createInfo.hwnd      = static_cast<HWND>(window->Primitive());
         return vkCreateWin32SurfaceKHR(handle, &createInfo, pAllocator, nullptr);
-#endif
-#ifdef __linux__
-        LOG::WARN("Native surface creation is not supported on Linux yet!");
+#else
+        LOG::WARN("Native surface creation is not supported on Linux and Mac yet!");
         return VK_ERROR_INITIALIZATION_FAILED;
 #endif
     }

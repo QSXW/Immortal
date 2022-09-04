@@ -338,7 +338,7 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
     auto shader = dynamic_cast<Shader *>(superShader);
     auto &stage = shader->GetStages();
 
-    THROWIF(!shader->IsType(Shader::Type::Compute), "Init compute pipeline with incorrect shader source type")
+    THROWIF(!shader->IsType(Shader::Type::Compute), "Init compute pipeline with incorrect shader source type");
 
     VkComputePipelineCreateInfo createInfo{};
     createInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

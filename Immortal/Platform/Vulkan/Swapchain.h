@@ -32,9 +32,9 @@ public:
     {
         Priorities() :
             PresentMode{
-                { VK_PRESENT_MODE_FIFO_KHR      },
-                { VK_PRESENT_MODE_MAILBOX_KHR   },
-                { VK_PRESENT_MODE_IMMEDIATE_KHR },
+                VK_PRESENT_MODE_FIFO_KHR,
+                VK_PRESENT_MODE_MAILBOX_KHR,
+                VK_PRESENT_MODE_IMMEDIATE_KHR,
             },
             SurfaceFormat{
                 VkSurfaceFormatKHR{ VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },

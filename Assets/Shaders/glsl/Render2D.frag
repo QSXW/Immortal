@@ -9,7 +9,7 @@ layout(location = 2) in flat float inTexIndex;
 layout(location = 3) in float      inTilingFactor;
 layout(location = 4) in flat int   inObjectID;
 
-layout(binding = 1) uniform sampler2D uTextures[32];
+layout(binding = 1) uniform sampler2D uTextures[16];
 
 void main()
 {

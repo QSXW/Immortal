@@ -245,13 +245,22 @@ void GuiLayer::OnGuiRender()
     const auto &io = ImGui::GetIO();
     sprintf(
         title,
-        "%s (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
+        "%s (Graphics API: %s, Physical Device: %s)",
         Application::Name(),
         Render::Api(),
-        Render::GraphicsRenderer(),
+        Render::GraphicsRenderer()
+    );
+
+#ifndef __APPLE__
+    sprintf(
+        title,
+        "%s %.3f ms/frame (%.1f FPS)",
+        title,
         1000.0f / io.Framerate,
         io.Framerate
     );
+#endif
+
     Application::SetTitle(title);
 }
 
