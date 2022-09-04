@@ -2,18 +2,13 @@
 
 #include "Common.h"
 #include "CommandBuffer.h"
+#include "Timeline.h"
 #include "Algorithm/LightArray.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
-
-struct Timeline
-{
-    VkSemaphore semaphore;
-    uint64_t value;
-};
 
 struct TimelineSubmitter
 {
@@ -96,6 +91,14 @@ struct Submitter
     void Execute(const CommandBuffer *commandBuffer)
     {
         Execute(*commandBuffer);
+    }
+
+    void Execute(const LightArray<CommandBuffer *> &pCommandBuffers)
+    {
+        for (const auto &cmd : pCommandBuffers)
+        {
+            Execute(*cmd);
+        }
     }
 
     void Clear()

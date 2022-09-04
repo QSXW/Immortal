@@ -34,12 +34,6 @@ static std::vector<const char *> ValidationLayers = {
 #ifdef _DEBUG
     "VK_LAYER_KHRONOS_validation",
     "VK_LAYER_KHRONOS_synchronization2",
-    // "VK_LAYER_LUNARG_api_dump",
-    // "VK_LAYER_LUNARG_device_simulation",
-    // "VK_LAYER_LUNARG_assistant_layer",
-    // "VK_LAYER_LUNARG_monitor",
-    // "VK_LAYER_LUNARG_screenshot",
-    // "VK_LAYER_RENDERDOC_Capture",
 #endif
 };
 
@@ -98,10 +92,12 @@ RenderContext::~RenderContext()
         device->DestroyAsync(DescriptorSetLayout);
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
+
+    ImmutableSampler.Reset();
     present.renderTargets.clear();
     renderPass.Reset();
     swapchain.Reset();
-
+    device.Reset();
     instance->DestroySurface(surface, nullptr);
 }
 
@@ -194,8 +190,25 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
 }
 
 VkDescriptorSetLayout RenderContext::DescriptorSetLayout{ VK_NULL_HANDLE };
+MonoRef<Sampler> RenderContext::ImmutableSampler;
 void RenderContext::SetupDescriptorSetLayout()
 {
+    VkSamplerCreateInfo samplerInfo = {
+        .sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter     = VK_FILTER_LINEAR,
+        .minFilter     = VK_FILTER_LINEAR,
+        .mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU  = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeV  = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .maxAnisotropy = 1.0f,
+        .minLod        = -1000,
+        .maxLod        = 1000,
+    };
+
+    ImmutableSampler = new Sampler{ device, samplerInfo };
+    VkSampler sampler = *ImmutableSampler;
+
     std::array<VkDescriptorSetLayoutBinding, 1> bindings{};
     bindings[0].descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     bindings[0].descriptorCount    = 1;
@@ -207,6 +220,7 @@ void RenderContext::SetupDescriptorSetLayout()
     info.bindingCount = U32(bindings.size());
     info.pBindings    = bindings.data();
     Check(device->Create(&info, &DescriptorSetLayout));
+
 }
 
 GuiLayer::Super *RenderContext::CreateGuiLayer()

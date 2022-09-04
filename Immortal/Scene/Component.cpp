@@ -249,20 +249,21 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
     /* upload frame data for each plane to the texture */
 	pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
 	colorSpacePipeline->Bind(pNext->input[0], 0);
-	picture.shared->linesize[1] >>= 1;
-    pNext->input[1]->Update(picture[1], picture.shared->linesize[1] / pNext->chromaFormat.BytesPerPixel());
-	colorSpacePipeline->Bind(pNext->input[1], 1);
 
 	if (picture.desc.format.IsType(Format::NV))
 	{
+        picture.shared->linesize[1] >>= 1;
 		colorSpacePipeline->Bind(Sprite, 2);
 	}
     else
-    {
+    {   
 		pNext->input[2]->Update(picture[2], picture.shared->linesize[2] / pNext->chromaFormat.BytesPerPixel());
 		colorSpacePipeline->Bind(pNext->input[2], 2);
 		colorSpacePipeline->Bind(Sprite, 3);
     }
+
+    pNext->input[1]->Update(picture[1], picture.shared->linesize[1] / pNext->chromaFormat.BytesPerPixel());
+	colorSpacePipeline->Bind(pNext->input[1], 1);
 
     colorSpacePipeline->PushConstant(sizeof(properties), &properties);
     colorSpacePipeline->Dispatch(SLALIGN(width, 1), SLALIGN(height, 1), 1);

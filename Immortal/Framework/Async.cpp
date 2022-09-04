@@ -10,14 +10,14 @@ ThreadPool::ThreadPool(uint32_t num)
     for (int i = 0; i < num; i++)
     {
         semaphores[i] = Thread::State::Idle;
-        threads.emplace_back([=]() -> void {
+        threads.emplace_back([=, this]() -> void {
             while (true)
             {
                 static Thread::Semaphore *semaphore = semaphores + i;
                 Task task;
                 {
                     std::unique_lock<std::mutex> lock{ mutex };
-                    condition.wait(lock, [=] { 
+                    condition.wait(lock, [=, this] { 
                             return stopping || !tasks.empty();
                         });
 

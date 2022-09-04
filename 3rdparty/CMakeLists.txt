@@ -238,8 +238,10 @@ endif()
 
 # FFmpeg
 set(FFMPEG_LIB avcodec avdevice avfilter avformat avutil)
-set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg")
-find_path(FFmpeg_FOUND HINTS ${FFMPEG_DIR})
+if (NOT DEFINED FFMPEG_DIR)
+    set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg")
+endif(NOT DEFINED FFMPEG_DIR)
+find_path(FFmpeg_FOUND "lib" HINTS ${FFMPEG_DIR})
 if (FFmpeg_FOUND)
     set(FFMPEG_LIBRARY_DIR "${FFmpeg_FOUND}/lib")
     set(FFMPEG_BINARY_DIR  "${FFmpeg_FOUND}/bin")

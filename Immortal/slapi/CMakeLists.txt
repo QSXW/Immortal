@@ -22,7 +22,7 @@ add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_options(${PROJECT_NAME} INTERFACE
-    $<$<C_COMPILER_ID:GNU>:-march=skylake-avx512>
+    $<$<C_COMPILER_ID:GNU>:-march=native>
 )
 
 add_custom_target("sl"

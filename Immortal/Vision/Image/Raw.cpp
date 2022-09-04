@@ -22,7 +22,7 @@ void ReadPixelsToPicture(T *dst, T *pixels, uint32_t width, uint32_t height, int
             dst[0] = src[0];
             dst[1] = src[1];
             dst[2] = src[2];
-            dst[3] = 0xffff;
+            dst[3] = T(-1);
         }
     }
 }

@@ -29,22 +29,4 @@ std::unique_ptr<RenderContext> RenderContext::Create(const Description &desc)
     }
 }
 
-std::shared_ptr<Shader> RenderContext::CreateShader(const std::string &filename, Shader::Type type)
-{
-    if (Render::API == Render::Type::OpenGL)
-    {
-        return std::make_shared<OpenGL::Shader>(filename, type);
-    }
-    if (Render::API == Render::Type::Vulkan)
-    {
-        auto context = dcast<Vulkan::RenderContext*>(this);
-        return std::make_shared<Vulkan::Shader>(context->GetAddress<Vulkan::Device>(), filename, type);
-    }
-    if (Render::API == Render::Type::D3D12)
-    {
-        return nullptr;
-    }
-    return nullptr;
-}
-
 }

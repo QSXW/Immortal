@@ -355,7 +355,7 @@ void Scene::OnRenderRuntime()
 {
     // Update Script
     {
-        registry.view<ScriptComponent>().each([=](auto object, ScriptComponent &script) {
+        registry.view<ScriptComponent>().each([=, this](auto object, ScriptComponent &script) {
                 script.Update((int)object, this, Time::DeltaTime);
             });
     }
@@ -636,7 +636,7 @@ bool Scene::Deserialize(const std::string & path)
 
 void Scene::OnKeyPressed(KeyPressedEvent & e)
 {
-    registry.view<ScriptComponent>().each([=](auto object, ScriptComponent &script) {
+    registry.view<ScriptComponent>().each([=, this](auto object, ScriptComponent &script) {
         script.OnKeyDown((int)object, this, (int)e.GetKeyCode());
         });
 }

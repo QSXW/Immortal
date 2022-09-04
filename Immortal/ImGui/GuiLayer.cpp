@@ -65,14 +65,14 @@ void GuiLayer::OnAttach()
 
     Profiler p{ "Loading DemiLight File" };
     NotoSans.Demilight = io.Fonts->AddFontFromFileTTF(
-        "Assets/fonts/NotoSansCJKsc-Light.otf",
+        "Assets/Fonts/NotoSansCJKsc-Light.otf",
         18,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 
     NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
-        "Assets/fonts/NotoSansCJKsc-Bold.otf",
+        "Assets/Fonts/NotoSansCJKsc-Bold.otf",
         18,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
@@ -163,77 +163,77 @@ void GuiLayer::OnEvent(Event &e)
 
 void GuiLayer::UpdateTheme()
 {
-    ImGuiStyle *style = &ImGui::GetStyle();
-    ImVec4* colors = style->Colors;
+//     ImGuiStyle *style = &ImGui::GetStyle();
+//     ImVec4* colors = style->Colors;
 
-    ImGui::Begin("Theme Editor");
+//     ImGui::Begin("Theme Editor");
 
-#define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
-    XX(Text);
-    XX(TextDisabled);
-    XX(WindowBg);
-    XX(ChildBg);
-    XX(PopupBg);
-    XX(Border);
-    XX(BorderShadow);
-    XX(FrameBg);
-    XX(FrameBgHovered);
-    XX(FrameBgActive);
-    XX(TitleBg);
-    XX(TitleBgActive);
-    XX(TitleBgCollapsed);
-    XX(MenuBarBg);
-    XX(ScrollbarBg);
-    XX(ScrollbarGrab);
-    XX(ScrollbarGrabHovered);
-    XX(ScrollbarGrabActive);
-    XX(CheckMark);
-    XX(SliderGrab);
-    XX(SliderGrabActive);
-    XX(Button);
-    XX(ButtonHovered);
-    XX(ButtonActive);
-    XX(Header);
-    XX(HeaderHovered);
-    XX(HeaderActive);
-    XX(Separator);
-    XX(SeparatorHovered);
-    XX(SeparatorActive);
-    XX(ResizeGrip);
-    XX(ResizeGripHovered);
-    XX(ResizeGripActive);
-    XX(Tab);
-    XX(TabHovered);
-    XX(TabActive);
-    XX(TabUnfocused);
-    XX(TabUnfocusedActive);
-    XX(DockingEmptyBg);
-    XX(PlotLines);
-    XX(PlotLinesHovered);
-    XX(PlotHistogram);
-    XX(PlotHistogramHovered);
-    XX(TableHeaderBg);
-    XX(TableBorderStrong);
-    XX(TableBorderLight);
-    XX(TableRowBg);
-    XX(TableRowBgAlt);
-    XX(TextSelectedBg);
-    XX(DragDropTarget);
-    XX(NavHighlight);
-    XX(NavWindowingHighlight);
-    XX(NavWindowingDimBg);
-    XX(ModalWindowDimBg);
-#undef XX
+// #define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
+//     XX(Text);
+//     XX(TextDisabled);
+//     XX(WindowBg);
+//     XX(ChildBg);
+//     XX(PopupBg);
+//     XX(Border);
+//     XX(BorderShadow);
+//     XX(FrameBg);
+//     XX(FrameBgHovered);
+//     XX(FrameBgActive);
+//     XX(TitleBg);
+//     XX(TitleBgActive);
+//     XX(TitleBgCollapsed);
+//     XX(MenuBarBg);
+//     XX(ScrollbarBg);
+//     XX(ScrollbarGrab);
+//     XX(ScrollbarGrabHovered);
+//     XX(ScrollbarGrabActive);
+//     XX(CheckMark);
+//     XX(SliderGrab);
+//     XX(SliderGrabActive);
+//     XX(Button);
+//     XX(ButtonHovered);
+//     XX(ButtonActive);
+//     XX(Header);
+//     XX(HeaderHovered);
+//     XX(HeaderActive);
+//     XX(Separator);
+//     XX(SeparatorHovered);
+//     XX(SeparatorActive);
+//     XX(ResizeGrip);
+//     XX(ResizeGripHovered);
+//     XX(ResizeGripActive);
+//     XX(Tab);
+//     XX(TabHovered);
+//     XX(TabActive);
+//     XX(TabUnfocused);
+//     XX(TabUnfocusedActive);
+//     XX(DockingEmptyBg);
+//     XX(PlotLines);
+//     XX(PlotLinesHovered);
+//     XX(PlotHistogram);
+//     XX(PlotHistogramHovered);
+//     XX(TableHeaderBg);
+//     XX(TableBorderStrong);
+//     XX(TableBorderLight);
+//     XX(TableRowBg);
+//     XX(TableRowBgAlt);
+//     XX(TextSelectedBg);
+//     XX(DragDropTarget);
+//     XX(NavHighlight);
+//     XX(NavWindowingHighlight);
+//     XX(NavWindowingDimBg);
+//     XX(ModalWindowDimBg);
+// #undef XX
 
-    if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
-    {
-        GuiLayer *that = this;
-        Async::Execute([&]() -> void {
-            that->SaveTheme();
-            });
-    }
+//     if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
+//     {
+//         GuiLayer *that = this;
+//         Async::Execute([&]() -> void {
+//             that->SaveTheme();
+//             });
+//     }
 
-    ImGui::End();
+//     ImGui::End();
 }
 
 void GuiLayer::OnGuiRender()

@@ -35,6 +35,19 @@ std::optional<std::string> FileDialogs::OpenFile(const char *filter)
         strcat(lastDir, ofn.lpstrFile);
         return ofn.lpstrFile;
     }
+#else
+    char path[1024];
+    FILE *f = popen("zenity --file-selection", "r");
+    (void)fgets(path, 1024, f);
+
+    int ret = pclose(f);
+    if(ret< 0 )
+    {
+        perror("file_name_dialog()");
+    }
+    
+    path[strlen(path) - 1] = '\0';
+    return path;
 #endif
 
     return std::nullopt;

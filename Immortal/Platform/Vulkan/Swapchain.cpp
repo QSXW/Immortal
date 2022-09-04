@@ -251,7 +251,10 @@ Swapchain::Swapchain(Swapchain                           &oldSwapchain,
 
 Swapchain::~Swapchain()
 {
-    IfNotNullThen<VkSwapchainKHR>(vkDestroySwapchainKHR, *device, handle);
+    if (handle)
+    {
+        device->DestroyAsync(handle);
+    }
 }
 
 void Swapchain::Create()

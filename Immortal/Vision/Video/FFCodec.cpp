@@ -162,7 +162,6 @@ void FFCodec::SetCodecContext(const AVCodec *codec, const AVCodecParameters *par
 
     AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
     av_dict_set(opts, "threads", "auto", 0);
-    av_dict_set(opts, "vsync", "1", 0);
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");

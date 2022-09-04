@@ -228,7 +228,7 @@ public:
 
     void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator = nullptr)
     {
-        destroyCoroutine.queues[destroyCoroutine.working].push([=] {
+        destroyCoroutine.queues[destroyCoroutine.working].push([=, this] {
             vkFreeMemory(handle, memory, pAllocator);
             }); 
     }
@@ -427,52 +427,66 @@ public:
     }
 
     template <class T>
-    void TransferAsync(T &&process)
+    void Submit(T &&process)
     {
-        CommandBuffer *cmdbuf = transfer->GetCurrentCommandBuffer();
-        if (!cmdbuf->Recoding())
-        {
-            Transfer(process);
-        }
-        else
-        {
-            process(cmdbuf);
-        }
+        CommandBuffer *cmdbuf = timelineCommandBuffers[0]->GetRecordableCommandBuffer();
+        process(cmdbuf);
     }
 
     template <class T>
     void ComputeAsync(T &&process)
     {
-        CommandBuffer *cmdbuf = compute->GetCurrentCommandBuffer();
-        if (!cmdbuf->Recoding())
-        {
-            Compute(process);
-        }
-        else
-        {
-            process(cmdbuf);
-        }
-    }
-
-    template <class T>
-    void Submit(T &&process)
-    {
-        CommandBuffer *cmdbuf = graphics->GetCurrentCommandBuffer();
+        CommandBuffer *cmdbuf = timelineCommandBuffers[1]->GetRecordableCommandBuffer();
         process(cmdbuf);
     }
 
-    void BeginComputeThread()
+    template <class T>
+    void TransferAsync(T &&process)
     {
-        graphics->Begin();
-        compute->Begin();
-        transfer->Begin();
+        CommandBuffer *cmdbuf = timelineCommandBuffers[2]->GetRecordableCommandBuffer();
+        process(cmdbuf);
     }
 
-    void ExecuteComputeThread()
+    template <Queue::Type T>
+    const LightArray<CommandBuffer *> &GetCommandBuffers(const Timeline &timeline)
     {
-        graphics->Sync();
-        compute->Sync();
-        transfer->Sync();
+        if constexpr (T == Queue::Type::Graphics)
+        {
+            return timelineCommandBuffers[0]->GetCommandBuffers(timeline);
+        }
+        else if constexpr (T == Queue::Type::Compute)
+        {
+            return timelineCommandBuffers[1]->GetCommandBuffers(timeline);
+        }
+        else if constexpr (T == Queue::Type::Transfer)
+        {
+            return timelineCommandBuffers[2]->GetCommandBuffers(timeline);
+        }
+        else
+        {
+            SLASSERT(false && "Invalid queue type!");
+        }
+    }
+
+    template <Queue::Type T>
+    bool IsCommandBufferRecorded()
+    {
+        if constexpr (T == Queue::Type::Graphics)
+        {
+            return timelineCommandBuffers[0]->IsRecorded();
+        }
+        else if constexpr (T == Queue::Type::Compute)
+        {
+            return timelineCommandBuffers[1]->IsRecorded();
+        }
+        else if constexpr (T == Queue::Type::Transfer)
+        {
+            return timelineCommandBuffers[2]->IsRecorded();
+        }
+        else
+        {
+            SLASSERT(false && "Invalid queue type!");
+        }
     }
 
 private:
@@ -494,11 +508,7 @@ private:
 
     std::unique_ptr<DescriptorPool> descriptorPool;
 
-    MonoRef<AsynchronousCommandBuffer> compute;
-
-    MonoRef<AsynchronousCommandBuffer> transfer;
-
-    MonoRef<AsynchronousCommandBuffer> graphics;
+    std::array<MonoRef<TimelineCommandBuffer>, 3> timelineCommandBuffers;
 
     struct {
         std::array<std::queue<std::function<void()>>, 6> queues;
