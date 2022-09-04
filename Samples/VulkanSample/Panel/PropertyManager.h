@@ -134,7 +134,7 @@ public:
                             seconds %= 60;
                             minutes %= 60;
                             ImGui::Text("Start Time: 00:%02d:%02d:%02d", startHours, startMinutes, startSeconds);
-                            ImGui::Text("End Time:   00:%02d:%02d:%02d", hours, minutes, seconds, minutes);
+                            ImGui::Text("End Time:   00:%02d:%02d:%02d", hours, minutes, seconds);
                             UI::DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
                         });
                 }

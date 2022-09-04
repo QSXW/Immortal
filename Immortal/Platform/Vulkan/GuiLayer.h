@@ -33,6 +33,9 @@ public:
     virtual void End() override;
 
 private:
+    void __RenderDrawData();
+
+private:
     RenderContext *context{ nullptr };
 
     std::unique_ptr<DescriptorPool> descriptorPool;

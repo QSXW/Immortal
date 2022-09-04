@@ -1,5 +1,4 @@
 #include "ColorSpace.h"
-#include "slintrinsic.h"
 
 namespace Immortal
 {

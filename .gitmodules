@@ -17,3 +17,6 @@
 [submodule "3rdparty/LibRaw"]
 	path = 3rdparty/LibRaw
 	url = https://github.com/LibRaw/LibRaw.git
+[submodule "3rdparty/GLFW"]
+	path = 3rdparty/GLFW
+	url = https://github.com/QSXW/glfw.git

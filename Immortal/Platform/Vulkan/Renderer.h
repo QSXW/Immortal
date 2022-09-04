@@ -51,7 +51,7 @@ public:
 
     virtual void OnResize(UINT32 x, UINT32 y, UINT32 width, UINT32 height) override
     {
-        // Resize();
+        Resize();
     }
 
     virtual const char *GraphicsRenderer();

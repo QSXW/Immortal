@@ -129,7 +129,9 @@ public:
 
     int Close()
     {
-        return fclose(fp);
+        auto ptr = fp;
+        fp = nullptr;
+        return fclose(ptr);
     }
 
     const std::string &GetFilePath() const

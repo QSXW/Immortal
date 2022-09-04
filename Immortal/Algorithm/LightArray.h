@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Core.h"
+#include "LightVector.h"
 
 namespace Immortal
 {
@@ -17,7 +18,11 @@ class LightArray
 public:
     static constexpr size_t Capacity = Reserved;
 
-    using value_type = typename T;
+    using value_type = T;
+
+    using Iterator = ScalarInterator<T>;
+
+    using ConstantInterator = ConstantScalarInterator<T>;
 
 public:
     LightArray() :
@@ -66,6 +71,31 @@ public:
     void clear()
     {
         _size = 0;
+    }
+
+    bool empty() const
+    {
+        return _size == 0;
+    }
+
+    Iterator begin()
+    {
+        return Iterator(_data);
+    }
+
+    Iterator end()
+    {
+        return Iterator(&_data[_size]);
+    }
+
+    ConstantInterator begin() const
+    {
+        return ConstantInterator(_data);
+    }
+
+    ConstantInterator end() const
+    {
+        return ConstantInterator(&_data[_size]);
     }
 
 private:

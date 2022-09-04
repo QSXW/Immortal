@@ -30,18 +30,19 @@ public:
         return *this;
     }
 
-    T &operator*()
-    {
-        return *ptr;
-    }
-
-    T operator*() const
+    T &operator*() const
     {
         return *ptr;
     }
 
 private:
     T *ptr;
+};
+
+template <class T>
+class ConstantScalarInterator : public ScalarInterator<const T>
+{
+
 };
 
 template <class T>

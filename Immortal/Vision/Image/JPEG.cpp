@@ -1,12 +1,16 @@
 #include "JPEG.h"
 #include "Vision/LookupTable/LookupTable.h"
+
+#ifdef _MSC_VER
 #include "slintrinsic.h"
+#endif
 
 namespace Immortal
 {
 namespace Vision
 {
 
+#ifdef _MSC_VER
 static inline void Dequantize(int16_t *block, int16_t *table)
 {
     INT16X32 b1, b2, t1, t2;
@@ -22,6 +26,22 @@ static inline void Dequantize(int16_t *block, int16_t *table)
     b1.store(block);
     b2.store(block + 32);
 }
+
+static inline void Levelup(int16_t *block)
+{
+    INT16X32 level(int16_t(128));
+    INT16X32 b1, b2;
+
+    b1.loadu(block);
+    b2.loadu(block + 32);
+
+    b1 = b1 + level;
+    b2 = b2 + level;
+    
+    UINT8X32(b1.cvt2uint8()).storeu((uint8_t *)block);
+    UINT8X32(b2.cvt2uint8()).storeu((uint8_t *)(block + 16));
+}
+#endif
 
 static const double A[] = {
     NAN,
@@ -114,28 +134,14 @@ inline constexpr void InverseDCT8x8(T *block)
     IDCT8_V(block, 7);
 }
 
-static inline void Levelup(int16_t *block)
-{
-    INT16X32 level(int16_t(128));
-    INT16X32 b1, b2;
-
-    b1.loadu(block);
-    b2.loadu(block + 32);
-
-    b1 = b1 + level;
-    b2 = b2 + level;
-    
-    UINT8X32(b1.cvt2uint8()).storeu((uint8_t *)block);
-    UINT8X32(b2.cvt2uint8()).storeu((uint8_t *)(block + 16));
-}
-
 #define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
 static void Backward(uint8_t *dst, size_t stride, int16_t *block, int16_t *table)
 {
+#ifdef _MSC_VER
     Dequantize(block, table);
     InverseDCT8x8(block);
     Levelup(block);
-
+#endif
     COPY_64BITS(0);
     COPY_64BITS(1);
     COPY_64BITS(2);
@@ -490,8 +496,7 @@ void JpegCodec::DecodeMCU()
             }
             if (bitTracker.RestartMarker)
             {
-                INT32X4 zero{ 0 };
-                zero.store(pred);
+                memset(pred, 0, sizeof(pred));
                 bitTracker.RestartMarker = false;
                 break;
             }

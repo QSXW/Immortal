@@ -22,6 +22,8 @@ public:
 public:
     Shader(Device *device, const std::string &filename, Type type = Type::Graphics);
 
+    Shader(Device *device, const std::vector<uint32_t> &vsSpirv, const std::vector<uint32_t> &psSpirv);
+
     virtual ~Shader();
 
     VkShaderModule Load(const std::string &filename, Stage stage);
@@ -61,6 +63,8 @@ public:
     }
  
 private:
+    VkShaderModule CreateModuleBySpriv(const std::vector<uint32_t> &spirv, Stage stage);
+
     void Reflect(const std::string &source);
 
     void SetupDescriptorSetLayout(Stage stage);

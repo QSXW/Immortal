@@ -76,8 +76,8 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
         VkShaderModule vert = Load(filename + ".vert", Shader::Stage::Vertex);
         VkShaderModule frag = Load(filename + ".frag", Shader::Stage::Fragment);
 
-        modules.push_back(vert);
-        modules.push_back(frag);
+        modules.emplace_back(vert);
+        modules.emplace_back(frag);
         stages[0] = CreateStage(vert, VK_SHADER_STAGE_VERTEX_BIT);
         stages[1] = CreateStage(frag, VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -88,6 +88,17 @@ Shader::Shader(Device *d, const std::string &filename, Shader::Type type) :
         stages[0] = CreateStage(comp, VK_SHADER_STAGE_COMPUTE_BIT);
     }
     Setup();
+}
+
+Shader::Shader(Device *device, const std::vector<uint32_t> &vsSpirv, const std::vector<uint32_t> &psSpirv) :
+    Super{ Type::Graphics },
+    device{ device }
+{
+    modules.emplace_back(CreateModuleBySpriv(vsSpirv, Stage::Vertex));
+    modules.emplace_back(CreateModuleBySpriv(psSpirv, Stage::Pixel));
+    
+    stages[0] = CreateStage(modules[0], VK_SHADER_STAGE_VERTEX_BIT);
+    stages[1] = CreateStage(modules[1], VK_SHADER_STAGE_FRAGMENT_BIT);
 }
 
 Shader::~Shader()
@@ -134,6 +145,11 @@ VkShaderModule Shader::Load(const std::string &filename, Shader::Stage stage)
         CacheSpirv(tmpPath, filename, src, spirv);
     }
 
+    return CreateModuleBySpriv(spirv, stage);
+}
+
+VkShaderModule Shader::CreateModuleBySpriv(const std::vector<uint32_t> &spirv, Shader::Stage stage)
+{
     GLSLCompiler::Reflect(spirv, resources);
 
     VkShaderModule shaderModule{ VK_NULL_HANDLE };

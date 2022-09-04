@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include <atomic>
 
 namespace Immortal
 {
@@ -24,7 +25,7 @@ public:
     }
 
 private:
-    uint32_t ref = 0;
+    std::atomic<uint32_t> ref = 0;
 };
 
 template <class T>

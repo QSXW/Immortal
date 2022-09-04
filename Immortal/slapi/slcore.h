@@ -160,7 +160,7 @@ std::exception(what, 1) { }
 #elif __GNUC__
 message(what) { }
 
-    virtual const char* what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW override
+    virtual const char *what() const noexcept
     {
         return message.c_str();
     }

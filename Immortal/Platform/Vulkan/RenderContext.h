@@ -37,10 +37,10 @@ public:
     using Description           = SuperRenderContext::Description;
     using SurfaceFormatPriority = std::vector<VkSurfaceFormatKHR>;
     using PresentModePriorities = std::vector<VkPresentModeKHR>;
-    using Frames                = std::vector<std::unique_ptr<RenderFrame>>;
 
     static VkResult Status;
     static VkDescriptorSetLayout DescriptorSetLayout;
+    static MonoRef<Sampler> ImmutableSampler;
     static std::unordered_map<const char *, bool> InstanceExtensions;
     static std::unordered_map<const char *, bool> DeviceExtensions;
 
@@ -207,5 +207,6 @@ private:
 
     size_t threadCount{ 1 };
 };
+
 }
 }

@@ -22,14 +22,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(VkDebugUtilsMe
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        LOG::INFO("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+        LOG::INFO("{} - {}: {}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        LOG::WARN("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+        LOG::WARN("{} - {}: {}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
     default:
-        LOG::ERR("{0} - {1}: {2}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
+        LOG::ERR("{} - {}: {}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage);
         break;
     }
 
@@ -43,14 +43,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags,
     switch (flags)
     {
     case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-        LOG::ERR("{0}: {1}", layerPrefix, message);
+        LOG::ERR("{}: {}", layerPrefix, message);
         break;
     case VK_DEBUG_REPORT_WARNING_BIT_EXT:
     case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-        LOG::WARN("{0}: {1}", layerPrefix, message);
+        LOG::WARN("{}: {}", layerPrefix, message);
         break;
     default:
-        LOG::INFO("{0}: {1}", layerPrefix, message);
+        LOG::INFO("{}: {}", layerPrefix, message);
         break;
     }
 

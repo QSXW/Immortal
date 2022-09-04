@@ -81,7 +81,7 @@ void GuiLayer::OnEvent(Event &e)
     if (e.GetType() == Event::Type::WindowResize)
     {
         auto resize = dcast<WindowResizeEvent *>(&e);
-        ImGuiIO     &io  = ImGui::GetIO();
+        ImGuiIO &io  = ImGui::GetIO();
         io.DisplaySize = ImVec2{ (float)resize->Width(), (float)resize->Height() };
     }
 }
@@ -140,6 +140,11 @@ void GuiLayer::End()
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+}
+
+void GuiLayer::__RenderDrawData()
+{
+
 }
 
 }

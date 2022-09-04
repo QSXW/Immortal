@@ -3,6 +3,12 @@
 #include "Common.h"
 #include "CommandBuffer.h"
 #include "Queue.h"
+#include "Timeline.h"
+#include "Algorithm/LightArray.h"
+#include "Interface/IObject.h"
+
+#include <map>
+#include <queue>
 
 namespace Immortal
 {
@@ -10,11 +16,10 @@ namespace Vulkan
 {
 
 class Device;
-class RenderFrame;
-class CommandPool
+class CommandPool : public IObject
 {
 public:
-    using QueueFamilyIndex = UINT32;
+    using QueueFamilyIndex = uint32_t;
 
     using Primitive = VkCommandPool;
     VKCPP_OPERATOR_HANDLE()
@@ -22,11 +27,7 @@ public:
 public:
     CommandPool() = default;
 
-    CommandPool(Device                  *device,
-                UINT32                   queueFamilyIndex,
-                RenderFrame             *renderFrame = nullptr,
-                size_t                   threadIndex = 0,
-                CommandBuffer::ResetMode resetMode   = CommandBuffer::ResetMode::ResetIndividually);
+    CommandPool(Device *device, uint32_t queueFamilyIndex, size_t threadIndex = 0, CommandBuffer::ResetMode resetMode = CommandBuffer::ResetMode::ResetIndividually);
         
     CommandPool(CommandPool &&other);
 
@@ -38,14 +39,7 @@ public:
 
     void DiscardBuffer(CommandBuffer *commandBuffer);
 
-    void DestoryAll()
-    {
-        primaryCommandBuffers.clear();
-        primaryActiveCount   = 0;
-
-        secondaryCommandBuffers.clear();
-        secondaryActiveCount = 0;
-    }
+    void Destory();
 
     template <class T>
     T Get()
@@ -62,13 +56,10 @@ public:
         {
             return threadIndex;
         }
-        if constexpr (IsPrimitiveOf<RenderFrame, T>())
-        {
-            return renderFrame;
-        }
     }
 
     template <class T>
+    requires std::is_same_v<Device, T>
     T *GetAddress()
     {
         if constexpr (IsPrimitiveOf<Device, T>())
@@ -79,69 +70,74 @@ public:
 
     size_t size()
     {
-        return primaryCommandBuffers.size();
+        return allocatedBuffers.size();
     }
+
+private:
+    void __Shift(CommandPool &other);
+
+    VkResult __Reset();
 
 private:
     Device *device{ nullptr };
 
-    RenderFrame *renderFrame{ nullptr };
-
     size_t threadIndex;
 
-    UINT32 queueFamilyIndex{ 0 };
+    std::vector<MonoRef<CommandBuffer>> allocatedBuffers;
 
-    std::vector<std::unique_ptr<CommandBuffer>> primaryCommandBuffers;
-
-    UINT32 primaryActiveCount{ 0 };
-
-    std::vector<std::unique_ptr<CommandBuffer>> secondaryCommandBuffers;
-
-    UINT32 secondaryActiveCount{ 0 };
+    std::queue<CommandBuffer *> queue;
 
     CommandBuffer::ResetMode resetMode{ CommandBuffer::ResetMode::ResetPool };
 
-    CommandBuffer *activeCommandBuffer{ nullptr };
-
-private:
-    VkResult ResetCommandBuffers();
+    uint32_t queueFamilyIndex{ 0 };
 };
 
-class AsynchronousCommandBuffer
+using TimelineMap = std::map<Timeline, std::unique_ptr<LightArray<CommandBuffer*>>>;
+
+class TimelineCommandBuffer
 {
 public:
-    AsynchronousCommandBuffer() = default;
+    TimelineCommandBuffer() = default;
 
-    AsynchronousCommandBuffer(Device *device, Queue::Type type);
+    TimelineCommandBuffer(Device *device, Queue::Type type);
     
+    const LightArray<CommandBuffer *> &GetCommandBuffers(const Timeline &timeline);
+
 public:
-    /* inline */
-    CommandBuffer *GetCurrentCommandBuffer() const
+    CommandBuffer *GetRecordableCommandBuffer()
     {
-        return commandBuffers[sync];
+        if (currentCommandBuffer->ReadyToSubmit())
+        {
+            End();
+        }
+        if (!currentCommandBuffer->Recording())
+        {
+            currentCommandBuffer->Begin();
+        }
+
+        return currentCommandBuffer;
     }
 
-    CommandBuffer *Begin()
+    void End()
     {
-        commandBuffers[sync]->Begin();
-        return commandBuffers[sync];
+        Check(currentCommandBuffer->End());
+        commandBuffers->emplace_back(currentCommandBuffer);
+        currentCommandBuffer = commandPool->RequestBuffer(Level::Primary);
     }
 
-    CommandBuffer *End()
+    bool IsRecorded() const
     {
-        commandBuffers[sync]->End();
-        return commandBuffers[sync];
-    }
-
-    void Sync()
-    {
-        SLROTATE(sync, SL_ARRAY_LENGTH(commandBuffers));
+        return currentCommandBuffer->IsRecorded() || !commandBuffers->empty();
     }
 
 private:
-    std::unique_ptr<CommandPool> commandPool;
+    MonoRef<CommandPool> commandPool;
 
-    CommandBuffer *commandBuffers[3];
+    std::unique_ptr<LightArray<CommandBuffer*>> commandBuffers;
+
+    CommandBuffer *currentCommandBuffer;    
+
+    TimelineMap cache;
 
     uint32_t sync = 0;
 };

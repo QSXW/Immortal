@@ -10,6 +10,7 @@ namespace Vulkan
 
 CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
     commandPool{ cmdPool },
+    count{ 0 },
     level{ level }
 {
     VkCommandBufferAllocateInfo allocInfo{};
@@ -35,7 +36,7 @@ VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
         SLASSERT(primaryCommandBuffer && "A primary command buffer pointer must be provided when calling begin from a second one");
     }
 
-    if (Recoding())
+    if (Recording())
     {
         LOG::ERR("Command buffer is already recording, call end first then begin");
         return VK_NOT_READY;
@@ -61,15 +62,14 @@ VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
 
 VkResult CommandBuffer::End()
 {
-    if (!Recoding())
+    if (!Recording())
     {
         LOG::ERR("Command buffer is not already recording, call begin");
         return VK_NOT_READY;
     }
-    vkEndCommandBuffer(handle);
     state = State::Executable;
 
-    return VK_SUCCESS;
+    return vkEndCommandBuffer(handle);;
 }
 
 VkResult CommandBuffer::Execute()
@@ -77,12 +77,14 @@ VkResult CommandBuffer::Execute()
     return VK_SUCCESS;
 }
 
-VkResult CommandBuffer::reset(ResetMode resetMode)
+VkResult CommandBuffer::Reset(ResetMode resetMode)
 {
     VkResult result = VK_SUCCESS;
 
     SLASSERT(resetMode == commandPool->Get<ResetMode>() &&
         "The resetMode of Command buffer must match the one used by the pool to allocated it");
+
+    count = 0;
     state = State::Initial;
     if (resetMode == ResetMode::ResetIndividually)
     {

@@ -184,11 +184,9 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
     descriptorPool.reset(new DescriptorPool{ this, Limit::PoolSize });
 
-    graphics = new AsynchronousCommandBuffer{ this, Queue::Type::Graphics };
-
-    compute = new AsynchronousCommandBuffer{ this, Queue::Type::Compute };
-
-    transfer = new AsynchronousCommandBuffer{ this, Queue::Type::Transfer };
+    timelineCommandBuffers[0] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
+    timelineCommandBuffers[1] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
+    timelineCommandBuffers[2] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
 
     EnableGlobal();
 }
@@ -227,9 +225,10 @@ Device::~Device()
 {
     Wait();
 
-    graphics.Reset();
-    compute.Reset();
-    transfer.Reset();
+    for (auto &cmd : timelineCommandBuffers)
+    {
+        cmd.Reset();
+    }
     commandPool.reset();
     fencePool.reset();
     descriptorPool->Destroy();

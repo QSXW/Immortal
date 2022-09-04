@@ -8,12 +8,9 @@ namespace Immortal
 class Tools : public Layer
 {
 public:
-    enum
-    {
-        None      = 0,
-        Activated = 1,
-        Hovered   = 2
-    };
+    static constexpr float None      = 0.;
+    static constexpr float Activated = 1.;
+    static constexpr float Hovered   = 2.;
 
     enum
     {
