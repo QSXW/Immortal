@@ -90,7 +90,7 @@ public:
 
     ConstantInterator begin() const
     {
-        return ConstantInterator(_data);
+        return ConstantInterator(&_data[0]);
     }
 
     ConstantInterator end() const

@@ -73,7 +73,7 @@ private:
 
     std::vector<std::unique_ptr<PhysicalDevice>> physicalDevices{};
 
-#if defined ( SLDEBUG ) || defined ( VKB_VALIDATION_LAYERS )
+#if defined (_DEBUG) || defined (VKB_VALIDATION_LAYERS)
     VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };
 
     VkDebugReportCallbackEXT debugReportCallback{ VK_NULL_HANDLE };

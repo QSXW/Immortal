@@ -38,7 +38,7 @@ public:
         desc.EventCallback = callback;
     }
 
-    virtual void *GetNativeWindow() const
+    virtual void *GetNativeWindow() const override
     {
         return window;
     }

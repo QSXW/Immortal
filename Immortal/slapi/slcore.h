@@ -56,8 +56,6 @@ inline void aligned_free(void* ptr)
 
 #define SLBIND(x) std::bind(&x, this, std::placeholders::_1)
 
-#define SLDEBUG defined( DEBUG) || defined( _DEBUG )
-
 #if defined( WIN32 ) || defined( _WIN32 )
 #   define WINDOWS
 #elif defined( __ANDROID__ )
@@ -154,11 +152,12 @@ static inline bool Equals(const char *str1, const char *str2)
 
 class Exception : public std::exception
 {
-public: Exception(const char *what) noexcept :
+public:
+    Exception(const char *what) noexcept :
 #ifdef _MSC_VER
-std::exception(what, 1) { }
+        std::exception(what, 1) { }
 #elif __GNUC__
-message(what) { }
+        message(what) { }
 
     virtual const char *what() const noexcept
     {
@@ -205,7 +204,7 @@ public:
  * @brief Static Exception means the case should not occur anyway when running.
  *  Using RuntimeException to check runtime error instead.
  */
-#ifdef SLDEBUG
+#ifdef _DEBUG
 #define THROWIF(expr, what) \
     if (!!(expr)) \
     { \

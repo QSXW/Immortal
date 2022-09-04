@@ -79,7 +79,7 @@ void Renderer::PrepareFrame()
 
     syncValues[sync] = lastSync;
 
-#ifdef _WIN32
+#ifndef __linux__
     if (fences[sync] != VK_NULL_HANDLE)
     {
         device->WaitAndReset(&fences[sync]);

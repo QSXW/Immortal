@@ -58,7 +58,7 @@ public:
         static constexpr uint32_t MaxRects        = 20000;
         static constexpr uint32_t MaxVertices     = MaxRects * 4;
         static constexpr uint32_t MaxIndices      = MaxRects * 6;
-        static constexpr uint32_t MaxTextureSlots = 32;
+        static constexpr uint32_t MaxTextureSlots = 16;
 
         Ref<Texture> WhiteTexture;
         std::unique_ptr<Descriptor> textureDescriptors;

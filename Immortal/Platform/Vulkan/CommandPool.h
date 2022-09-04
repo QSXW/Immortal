@@ -97,10 +97,19 @@ using TimelineMap = std::map<Timeline, std::unique_ptr<LightArray<CommandBuffer*
 class TimelineCommandBuffer
 {
 public:
+    enum class DiscardType
+    {
+        Timeline,
+        All
+    };
+
+public:
     TimelineCommandBuffer() = default;
 
     TimelineCommandBuffer(Device *device, Queue::Type type);
     
+    ~TimelineCommandBuffer();
+
     const LightArray<CommandBuffer *> &GetCommandBuffers(const Timeline &timeline);
 
 public:
@@ -128,6 +137,35 @@ public:
     bool IsRecorded() const
     {
         return currentCommandBuffer->IsRecorded() || !commandBuffers->empty();
+    }
+
+private:
+    VkResult __GetCompletion(VkSemaphore semaphore, uint64_t *value) const;
+
+    template <DiscardType T>
+    void __DiscardCache()
+    {
+        if (!cache.empty())
+        {
+            for (auto it = cache.begin(); it != cache.end(); )
+            {
+                uint64_t completion;
+                __GetCompletion(it->first.semaphore, &completion);
+                if (completion >= it->first.value)
+                {
+                    for (auto &cmd : *it->second)
+                    {
+                        commandPool->DiscardBuffer(cmd);
+                    }
+                    it->second->clear();
+                    it = cache.erase(it);
+                }
+                else if constexpr (T == DiscardType::Timeline)
+                {
+                    break;
+                }
+            }
+        }
     }
 
 private:

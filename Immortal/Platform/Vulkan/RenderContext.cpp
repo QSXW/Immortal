@@ -20,14 +20,21 @@ VkResult RenderContext::Status = VK_NOT_READY;
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
 #if defined( _WIN32 )
     { "VK_KHR_win32_surface", false },
-#elif defined( __linux__ )
+#elif defined(__linux__)
     { "VK_KHR_xcb_surface",   false },
+#endif
+#if defined(__APPLE__)
+    { "VK_EXT_metal_surface",           false },
+    { "VK_KHR_portability_enumeration", false },
 #endif
 };
 
 std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
     { VK_KHR_SWAPCHAIN_EXTENSION_NAME,          false },
-    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, false }
+    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, false },
+#ifdef __APPLE__
+    { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, false },
+#endif
 };
 
 static std::vector<const char *> ValidationLayers = {

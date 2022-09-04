@@ -105,7 +105,9 @@ private:
 struct Profiler
 {
 
-    Profiler(const char *msg = "") : start{clock()}, end{0}
+    Profiler(const char *msg = "") :
+        start{clock()},
+        end{0l}
     {
         LOG::INFO("-> {0}", msg);
     }
@@ -117,8 +119,8 @@ struct Profiler
         LOG::INFO("<- {} (ms), {} (s)", end - start, duration);
     }
 
-    time_t start;
-    time_t end;
+    clock_t start;
+    clock_t end;
 };
 
 }

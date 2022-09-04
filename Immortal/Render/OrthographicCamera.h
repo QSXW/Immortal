@@ -67,7 +67,7 @@ public:
         ReCalculateViewMatrix();
     }
 
-    virtual Matrix4 ViewProjection() const
+    virtual Matrix4 ViewProjection() const override
     {
         return viewProjection;
     }

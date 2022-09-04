@@ -103,7 +103,7 @@ public:
 
     virtual ~GuiLayer();
 
-    void OnUpdate() { };
+    void OnUpdate() override { }
 
     virtual void OnAttach() override;
 
@@ -118,12 +118,12 @@ public:
 
     void AddLayer(Layer *layer);
 
-    void Begin()
+    void Begin() override
     {
         ImGui::NewFrame();  
     }
 
-    void End()
+    void End() override
     {
         ImGui::Render();
     }

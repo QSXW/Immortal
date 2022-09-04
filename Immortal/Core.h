@@ -24,7 +24,7 @@
 #include <Windows.h>
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
     #if defined IML_DLL_EXPORT
         #define IMMORTAL_API __declspec(dllexport)
     #elif defined IML_DLL_IMPORT
@@ -32,7 +32,7 @@
     #else
         #define IMMORTAL_API
     #endif
-#elif defined( __linux__ )
+#elif defined(__linuxe__) || defined(__APPLE__)
     #define IMMORTAL_API __attribute__((visibility("default")))
 #else
     #error Unsupport Platform Detected!

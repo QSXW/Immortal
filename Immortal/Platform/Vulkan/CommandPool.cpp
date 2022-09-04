@@ -127,6 +127,11 @@ TimelineCommandBuffer::TimelineCommandBuffer(Device *device, Queue::Type type)
     commandBuffers.reset(new LightArray<CommandBuffer*>);
 }
 
+TimelineCommandBuffer:: ~TimelineCommandBuffer()
+{
+    __DiscardCache<DiscardType::All>();
+}
+
 const LightArray<CommandBuffer*> &TimelineCommandBuffer::GetCommandBuffers(const Timeline &timeline)
 {
     if (currentCommandBuffer->Recording())
@@ -134,34 +139,19 @@ const LightArray<CommandBuffer*> &TimelineCommandBuffer::GetCommandBuffers(const
         End();
     }
 
-    if (!cache.empty())
-    {
-        auto device = commandPool->GetAddress<Device>();
-        for (auto it = cache.begin(); it != cache.end(); )
-        {
-            uint64_t completion;
-            Check(device->GetCompletion(it->first.semaphore, &completion));
-            if (completion >= it->first.value)
-            {
-                for (auto &cmd : *it->second)
-                {
-                    commandPool->DiscardBuffer(cmd);
-                }
-                it->second->clear();
-                it = cache.erase(it);
-            }
-            else 
-            {
-                break;
-            }
-        }
-    }
+    __DiscardCache<DiscardType::Timeline>();
 
     auto *ret = commandBuffers.get();
     cache[timeline] = std::move(commandBuffers);
     commandBuffers.reset(new LightArray<CommandBuffer*>);
 
     return *ret;
+}
+
+VkResult TimelineCommandBuffer::__GetCompletion(VkSemaphore semaphore, uint64_t *value) const
+{
+    auto device = commandPool->GetAddress<Device>();
+    return device->GetCompletion(semaphore, value);
 }
 
 }

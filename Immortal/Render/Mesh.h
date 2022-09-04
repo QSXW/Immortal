@@ -202,7 +202,7 @@ public:
     static std::vector<std::shared_ptr<Mesh>> Primitives;
 
     template <Primitive I>
-    static inline constexpr std::shared_ptr<Mesh> Get()
+    static inline std::shared_ptr<Mesh> Get()
     {
         return Primitives[static_cast<uint32_t>(I)];
     }

@@ -42,7 +42,15 @@ private:
 template <class T>
 class ConstantScalarInterator : public ScalarInterator<const T>
 {
+public:
+    using Super = ScalarInterator<const T>;
 
+public:
+    ConstantScalarInterator(const T *ptr) :
+        Super{ptr}
+    {
+        
+    }
 };
 
 template <class T>
@@ -148,7 +156,7 @@ public:
 
 private:
     T *data;
-    uint32_t size;
+    size_t size;
 };
 
 }
