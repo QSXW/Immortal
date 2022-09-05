@@ -208,12 +208,11 @@ Instance::Instance(const char                                   *applicationName
         .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
         .pApplicationInfo        = &appInfo,
-        .enabledExtensionCount   = U32(enabledExtensions.size()),
-        .ppEnabledExtensionNames = enabledExtensions.data(),
         .enabledLayerCount       = U32(requiredValidationLayers.size()),
         .ppEnabledLayerNames     = requiredValidationLayers.data(),
+	    .enabledExtensionCount   = U32(enabledExtensions.size()),
+	    .ppEnabledExtensionNames = enabledExtensions.data(),
     };
-
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
