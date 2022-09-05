@@ -238,9 +238,7 @@ endif()
 
 # FFmpeg
 set(FFMPEG_LIBS avcodec avdevice avfilter avformat avutil)
-if (NOT DEFINED FFMPEG_DIR)
-    set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg")
-endif(NOT DEFINED FFMPEG_DIR)
+set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg" CACHE STRING "Path to FFmpeg directory (default=${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg)")
 set(FFMPEG_LIBRARY_DIR "${FFMPEG_DIR}/lib")
 set(FFMPEG_BINARY_DIR  "${FFMPEG_DIR}/bin")
 set(FFMPEG_INCLUDE_DIR "${FFMPEG_DIR}/include")
