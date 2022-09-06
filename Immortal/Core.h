@@ -25,14 +25,14 @@
 #endif
 
 #ifdef _MSC_VER
-    #if defined IML_DLL_EXPORT
+    #if defined EXPORT_IMMORTAL
         #define IMMORTAL_API __declspec(dllexport)
-    #elif defined IML_DLL_IMPORT
+    #elif defined IMPORT_IMMORTAL
         #define IMMORTAL_API __declspec(dllimport)
     #else
         #define IMMORTAL_API
     #endif
-#elif defined(__linuxe__) || defined(__APPLE__)
+#elif defined(__linux__) || defined(__APPLE__)
     #define IMMORTAL_API __attribute__((visibility("default")))
 #else
     #error Unsupport Platform Detected!
