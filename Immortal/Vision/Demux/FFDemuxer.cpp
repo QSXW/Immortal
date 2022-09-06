@@ -152,8 +152,8 @@ public:
         auto stream = handle->streams[GetIndex(type)];
 
         auto name = GetHardwareDecoderNameById(stream->codecpar->codec_id);
-        auto codec = !name ? avcodec_find_decoder(stream->codecpar->codec_id) : avcodec_find_decoder_by_name(name);
-        if (!codec)
+        auto codec = avcodec_find_decoder_by_name(name);
+        if (!codec && !(codec = avcodec_find_decoder(stream->codecpar->codec_id)))
         {
             LOG::ERR("There is not suitable codec for {}", handle->url);
         }

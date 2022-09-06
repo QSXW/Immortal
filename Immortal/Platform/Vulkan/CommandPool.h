@@ -59,7 +59,6 @@ public:
     }
 
     template <class T>
-    requires std::is_same_v<Device, T>
     T *GetAddress()
     {
         if constexpr (IsPrimitiveOf<Device, T>())
