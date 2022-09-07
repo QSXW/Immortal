@@ -130,7 +130,7 @@ void Buffer::Create(size_t size)
 
 void Buffer::Map()
 {
-    if (!mappedData)
+    if (!mappedData && !persistent)
     {
         vmaMapMemory(device->MemoryAllocator(), memory, (void **)&mappedData);
     }
@@ -138,11 +138,11 @@ void Buffer::Map()
 
 void Buffer::Unmap()
 {
-    if (mappedData)
+    if (mappedData && !persistent)
     {
         vmaUnmapMemory(device->MemoryAllocator(), memory);
+        mappedData = nullptr;
     }
-    mappedData = nullptr;
 }
 
 void Buffer::Flush()

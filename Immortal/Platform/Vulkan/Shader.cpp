@@ -99,6 +99,8 @@ Shader::Shader(Device *device, const std::vector<uint32_t> &vsSpirv, const std::
     
     stages[0] = CreateStage(modules[0], VK_SHADER_STAGE_VERTEX_BIT);
     stages[1] = CreateStage(modules[1], VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    Setup();
 }
 
 Shader::~Shader()
@@ -109,8 +111,14 @@ Shader::~Shader()
         {
             device->DestroyAsync(m);
         }
-        device->DestroyAsync(descriptorSetLayout);
-        device->DestroyAsync(pipelineLayout.Handle());
+        if (descriptorSetLayout != VK_NULL_HANDLE)
+        {
+            device->DestroyAsync(descriptorSetLayout);
+        }
+        if (pipelineLayout != VK_NULL_HANDLE)
+        {
+            device->DestroyAsync(pipelineLayout.Handle());
+        }
     }
 }
 

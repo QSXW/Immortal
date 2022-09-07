@@ -235,5 +235,46 @@ GuiLayer::Super *RenderContext::CreateGuiLayer()
     return new GuiLayer{ this };
 }
 
+void RenderContext::PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+{
+    Submit([&](CommandBuffer *cmdbuf) {
+        cmdbuf->PushConstants(
+            pipeline->Layout(),
+            stage,
+            offset,
+            size,
+            data
+            );
+        });
+}
+
+void RenderContext::Begin(RenderTarget *renderTarget)
+{
+    Submit([&](CommandBuffer *cmdbuf) {
+        auto &desc = renderTarget->Desc();
+
+        VkRenderPassBeginInfo beginInfo = {
+            .sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .pNext                    = nullptr,
+            .renderPass               = renderTarget->Get<RenderPass>(),
+            .framebuffer              = renderTarget->Get<Framebuffer>(),
+            .renderArea               = { .offset = { 0, 0 }, .extent = { desc.Width, desc.Height}},
+            .clearValueCount          = renderTarget->ColorAttachmentCount() + 1,
+            .pClearValues             = rcast<VkClearValue*>(&renderTarget->clearValues),
+        };
+
+        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        cmdbuf->SetViewport(ncast<float>(desc.Width), ncast<float>(desc.Height));
+        cmdbuf->SetScissor(desc.Width, desc.Height);
+    });
+}
+
+void RenderContext::End()
+{
+    Submit([&](CommandBuffer *cmdbuf) {
+        cmdbuf->EndRenderPass();
+    });
+}
+
 }
 }

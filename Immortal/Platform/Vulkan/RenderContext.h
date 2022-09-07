@@ -9,7 +9,8 @@
 #include "RenderPass.h"
 #include "Framebuffer.h"
 #include "CommandBuffer.h"
-#include "GuiLayer.h"
+#include "Pipeline.h"
+#include "ImGui/GuiLayer.h"
 
 namespace Immortal
 {
@@ -63,7 +64,13 @@ public:
         return !!swapchain;
     }
 
-    virtual GuiLayer::Super *CreateGuiLayer() override;
+    virtual SuperGuiLayer *CreateGuiLayer() override;
+
+    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+
+    virtual void Begin(RenderTarget *renderTarget);
+
+    virtual void End();
 
 public:
     void CreateSurface();
