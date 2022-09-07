@@ -39,6 +39,9 @@ public:
 	void OnUpdate()
 	{
 		camera.OnUpdate();
+
+		Render::Begin(renderTarget, camera);
+
 		Render2D::BeginScene(camera);
 
 		static float rotation = 0.0f;
@@ -48,7 +51,6 @@ public:
 		Render2D::SetColor(color, luminance);
 		Render2D::EndScene();
 
-		Render::Begin(renderTarget, camera);
 		Render2D::BeginScene(camera);
 		for (float y = -5.0f; y < 5.0f; y += 0.5f)
 		{
@@ -64,7 +66,7 @@ public:
 
 	void OnGuiRender()
 	{
-		static bool show_demo_window = false;
+		static bool show_demo_window = true;
 
 		if (show_demo_window)
 		{
@@ -72,7 +74,6 @@ public:
 		}
 
 		frame->Render();
-		LOG::DEBUG("Width:{}, Height:{}", frame->Width(), frame->Height());
 		offline.OnUpdate(renderTarget.Get(), [] {});
 	}
 

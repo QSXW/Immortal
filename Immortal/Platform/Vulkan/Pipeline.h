@@ -121,6 +121,8 @@ public:
 public:
     GraphicsPipeline(Device *device, Ref<Shader::Super> shader);
 
+    GraphicsPipeline(Device *device, Shader *shader);
+
     virtual ~GraphicsPipeline();
 
     virtual void Set(const InputElementDescription &description) override;

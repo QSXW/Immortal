@@ -54,6 +54,13 @@ public:
 
     void Unmap();
 
+    template <class T>
+    void Map(T **ppData)
+    {
+        Map();
+        *ppData = (T *)mappedData;
+    }
+
     void Flush();
 
 private:

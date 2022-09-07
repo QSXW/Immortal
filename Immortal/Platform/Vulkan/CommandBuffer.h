@@ -180,7 +180,7 @@ public:
 
     void BindIndexBuffer(Buffer *buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32)
     {
-        BindIndexBuffer(*buffer, 0, indexType);
+        BindIndexBuffer(*buffer, buffer->Offset(), indexType);
     }
 
     template <Buffer::Type type>
@@ -223,6 +223,12 @@ public:
 
         __Record();
         vkCmdSetScissor(handle, 0, 1, &scissor);
+    }
+
+    void SetScissor(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D *pScissors)
+    {
+        __Record();
+        vkCmdSetScissor(handle, firstScissor, scissorCount, pScissors);
     }
 
     void Draw(uint32_t indexCount)

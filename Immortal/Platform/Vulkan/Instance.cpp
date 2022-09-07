@@ -192,19 +192,20 @@ Instance::Instance(const char                                   *applicationName
         LOG::ERR("Required validation layers are missing.");
     }
 
-    VkApplicationInfo appInfo{};
-    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pNext              = nullptr;
-    appInfo.pApplicationName   = applicationName;
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName        = applicationName;
-    appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion         = apiVersion;
+    VkApplicationInfo appInfo = {
+        .sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        .pNext              = nullptr,
+        .pApplicationName   = applicationName,
+        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+        .pEngineName        = applicationName,
+        .engineVersion      = VK_MAKE_VERSION(1, 0, 0),
+        .apiVersion         = apiVersion,
+    };
 
     VkInstanceCreateInfo instanceInfo = {
         .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pNext                   = nullptr,
-#ifdef VK_KHR_portability_enumeration
+#ifdef __APPLE__
         .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
         .pApplicationInfo        = &appInfo,

@@ -199,49 +199,21 @@ void Renderer::SwapBuffers()
 void Renderer::Begin(RenderTarget::Super *superRenderTarget)
 {
     auto renderTarget = dynamic_cast<RenderTarget *>(superRenderTarget);
-    renderTarget->IssueTimeline({timelineSemaphore, syncValues[sync] + 3});
-
-    context->Submit([&](CommandBuffer *cmdbuf) {
-        auto &desc = renderTarget->Desc();
-
-        VkRenderPassBeginInfo beginInfo = {
-            .sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .pNext                    = nullptr,
-            .renderPass               = renderTarget->Get<RenderPass>(),
-            .framebuffer              = renderTarget->Get<Framebuffer>(),
-            .renderArea               = { .offset = { 0, 0 }, .extent = { desc.Width, desc.Height}},
-            .clearValueCount          = renderTarget->ColorAttachmentCount() + 1,
-            .pClearValues             = rcast<VkClearValue*>(&renderTarget->clearValues),
-        };
-
-        cmdbuf->BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        cmdbuf->SetViewport(ncast<float>(desc.Width), ncast<float>(desc.Height));
-        cmdbuf->SetScissor(desc.Width, desc.Height);
-    });
+    context->Begin(renderTarget);
 }
 
 void Renderer::End()
 {
-    context->Submit([&](CommandBuffer *cmdbuf) {
-        cmdbuf->EndRenderPass();
-    });
+    context->End();
 }
 
-void Renderer::PushConstant(GraphicsPipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+void Renderer::PushConstant(GraphicsPipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
     auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
-    context->Submit([&](CommandBuffer *cmdbuf) {
-        cmdbuf->PushConstants(
-            pipeline->Layout(),
-            stage,
-            offset,
-            size,
-            data
-            );
-        });
+    context->PushConstant(pipeline, stage, size, data, offset);
 }
 
-void Renderer::PushConstant(ComputePipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
+void Renderer::PushConstant(ComputePipeline::Super *superPipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
     auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
     context->Submit([&](CommandBuffer *cmdbuf) {

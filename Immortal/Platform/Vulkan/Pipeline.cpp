@@ -167,6 +167,14 @@ GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> shader) :
     CleanUpObject(state.get(), 0, offsetof(State, inputAttributeDescriptions));
 }
 
+GraphicsPipeline::GraphicsPipeline(Device *device, Shader *shader) :
+    Super{ shader },
+    NativeSuper{ device, shader }
+{
+    state = std::make_unique<State>();
+    CleanUpObject(state.get(), 0, offsetof(State, inputAttributeDescriptions));
+}
+
 GraphicsPipeline::~GraphicsPipeline()
 {
 
@@ -249,11 +257,11 @@ void GraphicsPipeline::Reconstruct(const SuperRenderTarget *superTarget)
         {
             colorBlend.blendEnable         = VK_TRUE;
             colorBlend.colorBlendOp        = VK_BLEND_OP_ADD;
-            colorBlend.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+            colorBlend.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
             colorBlend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
             colorBlend.alphaBlendOp        = VK_BLEND_OP_ADD;
-            colorBlend.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-            colorBlend.dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+            colorBlend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+            colorBlend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         }
         else
         {
@@ -297,25 +305,29 @@ void GraphicsPipeline::Reconstruct(const SuperRenderTarget *superTarget)
     state->dynamic.pDynamicStates = dynamic.data();
 
     auto shader = desc.shader.InterpretAs<Shader>();
-
-    VkGraphicsPipelineCreateInfo createInfo{};
-    createInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.pNext               = nullptr;
-    createInfo.renderPass          = target->GetRenderPass();
-    createInfo.flags               = 0;
-    createInfo.layout              = layout;
-    createInfo.pInputAssemblyState = &state->inputAssembly;
-    createInfo.pVertexInputState   = &state->vertexInput;
-    createInfo.pRasterizationState = &state->rasterization;
-    createInfo.pDepthStencilState  = &state->depthStencil;
-    createInfo.pViewportState      = &state->viewport;
-    createInfo.pMultisampleState   = &state->multiSample;
-    createInfo.pDynamicState       = &state->dynamic;
-    createInfo.pColorBlendState    = &state->colorBlend;
-
     auto &stages = shader->GetStages();
-    createInfo.pStages    = stages.data();
-    createInfo.stageCount = stages.size();
+
+    VkGraphicsPipelineCreateInfo createInfo = {
+        .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .pNext               = nullptr,
+        .flags               = 0,
+        .stageCount          = U32(stages.size()),
+        .pStages             = stages.data(),
+        .pVertexInputState   = &state->vertexInput,
+        .pInputAssemblyState = &state->inputAssembly,
+        .pTessellationState  = nullptr,
+        .pViewportState      = &state->viewport,
+        .pRasterizationState = &state->rasterization,
+        .pMultisampleState   = &state->multiSample,
+        .pDepthStencilState  = &state->depthStencil,
+        .pColorBlendState    = &state->colorBlend,
+        .pDynamicState       = &state->dynamic,
+        .layout              = layout,
+        .renderPass          = target->GetRenderPass(),
+        .subpass             = 0,
+        .basePipelineHandle  = VK_NULL_HANDLE,
+        .basePipelineIndex   = 0,
+    };
 
     Check(device->CreatePipelines(cache, 1, &createInfo, &handle));
 }
