@@ -34,6 +34,18 @@ static Texture::DataType NativeTypeToOpenGl(Format format, Wrap wrap = Wrap::Cla
     data.Filter = filter == Filter::Linear ? GL_LINEAR : GL_NEAREST;
     switch (Format::ValueType(format))
     {
+	case Format::R8:
+		data.InternalFromat = GL_R8;
+		data.DataFormat     = GL_RED_INTEGER;
+		data.BinaryType     = GL_UNSIGNED_BYTE;
+		break;
+
+    case Format::RG8:
+		data.InternalFromat = GL_RG8;
+		data.DataFormat     = GL_RG;
+		data.BinaryType     = GL_UNSIGNED_BYTE;
+		break;
+
     case Format::R32:
         data.InternalFromat = GL_R32I;
         data.DataFormat = GL_RED_INTEGER;
@@ -103,19 +115,20 @@ class Texture : public SuperTexture
 {
 public:
     using Super = SuperTexture;
+	GLCPP_OPERATOR_HANDLE()
 
 public:
     Texture(uint32_t width, uint32_t height);
 
     Texture(const std::string &path, const Description &description);
 
-    Texture(const uint32_t width, const uint32_t height, Description &description, int levels);
+    Texture(const uint32_t width, const uint32_t height, Description &description);
 
     Texture(const std::string & path, bool flip, Wrap wrap, Filter filter);
 
     Texture(const std::string & path, Wrap wrap, Filter filter);
 
-    Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level = 0);
+    Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description);
 
     virtual ~Texture();
 
@@ -130,22 +143,22 @@ public:
 
     virtual void BindImageTexture(bool layered = false) override;
 
+    virtual void Blit() override;
+
     virtual bool operator==(const Super &super) const override
     {
         auto other = dcast<const Texture *>(&super);
         return handle == other->handle;
     }
 
-    uint32_t Handle() const
+    virtual void As(DescriptorBuffer *descriptors, size_t index) override;
+
+    uint32_t MipLevels() const
     {
-        return ncast<uint64_t>(handle);
+		return mipLevels;
     }
 
-    virtual void As(Descriptor::Super *descriptors, size_t index) override;
-
 private:
-    uint32_t handle;
-
     Texture::DataType type;
 };
 

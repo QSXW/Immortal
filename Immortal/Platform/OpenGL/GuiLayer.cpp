@@ -3,6 +3,7 @@
 #include "Framework/Application.h"
 #include "Common.h"
 
+#define IMGUI_IMPL_OPENGL_LOADER_GL3W
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>

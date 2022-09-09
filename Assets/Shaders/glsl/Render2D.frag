@@ -9,7 +9,13 @@ layout(location = 2) in flat float inTexIndex;
 layout(location = 3) in float      inTilingFactor;
 layout(location = 4) in flat int   inObjectID;
 
-layout(binding = 1) uniform sampler2D uTextures[16];
+#ifdef __APPLE__
+#define MAX_TEXTURE_DESCRIPTOR 16
+#else
+#define MAX_TEXTURE_DESCRIPTOR 32
+#endif
+
+layout(binding = 1) uniform sampler2D uTextures[MAX_TEXTURE_DESCRIPTOR];
 
 void main()
 {

@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "Camera.h"
 #include "RenderContext.h"
-#include "Renderer.h"
+#include "renderContext.h"
 #include "Texture.h"
 #include "Shader.h"
 #include "Descriptor.h"
@@ -100,48 +100,32 @@ public:
 
     static void OnWindowResize(UINT32 width, UINT32 height)
     {
-        renderer->OnResize(0, 0, width, height);
-    }
-
-    static void SetClearColor(Color &color)
-    {
-        renderer->SetClearColor(color);
-    }
-
-    static void Clear(const Color &color = Color{ 0.0f })
-    {
-        renderer->SetClearColor(color);
-        renderer->Clear();
+        renderContext->OnResize(0, 0, width, height);
     }
 
     static void Begin(Ref<RenderTarget> &renderTarget)
     {
-        renderer->Begin(renderTarget);
+        renderContext->Begin(renderTarget);
     }
 
     static void Begin(Ref<RenderTarget> &renderTarget, const Camera &camera)
     {
-        renderer->Begin(renderTarget);
+        renderContext->Begin(renderTarget);
     }
 
     static void End()
     {
-        renderer->End();
-    }
-
-    static uint32_t CurrentPresentedFrameIndex()
-    {
-        return renderer->Index();
+        renderContext->End();
     }
 
     static void SwapBuffers()
     {
-        renderer->SwapBuffers();
+        renderContext->SwapBuffers();
     }
 
     static void PrepareFrame()
     {
-        renderer->PrepareFrame();
+        renderContext->PrepareFrame();
     }
 
     static const char *Api()
@@ -151,39 +135,39 @@ public:
 
     static const char *GraphicsRenderer()
     {
-        return renderer->GraphicsRenderer();
+        return renderContext->GraphicsRenderer();
     }
 
     static Shader *CreateShader(const std::string &filepath, Shader::Type type = Shader::Type::Graphics)
     {
-        return renderer->CreateShader(filepath, type);
+        return renderContext->CreateShader(filepath, type);
     }
 
     template <class T>
     static Buffer *CreateBuffer(const size_t size, const T *data, Buffer::Type type)
     {
-        return renderer->CreateBuffer(size, data, type);
+        return renderContext->CreateBuffer(size, data, type);
     }
 
     template <class T>
     static Buffer *CreateBuffer(const std::vector<T> &v, Buffer::Type type)
     {
-        return renderer->CreateBuffer(sizeof(T) * v.size(), v.data(), type);
+        return renderContext->CreateBuffer(sizeof(T) * v.size(), v.data(), type);
     }
 
     static Buffer *CreateBuffer(const size_t size, Buffer::Type type)
     {
-        return renderer->CreateBuffer(size, type);
+        return renderContext->CreateBuffer(size, type);
     }
 
     static Buffer *CreateBuffer(const size_t size, uint32_t binding = 0)
     {
-        return renderer->CreateBuffer(size, binding);
+        return renderContext->CreateBuffer(size, binding);
     }
 
     static RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
     {
-        return renderer->CreateRenderTarget(description);
+        return renderContext->CreateRenderTarget(description);
     }
 
     template <class T, class... Args>
@@ -203,59 +187,59 @@ public:
         }
         if constexpr (IsPrimitiveOf<Texture, T>())
         {
-            return renderer->CreateTexture(std::forward<Args>(args)...);
+            return renderContext->CreateTexture(std::forward<Args>(args)...);
         }
         if constexpr (IsPrimitiveOf<TextureCube, T>())
         {
-            return renderer->CreateTextureCube(std::forward<Args>(args)...);
+            return renderContext->CreateTextureCube(std::forward<Args>(args)...);
         }
         if constexpr (IsPrimitiveOf<GraphicsPipeline, T>())
         {
-            return renderer->CreateGraphicsPipeline(std::forward<Args>(args)...);
+            return renderContext->CreateGraphicsPipeline(std::forward<Args>(args)...);
         }
         if constexpr (IsPrimitiveOf<ComputePipeline, T>())
         {
-            return renderer->CreateComputePipeline(std::forward<Args>(args)...);
+            return renderContext->CreateComputePipeline(std::forward<Args>(args)...);
         }
         throw RuntimeException("Type not supported yet");
         return nullptr;
     }
 
     template <class T>
-    static Descriptor *CreateDescriptor(uint32_t count)
+    static DescriptorBuffer *CreateDescriptor(uint32_t count)
     {
         if constexpr (IsPrimitiveOf<Buffer, T>())
         {
-            return renderer->CreateBufferDescriptor(count);
+            return renderContext->CreateBufferDescriptor(count);
         }
         if constexpr (IsPrimitiveOf<Texture, T>())
         {
-            return renderer->CreateImageDescriptor(count);
+            return renderContext->CreateImageDescriptor(count);
         }
     }
 
     static void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset = 0)
     {
-        renderer->PushConstant(pipeline, stage, size, data, offset);
+        renderContext->PushConstant(pipeline, stage, size, data, offset);
     }
 
-    static void PushConstant(ComputePipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset = 0)
+    static void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset = 0)
     {
-        renderer->PushConstant(pipeline, stage, size, data, offset);
+        renderContext->PushConstant(pipeline, size, data, offset);
     }
 
     static void Draw(GraphicsPipeline *pipeline)
     {
-        renderer->Draw(pipeline);
+		renderContext->Draw(pipeline);
     }
 
     static void Dispatch(ComputePipeline *pipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
     {
-        renderer->Dispatch(pipeline, nGroupX, nGroupY, nGroupZ);
+		renderContext->Dispatch(pipeline, nGroupX, nGroupY, nGroupZ);
     }
 
 private:
-    static std::unique_ptr<Renderer> renderer;
+	static RenderContext *renderContext;
 
     static Data data;
 

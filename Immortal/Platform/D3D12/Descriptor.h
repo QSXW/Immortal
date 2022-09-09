@@ -8,7 +8,7 @@ namespace Immortal
 namespace D3D12
 {
 
-struct CPUDescriptor : public SuperDescriptor, D3D12_CPU_DESCRIPTOR_HANDLE
+struct CPUDescriptor : D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:
     CPUDescriptor() = default;
@@ -46,7 +46,7 @@ public:
     }
 };
 
-struct GPUDescriptor : public SuperDescriptor, D3D12_GPU_DESCRIPTOR_HANDLE
+struct GPUDescriptor : D3D12_GPU_DESCRIPTOR_HANDLE
 {
 public:
     GPUDescriptor() = default;
@@ -86,8 +86,6 @@ public:
 
 struct Descriptor
 {
-    using Super = SuperDescriptor;
-
     enum class Type
     {
         ShaderResourceView,

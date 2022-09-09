@@ -31,17 +31,19 @@ public:
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
 
-    virtual void Bind(const Descriptor::Super *descriptors, uint32_t binding = 0) override;
+    virtual void Bind(const DescriptorBuffer *descriptors, uint32_t binding = 0) override;
 
-    virtual void Bind(Buffer::Super *buffer, uint32_t slot = 0) override;
+    virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;
 
-    virtual void Bind(Texture::Super *texture, uint32_t slot = 0) override;
+    virtual void Bind(SuperTexture *texture, uint32_t binding = 0) override;
 
     virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
 
     virtual void FreeDescriptorSet(uint64_t uuid) override;
 
-    void Bind(Buffer *buffer, uint32_t slot = 0);
+    void Bind(Buffer *buffer, uint32_t binding = 0);
+
+    void Bind(const CPUDescriptor *descriptors, uint32_t binding = 0);
 
     void InitRootSignature(const Shader *shader);
 
@@ -167,8 +169,6 @@ public:
     ComputePipeline(Device *device, Shader::Super *shader);
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
-
-private:
 };
 
 }

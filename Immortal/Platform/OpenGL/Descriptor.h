@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "Common.h"
 #include "Render/Descriptor.h"
 
 namespace Immortal
@@ -8,23 +8,28 @@ namespace Immortal
 namespace OpenGL
 {
 
-struct Descriptor : public SuperDescriptor
+enum class DescriptorType
 {
-    using Super = SuperDescriptor;
+	Buffer,
+	Image,
+	ImageWrite,
+};
 
-    Descriptor() :
-        handle{ 0 }
-    {
+struct Descriptor
+{
+	Descriptor(uint32_t handle, DescriptorType type, uint32_t binding) :
+	    Type{ type },
+	    Binding{ binding },
+	    handle{handle}
+	{
 
-    }
+	}
 
-    Descriptor(uint32_t handle) :
-        handle{ handle }
-    {
+	DescriptorType Type;
 
-    }
+	uint32_t Binding;
 
-    uint32_t handle;
+	GLCPP_OPERATOR_HANDLE()
 };
 
 }

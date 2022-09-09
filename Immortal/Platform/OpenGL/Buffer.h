@@ -1,5 +1,6 @@
 #pragma once
 #include "Core.h"
+#include "Common.h"
 #include "Render/Buffer.h"
 
 namespace Immortal
@@ -13,6 +14,8 @@ public:
     using Super         = SuperBuffer;
     using BindPointType = uint32_t;
 
+	GLCPP_OPERATOR_HANDLE()
+
 public:
     Buffer(uint32_t size, Type type);
 
@@ -21,16 +24,6 @@ public:
     Buffer(uint32_t size, uint32_t binding);
 
     virtual ~Buffer() override;
-
-    virtual uint32_t Handle() const
-    {
-        return handle;
-    }
-
-    virtual operator uint32_t() const
-    {
-        return handle;
-    }
 
     virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
 
@@ -63,8 +56,6 @@ public:
     }
 
 protected:
-    uint32_t handle{};
-
     BindPointType bindPoint{ GL_ARRAY_BUFFER };
 };
 

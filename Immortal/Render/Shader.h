@@ -127,7 +127,6 @@ public:
             { "vec2",  Format::VECTOR2 },
             { "vec3",  Format::VECTOR3 },
             { "vec4",  Format::VECTOR4 },
-            { "mat4",  Format::MATRIX4 }
         };
 
         const auto &it = map.find(key);
@@ -154,9 +153,6 @@ public:
 
     virtual ~Shader() = default;
 
-    virtual void Map() const { }
-    virtual void Unmap() const { }
-
     virtual const char *Name() const
     {
         return "Un-Specified";
@@ -165,11 +161,6 @@ public:
     virtual const std::string &GetEntryPoint() const
     {
         return entryPoint;
-    }
-
-    virtual const uint32_t Handle() const
-    {
-        return -1;
     }
 
     virtual const bool IsGraphics() const
@@ -189,6 +180,11 @@ protected:
 };
 
 using SuperShader = Shader;
+
+namespace Interface
+{
+    using Shader = SuperShader;
+}
 
 SL_DEFINE_BITWISE_OPERATION(Shader::Resource::Type, uint32_t)
 

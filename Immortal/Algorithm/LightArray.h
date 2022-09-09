@@ -50,6 +50,11 @@ public:
         return _data;
     }
 
+    void resize(size_t size) const
+    {
+		_size = size;
+    }
+
     size_t capacity() const
     {
         return Capacity;
@@ -61,6 +66,13 @@ public:
                                      "Please specify a bigger capacity for LightArray or use LightVector instead.");
         _data[_size++] = object;
     }
+
+    void emplace_back(T &&object)
+	{
+		SLASSERT(_size < Capacity && "Too big size for current LightArray."
+		                             "Please specify a bigger capacity for LightArray or use LightVector instead.");
+		_data[_size++] = std::move(object);
+	}
 
     T &operator[](size_t index)
     {

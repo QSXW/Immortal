@@ -8,6 +8,12 @@ namespace Immortal
 namespace Vulkan
 {
 
+SemaphorePool::SemaphorePool() :
+    device{}
+{
+
+}
+
 SemaphorePool::SemaphorePool(Device *device) :
     device{ device }
 {

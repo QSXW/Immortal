@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/RenderContext.h"
+#include "ImGui/GuiLayer.h"
 
 #include "Device.h"
 #include "Instance.h"
@@ -10,7 +11,7 @@
 #include "Framebuffer.h"
 #include "CommandBuffer.h"
 #include "Pipeline.h"
-#include "ImGui/GuiLayer.h"
+#include "SemaphorePool.h"
 
 namespace Immortal
 {
@@ -30,6 +31,12 @@ concept ExposedType = (
     std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain&>      ||
     std::is_same_v<T, Extent2D>       || std::is_same_v<T, Extent2D&>       
     );
+
+struct RenderSemaphore
+{
+	VkSemaphore acquiredImageReady;
+	VkSemaphore renderComplete;
+};
 
 class RenderContext : public SuperRenderContext
 {
@@ -59,18 +66,49 @@ public:
 
     virtual ~RenderContext();
 
-    virtual bool HasSwapchain() override
-    {
-        return !!swapchain;
-    }
-
     virtual SuperGuiLayer *CreateGuiLayer() override;
 
-    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+    virtual void SwapBuffers() override;
 
-    virtual void Begin(RenderTarget *renderTarget);
+	virtual void PrepareFrame() override;
 
-    virtual void End();
+	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
+
+	virtual SuperShader *CreateShader(const std::string &filepath, Shader::Type type) override;
+
+	virtual SuperGraphicsPipeline *CreateGraphicsPipeline(Ref<Shader::Super> shader) override;
+
+	virtual SuperComputePipeline *CreateComputePipeline(Shader::Super *shader) override;
+
+	virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override;
+
+	virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override;
+
+	virtual SuperTextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description) override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, Buffer::Type type) override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, uint32_t binding) override;
+
+	virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
+
+	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
+
+	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
+
+	virtual void PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+
+	virtual void PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
+
+	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
+
+	virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+	virtual void Begin(SuperRenderTarget *renderTarget) override;
+
+	virtual void End() override;
 
 public:
     void CreateSurface();
@@ -147,14 +185,9 @@ public:
         DeviceExtensions[extension] = optional;
     }
 
-    void MoveToFrame(uint32_t index)
-    {
-        present.bufferIndex = index;
-    }
-
     RenderTarget *GetRenderTarget()
     {
-        return present.renderTargets[present.bufferIndex].get();
+		return present.renderTargets[swapchainIndex];
     }
 
     Framebuffer *GetFramebuffer()
@@ -179,14 +212,25 @@ public:
         device->Submit(process);
     }
 
+protected:
+	void __InitSyncObjects();
+    
+    void __SubmitFrame();
+    
+    void __Resize();
+
+    void __PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+
 private:
     Window *window{ nullptr };
 
-    MonoRef<Instance> instance;
-    
-    MonoRef<Device> device;
+    URef<Instance> instance;
 
-    MonoRef<Swapchain> swapchain;
+    URef<Device> device;
+
+    std::vector<URef<Swapchain>> swapchainPool;
+
+    Swapchain *swapchain = nullptr;
 
     Queue *queue{ nullptr };
 
@@ -194,10 +238,10 @@ private:
 
     struct
     {
-        std::vector<std::unique_ptr<RenderTarget>> renderTargets;
-
-        uint32_t bufferIndex{ 0 };
+		std::vector<URef<RenderTarget>> renderTargets;
     } present;
+
+    uint32_t swapchainIndex = 0;
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
@@ -213,6 +257,20 @@ private:
     } regisry;
 
     size_t threadCount{ 1 };
+
+	URef<SemaphorePool> semaphorePool;
+
+	VkSemaphore timelineSemaphore{VK_NULL_HANDLE};
+
+	uint64_t syncValues[3] = {0, 0, 0};
+
+	uint64_t lastSync = 0;
+
+	std::array<RenderSemaphore, 3> semaphores;
+
+	std::array<VkFence, 3> fences{VK_NULL_HANDLE};
+
+	uint32_t sync{0};
 };
 
 }

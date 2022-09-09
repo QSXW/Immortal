@@ -312,4 +312,7 @@ private:
     MonoRef& operator=(const MonoRef &) = delete;
 };
 
+template <class T>
+using URef = MonoRef<T>;
+
 }

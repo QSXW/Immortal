@@ -3,6 +3,8 @@
 #include "Core.h"
 #include "Framework/Window.h"
 #include "Shader.h"
+#include "Pipeline.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
@@ -26,7 +28,7 @@ public:
     {
         Description() { }
 
-        Description(Window *handle, UINT32 width, UINT32 height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
+        Description(Window *handle, uint32_t width, uint32_t height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
             WindowHandle{ handle },
             Width{ width },
             Height{ height },
@@ -35,9 +37,9 @@ public:
 
         }
 
-        UINT32 Width{ 0 };
+        uint32_t Width{ 0 };
 
-        UINT32 Height{ 0 };
+        uint32_t Height{ 0 };
 
         int FrameCount{ 3 };
 
@@ -64,16 +66,6 @@ public:
 
     virtual ~RenderContext() = default;
 
-    virtual void SwapBuffers()
-    {
-
-    }
-
-    virtual bool HasSwapchain()
-    {
-        return false;
-    }
-
     virtual GuiLayer *CreateGuiLayer()
     {
         return nullptr;
@@ -94,7 +86,104 @@ public:
         return vendor.c_str();
     }
 
-    std::shared_ptr<Shader> CreateShader(const std::string &filename, Shader::Type type);
+	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+	{
+	
+	}
+
+    virtual void SwapBuffers()
+	{
+	
+	}
+
+	virtual void PrepareFrame()
+	{
+	
+	}
+
+	virtual Shader *CreateShader(const std::string &filepath, Shader::Type type)
+	{
+		return nullptr;
+	}
+
+	virtual GraphicsPipeline *CreateGraphicsPipeline(Ref<Shader> shader)
+	{
+		return nullptr;
+	}
+
+	virtual ComputePipeline *CreateComputePipeline(Shader *shader)
+	{
+		return nullptr;
+	}
+
+	virtual Texture *CreateTexture(const std::string &filepath, const Texture::Description &description = {})
+	{
+		return nullptr;
+	}
+
+	virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {})
+	{
+		return nullptr;
+	}
+
+	virtual TextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description = {})
+	{
+		return nullptr;
+	}
+
+	virtual Buffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+	{
+		return nullptr;
+	}
+
+	virtual Buffer *CreateBuffer(const size_t size, Buffer::Type type)
+	{
+		return nullptr;
+	}
+
+	virtual Buffer *CreateBuffer(const size_t size, uint32_t binding)
+	{
+		return nullptr;
+	}
+
+	virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
+	{
+		return nullptr;
+	}
+
+	virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+	{
+	}
+
+	virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
+	{
+	}
+
+	virtual void Draw(GraphicsPipeline *pipeline)
+	{
+	}
+
+	virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+	{
+	}
+
+	virtual void Begin(RenderTarget *renderTarget)
+	{
+	}
+
+	virtual void End()
+	{
+	}
+
+	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count)
+	{
+		return nullptr;
+	}
+
+	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count)
+	{
+		return nullptr;
+	}
 
 public:
     RenderContext(const RenderContext &) = delete;
@@ -125,5 +214,10 @@ protected:
 };
 
 using SuperRenderContext = RenderContext;
+
+namespace Interface
+{
+	using RenderContext = SuperRenderContext;
+}
 
 }

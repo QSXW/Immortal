@@ -14,15 +14,16 @@ class Shader : public SuperShader
 {
 public:
     using Super = SuperShader;
+	GLCPP_OPERATOR_HANDLE()
 
 public:
     Shader(const std::string &filepath, Type type);
 
     ~Shader();
 
-    void Map() const override;
+    void Activate() const;
 
-    void Unmap() const override;
+    void Deactivate() const;
 
     void Set(const std::string &name, int value);
 
@@ -40,19 +41,9 @@ public:
 
     virtual void DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ);
 
-    virtual const uint32_t Handle() const override
-    {
-        return handle;
-    }
-
     virtual const char *Name() const override
     {
         return name.c_str();
-    }
-
-    operator GLint() const
-    {
-        return handle;
     }
 
     GLuint Get(const std::string &name) const;
@@ -60,11 +51,11 @@ public:
 private:
     void Link(const std::vector<GLuint> &shaders);
 
-    uint32_t CompileShader(GLenum type, const char *src);
+    uint32_t CompileShader(GLenum type, const std::string &source);
+
+    std::string __InjectPreamble(const std::string &source);
 
 private:
-    uint32_t handle;
-
     std::string name;
 
     Shader::Type type = Shader::Type::Graphics;

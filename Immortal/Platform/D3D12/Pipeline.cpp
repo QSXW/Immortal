@@ -191,6 +191,12 @@ void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
     device->Create(&pipelineStateDesc, &pipelineState);
 }
 
+
+void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
+{
+	Bind(descriptorBuffer->DeRef<CPUDescriptor>(), binding);
+}
+
 void Pipeline::Bind(Buffer *buffer, uint32_t binding)
 {
     DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
@@ -218,9 +224,8 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
     Bind(buffer, buffer->Binding());
 }
 
-void Pipeline::Bind(const Descriptor::Super *super, uint32_t binding)
+void Pipeline::Bind(const CPUDescriptor *descriptors, uint32_t binding)
 {
-    auto descriptors = rcast<const CPUDescriptor *>(super);
     auto increment = descriptorHeap.active->GetIncrement();
 
     DescriptorTable &descriptorTable = descriptorTables[binding];

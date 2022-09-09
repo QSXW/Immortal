@@ -13,6 +13,8 @@ class Device;
 class SemaphorePool : public SuperSemaphorePool
 {
 public:
+	SemaphorePool();
+
     SemaphorePool(Device *device);
 
     ~SemaphorePool();

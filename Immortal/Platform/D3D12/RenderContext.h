@@ -33,6 +33,12 @@ public:
 #include "Queue.h"
 #include "Fence.h"
 #include "Math/Vector.h"
+#include "Buffer.h"
+#include "RenderTarget.h"
+#include "Shader.h"
+#include "Texture.h"
+#include "Pipeline.h"
+#include "ImGui/GuiLayer.h"
 
 namespace Immortal
 {
@@ -53,8 +59,49 @@ public:
 
     ~RenderContext();
 
-    virtual GuiLayer *CreateGuiLayer() override;
+    virtual void SwapBuffers() override;
 
+	virtual void PrepareFrame() override;
+
+	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
+
+    virtual SuperGuiLayer *CreateGuiLayer() override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, Buffer::Type type) override;
+
+	virtual SuperBuffer *CreateBuffer(const size_t size, uint32_t binding) override;
+
+	virtual SuperShader *CreateShader(const std::string &filepath, Shader::Type type) override;
+
+	virtual SuperGraphicsPipeline *CreateGraphicsPipeline(Ref<SuperShader> shader) override;
+
+	virtual SuperComputePipeline *CreateComputePipeline(SuperShader *shader) override;
+
+	virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override;
+
+	virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {}) override;
+
+	virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
+
+	virtual void PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+
+	virtual void PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
+
+	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
+
+	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
+
+	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
+
+	virtual void Begin(SuperRenderTarget *renderTarget) override;
+
+	virtual void End() override;
+
+	void PushConstant(Pipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+
+public:
     void Setup();
 
     template <class T>
@@ -74,19 +121,19 @@ public:
     {
         if constexpr (IsPrimitiveOf<Device, T>())
         {
-            return device.get();
+            return device;
         }
         if constexpr (IsPrimitiveOf<Swapchain, T>())
         {
-            return swapchain.get();
+            return swapchain;
         }
         if constexpr (IsPrimitiveOf<Queue, T>())
         {
-            return queue.get();
+            return queue;
         }
         if constexpr (IsPrimitiveOf<CommandList, T>())
         {
-            return commandList.get();
+            return commandList;
         }
         if constexpr (IsPrimitiveOf<Window, T>())
         {
@@ -137,19 +184,19 @@ private:
 
     ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
 
-    std::unique_ptr<Device> device;
+    URef<Device> device;
 
-    std::unique_ptr<Queue> queue;
+    URef<Queue> queue;
 
-    std::unique_ptr<Swapchain> swapchain;
+    URef<Swapchain> swapchain;
 
     HANDLE swapchainWritableObject{ nullptr };
 
-    std::unique_ptr<CommandList> commandList;
+    URef<CommandList> commandList;
 
     ID3D12CommandAllocator *commandAllocator[MAX_FRAME_COUNT];
 
-    std::unique_ptr<Fence> fence;
+    URef<Fence> fence;
 
     uint64_t fenceValues[MAX_FRAME_COUNT]{ 0 };
 
@@ -173,6 +220,10 @@ private:
     } color;
 
     Rect windowBounds;
+
+	std::array<Barrier<BarrierType::Transition>, 8> barriers;
+
+	uint32_t activeBarrier = 0;
 
 public:
     static Device *UnlimitedDevice;

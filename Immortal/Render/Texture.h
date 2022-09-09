@@ -163,7 +163,7 @@ public:
         return 0;
     }
 
-    virtual void As(Descriptor *descriptor, size_t index)
+    virtual void As(DescriptorBuffer *descriptor, size_t index)
     {
 
     }
@@ -232,5 +232,11 @@ public:
 };
 
 using SuperTextureCube = TextureCube;
+
+namespace Interface
+{
+    using Texture = SuperTexture;
+    using TextureCube = SuperTextureCube;
+}
 
 }

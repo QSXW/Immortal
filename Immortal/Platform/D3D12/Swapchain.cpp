@@ -7,7 +7,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Swapchain::Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc) :
+Swapchain::Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc) :
     device{ device }
 {
     auto factory = device->GetAddress<IDXGIFactory4>();

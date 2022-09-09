@@ -149,7 +149,6 @@ void GuiLayer::OnAttach()
     }
 
     __CreateFontsTexture();
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
 void GuiLayer::OnDetach()
@@ -186,25 +185,21 @@ void GuiLayer::End()
 {
     Super::End();
 
-    ImGuiIO &io  = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
 
     const auto &[width, height] = context->Get<Extent2D>();
+    
+    if (width > 0 && height > 0)
+	{
+		io.DisplaySize = ImVec2{(float) width, (float) height};
 
-    io.DisplaySize = ImVec2{ (float)width, (float)height };
-
-    ImDrawData *primaryDrawData = ImGui::GetDrawData();
-
-    VkClearValue clearValues[] = {
-        {{ .0f, .0f, .0f, 0.0f }},
-        {{ .0f, .0f, .0f, 0.0f }}
-    };
-
-    context->Record([&](CommandBuffer *cmdbuf) -> void {
-        auto renderTarget = context->GetAddress<RenderTarget>();
-        context->Begin(renderTarget);
-        __RenderDrawData(cmdbuf);
-        context->End();
-        });
+		context->Record([&](CommandBuffer *cmdbuf) -> void {
+			auto renderTarget = context->GetAddress<RenderTarget>();
+			context->Begin(renderTarget);
+			__RenderDrawData(cmdbuf);
+			context->End();
+		});
+    }
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -217,6 +212,9 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
 {
     ImDrawData *drawData = ImGui::GetDrawData();
 
+    auto &[vertex, index] = buffers[sync];
+	SLROTATE(sync, 3);
+
     int width  = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
     int height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
     if (width <= 0 || height <= 0)
@@ -226,30 +224,43 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
 
     if (drawData->TotalIdxCount > 0)
     {
-        size_t vertexSize = drawData->TotalVtxCount * sizeof(ImDrawVert);
-        size_t indexSize = drawData->TotalIdxCount * sizeof(ImDrawIdx);
+        size_t totalVertexSize = drawData->TotalVtxCount * sizeof(ImDrawVert);
+        size_t totalIndexSize = drawData->TotalIdxCount * sizeof(ImDrawIdx);
 
-        if (!buffers.vertex || buffers.vertex->Size() < vertexSize)
+        if (!vertex || vertex->Size() < totalVertexSize)
         {
-            __InvalidateRenderBuffer<Buffer::Type::Vertex>(vertexSize);
-        }
-        if (!buffers.index || buffers.index->Size() < indexSize)
-        {
-            __InvalidateRenderBuffer<Buffer::Type::Index>(vertexSize);
+			__InvalidateRenderBuffer<Buffer::Type::Vertex>(vertex, totalVertexSize);
         }
 
+		if (!index || index->Size() < totalIndexSize)
+        {
+			__InvalidateRenderBuffer<Buffer::Type::Index>(index, totalIndexSize);
+        }
+
+        uint8_t *pVertex;
+		uint8_t *pIndex;
+		vertex->Map(&pVertex);
+		index->Map(&pIndex);
         for (int i = 0, voffset = 0, ioffset = 0; i < drawData->CmdListsCount; i++)
         {
             const ImDrawList *cmdList = drawData->CmdLists[i];
-            buffers.vertex->Update(cmdList->VtxBuffer.Size * sizeof(ImDrawVert), cmdList->VtxBuffer.Data, voffset);
-            buffers.index->Update(cmdList->IdxBuffer.Size * sizeof(ImDrawIdx), cmdList->IdxBuffer.Data, ioffset);
-            voffset += cmdList->VtxBuffer.Size * sizeof(ImDrawVert);
-            ioffset += cmdList->IdxBuffer.Size * sizeof(ImDrawIdx);
+			uint32_t vertexSize = cmdList->VtxBuffer.Size * sizeof(ImDrawVert);
+			uint32_t indexSize = cmdList->IdxBuffer.Size * sizeof(ImDrawIdx);
+
+            memcpy(pVertex + voffset, cmdList->VtxBuffer.Data, vertexSize);
+			memcpy(pIndex + ioffset, cmdList->IdxBuffer.Data, indexSize);
+
+			voffset += vertexSize;
+			ioffset += indexSize;
         }
-    
+        vertex->Flush();
+		index->Flush();
+		vertex->Unmap();
+		index->Unmap();
+
         cmdbuf->BindPipeline(*pipeline, pipeline->BindPoint);
-        cmdbuf->BindVertexBuffers(buffers.vertex);
-        cmdbuf->BindIndexBuffer(buffers.index, sizeof(ImDrawIdx) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
+        cmdbuf->BindVertexBuffers(vertex);
+        cmdbuf->BindIndexBuffer(index, sizeof(ImDrawIdx) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
         
         struct {
             float scale[2];
@@ -308,15 +319,14 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
                      cmdbuf->SetScissor(0, 1, &scissor);
 
                     VkDescriptorSet descriptorSets[1] = { (VkDescriptorSet)pcmd->TextureId };
-                    vkCmdBindDescriptorSets(*cmdbuf, pipeline->BindPoint, pipeline->Layout() , 0, 1, descriptorSets, 0, nullptr);
+					cmdbuf->BindDescriptorSets(pipeline->BindPoint, pipeline->Layout() , 0, 1, descriptorSets, 0, nullptr);
                     cmdbuf->DrawIndexed(pcmd->ElemCount, 1, pcmd->IdxOffset + globalIndexOffset, pcmd->VtxOffset + globalVertexOffset, 0);
                 }
             }
             globalVertexOffset += cmdList->VtxBuffer.Size;
             globalIndexOffset += cmdList->IdxBuffer.Size;
         }
-        VkRect2D scissor = { { 0, 0 }, { (uint32_t)width, (uint32_t)height } };
-        vkCmdSetScissor(*cmdbuf, 0, 1, &scissor);
+		cmdbuf->SetScissor(uint32_t(width), uint32_t(height));
     }
 }
 

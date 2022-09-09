@@ -194,10 +194,13 @@ void Scene::LoadEnvironment()
 
 void Scene::Equirect2Cube()
 {
-    pipelines.equirect2Cube->AllocateDescriptorSet((uint64_t)textures.skybox.Get());
-    pipelines.equirect2Cube->Bind(textures.skybox,     0);
-    pipelines.equirect2Cube->Bind(textures.skyboxCube, 1);
-    pipelines.equirect2Cube->Dispatch(SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
+	if (Render::API == Render::Type::Vulkan)
+	{
+		pipelines.equirect2Cube->AllocateDescriptorSet((uint64_t) textures.skybox.Get());
+		pipelines.equirect2Cube->Bind(textures.skybox, 0);
+		pipelines.equirect2Cube->Bind(textures.skyboxCube, 1);
+		pipelines.equirect2Cube->Dispatch(SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
+	}
 }
 
 Scene::Scene(const std::string &name) :
@@ -233,7 +236,6 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
         }
     });
     renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
-    // renderTarget->Set(Colour{ 0.0f, 0.0f, 0.0f, 1 });
 
     constexpr size_t stride = sizeof(SkeletonVertex);
     InputElementDescription inputElementDescription = {
@@ -433,7 +435,7 @@ void Scene::OnRender(const Camera &camera)
             auto width = sprite.Result->Width();
             auto height = sprite.Result->Height();
 
-            if (Render::API != Render::Type::Vulkan)
+            if (Render::API == Render::Type::D3D12)
             {
                 break;
             }
@@ -449,7 +451,7 @@ void Scene::OnRender(const Camera &camera)
                 color.Initialized = true;
             }
 
-            if (settings.changed)
+            if (settings.changed && Render::API == Render::Type::Vulkan)
             {
                 ApplyGaussianBlur(sprite.Sprite, sprite.Result, settings.sigma, settings.kernalSize);
                 settings.changed = false;
@@ -561,7 +563,7 @@ void Scene::OnRender(const Camera &camera)
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
         Render2D::DrawRect(
             transform,
-            Render::API == Render::Type::Vulkan ? sprite.Result : sprite.Sprite,
+            Render::API != Render::Type::D3D12 ? sprite.Result : sprite.Sprite,
             sprite.TilingFactor, sprite.Color, (int)o
         );
     }

@@ -55,13 +55,17 @@ public:
 
     struct Data
     {
-        static constexpr uint32_t MaxRects        = 20000;
-        static constexpr uint32_t MaxVertices     = MaxRects * 4;
-        static constexpr uint32_t MaxIndices      = MaxRects * 6;
+#ifdef __APPLE__
         static constexpr uint32_t MaxTextureSlots = 16;
+#else
+		static constexpr uint32_t MaxTextureSlots = 32;
+#endif
+		static constexpr uint32_t MaxRects    = 20000;
+		static constexpr uint32_t MaxVertices = MaxRects * 4;
+		static constexpr uint32_t MaxIndices  = MaxRects * 6;
 
         Ref<Texture> WhiteTexture;
-        std::unique_ptr<Descriptor> textureDescriptors;
+		URef<DescriptorBuffer> textureDescriptorBuffer;
 
         uint32_t RectIndexCount = 0;
         std::vector<RectVertex> RectVertexBuffer;

@@ -8,7 +8,7 @@ namespace Immortal
 Ref<ComputePipeline> Pipelines::ColorSpace;
 Ref<ComputePipeline> Pipelines::ColorSpaceNV122RGBA8;
 
-std::unique_ptr<Renderer> Render::renderer;
+RenderContext *Render::renderContext;
 
 Shader::Manager Render::ShaderManager;
 
@@ -45,8 +45,7 @@ Ref<Shader> Render::GetShader(const std::string &name)
 void Render::Setup(RenderContext *context)
 {
     LOG::INFO("Initialize Renderer With Graphics API: {}", Sringify(Render::API));
-    renderer = Renderer::Create(context);
-    renderer->Setup();
+	renderContext = context;
 
     {
         Profiler profiler{ "Loading Shader" };
@@ -106,7 +105,6 @@ void Render::Release()
     ShaderManager.clear();
 
     Render2D::Release();
-    renderer.reset();
 }
 
 }

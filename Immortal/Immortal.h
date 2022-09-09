@@ -39,7 +39,6 @@
 #include "Render/RenderTarget.h"
 #include "Render/Render.h"
 #include "Render/OrthographicCamera.h"
-#include "Render/Renderer.h"
 #include "Render/Render2D.h"
 #include "Render/Frame.h"
 #include "Render/Mesh.h"

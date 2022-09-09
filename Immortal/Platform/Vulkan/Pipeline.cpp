@@ -144,16 +144,21 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
     Update();
 }
 
-void Pipeline::Bind(const Descriptor *descriptors, uint32_t slot)
+void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t slot)
+{
+	Bind(descriptorBuffer->DeRef<Descriptor>(), slot);
+}
+
+void Pipeline::Bind(const Descriptor *pDescriptor, uint32_t slot)
 {
     auto &writeDescriptor = descriptor.setUpdater->WriteDescriptorSets[slot];
     if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-        writeDescriptor.pImageInfo = rcast<const VkDescriptorImageInfo *>(descriptors);
+		writeDescriptor.pImageInfo = (ImageDescriptor *)pDescriptor;
     }
     else
     {
-        writeDescriptor.pBufferInfo = rcast<const VkDescriptorBufferInfo *>(descriptors);
+		writeDescriptor.pBufferInfo = (BufferDescriptor *)pDescriptor;
     }
     writeDescriptor.dstSet = descriptor.set;
     Update();

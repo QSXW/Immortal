@@ -57,10 +57,7 @@ Texture::Texture(const std::string &path, bool flip, Wrap wrap, Filter filter) :
 
     glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, frame.Data());
 
-    if (mipLevels > 0)
-    {
-        glGenerateTextureMipmap(handle);
-    }
+    Blit();
 }
 
 Texture::Texture(const std::string &path, const Description &description) :
@@ -115,23 +112,18 @@ Texture::Texture(const std::string &path, Wrap wrap, Filter filter)
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, type.Wrap);
 
     mipLevels = Texture::CalculateMipmapLevels(width, height);
-    if (mipLevels > 0)
-    {
-        glGenerateTextureMipmap(handle);
-    }
+	Blit();
 }
 
-Texture::Texture(const uint32_t width, const uint32_t height, Texture::Description &description, int levels) :
+Texture::Texture(const uint32_t width, const uint32_t height, Texture::Description &description) :
     Super{ width, height }
 {
-    mipLevels = (levels > 0) ? levels : Texture::CalculateMipmapLevels(width, height);
-
     type = NativeTypeToOpenGl(description);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &handle);
     glTextureStorage2D(handle, mipLevels, type.InternalFromat, width, height);
 
-    // glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
+    glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
 
     glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, mipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : type.Filter);
     glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, type.Filter);
@@ -140,20 +132,18 @@ Texture::Texture(const uint32_t width, const uint32_t height, Texture::Descripti
     glTextureParameteri(handle, GL_TEXTURE_WRAP_T, type.Wrap);
 }
 
-
-Texture::Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description, int level) :
+Texture::Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description) :
     Super{ width, height }
 {
-    mipLevels = (level > 0) ? level : CalculateMipmapLevels(width, height);
     type   = NativeTypeToOpenGl(description);
     handle = InternalCreate(GL_TEXTURE_2D, width, height, type, mipLevels);
 
-    glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
-
-    if (mipLevels > 0)
+    if (data)
     {
-        glGenerateTextureMipmap(handle);
+		glTextureSubImage2D(handle, 0, 0, 0, width, height, type.DataFormat, type.BinaryType, data);
     }
+
+    Blit();
 }
 
 Texture::~Texture()
@@ -165,7 +155,6 @@ void Texture::Update(const void *data, uint32_t pitchX)
 {
     uint32_t bpp = type.DataFormat == GL_RGBA ? 4 : 3;
 
-    // glTextureStorage2D(handle, 1, mInternalFormat, width, height);
     glTextureSubImage2D(handle, 0, pitchX, 0, width, height, type.DataFormat, type.BinaryType, data);
 }
 
@@ -179,10 +168,18 @@ void Texture::BindImageTexture(bool layered)
     glBindImageTexture(0, handle, 0, layered ? GL_TRUE : GL_FALSE, 0, GL_WRITE_ONLY, type.InternalFromat);
 }
 
-void Texture::As(Descriptor::Super *superDescriptors, size_t index)
+void Texture::Blit()
 {
-    Descriptor *descriptors = rcast<Descriptor *>(superDescriptors);
-    descriptors[index] = handle;
+    if (mipLevels > 1)
+    {
+		glGenerateTextureMipmap(handle);
+    }
+}
+
+void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
+{
+    auto descriptor = descriptorBuffer->DeRef<uint32_t>(index);
+	descriptor[0] = handle;
 }
 
 TextureCube::TextureCube(const uint32_t width, const uint32_t height, const Texture::Description &description, int levels)
@@ -212,46 +209,7 @@ void TextureCube::Create(const uint32_t width, const uint32_t height, const Text
 TextureCube::TextureCube(const std::string &path) :
     Super{ path }
 {
-    // Parameters
-    constexpr uint32_t cubemapSize = 1024;
 
-    // Unfiltered environment cube map (temporary).
-    TextureCube envCubeUnfiltered(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Linear });
-    // Load & convert Equirectangular Environment Map to a Cubemap texture.
-    {
-        OpenGL::Shader equirectangleToCubeShader("assets/shaders/equirect2cube_cs.glsl", Shader::Type::Compute);
-        OpenGL::Texture envEquirect(path, false, Wrap::Clamp, Filter::Linear);
-
-        equirectangleToCubeShader.Map();
-        envEquirect.Map(1);
-        glBindImageTexture(0, envCubeUnfiltered.Handle(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-        glDispatchCompute(envCubeUnfiltered.Width() / 32, envCubeUnfiltered.Height() / 32, 6);
-    }
-    glGenerateTextureMipmap(envCubeUnfiltered.Handle());
-
-    // Compute pre-filtered specular environment map.
-    {
-        OpenGL::Shader spmapShader("assets/shaders/spmap_cs.glsl", Shader::Type::Compute);
-        this->Create(cubemapSize, cubemapSize, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Linear });
-
-        // Copy unfiltered texture to the current
-        glCopyImageSubData(envCubeUnfiltered.Handle(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                            this->Handle(), GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-                            this->Width(), this->Height(), 6);
-
-        spmapShader.Map();
-        envCubeUnfiltered.Map();
-
-        // Pre-filter rest of the mip chain.
-        const float deltaRoughness = 1.0f / std::max(float(mipLevels - 1), 1.0f);
-        for (int level = 1, size = cubemapSize / 2; level <= level; level++, size /= 2)
-        {
-            const GLuint numGroups = std::max(1, size / 32);
-            glBindImageTexture(0, this->Handle(), level, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-            glProgramUniform1f(spmapShader.Handle(), 0, level * deltaRoughness);
-            glDispatchCompute(numGroups, numGroups, 6);
-        }
-    }
 }
 
 TextureCube::~TextureCube()

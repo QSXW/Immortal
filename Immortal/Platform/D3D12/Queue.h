@@ -21,11 +21,6 @@ class Device;
 class Queue
 {
 public:
-    struct Description : public D3D12_COMMAND_QUEUE_DESC
-    {
-
-    };
-
     enum class Flag
     {
         None              = D3D12_COMMAND_QUEUE_FLAG_NONE,
@@ -33,18 +28,18 @@ public:
     };
 
 public:
-    Queue(Device *device, const Description &desc);
+	Queue(Device *device, const D3D12_COMMAND_QUEUE_DESC &desc);
 
     ~Queue();
 
     ID3D12CommandQueue *Handle() const
     {
-        return handle;
+		return handle.Get();
     }
 
     operator ID3D12CommandQueue*() const
     {
-        return handle;
+		return handle.Get();
     }
 
     UINT64 ExecuteCommandLists(CommandList *commadList, UINT num = 1)
@@ -145,7 +140,7 @@ public:
     }
 
 private:
-    ID3D12CommandQueue *handle{ nullptr };
+    ComPtr<ID3D12CommandQueue> handle;
 
     UINT64 nextFenceValue;
 
@@ -155,7 +150,7 @@ private:
 
     ID3D12Fence *fence{ nullptr };
 
-    Description desc{};
+    D3D12_COMMAND_QUEUE_DESC desc{};
 
     CommandAllocatorPool commandAllocatorPool;
 

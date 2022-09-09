@@ -291,6 +291,11 @@ protected:
 
 using SuperBuffer = Buffer;
 
+namespace Interface
+{
+    using Buffer = SuperBuffer;
+}
+
 SL_DEFINE_BITWISE_OPERATION(Buffer::Type, uint32_t)
 
 }

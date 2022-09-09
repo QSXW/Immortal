@@ -15,11 +15,6 @@ class DescriptorHeap;
 class Swapchain
 {
 public:
-    struct Description : public DXGI_SWAP_CHAIN_DESC1
-    {
-
-    };
-
     enum class BitDepth
     {
         _8  = 0,
@@ -31,7 +26,7 @@ public:
     static inline constexpr UINT64 SWAP_CHAIN_BUFFER_COUNT = 3;
 
 public:
-    Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, Description &desc);
+	Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
 
     void CreateRenderTarget();
 
