@@ -77,8 +77,6 @@ void GuiLayer::End()
 {
     Super::End();
 
-    UINT backBufferIdx = Render::CurrentPresentedFrameIndex();
-
     Barrier<BarrierType::Transition> barrier{
         swapchain->GetRenderTarget(),
         D3D12_RESOURCE_STATE_PRESENT,

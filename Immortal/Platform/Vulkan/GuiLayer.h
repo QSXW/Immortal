@@ -43,17 +43,10 @@ private:
     void __RenderDrawData(CommandBuffer *cmdbuf);
 
     template <Buffer::Type T>
-    void __InvalidateRenderBuffer(size_t size)
+    void __InvalidateRenderBuffer(Ref<Buffer> &buffer, size_t size)
     {
         auto device = context->GetAddress<Device>();
-        if constexpr (T == Buffer::Type::Vertex)
-        {
-            buffers.vertex = new Buffer{device, size, Buffer::Type::Vertex};
-        }
-        else if constexpr (T == Buffer::Type::Index)
-        {
-            buffers.index = new Buffer{device, size, Buffer::Type::Index};
-        }
+	    buffer = new Buffer{device, size, T};
     }
 
 private:
@@ -70,7 +63,9 @@ private:
     struct {
         Ref<Buffer> vertex;
         Ref<Buffer> index;
-    } buffers;
+	} buffers[3];
+
+    uint32_t sync = 0;
 };
 
 }

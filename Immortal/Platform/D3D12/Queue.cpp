@@ -6,7 +6,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Queue::Queue(Device *device, const Description &desc) :
+Queue::Queue(Device *device, const D3D12_COMMAND_QUEUE_DESC &desc) :
     desc{ desc },
     nextFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },
     lastCompletedFenceValue{ ncast<UINT64>(desc.Type) << 56 | 1 },

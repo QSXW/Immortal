@@ -2,6 +2,7 @@
 
 #include "Common.h"
 
+#include "Algorithm/LightArray.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Render/Texture.h"
@@ -10,13 +11,16 @@
 #include "VertexArray.h"
 #include "Buffer.h"
 #include "Descriptor.h"
+#include "Texture.h"
+
+#include <vector>
 
 namespace Immortal
 {
 namespace OpenGL
 {
 
-class Pipeline : public SuperGraphicsPipeline
+class Pipeline : virtual public SuperGraphicsPipeline, virtual public ComputePipeline
 {
 public:
     using Super = SuperGraphicsPipeline;
@@ -30,11 +34,19 @@ public:
 
     virtual void Set(Ref<SuperBuffer> buffer) override;
 
-    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
+    virtual void Bind(const std::string &name, const SuperBuffer *uniform) override;
 
-    virtual void Bind(Texture *texture, uint32_t slot);
+    virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;
 
-    virtual void Bind(const Descriptor::Super *descriptors, uint32_t slot) override;
+    virtual void Bind(Texture::Super *texture, uint32_t binding = 0) override;
+
+    virtual void Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding) override;
+
+    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
+
+    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+
+    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) override;
 
     template <Buffer::Type type>
     Ref<Buffer> Get()
@@ -49,29 +61,21 @@ public:
         }
     }
 
-    void Draw()
-    {
-        auto shader = desc.shader.InterpretAs<Shader>();
+    void Draw();
 
-        shader->Map();
-        handle.Bind();
-
-        auto vertexBuffer = Get<Buffer::Type::Vertex>();
-        auto indexBuffer = Get<Buffer::Type::Index>();
-
-        vertexBuffer->Bind();
-        indexBuffer->Bind();
-
-        glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
-
-        handle.Unbind();
-        shader->Unmap();
-    }
+private:
+	void __BindDescriptorTable() const;
 
 private:
     VertexArray handle;
 
+    Shader *shader;
+
+    std::vector<Descriptor> descriptorTable;
+
     InputElementDescription inputElementDesription;
+
+    URef<UniformBuffer> pushConstants;
 };
 
 }

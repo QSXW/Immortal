@@ -11,6 +11,11 @@ namespace Immortal
 namespace Vulkan
 {
 
+struct Descriptor
+{
+
+};
+
 struct ImageDescriptor : public Descriptor, public VkDescriptorImageInfo
 {
     using Primitive = VkDescriptorImageInfo;

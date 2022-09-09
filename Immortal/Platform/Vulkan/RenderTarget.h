@@ -27,7 +27,7 @@ class RenderTarget : public SuperRenderTarget
 public:
     using Super = SuperRenderTarget;
 
-    static std::unique_ptr<RenderTarget> Create(std::unique_ptr<Image> &&image);
+    static URef<RenderTarget> Create(std::unique_ptr<Image> &&image);
 
 public:
     RenderTarget(std::vector<std::unique_ptr<Image>> images);

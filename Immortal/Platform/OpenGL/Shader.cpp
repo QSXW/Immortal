@@ -38,9 +38,9 @@ Shader::~Shader()
 
 GLuint Shader::Get(const std::string &name) const
 {
-    Map();
+    Activate();
     GLuint location = glGetUniformLocation(handle, name.c_str());
-    Unmap();
+    Deactivate();
 
     return location;
 }
@@ -77,11 +77,30 @@ void Shader::Link(const std::vector<GLuint> &shaders)
     }	
 }
 
-uint32_t Shader::CompileShader(GLenum type, const char *src)
+std::string Shader::__InjectPreamble(const std::string &source)
 {
-    uint32_t shader = glCreateShader(type);
+#ifdef __APPLE__
+#   define PLATFORM_STRING STR(__APPLE__)
+#elif defined(_WIN32)
+#   define PLATFORM_STRING STR(_WIN32)
+#elif defined(__linux__)
+#	define PLATFORM_STRING STR(__linux__)
+#else
+#	define PLATFORM_STRING "Unknown"
+#endif
 
-    glShaderSource(shader, 1, &src, 0);
+	static std::string preamble = "#define push_constant binding=" PUSH_CONSTANT_LOCATION_STR "\n#define " PLATFORM_STRING "\n";
+	size_t index = source.find("layout");
+	return source.substr(0, index) + preamble + source.substr(index);
+}
+
+uint32_t Shader::CompileShader(GLenum type, const std::string &source)
+{
+	std::string shaderSource = __InjectPreamble(source);
+    const char *pSource = shaderSource.c_str();
+
+    uint32_t shader = glCreateShader(type);
+	glShaderSource(shader, 1, &pSource, 0);
     glCompileShader(shader);
 
     GLint isCompiled = GL_TRUE;
@@ -97,7 +116,7 @@ uint32_t Shader::CompileShader(GLenum type, const char *src)
         glDeleteShader(shader);
 
         LOG::ERR("Shader compilation failure!");
-        LOG::ERR("{0}", error.data());
+        LOG::ERR("{}", error.data());
 
         THROWIF(true, error.data());
     }
@@ -105,12 +124,12 @@ uint32_t Shader::CompileShader(GLenum type, const char *src)
     return shader;
 }
 
-void Shader::Map() const
+void Shader::Activate() const
 {
     glUseProgram(handle);
 }
 
-void Shader::Unmap() const
+void Shader::Deactivate() const
 {
     glUseProgram(0);
 }
@@ -159,7 +178,7 @@ void Shader::Set(const std::string &name, const Matrix4 & matrix)
 
 void Shader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
 {
-    SLASSERT(type == Shader::Type::Compute && "The shader type is not compute.");
+    // SLASSERT(type == Shader::Type::Compute && "The shader type is not compute.");
     glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
 }
 

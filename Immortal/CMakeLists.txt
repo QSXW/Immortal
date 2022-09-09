@@ -116,8 +116,6 @@ set(D3D12_FILES
     Platform/D3D12/Queue.h
     Platform/D3D12/RenderContext.cpp
     Platform/D3D12/RenderContext.h
-    Platform/D3D12/Renderer.cpp
-    Platform/D3D12/Renderer.h
     Platform/D3D12/RenderTarget.cpp
     Platform/D3D12/RenderTarget.h
     Platform/D3D12/Resource.h
@@ -170,8 +168,6 @@ set(VULKAN_FILES
    Platform/Vulkan/Queue.h
    Platform/Vulkan/RenderContext.cpp
    Platform/Vulkan/RenderContext.h
-   Platform/Vulkan/Renderer.cpp
-   Platform/Vulkan/Renderer.h
    Platform/Vulkan/RenderTarget.cpp
    Platform/Vulkan/RenderTarget.h
    Platform/Vulkan/SemaphorePool.cpp
@@ -201,8 +197,6 @@ set(OPENGL_FILES
     Platform/OpenGL/GuiLayer.h
     Platform/OpenGL/RenderContext.cpp
     Platform/OpenGL/RenderContext.h
-    Platform/OpenGL/Renderer.cpp
-    Platform/OpenGL/Renderer.h
     Platform/OpenGL/RenderTarget.cpp
     Platform/OpenGL/RenderTarget.h
     Platform/OpenGL/Shader.cpp
@@ -251,8 +245,6 @@ set(RENDER_FILES
     Render/Render.h
     Render/RenderContext.cpp
     Render/RenderContext.h
-    Render/Renderer.cpp
-    Render/Renderer.h
     Render/Render2D.cpp
     Render/Render2D.h
     Render/Shader.h

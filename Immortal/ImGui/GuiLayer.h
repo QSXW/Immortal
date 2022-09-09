@@ -162,4 +162,10 @@ private:
 };
 
 using SuperGuiLayer = GuiLayer;
+
+namespace Interface
+{
+    using GuiLayer = SuperGuiLayer;
+}
+
 }

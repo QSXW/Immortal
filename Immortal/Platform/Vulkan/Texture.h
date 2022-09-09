@@ -33,7 +33,7 @@ public:
 
     virtual void Blit() override;
 
-    virtual void As(Descriptor *descriptor, size_t index) override;
+    virtual void As(DescriptorBuffer *descriptorBuffer, size_t index) override;
 
     virtual bool operator==(const Texture::Super &super) const override;
 

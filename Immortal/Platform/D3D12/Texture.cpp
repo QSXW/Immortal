@@ -96,10 +96,10 @@ void Texture::InternalCreate(const void *data)
     device->CreateShaderResourceView(resource, &srvDesc, descriptor.invisible);
 }
 
-void Texture::As(Descriptor::Super *descriptors, size_t index)
+void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
 {
-    CPUDescriptor *cpuDescriptors = rcast<CPUDescriptor *>(descriptors);
-    cpuDescriptors[index] = descriptor.invisible;
+	auto pDescriptor = descriptorBuffer->DeRef<CPUDescriptor>(index);
+	pDescriptor[0] = descriptor.invisible;
 }
 
 bool Texture::operator==(const Super &other) const

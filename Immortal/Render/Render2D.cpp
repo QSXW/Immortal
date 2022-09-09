@@ -15,7 +15,7 @@ Ref<Buffer> Render2D::uniform;
 
 void Render2D::Setup()
 {
-    data.textureDescriptors.reset(Render::CreateDescriptor<Texture>(Data::MaxTextureSlots));
+	data.textureDescriptorBuffer = Render::CreateDescriptor<Texture>(Data::MaxTextureSlots);
 
     data.RectVertexBuffer.resize(data.MaxVertices);
     pipeline = Render::Create<Pipeline::Graphics>(Render::GetShader("Render2D"));
@@ -58,7 +58,7 @@ void Render2D::Setup()
 
     for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
     {
-        data.WhiteTexture->As(data.textureDescriptors.get(), i);
+		data.WhiteTexture->As(data.textureDescriptorBuffer, i);
         data.ActiveTextures[i] = data.WhiteTexture;
     }
     isTextureChanged = true;
@@ -73,6 +73,7 @@ void Render2D::Setup()
 
 void Render2D::Release()
 {
+	data.textureDescriptorBuffer.Reset();
     uniform.Reset();
     data.WhiteTexture.Reset();
     data.RectVertexBuffer.clear();
@@ -103,7 +104,7 @@ void Render2D::Flush()
     {
         pipeline->AllocateDescriptorSet((uint64_t)&data);
         pipeline->Bind(uniform,                       0);
-        pipeline->Bind(data.textureDescriptors.get(), 1);
+		pipeline->Bind(data.textureDescriptorBuffer,  1);
         isTextureChanged = false;
     }
 
@@ -176,7 +177,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, f
     if (textureIndex == SL_ARRAY_LENGTH(data.ActiveTextures))
     {
         data.ActiveTextures[data.TextureSlotIndex] = texture;
-        texture->As(data.textureDescriptors.get(), data.TextureSlotIndex);
+		texture->As(data.textureDescriptorBuffer, data.TextureSlotIndex);
         textureIndex = data.TextureSlotIndex++;
         isTextureChanged = true;
     }

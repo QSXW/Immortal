@@ -57,15 +57,15 @@ void RenderContext::Setup()
     }
 #endif
     Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
-    device = std::make_unique<Device>(dxgiFactory);
+    device = new Device{ dxgiFactory };
 
-    UnlimitedDevice = device.get();
+    UnlimitedDevice = device;
 
     for (size_t i = 0; i < SL_ARRAY_LENGTH(descriptorAllocators); i++)
     {
-        descriptorAllocators[i].Init(device.get());
+        descriptorAllocators[i].Init(device);
     }
-    shaderVisibleDescriptorAllocator.Init(device.get());
+    shaderVisibleDescriptorAllocator.Init(device);
 
     auto adapterDesc = device->GetAdapterDesc();
     Super::UpdateMeta(
@@ -76,31 +76,29 @@ void RenderContext::Setup()
 
     auto hWnd = rcast<HWND>(desc.WindowHandle->Primitive());
 
-    {
-        Queue::Description queueDesc{};
-        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    D3D12_COMMAND_QUEUE_DESC queueDesc = {
+		.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT,
+		.Priority = 0,
+		.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE,
+        .NodeMask = 0,
+    };
 
-        queue.reset(new Queue{ device.get(), queueDesc});
-    }
+    queue = new Queue{ device, queueDesc } ;
 
-    {
-        Swapchain::Description swapchainDesc{};
-        CleanUpObject(&swapchainDesc);
-        swapchainDesc.BufferCount       = desc.FrameCount;
-        swapchainDesc.Width             = desc.Width;
-        swapchainDesc.Height            = desc.Height;
-        swapchainDesc.Format            = desc.format;
-        swapchainDesc.BufferUsage       = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapchainDesc.SwapEffect        = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapchainDesc.SampleDesc.Count  = 1;
-        swapchainDesc.Flags             = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-        // swapchainDesc.Flags          = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
-
-        swapchain = std::make_unique<Swapchain>(device.get(), queue->Handle(), hWnd, swapchainDesc);
-        // swapchain->SetMaximumFrameLatency(desc.FrameCount);
-        // swapchainWritableObject = swapchain->FrameLatencyWaitableObject();
-    }
+	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {
+        .Width       = desc.Width,
+        .Height      = desc.Height,
+        .Format      = desc.format,
+        .Stereo      = FALSE,
+		.SampleDesc  = { .Count = 1, .Quality = 0 },
+		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        .BufferCount = UINT(desc.FrameCount),
+		.Scaling     = DXGI_SCALING_STRETCH,
+		.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD,
+        .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
+        .Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
+    };
+    swapchain = new Swapchain{ device, queue->Handle(), hWnd, swapchainDesc };
 
     Check(dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
 
@@ -125,23 +123,18 @@ void RenderContext::Setup()
             commandAllocator[i] = queue->RequestCommandAllocator();
         }
 
-        commandList = std::make_unique<CommandList>(
-            device.get(),
-            CommandList::Type::Direct,
-            commandAllocator[frameIndex]
-            );
-
+        commandList = new CommandList{ device, CommandList::Type::Direct, commandAllocator[frameIndex]};
         commandList->Close();
 
         queue->Execute(commandList->AddressOf<ID3D12CommandList>());
 
-        fence.reset(new Fence{ device.get(), fenceValues[frameIndex] });
+        fence = new Fence{ device, fenceValues[frameIndex] };
 
         fenceValues[frameIndex]++;
         WaitForGPU();
     }
 
-#ifdef SLDEBUG
+#ifdef _DEBUG
     device->Set("RenderContext::Device");
 #endif
 }
@@ -379,9 +372,185 @@ void RenderContext::CopyDescriptorHeapToShaderVisible()
         );
 }
 
-GuiLayer::Super *RenderContext::CreateGuiLayer()
+void RenderContext::PrepareFrame()
+{
+	frameIndex = swapchain->AcquireCurrentBackBufferIndex();
+
+	commandAllocator[frameIndex]->Reset();
+
+	commandList->Reset(commandAllocator[frameIndex]);
+}
+
+void RenderContext::SwapBuffers()
+{
+	commandList->Close();
+	queue->Execute(commandList->AddressOf<ID3D12CommandList>());
+
+	swapchain->Present(1, 0);
+
+	WaitForPreviousFrame();
+}
+
+void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+{
+	UpdateSwapchain(width, height);
+}
+
+SuperGuiLayer *RenderContext::CreateGuiLayer()
 {
     return new GuiLayer{ this };
+}
+
+SuperBuffer *RenderContext::CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+{
+	return new Buffer{device, size, data, type};
+}
+
+SuperBuffer *RenderContext::CreateBuffer(const size_t size, Buffer::Type type)
+{
+	return new Buffer{device, size, type};
+}
+
+SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
+{
+	return new Buffer{device, size, binding};
+}
+
+SuperShader *RenderContext::CreateShader(const std::string &filepath, Shader::Type type)
+{
+	return new Shader{filepath, type};
+}
+
+SuperGraphicsPipeline *RenderContext::CreateGraphicsPipeline(Ref<SuperShader> shader)
+{
+	return new GraphicsPipeline{device, shader};
+}
+
+SuperComputePipeline *RenderContext::CreateComputePipeline(SuperShader *shader)
+{
+	return new ComputePipeline{device, shader};
+}
+
+SuperTexture *RenderContext::CreateTexture(const std::string &filepath, const Texture::Description &description)
+{
+	return new Texture{this, filepath, description};
+}
+
+SuperTexture *RenderContext::CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
+{
+	return new Texture{this, width, height, data, description};
+}
+
+SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Description &description)
+{
+	return new RenderTarget{device, description};
+}
+
+void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+{
+	PushConstant(dcast<Pipeline *>(super), stage, size, data, offset);
+}
+
+void RenderContext::PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
+{
+	PushConstant(dcast<Pipeline *>(pipeline), Shader::Stage::Compute, size, data, offset);
+}
+
+DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
+{
+	auto ret = new DescriptorBuffer;
+	ret->Request<CPUDescriptor>(count);
+	return ret;
+}
+
+DescriptorBuffer *RenderContext::CreateBufferDescriptor(uint32_t count)
+{
+	return CreateImageDescriptor(count);
+}
+
+void RenderContext::Draw(SuperGraphicsPipeline *super)
+{
+	auto pipeline = dynamic_cast<GraphicsPipeline *>(super);
+	auto descriptorHeap = pipeline->GetAddress<DescriptorHeap>();
+
+	commandList->SetPipelineState(*pipeline);
+	commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature &>());
+	commandList->SetDescriptorHeaps(descriptorHeap->AddressOf(), 1);
+	commandList->SetPrimitiveTopology(pipeline->Get<D3D12_PRIMITIVE_TOPOLOGY>());
+
+	auto vertexView = pipeline->Get<Buffer::VertexView>();
+	commandList->SetVertexBuffers(&vertexView);
+
+	auto indexView = pipeline->Get<Buffer::IndexView>();
+	commandList->SetIndexBuffer(&indexView);
+
+	GPUDescriptor descriptors{descriptorHeap->StartOfGPU()};
+	auto &descriptorTables = pipeline->GetDescriptorTables();
+	for (uint32_t i = 0; i < descriptorTables.size(); i++)
+	{
+		GPUDescriptor descriptor = descriptors;
+		descriptor.Offset(descriptorTables[i].Offset, descriptorHeap->GetIncrement());
+		commandList->SetGraphicsRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
+	}
+
+	commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
+}
+
+void RenderContext::Begin(SuperRenderTarget *superRenderTarget)
+{
+	auto renderTarget = dynamic_cast<RenderTarget *>(superRenderTarget);
+
+	auto width = renderTarget->Width();
+	auto height = renderTarget->Height();
+
+	Viewport viewport{0, 0, width, height};
+	commandList->RSSetViewports(&viewport);
+
+	Rect scissorRect{0, 0, width, height};
+	commandList->RSSetScissorRects(&scissorRect);
+
+	auto &colorBuffers = renderTarget->GetColorBuffers();
+	auto &depthBuffer = renderTarget->GetDepthBuffer();
+
+	for (auto &colorBuffer : colorBuffers)
+	{
+		barriers[activeBarrier++].Transition(
+		    colorBuffer,
+		    D3D12_RESOURCE_STATE_COMMON,
+		    D3D12_RESOURCE_STATE_RENDER_TARGET);
+	}
+
+	barriers[activeBarrier].Transition(
+	    depthBuffer,
+	    D3D12_RESOURCE_STATE_COMMON,
+	    D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	activeBarrier++;
+
+	commandList->ResourceBarrier(barriers.data(), activeBarrier);
+
+	const auto &rtvDescriptor = renderTarget->GetDescriptor();
+	const auto &dsvDescriptor = depthBuffer.GetDescriptor();
+	commandList->ClearRenderTargetView(rtvDescriptor[0], rcast<float *>(renderTarget->ClearColor()));
+	commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
+	commandList->SetRenderTargets(rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
+}
+
+void RenderContext::End()
+{
+	for (auto &barrier : barriers)
+	{
+		barrier.Swap();
+	}
+	commandList->ResourceBarrier(barriers.data(), activeBarrier);
+	activeBarrier = 0;
+}
+
+void RenderContext::PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+{
+	(void) stage;
+
+	commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature &>());
+	commandList->PushConstant(size, data, offset);
 }
 
 }

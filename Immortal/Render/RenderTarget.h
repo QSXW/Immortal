@@ -183,4 +183,9 @@ public:
 
 using SuperRenderTarget = RenderTarget;
 
+namespace Interface
+{
+    using RenderTarget = SuperRenderTarget;
+}
+
 }

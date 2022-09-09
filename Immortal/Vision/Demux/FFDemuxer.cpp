@@ -115,31 +115,31 @@ public:
             return "hevc_cuvid";
 
         case AV_CODEC_ID_AV1:
-			return "av1_nvdec";
+            return "av1_nvdec";
 
         case AV_CODEC_ID_MJPEG:
-			return "mjpeg_nvdec";
+            return "mjpeg_nvdec";
 
         case AV_CODEC_ID_MPEG4:
-			return "mpeg4_nvdec";
+            return "mpeg4_nvdec";
 
         case AV_CODEC_ID_MPEG1VIDEO:
-			return "mpeg1_nvdec";
+            return "mpeg1_nvdec";
 
         case AV_CODEC_ID_MPEG2VIDEO:
-			return "mpeg2_nvdec";
+            return "mpeg2_nvdec";
 
         case AV_CODEC_ID_VC1:
-			return "vc1_nvdec";
+            return "vc1_nvdec";
 
         case AV_CODEC_ID_WMV3:
-			return "wmv3_nvdec";
+            return "wmv3_nvdec";
 
         case AV_CODEC_ID_VP8:
-			return "vp8_nvdec";
+            return "vp8_nvdec";
 
         case AV_CODEC_ID_VP9:
-			return "vp9_nvdec";
+            return "vp9_nvdec";
 
         default:
             return nullptr;

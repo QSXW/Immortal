@@ -316,10 +316,10 @@ void Texture::Synchronize(VkImageLayout newLayout)
     });
 }
 
-void Texture::As(Descriptor *descriptors, size_t index)
+void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
 {
-    ImageDescriptor *imageDescriptors = rcast<ImageDescriptor *>(descriptors);
-    imageDescriptors[index] = descriptor;
+	auto imageDescriptor = descriptorBuffer->DeRef<ImageDescriptor>(index);
+	*imageDescriptor = descriptor;
 }
 
 Texture::operator uint64_t() const

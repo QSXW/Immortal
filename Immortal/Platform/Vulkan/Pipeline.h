@@ -44,7 +44,7 @@ public:
 
     virtual ~Pipeline();
 
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0) override;
+    virtual void Bind(const DescriptorBuffer *descriptorBuffer, uint32_t slot = 0) override;
 
     virtual void Bind(SuperTexture *texture, uint32_t slot = 0) override;
 
@@ -57,11 +57,18 @@ public:
     virtual void FreeDescriptorSet(uint64_t uuid) override;
 
 public:
+	void Bind(const Descriptor *descriptor, uint32_t slot);
+
     bool Ready();
 
     void Update();
 
     void Destroy();
+
+    VkPipelineLayout Layout() const
+	{
+		return layout;
+	}
 
 protected:
     Device *device{ nullptr };
@@ -151,11 +158,6 @@ public:
         return descriptor.set;
     }
 
-    VkPipelineLayout Layout() const
-    {
-        return layout;
-    }
-
 private:
     void SetupVertex();
 
@@ -186,11 +188,6 @@ public:
     virtual void PushConstant(uint32_t size, const void *data, uint32_t offset) override;
 
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
-
-    VkPipelineLayout Layout() const
-    {
-        return layout;
-    }
 
     const VkDescriptorSet &GetDescriptorSet() const
     {

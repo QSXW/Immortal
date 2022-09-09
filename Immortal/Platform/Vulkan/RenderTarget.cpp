@@ -10,7 +10,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colorImage)
+URef<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colorImage)
 {
     std::vector<std::unique_ptr<Image>> images;
 
@@ -29,7 +29,7 @@ std::unique_ptr<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colo
     images.emplace_back(std::move(colorImage));
     images.emplace_back(std::move(depthImage));
 
-    return std::make_unique<RenderTarget>(std::move(images));
+    return new RenderTarget{std::move(images)};
 };
 
 RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &description) :

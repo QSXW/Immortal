@@ -63,7 +63,7 @@ public:
 
     }
 
-    virtual void Bind(const Descriptor *descriptors, uint32_t slot = 0)
+    virtual void Bind(const DescriptorBuffer *descriptorBuffer, uint32_t slot = 0)
     {
 
     }
@@ -199,6 +199,13 @@ public:
 using SuperPipeline         = Pipeline;
 using SuperComputePipeline  = ComputePipeline;
 using SuperGraphicsPipeline = GraphicsPipeline;
+
+namespace Interface
+{
+    using Pipeline         = SuperPipeline;
+    using ComputePipeline  = SuperComputePipeline;
+    using GraphicsPipeline = SuperGraphicsPipeline; 
+}
 
 SL_DEFINE_BITWISE_OPERATION(Pipeline::State, uint32_t)
 

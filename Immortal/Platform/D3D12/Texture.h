@@ -6,13 +6,13 @@
 #include "Descriptor.h"
 #include "Device.h"
 #include "Resource.h"
-#include "RenderContext.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
+class RenderContext;
 class Texture : public SuperTexture, public Resource
 {
 public:
@@ -37,7 +37,7 @@ public:
 
     virtual bool operator==(const Super &other) const override;
 
-    virtual void As(Descriptor::Super *descriptors, size_t index) override;
+    virtual void As(DescriptorBuffer *descriptorBuffer, size_t index) override;
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
