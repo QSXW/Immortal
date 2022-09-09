@@ -233,12 +233,7 @@ void RenderContext::PrepareFrame()
 	if (swapchain)
 	{
 		ret = swapchain->AcquireNextImage(&swapchainIndex, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
-
-		if ((ret == VK_ERROR_OUT_OF_DATE_KHR) || (ret == VK_SUBOPTIMAL_KHR))
-		{
-			__Resize();
-		}
-		else
+		if (ret != VK_ERROR_OUT_OF_DATE_KHR && ret != VK_SUBOPTIMAL_KHR)
 		{
 			Check(ret);
 		}

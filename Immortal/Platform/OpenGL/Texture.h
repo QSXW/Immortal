@@ -153,7 +153,7 @@ public:
 
     virtual void As(DescriptorBuffer *descriptors, size_t index) override;
 
-    uint32_t MipLevels() const
+    uint32_t MipLevels() const override
     {
 		return mipLevels;
     }
