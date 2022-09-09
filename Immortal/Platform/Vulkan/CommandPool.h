@@ -175,8 +175,6 @@ private:
     CommandBuffer *currentCommandBuffer;    
 
     TimelineMap cache;
-
-    uint32_t sync = 0;
 };
 
 }

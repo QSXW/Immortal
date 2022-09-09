@@ -7,7 +7,7 @@ void *operator new(size_t size)
     return allocator.Allocate(size);
 }
 
-void operator delete(void *ptr)
+void operator delete(void *ptr) noexcept
 {
     auto &allocator = Immortal::MemoryAllocator::Primary;
     allocator.Free(ptr);

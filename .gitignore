@@ -3,8 +3,10 @@
 /3rdparty/dav1d*
 /3rdparty/libmfx*
 /3rdparty/mono*
+/3rdparty/FFmpeg*
 
 Config.h
+*.spirv
 
 # cmake
 /build*
