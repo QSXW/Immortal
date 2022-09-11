@@ -252,9 +252,10 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 	pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
 	colorSpacePipeline->Bind(pNext->input[0], 0);
 
+    int samplingWidth = picture.shared->linesize[1];
 	if (picture.desc.format.IsType(Format::NV))
 	{
-        picture.shared->linesize[1] >>= 1;
+		samplingWidth >>= 1;
 		colorSpacePipeline->Bind(Sprite, 2);
 	}
     else
@@ -264,7 +265,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		colorSpacePipeline->Bind(Sprite, 3);
     }
 
-    pNext->input[1]->Update(picture[1], picture.shared->linesize[1] / pNext->chromaFormat.BytesPerPixel());
+    pNext->input[1]->Update(picture[1], samplingWidth / pNext->chromaFormat.BytesPerPixel());
 	colorSpacePipeline->Bind(pNext->input[1], 1);
 
     colorSpacePipeline->PushConstant(sizeof(properties), &properties);
