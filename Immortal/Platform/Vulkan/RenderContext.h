@@ -4,7 +4,6 @@
 #include "ImGui/GuiLayer.h"
 
 #include "Device.h"
-#include "Instance.h"
 #include "Swapchain.h"
 #include "RenderTarget.h"
 #include "RenderPass.h"
@@ -20,6 +19,7 @@ class Window;
 namespace Vulkan
 {
 
+class Instance;
 template <class T>
 concept ExposedType = (
     std::is_same_v<T, Instance>       || std::is_same_v<T, Instance&>       ||

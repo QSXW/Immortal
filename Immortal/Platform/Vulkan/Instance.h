@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Common.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -69,9 +70,9 @@ public:
     }
 
 private:
-    std::vector<const char*> enabledExtensions{};
+    std::vector<const char*> enabledExtensions;
 
-    std::vector<std::unique_ptr<PhysicalDevice>> physicalDevices{};
+    std::vector<URef<PhysicalDevice>> physicalDevices;
 
 #if defined (_DEBUG) || defined (VKB_VALIDATION_LAYERS)
     VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };

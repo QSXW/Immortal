@@ -57,27 +57,36 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags,
     return VK_FALSE;
 }
 
-static bool ValidateLayers(const std::vector<const char *> &required, const std::vector<VkLayerProperties> &available)
+static std::vector<const char *> ValidateLayers(const std::vector<const char *> &required)
 {
+	std::vector<const char *> enabledValidationLayers;
+
+#ifdef _DEBUG
+    uint32_t layerCount;
+	Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+
+	std::vector<VkLayerProperties> availableLayers{layerCount};
+	Check(vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()));
+
     for (auto &layer : required)
     {
-        bool found = false;
-        for (auto &availableLayer : available)
+		int i;
+		for (i = 0; i < availableLayers.size(); i++)
         {
-            if (Equals(layer, availableLayer.layerName))
+			if (Equals(layer, availableLayers[i].layerName))
             {
-                found = true;
-                break;
+				enabledValidationLayers.emplace_back(layer);
+				break;
             }
         }
-        if (!found)
+        if (i == availableLayers.size())
         {
-            LOG::ERR("Validation Layer {} not found", layer);
-            return false;
+		    LOG::ERR("Required Validation Layer is not supported - {}", layer);
         }
     }
+#endif
 
-    return true;
+    return enabledValidationLayers;
 }
 
 static inline void CheckDynamicLoadedLibarary()
@@ -159,11 +168,11 @@ Instance::Instance(const char                                   *applicationName
         {
             if (isOptional)
             {
-                LOG::WARN("Optional instance extension {0} not available, some features may be disabled", extension);
+                LOG::WARN("Optional instance extension {} not available, some features may be disabled", extension);
             }
             else
             {
-                LOG::ERR("Required instance extension {0} not available, cannot run", extension);
+                LOG::ERR("Required instance extension {} not available, cannot run", extension);
                 LOG::ERR("Required instance extensions are missing.");
             }
         }
@@ -173,24 +182,7 @@ Instance::Instance(const char                                   *applicationName
         }
     }
 
-    uint32_t layerCount;
-    Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
-
-    std::vector<VkLayerProperties> supportedValidationLayers(layerCount);
-    Check(vkEnumerateInstanceLayerProperties(&layerCount, supportedValidationLayers.data()));
-
-    if (ValidateLayers(requiredValidationLayers, supportedValidationLayers))
-    {
-        LOG::INFO("Enabled Validation Layers: ");
-        for (const auto &layer : requiredValidationLayers)
-        {
-            LOG::DEBUG("  \t{0}", layer);
-        }
-    }
-    else
-    {
-        LOG::ERR("Required validation layers are missing.");
-    }
+    std::vector<const char *> validLayers = ValidateLayers(requiredValidationLayers);
 
     VkApplicationInfo appInfo = {
         .sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -209,8 +201,8 @@ Instance::Instance(const char                                   *applicationName
         .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
         .pApplicationInfo        = &appInfo,
-        .enabledLayerCount       = U32(requiredValidationLayers.size()),
-        .ppEnabledLayerNames     = requiredValidationLayers.data(),
+        .enabledLayerCount       = U32(validLayers.size()),
+        .ppEnabledLayerNames     = validLayers.data(),
 	    .enabledExtensionCount   = U32(enabledExtensions.size()),
 	    .ppEnabledExtensionNames = enabledExtensions.data(),
     };
@@ -294,7 +286,7 @@ void Instance::QueryPhysicalDevice()
 
     for (auto &pd : physicalDevices)
     {
-        this->physicalDevices.emplace_back(std::make_unique<PhysicalDevice>(this, pd));
+        this->physicalDevices.emplace_back(new PhysicalDevice(this, pd));
     }
 }
 
