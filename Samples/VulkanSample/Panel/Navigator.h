@@ -12,10 +12,14 @@ public:
     void OnUpdate(Object &object, Callback callback = [] {})
     {
         UI::BeginDraw();
-        SpriteRendererComponent sprite;
+		Ref<Texture> sprite = Render::Preset()->Textures.White;
         if (object && object.HasComponent<SpriteRendererComponent>())
         {
-            sprite = object.GetComponent<SpriteRendererComponent>();
+			auto &spriteRendererComponent = object.GetComponent<SpriteRendererComponent>();
+            if (spriteRendererComponent.Sprite)
+            {
+				sprite = spriteRendererComponent.Sprite;
+            }
         }
 
         ImGui::PushFont(GuiLayer::NotoSans.Bold);
@@ -38,12 +42,12 @@ public:
 
             ImVec2 size{};
             size.x = x - 8;
-            size.y = size.x * sprite.Sprite->Height() / sprite.Sprite->Width();
+            size.y = size.x * sprite->Height() / sprite->Width();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.4509f, 0.7882f, 0.8980f, 1.0f });
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 20.0f, 20.0f });
-            if (ImGui::ImageButton((ImTextureID)(uint64_t)*sprite.Sprite, size))
+            if (ImGui::ImageButton((ImTextureID)(uint64_t)*sprite, size))
             {
                 if (object)
                 {
@@ -60,8 +64,8 @@ public:
 
             if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
             {
-                const auto width = sprite.Sprite->Width();
-                const auto height = sprite.Sprite->Height();
+                const auto width = sprite->Width();
+                const auto height = sprite->Height();
                 UI::DrawColumn(WordsMap::Get("Width"),  [&]() -> bool { ImGui::Text("%d", width);  return false ; });
                 UI::DrawColumn(WordsMap::Get("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
             }

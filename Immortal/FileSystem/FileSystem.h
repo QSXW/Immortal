@@ -65,7 +65,9 @@ enum class FileFormat : uint64_t
     H265  = MakeIdentifier('H', '2', '6', '5'),
     MKV   = MakeIdentifier('M', 'K', 'V'     ),
     TS    = MakeIdentifier('T', 'S'          ),
+	MOV   = MakeIdentifier('M', 'O', 'V'     ),
     M2TS  = MakeIdentifier('M', '2', 'T', 'S'),
+	WEBM  = MakeIdentifier('W', 'E', 'B', 'M'),
 
     /** Immortal Scene */
     IML = MakeIdentifier('I', 'M', 'L'),
@@ -137,13 +139,14 @@ static inline bool IsVideo(const std::string &path)
 {
     auto id = MakeIdentifier(path);
 
-    return IsFormat<FileFormat::IVF>(id) ||
-        IsFormat<FileFormat::MP4>(id) ||
-        IsFormat<FileFormat::H264>(id) ||
-        IsFormat<FileFormat::H265>(id) ||
-        IsFormat<FileFormat::MKV>(id) ||
-        IsFormat<FileFormat::M2TS>(id) ||
-        IsFormat<FileFormat::TS>(id);
+    return IsFormat<FileFormat::IVF>(id)  ||
+	       IsFormat<FileFormat::MP4>(id)  ||
+	       IsFormat<FileFormat::H264>(id) ||
+	       IsFormat<FileFormat::H265>(id) ||
+	       IsFormat<FileFormat::MKV>(id)  ||
+	       IsFormat<FileFormat::M2TS>(id) ||
+	       IsFormat<FileFormat::TS>(id)   ||
+	       IsFormat<FileFormat::WEBM>(id);
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint32_t align = sizeof(void*))

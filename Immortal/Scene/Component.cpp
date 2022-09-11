@@ -189,7 +189,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 
     auto width = picture.desc.width;
     auto height = picture.desc.height;
-    if (picture.desc.width != Sprite->Width() || picture.desc.height != Sprite->Height())
+	if (!Sprite || picture.desc.width != Sprite->Width() || picture.desc.height != Sprite->Height())
     {
         Sprite = Render::Create<Image>(picture.desc.width, picture.desc.height, nullptr, desc);
         Result = Render::Create<Image>(picture.desc.width, picture.desc.height, nullptr, desc);
@@ -218,10 +218,12 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 
         SamplingFactor samplingFactor{ picture.desc.format };
 
-        auto width  = picture.desc.width / samplingFactor.x;
-        auto height = picture.desc.height / samplingFactor.y;
-        pNext->input[0] = Render::Create<Image>(picture.desc.width, picture.desc.height, nullptr, desc);
+        auto width = picture.shared->linesize[0] / desc.format.BytesPerPixel();
+		auto height = picture.desc.height;
+		pNext->input[0] = Render::Create<Image>(width, height, nullptr, desc);
 
+        auto samplingWidth = width / samplingFactor.x;
+		auto samplingHeight = height / samplingFactor.y;
         if (picture.desc.format.IsType(Format::NV))
         {
 			Texture::Description desc {
@@ -232,21 +234,21 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
             };
 			pNext->chromaFormat = (picture.desc.format & Format::_10Bits) != Format::None ? Format::RG16 : Format::RG8;
 			desc.format = pNext->chromaFormat;
-			pNext->input[1] = Render::Create<Image>(width, height, nullptr, desc);
+			pNext->input[1] = Render::Create<Image>(samplingWidth, samplingHeight, nullptr, desc);
         }
         else
         {
-			pNext->input[1] = Render::Create<Image>(width, height, nullptr, desc);
-			pNext->input[2] = Render::Create<Image>(width, height, nullptr, desc);
+			pNext->input[1] = Render::Create<Image>(samplingWidth, samplingHeight, nullptr, desc);
+			pNext->input[2] = Render::Create<Image>(samplingWidth, samplingHeight, nullptr, desc);
         }
     }
 
-    auto colorSpacePipeline = picture.desc.format.IsType(Format::NV) ? Pipelines::ColorSpaceNV122RGBA8 : Pipelines::ColorSpace;
+    Ref<ComputePipeline> colorSpacePipeline = picture.desc.format.IsType(Format::NV) ? Pipelines::ColorSpaceNV122RGBA8 : Pipelines::ColorSpace;
 
     properties.colorSpace = picture.GetProperty<Vision::ColorSpace>();
 	colorSpacePipeline->AllocateDescriptorSet((uint64_t)this);
 
-    /* upload frame data for each plane to the texture */
+    /* Upload frame data for each plane to the texture */
 	pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
 	colorSpacePipeline->Bind(pNext->input[0], 0);
 
@@ -266,7 +268,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 	colorSpacePipeline->Bind(pNext->input[1], 1);
 
     colorSpacePipeline->PushConstant(sizeof(properties), &properties);
-    colorSpacePipeline->Dispatch(SLALIGN(width, 1), SLALIGN(height, 1), 1);
+	colorSpacePipeline->Dispatch(SLALIGN(picture.shared->linesize[0], 1), SLALIGN(height, 1), 1);
 
     Sprite->Blit();
 }

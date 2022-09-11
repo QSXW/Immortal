@@ -213,7 +213,7 @@ struct SpriteRendererComponent : public Component
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
-    Ref<Texture> Sprite = Render::Preset()->Textures.White;
+    Ref<Texture> Sprite;
 
     Ref<Texture> Result = Sprite;
 

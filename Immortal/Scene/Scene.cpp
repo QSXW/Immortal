@@ -403,10 +403,10 @@ void Scene::OnRender(const Camera &camera)
 
     /* Update Video Player Component */
     {
-        auto view = registry.view<SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>();
+		auto view = registry.view<TransformComponent, SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>();
         for (auto object : view)
         {
-            auto [sprite, videoPlayer, color] = view.get<SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>(object);
+			auto [transform, sprite, videoPlayer, color] = view.get<TransformComponent, SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>(object);
 
             auto animator = videoPlayer.GetAnimator();
             animator->Accumulator += deltaTime;
@@ -422,6 +422,7 @@ void Scene::OnRender(const Camera &camera)
                 videoPlayer.PopPicture();
                 sprite.UpdateSprite(picture);
                 color.Modified = true;
+				transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
             }
         }
     }
@@ -431,6 +432,11 @@ void Scene::OnRender(const Camera &camera)
         for (auto object : group)
         {
             auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(object);
+
+            if (!sprite.Sprite)
+            {
+				continue;
+            }
 
             auto width = sprite.Result->Width();
             auto height = sprite.Result->Height();
@@ -561,11 +567,13 @@ void Scene::OnRender(const Camera &camera)
     for (auto o : group)
     {
         auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
-        Render2D::DrawRect(
-            transform,
-            Render::API != Render::Type::D3D12 ? sprite.Result : sprite.Sprite,
-            sprite.TilingFactor, sprite.Color, (int)o
-        );
+        if (sprite.Sprite)
+        {
+			Render2D::DrawRect(
+			    transform,
+			    Render::API != Render::Type::D3D12 ? sprite.Result : sprite.Sprite,
+			    sprite.TilingFactor, sprite.Color, (int)o);
+        }
     }
     Render2D::EndScene();
 

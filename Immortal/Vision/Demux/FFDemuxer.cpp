@@ -4,6 +4,8 @@
 #include "FileSystem/FileSystem.h"
 #include "Algorithm/LightVector.h"
 
+#include <list>
+
 #if HAVE_FFMPEG
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -26,14 +28,27 @@ public:
         handle{}
     {}
 
-    FormatContext(const std::string &filepath) :
+    FormatContext(const std::string &path) :
         handle{ avformat_alloc_context() },
         streamIndex{}
     {
         ThrowIf(!handle, "Failed to allocated memory for FFCodec::FormatContext");
 
         memset(streamIndex, -1, sizeof(streamIndex));
-        int ret = avformat_open_input(&handle, filepath.c_str(), NULL, NULL);
+
+#ifdef _WIN32
+		std::wstring wfilepath;
+		wfilepath.resize(MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, NULL, 0));
+		MultiByteToWideChar(CP_ACP, 0, path.c_str(), path.size(), wfilepath.data(), wfilepath.size());
+
+        std::string filepath;
+		filepath.resize(WideCharToMultiByte(CP_UTF8, 0, wfilepath.c_str(), -1, NULL, NULL, NULL, NULL));
+		WideCharToMultiByte(CP_UTF8, 0, wfilepath.c_str(), wfilepath.size(), filepath.data(), filepath.size(), NULL, NULL);
+#else
+		const std::string &filepath = path;
+#endif
+
+		int ret = avformat_open_input(&handle, filepath.c_str(), NULL, NULL);
         if (ret < 0)
         {
             LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", filepath, ret);
@@ -104,45 +119,73 @@ public:
         return options;
     }
 
-    static const char *GetHardwareDecoderNameById(const AVCodecID id)
+    static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)
     {
         switch (id)
         {
         case AV_CODEC_ID_H264:
-            return "h264_cuvid";
+            return {
+                "h264_cuvid",
+				"h264_qsv",
+            };
 
         case AV_CODEC_ID_HEVC:
-            return "hevc_cuvid";
+            return {
+                "hevc_cuvid",
+				"hevc_qsv",
+            };
 
         case AV_CODEC_ID_AV1:
-            return "av1_nvdec";
+            return {
+                "av1_nvdec",
+				"av1_qsv",
+            };
 
         case AV_CODEC_ID_MJPEG:
-            return "mjpeg_nvdec";
+            return {
+                "mjpeg_nvdec",
+				"mjpeg_qsv",
+            };
 
         case AV_CODEC_ID_MPEG4:
-            return "mpeg4_nvdec";
+            return {
+                "mpeg4_nvdec"
+            };
 
         case AV_CODEC_ID_MPEG1VIDEO:
-            return "mpeg1_nvdec";
+            return {
+                "mpeg1_nvdec"
+            };
 
         case AV_CODEC_ID_MPEG2VIDEO:
-            return "mpeg2_nvdec";
+            return {
+                "mpeg2_nvdec",
+				"mpeg2_qsv",
+            };
 
         case AV_CODEC_ID_VC1:
-            return "vc1_nvdec";
+            return {
+                "vc1_nvdec"
+            };
 
         case AV_CODEC_ID_WMV3:
-            return "wmv3_nvdec";
+            return {
+                "wmv3_nvdec"
+            };
 
         case AV_CODEC_ID_VP8:
-            return "vp8_nvdec";
+            return {
+                "vp8_nvdec"
+            };
 
         case AV_CODEC_ID_VP9:
-            return "vp9_nvdec";
+            return {
+                "vp9_nvdec",
+				"vp9_qsv",
+            };
 
         default:
-            return nullptr;
+			return {};
         }
     }
 
@@ -151,8 +194,17 @@ public:
         int ret = 0;
         auto stream = handle->streams[GetIndex(type)];
 
-        auto name = GetHardwareDecoderNameById(stream->codecpar->codec_id);
-        auto codec = avcodec_find_decoder_by_name(name);
+        const AVCodec *codec = nullptr;
+        auto priorities = QueryDecoderPriorities(stream->codecpar->codec_id);
+        for (auto p : priorities)
+		{
+			codec = avcodec_find_decoder_by_name(p);
+            if (codec)
+            {
+				break;
+            }
+        }
+
         if (!codec && !(codec = avcodec_find_decoder(stream->codecpar->codec_id)))
         {
             LOG::ERR("There is not suitable codec for {}", handle->url);

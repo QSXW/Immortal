@@ -63,7 +63,7 @@ void main()
     const ivec2 size = imageSize(OutputImage);
 
     vec4 pixel = vec4(0, 0, 0, 1.0f);
-    vec2 uv = vec2(pos) / vec2(size);
+    vec2 uv = vec2(pos) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
     pixel.x = texture(InputImage0, uv).r;
     pixel.yz = texture(InputImage1, uv).rg;

@@ -135,7 +135,7 @@ public:
 
     operator bool() const
     {
-        return uint64_t(handle) && scene;
+		return uint64_t(handle) && handle != NullRef && !!scene;
     }
 
     bool operator==(const Object &other) const

@@ -428,37 +428,15 @@ public:
             }
             else if (FileSystem::IsVideo(filepath))
             {
-                Ref<Vision::Interface::Demuxer> demuxer;
-                Ref<Vision::VideoCodec> decoder;
-                if (FileSystem::IsFormat<FileFormat::IVF>(filepath))
-                {
-                    demuxer = new Vision::IVFDemuxer{};
-                    decoder = new Vision::DAV1DCodec{};
-                }
-                else
-                {
-                    demuxer = new Vision::FFDemuxer{};
-                    decoder = new Vision::FFCodec{};
-                }
+				Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
+				Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
 
                 demuxer->Open(filepath, decoder);
                 Vision::CodedFrame codedFrame;
 
                 auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
-
-                Vision::Picture picture{};
-                do 
-                {
-                    picture = videoPlayer.GetPicture();
-                } while (!picture.Available());
-                videoPlayer.PopPicture();
-
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
-                sprite.UpdateSprite(picture);
-
                 object.AddComponent<ColorMixingComponent>();
-                auto &transform = object.Get<TransformComponent>();
-                transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
             }
             else if (FileSystem::IsImage(filepath))
             {
