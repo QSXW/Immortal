@@ -105,20 +105,28 @@ FFCodec::~FFCodec()
 
 CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 {
-    int ret = 0;
-    
+    int ret = 0; 
     auto packet = codedFrame.DeRef<AVPacket>();
 
     ret = avcodec_send_packet(handle, packet);
-    if (ret < 0) {
-        LOG::ERR("Error sending a packet for decoding\n");
-        return CodecError::ExternalFailed;
+    if (ret < 0 && ret != AVERROR(EAGAIN))
+    {
+        if (ret != AVERROR(EOF))
+        {
+			av_packet_unref(packet);
+			return CodecError::ExternalFailed;
+        }
     }
 
-    if ((ret = avcodec_receive_frame(handle, frame)) == AVERROR(EAGAIN))
-    {
-        return CodecError::Again;
-    }
+	ret = avcodec_receive_frame(handle, frame);
+    if (ret < 0)
+	{
+        if (ret == AVERROR(EAGAIN))
+        {
+			return CodecError::Again;
+        }
+		return CodecError::ExternalFailed;
+	}
 
     picture = Picture{ frame->width, frame->height, FormatConverter(handle->pix_fmt), false };
 

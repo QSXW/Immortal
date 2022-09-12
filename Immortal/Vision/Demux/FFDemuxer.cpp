@@ -137,6 +137,7 @@ public:
 
         case AV_CODEC_ID_AV1:
             return {
+				"libdav1d",
                 "av1_nvdec",
 				"av1_qsv",
             };
