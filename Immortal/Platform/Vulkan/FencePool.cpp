@@ -63,10 +63,15 @@ VkFence FencePool::Request()
 
 void FencePool::Discard(VkFence *pFence)
 {
+    if (*pFence == VK_NULL_HANDLE)
+    {
+        return;
+    }
+
     device->Reset(pFence, 1);
     pending.push(*pFence);
     activeCount--;
-    *pFence = nullptr;
+    *pFence = VK_NULL_HANDLE;
 }
 
 }
