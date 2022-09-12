@@ -5,10 +5,7 @@ namespace Immortal
 
 LayerStack::~LayerStack()
 {
-    for (Layer *layer : layers)
-    {
-        delete layer;
-    }
+	clear();
 }
 
 Layer *LayerStack::PushLayer(Layer *layer)
@@ -43,6 +40,15 @@ void LayerStack::PopOverlay(Layer *overlay)
         overlay->OnDetach();
         layers.erase(it);
     }
+}
+
+void LayerStack::clear()
+{
+	for (Layer *layer : layers)
+	{
+		delete layer;
+	}
+	layers.clear();
 }
 
 }

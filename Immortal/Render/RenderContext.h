@@ -56,7 +56,7 @@ public:
     };
 
 public:
-    static std::unique_ptr<RenderContext> Create(const Description &desc);
+    static RenderContext *Create(const Description &desc);
 
 public:
     RenderContext()
@@ -208,9 +208,9 @@ public:
     }
 
 protected:
-    std::string graphicsRenderer{};
-    std::string driverVersion{};
-    std::string vendor{};
+    std::string graphicsRenderer;
+    std::string driverVersion;
+    std::string vendor;
 };
 
 using SuperRenderContext = RenderContext;

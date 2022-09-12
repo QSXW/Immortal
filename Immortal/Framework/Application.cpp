@@ -23,12 +23,12 @@ Application::Application(const Window::Description &description) :
 
     Async::Setup();
 
-    window.reset(Window::Create(desc));
+    window = Window::Create(desc);
     window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
     context = RenderContext::Create(RenderContext::Description{
-        window.get(),
+        window,
         desc.Width,
         desc.Height
         });
@@ -37,11 +37,11 @@ Application::Application(const Window::Description &description) :
 
     if (Render::API == Render::Type::OpenGL)
     {
-		Render::Setup(context.get());
+		Render::Setup(context);
     }
     else
     {
-		Async::Execute([&]() { Render::Setup(context.get()); timer.Start(); });
+		Async::Execute([&]() { Render::Setup(context); timer.Start(); });
     }
 
 	gui = context->CreateGuiLayer();
@@ -53,8 +53,15 @@ Application::Application(const Window::Description &description) :
 
 Application::~Application()
 {
+	timer.Stop();
+
+	layerStack.clear();
+	gui.Reset();
+
     Render::Release();
-    timer.Stop();
+	context.Reset();
+
+	Async::Release();
 }
 
 Layer *Application::PushLayer(Layer *layer)
@@ -118,7 +125,6 @@ void Application::OnEvent(Event &e)
 bool Application::OnWindowClosed(WindowCloseEvent &e)
 {
     /* Wait all threads to finish before closing */
-    Async::Release();
 
     runtime.running = false;
     return !runtime.running;

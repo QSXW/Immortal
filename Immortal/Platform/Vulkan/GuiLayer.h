@@ -52,7 +52,7 @@ private:
 private:
     RenderContext *context{ nullptr };
 
-    std::unique_ptr<DescriptorPool> descriptorPool;
+    URef<DescriptorPool> descriptorPool;
 
     Ref<GraphicsPipeline> pipeline;
 

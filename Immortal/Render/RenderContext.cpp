@@ -10,18 +10,18 @@
 namespace Immortal
 {
 
-std::unique_ptr<RenderContext> RenderContext::Create(const Description &desc)
+RenderContext *RenderContext::Create(const Description &desc)
 {
     switch (Render::API)
     {
     case Render::Type::OpenGL:
-        return std::make_unique<OpenGL::RenderContext>(desc);
+        return new OpenGL::RenderContext(desc);
 
     case Render::Type::Vulkan:
-        return std::make_unique<Vulkan::RenderContext>(desc);
+        return new Vulkan::RenderContext(desc);
 
     case Render::Type::D3D12:
-        return std::make_unique<D3D12::RenderContext>(desc);
+        return new D3D12::RenderContext(desc);
 
     default:
         throw Exception{ "Not support api" };

@@ -83,11 +83,14 @@ VkDescriptorPool DescriptorPool::Create()
 {
     VkDescriptorPool handle;
 
-    VkDescriptorPoolCreateInfo createInfo{};
-    createInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    createInfo.poolSizeCount = poolSize.size();
-    createInfo.pPoolSizes    = poolSize.data();
-    createInfo.maxSets       = poolSize.size() * MaxSetsPerPool;
+    VkDescriptorPoolCreateInfo createInfo = {
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext         = nullptr,
+        .flags         = 0,
+	    .maxSets       = U32(poolSize.size() * MaxSetsPerPool),
+        .poolSizeCount = U32(poolSize.size()),
+        .pPoolSizes    = poolSize.data(),
+    };
 
     Check(vkCreateDescriptorPool(*device, &createInfo, nullptr, &handle));
 
@@ -107,11 +110,13 @@ VkResult DescriptorPool::AllocateInternal(const VkDescriptorSetLayout *pDescript
         return VK_SUCCESS;
     }
 
-    VkDescriptorSetAllocateInfo createInfo{};
-    createInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    createInfo.descriptorPool     = handles.back();
-    createInfo.descriptorSetCount = count;
-    createInfo.pSetLayouts        = pDescriptorSetLayout;
+    VkDescriptorSetAllocateInfo createInfo = {
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext              = nullptr,
+        .descriptorPool     = handles.back(),
+        .descriptorSetCount = count,
+        .pSetLayouts        = pDescriptorSetLayout,
+    };
 
     return vkAllocateDescriptorSets(*device, &createInfo, pDescriptorSet);
 }

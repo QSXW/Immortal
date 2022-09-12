@@ -89,11 +89,6 @@ RenderContext::~RenderContext()
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
     
-    device->Wait();
-    for (auto &fence : fences)
-	{
-		device->Discard(&fence);
-	}
     for (auto &s : swapchainPool)
     {
 		s.Reset();

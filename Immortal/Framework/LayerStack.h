@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Layer.h"
-
 #include <vector>
 
 namespace Immortal
@@ -21,6 +20,8 @@ public:
 
     void PopOverlay(Layer* overlay);
 
+    void clear();
+
     auto begin()
     { 
         return layers.begin();
@@ -32,7 +33,7 @@ public:
     }
 
 private:
-    std::vector<Layer*> layers;
+    std::vector<Layer *> layers;
 
     uint32_t layerInsertIndex = 0;
 };

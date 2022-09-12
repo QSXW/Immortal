@@ -61,7 +61,7 @@ public:
 
     RenderContext *Context()
     {
-        return context.get();
+        return context;
     }
 
 public:
@@ -101,9 +101,9 @@ private:
     bool OnWindowResize(WindowResizeEvent &e);
 
 private:
-    std::unique_ptr<Window> window;
+	URef<Window> window;
 
-    std::unique_ptr<RenderContext> context;
+    URef<RenderContext> context;
 
     Ref<ScriptEngine> scriptEngine;
 
@@ -115,7 +115,7 @@ private:
 
     LayerStack layerStack;
 
-    MonoRef<GuiLayer> gui;
+    URef<GuiLayer> gui;
 
     Window::Description desc;
 

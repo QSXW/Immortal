@@ -110,6 +110,13 @@ GuiLayer::GuiLayer(RenderContext *context) :
 
 GuiLayer::~GuiLayer()
 {
+	descriptorPool.Reset();
+	fonts.Reset();
+    for (auto &buffer : buffers)
+    {
+		buffer.vertex.Reset();
+		buffer.index.Reset();
+    }
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 }
@@ -122,7 +129,7 @@ void GuiLayer::OnAttach()
     ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
 
     auto device = context->GetAddress<Device>();
-    descriptorPool.reset(new DescriptorPool{ device, Limit::PoolSize });
+    descriptorPool = new DescriptorPool{ device, Limit::PoolSize };
 
     ImGui_ImplVulkan_InitInfo initInfo{};
     auto queue = context->GetAddress<Queue>();
@@ -138,8 +145,6 @@ void GuiLayer::OnAttach()
     initInfo.MinImageCount   = Swapchain::MaxFrameCount;
     initInfo.ImageCount      = context->FrameSize();
     initInfo.CheckVkResultFn = &Check;
-    // initInfo.DescriptorSetLayout = RenderContext::DescriptorSetLayout;
-    // initInfo.Sampler  = *RenderContext::ImmutableSampler;
     ImGui_ImplVulkan_LoadFunctions(nullptr, nullptr);
 
     auto renderTarget = context->GetAddress<RenderTarget>();

@@ -52,7 +52,7 @@ private:
 protected:
     Device *device{ nullptr };
 
-    std::vector<VkDescriptorPool> handles{ VK_NULL_HANDLE };
+    std::vector<VkDescriptorPool> handles;
 
     std::vector<VkDescriptorPoolSize> poolSize;
 
