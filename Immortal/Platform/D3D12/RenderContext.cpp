@@ -36,7 +36,7 @@ RenderContext::RenderContext(const void *handle)
 
 RenderContext::~RenderContext()
 {
-
+	WaitForGPU();
 }
 
 void RenderContext::Setup()
@@ -45,7 +45,7 @@ void RenderContext::Setup()
 
     uint32_t dxgiFactoryFlags = 0;
 
-#if SLDEBUG
+#if _DEBUG
     ComPtr<ID3D12Debug> debugController;
 
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))

@@ -17,7 +17,7 @@ using Microsoft::WRL::ComPtr;
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "D3d12.lib")
 
-#if SLDEBUG
+#if _DEBUG
 #include <D3d12SDKLayers.h>
 #endif
 
@@ -25,6 +25,9 @@ namespace Immortal
 {
 namespace D3D12
 {
+
+#define D3D12_OPERATOR_PRITIMIVE(name)  Primitive *Handle() const { return name.Get(); } operator Primitive*() const { return Handle(); } protected: ComPtr<Primitive> name;
+#define D3D12_OPERATOR_HANDLE() D3D12_OPERATOR_PRITIMIVE(handle)
 
 namespace Definitions
 {

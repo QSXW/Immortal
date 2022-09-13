@@ -83,7 +83,7 @@ protected:
 
     struct {
         DescriptorHeap *active = nullptr;
-        std::unordered_map <uint64_t, DescriptorHeap*> packs;
+        std::unordered_map <uint64_t, URef<DescriptorHeap>> packs;
         std::queue<DescriptorHeap*> freePacks;
     } descriptorHeap;
 

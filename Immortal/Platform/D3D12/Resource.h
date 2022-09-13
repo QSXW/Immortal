@@ -10,8 +10,12 @@ namespace D3D12
 class Resource
 {
 public:
+    using Primitive = ID3D12Resource;
+	D3D12_OPERATOR_PRITIMIVE(resource)
+
+public:
     Resource() :
-        resource{ nullptr },
+        resource{},
         virtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL },
         state{ D3D12_RESOURCE_STATE_COMMON, (D3D12_RESOURCE_STATES)-1 }
     {
@@ -44,8 +48,7 @@ public:
 
     virtual void Destory()
     {
-        IfNotNullThenRelease(resource);
-        resource = nullptr;
+		resource.Reset();
         virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 
@@ -59,14 +62,7 @@ public:
         return !!resource;
     }
 
-    operator ID3D12Resource*() const
-    {
-        return resource;
-    }
-
 protected:
-    ID3D12Resource *resource;
-
     D3D12_GPU_VIRTUAL_ADDRESS virtualAddress;
 
     struct

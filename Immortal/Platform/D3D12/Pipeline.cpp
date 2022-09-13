@@ -87,7 +87,7 @@ void Pipeline::InitRootSignature(const Shader *shader)
         THROWIF(true, msg);
     }
 
-    device->Create(0, signature.Get(), &rootSignature);
+    Check(device->Create(signature.Get(), &rootSignature));
 }
 
 GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> shader) :
@@ -309,11 +309,15 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader)
 
     InitRootSignature(shader);
 
-    D3D12_COMPUTE_PIPELINE_STATE_DESC desc{};
-    desc.pRootSignature = rootSignature;
-    desc.CS             = byteCodes[Shader::ComputeShaderPos];
+    D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {
+        .pRootSignature = rootSignature,
+        .CS             = byteCodes[Shader::ComputeShaderPos],
+        .NodeMask       = 0,
+		.CachedPSO      = {nullptr, 0},
+		.Flags          = D3D12_PIPELINE_STATE_FLAG_NONE,
+    };
 
-    device->Create(&desc, &pipelineState);
+    Check(device->Create(&desc, &pipelineState));
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)

@@ -86,7 +86,7 @@ void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
     }
    
     device->CreateView(resource, &viewDescription.RenderTarget, renderTargetViewDescriptor);
-    device->CreateView(resource, &viewDescription.ShaderResource, shaderResourceViewDescriptor.cpu);
+	device->CreateView(resource, &viewDescription.ShaderResource, shaderResourceViewDescriptor.cpu);
 
     if (desc.SampleDesc.Count > 1)
     {
@@ -99,7 +99,7 @@ void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
         {
             unorderedAccessViewDescriptor[i] = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
         }
-        device->CreateView(resource, nullptr, &viewDescription.UnorderedAccess, unorderedAccessViewDescriptor[i]);
+		device->CreateView(resource, nullptr, &viewDescription.UnorderedAccess, unorderedAccessViewDescriptor[i]);
         viewDescription.UnorderedAccess.Texture2D.MipSlice++;
     }
 }
@@ -128,10 +128,10 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
     }
 
     depthStencilViewDescription.Flags = D3D12_DSV_FLAG_NONE;
-    device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[0]);
+	device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[0]);
 
     depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
-    device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[1]);
+	device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[1]);
 
     DXGI_FORMAT stencilReadFormat = GetStencilFormat(desc.Format);
     if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
@@ -143,10 +143,10 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
         }
 
         depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
-        device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[2]);
+		device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[2]);
 
         depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
-        device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[3]);
+		device->CreateView(resource, &depthStencilViewDescription, depthStencilViewDescriptor[3]);
     }
     else
     {

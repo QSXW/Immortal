@@ -10,23 +10,23 @@ namespace D3D12
 
 CommandList::CommandList(Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState)
 {
-    device->CreateCommandList(
+    Check(device->CreateCommandList(
         ncast<D3D12_COMMAND_LIST_TYPE>(type),
         pAllocator,
         pInitialState,
         &handle
-    );
+    ));
 }
 
 CommandList::CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState)
 {
-    device->CreateCommandList(
+    Check(device->CreateCommandList(
         0,
         ncast<D3D12_COMMAND_LIST_TYPE>(type),
         pAllocator,
         pInitialState,
         IID_PPV_ARGS(&handle)
-    );
+    ));
 }
 
 CommandList::~CommandList()

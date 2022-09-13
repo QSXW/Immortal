@@ -14,7 +14,8 @@ namespace D3D12
 class Device
 {
 public: 
-    using Super = ID3D12Device;
+    using Primitive = ID3D12Device;
+	D3D12_OPERATOR_HANDLE()
 
 public:
     Device(ComPtr<IDXGIFactory4> factory);
@@ -24,21 +25,6 @@ public:
     DXGI_ADAPTER_DESC GetAdapterDesc();
 
 public:
-    ID3D12Device *Handle()
-    {
-        return handle;
-    }
-
-    operator const ID3D12Device*() const
-    {
-        return handle;
-    }
-
-    operator ID3D12Device*()
-    {
-        return handle;
-    }
-
     template <class T>
 	requires std::is_same_v<IDXGIFactory4, T>
     T *GetAddress() const
@@ -73,18 +59,31 @@ public:
     void CreateView(ID3D12Resource *p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
     { \
         handle->Create##F##View(p##F, pDesc, descriptor); \
-    }
+    } \
+    void CreateView(ComPtr<ID3D12Resource> &p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
+	{                                                                                                    \
+		handle->Create##F##View(p##F.Get(), pDesc, descriptor);                                                \
+	}
 
     DEFINE_CREATE_VIEW(RENDER_TARGET,   RenderTarget  )
     DEFINE_CREATE_VIEW(SHADER_RESOURCE, ShaderResource)
     DEFINE_CREATE_VIEW(DEPTH_STENCIL,   DepthStencil  )
 
-    void CreateView(ID3D12Resource *pResource,
+    template <class T>
+	requires std::is_same_v<ID3D12Resource*, T> || std::is_same_v<ComPtr<ID3D12Resource>, T>
+    void CreateView(T pResource,
         ID3D12Resource *pCounterResouce,
         const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc,
         CPUDescriptor descriptor)
     {
-        handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
+        if constexpr (std::is_same_v<ID3D12Resource*, T>)
+        {
+			handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
+        }
+        else
+        {
+			handle->CreateUnorderedAccessView(pResource.Get(), pCounterResouce, pDesc, descriptor);
+        }
     }
 
     void CreateView(const D3D12_CONSTANT_BUFFER_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)
@@ -92,45 +91,45 @@ public:
         handle->CreateConstantBufferView(pDesc, descriptor);
     }
 
-    void Create(UINT nodeMask, ID3DBlob *pSignature, ID3D12RootSignature **ppRootSignature)
+    HRESULT Create(ID3DBlob *pSignature, ID3D12RootSignature **ppRootSignature, UINT nodeMask = 0)
     {
-        Check(handle->CreateRootSignature(
+        return handle->CreateRootSignature(
             nodeMask,
             pSignature->GetBufferPointer(),
             pSignature->GetBufferSize(),
             IID_PPV_ARGS(ppRootSignature)
-            ));
+            );
     }
 
-    void CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
+    HRESULT CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator **ppAllocator) const
     {
-        Check(handle->CreateCommandAllocator(
+        return handle->CreateCommandAllocator(
             type,
             IID_PPV_ARGS(ppAllocator)
-            ));
+            );
     }
 
-    void CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0) const
+    HRESULT CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0) const
     {
-        Check(handle->CreateCommandList(
+        return handle->CreateCommandList(
             nodeMask,
             type,
             pAllocator,
             pipeleState,
             IID_PPV_ARGS(ppCommandList)
-            ));
+            );
     }
 
-    void CreateFence(ID3D12Fence **pfence, UINT64 initialValue = 0, D3D12_FENCE_FLAGS flag = D3D12_FENCE_FLAG_NONE) const
+    HRESULT CreateFence(ID3D12Fence **pfence, UINT64 initialValue = 0, D3D12_FENCE_FLAGS flag = D3D12_FENCE_FLAG_NONE) const
     {
-        Check(handle->CreateFence(
+        return handle->CreateFence(
             initialValue,
             flag,
             IID_PPV_ARGS(pfence)
-            ));
+            );
     }
 
-    void CreateCommittedResource(
+    HRESULT CreateCommittedResource(
         const D3D12_HEAP_PROPERTIES *pHeapProperties,
               D3D12_HEAP_FLAGS       heapFlags,
         const D3D12_RESOURCE_DESC   *pDesc,
@@ -138,16 +137,16 @@ public:
         const D3D12_CLEAR_VALUE     *pOptimizedClearValue,
               ID3D12Resource       **pResource) const
     {
-        Check(handle->CreateCommittedResource(
+        return handle->CreateCommittedResource(
             pHeapProperties,
             heapFlags,
             pDesc,
             initialResourceState,
             pOptimizedClearValue,
             IID_PPV_ARGS(pResource)
-            ));
+            );
     }
-    
+
     void CopyDescriptors(
         UINT numDestDescriptorRanges,
         const D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptorRangeStarts,
@@ -193,9 +192,7 @@ public:
         Set(wName);
     }
 
-private:
-    ID3D12Device *handle{ nullptr };
-
+protected:
     IDXGIFactory4 *dxgiFactory{ nullptr };
 
     static inline bool UseWarpDevice{ false };

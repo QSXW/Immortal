@@ -4,6 +4,7 @@
 #include "Device.h"
 #include "RenderContext.h"
 #include "Barrier.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
@@ -42,28 +43,31 @@ Texture::~Texture()
 
 void Texture::InternalCreate(const void *data)
 {
-    ID3D12Device *device = *context->GetAddress<Device>();
+	Device *device = context->GetAddress<Device>();
 
     descriptor.visible   = RenderContext::AllocateShaderVisibleDescriptor();
     descriptor.invisible = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
 
-    D3D12_HEAP_PROPERTIES props{};
-    props.Type                 = D3D12_HEAP_TYPE_DEFAULT;
-    props.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    D3D12_HEAP_PROPERTIES props = {
+        .Type                 = D3D12_HEAP_TYPE_DEFAULT,
+        .CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+        .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
+        .CreationNodeMask     = 0,
+        .VisibleNodeMask      = 0,
+    };
 
-    D3D12_RESOURCE_DESC resourceDesc{};
-    resourceDesc.Format             = format;
-    resourceDesc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resourceDesc.Alignment          = 0;
-    resourceDesc.Width              = width;
-    resourceDesc.Height             = height;
-    resourceDesc.DepthOrArraySize   = 1;
-    resourceDesc.MipLevels          = mipLevels;
-    resourceDesc.SampleDesc.Count   = 1;
-    resourceDesc.SampleDesc.Quality = 0;
-    resourceDesc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    resourceDesc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_RESOURCE_DESC resourceDesc = {
+        .Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+        .Alignment          = 0,
+        .Width              = width,
+        .Height             = height,
+        .DepthOrArraySize   = 1,
+        .MipLevels          = UINT16(mipLevels),
+	    .Format             = format,
+	    .SampleDesc         = { .Count = 1, .Quality = 0 },
+        .Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN,
+        .Flags              = D3D12_RESOURCE_FLAG_NONE,
+    };
 
     Check(device->CreateCommittedResource(
         &props,
@@ -71,7 +75,7 @@ void Texture::InternalCreate(const void *data)
         &resourceDesc,
         D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
-        IID_PPV_ARGS(&resource)
+        &resource
         ));
 
     if (!resource)
@@ -85,15 +89,14 @@ void Texture::InternalCreate(const void *data)
         Update(data);
     }
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    CleanUpObject(&srvDesc);
-    srvDesc.Format                    = resourceDesc.Format;
-    srvDesc.ViewDimension             = D3D12_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels       = 1;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Shader4ComponentMapping   = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    device->CreateShaderResourceView(resource, &srvDesc, descriptor.visible.cpu);
-    device->CreateShaderResourceView(resource, &srvDesc, descriptor.invisible);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {
+        .Format                  = resourceDesc.Format,
+        .ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
+	    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+        .Texture2D               = { .MostDetailedMip = 0, .MipLevels = 1, .PlaneSlice = 0, .ResourceMinLODClamp = 0 },
+    };
+    device->CreateView(resource, &srvDesc, descriptor.visible.cpu);
+	device->CreateView(resource, &srvDesc, descriptor.invisible);
 }
 
 void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
@@ -109,54 +112,20 @@ bool Texture::operator==(const Super &other) const
 
 void Texture::Update(const void *data, uint32_t pitchX)
 {
-    ID3D12Device *device = *context->GetAddress<Device>();
+    Device *device = context->GetAddress<Device>();
 
-    uint32_t uploadPitch          = SLALIGN(width * format.Size(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-    uint32_t uploadSize           = height * uploadPitch;
+    uint32_t uploadPitch = SLALIGN(width * format.Size(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
+    uint32_t uploadSize  = height * uploadPitch;
 
     if (!pitchX)
     {
         pitchX = width;
     }
 
-    D3D12_RESOURCE_DESC uploadDesc{};
-    uploadDesc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
-    uploadDesc.Alignment          = 0;
-    uploadDesc.Width              = uploadSize;
-    uploadDesc.Height             = 1;
-    uploadDesc.DepthOrArraySize   = 1;
-    uploadDesc.MipLevels          = 1;
-    uploadDesc.Format             = DXGI_FORMAT_UNKNOWN;
-    uploadDesc.SampleDesc.Count   = 1;
-    uploadDesc.SampleDesc.Quality = 0;
-    uploadDesc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    uploadDesc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    URef<Buffer> uploadBuffer = new Buffer{ device, uploadSize, Buffer::Type::TransferSource };
 
-    D3D12_HEAP_PROPERTIES props{};
-    props.Type                 = D3D12_HEAP_TYPE_UPLOAD;
-    props.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-    // Create the GPU upload buffer.
-    ID3D12Resource *uploadBuffer{ nullptr };
-    Check(device->CreateCommittedResource(
-        &props,
-        D3D12_HEAP_FLAG_NONE,
-        &uploadDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&uploadBuffer)
-        ));
-
-    // Write pixels into the upload resource
-    void *mapped{ nullptr };
-    D3D12_RANGE range{ 0, uploadSize };
-
-    Check(uploadBuffer->Map(
-        0,
-        &range,
-        &mapped)
-        );
+    void *mapped;
+    Check(uploadBuffer->Map(&mapped));
 
     auto imageData = rcast<const uint8_t *>(data);
     auto formatSize = format.Size();
@@ -164,25 +133,30 @@ void Texture::Update(const void *data, uint32_t pitchX)
     {
         memcpy((void*)((uintptr_t)mapped + y * uploadPitch), imageData + y * pitchX * formatSize, width * formatSize);
     }
-    uploadBuffer->Unmap(0, &range);
+    uploadBuffer->Unmap();
 
-     // Copy the upload resource content into the real resource
-    D3D12_TEXTURE_COPY_LOCATION srcLocation{};
-    srcLocation.pResource                          = uploadBuffer;
-    srcLocation.Type                               = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    srcLocation.PlacedFootprint.Footprint.Format   = format;
-    srcLocation.PlacedFootprint.Footprint.Width    = width;
-    srcLocation.PlacedFootprint.Footprint.Height   = height;
-    srcLocation.PlacedFootprint.Footprint.Depth    = 1;
-    srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
+    D3D12_TEXTURE_COPY_LOCATION srcLocation = {
+        .pResource        = *uploadBuffer,
+        .Type             = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
+        .PlacedFootprint  = {
+	        .Offset = 0,
+            .Footprint = {
+                .Format = format,
+                .Width  = width,
+                .Height = height,
+                .Depth  = 1,
+                .RowPitch = uploadPitch,
+            },
+        },
+    };
 
-    D3D12_TEXTURE_COPY_LOCATION dstLocation{};
-    dstLocation.pResource        = resource;
-    dstLocation.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dstLocation.SubresourceIndex = 0;
-
+    D3D12_TEXTURE_COPY_LOCATION dstLocation = {
+	    .pResource        = *this,
+	    .Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+	    .SubresourceIndex = 0,
+	};
     Barrier<BarrierType::Transition> barrier{
-        resource,
+        *this,
         D3D12_RESOURCE_STATE_COPY_DEST,
         D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
     };
@@ -194,11 +168,7 @@ void Texture::Update(const void *data, uint32_t pitchX)
     cmdlist->ResourceBarrier(&barrier);
 
     queue->EndUpload();
-
-    uploadBuffer->Release();
 }
 
 }
 }
-
-
