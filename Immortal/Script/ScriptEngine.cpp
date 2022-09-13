@@ -89,9 +89,10 @@ namespace SceneObjectFunc
 
 static std::unordered_map<MonoType *, std::function<bool(Object&)>> TypeReflectionHasComponent;
 static std::unordered_map<MonoType *, std::function<void(Object&)>> TypeReflectionAddComponent;
-#define RegisterComponent(T) {                                                                           \
-    MonoType *type = mono_reflection_type_from_name("Immortal."#T, image);                               \
-    if (!type) { LOG::ERR("The type is not able to reflected from CShapr to Immortal Engine!");       }  \
+#define RegisterComponent(T) {                                                                                           \
+    static char name[] = "Immortal." #T;                                                                                 \
+    MonoType *type = mono_reflection_type_from_name(name, image);                                                        \
+    if (!type) { LOG::ERR("The type is not able to reflected from CShapr to Immortal Engine!");       }                  \
     SceneObjectFunc::TypeReflectionHasComponent[type] = [](Object &object) -> bool { return object.HasComponent<T>(); }; \
     SceneObjectFunc::TypeReflectionAddComponent[type] = [](Object &object) -> void {        object.AddComponent<T>(); }; \
 }
@@ -114,27 +115,27 @@ static void AddComponent(uint64_t scene, int id, Anonymous reflectionType)
 
 static void LogDebugCallback(MonoString *message)
 {
-    LOG::DEBUG(Utils::ws2s(std::wstring{ mono_string_chars(message) }));
+	LOG::DEBUG("{}", Utils::ws2s(std::wstring{mono_string_chars(message)}));
 }
 
 static void LogErrorCallback(MonoString *message)
 {
-    LOG::ERR(Utils::ws2s(std::wstring{ mono_string_chars(message) }));
+	LOG::ERR("{}", Utils::ws2s(std::wstring{mono_string_chars(message)}));
 }
 
 static void LogWarnCallback(MonoString *message)
 {
-    LOG::WARN(Utils::ws2s(std::wstring{ mono_string_chars(message) }));
+	LOG::WARN("{}", Utils::ws2s(std::wstring{mono_string_chars(message)}));
 }
 
 static void LogInfoCallback(MonoString *message)
 {
-    LOG::INFO(Utils::ws2s(std::wstring{ mono_string_chars(message) }));
+	LOG::INFO("{}", Utils::ws2s(std::wstring{mono_string_chars(message)}));
 }
 
 static void LogFatalCallback(MonoString *message)
 {
-    LOG::FATAL(Utils::ws2s(std::wstring{ mono_string_chars(message) }));
+	LOG::FATAL("{}", Utils::ws2s(std::wstring{mono_string_chars(message)}));
 }
 
 #define NS(n) "Immortal."#n
@@ -297,7 +298,7 @@ int ScriptEngine::Execute(int argc, char **argv)
     int retval = mono_jit_exec(domain, assembly, argc, argv);
     return retval;
 #else
-    LOG::ERR("Unable to execute script engine without Mono!");
+	LOG::ERR("{}", "Unable to execute script engine without Mono!");
     return -1;
 #endif
 }

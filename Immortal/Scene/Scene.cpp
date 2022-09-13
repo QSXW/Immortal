@@ -505,16 +505,19 @@ void Scene::OnRender(const Camera &camera)
 
     {
         /* Update Skybox */
-        auto &nodeList = meshes.skybox->NodeList();
-        for (auto &node : nodeList)
+        if (Render::API == Render::Type::Vulkan)
         {
-            pipelines.skybox->AllocateDescriptorSet((uint64_t)&node);
-            pipelines.skybox->Set(node.Vertex);
-            pipelines.skybox->Set(node.Index);
-            pipelines.skybox->Bind(uniforms.transform,  0);
-            pipelines.skybox->Bind(textures.skyboxCube, 1);
-            pipelines.skybox->Bind(uniforms.shading,    2);
-            Render::Draw(pipelines.skybox);
+			auto &nodeList = meshes.skybox->NodeList();
+			for (auto &node : nodeList)
+			{
+				pipelines.skybox->AllocateDescriptorSet((uint64_t) &node);
+				pipelines.skybox->Set(node.Vertex);
+				pipelines.skybox->Set(node.Index);
+				pipelines.skybox->Bind(uniforms.transform, 0);
+				pipelines.skybox->Bind(textures.skyboxCube, 1);
+				pipelines.skybox->Bind(uniforms.shading, 2);
+				Render::Draw(pipelines.skybox);
+			}
         }
     }
 
