@@ -7,10 +7,13 @@
 
 namespace Immortal
 {
+
+class Window;
 namespace D3D12
 {
 
 class Device;
+class Queue;
 class DescriptorHeap;
 class Swapchain
 {
@@ -25,8 +28,15 @@ public:
 
     static inline constexpr UINT64 SWAP_CHAIN_BUFFER_COUNT = 3;
 
+    using Primitive = IDXGISwapChain4;
+    D3D_OPERATOR_HANDLE()
+
 public:
-	Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
+    Swapchain(Device *device, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc);
+
+	Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
+
+    ~Swapchain();
 
     void CreateRenderTarget();
 
@@ -112,9 +122,7 @@ public:
 private:
     Device *device{ nullptr };
 
-    ComPtr<IDXGISwapChain4> handle{ nullptr };
-
-    std::unique_ptr<DescriptorHeap> rtvDescriptorHeap;
+    URef<DescriptorHeap> rtvDescriptorHeap;
 
     std::vector<ID3D12Resource *> renderTargets;
 

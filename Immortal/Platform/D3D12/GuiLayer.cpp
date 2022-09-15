@@ -21,9 +21,13 @@ namespace D3D12
 GuiLayer::GuiLayer(SuperRenderContext *superContext) :
     context{ dcast<RenderContext*>(superContext)}
 {
-    swapchain   = context->GetAddress<Swapchain>();
-    commandList = context->GetAddress<CommandList>();
-    queue       = context->GetAddress<Queue>();
+    swapchain = context->GetAddress<Swapchain>();
+}
+
+GuiLayer::~GuiLayer()
+{
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
 }
 
 void GuiLayer::OnAttach()
@@ -77,29 +81,31 @@ void GuiLayer::End()
 {
     Super::End();
 
-    Barrier<BarrierType::Transition> barrier{
-        swapchain->GetRenderTarget(),
-        D3D12_RESOURCE_STATE_PRESENT,
-        D3D12_RESOURCE_STATE_RENDER_TARGET
-    };
-    commandList->ResourceBarrier(&barrier);
+    context->Submit([&](CommandList *commandList) {
+        Barrier<BarrierType::Transition> barrier{
+            swapchain->GetRenderTarget(),
+            D3D12_RESOURCE_STATE_PRESENT,
+            D3D12_RESOURCE_STATE_RENDER_TARGET
+        };
+        commandList->ResourceBarrier(&barrier);
 
-    CPUDescriptor rtvDescritor = swapchain->GetDescriptor();
-    commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
-    commandList->SetRenderTargets(&rtvDescritor, 1, false, nullptr);
+        CPUDescriptor rtvDescritor = swapchain->GetDescriptor();
+        commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
+        commandList->SetRenderTargets(&rtvDescritor, 1, false, nullptr);
 
-    commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->Handle());
+        commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList->Handle());
 
-    barrier.Swap();
-    commandList->ResourceBarrier(&barrier);
+        barrier.Swap();
+        commandList->ResourceBarrier(&barrier);
 
-    auto &io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault(nullptr, rcast<void*>(commandList->Handle()));
-    }
+        auto &io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault(nullptr, (void*)(commandList->Handle()));
+        }
+        });
 }
 
 }

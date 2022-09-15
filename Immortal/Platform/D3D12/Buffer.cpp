@@ -14,24 +14,27 @@ Buffer::Buffer(const Buffer &other, const BindInfo &bindInfo) :
     virtualAddress = other.virtualAddress + bindInfo.offset;
 }
 
-Buffer::Buffer(Device *device, const size_t size, const void *data, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size }
+Buffer::Buffer(RenderContext *context, const size_t size, const void *data, Type type) :
+    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
+    context{ context }
 {
-    InternelCreate(device);
+    __Create();
     Update(size, data);
 }
 
-Buffer::Buffer(Device * device, const size_t size, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size }
+Buffer::Buffer(RenderContext *context, const size_t size, Type type) :
+    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
+    context{ context }
 {
-    InternelCreate(device);
+    __Create();
 }
 
-Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
+Buffer::Buffer(RenderContext *context, const size_t size, uint32_t binding) :
     Super{ Buffer::Type::Uniform, SLALIGN(size, 256) },
+    context{ context },
     binding{ binding }
 {
-    InternelCreate(device);
+    __Create();
 }
 
 Buffer::~Buffer()
@@ -39,27 +42,29 @@ Buffer::~Buffer()
 
 }
 
-void Buffer::InternelCreate(Device *device)
+void Buffer::__Create()
 {
-    D3D12_HEAP_PROPERTIES heapProperties{};
-    heapProperties.Type                 = D3D12_HEAP_TYPE_UPLOAD;
-    heapProperties.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    heapProperties.CreationNodeMask     = 1;
-    heapProperties.VisibleNodeMask      = 1;
+    Device *device = context->GetAddress<Device>();
+    D3D12_HEAP_PROPERTIES heapProperties = {
+        .Type                 = D3D12_HEAP_TYPE_UPLOAD,
+        .CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+        .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
+        .CreationNodeMask     = 1,
+        .VisibleNodeMask      = 1,
+    };
 
-    D3D12_RESOURCE_DESC desc{};
-    desc.Dimension          = D3D12_RESOURCE_DIMENSION_BUFFER;
-    desc.Width              = size;
-    desc.Height             = 1;
-    desc.DepthOrArraySize   = 1;
-    desc.MipLevels          = 1;
-    desc.Format             = DXGI_FORMAT_UNKNOWN;
-    desc.SampleDesc.Count   = 1;
-    desc.SampleDesc.Quality = 0;
-    desc.Layout             = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    desc.Alignment          = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT; // Zero is effectively 64KB also
-    desc.Flags              = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_RESOURCE_DESC desc = {
+        .Dimension        = D3D12_RESOURCE_DIMENSION_BUFFER,
+        .Alignment        = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // Zero is effectively 64KB also
+        .Width            = size,
+        .Height           = 1,
+        .DepthOrArraySize = 1,
+        .MipLevels        = 1,
+        .Format           = DXGI_FORMAT_UNKNOWN,
+        .SampleDesc       = { .Count = 1, .Quality = 0 },
+        .Layout           = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+        .Flags            = D3D12_RESOURCE_FLAG_NONE,
+    };
 
     device->CreateCommittedResource(
         &heapProperties,
@@ -75,9 +80,12 @@ void Buffer::InternelCreate(Device *device)
     if (type & Type::Uniform)
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC desc = Desc();
-        descriptor = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
+        descriptor = context->AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
         device->CreateView(&desc, descriptor);
     }
+#ifdef _DEBUG
+    resource->SetName(L"Buffer");
+#endif
 }
 
 void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
@@ -85,7 +93,7 @@ void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
     THROWIF(updateSize > size, SError::OutOfBound);
 
     uint8_t *memory = nullptr;
-    Map(rcast<void **>(&memory));
+    Check(Map(rcast<void **>(&memory)));
     memcpy(memory + offset, data, updateSize);
     Unmap();
 }

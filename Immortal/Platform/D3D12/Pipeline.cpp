@@ -3,6 +3,7 @@
 #include "Buffer.h"
 #include "Texture.h"
 #include "RenderTarget.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -25,8 +26,21 @@ static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopologyType(const Pipeline
     }
 }
 
+Pipeline::Pipeline(RenderContext *context) :
+    context{ context }
+{
+
+}
+
+Pipeline::~Pipeline()
+{
+
+}
+
 void Pipeline::InitRootSignature(const Shader *shader)
 {
+    rootSignature = new RootSignature;
+
     auto &descriptorRanges = shader->DescriptorRanges();
 
     std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
@@ -41,26 +55,26 @@ void Pipeline::InitRootSignature(const Shader *shader)
     {
         auto &descriptorRange = descriptorRanges[i];
         auto &range = descriptorRange.first;
-        if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV)
+        if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SRV || range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV)
         {
             textureIndexInDescriptorTable = i;
             if (samplers.empty())
             {
-                D3D12_STATIC_SAMPLER_DESC sampler = {};
-                sampler.Filter           = D3D12_FILTER_MIN_MAG_MIP_POINT;
-                sampler.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-                sampler.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-                sampler.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-                sampler.MipLODBias       = 0;
-                sampler.MaxAnisotropy    = 0;
-                sampler.ComparisonFunc   = D3D12_COMPARISON_FUNC_NEVER;
-                sampler.BorderColor      = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-                sampler.MinLOD           = 0.0f;
-                sampler.MaxLOD           = D3D12_FLOAT32_MAX;
-                sampler.ShaderRegister   = 0;
-                sampler.RegisterSpace    = 0;
-                sampler.ShaderVisibility = descriptorRanges[i].second;
-
+                D3D12_STATIC_SAMPLER_DESC sampler = {
+                    .Filter           = D3D12_FILTER_MIN_MAG_MIP_POINT,
+                    .AddressU         = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .AddressV         = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .AddressW         = D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+                    .MipLODBias       = 0,
+                    .MaxAnisotropy    = 0,
+                    .ComparisonFunc   = D3D12_COMPARISON_FUNC_NEVER,
+                    .BorderColor      = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK,
+                    .MinLOD           = 0.0f,
+                    .MaxLOD           = D3D12_FLOAT32_MAX,
+                    .ShaderRegister   = 0,
+                    .RegisterSpace    = 0,
+                    .ShaderVisibility = descriptorRanges[i].second,
+                };
                 samplers.emplace_back(std::move(sampler));
             }
         }
@@ -87,19 +101,19 @@ void Pipeline::InitRootSignature(const Shader *shader)
         THROWIF(true, msg);
     }
 
-    Check(device->Create(signature.Get(), &rootSignature));
+    Device *device = context->GetAddress<Device>();
+    Check(device->Create(signature.Get(), &*rootSignature));
+#ifdef _DEBUG
+    rootSignature->SetName("Pipeline::RootSignature");
+#endif
 }
 
-GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> shader) :
+GraphicsPipeline::GraphicsPipeline(RenderContext *context, Ref<Shader::Super> shader) :
     Super{ shader },
+    Pipeline{ context },
     state{ new State{} }
 {
-    Pipeline::device = device;
-}
 
-Pipeline::~Pipeline()
-{
-    IfNotNullThenRelease(pipelineState);
 }
 
 void GraphicsPipeline::Set(Ref<Buffer::Super> superBuffer)
@@ -161,23 +175,40 @@ void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
         U32(state->InputElementDescription.size())
     };
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
-    CleanUpObject(&pipelineStateDesc);
-    pipelineStateDesc.InputLayout           = inputLayoutDesc;
-    pipelineStateDesc.pRootSignature        = rootSignature;
-    pipelineStateDesc.VS                    = bytesCodes[Shader::VertexShaderPos];
-    pipelineStateDesc.PS                    = bytesCodes[Shader::PixelShaderPos ];
-    pipelineStateDesc.RasterizerState       = RasterizerDescription{};
-    pipelineStateDesc.BlendState            = BlendDescription{};
-    pipelineStateDesc.DepthStencilState     = DepthStencilDescription{};
-    pipelineStateDesc.SampleMask            = UINT_MAX;
-    pipelineStateDesc.PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.primitiveType);
-    pipelineStateDesc.NumRenderTargets      = 1;
-    pipelineStateDesc.SampleDesc.Count      = 1;
-
     auto renderTarget = dynamic_cast<const RenderTarget*>(superRenderTarget);
-    auto &colorBuffers = renderTarget->GetColorBuffers();
+    auto &depthBuffer = renderTarget->GetDepthBuffer();
 
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc = {
+        .pRootSignature        = *rootSignature,
+        .VS                    = bytesCodes[Shader::VertexShaderPos],
+        .PS                    = bytesCodes[Shader::PixelShaderPos ],
+        .DS                    = nullptr,
+        .HS                    = nullptr,
+        .GS                    = nullptr,
+        .StreamOutput          = { 
+            .pSODeclaration   = nullptr,
+            .NumEntries       = 0,
+            .pBufferStrides   = nullptr,
+            .NumStrides       = 0,
+            .RasterizedStream = 0,
+         },
+        .BlendState            = BlendDescription{},
+        .SampleMask            = UINT_MAX,
+        .RasterizerState       = RasterizerDescription{},
+        .DepthStencilState     = DepthStencilDescription{},
+        .InputLayout           = inputLayoutDesc,
+        .IBStripCutValue       = { D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED },
+        .PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.primitiveType),
+        .NumRenderTargets      = 1,
+        .RTVFormats            = {},
+        .DSVFormat             = depthBuffer.Format,
+        .SampleDesc            = { .Count = 1, .Quality = 0 },
+        .NodeMask              = 0,
+        .CachedPSO             = { .pCachedBlob = nullptr, .CachedBlobSizeInBytes = 0 },
+        .Flags                 = D3D12_PIPELINE_STATE_FLAG_NONE,
+    };
+
+    auto &colorBuffers = renderTarget->GetColorBuffers();
     THROWIF(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);
     pipelineStateDesc.NumRenderTargets = colorBuffers.size();
     for (int i = 0; i < pipelineStateDesc.NumRenderTargets; i++)
@@ -185,20 +216,18 @@ void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
         pipelineStateDesc.RTVFormats[i] = colorBuffers[i].Format;
     }
 
-    auto &depthBuffer = renderTarget->GetDepthBuffer();
-    pipelineStateDesc.DSVFormat = depthBuffer.Format;
-
-    device->Create(&pipelineStateDesc, &pipelineState);
+    Device *device = context->GetAddress<Device>();
+    device->Create(&pipelineStateDesc, &handle);
 }
-
 
 void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
 {
-	Bind(descriptorBuffer->DeRef<CPUDescriptor>(), binding);
+    Bind(descriptorBuffer->DeRef<CPUDescriptor>(), binding);
 }
 
 void Pipeline::Bind(Buffer *buffer, uint32_t binding)
 {
+    Device *device = context->GetAddress<Device>();
     DescriptorTable &descriptorTable = descriptorTables[Definitions::ConstantBufferIndex];
 
     auto cbvDescriptor = descriptorHeap.active->StartOfCPU();
@@ -226,9 +255,10 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
 
 void Pipeline::Bind(const CPUDescriptor *descriptors, uint32_t binding)
 {
+    Device *device = context->GetAddress<Device>();
     auto increment = descriptorHeap.active->GetIncrement();
 
-    DescriptorTable &descriptorTable = descriptorTables[binding];
+    DescriptorTable &descriptorTable = descriptorTables[textureIndexInDescriptorTable];
     auto srvDescriptor = descriptorHeap.active->StartOfCPU();
     srvDescriptor.Offset(descriptorTable.Offset, increment);
     for (size_t i = 0; i < descriptorTable.DescriptorCount; i++)
@@ -244,6 +274,7 @@ void Pipeline::Bind(const CPUDescriptor *descriptors, uint32_t binding)
 
 void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 {
+    Device *device = context->GetAddress<Device>();
     DescriptorTable &descriptorTable = descriptorTables[textureIndexInDescriptorTable];
     Texture *texture = dcast<Texture *>(super);
     auto srvDescriptor = descriptorHeap.active->StartOfCPU();
@@ -257,6 +288,7 @@ void Pipeline::Bind(Texture::Super *super, uint32_t binding)
 
 Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
 {
+    Device *device = context->GetAddress<Device>();
     auto it = descriptorHeap.packs.find(uuid);
     if (it != descriptorHeap.packs.end())
     {
@@ -295,9 +327,10 @@ void Pipeline::FreeDescriptorSet(uint64_t uuid)
     }
 }
 
-ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader)
+ComputePipeline::ComputePipeline(RenderContext *context, Shader::Super *superShader) :
+    Pipeline{ context }
 {
-    Pipeline::device = device;
+    Device *device = context->GetAddress<Device>();
 
     if (!superShader)
     {
@@ -310,19 +343,42 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader)
     InitRootSignature(shader);
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {
-        .pRootSignature = rootSignature,
+        .pRootSignature = *rootSignature,
         .CS             = byteCodes[Shader::ComputeShaderPos],
         .NodeMask       = 0,
-		.CachedPSO      = {nullptr, 0},
-		.Flags          = D3D12_PIPELINE_STATE_FLAG_NONE,
+        .CachedPSO      = {nullptr, 0},
+        .Flags          = D3D12_PIPELINE_STATE_FLAG_NONE,
     };
 
-    Check(device->Create(&desc, &pipelineState));
+    Check(device->Create(&desc, &handle));
 }
 
 void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
+    context->Compute([&, this](CommandList *cmdlist) {
+        cmdlist->SetPipelineState(*this);
+        cmdlist->SetComputeRootSignature(*rootSignature);
+        cmdlist->SetDescriptorHeaps(&*descriptorHeap.active, 1);
 
+        GPUDescriptor descriptors{ descriptorHeap.active->StartOfGPU() };
+        for (uint32_t i = 0; i < descriptorTables.size(); i++)
+        {
+            GPUDescriptor descriptor = descriptors;
+            descriptor.Offset(descriptorTables[i].Offset, descriptorHeap.active->GetIncrement());
+            cmdlist->SetComputeRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
+        }
+
+        cmdlist->PushComputeConstant(pushConstants.size(), pushConstants.data(), 0);
+        cmdlist->Dispatch(nGroupX, nGroupY, nGroupZ);
+        });
+
+    pushConstants.clear();
+}
+
+void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
+{  
+    pushConstants.resize(size + offset);
+    memcpy(pushConstants.data() + offset, data, size);
 }
 
 }

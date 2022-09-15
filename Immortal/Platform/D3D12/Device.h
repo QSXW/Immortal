@@ -18,7 +18,7 @@ public:
 	D3D12_OPERATOR_HANDLE()
 
 public:
-    Device(ComPtr<IDXGIFactory4> factory);
+    Device();
 
     ~Device();
 
@@ -26,10 +26,10 @@ public:
 
 public:
     template <class T>
-	requires std::is_same_v<IDXGIFactory4, T>
+	requires std::is_base_of_v<IDXGIFactory, T>
     T *GetAddress() const
     {
-        return dxgiFactory;
+        return dxgiFactory.Get();
     }
 
 #define DEFINE_CRETE_FUNC(U, T, O) \
@@ -181,19 +181,8 @@ public:
             );
     }
 
-    void Set(const std::wstring &name)
-    {
-        handle->SetName(name.c_str());
-    }
-
-    void Set(const std::string &name)
-    {
-        auto wName = Utils::s2ws(name);
-        Set(wName);
-    }
-
 protected:
-    IDXGIFactory4 *dxgiFactory{ nullptr };
+    ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
 
     static inline bool UseWarpDevice{ false };
 };

@@ -94,11 +94,10 @@ set(D3D12_FILES
     Platform/D3D12/Barrier.h
     Platform/D3D12/Buffer.cpp
     Platform/D3D12/Buffer.h
+    Platform/D3D12/CommandAllocator.cpp
     Platform/D3D12/CommandAllocator.h
-    Platform/D3D12/CommandBuffer.cpp
-    Platform/D3D12/CommandBuffer.h
-    Platform/D3D12/CommandPool.cpp
-    Platform/D3D12/CommandPool.h
+    Platform/D3D12/CommandList.cpp
+    Platform/D3D12/CommandList.h
     Platform/D3D12/Common.h
     Platform/D3D12/DescriptorHeap.cpp
     Platform/D3D12/DescriptorHeap.h

@@ -9,14 +9,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Device *RenderContext::UnlimitedDevice = nullptr;
-
-DescriptorAllocator RenderContext::shaderVisibleDescriptorAllocator{
-    DescriptorPool::Type::ShaderResourceView,
-    DescriptorPool::Flag::ShaderVisible
-};
-
-DescriptorAllocator RenderContext::descriptorAllocators[U32(DescriptorPool::Type::Quantity)] = {
+static DescriptorPool::Type DescriptorPoolTypes[] = {
     DescriptorPool::Type::ShaderResourceView,
     DescriptorPool::Type::Sampler,
     DescriptorPool::Type::RenderTargetView,
@@ -36,54 +29,39 @@ RenderContext::RenderContext(const void *handle)
 
 RenderContext::~RenderContext()
 {
-	WaitForGPU();
+    transferDispatcher.Reset();
+    graphicsDispatcher.Reset();
+    swapchain.Reset();
+
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(descriptorAllocators); i++)
+    {
+        descriptorAllocators[i].Reset();
+    }
+    shaderVisibleDescriptorAllocator.Reset();
 }
 
 void RenderContext::Setup()
 {
     desc.FrameCount = Swapchain::SWAP_CHAIN_BUFFER_COUNT;
 
-    uint32_t dxgiFactoryFlags = 0;
-
-#if _DEBUG
-    ComPtr<ID3D12Debug> debugController;
-
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-    {
-        debugController->EnableDebugLayer();
-
-        dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-        LOG::INFO("Enable Debug Layer: {0}", rcast<void*>(debugController.Get()));
-    }
-#endif
-    Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
-    device = new Device{ dxgiFactory };
-
-    UnlimitedDevice = device;
+    device = new Device;
 
     for (size_t i = 0; i < SL_ARRAY_LENGTH(descriptorAllocators); i++)
     {
-        descriptorAllocators[i].Init(device);
+        descriptorAllocators[i] = new DescriptorAllocator{ DescriptorPoolTypes[i] };
+        descriptorAllocators[i]->Init(device);
     }
-    shaderVisibleDescriptorAllocator.Init(device);
+
+    shaderVisibleDescriptorAllocator = new DescriptorAllocator{
+        DescriptorPool::Type::ShaderResourceView,
+        DescriptorPool::Flag::ShaderVisible
+    };
+    shaderVisibleDescriptorAllocator->Init(device);
 
     auto adapterDesc = device->GetAdapterDesc();
-    Super::UpdateMeta(
-        Utils::ws2s(adapterDesc.Description).c_str(),
-        nullptr,
-        nullptr
-        );
+    Super::UpdateMeta(Utils::ws2s(adapterDesc.Description).c_str(), "12", std::to_string(adapterDesc.VendorId).c_str());
 
-    auto hWnd = rcast<HWND>(desc.WindowHandle->Primitive());
-
-    D3D12_COMMAND_QUEUE_DESC queueDesc = {
-		.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT,
-		.Priority = 0,
-		.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE,
-        .NodeMask = 0,
-    };
-
-    queue = new Queue{ device, queueDesc } ;
+    __InitQueue();
 
 	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {
         .Width       = desc.Width,
@@ -98,9 +76,10 @@ void RenderContext::Setup()
         .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
         .Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
     };
-    swapchain = new Swapchain{ device, queue->Handle(), hWnd, swapchainDesc };
+    swapchain = new Swapchain{ device, graphicsDispatcher->GetAddress<Queue>(), desc.WindowHandle, swapchainDesc};
 
-    Check(dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
+    auto dxgiFactory = device->GetAddress<IDXGIFactory4>();
+    Check(dxgiFactory->MakeWindowAssociation((HWND)desc.WindowHandle->Primitive(), DXGI_MWA_NO_ALT_ENTER));
 
     {
         CheckDisplayHDRSupport();
@@ -115,28 +94,16 @@ void RenderContext::Setup()
         ); */
     }
 
-    {
-        frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-
-        for (int i = 0; i < desc.FrameCount; i++)
-        {
-            commandAllocator[i] = queue->RequestCommandAllocator();
-        }
-
-        commandList = new CommandList{ device, CommandList::Type::Direct, commandAllocator[frameIndex]};
-        commandList->Close();
-
-        queue->Execute(commandList->AddressOf<ID3D12CommandList>());
-
-        fence = new Fence{ device, fenceValues[frameIndex] };
-
-        fenceValues[frameIndex]++;
-        WaitForGPU();
-    }
-
 #ifdef _DEBUG
-    device->Set("RenderContext::Device");
+    Check(device->SetName("RenderContext::Device"));
 #endif
+}
+
+void RenderContext::__InitQueue()
+{
+    graphicsDispatcher = new CommandListDispatcher{ device, D3D12_COMMAND_LIST_TYPE_DIRECT };
+
+    transferDispatcher = new CommandListDispatcher{ device, D3D12_COMMAND_LIST_TYPE_COPY };
 }
 
 inline int ComputeIntersectionArea(int ax1, int ay1, int ax2, int ay2, int bx1, int by1, int bx2, int by2)
@@ -184,6 +151,7 @@ void RenderContext::EnsureSwapChainColorSpace(Swapchain::BitDepth bitDepth, bool
 
 void RenderContext::CheckDisplayHDRSupport()
 {
+    auto dxgiFactory = device->GetAddress<IDXGIFactory4>();
     if (dxgiFactory->IsCurrent() == false)
     {
         Check(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory)));
@@ -286,17 +254,14 @@ void RenderContext::SetHDRMetaData(float maxOutputNits, float minOutputNits, flo
 
 void RenderContext::WaitForGPU()
 {
-    Check(queue->Signal(*fence, fenceValues[frameIndex]));
-    Check(fence->SetCompletion(fenceValues[frameIndex]));
-    fence->Wait();
-    fenceValues[frameIndex]++;
+    graphicsDispatcher->WaitIdle();
 }
 
 UINT RenderContext::WaitForPreviousFrame()
 {
     const uint64_t currentFenceValue = fenceValues[frameIndex];
-    Check(queue->Signal(*fence, currentFenceValue));
-
+    
+    auto fence = graphicsDispatcher->GetAddress<Fence>();
     frameIndex = swapchain->AcquireCurrentBackBufferIndex();
     auto completedValue = fence->GetCompletion();
     if (completedValue < fenceValues[frameIndex])
@@ -305,7 +270,7 @@ UINT RenderContext::WaitForPreviousFrame()
         fence->Wait();
     }
 
-    fenceValues[frameIndex] = currentFenceValue + 1;
+    fenceValues[frameIndex] = graphicsDispatcher->GetFenceValue();
 
     return frameIndex;
 }
@@ -338,36 +303,14 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
     }
 }
 
-void RenderContext::WaitForNextFrameResources()
-{
-    auto frameIndex = swapchain->AcquireCurrentBackBufferIndex();
-
-    HANDLE waitableObjects[] = {
-        swapchainWritableObject,
-        NULL
-    };
-    DWORD numWaitableObjects = 1;
-
-    uint64_t fenceValue = fenceValues[frameIndex];
-    if (fenceValue != 0)
-    {
-        fenceValues[frameIndex] = 0;
-        fence->SetCompletion(fenceValue);
-        waitableObjects[1] = fence->GetEvent();;
-        numWaitableObjects = 2;
-    }
-
-    WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
-}
-
 void RenderContext::CopyDescriptorHeapToShaderVisible()
 {
-    auto srcDescriptorAllocator = descriptorAllocators[U32(DescriptorPool::Type::ShaderResourceView)];
+    auto &srcDescriptorAllocator = descriptorAllocators[U32(DescriptorPool::Type::ShaderResourceView)];
 
     device->CopyDescriptors(
-        srcDescriptorAllocator.CountOfDescriptor(),
-        shaderVisibleDescriptorAllocator.FreeStartOfHeap(),
-        srcDescriptorAllocator.StartOfHeap(),
+        srcDescriptorAllocator->CountOfDescriptor(),
+        shaderVisibleDescriptorAllocator->FreeStartOfHeap(),
+        srcDescriptorAllocator->StartOfHeap(),
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
         );
 }
@@ -376,15 +319,13 @@ void RenderContext::PrepareFrame()
 {
 	frameIndex = swapchain->AcquireCurrentBackBufferIndex();
 
-	commandAllocator[frameIndex]->Reset();
-
-	commandList->Reset(commandAllocator[frameIndex]);
+    commandList = graphicsDispatcher->GetCommandList();
 }
 
 void RenderContext::SwapBuffers()
 {
-	commandList->Close();
-	queue->Execute(commandList->AddressOf<ID3D12CommandList>());
+    transferDispatcher->Execute();
+    graphicsDispatcher->Execute();
 
 	swapchain->Present(1, 0);
 
@@ -403,17 +344,17 @@ SuperGuiLayer *RenderContext::CreateGuiLayer()
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, const void *data, Buffer::Type type)
 {
-	return new Buffer{device, size, data, type};
+	return new Buffer{ this, size, data, type };
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, Buffer::Type type)
 {
-	return new Buffer{device, size, type};
+	return new Buffer{ this, size, type };
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
 {
-	return new Buffer{device, size, binding};
+	return new Buffer{ this, size, binding };
 }
 
 SuperShader *RenderContext::CreateShader(const std::string &filepath, Shader::Type type)
@@ -423,12 +364,12 @@ SuperShader *RenderContext::CreateShader(const std::string &filepath, Shader::Ty
 
 SuperGraphicsPipeline *RenderContext::CreateGraphicsPipeline(Ref<SuperShader> shader)
 {
-	return new GraphicsPipeline{device, shader};
+	return new GraphicsPipeline{this, shader};
 }
 
 SuperComputePipeline *RenderContext::CreateComputePipeline(SuperShader *shader)
 {
-	return new ComputePipeline{device, shader};
+	return new ComputePipeline{ this, shader};
 }
 
 SuperTexture *RenderContext::CreateTexture(const std::string &filepath, const Texture::Description &description)
@@ -443,7 +384,7 @@ SuperTexture *RenderContext::CreateTexture(uint32_t width, uint32_t height, cons
 
 SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Description &description)
 {
-	return new RenderTarget{device, description};
+	return new RenderTarget{this, description};
 }
 
 void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
@@ -451,9 +392,13 @@ void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage sta
 	PushConstant(dcast<Pipeline *>(super), stage, size, data, offset);
 }
 
-void RenderContext::PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
+void RenderContext::PushConstant(SuperComputePipeline *super, uint32_t size, const void *data, uint32_t offset)
 {
-	PushConstant(dcast<Pipeline *>(pipeline), Shader::Stage::Compute, size, data, offset);
+    Compute([&](CommandList *cmdlist) {
+        auto pipeline = dynamic_cast<Pipeline*>(super);
+        cmdlist->SetComputeRootSignature(pipeline->Get<RootSignature&>());
+        cmdlist->PushConstant(size, data, offset);
+        });
 }
 
 DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
@@ -530,7 +475,7 @@ void RenderContext::Begin(SuperRenderTarget *superRenderTarget)
 
 	const auto &rtvDescriptor = renderTarget->GetDescriptor();
 	const auto &dsvDescriptor = depthBuffer.GetDescriptor();
-	commandList->ClearRenderTargetView(rtvDescriptor[0], rcast<float *>(renderTarget->ClearColor()));
+	commandList->ClearRenderTargetView(rtvDescriptor[0], (float *)(renderTarget->ClearColor()));
 	commandList->ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
 	commandList->SetRenderTargets(rtvDescriptor, U32(colorBuffers.size()), false, &dsvDescriptor);
 }
@@ -547,7 +492,7 @@ void RenderContext::End()
 
 void RenderContext::PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
-	(void) stage;
+	(void)stage;
 
 	commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature &>());
 	commandList->PushConstant(size, data, offset);

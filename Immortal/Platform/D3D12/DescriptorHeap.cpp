@@ -20,16 +20,12 @@ DescriptorHeap::DescriptorHeap(Device * device, uint32_t descriptorCount, Type t
     Check(device->Create(&desc, &handle));
 }
 
-std::vector<std::unique_ptr<DescriptorHeap>> DescriptorAllocator::descriptorHeaps;
-
-std::mutex DescriptorAllocator::mutex;
-
 DescriptorHeap *DescriptorAllocator::Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flags)
 {
     std::lock_guard<std::mutex> lock{ mutex };
     descriptorHeaps.emplace_back(new DescriptorHeap{ device, NumDescriptorPerPool, type, flags });
 
-    return descriptorHeaps.back().get();
+    return descriptorHeaps.back();
 }
 
 void DescriptorAllocator::Init(Device * device, uint32_t count)

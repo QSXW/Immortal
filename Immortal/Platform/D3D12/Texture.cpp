@@ -45,8 +45,8 @@ void Texture::InternalCreate(const void *data)
 {
 	Device *device = context->GetAddress<Device>();
 
-    descriptor.visible   = RenderContext::AllocateShaderVisibleDescriptor();
-    descriptor.invisible = RenderContext::AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
+    descriptor.visible   = context->AllocateShaderVisibleDescriptor();
+    descriptor.invisible = context->AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
 
     D3D12_HEAP_PROPERTIES props = {
         .Type                 = D3D12_HEAP_TYPE_DEFAULT,
@@ -77,6 +77,10 @@ void Texture::InternalCreate(const void *data)
         nullptr,
         &resource
         ));
+
+#ifdef _DEBUG
+    resource->SetName(L"Texture");
+#endif
 
     if (!resource)
     {
@@ -114,21 +118,21 @@ void Texture::Update(const void *data, uint32_t pitchX)
 {
     Device *device = context->GetAddress<Device>();
 
-    uint32_t uploadPitch = SLALIGN(width * format.Size(), D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-    uint32_t uploadSize  = height * uploadPitch;
+    auto formatSize = format.Size();
+    uint32_t uploadPitch = SLALIGN(width * formatSize, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
 
+    uint32_t uploadSize  = height * uploadPitch;
     if (!pitchX)
     {
         pitchX = width;
     }
 
-    URef<Buffer> uploadBuffer = new Buffer{ device, uploadSize, Buffer::Type::TransferSource };
+    URef<Buffer> uploadBuffer = new Buffer{ context, uploadSize, Buffer::Type::TransferSource };
 
     void *mapped;
     Check(uploadBuffer->Map(&mapped));
-
     auto imageData = rcast<const uint8_t *>(data);
-    auto formatSize = format.Size();
+
     for (int y = 0; y < height; y++)
     {
         memcpy((void*)((uintptr_t)mapped + y * uploadPitch), imageData + y * pitchX * formatSize, width * formatSize);
@@ -155,19 +159,18 @@ void Texture::Update(const void *data, uint32_t pitchX)
 	    .Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
 	    .SubresourceIndex = 0,
 	};
+
     Barrier<BarrierType::Transition> barrier{
         *this,
         D3D12_RESOURCE_STATE_COPY_DEST,
-        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
     };
 
-    auto queue = context->GetAddress<Queue>();
-    auto cmdlist = queue->BeginUpload();
-
-    cmdlist->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
-    cmdlist->ResourceBarrier(&barrier);
-
-    queue->EndUpload();
+    context->Transfer([&](CommandList *graphicsCmdList, CommandList *cmdlist) {
+        cmdlist->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+        // graphicsCmdList->ResourceBarrier(&barrier);
+        });
 }
 
 }

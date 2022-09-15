@@ -10,7 +10,7 @@ namespace Immortal
 namespace D3D12
 {
 
-class Device;
+class RenderContext;
 class Buffer : public SuperBuffer, public Resource
 {
 public:
@@ -59,11 +59,11 @@ public:
 
     Buffer(const Buffer &other, const BindInfo &bindInfo);
 
-    Buffer(Device *device, const size_t size, const void *data, Type type);
+    Buffer(RenderContext *context, const size_t size, const void *data, Type type);
 
-    Buffer(Device *device, const size_t size, Type type);
+    Buffer(RenderContext *context, const size_t size, Type type);
     
-    Buffer(Device *device, const size_t size, uint32_t binding);
+    Buffer(RenderContext *context, const size_t size, uint32_t binding);
 
     virtual ~Buffer() override;
 
@@ -103,10 +103,12 @@ public:
         return descriptor;
     }
 
-private:
-    void InternelCreate(Device *device);
+protected:
+    void __Create();
 
-private:
+protected:
+    RenderContext *context;
+
     uint32_t binding = 0;
 
     CPUDescriptor descriptor;

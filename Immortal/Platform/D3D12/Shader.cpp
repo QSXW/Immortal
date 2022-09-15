@@ -69,7 +69,10 @@ Shader::~Shader()
 {
     for (auto &handle : handles)
     {
-        IfNotNullThenRelease(handle);
+        if (handle)
+        {
+            handle->Release();
+        }
     }
 }
 
@@ -79,7 +82,7 @@ void Shader::InternalCheck(HRESULT result, ID3DBlob **error, ID3DBlob **toBeRele
     {
         if (*error)
         {
-            LOG::ERR("D3D12 Shader Compiling failed with...\n{0}", rcast<char *>((*error)->GetBufferPointer()));
+            LOG::ERR("D3D12 Shader Compiling failed with...\n{}", rcast<char *>((*error)->GetBufferPointer()));
         }
 
         if (*toBeReleased)
@@ -88,7 +91,7 @@ void Shader::InternalCheck(HRESULT result, ID3DBlob **error, ID3DBlob **toBeRele
             *toBeReleased = nullptr;
         }
 
-        THROWIF(true, "Failed to compile shader source");
+        SLASSERT(false && "Failed to compile shader source");
     }
 }
 

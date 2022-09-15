@@ -26,7 +26,41 @@ namespace Immortal
 namespace D3D12
 {
 
-#define D3D12_OPERATOR_PRITIMIVE(name)  Primitive *Handle() const { return name.Get(); } operator Primitive*() const { return Handle(); } protected: ComPtr<Primitive> name;
+#define D3D_OPERATOR_PRIMITIVE(handle)                            \
+protected:                                                        \
+    ComPtr<Primitive> handle;                                     \
+                                                                  \
+public:                                                           \
+    Primitive *Handle() const                                     \
+    {                                                             \
+        return handle.Get();                                      \
+    }                                                             \
+                                                                  \
+    operator Primitive*() const                                   \
+    {                                                             \
+        return handle.Get();                                      \
+    }                                                             \
+                                                                  \
+    Primitive **operator &()                                      \
+    {                                                             \
+        return handle.GetAddressOf();                             \
+    }
+
+#define D3D12_OPERATOR_PRITIMIVE(handle)                          \
+    D3D_OPERATOR_PRIMITIVE(handle)                                \
+                                                                  \
+    HRESULT SetName(const std::string &name)                      \
+    {                                                             \
+        std::wstring wname{ name.begin(), name.end() };           \
+        return handle->SetName(wname.c_str());                    \
+    }                                                             \
+                                                                  \
+    HRESULT SetName(const std::wstring &name)                     \
+    {                                                             \
+        return handle->SetName(name.c_str());                     \
+    }
+
+#define D3D_OPERATOR_HANDLE() D3D_OPERATOR_PRIMITIVE(handle)
 #define D3D12_OPERATOR_HANDLE() D3D12_OPERATOR_PRITIMIVE(handle)
 
 namespace Definitions

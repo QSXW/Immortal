@@ -12,7 +12,7 @@ namespace D3D12
 {
 
 class Device;
-
+class RenderContext;
 class PixelBuffer : public Resource
 {
 public:
@@ -166,7 +166,7 @@ public:
         }
     }
 
-    void Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
     template <Descriptor::Type T>
     CPUDescriptor Get() const
@@ -216,7 +216,7 @@ public:
         shaderResourceDescriptor.stencil.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
     }
 
-    void Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
+    void Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
 
     bool IsAvailable() const
     {
@@ -244,7 +244,7 @@ public:
 public:
     RenderTarget();
 
-    RenderTarget(Device *context, const Super::Description &descrition);
+    RenderTarget(RenderContext *context, const Super::Description &descrition);
 
     ~RenderTarget();
 
@@ -258,18 +258,18 @@ public:
 
     D3D12_RESOURCE_DESC SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
     {
-        D3D12_RESOURCE_DESC desc{};
-        desc.Alignment          = 0;
-        desc.Flags              = flags;
-        desc.Format             = format;
-        desc.DepthOrArraySize   = description.Layers;
-        desc.MipLevels          = description.MipLevels;
-        desc.Width              = description.Width;
-        desc.Height             = U64(description.Height);
-        desc.SampleDesc.Count   = description.Samples;
-        desc.SampleDesc.Quality = 0;
-        desc.Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-        desc.Dimension          = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        D3D12_RESOURCE_DESC desc = {
+            .Dimension        = D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+            .Alignment        = 0,
+            .Width            = U64(description.Width),
+            .Height           = description.Height,
+            .DepthOrArraySize = (UINT16)description.Layers,
+            .MipLevels        = (UINT16)description.MipLevels,
+            .Format           = format,
+            .SampleDesc       = { .Count = description.Samples, .Quality = 0 },
+            .Layout           = D3D12_TEXTURE_LAYOUT_UNKNOWN,
+            .Flags            = flags,
+        };
 
         return desc;
     }

@@ -1,80 +1,59 @@
 #pragma once
 
 #include "Common.h"
-#include "CommandPool.h"
+#include "Interface/IObject.h"
 
 #include <mutex>
 #include <queue>
+#include <list>
 
 namespace Immortal
 {
 namespace D3D12
 {
 
+class Device;
+class CommandAllocator
+{
+public:
+    using Primitive = ID3D12CommandAllocator;
+	D3D12_OPERATOR_HANDLE()
+
+    CommandAllocator(CommandAllocator &&)                = delete;                                                     
+	CommandAllocator(const CommandAllocator &)           = delete;                                              
+	CommandAllocator &operator=(CommandAllocator &&)     = delete;
+	CommandAllocator operator=(const CommandAllocator &) = delete;
+
+public:
+	CommandAllocator(Device *device, D3D12_COMMAND_LIST_TYPE type);
+
+    ~CommandAllocator();
+
+    HRESULT Reset()
+    {
+		return handle->Reset();
+    }
+};
+
 class CommandAllocatorPool
 {
 public:
-    CommandAllocatorPool(ID3D12Device *device, D3D12_COMMAND_LIST_TYPE type) :
-        type{ type },
-        device{ device }
-    {
+	CommandAllocatorPool(Device *device, D3D12_COMMAND_LIST_TYPE type);
 
-    }
+    ~CommandAllocatorPool();
 
-    ~CommandAllocatorPool()
-    {
-        for (auto &p : pool)
-        {
-            p->Release();
-        }
-        pool.clear();
-    }
+    CommandAllocator *RequestAllocator(uint64_t CompletedFenceValue);
 
-    ID3D12CommandAllocator *RequestAllocator(uint64_t CompletedFenceValue)
-    {
-        std::lock_guard<std::mutex> lock{ mutex };
-        ID3D12CommandAllocator *allocator{ nullptr };
-
-        if (!readyAllocators.empty())
-        {
-            std::pair<uint64_t, ID3D12CommandAllocator*> &AllocatorPair = readyAllocators.front();
-
-            if (AllocatorPair.first <= CompletedFenceValue)
-            {
-                allocator = AllocatorPair.second;
-                Check(allocator->Reset());
-                readyAllocators.pop();
-            }
-        }
-
-        // If no allocator's were ready to be reused, create a new one
-        if (!allocator)
-        {
-            Check(device->CreateCommandAllocator(type, IID_PPV_ARGS(&allocator)));
-
-            wchar_t name[32];
-            swprintf(name, 32, L"CommandAllocator %zu", pool.size());
-            allocator->SetName(name);
-            pool.push_back(allocator);
-        }
-
-        return allocator;
-    }
-
-    void DiscardAllocator(uint64_t fenceValue, ID3D12CommandAllocator *allocator)
-    {
-        std::lock_guard<std::mutex> lock{ mutex };
-        readyAllocators.push(std::make_pair(fenceValue, allocator));
-    }
+    void DiscardAllocator(uint64_t fenceValue, CommandAllocator *allocator);
 
 private:
     D3D12_COMMAND_LIST_TYPE type;
 
-    ID3D12Device *device{ nullptr };
+    Device *device;
 
-    std::vector<ID3D12CommandAllocator *> pool;
+    std::list<URef<CommandAllocator>> pool;
 
-    std::queue<std::pair<uint64_t, ID3D12CommandAllocator*>> readyAllocators;
+    std::queue<std::pair<uint64_t, CommandAllocator*>> readyAllocators;
 
     std::mutex mutex;
 };

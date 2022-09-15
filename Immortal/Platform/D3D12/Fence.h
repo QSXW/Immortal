@@ -19,6 +19,9 @@ public:
         NonMonitored       = D3D12_FENCE_FLAG_NON_MONITORED
     };
 
+    using Primitive = ID3D12Fence;
+    D3D12_OPERATOR_HANDLE()
+
 public:
     Fence(Device *device, uint64_t initValue = 0u, Type type = Type::None);
 
@@ -47,14 +50,7 @@ public:
         return event;
     }
 
-    operator ID3D12Fence*() const
-    {
-        return handle.Get();
-    } 
-
-private:
-    ComPtr<ID3D12Fence> handle;
-
+protected:
     HANDLE event = nullptr;
 };
 

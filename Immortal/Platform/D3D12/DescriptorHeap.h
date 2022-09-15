@@ -12,6 +12,10 @@ class Device;
 class DescriptorHeap
 {
 public:
+    using Primitive = ID3D12DescriptorHeap;
+    D3D12_OPERATOR_HANDLE()
+
+public:
     enum Type
     {
         ShaderResourceView = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
@@ -94,43 +98,14 @@ public:
         other.handle = nullptr;
     }
 
-    DescriptorHeap &operator=(const DescriptorHeap &other)
-    {
-        THROWIF(&other == this, SError::SelfAssignment);
-
-        handle = other.handle;
-
-        return *this;
-    }
-
-    DescriptorHeap &operator=(DescriptorHeap &&other)
-    {
-        THROWIF(&other == this, SError::SelfAssignment);
-
-        handle = other.handle;
-        other.handle = nullptr;
-
-        return *this;
-    }
-
     ~DescriptorHeap()
     {
 
     }
 
-    operator ID3D12DescriptorHeap*() const
-    {
-        return handle;
-    }
-    
-    ID3D12DescriptorHeap *Handle()
-    {
-        return handle;
-    }
-
     ID3D12DescriptorHeap **AddressOf()
     {
-        return &handle;
+        return handle.GetAddressOf();
     }
 
     uint32_t GetIncrement() const
@@ -138,9 +113,7 @@ public:
         return increment;
     }
 
-private:
-    ID3D12DescriptorHeap *handle{ nullptr };
-
+protected:
     uint32_t increment = 0;
 };
 
@@ -162,7 +135,7 @@ public:
 
     }
 
-    static DescriptorHeap *Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flag = DescriptorHeap::Flag::None);
+    DescriptorHeap *Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flag = DescriptorHeap::Flag::None);
 
     void Init(Device *device, uint32_t count = 1);
 
@@ -212,10 +185,9 @@ private:
 
     uint32_t freeDescritorCount;
 
-public:
-    static std::vector<std::unique_ptr<DescriptorHeap>> descriptorHeaps;
+    std::vector<URef<DescriptorHeap>> descriptorHeaps;
 
-    static std::mutex mutex;
+    std::mutex mutex;
 };
 
 }

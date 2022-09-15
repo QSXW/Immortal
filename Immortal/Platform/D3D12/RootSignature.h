@@ -114,18 +114,15 @@ public:
         }
 	};
 
-    operator ID3D12RootSignature*()
+public:
+    ~RootSignature()
     {
-        return handle.Get();
+
     }
 
-    ID3D12RootSignature **operator &()
-    {
-        return handle.GetAddressOf();
-    }
-
-private:
-    ComPtr<ID3D12RootSignature> handle;
+public:
+    using Primitive = ID3D12RootSignature;
+    D3D12_OPERATOR_HANDLE()
 };
 
 struct RootDescriptorTable : public D3D12_ROOT_DESCRIPTOR_TABLE1

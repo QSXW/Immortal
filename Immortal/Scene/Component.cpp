@@ -269,7 +269,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 	colorSpacePipeline->Bind(pNext->input[1], 1);
 
     colorSpacePipeline->PushConstant(sizeof(properties), &properties);
-	colorSpacePipeline->Dispatch(SLALIGN(picture.shared->linesize[0], 1), SLALIGN(height, 1), 1);
+	colorSpacePipeline->Dispatch(SLALIGN(picture.shared->linesize[0] / pNext->chromaFormat.BytesPerPixel(), 1), SLALIGN(height, 1), 1);
 
     Sprite->Blit();
 }

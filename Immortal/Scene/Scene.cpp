@@ -235,14 +235,13 @@ Scene::Scene(const std::string &name, bool isEditorScene) :
             { Format::Depth32F }
         }
     });
-    renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 
     constexpr size_t stride = sizeof(SkeletonVertex);
     InputElementDescription inputElementDescription = {
-        { Format::VECTOR3, "POSITION"  },
-        { Format::VECTOR3, "NORMAL"    },
-        { Format::VECTOR3, "BITANGENT" },
-        { Format::VECTOR2, "TEXCOORD"  },
+        { Format::VECTOR3, "POSITION" },
+        { Format::VECTOR3, "NORMAL"   },
+        { Format::VECTOR3, "TANGENT"  },
+        { Format::VECTOR2, "TEXCOORD" },
     };
     inputElementDescription.Stride = stride;
 
@@ -441,18 +440,13 @@ void Scene::OnRender(const Camera &camera)
             auto width = sprite.Result->Width();
             auto height = sprite.Result->Height();
 
-            if (Render::API == Render::Type::D3D12)
-            {
-                break;
-            }
-
             if (color.Modified || !color.Initialized)
             {
                 pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Sprite, 0);
                 pipelines.colorMixing->Bind(sprite.Result, 1);
-                pipelines.colorMixing->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);     
+                pipelines.colorMixing->Dispatch(SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);     
                 sprite.Result->Blit();
                 color.Initialized = true;
             }
@@ -556,7 +550,7 @@ void Scene::OnRender(const Camera &camera)
     for (auto object : view)
     {
         auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
-        if (mesh.Mesh->IsAnimated())
+        if (Render::API != Render::Type::D3D12 && mesh.Mesh->IsAnimated())
         {
             RenderAnimatedObject(pipelines.animatedBasic, object, transform, mesh, material);
         }
@@ -574,7 +568,7 @@ void Scene::OnRender(const Camera &camera)
         {
 			Render2D::DrawRect(
 			    transform,
-			    Render::API != Render::Type::D3D12 ? sprite.Result : sprite.Sprite,
+			    sprite.Result,
 			    sprite.TilingFactor, sprite.Color, (int)o);
         }
     }

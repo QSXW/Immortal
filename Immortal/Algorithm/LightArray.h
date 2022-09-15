@@ -50,7 +50,7 @@ public:
         return _data;
     }
 
-    void resize(size_t size) const
+    void resize(size_t size)
     {
 		_size = size;
     }

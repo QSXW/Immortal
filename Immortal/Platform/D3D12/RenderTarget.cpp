@@ -27,8 +27,9 @@ void PixelBuffer::Create(const Device *device, const D3D12_RESOURCE_DESC &desc, 
     );
 }
 
-void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
+void ColorBuffer::Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
+    Device *device = context->GetAddress<Device>();
     Super::Create(device, desc, clearValue);
 
     struct {
@@ -81,8 +82,8 @@ void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
 
     if (renderTargetViewDescriptor.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
     {
-        renderTargetViewDescriptor   = RenderContext::AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
-        shaderResourceViewDescriptor = RenderContext::AllocateShaderVisibleDescriptor();
+        renderTargetViewDescriptor   = context->AllocateDescriptor(DescriptorPool::Type::RenderTargetView);
+        shaderResourceViewDescriptor = context->AllocateShaderVisibleDescriptor();
     }
    
     device->CreateView(resource, &viewDescription.RenderTarget, renderTargetViewDescriptor);
@@ -97,15 +98,16 @@ void ColorBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
     {
         if (unorderedAccessViewDescriptor[i].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
         {
-            unorderedAccessViewDescriptor[i] = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+            unorderedAccessViewDescriptor[i] = context->AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
         }
 		device->CreateView(resource, nullptr, &viewDescription.UnorderedAccess, unorderedAccessViewDescriptor[i]);
         viewDescription.UnorderedAccess.Texture2D.MipSlice++;
     }
 }
 
-void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
+void DepthBuffer::Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue)
 {
+    Device *device = context->GetAddress<Device>();
     Super::Create(device, desc, clearValue);
 
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDescription{};
@@ -123,8 +125,8 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
 
     if (depthStencilViewDescriptor[0].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
     {
-        depthStencilViewDescriptor[0] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
-        depthStencilViewDescriptor[1] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+        depthStencilViewDescriptor[0] = context->AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+        depthStencilViewDescriptor[1] = context->AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
     }
 
     depthStencilViewDescription.Flags = D3D12_DSV_FLAG_NONE;
@@ -138,8 +140,8 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
     {
         if (depthStencilViewDescriptor[2].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
         {
-            depthStencilViewDescriptor[2] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
-            depthStencilViewDescriptor[3] = RenderContext::AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+            depthStencilViewDescriptor[2] = context->AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
+            depthStencilViewDescriptor[3] = context->AllocateDescriptor(DescriptorPool::Type::DepthStencilView);
         }
 
         depthStencilViewDescription.Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
@@ -156,7 +158,7 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
 
     if (shaderResourceDescriptor.depth.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
     {
-        shaderResourceDescriptor.depth = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+        shaderResourceDescriptor.depth = context->AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
     }
 
     D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceDesc{};
@@ -178,7 +180,7 @@ void DepthBuffer::Create(Device *device, const D3D12_RESOURCE_DESC &desc, const 
     {
         if (shaderResourceDescriptor.stencil.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
         {
-            shaderResourceDescriptor.stencil = RenderContext::AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
+            shaderResourceDescriptor.stencil = context->AllocateDescriptor(DescriptorPool::Type::ShaderResourceView);
         }
 
         shaderResourceDesc.Format = stencilReadFormat;
@@ -191,7 +193,7 @@ RenderTarget::RenderTarget()
 
 }
 
-RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &descrition) :
+RenderTarget::RenderTarget(RenderContext *context, const RenderTarget::Description &descrition) :
     Super{ descrition }
 {
     D3D12_CLEAR_VALUE clearValue{};
@@ -211,7 +213,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
         {
             clearValue.DepthStencil.Depth   = 1.0f;
             clearValue.DepthStencil.Stencil = 0.0f;
-            attachments.depth.Create(device, resourceDesc, clearValue);
+            attachments.depth.Create(context, resourceDesc, clearValue);
         }
         else
         {
@@ -222,14 +224,14 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
             clearValue.Color[3] = clearValues.a;
 
             ColorBuffer colorBuffer{};
-            colorBuffer.Create(device, resourceDesc, clearValue);
+            colorBuffer.Create(context, resourceDesc, clearValue);
             attachments.color.emplace_back(std::move(colorBuffer));
             descriptors[index] = colorBuffer.Get<Descriptor::Type::RenderTargetView>();
             index++;
         }
     }
     
-#ifdef SLDEBUG
+#ifdef _DEBUG
     attachments.depth.SetName(L"RenderTarget::DepthStencilAttachment");
     for (size_t i = 0; i < attachments.color.size(); i++)
     {

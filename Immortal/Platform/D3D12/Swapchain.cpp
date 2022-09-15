@@ -1,19 +1,27 @@
 #include "Swapchain.h"
 #include "Device.h"
 #include "DescriptorHeap.h"
+#include "Queue.h"
+#include "Framework/Window.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-Swapchain::Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc) :
+Swapchain::Swapchain(Device *device, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc) :
+    Swapchain{device, queue, (HWND)window->Primitive(), desc }
+{
+
+}
+
+Swapchain::Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc) :
     device{ device }
 {
     auto factory = device->GetAddress<IDXGIFactory4>();
     ComPtr<IDXGISwapChain1> swapchain1;
     Check(factory->CreateSwapChainForHwnd(
-        queue.Get(),
+        *queue,
         hWnd,
         &desc,
         nullptr,
@@ -31,8 +39,14 @@ Swapchain::Swapchain(Device *device, ComPtr<ID3D12CommandQueue> queue, HWND hWnd
         1
     };
 
-    rtvDescriptorHeap.reset(new DescriptorHeap{ device, &rtvDesc });
+    rtvDescriptorHeap = new DescriptorHeap{ device, &rtvDesc };
     CreateRenderTarget();
+}
+
+Swapchain::~Swapchain()
+{
+    ClearRenderTarget();
+    handle.Reset();
 }
 
 void Swapchain::CreateRenderTarget()

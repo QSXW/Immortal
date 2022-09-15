@@ -28,7 +28,7 @@ public:
 #include "Device.h"
 #include "Swapchain.h"
 #include "DescriptorHeap.h"
-#include "CommandPool.h"
+#include "CommandList.h"
 #include "CommandAllocator.h"
 #include "Queue.h"
 #include "Fence.h"
@@ -44,6 +44,12 @@ namespace Immortal
 {
 namespace D3D12
 {
+
+struct RenderEntry
+{
+	URef<Queue> queue;
+	URef<CommandList> cmdlist;
+};
 
 class RenderContext : public SuperRenderContext
 {
@@ -129,19 +135,15 @@ public:
         }
         if constexpr (IsPrimitiveOf<Queue, T>())
         {
-            return queue;
+            return graphicsDispatcher->GetAddress<Queue>();
         }
         if constexpr (IsPrimitiveOf<CommandList, T>())
         {
-            return commandList;
+            return graphicsDispatcher->GetCommandList();
         }
         if constexpr (IsPrimitiveOf<Window, T>())
         {
             return desc.WindowHandle;
-        }
-        if constexpr (IsPrimitiveOf<ID3D12CommandAllocator*, T>())
-        {
-            return commandAllocator;
         }
     }
 
@@ -152,7 +154,17 @@ public:
 
     DescriptorPool *ShaderResourceViewDescritorHeap()
     {
-        return shaderVisibleDescriptorAllocator.GetAddress<DescriptorPool>();
+        return shaderVisibleDescriptorAllocator->GetAddress<DescriptorPool>();
+    }
+
+    CPUDescriptor AllocateDescriptor(DescriptorPool::Type type, uint32_t count = 1)
+    {
+        return descriptorAllocators[U32(type)]->Allocate(device, count);
+    }
+
+    Descriptor AllocateShaderVisibleDescriptor(uint32_t count = 1)
+    {
+        return shaderVisibleDescriptorAllocator->Allocate(device);
     }
 
     Vector2 Extent()
@@ -171,36 +183,54 @@ public:
 
     void WaitForGPU();
 
-    void WaitForNextFrameResources();
-
     void UpdateSwapchain(UINT width, UINT height);
 
     void CopyDescriptorHeapToShaderVisible();
 
     UINT WaitForPreviousFrame();
 
+    template <class T>
+    void Submit(T &&process)
+    {
+        process(commandList);
+    }
+
+    template <class T>
+    void Transfer(T &&process)
+    {
+        auto cmdlist = transferDispatcher->GetCommandList();
+        process(graphicsDispatcher->GetCommandList(), cmdlist);
+    }
+
+    template <class T>
+    void Compute(T &&process)
+    {
+        process(graphicsDispatcher->GetCommandList());
+    }
+
+protected:
+	void __InitQueue();
+
 private:
     Super::Description desc{};
 
-    ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
-
     URef<Device> device;
 
-    URef<Queue> queue;
+    CommandList *commandList{};
+    URef<CommandListDispatcher> graphicsDispatcher;
+    URef<CommandListDispatcher> transferDispatcher;
 
     URef<Swapchain> swapchain;
 
     HANDLE swapchainWritableObject{ nullptr };
 
-    URef<CommandList> commandList;
-
-    ID3D12CommandAllocator *commandAllocator[MAX_FRAME_COUNT];
-
-    URef<Fence> fence;
-
     uint64_t fenceValues[MAX_FRAME_COUNT]{ 0 };
 
     uint32_t frameIndex = 0;
+
+    URef<DescriptorAllocator> descriptorAllocators[U32(DescriptorPool::Type::Quantity)];
+
+    URef<DescriptorAllocator> shaderVisibleDescriptorAllocator;
 
     struct
     {
@@ -224,28 +254,6 @@ private:
 	std::array<Barrier<BarrierType::Transition>, 8> barriers;
 
 	uint32_t activeBarrier = 0;
-
-public:
-    static Device *UnlimitedDevice;
-
-    static DescriptorAllocator descriptorAllocators[U32(DescriptorPool::Type::Quantity)];
-
-    static DescriptorAllocator shaderVisibleDescriptorAllocator;
-
-    static DescriptorPool *Request(DescriptorPool::Type type)
-    {
-        return DescriptorAllocator::Request(UnlimitedDevice, type);
-    }
-
-    static inline CPUDescriptor AllocateDescriptor(DescriptorPool::Type type, uint32_t count = 1)
-    {
-        return descriptorAllocators[U32(type)].Allocate(UnlimitedDevice, count);
-    }
-
-    static inline Descriptor AllocateShaderVisibleDescriptor(uint32_t count = 1)
-    {
-        return shaderVisibleDescriptorAllocator.Allocate(UnlimitedDevice);
-    }
 };
 
 }

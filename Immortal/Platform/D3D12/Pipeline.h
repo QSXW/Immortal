@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Algorithm/LightArray.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Buffer.h"
@@ -9,12 +10,14 @@
 #include "RootSignature.h"
 #include "DescriptorHeap.h"
 
+#include <queue>
+
 namespace Immortal
 {
 namespace D3D12
 {
 
-class Device;
+class RenderContext;
 class Pipeline : public virtual SuperPipeline
 {
 public:
@@ -26,7 +29,12 @@ public:
         uint32_t Offset;
     };
 
+    using Primitive = ID3D12PipelineState;
+    D3D12_OPERATOR_HANDLE()
+
 public:
+    Pipeline(RenderContext *context);
+
     virtual ~Pipeline();
 
     virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
@@ -62,13 +70,8 @@ public:
     {
         if constexpr (IsPrimitiveOf<RootSignature, T>())
         {
-            return rootSignature;
+            return *rootSignature;
         }
-    }
-
-    operator ID3D12PipelineState*()
-    {
-        return pipelineState;
     }
 
     const std::vector<DescriptorTable> &GetDescriptorTables() const
@@ -77,9 +80,7 @@ public:
     }
 
 protected:
-    Device *device{ nullptr };
-
-    ID3D12PipelineState *pipelineState{ nullptr };
+    RenderContext *context{};
 
     struct {
         DescriptorHeap *active = nullptr;
@@ -90,7 +91,7 @@ protected:
     uint32_t textureIndexInDescriptorTable = 0;
     std::vector<DescriptorTable> descriptorTables;
     
-    RootSignature rootSignature;
+    URef<RootSignature> rootSignature;
 };
 
 class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
@@ -104,7 +105,7 @@ public:
     };
 
 public:
-    GraphicsPipeline(Device *device, Ref<Shader::Super> shader);
+    GraphicsPipeline(RenderContext *context, Ref<Shader::Super> shader);
 
     virtual void Create(const SuperRenderTarget *renderTarget) override;
 
@@ -132,7 +133,7 @@ public:
         }
         if constexpr (IsPrimitiveOf<RootSignature, T>())
         {
-            return rootSignature;
+            return *rootSignature;
         }
     }
 
@@ -166,9 +167,14 @@ public:
     using Super = SuperComputePipeline;
 
 public:
-    ComputePipeline(Device *device, Shader::Super *shader);
+    ComputePipeline(RenderContext *context, Shader::Super *shader);
 
     virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+
+    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) override;
+
+protected:
+    LightArray<uint8_t, 128> pushConstants;
 };
 
 }

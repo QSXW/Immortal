@@ -3,7 +3,7 @@
 #include "ImGui/GuiLayer.h"
 #include "RenderContext.h"
 #include "DescriptorHeap.h"
-#include "CommandPool.h"
+#include "CommandList.h"
 
 namespace Immortal
 {
@@ -18,7 +18,7 @@ public:
 public:
     GuiLayer(SuperRenderContext *context);
 
-    ~GuiLayer() { }
+    virtual ~GuiLayer();
 
     virtual void OnAttach() override;
 
@@ -37,10 +37,6 @@ private:
     Swapchain *swapchain{ nullptr };
 
     DescriptorHeap *srvDescriptorHeap{ nullptr };
-
-    CommandList *commandList{ nullptr };
-
-    Queue *queue{ nullptr };
 
 public:
     Vector4 clearColor{ .4f, .5f, .6f, 1.0f };
