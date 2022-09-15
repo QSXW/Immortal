@@ -38,7 +38,10 @@ Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const 
 
 Texture::~Texture()
 {
-
+    if (context)
+    {
+        context->RefResource(resource.Get());
+    }
 }
 
 void Texture::InternalCreate(const void *data)

@@ -59,8 +59,6 @@ public:
     static constexpr int MAX_FRAME_COUNT{ 3 };
 
 public:
-    RenderContext(const void *handle);
-
     RenderContext(const Description &desc);
 
     ~RenderContext();
@@ -108,8 +106,6 @@ public:
 	void PushConstant(Pipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
 
 public:
-    void Setup();
-
     template <class T>
     T Get()
     {
@@ -187,7 +183,9 @@ public:
 
     void CopyDescriptorHeapToShaderVisible();
 
-    UINT WaitForPreviousFrame();
+    void WaitForPreviousFrame();
+
+    void RefResource(ID3D12Resource *pResource);
 
     template <class T>
     void Submit(T &&process)
@@ -209,6 +207,8 @@ public:
     }
 
 protected:
+    void __Prepare();
+
 	void __InitQueue();
 
 private:

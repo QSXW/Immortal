@@ -19,12 +19,7 @@ static DescriptorPool::Type DescriptorPoolTypes[] = {
 RenderContext::RenderContext(const Description &descrition) :
     desc{ descrition }
 {
-    Setup();
-}
-
-RenderContext::RenderContext(const void *handle)
-{
-    Setup();
+    __Prepare();
 }
 
 RenderContext::~RenderContext()
@@ -40,7 +35,7 @@ RenderContext::~RenderContext()
     shaderVisibleDescriptorAllocator.Reset();
 }
 
-void RenderContext::Setup()
+void RenderContext::__Prepare()
 {
     desc.FrameCount = Swapchain::SWAP_CHAIN_BUFFER_COUNT;
 
@@ -257,7 +252,7 @@ void RenderContext::WaitForGPU()
     graphicsDispatcher->WaitIdle();
 }
 
-UINT RenderContext::WaitForPreviousFrame()
+void RenderContext::WaitForPreviousFrame()
 {
     const uint64_t currentFenceValue = fenceValues[frameIndex];
     
@@ -271,8 +266,6 @@ UINT RenderContext::WaitForPreviousFrame()
     }
 
     fenceValues[frameIndex] = graphicsDispatcher->GetFenceValue();
-
-    return frameIndex;
 }
 
 void RenderContext::UpdateSwapchain(UINT width, UINT height)
@@ -330,6 +323,14 @@ void RenderContext::SwapBuffers()
 	swapchain->Present(1, 0);
 
 	WaitForPreviousFrame();
+}
+
+void RenderContext::RefResource(ID3D12Resource *pResource)
+{
+    if (commandList)
+    {
+        commandList->RefResource(pResource);
+    }
 }
 
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)

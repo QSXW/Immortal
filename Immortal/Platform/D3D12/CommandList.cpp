@@ -72,6 +72,11 @@ CommandListDispatcher::~CommandListDispatcher()
 {
     WaitIdle();
     __Release();
+    
+    if (!resources.empty())
+    {
+        __ReleaseResource(resources);
+    }
 }
 
 void CommandListDispatcher::__InjectSignal()
@@ -125,16 +130,21 @@ void CommandListDispatcher::__Release()
         auto &pair = resourceCache.front();
         if (pair.first <= completion)
         {
-            for (auto &resource : pair.second)
-            {
-                resource->Release();
-            }
+            __ReleaseResource(pair.second);
             resourceCache.pop();
         }
         else
         {
             break;
         }
+    }
+}
+
+void CommandListDispatcher::__ReleaseResource(const std::list<ID3D12Resource*> &resourceChain)
+{
+    for (auto &resource : resourceChain)
+    {
+        (void)resource->Release();
     }
 }
 

@@ -86,6 +86,11 @@ public:
 		return state == other;
     }
 
+    void RefResource(ID3D12Resource *pResource)
+    {
+        __RefResource(pResource);
+    }
+
     void SetResource(std::list<ID3D12Resource *> *other)
     {
         pResources = other;
@@ -144,11 +149,7 @@ public:
     void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION *pDst, UINT dstX, UINT dstY, UINT dstZ, const D3D12_TEXTURE_COPY_LOCATION *pSrc,  const D3D12_BOX *pSrcBox)
     {
         __Record();
-        if (pResources)
-        {
-            pSrc->pResource->AddRef();
-            pResources->emplace_back(pSrc->pResource);
-        }
+        __RefResource(pSrc->pResource);
         handle->CopyTextureRegion(pDst, dstX, dstY, dstZ, pSrc, pSrcBox);
     }
     
@@ -247,6 +248,15 @@ public:
     }
 
 protected:
+    void __RefResource(ID3D12Resource *resource)
+    {
+        if (pResources)
+        {
+            (void)resource->AddRef();
+            pResources->emplace_back(resource);
+        }
+    }
+
     void __Close()
     {
 		SetState(State::Executable);
@@ -328,6 +338,8 @@ private:
     void __Begin();
 
     void __Release();
+
+    void __ReleaseResource(const std::list<ID3D12Resource*> &resourceChain);
 
     void __InjectSignal();
 

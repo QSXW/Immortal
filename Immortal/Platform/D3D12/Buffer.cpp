@@ -9,6 +9,7 @@ namespace D3D12
 
 Buffer::Buffer(const Buffer &other, const BindInfo &bindInfo) :
     Super{ bindInfo.type, bindInfo.size },
+    context{},
     descriptor{ other.descriptor }
 {
     virtualAddress = other.virtualAddress + bindInfo.offset;
@@ -39,7 +40,10 @@ Buffer::Buffer(RenderContext *context, const size_t size, uint32_t binding) :
 
 Buffer::~Buffer()
 {
-
+    if (context)
+    {
+        context->RefResource(resource.Get());
+    }
 }
 
 void Buffer::__Create()
