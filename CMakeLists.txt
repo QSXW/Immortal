@@ -11,12 +11,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(WORKSPACE ${CMAKE_CURRENT_SOURCE_DIR})
 set(IMMORTAL_RUMTIME_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(ASSETS_DIR "${WORKSPACE}//Assets")
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Scripts/cmake)
+include(utils)
 
 add_compile_definitions($<$<CONFIG:DEBUG>:_DEBUG>)
 
 add_subdirectory(3rdparty)
+set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets" PARENT_SCOPE)
+set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED} PARENT_SCOPE)
+
 add_subdirectory(Immortal)
+add_subdirectory(Assets)
 add_subdirectory(Samples/CMakeTest)
 add_subdirectory(Samples/D3D12Sample)
 add_subdirectory(Samples/VulkanSample)
@@ -24,4 +30,3 @@ add_subdirectory(Samples/OpenGLSample)
 add_subdirectory(Samples/MediaTest)
 add_subdirectory(Samples/ScriptBenchmark)
 add_subdirectory(Samples/RawExtractor)
-add_subdirectory(Assets)
