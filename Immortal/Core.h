@@ -32,7 +32,7 @@
     #else
         #define IMMORTAL_API
     #endif
-#elif defined(__linux__) || defined(__APPLE__)
+#elif defined(__GNUC__) || defined(__clang__)
     #define IMMORTAL_API __attribute__((visibility("default")))
 #else
     #error Unsupport Platform Detected!
