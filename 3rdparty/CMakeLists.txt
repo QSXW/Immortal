@@ -161,14 +161,16 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 # assimp
-if(WIN32)
-    set(Assimp_DIR "${CMAKE_SOURCE_DIR}/3rdparty/Assimp")
-    set(ASSIMP_BIN_DIR "${Assimp_DIR}/bin")
-endif(WIN32)
-find_package(Assimp QUIET)
+set(Assimp_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Assimp" CACHE STRING "Path to Assimp directory (default=${CMAKE_CURRENT_SOURCE_DIR}/Assimp)")
+message(STATUS "Looking for Assimp directory...")
+find_package(Assimp QUIET PATHS ${Assimp_DIR})
 if (Assimp_FOUND)
+    message(STATUS "Looking for Assimp directory - found ${ASSIMP_ROOT_DIR}")
+    set(ASSIMP_BIN_DIR "${ASSIMP_ROOT_DIR}/bin")
     set(HAVE_ASSIMP "${Assimp_VERSION_MAJOR}")
     set(ASSIMP_SHARED "${ASSIMP_BIN_DIR}/${ASSIMP_LIB}${SHARED_SUFFIX}" PARENT_SCOPE)
+else()
+    message(STATUS "Looking for Assimp directory - not found")
 endif(Assimp_FOUND)
 
 # opencv
@@ -220,12 +222,15 @@ endif()
 
 # Mono
 set(MONO_LIB "mono-2.0-sgen")
-set(MONO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Mono")
+set(MONO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Mono" CACHE STRING "Path to Mono directory (default=${CMAKE_CURRENT_SOURCE_DIR}/Mono)")
 set(MONO_LIBRARY_DIR "${MONO_DIR}/lib")
 set(MONO_BINARY_DIR  "${MONO_DIR}/bin")
 set(MONO_INCLUDE_DIR "${MONO_DIR}/include/mono-2.0")
-find_path(MONO_FOUND "Mono" ${MONO_DIR})
+message(STATUS "Looking for Mono directory...")
+find_path(MONO_FOUND "mono-2.0-sgen.dll" PATHS "${MONO_BINARY_DIR}" NO_DEFAULT_PATH)
 if (MONO_FOUND)
+    message(STATUS "Looking for Mono directory - found ${MONO_DIR}")
+    message(STATUS "Looking for Mono include   - found ${MONO_INCLUDE_DIR}")
     set(HAVE_MONO ${LIB_FOUND})
     add_library("mono" INTERFACE)
     target_include_directories("mono" INTERFACE ${MONO_INCLUDE_DIR})
@@ -234,6 +239,8 @@ if (MONO_FOUND)
     if (WIN32)
         set(MONO_SHARED "${MONO_BINARY_DIR}/${MONO_LIB}.dll" PARENT_SCOPE)
     endif()
+else()
+    message(STATUS "Looking for Mono directory - not found")
 endif()
 
 # FFmpeg
@@ -242,11 +249,11 @@ set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg" CACHE STRING "Path to FFmpeg
 set(FFMPEG_LIBRARY_DIR "${FFMPEG_DIR}/lib")
 set(FFMPEG_BINARY_DIR  "${FFMPEG_DIR}/bin")
 set(FFMPEG_INCLUDE_DIR "${FFMPEG_DIR}/include")
-message("-- Looking for FFmpeg directory")
+message(STATUS "Looking for FFmpeg directory...")
 find_path(FFmpeg_FOUND "avformat.h" PATHS "${FFMPEG_INCLUDE_DIR}/libavformat" NO_DEFAULT_PATH)
 if (FFmpeg_FOUND)
-    message("-- Looking for FFmpeg directory - found ${FFMPEG_DIR}")
-    message("-- Looking for FFmpeg include - found ${FFMPEG_INCLUDE_DIR}")
+    message(STATUS "Looking for FFmpeg directory - found ${FFMPEG_DIR}")
+    message(STATUS "Looking for FFmpeg include - found ${FFMPEG_INCLUDE_DIR}")
     set(HAVE_FFMPEG ${LIB_FOUND})
     add_library("FFmpeg" INTERFACE)
     target_include_directories("FFmpeg" INTERFACE ${FFMPEG_INCLUDE_DIR})
@@ -256,7 +263,7 @@ if (FFmpeg_FOUND)
         set(FFMPEG_SHARED "${FFMPEG_BINARY_DIR}/" PARENT_SCOPE)
     endif()
 else()
-    message("-- Looking for FFmpeg directory - not found")
+    message(STATUS "Looking for FFmpeg directory - not found")
 endif()
 
 # LibRaw
@@ -269,11 +276,46 @@ target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     vulkan imgui spdlog::spdlog_header_only
     SPIRV spirv-cross-glsl libraw::libraw
-    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp
-    $<$<BOOL:${DAV1D_FOUND}>:dav1d>>
+    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
+    $<$<BOOL:${DAV1D_FOUND}>:dav1d>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
     $<$<BOOL:${MONO_FOUND}>:mono>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>)
+
+message(STATUS "----------------------------------------------------------------------------------")
+message(STATUS "Immortal 3rdparty configuration")
+message(STATUS)
+if (Assimp_FOUND)
+    message(STATUS "Immortal will be compiled with Assimp ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with Assimp ------ No")
+endif()
+if (DAV1D_FOUND)
+    message(STATUS "Immortal will be compiled with Dav1d  ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with Dav1d  ------ No")
+endif()
+if (MFX_FOUND)
+    message(STATUS "Immortal will be compiled with MFX    ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with MFX    ------ No")
+endif()
+if (MONO_FOUND)
+    message(STATUS "Immortal will be compiled with Mono   ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with Mono   ------ No")
+endif()
+if (OpenCV_FOUND)
+    message(STATUS "Immortal will be compiled with OpenCV ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with OpenCV ------ No")
+endif()
+if (FFmpeg_FOUND)
+    message(STATUS "Immortal will be compiled with FFmpeg ------ Yes")
+    else()
+    message(STATUS "Immortal will be compiled with FFmpeg ------ No")
+endif()
+message(STATUS "----------------------------------------------------------------------------------")
 
 configure_file(Config.h.in ${WORKSPACE}/Immortal/Config.h)
