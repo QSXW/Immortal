@@ -8,14 +8,26 @@
 
 #include <string>
 #include <functional>
+#include <unordered_map>
+
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "Core.h"
-#include "Interface/IObject.h"
+#include "Math/Math.h"
 #include "Math/Vector.h"
+#include "Interface/IObject.h"
+#include "Framework/Timer.h"
+#include "ImGui/GuiLayer.h"
+#include "String/LanguageSettings.h"
 
 namespace Immortal
 {
+
+static inline ImVec2 operator + (const ImVec2 &a, const ImVec2 &b)
+{
+    return { a.x + b.x, a.y + b. y };
+}
 
 enum class Theme
 {
@@ -77,32 +89,48 @@ enum class Theme
     MaxCount
 };
 
+static constexpr float WInherit = -1.0f;
+
 class Widget;
 struct WidgetProperty
 {
     std::string text = "Untitled";
 
-    float width  = -1;
-    float height = -1;
+    float width  = WInherit;
+    float height = WInherit;
+    float renderWidth = 0;
+    float renderHeight = 0;
+
+    ImVec2 position = { 0, 0 };
     ImVec4 color;
     ImVec4 backgroundColor;
 
-    ImVec2 padding = { 0, 0 };
+    struct
+    {
+        float left   = 0;
+        float right  = 0;
+        float top    = 0;
+        float bottom = 0;
+    } padding;
+
     uint64_t descriptor;
 
     struct {
-        const Widget *left;
-        const Widget *right;
-        const Widget *top;
-        const Widget *bottom;
-        const Widget *fill = nullptr;
+        const Widget *left   = nullptr;
+        const Widget *right  = nullptr;
+        const Widget *top    = nullptr;
+        const Widget *bottom = nullptr;
+        const Widget *fill   = nullptr;
     } anchors;
+
+    bool anchored = false;
 };
 
 struct WidgetState
 {
     bool isHovered;
     bool isFocused;
+    bool isActive;
 };
 
 /** Widget Lock
@@ -128,10 +156,134 @@ struct WidgetLock
     WidgetLock &operator=(WidgetLock &&) = delete;
 };
 
+#define WIDGET_SET_PROPERTY(U, L, T) \
+    WidgetType *U(T L)               \
+    {                                \
+        props.L = L;                 \
+        return this;                 \
+    }                                \
+                                     \
+    T U() const                      \
+    {                                \
+        return props.L;              \
+    }                                \
+
+#define WIDGET_SET_PROPERTIES(W)                                              \
+    using WidgetType = W;                                                     \
+    WIDGET_SET_PROPERTY(Color,           color,          const ImVec4 &     ) \
+    WIDGET_SET_PROPERTY(Width,           width,          float              ) \
+    WIDGET_SET_PROPERTY(Height,          height,         float              ) \
+    WIDGET_SET_PROPERTY(RenderWidth,     renderWidth,    float              ) \
+    WIDGET_SET_PROPERTY(RenderHeight,    renderHeight,   float              ) \
+    WIDGET_SET_PROPERTY(Descriptor,      descriptor,     uint64_t           ) \
+    WIDGET_SET_PROPERTY(BackgroundColor, backgroundColor, const ImVec4 &    ) \
+                                                                              \
+    WidgetType *PaddingLeft(float left)                \
+    {                                                  \
+        props.padding.left = left;                     \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *PaddingRight(float right)              \
+    {                                                  \
+        props.padding.right = right;                   \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *PaddingTop(float top)                  \
+    {                                                  \
+        props.padding.top = top;                       \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *PaddingBottom(float bottom)            \
+    {                                                  \
+        props.padding.bottom = bottom;                 \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *Padding(const Vector4 &padding)        \
+    {                                                  \
+        props.padding.top    = padding.x;              \
+        props.padding.right  = padding.y;              \
+        props.padding.bottom = padding.z;              \
+        props.padding.left   = padding.w;              \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *Id(const std::string &id)              \
+    {                                                  \
+        WidgetTracker[id] = this;                      \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *Text(const std::string &text)          \
+    {                                                  \
+        if (!GuiLayer::IsLanguage(Language::English))  \
+        {                                              \
+            props.text = WordsMap::Get(text);          \
+        }                                              \
+        else                                           \
+        {                                              \
+            props.text = text;                         \
+        }                                              \
+                                                       \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *Anchors(const Widget *widget)          \
+    {                                                  \
+        props.anchored = true;                         \
+        props.anchors.fill = widget;                   \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *AnchorsTop(const Widget *widget)       \
+    {                                                  \
+        props.anchored = true;                         \
+        props.anchors.top = widget;                    \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *AnchorsBottom(const Widget *widget)    \
+    {                                                  \
+        props.anchored = true;                         \
+        props.anchors.bottom = widget;                 \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *AnchorsRight(const Widget *widget)     \
+    {                                                  \
+        props.anchored = true;                         \
+        props.anchors.right = widget;                  \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *AnchorsLeft(const Widget *widget)      \
+    {                                                  \
+        props.anchored = true;                         \
+        props.anchors.left = widget;                   \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *Resize(const Vector2 &size)            \
+    {                                                  \
+        props.anchored = true;                         \
+        props.width = size.x;                          \
+        props.height = size.y;                         \
+        return this;                                   \
+    }
+
 class IMMORTAL_API Widget : public IObject
 {
 public:
     using Property = WidgetProperty;
+
+    static constexpr int Inherit = -1114;
+
+    WIDGET_SET_PROPERTIES(Widget)
+
+    static std::unordered_map<std::string, Widget *> WidgetTracker;
 
 public:
     Widget(Widget *parent = nullptr) :
@@ -167,7 +319,27 @@ public:
         return child;
     }
 
-    virtual void SetProperty(const WidgetProperty &other)
+    Widget *AddChildren(std::initializer_list<Widget *> &&widgets)
+    {
+        for (auto &w : widgets)
+        {
+            AddChild(w);
+        }
+
+        return this;
+    }
+
+    Widget *operator[](std::initializer_list<Widget *> &&widgets)
+    {
+        return AddChildren(std::move(widgets));
+    }
+
+    Widget *Wrap(std::initializer_list<Widget *> &&widgets)
+    {
+        return AddChildren(std::move(widgets));
+    }
+
+    void SetProperty(const WidgetProperty &other)
     {
         props = other;
     }
@@ -188,46 +360,9 @@ public:
         return props.text;
     }
 
-#define WIDGET_SET_PROPERTY(U, L, T) \
-    Widget &U(T L) \
-    { \
-        props.L = L; \
-        return *this; \
-    }
-
-    WIDGET_SET_PROPERTY(Text, text, const std::string &)
-    WIDGET_SET_PROPERTY(Color, color, const ImVec4 &)
-    WIDGET_SET_PROPERTY(Width, width, float)
-    WIDGET_SET_PROPERTY(Height, height, float)
-    WIDGET_SET_PROPERTY(Descriptor, descriptor, uint64_t)
-    WIDGET_SET_PROPERTY(Padding, padding, const ImVec2 &)
-
-    Widget &Anchors(const Widget *widget)
-    {
-        props.anchors.fill = widget;
-        return *this;
-    }
-
-    Widget &Resize(const Vector2 &size)
-    {
-        props.width = size.x;
-        props.height = size.y;
-        return *this;
-    }
-
-    float Width() const
-    {
-        return props.width;
-    }
-
-    float Height() const
-    {
-        return props.height;
-    }
-
     Vector2 Size() const
     {
-        return Vector2{ props.width, props.height };
+        return Vector2{ props.renderWidth, props.renderHeight };
     }
 
     bool IsHovered() const
@@ -240,11 +375,109 @@ public:
         return state.isFocused;
     }
 
+    bool IsActive() const
+    {
+        return state.isActive;
+    }
+
+    ImVec2 Position() const
+    {
+        return props.position;
+    }
+
     template <class F>
-    Widget &Connect(F f)
+    Widget *Connect(F f)
     {
         render = f;
-        return *this;
+        return this;
+    }
+
+    template <class T>
+    requires std::is_base_of_v<Widget, T>
+    T *Query(const std::string &id)
+    {
+        auto widget = WidgetTracker.find(id);
+        return widget == WidgetTracker.end() ? nullptr : dynamic_cast<T*>(widget->second);
+    }
+
+    ImVec2 __PreCalculateSize()
+    {
+        float x = Width();
+        float y = Height();
+        if (props.anchors.fill == parent)
+        {
+            x = parent->RenderWidth();
+            y = parent->RenderHeight();
+        }
+        if (props.width == WInherit)
+        {
+            x = parent->RenderWidth();
+        }
+        if (props.height == WInherit)
+        {
+            y = parent->RenderHeight();
+        }
+
+        if (props.width > 0.f && props.width < 1.0f)
+        {
+            y = parent->RenderWidth() * props.width;
+        }
+        if (props.height > 0.f && props.height < 1.0f)
+        {
+            y = parent->RenderHeight() * props.height;
+        }
+        
+        if (props.anchored)
+        {
+            if (props.anchors.top)
+            {
+                SLASSERT(props.anchors.top == parent || props.anchors.top->parent == parent);
+                auto top = props.anchors.top;
+                y -= (top->Position().y - top->parent->Position().y);
+                y -= top->RenderHeight();
+            }
+            if (props.anchors.bottom)
+            {
+                SLASSERT(props.anchors.bottom == parent || props.anchors.bottom->parent == parent);
+                const_cast<Widget *>(props.anchors.bottom)->__PreCalculateSize();
+                auto bottom = props.anchors.bottom;
+                props.position = bottom->Position();
+                props.position.y = props.position.y + bottom->RenderHeight() - (props.height == WInherit ? 0 : props.height);
+
+                if (props.height == WInherit)
+                {
+                    y -= (bottom->parent->props.position.y + bottom->parent->props.renderHeight) - bottom->props.position.y;
+                }
+            }
+            if (props.anchors.left)
+            {
+                SLASSERT(props.anchors.left == parent || props.anchors.left->parent == parent);
+                auto left = props.anchors.left;
+                SLASSERT(false && "Not Implemented yet");
+            }
+            if (props.anchors.right)
+            {
+                SLASSERT(props.anchors.right == parent || props.anchors.right->parent == parent);
+                const_cast<Widget *>(props.anchors.right)->__PreCalculateSize();
+                auto right = props.anchors.right;
+                SLASSERT(false && "Not Implemented yet");
+            }
+        }
+
+        x -= (props.padding.right + props.padding.left);
+        y -= (props.padding.top + props.padding.bottom);
+        props.renderWidth  = x;
+        props.renderHeight = y;
+        return { x, y };
+    }
+
+    void __Trampoline()
+    {
+        props.position = ImGui::GetItemRectMin();
+        for (auto &child : children)
+        {
+            child->RealRender();
+        }
     }
 
 protected:
@@ -259,37 +492,112 @@ protected:
     std::function<void()> render;
 };
 
+class IMMORTAL_API WWindow : public Widget
+{
+public:
+    WWindow();
+};
+
+class IMMORTAL_API WDemoWindow : public Widget
+{
+public:
+    WDemoWindow(Widget *parent = nullptr) :
+        Widget{ parent }
+    {
+        Connect([&] { ImGui::ShowDemoWindow(&isOpen); });
+    }
+
+    bool Triggle()
+    {
+        isOpen = !isOpen;
+    }
+
+protected:
+    bool isOpen = true;
+};
+
 class IMMORTAL_API WFrame : public Widget
 {
+public:
+    WIDGET_SET_PROPERTIES(WFrame)
+
 public:
     WFrame(Widget *parent = nullptr) :
         Widget{ parent }
     {
         Connect([&]() {
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, props.color);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, props.padding);
-            if (ImGui::Begin(props.text.c_str()))
+            WidgetLock lock{this};
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, props.backgroundColor);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { props.padding.right, props.padding.bottom });
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { props.padding.right, props.padding.bottom });
+            if (ImGui::Begin(props.text.c_str(), nullptr, ImGuiWindowFlags_NoTitleBar))
             {
                 auto [x, y] = ImGui::GetContentRegionAvail();
-                Width(x);
-                Height(y);
-
+                RenderWidth(x);
+                RenderHeight(y);
                 ImGui::BeginChild("###");
-                for (auto &child : children)
-                {
-                    child->RealRender();
-                }
+                state.isFocused = ImGui::IsWindowFocused();
+                state.isHovered = ImGui::IsWindowHovered();
+                __Trampoline();
                 ImGui::EndChild();
             }
             ImGui::End();
-            ImGui::PopStyleVar();
+            ImGui::PopStyleVar(2);
             ImGui::PopStyleColor();
             });
     }
 };
 
+class IMMORTAL_API WRect : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WRect)
+
+public:
+    WRect(Widget *v = nullptr) :
+        Widget{ v }
+    {
+        Connect([&]() {
+            WidgetLock lock{this};
+            auto size = __PreCalculateSize();
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, props.color);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{props.padding.right, props.padding.bottom});
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{props.padding.left, props.padding.top};
+            Draw(size);
+
+            state.isHovered = ImGui::IsItemHovered();
+            __Trampoline();
+
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+            });
+    }
+
+    void Draw(const ImVec2 &size)
+    {
+        ImGuiWindow *window = ImGui::GetCurrentWindow();
+        if (window->SkipItems)
+        {
+            return;
+        }
+
+        ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+        ImGui::ItemSize(bb);
+        if (!ImGui::ItemAdd(bb, 0))
+        {
+            return;
+        }
+
+        window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(props.color), 0.0f);
+    }
+};
+
 class IMMORTAL_API WImage : public Widget
 {
+public:
+    WIDGET_SET_PROPERTIES(WImage)
+
 public:
     WImage(Widget *v = nullptr) :
         Widget{ v }
@@ -297,16 +605,7 @@ public:
         Connect([&]() {
             WidgetLock lock{ this };
 
-            float x = props.width;
-            float y = props.height;
-
-            if (props.anchors.fill == parent || x < 0 || y < 0)
-            {
-                x = parent->Width();
-                y = parent->Height();
-                props.width = x;
-                props.height = y;
-            }
+            auto [x, y] =  __PreCalculateSize();
 
             ImVec2 offset = ImGui::GetWindowPos();
             ImVec2 minRegion = ImGui::GetWindowContentRegionMin();
@@ -318,15 +617,16 @@ public:
             state.isHovered = ImGui::IsWindowHovered();
             state.isFocused = ImGui::IsWindowFocused();
 
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{props.padding.right, props.padding.bottom});
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{props.padding.left, props.padding.top};
             ImGui::Image(
                 (ImTextureID)props.descriptor,
                 { x, y }
             );
+            ImGui::PopStyleVar();
 
-            for (auto &child : children)
-            {
-                child->RealRender();
-            }
+            __Trampoline();
 
             });
     }
@@ -342,6 +642,147 @@ public:
         Vector2 min;
         Vector2 max;
     } bounds;
+};
+
+class IMMORTAL_API WPopup : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WPopup)
+
+public:
+    WPopup(Widget *parent = nullptr) :
+        Widget{ parent }
+    {
+        Connect([&] {
+            if (isOpen)
+            {
+                ImGui::OpenPopup(props.text.c_str());
+            }
+
+            ImVec4 backgroupColor = props.backgroundColor;
+            backgroupColor.w *= std::sin(factor);
+            ImGui::SetNextWindowSize({ props.width, props.height });
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, backgroupColor);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{props.padding.right, props.padding.bottom});
+            if (ImGui::BeginPopup(props.text.c_str(), ImGuiWindowFlags_NoMove))
+            {
+                factor = std::min(factor + Time::DeltaTime * 4.f, (float)(0.5f * Math::PI));
+                __Trampoline();
+                ImGui::EndPopup();
+            }
+            else
+            {
+                factor = 0;
+            }
+            ImGui::PopStyleColor(1);
+            ImGui::PopStyleVar(1);
+        });
+    }
+
+    void Trigger(bool enable)
+    {
+        isOpen = enable;
+    }
+
+private:
+    bool isOpen = false;
+
+    float factor = 0.0f;
+};
+
+class IMMORTAL_API WSeparator : public Widget
+{
+public:
+    WSeparator(Widget *parent = nullptr) :
+        Widget{ parent }
+    {
+        props.color = ImGui::RGBA32(119, 119, 119, 88);
+        Connect([&] {
+            ImGui::PushStyleColor(ImGuiCol_Separator, props.color);
+            ImGui::Separator();
+            ImGui::PopStyleColor();
+        });
+    }
+};
+
+class IMMORTAL_API WHBox : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WHBox)
+
+public:
+    WHBox(Widget *parent = nullptr) :
+        Widget{parent}
+    {
+        Connect([this] {
+            props.position = this->parent->Position();
+            (void) __PreCalculateSize();
+
+            for (auto &c : children)
+            {
+                c->RealRender();
+                ImGui::SameLine();
+            }
+        });
+    }
+};
+
+class IMMORTAL_API WVBox : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WVBox)
+
+public:
+    WVBox(Widget *parent = nullptr) :
+        Widget{parent}
+    {
+        Connect([this] {
+            props.position = this->parent->Position();
+            (void) __PreCalculateSize();
+
+            for (auto &c : children)
+            {
+                c->RealRender();
+            }
+        });
+    }
+};
+
+class IMMORTAL_API WText : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WText)
+
+public:
+    WText(Widget *parent = nullptr) :
+        Widget{parent}
+    {
+        Connect([&] {
+            Height(fontSize);
+            (void)__PreCalculateSize();
+
+            auto fontScale = fontSize / ImGui::GetFontSize();
+            ImGui::SetWindowFontScale(fontScale);
+            ImGui::PushStyleColor(ImGuiCol_Text, props.color);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{props.padding.right, props.padding.bottom});
+            ImGui::SetCursorPos({props.padding.left, props.padding.top});
+            ImGui::Text("%s", props.text.c_str());
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+            ImGui::SetWindowFontScale(1.0f);
+
+            props.position = ImGui::GetItemRectMin();
+        });
+    }
+
+    WidgetType *FontSize(float size)
+    {
+        fontSize = size;
+        return this;
+    }
+
+protected:
+    float fontSize = 16.0f;
 };
 
 class IMMORTAL_API WDockerSpace : public Widget
@@ -408,10 +849,7 @@ public:
                 ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
             }
 
-            for (auto &child : children)
-            {
-                child->RealRender();
-            }
+            __Trampoline();
 
             ImGui::End();
             });

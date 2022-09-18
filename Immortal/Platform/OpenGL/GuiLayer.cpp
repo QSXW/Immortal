@@ -45,22 +45,17 @@ void GuiLayer::OnEvent(Event &e)
 
 }
 
-void GuiLayer::OnGuiRender()
-{
-    Super::OnGuiRender();
-}
-
 void GuiLayer::Begin()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
-    Super::Begin();
+    Super::__Begin();
 }
 
 void GuiLayer::End()
 {
-    Super::End();
+    Super::__End();
 
     ImGuiIO &io = ImGui::GetIO();
     Application *app = Application::App();

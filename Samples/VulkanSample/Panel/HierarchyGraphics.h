@@ -21,7 +21,7 @@ static inline void AddComponents(Scene *scene, Object &object)
     }
 }
 
-class HierarchyGraphics : public Layer
+class WHierarchyGraphics : public Widget
 {
 public:
     void DrawObjectNode(Scene *scene, Object &object)
@@ -76,25 +76,34 @@ public:
         }
     }
 
-    template <class Callback>
-    void OnUpdate(Scene *scene, Callback callback)
+    template <class T>
+    WHierarchyGraphics(T callback, Widget *parent = nullptr) :
+        Widget{ parent },
+	    scene{},
+	    selectedObject{}
     {
-        ImGui::PushFont(GuiLayer::NotoSans.Bold);
-        ImGui::Begin(WordsMap::Get("Project"));
+		Connect([=, this] {
+			ImGui::PushFont(GuiLayer::NotoSans.Bold);
+			ImGui::Begin(WordsMap::Get("Project"));
 
-        scene->Registry().each([&](auto id)
-        {
-            Object object{ id, scene };
-            if (object.HasComponent<TagComponent>())
-            {
-                DrawObjectNode(scene, object);
-            }
-        });      
+			scene->Registry().each([&](auto id) {
+				Object object{id, scene};
+				if (object.HasComponent<TagComponent>())
+				{
+					DrawObjectNode(scene, object);
+				}
+			});
 
-        ImGui::End();
-        ImGui::PopFont();
+			ImGui::End();
+			ImGui::PopFont();
 
-        callback(selectedObject);
+			callback(selectedObject);
+		});
+    }
+
+    void OnUpdate(Scene *other)
+    {
+		scene = other;
     }
 
     void Select(Object object)
@@ -103,6 +112,8 @@ public:
     }
 
 private:
+	Scene *scene;
+
     Object selectedObject;
 };
 

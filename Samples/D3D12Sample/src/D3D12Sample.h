@@ -4,15 +4,40 @@
 
 using namespace Immortal;
 
+class WVec3Control : public Widget
+{
+public:
+    WVec3Control(Widget *parent, Ref<RenderTarget> renderTarget, TransformComponent &transformComponent) :
+        Widget{ parent }
+    {
+		Connect([&] {
+			ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
+			Immortal::UI::DrawVec3Control("Position", transformComponent.Position);
+			Immortal::UI::DrawVec3Control("Rotation", transformComponent.Rotation);
+			Immortal::UI::DrawVec3Control("Scale", transformComponent.Scale);
+		});
+    }
+};
+
 class RenderLayer : public Layer
 {
 public:
     RenderLayer() :
         eventSink{ this },
+	    window{new WWindow},
         viewportFrame{ new WFrame },
-        renderViewport{ new WImage{ viewportFrame }}
+	    controlPanel{ new WFrame },
+	    viewport{new WImage{viewportFrame}},
+	    renderViewportFrame{ new WFrame },
+	    renderViewport{new WImage{renderViewportFrame}}
     {
-        viewportFrame->Text("Render Target");
+		window->Wrap({
+            viewportFrame
+		        ->Text("Render Target"),
+		    renderViewportFrame,
+		    controlPanel
+                ->Text("Contorl Panel")
+        });
 
         eventSink.Listen(&RenderLayer::OnKeyPressed, Event::Type::KeyPressed);
         texture = Render::Preset()->Textures.White;
@@ -34,6 +59,8 @@ public:
 
         camera.SetPerspective(90.0f);
         transformComponent.Position.z = -0.5f;
+
+        vec3Control = new WVec3Control{controlPanel, renderTarget, transformComponent};
     }
 
     ~RenderLayer()
@@ -45,7 +72,6 @@ public:
     {
         Render::Begin(renderTarget, camera);
         {
-            // Render::Draw(pipeline);
             Render2D::BeginScene(camera);
             Render2D::DrawRect(transformComponent.Transform(), texture);
             auto newTransform = transformComponent;
@@ -54,35 +80,24 @@ public:
             Render2D::EndScene();
         }
         Render::End();
-    }
 
-    void OnGuiRender()
-    {
         Vector2 viewportSize = viewportFrame->Size();
-        if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
-            (viewportSize.x != 0 && viewportSize.y != 0))
-        {
-            renderTarget->Resize(viewportSize);
-            camera.SetViewportSize(renderTarget->ViewportSize());
-        }
+		if ((viewportSize.x != renderTarget->Width() || viewportSize.y != renderTarget->Height()) &&
+		    (viewportSize.x != 0 && viewportSize.y != 0))
+		{
+			renderTarget->Resize(viewportSize);
+			camera.SetViewportSize(renderTarget->ViewportSize());
+		}
 
-        ubo.modeTransform = transformComponent;
-        ubo.viewProjection = camera.ViewProjection();
-        uniformBuffer->Update(sizeof(ubo), &ubo);
+		ubo.modeTransform = transformComponent;
+		ubo.viewProjection = camera.ViewProjection();
+		uniformBuffer->Update(sizeof(ubo), &ubo);
 
-        renderViewport->Descriptor(*renderTarget);
-        viewport.OnUpdate(texture.Get(), [] {});
-
-        ImGui::Begin("Control Panel");
-        ImGui::ColorEdit4("Clear Color", rcast<float *>(renderTarget->ClearColor()));
-        Immortal::UI::DrawVec3Control("Position", transformComponent.Position);
-        Immortal::UI::DrawVec3Control("Rotation", transformComponent.Rotation);
-        Immortal::UI::DrawVec3Control("Scale", transformComponent.Scale);
-        ImGui::End();
-
-        viewportFrame->Render();
+		renderViewport->Descriptor(*renderTarget);
+		viewport->Descriptor(*texture);
+  
         auto gui = Application::App()->GetGuiLayer();
-        gui->BlockEvent(false);
+		gui->BlockEvent(false);
     }
     
     bool LoadObject()
@@ -139,11 +154,15 @@ private:
     Ref<Texture> texture;
     Ref<Texture> texture2;
 
-    Ref<WFrame> viewportFrame;
+    URef<WWindow> window;
+	URef<WFrame> viewportFrame;
+    URef<WImage> viewport;
 
-    Viewport viewport{ "Texture Preview " };
+    URef<WFrame> renderViewportFrame;
+	URef<WImage> renderViewport;
 
-    Ref<WImage> renderViewport{};
+    URef<WFrame> controlPanel;
+	URef<WVec3Control> vec3Control;
 
     EventSink<RenderLayer> eventSink;
 

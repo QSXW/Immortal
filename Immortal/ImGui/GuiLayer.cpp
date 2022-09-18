@@ -10,6 +10,7 @@
 #include "String/LanguageSettings.h"
 #include "FileSystem/Stream.h"
 #include "Framework/Async.h"
+#include "Widget/Widget.h"
 
 namespace Immortal
 {
@@ -21,23 +22,33 @@ namespace Immortal
 FontContext GuiLayer::NotoSans;
 FontContext GuiLayer::SimSun;
 
+GuiLayer *GuiLayer::__instance = nullptr;
+
 GuiLayer::GuiLayer() :
     Layer{ "Immortal Graphics User Interface Layer" },
     dockspace{ new WDockerSpace{} }
 {
-    
+	__instance = this;
+
+    themeEditor = new WWindow;
+	themeEditor
+	    ->Connect([this] {
+		    UpdateTheme();
+	    });
 }
 
 GuiLayer::~GuiLayer()
 {
     ImGui::DestroyContext();
+	__instance = nullptr;
 }
 
 void GuiLayer::OnAttach()
 {
-#if SLDEBUG
+#ifdef _DEBUG
     IMGUI_CHECKVERSION();
 #endif
+
     ImGui::CreateContext();
 
     if (!LoadTheme())
@@ -66,14 +77,14 @@ void GuiLayer::OnAttach()
     Profiler p{ "Loading DemiLight File" };
     NotoSans.Demilight = io.Fonts->AddFontFromFileTTF(
         "Assets/Fonts/NotoSansCJKsc-Light.otf",
-        18,
+        20,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 
     NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
         "Assets/Fonts/NotoSansCJKsc-Bold.otf",
-        18,
+	    20,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
@@ -81,13 +92,18 @@ void GuiLayer::OnAttach()
 #ifdef WINDOWS
     SimSun.Regular = io.Fonts->AddFontFromFileTTF(
         std::string{ SystemFontPath + std::string{ "Simsun.ttc" } }.c_str(),
-        18,
+	    20,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 #else
     SimSun.Regular = NotoSans.Demilight;
 #endif
+}
+
+void GuiLayer::OnDetach()
+{
+	ImGui::DestroyContext();
 }
 
 void GuiLayer::SetTheme()
@@ -163,80 +179,80 @@ void GuiLayer::OnEvent(Event &e)
 
 void GuiLayer::UpdateTheme()
 {
-//     ImGuiStyle *style = &ImGui::GetStyle();
-//     ImVec4* colors = style->Colors;
+     ImGuiStyle *style = &ImGui::GetStyle();
+     ImVec4* colors = style->Colors;
 
-//     ImGui::Begin("Theme Editor");
+     ImGui::Begin("Theme Editor");
 
-// #define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
-//     XX(Text);
-//     XX(TextDisabled);
-//     XX(WindowBg);
-//     XX(ChildBg);
-//     XX(PopupBg);
-//     XX(Border);
-//     XX(BorderShadow);
-//     XX(FrameBg);
-//     XX(FrameBgHovered);
-//     XX(FrameBgActive);
-//     XX(TitleBg);
-//     XX(TitleBgActive);
-//     XX(TitleBgCollapsed);
-//     XX(MenuBarBg);
-//     XX(ScrollbarBg);
-//     XX(ScrollbarGrab);
-//     XX(ScrollbarGrabHovered);
-//     XX(ScrollbarGrabActive);
-//     XX(CheckMark);
-//     XX(SliderGrab);
-//     XX(SliderGrabActive);
-//     XX(Button);
-//     XX(ButtonHovered);
-//     XX(ButtonActive);
-//     XX(Header);
-//     XX(HeaderHovered);
-//     XX(HeaderActive);
-//     XX(Separator);
-//     XX(SeparatorHovered);
-//     XX(SeparatorActive);
-//     XX(ResizeGrip);
-//     XX(ResizeGripHovered);
-//     XX(ResizeGripActive);
-//     XX(Tab);
-//     XX(TabHovered);
-//     XX(TabActive);
-//     XX(TabUnfocused);
-//     XX(TabUnfocusedActive);
-//     XX(DockingEmptyBg);
-//     XX(PlotLines);
-//     XX(PlotLinesHovered);
-//     XX(PlotHistogram);
-//     XX(PlotHistogramHovered);
-//     XX(TableHeaderBg);
-//     XX(TableBorderStrong);
-//     XX(TableBorderLight);
-//     XX(TableRowBg);
-//     XX(TableRowBgAlt);
-//     XX(TextSelectedBg);
-//     XX(DragDropTarget);
-//     XX(NavHighlight);
-//     XX(NavWindowingHighlight);
-//     XX(NavWindowingDimBg);
-//     XX(ModalWindowDimBg);
-// #undef XX
+ #define XX(x) ImGui::ColorEdit4(#x, (float*)&colors[ImGuiCol_##x])
+     XX(Text);
+     XX(TextDisabled);
+     XX(WindowBg);
+     XX(ChildBg);
+     XX(PopupBg);
+     XX(Border);
+     XX(BorderShadow);
+     XX(FrameBg);
+     XX(FrameBgHovered);
+     XX(FrameBgActive);
+     XX(TitleBg);
+     XX(TitleBgActive);
+     XX(TitleBgCollapsed);
+     XX(MenuBarBg);
+     XX(ScrollbarBg);
+     XX(ScrollbarGrab);
+     XX(ScrollbarGrabHovered);
+     XX(ScrollbarGrabActive);
+     XX(CheckMark);
+     XX(SliderGrab);
+     XX(SliderGrabActive);
+     XX(Button);
+     XX(ButtonHovered);
+     XX(ButtonActive);
+     XX(Header);
+     XX(HeaderHovered);
+     XX(HeaderActive);
+     XX(Separator);
+     XX(SeparatorHovered);
+     XX(SeparatorActive);
+     XX(ResizeGrip);
+     XX(ResizeGripHovered);
+     XX(ResizeGripActive);
+     XX(Tab);
+     XX(TabHovered);
+     XX(TabActive);
+     XX(TabUnfocused);
+     XX(TabUnfocusedActive);
+     XX(DockingEmptyBg);
+     XX(PlotLines);
+     XX(PlotLinesHovered);
+     XX(PlotHistogram);
+     XX(PlotHistogramHovered);
+     XX(TableHeaderBg);
+     XX(TableBorderStrong);
+     XX(TableBorderLight);
+     XX(TableRowBg);
+     XX(TableRowBgAlt);
+     XX(TextSelectedBg);
+     XX(DragDropTarget);
+     XX(NavHighlight);
+     XX(NavWindowingHighlight);
+     XX(NavWindowingDimBg);
+     XX(ModalWindowDimBg);
+ #undef XX
 
-//     if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
-//     {
-//         GuiLayer *that = this;
-//         Async::Execute([&]() -> void {
-//             that->SaveTheme();
-//             });
-//     }
+     if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
+     {
+         GuiLayer *that = this;
+         Async::Execute([&]() -> void {
+             that->SaveTheme();
+             });
+     }
 
-//     ImGui::End();
+     ImGui::End();
 }
 
-void GuiLayer::OnGuiRender()
+void GuiLayer::Render()
 {
     dockspace->Render();
 
@@ -267,13 +283,9 @@ void GuiLayer::OnGuiRender()
     Application::SetTitle(title);
 }
 
-void GuiLayer::AddLayer(Layer *layer)
+void GuiLayer::AddChild(Widget *widget)
 {
-   layers.emplace_back(new WLayer{})
-       ->Connect([=] {
-            layer->OnGuiRender();
-           })
-       .AddParent(dockspace);
+	dockspace->AddChild(widget);
 }
 
 static inline std::string ThemePath = { "Assets/json/theme.json" };

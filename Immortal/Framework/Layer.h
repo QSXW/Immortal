@@ -6,6 +6,7 @@
 namespace Immortal
 {
 
+class Widget;
 class IMMORTAL_API Layer
 {
 public:
@@ -19,21 +20,15 @@ public:
 
     virtual void OnUpdate() { }
 
-    virtual void OnGuiRender() { }
-
     virtual void OnEvent(Event &e) { }
 
-    virtual void Begin() { }
-
-    virtual void End() { }
-
-    const std::string &Name() const
+    const std::string &GetName() const
     {
-        return debugName;
+		return name;
     }
 
 protected:
-    std::string debugName;
+    std::string name;
 };
 
 }

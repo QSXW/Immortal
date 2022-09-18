@@ -27,10 +27,34 @@ public:
         eventSink{ this },
         selectedObject{},
         viewportSize{ viewportSize },
+        window{ new WWindow },
         viewport{ new WFrame{} },
         editableArea{ new WImage{} },
-        imguizmoWidget{ new WImGuizmo{} }
+        imguizmoWidget{ new WImGuizmo{} },
+        objectEditorText{new WText },
+        separator{ new WSeparator },
+        menuBar{ new WMenuBar },
+        rightClickMenu{new WPopup}
     {
+        menus[1] = new WMenu;
+        items.primary = new WItemList;
+        items.secondary = new WItemList;
+
+        panels.tools = new WTools;
+        panels.navigator = new WNavigator([this] { OnTextureLoaded(); });
+        panels.propertyManager = new WPropertyManager;
+        panels.hierarchyGraphics = new WHierarchyGraphics([this](Object object) { selectedObject = object; });
+        window->Wrap({ menuBar, viewport, panels.tools, panels.navigator, panels.propertyManager, panels.hierarchyGraphics});
+
+        menus[0] = new WMenu;
+        menus[0]
+            ->Item({ "Open",       "Ctrl + O", [this] { LoadObject(); }})
+            ->Item({ "Save Scene", "Ctrl + S", [this] { SaveScene();  }})
+            ->Item({ "Load Scene", "Ctrl + L", [this] { LoadScene();  }})
+            ->Item({ "Close",      "Ctrl + W", [this] { Application::App()->Close(); }})
+            ->Text("Menu");
+        menuBar->Color({0., 0., 0., 1.0f})->AddChild(menus[0]);
+
         camera.primary = &camera.editor;
         camera.editor = { Vector::PerspectiveFOV(Vector::Radians(90.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f) };
         camera.orthographic.SetViewportSize(viewportSize);
@@ -40,61 +64,115 @@ public:
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
-        viewport->AddChild(editableArea)->AddChild(imguizmoWidget);
-        viewport->Text(WordsMap::Get("Offline Render"));
-        editableArea->Resize(viewportSize).Anchors(viewport);
+        viewport
+            ->Text("Offline Render")
+            ->AddChild(
+            editableArea
+                ->Resize(viewportSize)
+                ->Anchors(viewport)
+                ->Wrap({
+                rightClickMenu
+                    ->Padding({ 14.0f, 2.f })
+                    ->Width(192.0f)
+                    ->Height(260.0f)
+                    ->Text("Right Click Menu")
+                    ->BackgroundColor({.15f, .15f, .15f, 1.0f})
+                    ->Wrap({ 
+                    objectEditorText
+                        ->Text("Object Editor")
+                        ->Color({1.0f, 1.0f, 1.0f, .65f}),
+                    separator,
+                    items.primary
+                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
+                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Item({ "Select/Deselect", [this] { SelectObject(selectedPosition.x, selectedPosition.y); }})
+                        ->Item({ "Import",          [this] { LoadObject(); }})
+                        ->Item({ "Load Scene",      [this] { LoadScene();  }})
+                        ->Item({ "Save Scene",      [this] { SaveScene();  }}),
+                    separator,
+                    menus[1]
+                        ->Text("Create Object")
+                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
+                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Item({ "Empty" , "", [this] { Object object = scene->CreateObject("Empty" );                                         }})
+                        ->Item({ "Camera", "", [this] { Object object = scene->CreateObject("Camera"); object.AddComponent<CameraComponent>(); }})
+                        ->Item({ "Light" , "", [this] { Object object = scene->CreateObject("Light" ); object.AddComponent<LightComponent>();  }}),
+                    items.secondary
+                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
+                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Item({ "Copy",            [this] { CopyObject(); }})
+                        ->Item({ "Paste",           [this] {               }})
+                        ->Item({ "Duplicate",       [this] { panels.hierarchyGraphics->Select(CopyObject()); }})
+                        ->Item({ "Delete",          [this] { 
+                            if (selectedObject)
+                            {
+                                panels.navigator
+                                    ->Select(Object{});
+                                panels.propertyManager
+                                    ->Select(Object{});
+                                panels.hierarchyGraphics
+                                    ->Select(Object{});
+                                scene->DestroyObject(selectedObject);
+                                selectedObject = Object{};
+                            }
+                        }}),
+                    separator
+                    }),
 
-        imguizmoWidget->Connect([&]() {
-            if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
-            {
-                auto [x, y] = ImGui::GetWindowPos();
-                auto [w, h] = ImGui::GetWindowSize();
+                imguizmoWidget->Connect([&]() {
+                    if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
+                    {
+                        auto [x, y] = ImGui::GetWindowPos();
+                        auto [w, h] = ImGui::GetWindowSize();
 
-                const Camera *primaryCamera = nullptr;
-                if (panels.tools.IsControlActive(Tools::Start))
-                {
-                    primaryCamera = scene->GetCamera();
-                }
-                else
-                {
-                    primaryCamera = camera.primary;
-                }
-                ImGuizmo::SetOrthographic(primaryCamera->IsOrthographic());
-                ImGuizmo::SetDrawlist();
-                ImGuizmo::SetRect(x, y, w, h);
+                        const Camera *primaryCamera = nullptr;
+                        if (panels.tools->IsControlActive(WTools::Start))
+                        {
+                            primaryCamera = scene->GetCamera();
+                        }
+                        else
+                        {
+                            primaryCamera = camera.primary;
+                        }
+                        ImGuizmo::SetOrthographic(primaryCamera->IsOrthographic());
+                        ImGuizmo::SetDrawlist();
+                        ImGuizmo::SetRect(x, y, w, h);
 
-                TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
-                Matrix4 munipulatedTransform = transform.Transform();
+                        TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
+                        Matrix4 munipulatedTransform = transform.Transform();
 
-                Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
-                Matrix4 cameraViewMatrix = primaryCamera->View();
+                        Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
+                        Matrix4 cameraViewMatrix = primaryCamera->View();
 
-                bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
-                float snapValues[][3] = {
-                    {  0.5f,  0.5f,  0.5f },
-                    { 45.0f, 45.0f, 45.0f },
-                    {  0.5f,  0.5f,  0.5f }
-                };
+                        bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
+                        float snapValues[][3] = {
+                            {  0.5f,  0.5f,  0.5f },
+                            { 45.0f, 45.0f, 45.0f },
+                            {  0.5f,  0.5f,  0.5f }
+                        };
 
-                ImGuizmo::Manipulate(
-                    &cameraViewMatrix[0].x,
-                    &cameraProjectionMatrix[0].x,
-                    guizmoType,
-                    ImGuizmo::LOCAL,
-                    &munipulatedTransform[0].x,
-                    nullptr,
-                    snap ? snapValues[guizmoType] : nullptr);
+                        ImGuizmo::Manipulate(
+                            &cameraViewMatrix[0].x,
+                            &cameraProjectionMatrix[0].x,
+                            guizmoType,
+                            ImGuizmo::LOCAL,
+                            &munipulatedTransform[0].x,
+                            nullptr,
+                            snap ? snapValues[guizmoType] : nullptr);
 
-                if (ImGuizmo::IsUsing())
-                {
-                    Vector3 rotation;
-                    Vector::DecomposeTransform(munipulatedTransform, transform.Position, rotation, transform.Scale);
+                        if (ImGuizmo::IsUsing())
+                        {
+                            Vector3 rotation;
+                            Vector::DecomposeTransform(munipulatedTransform, transform.Position, rotation, transform.Scale);
 
-                    Vector3 deltaRotation = rotation - transform.Rotation;
-                    transform.Rotation += deltaRotation;
-                }
-            }
-            });
+                            Vector3 deltaRotation = rotation - transform.Rotation;
+                            transform.Rotation += deltaRotation;
+                        }
+                    }
+                })
+                })
+            );
+
     }
 
     virtual void OnDetach() override
@@ -115,7 +193,7 @@ public:
         }
 
         scene->Select(&selectedObject);
-        if (panels.tools.IsControlActive(Tools::Start))
+        if (panels.tools->IsControlActive(WTools::Start))
         {
             scene->OnRenderRuntime();
         }
@@ -127,230 +205,35 @@ public:
             }
             scene->OnRenderEditor(*camera.primary);
         }
-    }
 
-    void UpdateEditableArea()
-    {
-        editableArea->Descriptor(*scene->Target());
-        viewport->Render();
-    }
-
-    void UpdateMenuBar()
-    {
-        bool isSaveAsClicked = false;
-        auto *gui = Application::App()->GetGuiLayer();
-        gui->UpdateTheme();
-
-        ImGui::PushFont(gui->Bold());
-        menuBar.OnUpdate([&]() -> void {
-            if (ImGui::BeginMenu(WordsMap::Get("Menu")))
-            {
-                if (ImGui::MenuItem(WordsMap::Get("Open"), "Ctrl + O"))
-                {
-                    LoadObject();
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Load Object"), "Ctrl + L"))
-                {
-                    LoadObject();
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Save"), "Ctrl + S"))
-                {
-
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Save As"), "Ctrl+A"))
-                {
-                    isSaveAsClicked = true;
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Save Scene"), "Ctrl + Alt + A"))
-                {
-                    SaveScene();
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Load Scene"), "Ctrl + Alt + L"))
-                {
-                    LoadScene();
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Exit"), "Ctrl + W"))
-                {
-                    Application::App()->Close();
-                }
-
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(WordsMap::Get("Edit")))
-            {
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(WordsMap::Get("View")))
-            {
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(WordsMap::Get("Graphics")))
-            {
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(WordsMap::Get("Help")))
-            {
-                ImGui::EndMenu();
-            }
-            });
-
-        if (isSaveAsClicked)
-        {
-            ImGui::OpenPopup(WordsMap::Get("Save Option").c_str());
-        }
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-        static bool opened = true;
-        if (ImGui::BeginPopupModal(WordsMap::Get("Save Option").c_str(), &opened, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            ImGui::Text(
-                "\n"
-                "\n\n"
-            );
-            ImGui::Separator();
-
-            static bool dontAskMeNextTime = false;
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-            ImGui::Checkbox(WordsMap::Get("Don't ask me next time").c_str(), &dontAskMeNextTime);
-            ImGui::PopStyleVar();
-
-            if (ImGui::Button(WordsMap::Get("OK").c_str(), ImVec2(120, 0)))
-            {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(WordsMap::Get("Cancel").c_str(), ImVec2(120, 0)))
-            {
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
-        }
-
-        ImGui::PopFont();
-    }
-
-    void UpdateRightClickMenu()
-    {
-        static ImVec2 pos;
-        if (editableArea->IsHovered() && !ImGuizmo::IsOver() &&
-            Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt)
-            && !panels.tools.IsControlActive(Tools::Start))
-        {
-            pos = ImGui::GetMousePos();
-            ImGui::OpenPopup("Right Click Menu");
-        }
-        ImGui::SetNextWindowSize(ImVec2{ 192.0f, 28.0f * 9 });
-
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::RGBA32(212, 115, 115, 204));
-        ImGui::PushStyleColor(ImGuiCol_Separator,     ImGui::RGBA32(119, 119, 119,  88));
-        if (ImGui::BeginPopup("Right Click Menu"))
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::RGBA32(150, 150, 150, 255));
-            ImGui::Text("%s", WordsMap::Get("Object Editor").c_str());
-            ImGui::PopStyleColor();
-            ImGui::Separator();
-
-            if (ImGui::MenuItem(WordsMap::Get("Select/Deselect").c_str()))
-            {
-                SelectObject(pos.x, pos.y);
-            }
-            if (ImGui::MenuItem(WordsMap::Get("Import").c_str()))
-            {
-                LoadObject();
-            }
-            if (ImGui::MenuItem(WordsMap::Get("Save Scene").c_str()))
-            {
-                SaveScene();
-            }
-            if (ImGui::MenuItem(WordsMap::Get("Load Scene").c_str()))
-            {
-                LoadScene();
-            }
-            ImGui::Separator();
-
-            if (ImGui::BeginMenu(WordsMap::Get("Create Object").c_str()))
-            {
-                if (ImGui::MenuItem(WordsMap::Get("Empty")))
-                {
-                    Object object = scene->CreateObject("Empty");
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Camera")))
-                {
-                    Object object = scene->CreateObject("Camera");
-                    object.AddComponent<CameraComponent>();
-                }
-                if (ImGui::MenuItem(WordsMap::Get("Light")))
-                {
-                    Object object = scene->CreateObject("Light");
-                    object.AddComponent<LightComponent>();
-                }
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::MenuItem(WordsMap::Get("Copy").c_str()))
-            {
-                CopyObject();
-            }
-            if (ImGui::MenuItem(WordsMap::Get("Paste").c_str()))
-            {
-
-            }
-            if (ImGui::MenuItem(WordsMap::Get("Duplicate Object").c_str()))
-            {
-                panels.hierarchyGraphics.Select(CopyObject());
-            }
-            ImGui::Separator();
-
-            if (ImGui::MenuItem(WordsMap::Get("Delete").c_str()) && selectedObject)
-            {
-                panels.hierarchyGraphics.Select(Object{});
-                scene->DestroyObject(selectedObject);
-                selectedObject = Object{};
-            }
-
-            ImGui::EndPopup();
-        }
-        ImGui::PopStyleColor(2);
-    }
-
-    virtual void OnGuiRender() override
-    {
-        UpdateEditableArea();
-        UpdateMenuBar();
+        UpdateEditableArea();    
         UpdateRightClickMenu();
 
         panels
             .hierarchyGraphics
-            .OnUpdate(scene, [&](Object &o) -> void {
-                selectedObject = o;
-            });
+            ->OnUpdate(scene);
 
         panels
             .navigator
-            .OnUpdate(selectedObject, [&]() -> void {
-                OnTextureLoaded();
-            });
+            ->OnUpdate(selectedObject);
 
         panels
             .propertyManager
-            .OnUpdate(selectedObject);
+            ->OnUpdate(selectedObject);
 
         panels
             .tools
-            .OnUpdate(selectedObject);
+            ->OnUpdate(selectedObject);
 
-        if (panels.tools.IsToolActive(Tools::Move))
+        if (panels.tools->IsToolActive(WTools::Move))
         {
             guizmoType = ImGuizmo::OPERATION::TRANSLATE;
         }
-        else if (panels.tools.IsToolActive(Tools::Rotate))
+        else if (panels.tools->IsToolActive(WTools::Rotate))
         {
             guizmoType = ImGuizmo::OPERATION::ROTATE;
         }
-        else if (panels.tools.IsToolActive(Tools::Scale))
+        else if (panels.tools->IsToolActive(WTools::Scale))
         {
             guizmoType = ImGuizmo::OPERATION::SCALE;
         }
@@ -359,14 +242,28 @@ public:
             guizmoType = ImGuizmo::OPERATION::INVALID;
         }
 
-        if (Settings.showDemoWindow)
-        {
-            ImGui::ShowDemoWindow(&Settings.showDemoWindow);
-        }
-            
-        scene->OnGuiRender();
-
         Application::App()->GetGuiLayer()->BlockEvent(false);
+    }
+
+    void UpdateEditableArea()
+    {
+        editableArea->Descriptor(*scene->Target());
+    }
+
+    void UpdateRightClickMenu()
+    {
+        if (editableArea->IsHovered() && !ImGuizmo::IsOver() &&
+            Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt)
+            && !panels.tools->IsControlActive(WTools::Start))
+        {
+            ImVec2 pos = ImGui::GetMousePos();
+            selectedPosition = *(Vector2 *)&pos;
+            rightClickMenu->Trigger(true);
+        }
+        else
+        {
+            rightClickMenu->Trigger(false);
+        }
     }
 
     void OnTextureLoaded()
@@ -399,7 +296,7 @@ public:
         uint64_t pixel = scene->Target()->PickPixel(1, x, y, Format::R32);
 
         Object o = Object{ *(int *)&pixel, scene };
-        panels.hierarchyGraphics.Select(pixel == -1 || o == selectedObject ? Object{} : o);
+        panels.hierarchyGraphics->Select(pixel == -1 || o == selectedObject ? Object{} : o);
     }
 
     bool LoadObject()
@@ -416,7 +313,7 @@ public:
             const auto &filepath = res.value();
             auto object = scene->CreateObject(res.value());
 
-            panels.hierarchyGraphics.Select(object);
+            panels.hierarchyGraphics->Select(object);
 
             if (FileSystem::Is3DModel(filepath))
             {
@@ -428,8 +325,8 @@ public:
             }
             else if (FileSystem::IsVideo(filepath))
             {
-				Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
-				Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
+                Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
+                Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
 
                 demuxer->Open(filepath, decoder);
                 Vision::CodedFrame codedFrame;
@@ -472,6 +369,7 @@ public:
             scene.Reset(new Scene{ FileSystem::ExtractFileName(path.value()), true });
             scene->SetViewportSize(viewportSize);
             scene->Deserialize(path.value());
+            panels.hierarchyGraphics->OnUpdate(scene);
         }
     }
 
@@ -489,7 +387,7 @@ public:
 
     bool OnKeyPressed(KeyPressedEvent &e)
     {
-        if (panels.tools.IsControlActive(Tools::Start))
+        if (panels.tools->IsControlActive(WTools::Start))
         {
             scene->OnKeyPressed(e);
             return false;
@@ -552,13 +450,13 @@ public:
             break;
 
         case KeyCode::Q:
-            panels.tools.Activate(Tools::Hand);
+            panels.tools->Activate(WTools::Hand);
             guizmoType = ImGuizmo::OPERATION::INVALID;
             break;
 
         case KeyCode::W:
             guizmoType = ImGuizmo::OPERATION::TRANSLATE;
-            panels.tools.Activate(Tools::Move);
+            panels.tools->Activate(WTools::Move);
             if (control || shift)
             {
                 Application::App()->Close();
@@ -566,12 +464,12 @@ public:
             break;
 
         case KeyCode::E:
-            panels.tools.Activate(Tools::Rotate);
+            panels.tools->Activate(WTools::Rotate);
             guizmoType = ImGuizmo::OPERATION::ROTATE;
             break;
 
         case KeyCode::R:
-            panels.tools.Activate(Tools::Scale);
+            panels.tools->Activate(WTools::Scale);
             guizmoType = ImGuizmo::OPERATION::SCALE;
             break;
 
@@ -613,16 +511,18 @@ public:
     }
 
 private:
-    std::shared_ptr<RenderTarget> renderTarget;
+    URef<WWindow> window;
 
-    std::shared_ptr<Shader> shader;
+    Ref<RenderTarget> renderTarget;
+
+    Ref<Shader> shader;
 
     Vector2 viewportSize;
 
     Object selectedObject;
 
     struct {
-        std::shared_ptr<GraphicsPipeline> graphics;
+        Ref<GraphicsPipeline> graphics;
     } pipelines;
 
     struct {
@@ -636,10 +536,10 @@ private:
     } camera;
 
     struct {
-        Navigator navigator;
-        HierarchyGraphics hierarchyGraphics;
-        PropertyManager propertyManager;
-        Tools tools;
+        URef<WNavigator> navigator;
+        URef<WHierarchyGraphics> hierarchyGraphics;
+        URef<WPropertyManager> propertyManager;
+        URef<WTools> tools;
     } panels;
 
     struct {
@@ -650,7 +550,21 @@ private:
 
     Ref<WImage> editableArea;
 
-    MenuBar menuBar;
+    URef<WPopup> rightClickMenu;
+
+    struct
+    {
+        URef<WItemList> primary;
+        URef<WItemList> secondary;
+    } items;
+
+    URef<WSeparator> separator;
+    URef<WText> objectEditorText;
+
+    URef<WMenuBar> menuBar;
+    std::array<URef<WMenu>, 6> menus; 
+
+    Vector2 selectedPosition;
 
     struct
     {

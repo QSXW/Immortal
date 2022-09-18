@@ -68,7 +68,6 @@ Layer *Application::PushLayer(Layer *layer)
 {
     layerStack.PushLayer(layer);
     layer->OnAttach();
-    gui->AddLayer(layer);
 
     return layer;
 }
@@ -94,7 +93,7 @@ void Application::Run()
         }
 
         gui->Begin();
-        gui->OnGuiRender();
+        gui->Render();
         gui->End();
 
         Render::SwapBuffers();

@@ -58,7 +58,7 @@ void GuiLayer::Begin()
 {
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
-    Super::Begin();
+    Super::__Begin();
 }
 
 void GuiLayer::OnEvent(Event &e)
@@ -72,14 +72,9 @@ void GuiLayer::OnEvent(Event &e)
     Super::OnEvent(e);
 }
 
-void GuiLayer::OnGuiRender()
-{
-    Super::OnGuiRender();
-}
-
 void GuiLayer::End()
 {
-    Super::End();
+    Super::__End();
 
     context->Submit([&](CommandList *commandList) {
         Barrier<BarrierType::Transition> barrier{

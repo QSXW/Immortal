@@ -3,10 +3,9 @@
 #include <imgui.h>
 
 #include "Framework/Layer.h"
-
+#include "Interface/IObject.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
-#include "Widget/Widget.h"
 
 #define DEFINE_CPP_STRING_API(FN_NAME, ...) \
     template <class...  Args> \
@@ -77,16 +76,14 @@ struct FontContext
 namespace Immortal
 {
 
-class IMMORTAL_API WLayer : public Widget
+enum class Language
 {
-public:
-    WLayer(Widget *parent = nullptr) :
-        Widget{ parent }
-    {
-
-    }
+	Chinese,
+    English,
 };
 
+class WWindow;
+class WDockerSpace;
 class RenderContext;
 class IMMORTAL_API GuiLayer : public Layer
 {
@@ -103,41 +100,30 @@ public:
 
     virtual ~GuiLayer();
 
-    void OnUpdate() override { }
-
     virtual void OnAttach() override;
 
     virtual void OnEvent(Event &e) override;
 
-    virtual void OnGuiRender() override;
+    virtual void OnDetach() override;
 
-    inline virtual void OnDetach() override
-    {
-        ImGui::DestroyContext();
-    }
+    virtual void Begin() = 0;
 
-    void AddLayer(Layer *layer);
+    virtual void End() = 0;
 
-    void Begin() override
-    {
-        ImGui::NewFrame();  
-    }
+    void Render();
 
-    void End() override
-    {
-        ImGui::Render();
-    }
-
-    void BlockEvent(bool block)
-    {
-        blockEvents = block;
-    }
+	void AddChild(Widget *widget);
 
     void SetTheme();
 
     bool LoadTheme();
 
     bool SaveTheme();
+
+    void BlockEvent(bool block)
+	{
+		blockEvents = block;
+	}
 
     ImFont *DemiLight()
     {
@@ -151,14 +137,40 @@ public:
 
     void UpdateTheme();
 
-private:
-    std::vector<MonoRef<WLayer>> layers;
+    static void Inject2Dockspace(Widget *widget)
+	{
+		SLASSERT(__instance && "ImGui is not initialized yet!");
+		__instance->AddChild(widget);
+	}
 
+    static bool IsLanguage(Language lang)
+    {
+		return __instance->language == lang;
+    }
+
+protected:
+	void __Begin()
+	{
+		ImGui::NewFrame();
+	}
+
+	void __End()
+	{
+		ImGui::Render();
+	}
+
+protected:
     Ref<WDockerSpace> dockspace;
     
     bool blockEvents = true;
 
     float time = 0.0f;
+
+    Language language = Language::Chinese;
+
+    static GuiLayer *__instance;
+
+    URef<WWindow> themeEditor;
 };
 
 using SuperGuiLayer = GuiLayer;

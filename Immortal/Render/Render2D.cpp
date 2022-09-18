@@ -116,11 +116,6 @@ void Render2D::Flush()
     data.Stats.DrawCalls++;
 }
 
-void Render2D::SetColor(const Vector4 &color, const float brightness, const Vector3 HSV)
-{
-
-}
-
 void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int object)
 {
     constexpr size_t RectVertexCount  = 4;

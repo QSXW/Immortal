@@ -290,6 +290,7 @@ set(UTILS_FILES
 
 set(WIDGET_FILES
     Widget/MenuBar.h
+    Widget/Widget.cpp
     Widget/Widget.h
     Widget/Viewport.h)
 

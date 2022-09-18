@@ -26,8 +26,6 @@ public:
 
     virtual void OnEvent(Event &e) override;
 
-    virtual void OnGuiRender() override;
-
     virtual void Begin() override;
     virtual void End() override;
 

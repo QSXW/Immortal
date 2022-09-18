@@ -9,11 +9,29 @@ class RenderLayer : public Layer
 public:
 	RenderLayer() :
 		Layer{ "OpenGLSample2D" },
+	    window{new WWindow },
 		frame{ new WFrame },
-		image{ new WImage{ frame } }
+		image{ new WImage{ frame } },
+	    renderViewportFrame{new WFrame},
+	    renderViewport{new WImage{ }}
 	{
+		window->Wrap({
+			frame
+				->Text("Text Frame")
+				->Color({ 1.0f, 0.5f, 0.5f, 1.0f })
+				->Wrap({
+				image
+					->Width(1920)
+					->Height(1080)
+				}),
+			renderViewportFrame
+				->Text("Offline Render")
+				->Wrap({
+				renderViewport,
+				}),
+		});
+
 		camera.SetViewportSize({ 1920.0f, 1080.0f });
-		frame->Text("Text Frame").Color(ImVec4{ 1.0f, 0.5f, 0.5f, 1.0f });
 	}
 
 	~RenderLayer()
@@ -26,14 +44,10 @@ public:
 		renderTarget = Render::Create<RenderTarget>(RenderTarget::Description{ { 1920, 1080 }, { {  Format::RGBA8, Wrap::Clamp, Filter::Bilinear }, { Format::Depth32F } } });
 		texture = Render::Preset()->Textures.White;
 
-		image->Width(1920).Height(1080).Descriptor(*texture);
 		renderTarget->Set(Colour{ 0.10980392f, 0.10980392f, 0.10980392f, 1 });
 		Render2D::Setup(renderTarget);
-	}
 
-	void OnDetach()
-	{
-
+		image->Descriptor(*texture);
 	}
 
 	void OnUpdate()
@@ -45,10 +59,9 @@ public:
 		Render2D::BeginScene(camera);
 
 		static float rotation = 0.0f;
-		rotation += Application::App()->DeltaTime() * 50.0f;
+		rotation += Time::DeltaTime * 50.0f;
 
 		Render2D::DrawRect({ 0.0f, 0.0f }, { texture->Ratio() * 2.0, 2.0f }, texture, 1.0f, Vector::Color(1.f));
-		Render2D::SetColor(color, luminance);
 		Render2D::EndScene();
 
 		Render2D::BeginScene(camera);
@@ -62,19 +75,8 @@ public:
 		}
 		Render2D::EndScene();
 		Render::End();
-	}
 
-	void OnGuiRender()
-	{
-		static bool show_demo_window = true;
-
-		if (show_demo_window)
-		{
-			ImGui::ShowDemoWindow(&show_demo_window);
-		}
-
-		frame->Render();
-		offline.OnUpdate(renderTarget.Get(), [] {});
+		renderViewport->Descriptor(*renderTarget);
 	}
 
 	void OnEvent(Event &e)
@@ -88,21 +90,19 @@ public:
 private:
 	Ref<RenderTarget> renderTarget;
 
-	Ref<Shader> shader;
-
 	Ref<Pipeline> pipeline;
 
 	Ref<Texture> texture;
-	
-	OrthographicCamera camera;
 
-	Viewport offline{ WordsMap::Get("Offline Render") };
-
-	float luminance{ 0 };
-
-	Vector4 color{ 0.0f, 0.0f, 0.0f, 0.0f };
+	URef<WWindow> window;
 
 	Ref<WFrame> frame;
 
 	Ref<WImage> image;
+
+	URef<WFrame> renderViewportFrame;
+
+	URef<WImage> renderViewport;
+	
+	OrthographicCamera camera;
 };

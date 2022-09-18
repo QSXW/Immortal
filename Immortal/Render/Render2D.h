@@ -131,8 +131,6 @@ public:
         NextBatch();
     }
 
-    static void SetColor(const Vector4 &color, const float brightness, const Vector3 HSV = Vector3(0.0f));
-
     static void DrawRect(const Matrix4 &transform, const Vector4 &color, int object = -1);
 
     static void DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, float tilingFactor = 1.0f, const Vector4 &tintColor = Vector4(1.0f), int object = -1);
