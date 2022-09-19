@@ -18,8 +18,8 @@ include(utils)
 add_compile_definitions($<$<CONFIG:DEBUG>:_DEBUG>)
 
 add_subdirectory(3rdparty)
-set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets" PARENT_SCOPE)
-set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED} PARENT_SCOPE)
+set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets")
+set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED})
 
 add_subdirectory(Immortal)
 add_subdirectory(Assets)
@@ -30,3 +30,6 @@ add_subdirectory(Samples/OpenGLSample)
 add_subdirectory(Samples/MediaTest)
 add_subdirectory(Samples/ScriptBenchmark)
 add_subdirectory(Samples/RawExtractor)
+
+set(IMMORTAL_ASSET_DIR ${IMMORTAL_ASSET_DIR} PARENT_SCOPE)
+set(IMMORTAL_RUNTIME ${IMMORTAL_RUNTIME} PARENT_SCOPE)
