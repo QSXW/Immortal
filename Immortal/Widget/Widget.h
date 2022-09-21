@@ -20,6 +20,7 @@
 #include "Framework/Timer.h"
 #include "ImGui/GuiLayer.h"
 #include "String/LanguageSettings.h"
+#include "Resource.h"
 
 namespace Immortal
 {
@@ -91,6 +92,14 @@ enum class Theme
 
 static constexpr float WInherit = -1.0f;
 
+struct WPadding
+{
+    float left   = 0;
+    float right  = 0;
+    float top    = 0;
+    float bottom = 0;
+};
+
 class Widget;
 struct WidgetProperty
 {
@@ -105,15 +114,9 @@ struct WidgetProperty
     ImVec4 color;
     ImVec4 backgroundColor;
 
-    struct
-    {
-        float left   = 0;
-        float right  = 0;
-        float top    = 0;
-        float bottom = 0;
-    } padding;
+    WPadding padding;
 
-    uint64_t descriptor;
+    uint64_t descriptor = 0;
 
     struct {
         const Widget *left   = nullptr;
@@ -178,6 +181,18 @@ struct WidgetLock
     WIDGET_SET_PROPERTY(Descriptor,      descriptor,     uint64_t           ) \
     WIDGET_SET_PROPERTY(BackgroundColor, backgroundColor, const ImVec4 &    ) \
                                                                               \
+    WidgetType *Color(uint32_t color)                  \
+    {                                                  \
+        props.color = ImGui::RGBA32(color);            \
+        return this;                                   \
+    }                                                  \
+                                                       \
+    WidgetType *BackgroundColor(uint32_t color)        \
+    {                                                  \
+        props.backgroundColor = ImGui::RGBA32(color);  \
+        return this;                                   \
+    }                                                  \
+                                                       \
     WidgetType *PaddingLeft(float left)                \
     {                                                  \
         props.padding.left = left;                     \
@@ -480,7 +495,23 @@ public:
         }
     }
 
-protected:
+    #define PUSH_WINDOW_POS ImVec2 __pos = window->DC.CursorPos;
+    #define POP_WINDOW_POS 	window->DC.CursorPos = __pos;
+    void __RelativeTrampoline()
+    {
+        ImGuiWindow *window = ImGui::GetCurrentWindow();
+        props.position = ImGui::GetItemRectMin();
+
+        PUSH_WINDOW_POS
+        window->DC.CursorPos = props.position;
+        for (auto &child : children)
+        {
+            child->RealRender();
+        }
+        POP_WINDOW_POS
+    }
+
+public:
     Widget *parent;
 
     std::vector<Widget*> children;
@@ -567,7 +598,8 @@ public:
             Draw(size);
 
             state.isHovered = ImGui::IsItemHovered();
-            __Trampoline();
+
+            __RelativeTrampoline();
 
             ImGui::PopStyleVar();
             ImGui::PopStyleColor();
@@ -605,7 +637,8 @@ public:
         Connect([&]() {
             WidgetLock lock{ this };
 
-            auto [x, y] =  __PreCalculateSize();
+            __PreCalculateSize();
+			__PreClaculateImageSize();
 
             ImVec2 offset = ImGui::GetWindowPos();
             ImVec2 minRegion = ImGui::GetWindowContentRegionMin();
@@ -617,18 +650,70 @@ public:
             state.isHovered = ImGui::IsWindowHovered();
             state.isFocused = ImGui::IsWindowFocused();
 
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{props.padding.right, props.padding.bottom});
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{renderPadding.right, renderPadding.bottom});
             ImGuiWindow *window = ImGui::GetCurrentWindow();
-            window->DC.CursorPos = window->DC.CursorPos + ImVec2{props.padding.left, props.padding.top};
-            ImGui::Image(
-                (ImTextureID)props.descriptor,
-                { x, y }
-            );
+			window->DC.CursorPos = window->DC.CursorPos + ImVec2{renderPadding.left, renderPadding.top};
+            
+            if (props.descriptor)
+            {
+				ImGui::Image(
+				    (ImTextureID)props.descriptor,
+				    {props.renderWidth, props.renderHeight}
+                );
+            }
+            else
+            {
+				ImGui::Image(
+				    (ImTextureID)(uint64_t) *resource.image,
+				    {props.renderWidth, props.renderHeight},
+                    resource.uv._0,
+                    resource.uv._1
+                );
+            }
             ImGui::PopStyleVar();
 
-            __Trampoline();
+            __RelativeTrampoline();
 
             });
+    }
+
+    void __PreClaculateImageSize()
+    {
+        if (props.descriptor)
+        {
+			return;
+        }
+
+        auto scale = (float)resource.image->Width() / (float)resource.image->Height();
+		auto rscale = props.renderWidth / props.renderHeight;
+
+        float x = props.renderWidth;
+		float y = props.renderHeight;
+        if (scale > rscale)
+        {
+			y = x * ((float) resource.image->Height() / (float) resource.image->Width());
+        }
+        else
+        {
+			x = y * scale;
+        }
+
+        float padding = (props.renderHeight - y) * 0.5f;
+		renderPadding.top = props.padding.top + padding;
+		renderPadding.bottom = props.padding.bottom + padding;
+
+        padding = (props.renderWidth - x) * 0.5f;
+		renderPadding.left = props.padding.left + padding;
+		renderPadding.right = props.padding.right + padding;
+
+        props.renderWidth = x;
+		props.renderHeight = y;
+    }
+
+    WidgetType *Source(const WImageResource &res)
+    {
+		resource = res;
+		return this;
     }
 
     Vector2 MinBound() const
@@ -642,6 +727,10 @@ public:
         Vector2 min;
         Vector2 max;
     } bounds;
+
+    WImageResource resource;
+
+    WPadding renderPadding;
 };
 
 class IMMORTAL_API WPopup : public Widget
@@ -765,7 +854,8 @@ public:
             ImGui::SetWindowFontScale(fontScale);
             ImGui::PushStyleColor(ImGuiCol_Text, props.color);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{props.padding.right, props.padding.bottom});
-            ImGui::SetCursorPos({props.padding.left, props.padding.top});
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{props.padding.left, props.padding.top};
             ImGui::Text("%s", props.text.c_str());
             ImGui::PopStyleVar();
             ImGui::PopStyleColor();
