@@ -91,8 +91,8 @@ void GuiLayer::OnAttach()
 
 #ifdef WINDOWS
     SimSun.Regular = io.Fonts->AddFontFromFileTTF(
-        std::string{ SystemFontPath + std::string{ "Simsun.ttc" } }.c_str(),
-	    20,
+	    std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
+	    16,
         nullptr,
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
@@ -254,7 +254,9 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::Render()
 {
+	ImGui::PushFont(SimSun.Regular);
     dockspace->Render();
+	ImGui::PopFont();
 
     static char title[128] = { 0 };
 

@@ -41,7 +41,7 @@ Application::Application(const Window::Description &description) :
     }
     else
     {
-		Async::Execute([&]() { Render::Setup(context); timer.Start(); });
+            Async::Execute([&]() { Render::Setup(context); timer.Start(); });
     }
 
 	gui = context->CreateGuiLayer();
@@ -79,22 +79,25 @@ Layer *Application::PushOverlay(Layer *overlay)
 
     return overlay;
 }
- 
+
 void Application::Run()
 {
     while (runtime.running)
     {
         Render::PrepareFrame();
         Time::DeltaTime = timer.tick<Timer::Seconds>();
-        
+
         for (Layer *layer : layerStack)
         {
             layer->OnUpdate();
         }
 
-        gui->Begin();
-        gui->Render();
-        gui->End();
+        if (!runtime.minimized)
+        {
+			gui->Begin();
+			gui->Render();
+			gui->End();
+        }
 
         Render::SwapBuffers();
 

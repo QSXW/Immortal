@@ -12,6 +12,12 @@ namespace Immortal
 namespace D3D12
 {
 
+struct PushConstants
+{
+	uint8_t size;
+	uint8_t biding;
+};
+
 struct ShaderByteCode : public D3D12_SHADER_BYTECODE
 {
     using Primitive = D3D12_SHADER_BYTECODE;
@@ -57,7 +63,11 @@ public:
 public:
     Shader(const std::string &filepath, Type type = Type::Graphics);
 
+    Shader(const std::string &name, const std::string &source, Type type = Type::Graphics);
+
     virtual ~Shader();
+
+    void LoadByteCodes(const std::string &source, const std::string &name, Type type = Type::Graphics);
 
     const std::array<ShaderByteCode, MaxHandleCount> &ByteCodes() const
     {
@@ -68,20 +78,27 @@ public:
     {
         return descriptorRanges;
     }
+    
+    const PushConstants &GetPushConstants() const
+    {
+		return pushConstants;
+    }
+
+protected:
+    void __Check(HRESULT result, ID3DBlob **errorMsg, ID3DBlob **toBeReleased);
+
+    void __Reflect();
+
+    void __SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> reflector, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters);
 
 private:
-    void InternalCheck(HRESULT result, ID3DBlob **errorMsg, ID3DBlob **toBeReleased);
-
-    void Reflect();
-
-    void SetupDescriptorRanges(const D3D12_SHADER_DESC &desc, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters);
-
-private:
-    std::array<ID3DBlob*, MaxHandleCount> handles{ nullptr };
+    std::array<ID3DBlob *, MaxHandleCount> handles;
 
     std::array<ShaderByteCode, MaxHandleCount> byteCodes;
 
     std::vector<std::pair<DescriptorRange, D3D12_SHADER_VISIBILITY>> descriptorRanges;
+
+    PushConstants pushConstants;
 };
 
 }

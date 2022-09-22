@@ -12,8 +12,8 @@ class Window;
 namespace D3D12
 {
 
-class Device;
 class Queue;
+class RenderContext;
 class DescriptorHeap;
 class Swapchain
 {
@@ -32,9 +32,9 @@ public:
     D3D_OPERATOR_HANDLE()
 
 public:
-    Swapchain(Device *device, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc);
+    Swapchain(RenderContext *context, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc);
 
-	Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
+	Swapchain(RenderContext *context, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
 
     ~Swapchain();
 
@@ -119,8 +119,13 @@ public:
         return renderTargets[bufferIndex];
     }
 
+    const std::vector<ID3D12Resource *> GetRenderTargets() const
+    {
+		return renderTargets;
+    }
+
 private:
-    Device *device{ nullptr };
+    RenderContext *context;
 
     URef<DescriptorHeap> rtvDescriptorHeap;
 

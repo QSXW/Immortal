@@ -71,7 +71,7 @@ void RenderContext::__Prepare()
         .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
         .Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
     };
-    swapchain = new Swapchain{ device, graphicsDispatcher->GetAddress<Queue>(), desc.WindowHandle, swapchainDesc};
+    swapchain = new Swapchain{ this, graphicsDispatcher->GetAddress<Queue>(), desc.WindowHandle, swapchainDesc};
 
     auto dxgiFactory = device->GetAddress<IDXGIFactory4>();
     Check(dxgiFactory->MakeWindowAssociation((HWND)desc.WindowHandle->Primitive(), DXGI_MWA_NO_ALT_ENTER));
@@ -436,10 +436,10 @@ void RenderContext::Draw(SuperGraphicsPipeline *super)
 	{
 		GPUDescriptor descriptor = descriptors;
 		descriptor.Offset(descriptorTables[i].Offset, descriptorHeap->GetIncrement());
-		commandList->SetGraphicsRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
+		commandList->SetGraphicsRootDescriptorTable(descriptorTables[i].RootParameterIndex, descriptor);
 	}
 
-	commandList->DrawIndexedInstance(pipeline->ElementCount, 1, 0, 0, 0);
+	commandList->DrawIndexedInstanced(pipeline->ElementCount, 1, 0, 0, 0);
 }
 
 void RenderContext::Begin(SuperRenderTarget *superRenderTarget)

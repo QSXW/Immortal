@@ -25,9 +25,10 @@ struct Model
     int      objectID;
 };
 
-ConstantBuffer<Model> model : register(b8);
+ConstantBuffer<Model> push_constant : register(b0);
+#define model push_constant
 
-cbuffer ubo : register(b0)
+cbuffer ubo : register(b1)
 {
 	float4x4 viewProjection;
     float4x4 skyProjection;
@@ -39,7 +40,7 @@ struct Light {
     float3 radiance;
 };
 
-cbuffer shading : register(b1)
+cbuffer shading : register(b2)
 {
     Light  lights[4];
     float3 camPos;

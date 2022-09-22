@@ -37,6 +37,12 @@ static inline ImVec4 RGBA32(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     return ConvertColor<decltype(r)>(r, g, b, a);
 }
 
+static inline ImVec4 RGBA32(uint32_t rgba)
+{
+	uint8_t *_rgba = (uint8_t *)&rgba;
+	return ConvertColor<uint8_t>(_rgba[3], _rgba[2], _rgba[1], _rgba[0]);
+}
+
 static inline bool MenuItem(const std::string &label, const char *shortcut = NULL, bool selected = false, bool enabled = true)
 {
     return MenuItem(label.c_str(), shortcut, selected, enabled);

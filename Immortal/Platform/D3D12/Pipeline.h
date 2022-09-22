@@ -25,6 +25,7 @@ public:
 
     struct DescriptorTable
     {
+		uint32_t RootParameterIndex;
         uint32_t DescriptorCount;
         uint32_t Offset;
     };
@@ -79,6 +80,11 @@ public:
         return descriptorTables;
     }
 
+    bool HasRootConstant() const
+    {
+		return hasRootConstant;
+    }
+
 protected:
     RenderContext *context{};
 
@@ -92,6 +98,8 @@ protected:
     std::vector<DescriptorTable> descriptorTables;
     
     URef<RootSignature> rootSignature;
+
+    bool hasRootConstant = false;
 };
 
 class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
@@ -107,6 +115,8 @@ public:
 public:
     GraphicsPipeline(RenderContext *context, Ref<Shader::Super> shader);
 
+    GraphicsPipeline(RenderContext *context, Ref<Shader> shader);
+
     virtual void Create(const SuperRenderTarget *renderTarget) override;
 
     virtual void Reconstruct(const SuperRenderTarget *renderTarget) override;
@@ -114,6 +124,11 @@ public:
     virtual void Set(Ref<Buffer::Super> buffer) override;
 
     virtual void Set(const InputElementDescription &description) override;
+
+	void Create(ID3D12Resource *resource);
+
+protected:
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC __GetDescription();
 
 public:
     template <class T, Buffer::Type type = Buffer::Type::Index>

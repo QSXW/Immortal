@@ -71,11 +71,12 @@ public:
 
     virtual Buffer *Bind(const BindInfo &bindInfo) const override;
 
-    HRESULT Map(void **data)
-    {
-        D3D12_RANGE range{ 0, size };
-        return resource->Map(0, &range, data);
-    }
+    template <class T>
+	HRESULT Map(T **data)
+	{
+		D3D12_RANGE range{0, size};
+		return resource->Map(0, &range, (void **)data);
+	}
 
     void Unmap()
     {

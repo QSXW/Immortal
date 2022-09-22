@@ -47,8 +47,16 @@ void Pipeline::InitRootSignature(const Shader *shader)
     std::vector<RootParameter> rootParameters{};
 
     descriptorTables.resize(descriptorRanges.size());
-    rootParameters.resize(descriptorRanges.size() + 1);
-    rootParameters[0].InitAsConstants(Limit::BytesOfRootConstant / sizeof(uint32_t), Definitions::RootConstantsIndex);
+    rootParameters.reserve(descriptorRanges.size() + 1);
+
+    RootParameter rootParameter;
+    auto &pushConstants = shader->GetPushConstants();
+    if (pushConstants.size > 0)
+    {
+		hasRootConstant = true;
+		rootParameter.InitAsConstants(pushConstants.size / sizeof(uint32_t), pushConstants.biding);
+		rootParameters.emplace_back(rootParameter);
+    }
 
     uint32_t offset = 0;
     for (size_t i = 0; i < descriptorRanges.size(); i++)
@@ -79,8 +87,13 @@ void Pipeline::InitRootSignature(const Shader *shader)
             }
         }
 
-        rootParameters[i + 1].InitAsDescriptorTable(1, &range, descriptorRange.second);
-        descriptorTables[i] = DescriptorTable{ range.NumDescriptors, offset };
+        rootParameter.InitAsDescriptorTable(1, &range, descriptorRange.second);
+        descriptorTables[i] = DescriptorTable{ 
+            .RootParameterIndex = U32(rootParameters.size()),
+            .DescriptorCount    = range.NumDescriptors,
+            .Offset             = offset
+        };
+		rootParameters.emplace_back(rootParameter);
         offset += range.NumDescriptors;
     }
 
@@ -112,6 +125,14 @@ GraphicsPipeline::GraphicsPipeline(RenderContext *context, Ref<Shader::Super> sh
     Super{ shader },
     Pipeline{ context },
     state{ new State{} }
+{
+
+}
+
+GraphicsPipeline::GraphicsPipeline(RenderContext *context, Ref<Shader> shader) :
+    Super{shader},
+    Pipeline{context},
+    state{new State{}}
 {
 
 }
@@ -161,22 +182,68 @@ void GraphicsPipeline::Create(const RenderTarget::Super *renderTarget)
 
 void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
 {
-    auto shader = desc.shader.InterpretAs<Shader>();
-    if (!shader)
+    auto pipelineStateDesc = __GetDescription();
+    if (!pipelineStateDesc.VS.pShaderBytecode)
     {
-        return;
+		return;
     }
 
-    auto &bytesCodes = shader->ByteCodes();
-    InitRootSignature(shader);
+    auto renderTarget = dynamic_cast<const RenderTarget *>(superRenderTarget);
+	auto &depthBuffer = renderTarget->GetDepthBuffer();
+    auto &colorBuffers = renderTarget->GetColorBuffers();
+
+    THROWIF(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);
+    pipelineStateDesc.NumRenderTargets = colorBuffers.size();
+    for (int i = 0; i < pipelineStateDesc.NumRenderTargets; i++)
+    {
+        pipelineStateDesc.RTVFormats[i] = colorBuffers[i].Format;
+    }
+	pipelineStateDesc.DSVFormat = depthBuffer.Format;
+
+    Device *device = context->GetAddress<Device>();
+    device->Create(&pipelineStateDesc, &handle);
+}
+
+void GraphicsPipeline::Create(ID3D12Resource *resource)
+{
+	auto pipelineStateDesc = __GetDescription();
+
+	D3D12_RESOURCE_DESC desc = resource->GetDesc();
+	pipelineStateDesc.RTVFormats[0] = desc.Format;
+
+    if (flags & Pipeline::State::Blend)
+    {
+		auto &blend = pipelineStateDesc.BlendState;
+		blend.AlphaToCoverageEnable                 = false;
+		blend.RenderTarget[0].BlendEnable           = true;
+		blend.RenderTarget[0].SrcBlend              = D3D12_BLEND_SRC_ALPHA;
+		blend.RenderTarget[0].DestBlend             = D3D12_BLEND_INV_SRC_ALPHA;
+		blend.RenderTarget[0].BlendOp               = D3D12_BLEND_OP_ADD;
+		blend.RenderTarget[0].SrcBlendAlpha         = D3D12_BLEND_ONE;
+		blend.RenderTarget[0].DestBlendAlpha        = D3D12_BLEND_INV_SRC_ALPHA;
+		blend.RenderTarget[0].BlendOpAlpha          = D3D12_BLEND_OP_ADD;
+		blend.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    }
+
+    Device *device = context->GetAddress<Device>();
+	device->Create(&pipelineStateDesc, &handle);
+}
+
+D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipeline::__GetDescription()
+{
+	auto shader = desc.shader.InterpretAs<Shader>();
+	if (!shader)
+	{
+		return D3D12_GRAPHICS_PIPELINE_STATE_DESC{};
+	}
+
+	auto &bytesCodes = shader->ByteCodes();
+	InitRootSignature(shader);
 
     D3D12_INPUT_LAYOUT_DESC inputLayoutDesc = { 
         state->InputElementDescription.data(),
         U32(state->InputElementDescription.size())
     };
-
-    auto renderTarget = dynamic_cast<const RenderTarget*>(superRenderTarget);
-    auto &depthBuffer = renderTarget->GetDepthBuffer();
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc = {
         .pRootSignature        = *rootSignature,
@@ -201,23 +268,26 @@ void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
         .PrimitiveTopologyType = ConvertPrimitiveTopologyType(desc.primitiveType),
         .NumRenderTargets      = 1,
         .RTVFormats            = {},
-        .DSVFormat             = depthBuffer.Format,
+        .DSVFormat             = DXGI_FORMAT_UNKNOWN,
         .SampleDesc            = { .Count = 1, .Quality = 0 },
         .NodeMask              = 0,
         .CachedPSO             = { .pCachedBlob = nullptr, .CachedBlobSizeInBytes = 0 },
         .Flags                 = D3D12_PIPELINE_STATE_FLAG_NONE,
     };
 
-    auto &colorBuffers = renderTarget->GetColorBuffers();
-    THROWIF(colorBuffers.size() > SL_ARRAY_LENGTH(pipelineStateDesc.RTVFormats), SError::OutOfBound);
-    pipelineStateDesc.NumRenderTargets = colorBuffers.size();
-    for (int i = 0; i < pipelineStateDesc.NumRenderTargets; i++)
+    if (!(flags & Pipeline::State::Depth))
     {
-        pipelineStateDesc.RTVFormats[i] = colorBuffers[i].Format;
+		D3D12_DEPTH_STENCIL_DESC &depth = pipelineStateDesc.DepthStencilState;
+		depth.DepthEnable             = false;
+		depth.DepthWriteMask          = D3D12_DEPTH_WRITE_MASK_ALL;
+		depth.DepthFunc               = D3D12_COMPARISON_FUNC_ALWAYS;
+		depth.StencilEnable           = false;
+		depth.FrontFace.StencilFailOp = depth.FrontFace.StencilDepthFailOp = depth.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		depth.FrontFace.StencilFunc   = D3D12_COMPARISON_FUNC_ALWAYS;
+		depth.BackFace                = depth.FrontFace;
     }
 
-    Device *device = context->GetAddress<Device>();
-    device->Create(&pipelineStateDesc, &handle);
+    return pipelineStateDesc;
 }
 
 void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
@@ -365,10 +435,13 @@ void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGro
         {
             GPUDescriptor descriptor = descriptors;
             descriptor.Offset(descriptorTables[i].Offset, descriptorHeap.active->GetIncrement());
-            cmdlist->SetComputeRootDescriptorTable(i + 1 /* 0 is reserved by root constants */, descriptor);
+			cmdlist->SetComputeRootDescriptorTable(descriptorTables[i].RootParameterIndex, descriptor);
         }
 
-        cmdlist->PushComputeConstant(pushConstants.size(), pushConstants.data(), 0);
+        if (HasRootConstant())
+        {
+			cmdlist->PushComputeConstant(pushConstants.size(), pushConstants.data(), 0);
+        }
         cmdlist->Dispatch(nGroupX, nGroupY, nGroupZ);
         });
 
@@ -377,8 +450,11 @@ void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGro
 
 void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
 {  
-    pushConstants.resize(size + offset);
-    memcpy(pushConstants.data() + offset, data, size);
+    if (HasRootConstant())
+    {
+		pushConstants.resize(size + offset);
+		memcpy(pushConstants.data() + offset, data, size);
+    }
 }
 
 }

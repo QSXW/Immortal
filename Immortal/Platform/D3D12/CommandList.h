@@ -213,7 +213,7 @@ public:
         handle->IASetIndexBuffer(pView);
     }
     
-    void DrawIndexedInstance(UINT indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, INT  baseVertexLocation, UINT startInstanceLocation)
+    void DrawIndexedInstanced(UINT indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, INT baseVertexLocation, UINT startInstanceLocation)
     {
         __Record();
         handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
@@ -245,6 +245,12 @@ public:
     void PushComputeConstant(uint32_t size, const void *data, uint32_t offset)
     {
         SetComputeRoot32BitConstants(0, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
+    }
+
+    void OMSetBlendFactor(const float *blendFactor)
+    {
+		__Record();
+		handle->OMSetBlendFactor(blendFactor);
     }
 
 protected:

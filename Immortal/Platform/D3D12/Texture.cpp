@@ -171,7 +171,7 @@ void Texture::Update(const void *data, uint32_t pitchX)
     };
 
     context->Transfer([&](CommandList *graphicsCmdList, CommandList *cmdlist) {
-        cmdlist->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+		cmdlist->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
         // graphicsCmdList->ResourceBarrier(&barrier);
         });
 }

@@ -17,7 +17,8 @@ struct Properties
     int _10Bits;
 };
 
-ConstantBuffer<Properties> uProperties : register(b8);
+ConstantBuffer<Properties> push_constant : register(b0);
+#define uProperties push_constant
 
 [numthreads(1, 1, 1)]
 void main(uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_GroupThreadID, uint3 DTid : SV_DispatchThreadID)

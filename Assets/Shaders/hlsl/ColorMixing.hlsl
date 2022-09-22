@@ -27,7 +27,8 @@ struct Properties
     float Vividness;
 };
 
-ConstantBuffer<Properties> properties : register(b8);
+ConstantBuffer<Properties> push_constant : register(b8);
+#define properties push_constant
 
 float avg(float3 color)
 {
