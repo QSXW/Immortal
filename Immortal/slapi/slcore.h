@@ -52,18 +52,18 @@ inline void aligned_free(void* ptr)
 #endif
 }
 
+#define SLSTR(x) #x
+#define SL_MAEK_STR(x) SLSTR(x)
 #define SLASSERT(...) assert(__VA_ARGS__)
 
-#define SLBIND(x) std::bind(&x, this, std::placeholders::_1)
-
-#if defined( WIN32 ) || defined( _WIN32 )
-#   define WINDOWS
+#if defined( _WIN32 )
+#	define PLATFORM_STRING SLSTR(_WIN32)
 #elif defined( __ANDROID__ )
-#   define ANDROID
+#	define PLATFORM_STRING SLSTR(__ANDROID__)
 #elif defined(__linux__)
-#   define LINUX
+#	define PLATFORM_STRING SLSTR(__linux__)
 #elif defined( __APPLE__ ) || defined( __MACH__ )
-#   define APPLE
+#	define PLATFORM_STRING SLSTR(__APPLE__)
 #endif
 
 /*

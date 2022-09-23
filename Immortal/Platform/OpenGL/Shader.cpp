@@ -79,16 +79,6 @@ void Shader::Link(const std::vector<GLuint> &shaders)
 
 std::string Shader::__InjectPreamble(const std::string &source)
 {
-#ifdef __APPLE__
-#   define PLATFORM_STRING STR(__APPLE__)
-#elif defined(_WIN32)
-#   define PLATFORM_STRING STR(_WIN32)
-#elif defined(__linux__)
-#	define PLATFORM_STRING STR(__linux__)
-#else
-#	define PLATFORM_STRING "Unknown"
-#endif
-
 	static std::string preamble = "#define push_constant binding=" PUSH_CONSTANT_LOCATION_STR "\n#define " PLATFORM_STRING "\n";
 	size_t index = source.find("layout");
 	return source.substr(0, index) + preamble + source.substr(index);
@@ -132,54 +122,6 @@ void Shader::Activate() const
 void Shader::Deactivate() const
 {
     glUseProgram(0);
-}
-
-void Shader::Set(const std::string &name, int value)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform1i(location, value);
-}
-
-void Shader::Set(const std::string & name, int * values, uint32_t count)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform1iv(location, count, values);
-}
-
-void Shader::Set(const std::string & name, float value)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform1f(location, value);
-}
-
-void Shader::Set(const std::string & name, const Vector::Vector2 & value)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform2f(location, value.x, value.y);
-}
-
-void Shader::Set(const std::string & name, const Vector3 & value)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform3f(location, value.x, value.y, value.z);
-}
-
-void Shader::Set(const std::string & name, const Vector::Vector4 & value)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniform4f(location, value.x, value.y, value.z, value.w);
-}
-
-void Shader::Set(const std::string &name, const Matrix4 & matrix)
-{
-    GLint location = glGetUniformLocation(handle, name.c_str());
-    glUniformMatrix4fv(location, 1, GL_FALSE, &(matrix[0].x));
-}
-
-void Shader::DispatchCompute(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
-{
-    // SLASSERT(type == Shader::Type::Compute && "The shader type is not compute.");
-    glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
 }
 
 }

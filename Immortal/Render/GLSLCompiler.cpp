@@ -52,9 +52,7 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     shader.setSourceEntryPoint(entryPoint);
     shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetNone, version);
 
-#ifdef __APPLE__
-	shader.setPreamble("#define __APPLE__\n");
-#endif
+	shader.setPreamble("#define " PLATFORM_STRING "\n");
 
     if (!shader.parse(&glslang::DefaultTBuiltInResource, 100, false, messages))
     {

@@ -123,7 +123,7 @@ void Pipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
 	glBindBufferBase(GL_UNIFORM_BUFFER, PUSH_CONSTANT_LOCATION, *pushConstants);
 	__BindDescriptorTable();
-	shader->DispatchCompute(nGroupX, nGroupY, nGroupZ);
+	glDispatchCompute(nGroupX, nGroupY, nGroupZ);
 	shader->Deactivate();
 }
 
