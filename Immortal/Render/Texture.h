@@ -52,15 +52,6 @@ public:
         Array3D
     };
 
-    struct DataType
-    {
-        int InternalFromat;
-        int DataFormat;
-        int BinaryType;
-        int Filter;
-        int Wrap;
-    };
-
     enum class Type
     {
         None = 0,

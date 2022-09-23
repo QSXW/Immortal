@@ -11,25 +11,17 @@ namespace OpenGL
 enum class DescriptorType
 {
 	Buffer,
-	Image,
-	ImageWrite,
+	Sampler = GL_SAMPLER_2D,
+	Image2D = GL_IMAGE_2D,
 };
 
 struct Descriptor
 {
-	Descriptor(uint32_t handle, DescriptorType type, uint32_t binding) :
-	    Type{ type },
-	    Binding{ binding },
-	    handle{handle}
-	{
-
-	}
+	uint32_t handle;
 
 	DescriptorType Type;
 
 	uint32_t Binding;
-
-	GLCPP_OPERATOR_HANDLE()
 };
 
 }

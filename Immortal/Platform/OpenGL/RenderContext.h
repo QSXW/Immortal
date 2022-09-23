@@ -14,6 +14,11 @@ namespace Immortal
 namespace OpenGL
 {
 
+struct Capabilities
+{
+	float MaxAnisotropy = 1.0f;
+};
+
 class RenderContext : public SuperRenderContext
 {
 public:
@@ -59,6 +64,13 @@ public:
 	virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
 
 public:
+	static const Capabilities &GetCapabilites()
+	{
+		return capabilites;
+	}
+
+
+public:
 	GLFWwindow *Handle()
 	{
 		return handle;
@@ -66,6 +78,8 @@ public:
 
 protected:
     GLFWwindow *handle;
+
+	static Capabilities capabilites;
 };
 
 }

@@ -11,21 +11,24 @@ namespace OpenGL
 class VertexArray
 {
 public:
-	GLenum GetBaseType(GLenum format)
+	GL_FORMAT GetBaseType(Format _format)
     {
+		GL_FORMAT format = _format;
 		switch (format)
         {
-			case GL_R32F:
-			case GL_RG32F:
-			case GL_RGB32F:
-			case GL_RGBA32F:
-                return GL_FLOAT;
-			case GL_INT:
-			case GL_R32I:
-			case GL_RG32I:
-			case GL_RGB32I:
-			case GL_RGBA32I:
-				return GL_INT;
+			case GL_FORMAT_R32F:
+			case GL_FORMAT_RG32F:
+			case GL_FORMAT_RGB32F:
+			case GL_FORMAT_RGBA32F:
+                return GL_FORMAT_FLOAT;
+
+			case GL_FORMAT_INT:
+			case GL_FORMAT_R32I:
+			case GL_FORMAT_RG32I:
+			case GL_FORMAT_RGB32I:
+			case GL_FORMAT_RGBA32I:
+				return GL_FORMAT_INT;
+
 			default:
 				return format;
         }
@@ -61,8 +64,8 @@ public:
         uint32_t attributeIndex = 0;
         for (const auto &e : inputElementDescription)
         {
-			auto glBaseType = GetBaseType(e.BaseType<GLenum>());
-            if (glBaseType == GL_INT)
+			GL_FORMAT glBaseType = GetBaseType(e.format);
+			if (glBaseType == GL_FORMAT_INT)
             {
                 glVertexAttribIPointer(attributeIndex,
                     e.ComponentCount(),

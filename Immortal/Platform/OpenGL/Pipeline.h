@@ -71,7 +71,9 @@ private:
 
     Shader *shader;
 
-    std::vector<Descriptor> descriptorTable;
+    LightArray<Descriptor> bufferDescriptorTable;
+
+    LightArray<Descriptor, 32> imageDescriptorTable;
 
     InputElementDescription inputElementDesription;
 

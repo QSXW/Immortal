@@ -5,13 +5,32 @@ namespace Immortal
 namespace OpenGL
 {
 
-Pipeline::Pipeline(Ref<Shader::Super> shader) :
-    Super{ shader },
+Pipeline::Pipeline(Ref<Shader::Super> superShader) :
+    Super{superShader},
     handle{},
-    shader{ shader.InterpretAs<Shader>() },
-    pushConstants{ new UniformBuffer{128, 0} }
+    shader{superShader.InterpretAs<Shader>()},
+    pushConstants{new UniformBuffer{128, 0}}
 {
+	GLsizei length;
+	GLint size;
+	GLenum type;
+	GLchar name[256] = {};
 
+    GLint numUniform;
+	glGetProgramiv(*shader, GL_ACTIVE_UNIFORMS, &numUniform);
+
+    for (int i = 0; i < numUniform; i++)
+	{
+		glGetActiveUniform(*shader, i, sizeof(name), &length, &size, &type, name);
+
+		if (type == (GLenum)DescriptorType::Sampler || type == (GLenum)DescriptorType::Image2D)
+		{
+			for (int j = 0; j < size; j++)
+			{
+				imageDescriptorTable.emplace_back(Descriptor{ .handle = 0, .Type = (DescriptorType)type, .Binding = U32(i + j), });
+			}
+		}
+    }
 }
 
 Pipeline::~Pipeline()
@@ -39,24 +58,13 @@ void Pipeline::Bind(const std::string &name, const SuperBuffer *superUniform)
 void Pipeline::Bind(SuperBuffer *super, uint32_t binding)
 {
 	auto buffer = dynamic_cast<Buffer *>(super);
-	descriptorTable.emplace_back(Descriptor{ buffer->Handle(), DescriptorType::Buffer, binding });
+	bufferDescriptorTable.emplace_back(Descriptor{ .handle = *buffer, .Type = DescriptorType::Buffer, .Binding = binding, });
 }
 
 void Pipeline::Bind(SuperTexture *super, uint32_t binding)
 {
 	Texture *texture = dynamic_cast<Texture *>(super);
-	DescriptorType type;
-
-    if (binding > 0)
-    {
-		type = DescriptorType::ImageWrite;
-    }
-    else
-    {
-		type = DescriptorType::Image;
-    }
-
-    descriptorTable.emplace_back(Descriptor{*texture, type, binding});
+	imageDescriptorTable[binding].handle = *texture;
 }
 
 void Pipeline::Set(Ref<SuperBuffer> buffer)
@@ -80,7 +88,7 @@ void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
 {
     for (int i = 0; i < descriptorBuffer->size(); i++)
     {
-		descriptorTable.emplace_back(Descriptor{ *descriptorBuffer->DeRef<uint32_t>(i), DescriptorType::Image, i + binding });
+		imageDescriptorTable[i].handle = *descriptorBuffer->DeRef<uint32_t>(i);
     }
 }
 
@@ -106,7 +114,7 @@ Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
 {
 	(void) uuid;
 	shader->Activate();
-    descriptorTable.clear();
+    bufferDescriptorTable.clear();
 
 	return nullptr;
 }
@@ -126,19 +134,20 @@ void Pipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
 
 void Pipeline::__BindDescriptorTable() const
 {
-	for (auto &descriptor : descriptorTable)
+	for (auto &descriptor : bufferDescriptorTable)
 	{
-		if (descriptor.Type == DescriptorType::Buffer)
+		glBindBufferBase(GL_UNIFORM_BUFFER, descriptor.Binding, descriptor.handle);
+	}
+
+	for (auto &descriptor : imageDescriptorTable)
+	{
+		if (descriptor.Type == DescriptorType::Image2D)
 		{
-			glBindBufferBase(GL_UNIFORM_BUFFER, descriptor.Binding, descriptor);
-		}
-		else if (descriptor.Type == DescriptorType::ImageWrite)
-		{
-			glBindImageTexture(descriptor.Binding, descriptor, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+			glBindImageTexture(descriptor.Binding, descriptor.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 		}
         else
         {
-			glBindTextureUnit(descriptor.Binding, descriptor);
+			glBindTextureUnit(descriptor.Binding, descriptor.handle);
         }
 	}
 }

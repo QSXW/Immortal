@@ -8,6 +8,11 @@ namespace Immortal
 namespace OpenGL
 {
 
+static inline GLenum SelectTextureTarget(bool multiSampled)
+{
+	return multiSampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+}
+
 RenderTarget::RenderTarget(const RenderTarget::Super::Description &descrition) :
     handle{ 0 },
     depthAttachment{ 0 },
@@ -48,11 +53,11 @@ void RenderTarget::AttachColorTexture(uint32_t id, int samples, Texture::DataTyp
     bool multisampled = samples > 1;
     if (multisampled)
     {
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, type.InternalFromat, width, height, GL_FALSE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, type.SizedFormat, width, height, GL_FALSE);
     }
     else
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, type.InternalFromat, width, height, 0, type.DataFormat, type.BinaryType, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, type.SizedFormat, width, height, 0, type.BaseFormat, type.BinaryType, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, type.Filter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, type.Filter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, type.Wrap);
@@ -60,7 +65,7 @@ void RenderTarget::AttachColorTexture(uint32_t id, int samples, Texture::DataTyp
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, type.Wrap);
     }
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, TextureTarget(multisampled), id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, SelectTextureTarget(multisampled), id, 0);
 }
 
 void RenderTarget::AttachDepthTexture(uint32_t id, int samples, Texture::DataType type, uint32_t attachmentType, uint32_t width, uint32_t height)
@@ -68,11 +73,11 @@ void RenderTarget::AttachDepthTexture(uint32_t id, int samples, Texture::DataTyp
     bool multisampled = samples > 1;
     if (multisampled)
     {
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, type.InternalFromat, width, height, GL_FALSE);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, type.SizedFormat, width, height, GL_FALSE);
     }
     else
     {
-        glTexStorage2D(GL_TEXTURE_2D, 1, type.InternalFromat, width, height);
+        glTexStorage2D(GL_TEXTURE_2D, 1, type.SizedFormat, width, height);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, type.Filter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, type.Filter);
@@ -81,7 +86,7 @@ void RenderTarget::AttachDepthTexture(uint32_t id, int samples, Texture::DataTyp
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, type.Wrap);
     }
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, TextureTarget(multisampled), id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentType, SelectTextureTarget(multisampled), id, 0);
 }
 
 void RenderTarget::Update()
@@ -91,29 +96,31 @@ void RenderTarget::Update()
         Clear();
     }
 
+	auto target = SelectTextureTarget(desc.Samples > 1);
+
     glCreateFramebuffers(1, &handle);
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    bool multisample = desc.Samples > 1;
+
 
     // Attachments
     if (colorAttachmentDescriptions.size())
     {
         colorAttachments.resize(colorAttachmentDescriptions.size());
-        CreateTexture(multisample, colorAttachments.data(), (uint32_t)colorAttachments.size());
+		glCreateTextures(target, (uint32_t)colorAttachments.size(), colorAttachments.data());
 
         for (size_t i = 0; i < colorAttachments.size(); i++)
         {
-            BindTexture(multisample, colorAttachments[i]);
-            Texture::DataType type = NativeTypeToOpenGl(colorAttachmentDescriptions[i].format, colorAttachmentDescriptions[i].wrap, colorAttachmentDescriptions[i].filter);
+			glBindTexture(target, colorAttachments[i]);
+			Texture::DataType type = NativeTypeToOpenGl(colorAttachmentDescriptions[i]);
             AttachColorTexture(colorAttachments[i], desc.Samples, type, desc.Width, desc.Height, (int)i);
         }
     }
 
     if (depthAttachmentDescription.format != Format::None)
     {
-        CreateTexture(multisample, &depthAttachment, 1);
-        BindTexture(multisample, depthAttachment);
-        Texture::DataType type = NativeTypeToOpenGl(depthAttachmentDescription.format, depthAttachmentDescription.wrap, depthAttachmentDescription.filter);
+		glCreateTextures(target, 1, &depthAttachment);
+		glBindTexture(target, depthAttachment);
+        Texture::DataType type = NativeTypeToOpenGl(depthAttachmentDescription);
         AttachDepthTexture(depthAttachment, desc.Samples, type, GL_DEPTH_STENCIL_ATTACHMENT, desc.Width, desc.Height);
     }
 
@@ -132,7 +139,7 @@ void RenderTarget::Update()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderTarget::Map(uint32_t slot)
+void RenderTarget::Activate()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
     glViewport(0, 0, desc.Width, desc.Height);
@@ -141,7 +148,7 @@ void RenderTarget::Map(uint32_t slot)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void RenderTarget::Unmap()
+void RenderTarget::Deactivate()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -155,7 +162,7 @@ void RenderTarget::Resize(uint32_t width, uint32_t height)
 
 void *RenderTarget::ReadPixel(uint32_t index, int x, int y, Format format, int width, int height)
 {
-    this->Map();
+    Activate();
     if (index >= colorAttachments.size())
     {
         throw RuntimeException{ SError::OutOfBound };
@@ -173,17 +180,6 @@ void *RenderTarget::ReadPixel(uint32_t index, int x, int y, Format format, int w
     }
 
     return reinterpret_cast<void *>((size_t)pixel);;
-}
-
-void RenderTarget::ClearAttachment(uint32_t index, int value)
-{
-    if (index >= colorAttachments.size())
-    {
-        throw RuntimeException{ SError::OutOfBound };
-    }
-
-    auto type = NativeTypeToOpenGl(colorAttachmentDescriptions[index].format);
-    glClearTexImage(colorAttachments[index], 0, type.DataFormat, type.BinaryType, &value);
 }
 
 Attachment RenderTarget::ColorAttachment(size_t index)

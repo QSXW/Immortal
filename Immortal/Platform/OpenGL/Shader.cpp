@@ -74,7 +74,7 @@ void Shader::Link(const std::vector<GLuint> &shaders)
     {
         glDetachShader(handle, shader);
         glDeleteShader(shader);
-    }	
+    }
 }
 
 std::string Shader::__InjectPreamble(const std::string &source)

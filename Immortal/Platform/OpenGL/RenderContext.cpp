@@ -29,6 +29,8 @@ void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned
 	}
 }
 
+Capabilities RenderContext::capabilites;
+
 RenderContext::RenderContext(const Description &desc)
     : handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
 {
@@ -38,13 +40,13 @@ RenderContext::RenderContext(const Description &desc)
 
 void RenderContext::Setup()
 {
-    glfwMakeContextCurrent(handle);
-    int status = gladLoadGLLoader(rcast<GLADloadproc>(glfwGetProcAddress));
+	glfwMakeContextCurrent(handle);
+	int status = gladLoadGLLoader(rcast<GLADloadproc>(glfwGetProcAddress));
 
-    SLASSERT(status && "Failed to initialize Glad!");
-    SLASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5) && "Immortal requires at least OpenGL version 4.5!");
+	SLASSERT(status && "Failed to initialize Glad!");
+	SLASSERT(GLVersion.major > 4 || (GLVersion.major == 4 && GLVersion.minor >= 5) && "Immortal requires at least OpenGL version 4.5!");
 
-    Super::UpdateMeta(rcast<const char *>(glGetString(GL_RENDERER)), rcast<const char *>(glGetString(GL_VERSION)), rcast<const char *>(glGetString(GL_VENDOR)));
+	Super::UpdateMeta(rcast<const char *>(glGetString(GL_RENDERER)), rcast<const char *>(glGetString(GL_VERSION)), rcast<const char *>(glGetString(GL_VENDOR)));
 
 #ifdef _DEBUG
 	glEnable(GL_DEBUG_OUTPUT);
@@ -141,7 +143,7 @@ void RenderContext::Draw(SuperGraphicsPipeline *superPipeline)
 void RenderContext::Begin(RenderTarget::Super *superRenderTarget)
 {
 	auto target = dynamic_cast<RenderTarget *>(superRenderTarget);
-	target->Map();
+	target->Activate();
 }
 
 void RenderContext::End()

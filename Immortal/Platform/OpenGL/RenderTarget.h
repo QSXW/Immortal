@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Render/RenderTarget.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -18,15 +19,9 @@ public:
 
     virtual ~RenderTarget();
 
-    virtual void Map(uint32_t slot = 0) override;
-
-    virtual void Unmap() override;
-
     virtual void Resize(uint32_t width, uint32_t height) override;
 
     virtual void *ReadPixel(uint32_t index, int x, int y, Format format, int width = 1, int height = 1);
-
-    virtual void ClearAttachment(uint32_t attachmentIndex, int value) override;
 
     virtual Attachment ColorAttachment(size_t index = 0) override;
 
@@ -36,6 +31,10 @@ public:
     {
         return colorAttachments[0];
     }
+ 
+    void Activate();
+
+	void Deactivate();
 
     operator GLint() const
     {

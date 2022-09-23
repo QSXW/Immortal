@@ -190,6 +190,7 @@ set(OPENGL_FILES
     Platform/OpenGL/Buffer.h
     Platform/OpenGL/Common.h
     Platform/OpenGL/Descriptor.h
+    Platform/OpenGL/GLFormat.h
     Platform/OpenGL/Framebuffer.cpp
     Platform/OpenGL/Framebuffer.h
     Platform/OpenGL/GuiLayer.cpp
