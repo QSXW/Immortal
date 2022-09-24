@@ -2,6 +2,7 @@
 
 #include "Render/Frame.h"
 #include "Shader.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -220,7 +221,7 @@ void Texture::Blit()
 {
     if (mipLevels > 1)
     {
-		glGenerateTextureMipmap(handle);
+		Submit([this] { glGenerateTextureMipmap(handle); });
     }
 }
 

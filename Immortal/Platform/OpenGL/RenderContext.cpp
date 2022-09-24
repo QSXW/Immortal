@@ -30,9 +30,10 @@ void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned
 }
 
 Capabilities RenderContext::capabilites;
+CommandBuffer RenderContext::commandBuffer;
 
-RenderContext::RenderContext(const Description &desc)
-    : handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
+RenderContext::RenderContext(const Description &desc) :
+	handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
 {
     SLASSERT(handle && "Window Handle is null!");
     Setup();
@@ -74,11 +75,14 @@ SuperGuiLayer *RenderContext::CreateGuiLayer()
 
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	glViewport(x, y, width, height);
+	Submit([=] {
+		glViewport(x, y, width, height);
+	});
 }
 
 void RenderContext::SwapBuffers()
 {
+	commandBuffer.Execute();
 	glfwSwapBuffers(handle);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
@@ -148,7 +152,9 @@ void RenderContext::Begin(RenderTarget::Super *superRenderTarget)
 
 void RenderContext::End()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	Submit([] {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	});
 }
 
 void RenderContext::PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)

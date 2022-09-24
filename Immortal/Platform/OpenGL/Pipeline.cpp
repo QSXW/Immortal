@@ -1,4 +1,5 @@
 #include "Pipeline.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -94,37 +95,44 @@ void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
 
 void Pipeline::Draw()
 {
-	shader->Activate();
-	handle.Bind();
+	Submit([this] {
+		glUseProgram(*shader);
+		handle.Bind();
 
-	auto vertexBuffer = Get<Buffer::Type::Vertex>();
-	auto indexBuffer  = Get<Buffer::Type::Index>();
+		auto vertexBuffer = Get<Buffer::Type::Vertex>();
+		auto indexBuffer = Get<Buffer::Type::Index>();
 
-	vertexBuffer->Bind();
-	indexBuffer->Bind();
+		vertexBuffer->Bind();
+		indexBuffer->Bind();
 
-    __BindDescriptorTable();
-	glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
+		__BindDescriptorTable();
+		glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
 
-	handle.Unbind();
-	shader->Deactivate();
+		handle.Unbind();
+		glUseProgram(0);
+	});
 }
 
 Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
 {
 	(void) uuid;
-	shader->Activate();
-    bufferDescriptorTable.clear();
+	bufferDescriptorTable.clear();
+
+	Submit([this] {
+		glUseProgram(*shader);
+	});
 
 	return nullptr;
 }
 
 void Pipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
-	glBindBufferBase(GL_UNIFORM_BUFFER, PUSH_CONSTANT_LOCATION, *pushConstants);
-	__BindDescriptorTable();
-	glDispatchCompute(nGroupX, nGroupY, nGroupZ);
-	shader->Deactivate();
+	Submit([=, this] {
+		glBindBufferBase(GL_UNIFORM_BUFFER, PUSH_CONSTANT_LOCATION, *pushConstants);
+		__BindDescriptorTable();
+		glDispatchCompute(nGroupX, nGroupY, nGroupZ);
+		shader->Deactivate();
+	});
 }
 
 void Pipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)

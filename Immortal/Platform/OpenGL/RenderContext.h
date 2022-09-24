@@ -6,6 +6,7 @@
 #include "RenderTarget.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "CommandBuffer.h"
 #include "ImGui/GuiLayer.h"
 
 struct GLFWwindow;
@@ -69,7 +70,6 @@ public:
 		return capabilites;
 	}
 
-
 public:
 	GLFWwindow *Handle()
 	{
@@ -79,8 +79,17 @@ public:
 protected:
     GLFWwindow *handle;
 
+public:
+	static CommandBuffer commandBuffer;
+
 	static Capabilities capabilites;
 };
+
+template <class T>
+static inline void Submit(T &&command)
+{
+	RenderContext::commandBuffer.Submit(command);
+}
 
 }
 }

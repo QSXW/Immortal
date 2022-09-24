@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Buffer.h"
+#include "Common.h"
 
 namespace Immortal
 {
@@ -33,6 +34,8 @@ public:
 				return format;
         }
     }
+
+    GLCPP_OPERATOR_HANDLE()
 
 public:
     VertexArray()
@@ -103,9 +106,6 @@ public:
         buffer->Unbind();
         Unbind();
     }
-
-private:
-    GLuint handle;
 };
 
 }

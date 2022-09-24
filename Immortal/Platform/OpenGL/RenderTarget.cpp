@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "Texture.h"
+#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -141,11 +142,13 @@ void RenderTarget::Update()
 
 void RenderTarget::Activate()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, handle);
-    glViewport(0, 0, desc.Width, desc.Height);
+	Submit([this] {
+		glBindFramebuffer(GL_FRAMEBUFFER, handle);
+		glViewport(0, 0, desc.Width, desc.Height);
 
-    glClearColor(clearValues[0].r, clearValues[0].g, clearValues[0].b, clearValues[0].a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(clearValues[0].r, clearValues[0].g, clearValues[0].b, clearValues[0].a);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	});
 }
 
 void RenderTarget::Deactivate()
