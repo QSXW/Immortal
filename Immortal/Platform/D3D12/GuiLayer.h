@@ -7,11 +7,18 @@
 #include "Buffer.h"
 #include "Texture.h"
 #include "Pipeline.h"
+#include "Algorithm/Rotate.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
+
+struct RenderBuffer
+{
+	Ref<Buffer> vertex;
+	Ref<Buffer> index;
+};
 
 class Pipeline;
 class GuiLayer : virtual public SuperGuiLayer
@@ -43,18 +50,11 @@ private:
 
     Swapchain *swapchain{ nullptr };
 
-    DescriptorHeap *srvDescriptorHeap{ nullptr };
-
     URef<GraphicsPipeline> pipeline;
 
     URef<Texture> fonts;
 
-    struct {
-        Ref<Buffer> vertex;
-        Ref<Buffer> index;
-	} buffers[3];
-
-    uint32_t sync = 0;
+    Rotate<RenderBuffer, 4> buffers;
 
 public:
     Vector4 clearColor{ .4f, .5f, .6f, 1.0f };
