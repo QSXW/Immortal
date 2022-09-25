@@ -25,7 +25,7 @@ Texture::Texture(RenderContext *context, const std::string &filepath, const Desc
 
     Super::Update(picture.desc.width, picture.desc.height);
     format = picture.desc.format;
-    InternalCreate(picture.Data());
+	__Create(picture.Data());
 }
 
 Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description) :
@@ -33,7 +33,7 @@ Texture::Texture(RenderContext *context, uint32_t width, uint32_t height, const 
     Super{ width, height }
 {
     format = description.format;
-    InternalCreate(data);
+	__Create(data);
 }
 
 Texture::~Texture()
@@ -44,11 +44,10 @@ Texture::~Texture()
     }
 }
 
-void Texture::InternalCreate(const void *data)
+void Texture::__Create(const void *data)
 {
 	Device *device = context->GetAddress<Device>();
 
-    descriptor.visible   = context->AllocateShaderVisibleDescriptor();
     descriptor.invisible = context->AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
 
     D3D12_HEAP_PROPERTIES props = {
@@ -85,25 +84,40 @@ void Texture::InternalCreate(const void *data)
     resource->SetName(L"Texture");
 #endif
 
-    if (!resource)
-    {
-        OutputDebugStringW(L"Faild to Create Texture");
-        return;
-    }
-
     if (data)
     {
         Update(data);
     }
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {
-        .Format                  = resourceDesc.Format,
+	__InitViewWithDescriptor(descriptor.invisible);
+}
+
+Texture::operator uint64_t() const
+{
+    if (!descriptor.visible.gpu.ptr)
+    {
+		Texture *This = const_cast<Texture *>(this);
+		This->descriptor.visible = context->AllocateShaderVisibleDescriptor();
+		This->__InitViewWithDescriptor(This->descriptor.visible.cpu);
+    }
+	return descriptor.visible.gpu.ptr;
+}
+
+void Texture::__InitViewWithDescriptor(CPUDescriptor descriptor)
+{
+    auto device = context->GetAddress<Device>();
+    D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
+        .Format                  = format,
         .ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
 	    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
         .Texture2D               = { .MostDetailedMip = 0, .MipLevels = 1, .PlaneSlice = 0, .ResourceMinLODClamp = 0 },
     };
-    device->CreateView(resource, &srvDesc, descriptor.visible.cpu);
-	device->CreateView(resource, &srvDesc, descriptor.invisible);
+	device->CreateView(*this, &desc, descriptor);
+}
+
+CPUDescriptor Texture::GetDescriptor() const
+{
+	return descriptor.invisible;
 }
 
 void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
