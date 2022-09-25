@@ -11,7 +11,10 @@ namespace D3D12
 struct CPUDescriptor : D3D12_CPU_DESCRIPTOR_HANDLE
 {
 public:
-    CPUDescriptor() = default;
+    CPUDescriptor()
+    {
+		ptr = 0;
+    }
 
     explicit CPUDescriptor(const D3D12_CPU_DESCRIPTOR_HANDLE &o) noexcept :
         D3D12_CPU_DESCRIPTOR_HANDLE{ o }
@@ -49,7 +52,10 @@ public:
 struct GPUDescriptor : D3D12_GPU_DESCRIPTOR_HANDLE
 {
 public:
-    GPUDescriptor() = default;
+    GPUDescriptor()
+    {
+		ptr = 1;
+    }
 
     explicit GPUDescriptor(const D3D12_GPU_DESCRIPTOR_HANDLE &o) noexcept :
         D3D12_GPU_DESCRIPTOR_HANDLE{ o }

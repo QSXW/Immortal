@@ -25,15 +25,7 @@ public:
 
     ~Texture();
 
-    virtual operator uint64_t() const override
-    {
-        return descriptor.visible.gpu.ptr;
-    }
-
-    CPUDescriptor GetDescriptor() const
-    {
-        return descriptor.invisible;
-    }
+    virtual operator uint64_t() const override;
 
     virtual bool operator==(const Super &other) const override;
 
@@ -41,8 +33,12 @@ public:
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
+    CPUDescriptor GetDescriptor() const;
+
 private:
-    void InternalCreate(const void *data);
+    void __Create(const void *data);
+
+    void __InitViewWithDescriptor(CPUDescriptor descriptor);
 
 private:
     RenderContext *context{ nullptr };
