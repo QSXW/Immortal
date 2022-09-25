@@ -13,7 +13,8 @@ set(CORE_FILES
 
 set(ALGORITHM_FILES
     Algorithm/LightArray.h
-    Algorithm/LightVector.h)
+    Algorithm/LightVector.h
+    Algorithm/Rotate.h)
 
 set(AUDIO_FILES
     Audio/AudioSource.cpp

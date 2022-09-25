@@ -16,12 +16,11 @@ namespace D3D12
 {
 
 static const std::string shaderSource = R"(
-struct Properties
+cbuffer push_constant : register(b0)
 {
-    float4x4 ProjectionMatrix;
+    float2 uScale;
+    float2 uTranslate;
 };
-
-ConstantBuffer<Properties> push_constant : register(b0);
 
 struct VS_INPUT
 {
@@ -43,9 +42,11 @@ Texture2D texture0 : register(t0);
 PS_INPUT VSMain(VS_INPUT input)
 {
     PS_INPUT output;
-    output.pos = mul(push_constant.ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));
+    output.pos = float4(input.pos * uScale + uTranslate, 0, 1);
     output.col = input.col;
     output.uv  = input.uv;
+
+    output.pos.y = -output.pos.y;
     return output;
 }
 
@@ -80,8 +81,6 @@ void GuiLayer::OnAttach()
     auto window = context->GetAddress<Window>();
     ImGui_ImplWin32_Init(rcast<HWND>(window->Primitive()));
 
-    srvDescriptorHeap  = context->ShaderResourceViewDescritorHeap();
-
     Descriptor descriptor = context->AllocateShaderVisibleDescriptor();
 
     Ref<Shader> shader = new Shader{"imgui_shader_source.hlsl", shaderSource, Shader::Type::Graphics};
@@ -99,18 +98,22 @@ void GuiLayer::OnAttach()
         *context->GetAddress<Device>(),
          context->FrameSize(),
          context->Get<DXGI_FORMAT>(),
-        *srvDescriptorHeap,
-         descriptor.cpu,
-         descriptor.gpu
+	    *context->ShaderResourceViewDescritorHeap(),
+	    descriptor.cpu,
+	    descriptor.gpu
         );
-
-    __CreateFontsTexture();
 }
 
 void GuiLayer::Begin()
 {
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
+
+    if (!fonts)
+    {
+		__CreateFontsTexture();
+    }
+
     Super::__Begin();
 }
 
@@ -145,8 +148,10 @@ void GuiLayer::End()
         commandList->ClearRenderTargetView(rtvDescritor, rcast<float *>(&clearColor));
         commandList->SetRenderTargets(&rtvDescritor, 1, false, nullptr);
 
-        commandList->SetDescriptorHeaps(srvDescriptorHeap->AddressOf(), 1);
+		commandList->SetDescriptorHeaps(context->ShaderResourceViewDescritorHeap()->AddressOf(), 1);
+
         __RenderDrawData(commandList);
+
         barrier.Swap();
         commandList->ResourceBarrier(&barrier);
 
@@ -175,17 +180,18 @@ void GuiLayer::__CreateFontsTexture()
 
     fonts = new Texture{context, U32(width), U32(height), pixels, desc};
 
-    io.Fonts->SetTexID((ImTextureID) (uint64_t) *fonts);
+    io.Fonts->SetTexID((ImTextureID)(uint64_t)*fonts);
 }
 
 void GuiLayer::__RenderDrawData(CommandList *commandList)
 {
    ImDrawData *drawData = ImGui::GetDrawData();
 
-    auto &[vertex, index] = buffers[sync];
-    SLROTATE(sync, 3);
+    RenderBuffer &buffer = buffers;
+    auto &[vertex, index] = buffer;
 
-    if (drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f)
+    auto [width, height] = drawData->DisplaySize;
+	if (width <= 0.0f || height <= 0.0f)
     {
         return;
     }
@@ -198,7 +204,7 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
         if (!vertex || vertex->Size() < totalVertexSize)
         {
             vertex = new Buffer{ context, totalVertexSize, Buffer::Type::Vertex};
-        }
+         }
 
         if (!index || index->Size() < totalIndexSize)
         {
@@ -236,18 +242,20 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
 		commandList->SetPipelineState(*pipeline);
 		commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature&>());
 
-        float L = drawData->DisplayPos.x;
-        float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
-        float T = drawData->DisplayPos.y;
-        float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
-        float mvp[4][4] =
-        {
-            { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
-            { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
-            { 0.0f,         0.0f,           0.5f,       0.0f },
-            { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
+        struct {
+            float scale[2];
+            float translate[2];
+        } pushConstant {
+            .scale = {
+                2.0f / drawData->DisplaySize.x,
+                2.0f / drawData->DisplaySize.y,
+            },
+            .translate = {
+                -1.0f - drawData->DisplayPos.x * (2.0f / drawData->DisplaySize.x),
+		        -1.0f - drawData->DisplayPos.y * (2.0f / drawData->DisplaySize.y),
+            }
         };
-        commandList->PushConstant(sizeof(mvp), &mvp, 0);
+		commandList->PushConstant(sizeof(pushConstant), &pushConstant, 0);
 
         const float blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
         commandList->OMSetBlendFactor(blendFactor);
@@ -263,6 +271,7 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
 		commandList->RSSetViewports(&viewport);
 
         ImVec2 clipOff = drawData->DisplayPos;
+		ImVec2 clipScale = drawData->FramebufferScale; 
         int globalVertexOffset = 0;
         int globalIndexOffset = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++)
@@ -277,13 +286,29 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
                 }
                 else
                 {
-                    // Project scissor/clipping rectangles into framebuffer space
-                    ImVec2 clipMin(pcmd->ClipRect.x - clipOff.x, pcmd->ClipRect.y - clipOff.y);
-                    ImVec2 clipMax(pcmd->ClipRect.z - clipOff.x, pcmd->ClipRect.w - clipOff.y);
-                    if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
-                    {
-                        continue;
-                    }
+                    ImVec2 clipMin((pcmd->ClipRect.x - clipOff.x) * clipScale.x, (pcmd->ClipRect.y - clipOff.y) * clipScale.y);
+                    ImVec2 clipMax((pcmd->ClipRect.z - clipOff.x) * clipScale.x, (pcmd->ClipRect.w - clipOff.y) * clipScale.y);
+
+					if (clipMin.x < 0.0f)
+					{
+						clipMin.x = 0.0f;
+					}
+					if (clipMin.y < 0.0f)
+					{
+						clipMin.y = 0.0f;
+					}
+					if (clipMax.x > width)
+					{
+						clipMax.x = width;
+					}
+					if (clipMax.y > height)
+					{
+						clipMax.y = height;
+					}
+					if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
+					{
+						continue;
+					}
 
                     const D3D12_RECT rect = {
                         .left   = (LONG)clipMin.x,
@@ -293,7 +318,7 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
                     };
 					commandList->RSSetScissorRects(&rect);
 
-                    D3D12_GPU_DESCRIPTOR_HANDLE descriptor = {.ptr = (UINT64) pcmd->TextureId};
+                    D3D12_GPU_DESCRIPTOR_HANDLE descriptor = { .ptr = (UINT64) pcmd->TextureId };
                     commandList->SetGraphicsRootDescriptorTable(1, descriptor);
                     commandList->DrawIndexedInstanced(pcmd->ElemCount, 1, pcmd->IdxOffset + globalIndexOffset, pcmd->VtxOffset + globalVertexOffset, 0);
                 }
