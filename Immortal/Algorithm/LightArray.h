@@ -46,8 +46,23 @@ public:
     }
 
     T *data()
+	{
+		return _data;
+	}
+
+    const T *data() const
     {
         return _data;
+    }
+
+    T &front()
+    {
+		return _data[0];
+    }
+
+    T &back()
+    {
+		return _data[_size - 1];
     }
 
     void resize(size_t size)
@@ -79,6 +94,12 @@ public:
         SLASSERT(index < _size);
         return _data[index];
     }
+
+    const T &operator[](size_t index) const
+	{
+		SLASSERT(index < _size);
+		return _data[index];
+	}
 
     void clear()
     {

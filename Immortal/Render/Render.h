@@ -40,17 +40,20 @@ public:
     enum class Type
     {
         None   = 0,
-        Vulkan = BIT(1),
-        OpenGL = BIT(2),
-        D3D12  = BIT(3),
-        Metal  = BIT(4)
+        Vulkan = BIT(2),
+        OpenGL = BIT(3),
+		Metal  = BIT(4),
+        D3D    = BIT(5),
+		D3D11  = BITS(D3D, BIT(0)),
+		D3D12  = BITS(D3D, BIT(1)),
     };
 
-    static inline const char SAPIs[5][8]
+    static inline const char SAPIs[6][8]
     {
         { "None"   },
         { "Vulkan" },
         { "OpenGL" },
+	    { "D3D11"  },
         { "D3D12"  },
         { "Metal"  }
     };
@@ -85,8 +88,9 @@ public:
         case Type::None:   return SAPIs[0];
         case Type::Vulkan: return SAPIs[1];
         case Type::OpenGL: return SAPIs[2];
-        case Type::D3D12:  return SAPIs[3];
-        case Type::Metal:  return SAPIs[4];
+		case Type::D3D11:  return SAPIs[3];
+        case Type::D3D12:  return SAPIs[4];
+        case Type::Metal:  return SAPIs[5];
         default:           return SAPIs[0];
         }
     }

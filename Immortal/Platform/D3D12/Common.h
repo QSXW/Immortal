@@ -4,13 +4,8 @@
 #define __D3D12_COMMON_H__
 
 #include "Core.h"
-
-#include <wrl/client.h>
-using Microsoft::WRL::ComPtr;
-
-#include <initguid.h>
+#include "Platform/D3D/Interface.h"
 #include <D3d12.h>
-#include <dxgi.h>
 #include <dxgi1_4.h>
 #include <dxgi1_6.h>
 
@@ -26,25 +21,7 @@ namespace Immortal
 namespace D3D12
 {
 
-#define D3D_OPERATOR_PRIMITIVE(handle)                            \
-protected:                                                        \
-    ComPtr<Primitive> handle;                                     \
-                                                                  \
-public:                                                           \
-    Primitive *Handle() const                                     \
-    {                                                             \
-        return handle.Get();                                      \
-    }                                                             \
-                                                                  \
-    operator Primitive*() const                                   \
-    {                                                             \
-        return handle.Get();                                      \
-    }                                                             \
-                                                                  \
-    Primitive **operator &()                                      \
-    {                                                             \
-        return handle.GetAddressOf();                             \
-    }
+using namespace D3D;
 
 #define D3D12_OPERATOR_PRITIMIVE(handle)                          \
     D3D_OPERATOR_PRIMITIVE(handle)                                \
@@ -60,7 +37,6 @@ public:                                                           \
         return handle->SetName(name.c_str());                     \
     }
 
-#define D3D_OPERATOR_HANDLE() D3D_OPERATOR_PRIMITIVE(handle)
 #define D3D12_OPERATOR_HANDLE() D3D12_OPERATOR_PRITIMIVE(handle)
 
 namespace Definitions
@@ -129,23 +105,6 @@ struct DisplayChromaticities
     float WhiteX;
     float WhiteY;
 };
-
-static inline void Check(HRESULT result, const char *message = "")
-{
-    if (FAILED(result))
-    {
-        LOG::ERR("Status Code => {0}", GetLastError());
-        if (!message || !message[0])
-        {
-            LOG::ERR("{0}", "This is a DirectX 12 Execption. Check Output for more details...");
-        }
-        else
-        {
-            LOG::ERR("{0}", message);
-        }
-        throw Exception(message);
-    }
-}
 
 static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **ppAdapter)
 {

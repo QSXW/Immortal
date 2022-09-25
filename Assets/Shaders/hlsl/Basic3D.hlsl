@@ -13,20 +13,16 @@ struct PSInput
     float3 normal    : NORMAL;
     float3 tangent   : TANGENT;
     float2 uv        : TEXCOORD;
-    int    id        : OBJECT_ID;
 };
 
-struct Model
+cbuffer push_constant : register(b0)
 {
-    float4x4 transform;
-    float3   color;
-    float    roughness;
-    float    metallic;
-    int      objectID;
+    float4x4 _transform;
+    float3   _color;
+    float    _roughness;
+    float    _metallic;
+    int      _objectID;
 };
-
-ConstantBuffer<Model> push_constant : register(b0);
-#define model push_constant
 
 cbuffer ubo : register(b1)
 {
@@ -60,14 +56,13 @@ PSInput VSMain(VSInput input)
     PSInput result;
 
     input.position.y = -input.position.y;
-    float4 worldPos  = mul(model.transform, input.position);
+    float4 worldPos  = mul(_transform, input.position);
 
     result.worldPos     = (float3)worldPos;
     result.position     = mul(viewProjection, worldPos);
-    result.normal       = mul((float3x3)model.transform, input.normal);
+    result.normal       = mul((float3x3)_transform, input.normal);
     result.tangent      = input.tangent;
     result.uv           = input.uv;
-    result.id           = model.objectID;
 
     return result;
 }
@@ -82,11 +77,11 @@ PSOutput PSMain(PSInput input) : SV_TARGET
 {
     PSOutput output;
 
-    float3 objectColor = AlbodoMap.Sample(g_sampler, input.uv).rgb * model.color;
+    float3 objectColor = AlbodoMap.Sample(g_sampler, input.uv).rgb * _color;
     float3 N = normalize(input.normal);
 
     output.color    = float4(objectColor.xyz, 1.0f);
-    output.objectID = model.objectID;
+    output.objectID = _objectID;
 
     return output;
 }

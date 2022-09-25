@@ -13,7 +13,7 @@ namespace Immortal
 Window *Window::Create(const Description &description)
 {
 #ifdef _WIN32
-    if (Render::API == Render::Type::D3D12)
+    if (Render::API & Render::Type::D3D)
     {
         LOG::INFO("Creating window with Native Win32");
         return new DirectWindow{ description };

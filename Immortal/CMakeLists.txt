@@ -126,6 +126,37 @@ set(D3D12_FILES
     Platform/D3D12/Texture.cpp
     Platform/D3D12/Texture.h)
 
+set(D3D_FILES
+    Platform/D3D/Interface.h)
+
+set(D3D11_FILES
+    Platform/D3D11/Buffer.cpp
+    Platform/D3D11/Buffer.h
+    Platform/D3D11/Common.h
+    Platform/D3D11/Descriptor.h
+    Platform/D3D11/Device.cpp
+    Platform/D3D11/Device.h
+    Platform/D3D11/Fence.cpp
+    Platform/D3D11/Fence.h
+    Platform/D3D11/GuiLayer.cpp
+    Platform/D3D11/GuiLayer.h
+    Platform/D3D11/Image.cpp
+    Platform/D3D11/Image.h
+    Platform/D3D11/Pipeline.cpp
+    Platform/D3D11/Pipeline.h
+    Platform/D3D11/RenderContext.cpp
+    Platform/D3D11/RenderContext.h
+    Platform/D3D11/RenderTarget.cpp
+    Platform/D3D11/RenderTarget.h
+    Platform/D3D11/Swapchain.cpp
+    Platform/D3D11/Swapchain.h
+    Platform/D3D11/Sampler.cpp
+    Platform/D3D11/Sampler.h
+    Platform/D3D11/Shader.cpp
+    Platform/D3D11/Shader.h
+    Platform/D3D11/Texture.cpp
+    Platform/D3D11/Texture.h)
+
 set(VULKAN_FILES
    Platform/Vulkan/vk_mem_alloc.h
    Platform/Vulkan/volk.h
@@ -188,6 +219,8 @@ set(VULKAN_FILES
 set(OPENGL_FILES
     Platform/OpenGL/Buffer.cpp
     Platform/OpenGL/Buffer.h
+    Platform/OpenGL/CommandBuffer.cpp
+    Platform/OpenGL/CommandBuffer.h
     Platform/OpenGL/Common.h
     Platform/OpenGL/Descriptor.h
     Platform/OpenGL/GLFormat.h
@@ -312,6 +345,8 @@ source_group("Math\\"              FILES ${MATH_FILES}      )
 source_group("Memory\\"            FILES ${MEMORY_FILES}    )
 source_group("FileSystem\\"        FILES ${FS_FILES}        )
 source_group("Physics\\"           FILES ${PHYSICS_FILES}   )
+source_group("Platform\\D3D\\"     FILES ${D3D_FILES}       )
+source_group("Platform\\D3D11\\"   FILES ${D3D11_FILES}     )
 source_group("Platform\\D3D12\\"   FILES ${D3D12_FILES}     )
 source_group("Platform\\Vulkan\\"  FILES ${VULKAN_FILES}    )
 source_group("Platform\\OpenGL\\"  FILES ${OPENGL_FILES}    )
@@ -450,6 +485,8 @@ set(PROJECT_FILES
     ${WIDGET_FILES}
     ${NET_FILES}
     ${VISION_FILES}
+    $<$<C_COMPILER_ID:MSVC>:${D3D_FILES}>
+    $<$<C_COMPILER_ID:MSVC>:${D3D11_FILES}>
     $<$<C_COMPILER_ID:MSVC>:${D3D12_FILES}>
 )
 

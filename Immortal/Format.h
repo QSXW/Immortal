@@ -107,6 +107,11 @@ public:
 		return (other & v) != Format::None;
     }
 
+    bool IsDepth() const
+    {
+		return v == Depth32F || v == Depth24Stencil8;
+    }
+
     operator ValueType() const
     {
         return v;

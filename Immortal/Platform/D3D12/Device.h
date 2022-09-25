@@ -182,7 +182,7 @@ public:
     }
 
 protected:
-    ComPtr<IDXGIFactory4> dxgiFactory{ nullptr };
+    ComPtr<IDXGIFactory4> dxgiFactory;
 
     static inline bool UseWarpDevice{ false };
 };

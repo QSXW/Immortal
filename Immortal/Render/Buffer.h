@@ -194,15 +194,16 @@ public:
 
     enum class Type
     {
-        Layout,
-        Vertex              = BIT(1),
-        Index               = BIT(2),
-        Uniform             = BIT(3),
-        PushConstant        = BIT(4),
-        TransferSource      = BIT(5),
-        TransferDestination = BIT(6),
-        Storage             = BIT(7),
-        Unspecified         = BIT(31)
+        None                = 0,
+        Vertex              = BIT(0),
+        Index               = BIT(1),
+        Uniform             = BIT(2),
+        PushConstant        = BIT(3),
+        TransferSource      = BIT(4),
+        TransferDestination = BIT(5),
+        Storage             = BIT(6),
+		VideoDecoder        = BIT(7),
+        VideoEncoder        = BIT(8),
     };
 
     enum class Usage
@@ -224,7 +225,7 @@ public:
 
 public:
     Buffer() :
-        type{ Type::Unspecified }
+        type{ Type::None }
     {
 
     }

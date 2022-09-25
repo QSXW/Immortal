@@ -15,20 +15,20 @@ Shader::Manager Render::ShaderManager;
 Render::Data Render::data{};
 
 const Shader::Properties Render::ShaderProperties[] = {
-    { "AnimatedBasic3D",        U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
-    { "Basic",                  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    { "Basic3D",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    { "Render2D",               U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Graphics },
-    { "Outline",                U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
-    { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Graphics },
-    { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                             ), Shader::Type::Graphics },
-    { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Compute  },
-    { "color_space_yuv2rgba8",  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Compute  },
-    { "color_space_nv122rgba8", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D12), Shader::Type::Compute  },
-    { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
-    { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
-    { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                      ), Shader::Type::Compute  },
+    { "AnimatedBasic3D",        U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
+    { "Basic",                  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
+    { "Basic3D",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
+    { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
+    { "Render2D",               U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
+    { "Outline",                U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
+    { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
+    { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                           ), Shader::Type::Graphics },
+    { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
+    { "color_space_yuv2rgba8",  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
+    { "color_space_nv122rgba8", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
+    { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
+    { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
+    { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
 };
 
 Ref<Shader> Render::GetShader(const std::string &name)
@@ -49,7 +49,7 @@ void Render::Setup(RenderContext *context)
 
     {
         Profiler profiler{ "Loading Shader" };
-        auto asset = API == Type::D3D12 ? 1 : 0;
+        auto asset = API & Type::D3D ? 1 : 0;
         for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)
         {
             if (ncast<Render::Type>(ShaderProperties[i].API) & API)

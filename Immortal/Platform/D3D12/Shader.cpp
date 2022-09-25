@@ -53,12 +53,17 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, T
 		entryPoint = "main";
 	}
 
+    D3D_SHADER_MACRO defines[] = {
+	    { .Name = "__D3D12__", .Definition = NULL },
+	    { .Name = NULL,        .Definition = NULL },
+	};
+
 	__Check(
 	    D3DCompile(
 	        source.c_str(),
 	        source.size(),
 	        name.c_str(),
-	        nullptr,
+	        defines,
 	        nullptr,
 	        entryPoint,
 	        target,
@@ -78,7 +83,7 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, T
 		        source.c_str(),
 		        source.size(),
 		        name.c_str(),
-		        nullptr,
+		        defines,
 		        nullptr,
 		        "PSMain",
 		        "ps_5_1",

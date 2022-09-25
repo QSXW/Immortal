@@ -4,31 +4,25 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
-RWTexture2D<float4> InputImage  : register(u0);
+RWTexture2D<unorm float4> InputImage  : register(u0);
 RWTexture2D<float4> OutputImage : register(u1);
 
 SamplerState Sampler : register(s0);
 
-struct Properties
+cbuffer push_constant : register(b0)
 {
-    float4 Color;
-    float4 HSL;
-
-    float ColorTemperature;
-    float Hue;
-
-    float White;
-    float Black;
-
-    float Exposure;
-    float Contrast;
-    float Hightlights;
-    float Shadow;
-    float Vividness;
+    float4 _Color;
+    float4 _HSL;
+    float  _ColorTemperature;
+    float  _Hue;
+    float  _White;
+    float  _Black;
+    float  _Exposure;
+    float  _Contrast;
+    float  _Hightlights;
+    float  _Shadow;
+    float  _Vividness;
 };
-
-ConstantBuffer<Properties> push_constant : register(b8);
-#define properties push_constant
 
 float avg(float3 color)
 {
@@ -58,20 +52,20 @@ void main( uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_Grou
 {
     float4 res = InputImage[DTid.xy];
 
-    res += properties.Color;
+    res += _Color;
 
-    res.xyz = clamp(res.xyz + properties.White * res.xyz * 0.5f,          0.0f, 1.0f);
-    res.xyz = clamp(res.xyz + properties.Black * (1.0f - res.xyz) * 0.5f, 0.0f, 1.0f);
+    res.xyz = clamp(res.xyz + _White * res.xyz * 0.5f,          0.0f, 1.0f);
+    res.xyz = clamp(res.xyz + _Black * (1.0f - res.xyz) * 0.5f, 0.0f, 1.0f);
 
     float factor = 1.0;
-    if (properties.Exposure > 0.0)
+    if (_Exposure > 0.0)
     {
         factor = 1.2;
     }
 
     float3 hsv = rgb2hsv(res.xyz);
-    hsv.x  += properties.HSL.x;
-    hsv.yz *= properties.HSL.yz + 1.0f;
+    hsv.x  += _HSL.x;
+    hsv.yz *= _HSL.yz + 1.0f;
 
     hsv.x = fmod(hsv.x, 1.0f);
     hsv.yz = clamp(hsv.yz, 0.0f, 1.0f);
@@ -79,9 +73,9 @@ void main( uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_Grou
     res.xyz = hsv2rgb(hsv);
 
     /* Contrast */
-    res.rgb = ((res.rgb - 0.5f) * max(1.0f + properties.Contrast, 0)) + 0.5f;
+    res.rgb = ((res.rgb - 0.5f) * max(1.0f + _Contrast, 0)) + 0.5f;
 
-    res.rgb = pow(res.rgb, float(1 / (1.0 + factor * (properties.Exposure - properties.Contrast))).xxx);
+    res.rgb = pow(res.rgb, float(1 / (1.0 + factor * (_Exposure - _Contrast))).xxx);
 
     OutputImage[DTid.xy] = res;
 }

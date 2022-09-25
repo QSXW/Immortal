@@ -5,9 +5,6 @@
 #endif
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx12.cpp>
-#include <backends/imgui_impl_glfw.h>
-
-#include <GLFW/glfw3.h>
 
 #include "Render/Render.h"
 #include "Barrier.h"

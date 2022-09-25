@@ -61,14 +61,18 @@ void GuiLayer::End()
     Application *app = Application::App();
     io.DisplaySize = ImVec2((float)app->Width(), (float)app->Height());
 
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    Submit([] {
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	});
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
-        GLFWwindow *backCurrentContext = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backCurrentContext);
+		Submit([] {
+			GLFWwindow *backCurrentContext = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backCurrentContext);
+		});
     }
 }
 }

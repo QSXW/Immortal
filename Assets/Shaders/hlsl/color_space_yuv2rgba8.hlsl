@@ -4,21 +4,18 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
-RWTexture2D<float4> InputImage0 : register(u0);
-RWTexture2D<float4> InputImage1 : register(u1);
-RWTexture2D<float4> InputImage2 : register(u2);
+RWTexture2D<unorm float4> InputImage0 : register(u0);
+RWTexture2D<unorm float4> InputImage1 : register(u1);
+RWTexture2D<unorm float4> InputImage2 : register(u2);
 RWTexture2D<float4> OutputImage : register(u3);
 
 SamplerState Sampler : register(s0);
 
-struct Properties
+cbuffer push_constant : register(b0)
 {
-    int ColorSpace;
+    int _ColorSpace;
     int _10Bits;
 };
-
-ConstantBuffer<Properties> push_constant : register(b0);
-#define uProperties push_constant
 
 [numthreads(1, 1, 1)]
 void main(uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_GroupThreadID, uint3 DTid : SV_DispatchThreadID)
@@ -29,7 +26,7 @@ void main(uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_Group
     pixel.y = InputImage1[DTid.xy * 0.5f].x;
     pixel.z = InputImage2[DTid.xy * 0.5f].x;
 
-    if (uProperties._10Bits == 1)
+    if (_10Bits == 1)
     {
         pixel.xyz *= 65536 / 1023;
     }

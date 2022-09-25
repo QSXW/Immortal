@@ -29,6 +29,9 @@ set(GLSL_FILES
 set(HLSL_FILES
     Basic.hlsl
     Basic3D.hlsl
+    ColorMixing.hlsl
+    color_space_nv122rgba8.hlsl
+    color_space_yuv2rgba8.hlsl
     Render2D.hlsl
     Texture.hlsl)
 

@@ -4,7 +4,6 @@
 #include "Render/Shader.h"
 
 #include <array>
-#include <d3dcompiler.h>
 #include <d3d12shader.h>
 
 namespace Immortal
