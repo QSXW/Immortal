@@ -23,7 +23,7 @@ public:
 
     using Semaphore = State;
 
-    static long Self()
+    static long Id()
     {
 #ifndef __GNUC__
         return GetCurrentThreadId();
@@ -33,6 +33,13 @@ public:
     }
 
 public:
+    Thread() :
+        stub{},
+        handle{}
+    {
+
+    }
+
     template <class T>
     Thread(T task)
     {
@@ -44,22 +51,25 @@ public:
 
     ~Thread()
     {
-        handle->join();
+		Join();
     }
 
     void Start()
     {
-        handle = new std::thread{ stub };
+        handle = new std::jthread{ stub };
     }
 
     void Join()
     {
-        handle->join();
+        if (handle->joinable())
+        {
+			handle->join();
+        }
     }
 
     std::function<void()> stub;
 
-    MonoRef<std::thread> handle;
+    URef<std::jthread> handle;
 };
 
 using Task = std::function<void()>;
@@ -67,7 +77,7 @@ using Task = std::function<void()>;
 class ThreadPool
 {
 public:
-    ThreadPool(uint32_t num);
+    ThreadPool(uint32_t numThreads);
 
     ~ThreadPool();
 
@@ -83,6 +93,7 @@ public:
             tasks.emplace([=]() -> void {
                 (*wrapper)();
             });
+            semaphores.insert((Anonymous) &tasks.back());
         }
 
         condition.notify_one();
@@ -92,7 +103,7 @@ public:
 private:
     std::vector<std::thread> threads;
 
-    Thread::Semaphore semaphores[256];
+    std::set<Anonymous> semaphores;
 
     std::condition_variable condition;
 

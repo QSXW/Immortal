@@ -35,7 +35,7 @@ public:
     }
 
 private:
-    MonoRef<Vision::Interface::Codec> decoder;
+    URef<Vision::Interface::Codec> decoder;
 };
 
 }

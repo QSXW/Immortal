@@ -91,155 +91,170 @@ set(PHYSICS_FILES
     Physics/Physics.cpp
     Physics/Physics.h)
 
-set(D3D12_FILES
-    Platform/D3D12/Barrier.h
-    Platform/D3D12/Buffer.cpp
-    Platform/D3D12/Buffer.h
-    Platform/D3D12/CommandAllocator.cpp
-    Platform/D3D12/CommandAllocator.h
-    Platform/D3D12/CommandList.cpp
-    Platform/D3D12/CommandList.h
-    Platform/D3D12/Common.h
-    Platform/D3D12/DescriptorHeap.cpp
-    Platform/D3D12/DescriptorHeap.h
-    Platform/D3D12/Descriptor.cpp
-    Platform/D3D12/Descriptor.h
-    Platform/D3D12/Device.cpp
-    Platform/D3D12/Device.h
-    Platform/D3D12/Fence.cpp
-    Platform/D3D12/Fence.h
-    Platform/D3D12/GuiLayer.cpp
-    Platform/D3D12/GuiLayer.h
-    Platform/D3D12/Pipeline.cpp
-    Platform/D3D12/Pipeline.h
-    Platform/D3D12/Queue.cpp
-    Platform/D3D12/Queue.h
-    Platform/D3D12/RenderContext.cpp
-    Platform/D3D12/RenderContext.h
-    Platform/D3D12/RenderTarget.cpp
-    Platform/D3D12/RenderTarget.h
-    Platform/D3D12/Resource.h
-    Platform/D3D12/RootSignature.h
-    Platform/D3D12/Swapchain.cpp
-    Platform/D3D12/Swapchain.h
-    Platform/D3D12/Shader.cpp
-    Platform/D3D12/Shader.h
-    Platform/D3D12/Texture.cpp
-    Platform/D3D12/Texture.h)
-
 set(D3D_FILES
     Platform/D3D/Interface.h)
 
 set(D3D11_FILES
-    Platform/D3D11/Buffer.cpp
-    Platform/D3D11/Buffer.h
-    Platform/D3D11/Common.h
-    Platform/D3D11/Descriptor.h
-    Platform/D3D11/Device.cpp
-    Platform/D3D11/Device.h
-    Platform/D3D11/Fence.cpp
-    Platform/D3D11/Fence.h
-    Platform/D3D11/GuiLayer.cpp
-    Platform/D3D11/GuiLayer.h
-    Platform/D3D11/Image.cpp
-    Platform/D3D11/Image.h
-    Platform/D3D11/Pipeline.cpp
-    Platform/D3D11/Pipeline.h
-    Platform/D3D11/RenderContext.cpp
-    Platform/D3D11/RenderContext.h
-    Platform/D3D11/RenderTarget.cpp
-    Platform/D3D11/RenderTarget.h
-    Platform/D3D11/Swapchain.cpp
-    Platform/D3D11/Swapchain.h
-    Platform/D3D11/Sampler.cpp
-    Platform/D3D11/Sampler.h
-    Platform/D3D11/Shader.cpp
-    Platform/D3D11/Shader.h
-    Platform/D3D11/Texture.cpp
-    Platform/D3D11/Texture.h)
+    Buffer.cpp
+    Buffer.h
+    Common.h
+    Descriptor.h
+    Device.cpp
+    Device.h
+    Fence.cpp
+    Fence.h
+    GuiLayer.cpp
+    GuiLayer.h
+    Image.cpp
+    Image.h
+    Pipeline.cpp
+    Pipeline.h
+    RenderContext.cpp
+    RenderContext.h
+    RenderTarget.cpp
+    RenderTarget.h
+    Swapchain.cpp
+    Swapchain.h
+    Sampler.cpp
+    Sampler.h
+    Shader.cpp
+    Shader.h
+    Texture.cpp
+    Texture.h)
 
-set(VULKAN_FILES
-   Platform/Vulkan/vk_mem_alloc.h
-   Platform/Vulkan/volk.h
-   Platform/Vulkan/Attachment.h
-   Platform/Vulkan/Barrier.h
-   Platform/Vulkan/Buffer.cpp
-   Platform/Vulkan/Buffer.h
-   Platform/Vulkan/Common.cpp
-   Platform/Vulkan/Common.h
-   Platform/Vulkan/Device.cpp
-   Platform/Vulkan/Device.h
-   Platform/Vulkan/CommandBuffer.cpp
-   Platform/Vulkan/CommandBuffer.h
-   Platform/Vulkan/CommandPool.cpp
-   Platform/Vulkan/CommandPool.h
-   Platform/Vulkan/Descriptor.h
-   Platform/Vulkan/DescriptorPool.cpp
-   Platform/Vulkan/DescriptorPool.h
-   Platform/Vulkan/DescriptorSet.cpp
-   Platform/Vulkan/DescriptorSet.h
-   Platform/Vulkan/FencePool.cpp
-   Platform/Vulkan/FencePool.h
-   Platform/Vulkan/Framebuffer.cpp
-   Platform/Vulkan/Framebuffer.h
-   Platform/Vulkan/GuiLayer.cpp
-   Platform/Vulkan/GuiLayer.h
-   Platform/Vulkan/Image.cpp
-   Platform/Vulkan/Image.h
-   Platform/Vulkan/ImageView.cpp
-   Platform/Vulkan/ImageView.h
-   Platform/Vulkan/Instance.cpp
-   Platform/Vulkan/Instance.h
-   Platform/Vulkan/Pipeline.cpp
-   Platform/Vulkan/Pipeline.h
-   Platform/Vulkan/PipelineLayout.h
-   Platform/Vulkan/PhysicalDevice.cpp
-   Platform/Vulkan/PhysicalDevice.h
-   Platform/Vulkan/Queue.cpp
-   Platform/Vulkan/Queue.h
-   Platform/Vulkan/RenderContext.cpp
-   Platform/Vulkan/RenderContext.h
-   Platform/Vulkan/RenderTarget.cpp
-   Platform/Vulkan/RenderTarget.h
-   Platform/Vulkan/SemaphorePool.cpp
-   Platform/Vulkan/SemaphorePool.h
-   Platform/Vulkan/Swapchain.cpp
-   Platform/Vulkan/Swapchain.h
-   Platform/Vulkan/Sampler.cpp
-   Platform/Vulkan/Sampler.h
-   Platform/Vulkan/Shader.cpp
-   Platform/Vulkan/Shader.h
-   Platform/Vulkan/Submitter.h
-   Platform/Vulkan/Texture.cpp
-   Platform/Vulkan/Texture.h
-   Platform/Vulkan/VideoSession.cpp
-   Platform/Vulkan/VideoSession.h
-   Platform/Vulkan/RenderPass.cpp
-   Platform/Vulkan/RenderPass.h)
+list(TRANSFORM D3D11_FILES PREPEND "Platform/D3D11/")
+
+set(D3D12_FILES
+    Barrier.h
+    Buffer.cpp
+    Buffer.h
+    CommandAllocator.cpp
+    CommandAllocator.h
+    CommandList.cpp
+    CommandList.h
+    Common.h
+    DescriptorHeap.cpp
+    DescriptorHeap.h
+    Descriptor.cpp
+    Descriptor.h
+    Device.cpp
+    Device.h
+    Fence.cpp
+    Fence.h
+    GuiLayer.cpp
+    GuiLayer.h
+    Pipeline.cpp
+    Pipeline.h
+    Queue.cpp
+    Queue.h
+    RenderContext.cpp
+    RenderContext.h
+    RenderTarget.cpp
+    RenderTarget.h
+    Resource.h
+    RootSignature.h
+    Swapchain.cpp
+    Swapchain.h
+    Shader.cpp
+    Shader.h
+    Texture.cpp
+    Texture.h
+    VideoCommon.h
+    VideoDecodeCommandList.h
+    VideoDecoder.cpp
+    VideoDecoder.h
+    VideoDecoderHeap.h
+    VideoDevice.cpp
+    VideoDevice.h)
+
+list(TRANSFORM D3D12_FILES PREPEND "Platform/D3D12/")
 
 set(OPENGL_FILES
-    Platform/OpenGL/Buffer.cpp
-    Platform/OpenGL/Buffer.h
-    Platform/OpenGL/CommandBuffer.cpp
-    Platform/OpenGL/CommandBuffer.h
-    Platform/OpenGL/Common.h
-    Platform/OpenGL/Descriptor.h
-    Platform/OpenGL/GLFormat.h
-    Platform/OpenGL/Framebuffer.cpp
-    Platform/OpenGL/Framebuffer.h
-    Platform/OpenGL/GuiLayer.cpp
-    Platform/OpenGL/GuiLayer.h
-    Platform/OpenGL/RenderContext.cpp
-    Platform/OpenGL/RenderContext.h
-    Platform/OpenGL/RenderTarget.cpp
-    Platform/OpenGL/RenderTarget.h
-    Platform/OpenGL/Shader.cpp
-    Platform/OpenGL/Shader.h
-    Platform/OpenGL/Pipeline.cpp
-    Platform/OpenGL/Pipeline.h
-    Platform/OpenGL/Texture.cpp
-    Platform/OpenGL/Texture.h
-    Platform/OpenGL/VertexArray.h)
+    Buffer.cpp
+    Buffer.h
+    CommandBuffer.cpp
+    CommandBuffer.h
+    Common.h
+    Descriptor.h
+    GLFormat.h
+    Framebuffer.cpp
+    Framebuffer.h
+    GuiLayer.cpp
+    GuiLayer.h
+    RenderContext.cpp
+    RenderContext.h
+    RenderTarget.cpp
+    RenderTarget.h
+    Shader.cpp
+    Shader.h
+    Pipeline.cpp
+    Pipeline.h
+    Texture.cpp
+    Texture.h
+    VertexArray.h)
+
+list(TRANSFORM OPENGL_FILES PREPEND "Platform/OpenGL/")
+
+set(VULKAN_FILES
+   vk_mem_alloc.h
+   volk.h
+   Attachment.h
+   Barrier.h
+   Buffer.cpp
+   Buffer.h
+   Common.cpp
+   Common.h
+   Device.cpp
+   Device.h
+   CommandBuffer.cpp
+   CommandBuffer.h
+   CommandPool.cpp
+   CommandPool.h
+   Descriptor.h
+   DescriptorPool.cpp
+   DescriptorPool.h
+   DescriptorSet.cpp
+   DescriptorSet.h
+   FencePool.cpp
+   FencePool.h
+   Framebuffer.cpp
+   Framebuffer.h
+   GuiLayer.cpp
+   GuiLayer.h
+   Image.cpp
+   Image.h
+   ImageView.cpp
+   ImageView.h
+   Instance.cpp
+   Instance.h
+   Pipeline.cpp
+   Pipeline.h
+   PipelineLayout.h
+   PhysicalDevice.cpp
+   PhysicalDevice.h
+   Queue.cpp
+   Queue.h
+   RenderContext.cpp
+   RenderContext.h
+   RenderTarget.cpp
+   RenderTarget.h
+   SemaphorePool.cpp
+   SemaphorePool.h
+   Swapchain.cpp
+   Swapchain.h
+   Sampler.cpp
+   Sampler.h
+   Shader.cpp
+   Shader.h
+   Submitter.h
+   Texture.cpp
+   Texture.h
+   VideoSession.cpp
+   VideoSession.h
+   RenderPass.cpp
+   RenderPass.h)
+
+list(TRANSFORM VULKAN_FILES PREPEND "Platform/Vulkan/")
 
 set(WINDOWS_FILES
     Platform/Windows/GLFWWindow.cpp
@@ -298,7 +313,10 @@ set(SCENE_FILES
     Scene/Scene.cpp
     Scene/Scene.h
     Scene/SceneCamera.cpp
-    Scene/SceneCamera.h)
+    Scene/SceneCamera.h
+    Scene/ScriptComponent.cpp
+    Scene/SpriteRendererComponent.cpp
+    Scene/VideoComponent.cpp)
 
 set(SCRIPT_FILES
     Script/ScriptEngine.cpp
@@ -327,8 +345,7 @@ set(WIDGET_FILES
     Widget/MenuBar.h
     Widget/Resource.h
     Widget/Widget.cpp
-    Widget/Widget.h
-    Widget/Viewport.h)
+    Widget/Widget.h)
 
 set(NET_FILES
     Net/Socket.h)
@@ -375,7 +392,8 @@ set(COMMON_FILES
     Vision/Common/Checksum.cpp
     Vision/Common/Checksum.h
     Vision/Common/Error.h
-    Vision/Common/NetworkAbstractionLayer.h)
+    Vision/Common/NetworkAbstractionLayer.h
+    Vision/Common/SamplingFactor.h)
 
 set(DEMUX_FILES
     Vision/Demux/FFDemuxer.cpp
@@ -420,6 +438,10 @@ set(VIDEO_CODEC_FILES
     Vision/Video/HEVC.h
     Vision/Video/Video.h)
 
+set(D3D12_VIDEO_FILES
+    Vision/Video/D3D12/HEVCCodec.cpp
+    Vision/Video/D3D12/HEVCCodec.h)
+
 set(VULKAN_VIDEO_FILES
     Vision/Video/Vulkan/HEVC.cpp
     Vision/Video/Vulkan/HEVC.h)
@@ -440,6 +462,7 @@ source_group("\\Vision\\Interface\\"     FILES ${VISION_INTERFACE_FILES})
 source_group("\\Vision\\LookupTable\\"   FILES ${LOOKUP_TABLE_FILE}     )
 source_group("\\Vision\\Image\\"         FILES ${IMAGE_CODEC_FILES}     )
 source_group("\\Vision\\Video\\"         FILES ${VIDEO_CODEC_FILES}     )
+source_group("\\Vision\\Video\\D3D12\\"  FILES ${D3D12_VIDEO_FILES}     )
 source_group("\\Vision\\Video\\Vulkan\\" FILES ${VULKAN_VIDEO_FILES}    )
 source_group("\\Vision\\External\\"      FILES ${EXTERNAL_FILES}        )
 source_group("\\Vision\\Processing\\"    FILES ${PROCESSING_FILES}      )
@@ -456,7 +479,7 @@ set(VISION_FILES
     ${VIDEO_CODEC_FILES}
     ${VULKAN_VIDEO_FILES}
     ${PROCESSING_FILES}
-)
+    $<$<C_COMPILER_ID:MSVC>:${D3D12_VIDEO_FILES}>)
 
 set(PROJECT_FILES
     ${CORE_FILES}
@@ -473,8 +496,8 @@ set(PROJECT_FILES
     ${MEMORY_FILES}
     ${IO_FILES}
     ${PHYSICS_FILES}
-    ${VULKAN_FILES}
     ${OPENGL_FILES}
+    ${VULKAN_FILES}
     ${WINDOWS_FILES}
     ${RENDER_FILES}
     ${SCENE_FILES}

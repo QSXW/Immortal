@@ -31,6 +31,7 @@ class IMMORTAL_API Texture : public IObject
 {
 public:
     template<class T>
+    requires std::is_integral_v<T>
     static constexpr T CalculateMipmapLevels(T width, T height)
     {
         T levels = 1;
@@ -71,20 +72,18 @@ public:
 
         }
 
-        Description(Wrap wrap, Filter filter = Filter::Nearest, bool mipLevels = true, Texture::Type type = Texture::Type::Texture2D) :
+        Description(Wrap wrap, Filter filter = Filter::Nearest, bool mipLevels = true) :
             wrap{ wrap },
             filter{ filter },
-            type{ type },
             mipLevels{ mipLevels }
         {
 
         }
 
-        Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, bool mipLevels = true, Texture::Type type = Texture::Type::Texture2D) :
+        Description(Format format, Wrap wrap = Wrap::Clamp, Filter filter = Filter::Nearest, bool mipLevels = true) :
             format{ format },
             wrap{ wrap },
             filter{ filter },
-            type{ type },
             mipLevels{ mipLevels }
         {
 
@@ -98,7 +97,6 @@ public:
         Format format = Format::RGBA8;
         Wrap   wrap   = Wrap::Clamp;
         Filter filter = Filter::Nearest;
-        Type   type   = Type::Texture2D;
 
         bool mipLevels = true;
         bool Anisotropic{ true };
@@ -110,17 +108,10 @@ public:
 
     }
 
-    Texture(const std::string &source) :
-        source{ source }
-    {
-
-    }
-
-    Texture(uint32_t width, uint32_t height, const std::string &source = {}) :
-        source{ source },
+    Texture(uint32_t width, uint32_t height, bool isMipLevel = false) :
         width{ width },
         height{ height },
-        mipLevels{ CalculateMipmapLevels(width, height) }
+        mipLevels{ isMipLevel ? CalculateMipmapLevels(width, height) : 1 }
     {
 
     }
@@ -142,11 +133,11 @@ public:
         return ncast<float>(width) / ncast<float>(height);
     }
 
-    void Update(uint32_t w, uint32_t h)
+    void SetProperties(uint32_t _width, uint32_t _height, bool isMipLevel = false)
     {
-        width     = w;
-        height    = h;
-        mipLevels = CalculateMipmapLevels(w, h);
+        width     = _width;
+        height    = _height;
+        mipLevels = isMipLevel ? CalculateMipmapLevels(width, height) : 1;
     }
 
     virtual operator uint64_t() const
@@ -171,14 +162,13 @@ public:
 
     virtual void Update(const void *data, uint32_t pitchX = 0) {}
 
+    virtual void CopyImage(const uint8_t *const *data, const int *pLinesize, int height, int planes) {}
+
+    virtual void PlatformSpecifiedUpdate(Anonymous resource, UINT subresource) {}
+
     virtual void Blit() {}
 
     virtual void Map(uint32_t slot = 0) { }
-
-    virtual const std::string &Source() const
-    {
-        return source;
-    }
 
     virtual bool operator==(const Texture &other) const
     {
@@ -188,8 +178,6 @@ public:
     virtual void BindImageTexture(bool layered) { }
 
 protected:
-    std::string source;
-
     uint32_t width = 0;
 
     uint32_t height = 0;
@@ -206,12 +194,6 @@ public:
     using Super = Texture;
 
     TextureCube()
-    {
-
-    }
-
-    TextureCube(const std::string &source) :
-        Super{ source }
     {
 
     }

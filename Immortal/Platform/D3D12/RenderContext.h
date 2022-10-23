@@ -69,6 +69,8 @@ public:
 
 	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 
+    virtual Anonymous GetDevice() const override;
+
     virtual SuperGuiLayer *CreateGuiLayer() override;
 
 	virtual SuperBuffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
@@ -198,6 +200,15 @@ public:
     {
         auto cmdlist = transferDispatcher->GetCommandList();
         process(graphicsDispatcher->GetCommandList(), cmdlist);
+    }
+
+    template <class T>
+    void TransferSync(T&& process)
+    {
+		auto cmdlist = transferDispatcher->GetCommandList();
+		process(graphicsDispatcher->GetCommandList(), cmdlist);
+		transferDispatcher->Execute();
+		transferDispatcher->WaitIdle();
     }
 
     template <class T>

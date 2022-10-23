@@ -76,10 +76,11 @@ public:
                     ->Width(192.0f)
                     ->Height(260.0f)
                     ->Text("Right Click Menu")
-                    ->BackgroundColor({.15f, .15f, .15f, 1.0f})
+                    ->Color({.15f, .15f, .15f, 1.0f})
                     ->Wrap({ 
                     objectEditorText
                         ->Text("Object Editor")
+		                ->Height(10)
                         ->Color({1.0f, 1.0f, 1.0f, .65f}),
                     separator,
                     items.primary
@@ -199,7 +200,7 @@ public:
         }
         else
         {
-            if (editableArea->IsHovered())
+            if (viewport->IsHovered())
             {
                 camera.primary->OnUpdate();
             }
@@ -252,7 +253,7 @@ public:
 
     void UpdateRightClickMenu()
     {
-        if (editableArea->IsHovered() && !ImGuizmo::IsOver() &&
+        if (viewport->IsHovered() && !ImGuizmo::IsOver() &&
             Input::IsMouseButtonPressed(MouseCode::Right) && !Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::Alt)
             && !panels.tools->IsControlActive(WTools::Start))
         {
@@ -326,7 +327,12 @@ public:
             else if (FileSystem::IsVideo(filepath))
             {
                 Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
-                Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
+                Ref<Vision::VideoCodec> decoder = new Vision::D3D12::HEVCCodec;
+
+                Vision::CodedFrame codecFrame;
+				demuxer->Open(res.value(), decoder);
+				demuxer->Read(&codecFrame);
+				decoder->Decode(codecFrame);
 
                 demuxer->Open(filepath, decoder);
                 Vision::CodedFrame codedFrame;
@@ -483,7 +489,7 @@ public:
 
     bool OnMouseDown(MouseButtonPressedEvent &e)
     {
-        if (editableArea->IsHovered() && !ImGuizmo::IsOver())
+		if (viewport->IsHovered() && !ImGuizmo::IsOver())
         {
             if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control))
             {
@@ -498,7 +504,7 @@ public:
 
     bool OnMouseScrolled(MouseScrolledEvent &e)
     {
-        if (editableArea->IsHovered())
+		if (viewport->IsHovered())
         {
             return camera.primary->OnMouseScrolled(e);
         }

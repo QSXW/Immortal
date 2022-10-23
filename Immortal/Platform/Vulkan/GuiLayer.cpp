@@ -187,7 +187,7 @@ void GuiLayer::End()
 
     ImGuiIO &io = ImGui::GetIO();
 
-    const auto &[width, height] = context->Get<Extent2D>();
+    const auto &[width, height] = context->GetViewportSize();
     
     if (width > 0 && height > 0)
 	{

@@ -89,7 +89,7 @@ public:
 
     bool IsExtensionSupport(const std::string &extension) const
     {
-        return availableExtensions.find(extension) != availableExtensions.end();
+		return deviceExtensions.find(extension) != deviceExtensions.end();
     }
 
 public:
@@ -494,7 +494,7 @@ private:
 
     VkSurfaceKHR surface{ VK_NULL_HANDLE };
 
-    std::unordered_set<std::string> availableExtensions;
+    std::unordered_set<std::string> deviceExtensions;
 
     std::vector<const char *> enabledExtensions;
 
@@ -502,13 +502,13 @@ private:
 
     std::vector<std::vector<Queue>> queues;
 
-    std::unique_ptr<CommandPool> commandPool;
+    URef<CommandPool> commandPool;
 
-    std::unique_ptr<FencePool> fencePool;
+    URef<FencePool> fencePool;
 
-    std::unique_ptr<DescriptorPool> descriptorPool;
+    URef<DescriptorPool> descriptorPool;
 
-    std::array<MonoRef<TimelineCommandBuffer>, 3> timelineCommandBuffers;
+    std::array<URef<TimelineCommandBuffer>, 3> timelineCommandBuffers;
 
     struct {
         std::array<std::queue<std::function<void()>>, 6> queues;

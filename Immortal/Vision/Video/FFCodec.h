@@ -7,6 +7,7 @@
 
 struct AVFrame;
 struct AVCodec;
+struct AVBufferRef;
 struct AVCodecContext;
 struct AVCodecParameters;
 namespace Immortal
@@ -22,19 +23,25 @@ public:
 
     virtual ~FFCodec();
 
-    virtual CodecError Decode(const CodedFrame &codedFrame);
+    virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    virtual uint8_t *Data() const;
+    virtual uint8_t *Data() const override;
 
-    virtual Picture GetPicture() const;
+    virtual Picture GetPicture() const override;
 
 public:
-    void SetCodecContext(const AVCodec *codec, const AVCodecParameters *parameters);
+	virtual CodecError SetCodecContext(Anonymous anonymous) override;
 
 protected:
     AVCodecContext *handle;
 
+    AVBufferRef *device;
+
+    Format format;
+
     AVFrame *frame;
+
+    PictureType type;
 #endif // HAVE_FFMPEG
 };
 

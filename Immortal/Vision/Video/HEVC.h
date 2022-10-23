@@ -340,7 +340,7 @@ struct NetworkAbstractionLayer : SuperNetworkAbstractionLayer
 
 using NAL = NetworkAbstractionLayer;
 
-class HEVCCodec : public Interface::Codec
+class HEVCCodec : public VideoCodec
 {
 public:
     enum
@@ -352,6 +352,8 @@ public:
     virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
 
     virtual CodecError Parse(const std::vector<uint8_t> &buffer) override;
+
+    CodecError Parse(const uint8_t *data, size_t size);
 
 protected:
     VideoParameterSet *vps;

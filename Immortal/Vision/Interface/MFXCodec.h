@@ -37,7 +37,7 @@ public:
 
     struct FrameSurface : public mfxFrameSurface1
     {
-       
+
     };
 
 public:
@@ -51,13 +51,20 @@ protected:
     mfxStatus CheckAdapterSupported();
 
 protected:
-    MonoRef<MFXVideoDECODE> handle;
-    MonoRef<MFXVideoSession> session;
+    URef<MFXVideoDECODE> handle;
+
+    URef<MFXVideoSession> session;
+
     mfxVideoParam videoParam;
+
     BitStreamReference bitstream;
+
     FrameSurface surface;
+
     mfxSyncPoint syncPoint;
+
     mfxVersion version;
+
     mfxIMPL impl;
 #endif
 };

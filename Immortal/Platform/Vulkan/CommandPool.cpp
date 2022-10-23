@@ -7,9 +7,8 @@ namespace Immortal
 namespace Vulkan
 {
 
-CommandPool::CommandPool(Device *device, uint32_t queueFamilyIndex, size_t threadIndex, CommandBuffer::ResetMode resetMode) :
+CommandPool::CommandPool(Device *device, uint32_t queueFamilyIndex, CommandBuffer::ResetMode resetMode) :
     device{ device },
-    threadIndex{ threadIndex },
     resetMode{ resetMode }
 {
     VkCommandPoolCreateFlags flags;
@@ -56,7 +55,6 @@ void CommandPool::__Shift(CommandPool &other)
     queueFamilyIndex        = other.queueFamilyIndex;
     allocatedBuffers        = std::move(other.allocatedBuffers);
     queue                   = std::move(queue);
-    threadIndex             = other.threadIndex;
     resetMode               = other.resetMode;
 
     other.handle            = VK_NULL_HANDLE;

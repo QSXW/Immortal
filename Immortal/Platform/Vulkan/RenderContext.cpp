@@ -175,7 +175,7 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
 }
 
 VkDescriptorSetLayout RenderContext::DescriptorSetLayout{ VK_NULL_HANDLE };
-MonoRef<Sampler> RenderContext::ImmutableSampler;
+URef<Sampler> RenderContext::ImmutableSampler;
 void RenderContext::SetupDescriptorSetLayout()
 {
     VkSamplerCreateInfo samplerInfo = {
@@ -284,45 +284,40 @@ void RenderContext::SwapBuffers()
 {
 	uint64_t signalValues[3] = {0};
 
+	if (device->IsCommandBufferRecorded<Queue::Type::Transfer>())
 	{
-		if (device->IsCommandBufferRecorded<Queue::Type::Transfer>())
-		{
-			signalValues[0] = ++syncValues[sync];
-			auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({timelineSemaphore, signalValues[0]});
-			TimelineSubmitter timelineSubmitter{};
-			timelineSubmitter.Signal(signalValues[0]);
+		signalValues[0] = ++syncValues[sync];
+		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({timelineSemaphore, signalValues[0]});
+		TimelineSubmitter timelineSubmitter{};
+		timelineSubmitter.Signal(signalValues[0]);
 
-			Submitter submitter{};
-			submitter.SignalSemaphore(timelineSemaphore);
-			submitter.Execute(commandBuffers);
-			submitter.Trampoline(timelineSubmitter);
+		Submitter submitter{};
+		submitter.SignalSemaphore(timelineSemaphore);
+		submitter.Execute(commandBuffers);
+		submitter.Trampoline(timelineSubmitter);
 
-			auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
-			transferQueue.Submit(submitter, nullptr);
-		}
-	}
-	{
-		if (device->IsCommandBufferRecorded<Queue::Type::Compute>())
-		{
-			signalValues[1] = ++syncValues[sync];
-			auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Compute>({timelineSemaphore, signalValues[1]});
-
-			TimelineSubmitter timelineSubmitter{};
-			timelineSubmitter.Wait(signalValues[0]);
-			timelineSubmitter.Signal(signalValues[1]);
-
-			Submitter submitter{};
-			submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-			submitter.SignalSemaphore(timelineSemaphore);
-			submitter.Execute(commandBuffers);
-			submitter.Trampoline(timelineSubmitter);
-
-			auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
-			computeQueue.Submit(submitter, nullptr);
-		}
+		auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
+		transferQueue.Submit(submitter, nullptr);
 	}
 
-	SLASSERT(device->IsCommandBufferRecorded<Queue::Type::Graphics>());
+	if (device->IsCommandBufferRecorded<Queue::Type::Compute>())
+	{
+		signalValues[1] = ++syncValues[sync];
+		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Compute>({timelineSemaphore, signalValues[1]});
+
+		TimelineSubmitter timelineSubmitter{};
+		timelineSubmitter.Wait(signalValues[0]);
+		timelineSubmitter.Signal(signalValues[1]);
+
+		Submitter submitter{};
+		submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+		submitter.SignalSemaphore(timelineSemaphore);
+		submitter.Execute(commandBuffers);
+		submitter.Trampoline(timelineSubmitter);
+
+		auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
+		computeQueue.Submit(submitter, nullptr);
+	}
 
 	uint64_t graphicsSignalValue = ++syncValues[sync];
 

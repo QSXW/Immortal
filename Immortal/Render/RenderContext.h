@@ -66,6 +66,11 @@ public:
 
     virtual ~RenderContext() = default;
 
+	virtual Anonymous GetDevice() const
+	{
+		return nullptr;
+	}
+
     virtual GuiLayer *CreateGuiLayer()
     {
         return nullptr;

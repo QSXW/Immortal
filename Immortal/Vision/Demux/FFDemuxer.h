@@ -5,6 +5,10 @@
 #include "Vision/Interface/Demuxer.h"
 #include "FileSystem/Stream.h"
 
+
+
+struct AVCodec;
+struct AVStream;
 struct AVPacket;
 namespace Immortal
 {
@@ -16,6 +20,12 @@ class IMMORTAL_API FFDemuxer : public Interface::Demuxer
 {
 #if HAVE_FFMPEG
 public:
+	struct Params
+	{
+		const AVStream *stream;
+	};
+
+public:
     FFDemuxer();
 
     ~FFDemuxer();
@@ -24,10 +34,10 @@ public:
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 
+    void Destory();
+
 private:
     Ref<FormatContext> formatContext;
-
-    AVPacket *packet;
 #endif
 
 public:

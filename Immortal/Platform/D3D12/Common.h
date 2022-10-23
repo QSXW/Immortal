@@ -112,14 +112,11 @@ static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **p
     for (UINT adapterIndex = 0; ; adapterIndex++)
     {
         IDXGIAdapter1 *pAdapter = nullptr;
-        if (DXGI_ERROR_NOT_FOUND == pFactory->EnumAdapters1(adapterIndex, &pAdapter))
+        if (pFactory->EnumAdapters1(adapterIndex, &pAdapter) == DXGI_ERROR_NOT_FOUND)
         {
-            // No more adapters to enumerate.
             break;
         }
 
-        // Check to see if the adapter supports Direct3D 12, but don't create the
-        // actual device yet.
         if (SUCCEEDED(D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_12_0, _uuidof(ID3D12Device), nullptr)))
         {
             *ppAdapter = pAdapter;

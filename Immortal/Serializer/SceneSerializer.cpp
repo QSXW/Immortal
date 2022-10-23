@@ -111,7 +111,7 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
             auto &sprite     = objectData["SpriteRenderer"];
             const auto &s    = object.GetComponent<SpriteRendererComponent>();
             ns::to_json(sprite["Color"], s.Color);
-            sprite["Source"]          = s.Sprite->Source();
+            //sprite["Source"]          = s.Sprite->Source();
             sprite["TilingFactor"] = s.TilingFactor;
         }
         if (object.HasComponent<MeshComponent>())
@@ -132,10 +132,10 @@ void SceneSerializer::Serialize(Scene *scene, const std::string &path)
                     j["Roughness"] = material.Roughness;
 
                     auto &textures = j["Textures"];
-                    textures["Albedo"   ] = material.Textures.Albedo->Source();
-                    textures["Normal"   ] = material.Textures.Normal->Source();
-                    textures["Metalness"] = material.Textures.Metallic->Source();
-                    textures["Roughness"] = material.Textures.Roughness->Source();
+                    //textures["Albedo"   ] = material.Textures.Albedo->Source();
+                    //textures["Normal"   ] = material.Textures.Normal->Source();
+                    //textures["Metalness"] = material.Textures.Metallic->Source();
+                    //textures["Roughness"] = material.Textures.Roughness->Source();
                     materialObject.emplace_back(std::move(j));
                 }
             }

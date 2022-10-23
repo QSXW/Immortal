@@ -124,6 +124,21 @@ public:
 #endif
     }
 
+    uint8_t BitsLeft() const
+    {
+		return bitsLeft;
+    }
+
+    uint64_t BytesLeft() const
+    {
+		return end - ptr;
+    }
+
+    uint64_t BytesRead() const
+	{
+		return ptr - start;
+	}
+
 protected:
     void Move(uint32_t n)
     {

@@ -19,7 +19,7 @@ CommandList::CommandList(Device *device, Type type, CommandAllocator *pAllocator
         D3D12_COMMAND_LIST_TYPE(type),
         *pAllocator,
         pInitialState,
-        &handle
+	    handle.GetAddressOf()
     ));
 }
 

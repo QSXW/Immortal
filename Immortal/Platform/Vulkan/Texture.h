@@ -60,13 +60,13 @@ private:
 
     Description desc;
 
-    MonoRef<Sampler> sampler;
+    URef<Sampler> sampler;
 
-    MonoRef<Image> image;
+    URef<Image> image;
 
-    MonoRef<ImageView> view;
+    URef<ImageView> view;
 
-    MonoRef<DescriptorSet> descriptorSet;
+    URef<DescriptorSet> descriptorSet;
 
     ImageDescriptor descriptor{};
 

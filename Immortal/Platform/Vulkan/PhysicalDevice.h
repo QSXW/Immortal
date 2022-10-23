@@ -89,10 +89,24 @@ public: /* vk api */
         return vkGetPhysicalDeviceSurfaceCapabilitiesKHR(handle, surface, pSurfaceCapabilities);
     }
 
-    VkResult EnumerateDeviceExtensionProperties(const char *pLayerName, uint32_t *pPropertyCount, VkExtensionProperties* pProperties) const
+    VkResult EnumerateDeviceExtensionProperties(uint32_t *pPropertyCount, VkExtensionProperties *pProperties, const char *pLayerName = nullptr) const
     {
         return vkEnumerateDeviceExtensionProperties(handle, pLayerName, pPropertyCount, pProperties);
     }
+
+    template <class T>
+	VkResult EnumerateDeviceExtensionProperties(T &container) const
+	{
+		uint32_t propsCount;
+		VkResult ret = EnumerateDeviceExtensionProperties(&propsCount, nullptr);
+        if (ret != VK_SUCCESS)
+        {
+			return ret;
+        }
+        
+        container.resize(propsCount);
+		return EnumerateDeviceExtensionProperties(&propsCount, container.data());
+	}
 
     VkResult CreateDevice(const VkDeviceCreateInfo *pCreateInfo, VkDevice *pDevice, const VkAllocationCallbacks *pAllocator = nullptr) const
     {

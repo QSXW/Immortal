@@ -33,7 +33,7 @@ public:
     void PlayClip(AudioClip pAudioClip);
 
 public:
-    MonoRef<Thread> thread;
+    URef<Thread> thread;
 
     std::mutex mutex;
 

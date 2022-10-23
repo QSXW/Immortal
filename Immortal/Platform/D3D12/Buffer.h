@@ -62,7 +62,7 @@ public:
     Buffer(RenderContext *context, const size_t size, const void *data, Type type);
 
     Buffer(RenderContext *context, const size_t size, Type type);
-    
+
     Buffer(RenderContext *context, const size_t size, uint32_t binding);
 
     virtual ~Buffer() override;
@@ -113,6 +113,23 @@ protected:
     uint32_t binding = 0;
 
     CPUDescriptor descriptor;
+};
+
+template <class T>
+struct Mapper
+{
+	Mapper(Buffer *buffer, T mapped) :
+        buffer{ buffer }
+	{
+		Check(buffer->Map(mapped));
+    }
+
+    ~Mapper()
+    {
+		buffer->Unmap();
+    }
+
+    Buffer *buffer;
 };
 
 }

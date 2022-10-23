@@ -45,6 +45,12 @@ struct PictureExtension : public IObject
     ColorSpace colorSpace;
 };
 
+enum class PictureType
+{
+    System,
+    Device,
+};
+
 /** Shared Picture Data
  *
  *  This struct only can used as a shared pointer
@@ -74,7 +80,11 @@ struct SharedPictureData : IObject
     }
 
     uint8_t *data[8];
+
     int linesize[8];
+
+	PictureType type;
+
     std::function<void()> destory;
 };
 
@@ -258,9 +268,18 @@ public:
         return nullptr;
     }
 
+    virtual CodecError SetCodecContext(Anonymous anonymous)
+    {
+		(void)anonymous;
+		return CodecError::NotImplement;
+    }
+
 protected:
     Animator animator;
 };
 
 }
+
+using Picture = Vision::Picture;
+
 }

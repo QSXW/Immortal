@@ -83,7 +83,7 @@ public:
     int FindBestStream(MediaType type, int request, int related = -1)
     {
         return av_find_best_stream(handle, (AVMediaType)type, request, related, NULL, 0);
-    }   
+    }
 
     AVDictionary **GenerateStreamInfo()
     {
@@ -119,100 +119,14 @@ public:
         return options;
     }
 
-    static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)
+    int OpenStream(VideoCodec *ffCodec, MediaType type)
     {
-        switch (id)
-        {
-        case AV_CODEC_ID_H264:
-            return {
-                "h264_cuvid",
-				"h264_qsv",
-            };
-
-        case AV_CODEC_ID_HEVC:
-            return {
-                "hevc_cuvid",
-				"hevc_qsv",
-            };
-
-        case AV_CODEC_ID_AV1:
-            return {
-				"libdav1d",
-                "av1_nvdec",
-				"av1_qsv",
-            };
-
-        case AV_CODEC_ID_MJPEG:
-            return {
-                "mjpeg_nvdec",
-				"mjpeg_qsv",
-            };
-
-        case AV_CODEC_ID_MPEG4:
-            return {
-                "mpeg4_nvdec"
-            };
-
-        case AV_CODEC_ID_MPEG1VIDEO:
-            return {
-                "mpeg1_nvdec"
-            };
-
-        case AV_CODEC_ID_MPEG2VIDEO:
-            return {
-                "mpeg2_nvdec",
-				"mpeg2_qsv",
-            };
-
-        case AV_CODEC_ID_VC1:
-            return {
-                "vc1_nvdec"
-            };
-
-        case AV_CODEC_ID_WMV3:
-            return {
-                "wmv3_nvdec"
-            };
-
-        case AV_CODEC_ID_VP8:
-            return {
-                "vp8_nvdec"
-            };
-
-        case AV_CODEC_ID_VP9:
-            return {
-                "vp9_nvdec",
-				"vp9_qsv",
-            };
-
-        default:
-			return {};
-        }
-    }
-
-    int OpenStream(FFCodec *ffCodec, MediaType type)
-    {
-        int ret = 0;
         auto stream = handle->streams[GetIndex(type)];
 
-        const AVCodec *codec = nullptr;
-        auto priorities = QueryDecoderPriorities(stream->codecpar->codec_id);
-        for (auto p : priorities)
-		{
-			codec = avcodec_find_decoder_by_name(p);
-            if (codec)
-            {
-				break;
-            }
-        }
+		FFDemuxer::Params params = { .stream = stream };
+		ffCodec->SetCodecContext(Anonymize(params));
 
-        if (!codec && !(codec = avcodec_find_decoder(stream->codecpar->codec_id)))
-        {
-            LOG::ERR("There is not suitable codec for {}", handle->url);
-        }
-        ffCodec->SetCodecContext(codec, stream->codecpar);
-
-        return ret;
+        return 0;
     }
 
     AVStream *GetStream(MediaType type, int index = 0)
@@ -249,27 +163,30 @@ private:
     const AVCodec *codec;
 };
 
-FFDemuxer::FFDemuxer() :
-    packet{ av_packet_alloc() }
+FFDemuxer::FFDemuxer()
 {
 
 }
 
 FFDemuxer::~FFDemuxer()
 {
-    if (packet)
-    {
-        av_packet_free(&packet);
-    }
+	Destory();
+}
+
+void FFDemuxer::Destory()
+{
+	formatContext.Reset();
 }
 
 CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
 {
+	formatContext.Reset();
+
     this->filepath = filepath;
 
     AVInputFormat format{};
     formatContext = new FormatContext{ filepath };
-    formatContext->OpenStream(dynamic_cast<FFCodec*>(codec), MediaType::Video);
+    formatContext->OpenStream(codec, MediaType::Video);
 
     auto animator = codec->GetAddress<Animator>();
 
@@ -285,6 +202,11 @@ CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
 
 CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 {
+	AVPacket *packet = av_packet_alloc();
+    if (!packet)
+    {
+		return CodecError::OutOfMemory;
+    }
     codedFrame->RefTo(packet);
 
     do
@@ -293,6 +215,10 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
         int ret = formatContext->ReadFrame(packet);
         if (ret < 0)
         {
+            if (ret == AVERROR_EOF)
+            {
+				return CodecError::EndOfFile;
+            }
             LOG::DEBUG("Failed to read frame: {}", ret);
             return CodecError::EndOfFile;
         }

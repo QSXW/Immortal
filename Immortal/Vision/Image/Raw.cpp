@@ -31,7 +31,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 {
     const auto &buffer = codedFrame.buffer;
 
-    MonoRef<LibRaw> processor = new LibRaw;
+    URef<LibRaw> processor = new LibRaw;
     processor->open_buffer(buffer.data(), buffer.size());
 
     processor->unpack();

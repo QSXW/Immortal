@@ -88,7 +88,7 @@ private:
     MonoAssembly *assembly;
     MonoImage *image;
 
-    std::unordered_map<std::string, MonoRef<VTable>> vtables;
+    std::unordered_map<std::string, URef<VTable>> vtables;
 
 private:
     static ScriptEngine *instance;
