@@ -11,6 +11,12 @@ namespace Immortal
 namespace D3D12
 {
 
+struct AdapterProperty
+{
+	ComPtr<IDXGIAdapter1> pAdapter;
+	DXGI_ADAPTER_DESC desc;
+};
+
 class Device
 {
 public: 
@@ -22,6 +28,8 @@ public:
 
     ~Device();
 
+    void EnumerateAdapters(std::vector<AdapterProperty> &pAdapters);
+  
     DXGI_ADAPTER_DESC GetAdapterDesc();
 
 public:
@@ -65,9 +73,14 @@ public:
 		handle->Create##F##View(p##F.Get(), pDesc, descriptor);                                                \
 	}
 
-    DEFINE_CREATE_VIEW(RENDER_TARGET,   RenderTarget  )
-    DEFINE_CREATE_VIEW(SHADER_RESOURCE, ShaderResource)
-    DEFINE_CREATE_VIEW(DEPTH_STENCIL,   DepthStencil  )
+    DEFINE_CREATE_VIEW(RENDER_TARGET,    RenderTarget   )
+    DEFINE_CREATE_VIEW(SHADER_RESOURCE,  ShaderResource )
+    DEFINE_CREATE_VIEW(DEPTH_STENCIL,    DepthStencil   )
+
+    void CreateView(ID3D12Resource *pResource, ID3D12Resource *pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE destDescriptor)
+    {
+		handle->CreateUnorderedAccessView(pResource, pCounterResource, pDesc, destDescriptor);
+    }
 
     template <class T>
 	requires std::is_same_v<ID3D12Resource*, T> || std::is_same_v<ComPtr<ID3D12Resource>, T>
@@ -91,6 +104,12 @@ public:
         handle->CreateConstantBufferView(pDesc, descriptor);
     }
 
+    template <class T>
+    HRESULT QueryInterface(T **ppObject)
+    {
+		return handle->QueryInterface(IID_PPV_ARGS(ppObject));
+    }
+
     HRESULT Create(ID3DBlob *pSignature, ID3D12RootSignature **ppRootSignature, UINT nodeMask = 0)
     {
         return handle->CreateRootSignature(
@@ -109,7 +128,9 @@ public:
             );
     }
 
-    HRESULT CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, ID3D12GraphicsCommandList **ppCommandList, UINT nodeMask = 0) const
+    template <class T>
+	requires std::is_base_of_v<ID3D12CommandList, T>
+    HRESULT CreateCommandList(D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pipeleState, T **ppCommandList, UINT nodeMask = 0) const
     {
         return handle->CreateCommandList(
             nodeMask,
@@ -184,7 +205,7 @@ public:
 protected:
     ComPtr<IDXGIFactory4> dxgiFactory;
 
-    static inline bool UseWarpDevice{ false };
+    ComPtr<IDXGIAdapter1> adapter;
 };
 
 }

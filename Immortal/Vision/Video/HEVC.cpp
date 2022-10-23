@@ -579,9 +579,14 @@ PictureParameterSet::~PictureParameterSet()
 
 }
 
-CodecError HEVCCodec::Parse(const std::vector<uint8_t>& buffer)
+CodecError HEVCCodec::Parse(const std::vector<uint8_t> &buffer)
 {
-    BitTracker bitTracker{ buffer.data(), buffer.size() };
+	return Parse(buffer.data(), buffer.size());
+}
+
+CodecError HEVCCodec::Parse(const uint8_t *data, size_t size)
+{
+	BitTracker bitTracker{ data, size };
 
     NAL nal{ bitTracker };
     switch (nal.GetType())

@@ -57,7 +57,8 @@ RenderTarget::RenderTarget(std::vector<std::unique_ptr<Image>> images) :
 
     auto &extent = *uniqueExtent.begin();
 
-    SetupExtent(extent);
+    desc.Width  = extent.width;
+	desc.Height = extent.height;
 
     for (auto &image : images)
     {

@@ -332,7 +332,7 @@ private:
     void ReadAssimpNode(BoneNode *boneNode, const aiNode *src);
 
 private:
-    MonoRef<Buffer> buffer;
+    URef<Buffer> buffer;
 
     std::string path;
 
@@ -340,7 +340,7 @@ private:
 
     std::unordered_map<std::string, BoneInfo> bones;
 
-    MonoRef<BoneNode> rootNode;
+    URef<BoneNode> rootNode;
 
     std::vector<Matrix4> transforms;
 

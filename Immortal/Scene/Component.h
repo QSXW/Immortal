@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
 #pragma once
 
 #include <queue>
@@ -201,7 +207,7 @@ struct SpriteRendererComponent : public Component
     {
         Ref<Image> input[3];
 
-		Format chromaFormat;
+        Format chromaFormat;
     };
 
     SpriteRendererComponent()
@@ -281,7 +287,7 @@ struct ScriptComponent : public Component
         object{},
         path{ path }
     {
-        
+
     }
 
     void Init(int id, Scene *scene);
@@ -360,6 +366,63 @@ struct FilterComponent : public Component
     std::vector<FilterType> Filter;
 };
 
+struct VideoPlayerContext
+{
+public:
+	VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer);
+
+	~VideoPlayerContext();
+
+	VideoPlayerContext(const VideoPlayerContext &&other) = delete;
+
+	VideoPlayerContext &operator=(const VideoPlayerContext &&other) = delete;
+
+	Picture GetPicture() const
+	{
+		return pictures.empty() ? Vision::Picture{} : pictures.front();
+	}
+	
+	void PopPicture()
+	{
+		std::unique_lock lock{mutex};
+		pictures.pop();
+	}
+
+	const std::string &GetSource() const
+	{
+		return demuxer->GetSource();
+	}
+
+public:
+	URef<Thread> demuxerThread;
+
+    URef<Thread> videoDecodeThread;
+
+    URef<Thread> audioDecodeThread;
+
+	std::mutex mutex;
+
+	Ref<Vision::VideoCodec> decoder;
+
+	Ref<Vision::Interface::Demuxer> demuxer;
+
+	std::queue<Picture> pictures;
+
+	std::queue<Picture> audioFrames;
+
+    std::queue<Vision::CodedFrame> pictureCodedFrames; 
+
+    std::queue<Vision::CodedFrame> audioCodedFrames;
+
+	Picture lastPicture;
+
+	struct State
+	{
+		bool playing = false;
+		bool exited = false;
+	} state;
+};
+
 struct VideoPlayerComponent : public Component
 {
     DEFINE_COMP_TYPE(VideoPlayer)
@@ -372,8 +435,8 @@ struct VideoPlayerComponent : public Component
     {
         Swap(other);
     }
-    
-    Vision::Picture GetPicture();
+
+    Picture GetPicture();
 
     void PopPicture();
 
@@ -385,44 +448,15 @@ struct VideoPlayerComponent : public Component
 
     void Swap(VideoPlayerComponent &other)
     {
-        if (other.mutex)
-        {
-            std::lock_guard lock{ *other.mutex };
-            mutex.swap(other.mutex);
-            thread.Swap(other.thread);
-            decoder.Swap(other.decoder);
-            demuxer.Swap(other.demuxer);
-            lastPicture.Swap(other.lastPicture);
-            fifo.Swap(other.fifo);
-            state.Swap(other.state);
-        }
+		player.Swap(other.player);
     }
 
-    Animator *GetAnimator() const
-    {
-        return decoder->GetAddress<Animator>();
-    }
+    Animator *GetAnimator() const;
 
-    const std::string &GetSource() const
-    {
-        return demuxer->GetSource();
-    }
+    const std::string &GetSource() const;
 
 public:
-    MonoRef<Thread> thread;
-    std::unique_ptr<std::mutex> mutex;
-
-    Ref<Vision::VideoCodec> decoder;
-    Ref<Vision::Interface::Demuxer> demuxer;
-    MonoRef<std::queue<Vision::Picture>> fifo;
-
-    MonoRef<Vision::Picture> lastPicture;
-
-    struct State {
-        bool playing = false;
-        bool exited = false;
-    };
-    MonoRef<State> state;
+	URef<VideoPlayerContext> player;
 };
 
 }

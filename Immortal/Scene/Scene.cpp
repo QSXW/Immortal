@@ -585,6 +585,7 @@ Object Scene::CreateObject(const std::string &name)
     object.AddComponent<TransformComponent>();
     object.AddComponent<IDComponent>();
 
+    objects.insert({ name, object });
     return object;
 }
 
@@ -609,6 +610,12 @@ void Scene::DestroyObject(Object &object)
         pipelines.pbr->FreeDescriptorSet(object);
     }
     registry.destroy(object);
+}
+
+Object Scene::Query(const std::string &name)
+{
+	auto it = objects.find(name);
+	return it != objects.end() ? Object{ it->second, this } : Object{};
 }
 
 void Scene::SetViewportSize(const Vector2 &size)

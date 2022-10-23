@@ -12,8 +12,7 @@ namespace Vulkan
 {
 
 Texture::Texture(Device *device, const std::string &filepath, const Description &description) :
-    device{ device },
-    Super{ filepath }
+    device{ device }
 {
     desc = description;
 
@@ -25,16 +24,14 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
 
     Vision::Picture picture = frame.GetPicture();
 
-    width     = picture.desc.width;
-    height    = picture.desc.height;
-    mipLevels = desc.mipLevels ? CalculateMipmapLevels(width, height) : 1;
+    SetProperties(picture.desc.width, picture.desc.height, desc.mipLevels);
 
     desc.format = picture.desc.format;
     Setup(desc, picture.desc.Size(), picture.Data());
 }
 
 Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description, uint32_t layer) :
-    Super{ width, height },
+    Super{ width, height, description.mipLevels },
     device{ device },
     desc{ description }
 {
@@ -42,10 +39,6 @@ Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *da
     {
         return;
     }
-
-    Super::width  = width;
-    Super::height = height;
-    mipLevels = desc.mipLevels ? CalculateMipmapLevels(width, height) : 1;
 
     Setup(description, width * height * description.format.Size(), data, layer);
 }

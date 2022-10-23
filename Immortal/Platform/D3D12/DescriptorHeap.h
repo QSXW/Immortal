@@ -103,11 +103,6 @@ public:
 
     }
 
-    ID3D12DescriptorHeap **AddressOf()
-    {
-        return handle.GetAddressOf();
-    }
-
     uint32_t GetIncrement() const
     {
         return increment;

@@ -14,6 +14,7 @@
 #include "Render/Pipeline.h"
 #include "Component.h"
 #include "Event/KeyEvent.h"
+#include <map>
 
 namespace Immortal
 {
@@ -72,6 +73,8 @@ public:
     Object CreateObject(const std::string &name = "");
 
     void DestroyObject(Object &object);
+    
+    Object Query(const std::string &name);
 
     void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
 
@@ -129,6 +132,8 @@ private:
     std::string name;
 
     entt::registry registry;
+
+    std::multimap<std::string, int> objects; 
 
     struct Settings
     {

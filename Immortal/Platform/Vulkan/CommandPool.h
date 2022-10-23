@@ -27,7 +27,7 @@ public:
 public:
     CommandPool() = default;
 
-    CommandPool(Device *device, uint32_t queueFamilyIndex, size_t threadIndex = 0, CommandBuffer::ResetMode resetMode = CommandBuffer::ResetMode::ResetIndividually);
+    CommandPool(Device *device, uint32_t queueFamilyIndex, CommandBuffer::ResetMode resetMode = CommandBuffer::ResetMode::ResetIndividually);
         
     CommandPool(CommandPool &&other);
 
@@ -51,10 +51,6 @@ public:
         if constexpr (IsPrimitiveOf<QueueFamilyIndex, T>())
         {
             return queueFamilyIndex;
-        }
-        if constexpr (IsPrimitiveOf<ThreadIndex, T>())
-        {
-            return threadIndex;
         }
     }
 
@@ -80,9 +76,7 @@ private:
 private:
     Device *device{ nullptr };
 
-    size_t threadIndex;
-
-    std::vector<MonoRef<CommandBuffer>> allocatedBuffers;
+    std::vector<URef<CommandBuffer>> allocatedBuffers;
 
     std::queue<CommandBuffer *> queue;
 
@@ -168,7 +162,7 @@ private:
     }
 
 private:
-    MonoRef<CommandPool> commandPool;
+    URef<CommandPool> commandPool;
 
     std::unique_ptr<LightArray<CommandBuffer*>> commandBuffers;
 

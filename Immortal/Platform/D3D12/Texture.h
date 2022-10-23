@@ -33,6 +33,10 @@ public:
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
+    virtual void CopyImage(const uint8_t *const *data, const int *pLinesize, int height, int planes) override;
+
+    virtual void PlatformSpecifiedUpdate(Anonymous resource, UINT subresource) override;
+
     CPUDescriptor GetDescriptor() const;
 
 private:

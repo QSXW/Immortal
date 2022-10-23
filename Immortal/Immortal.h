@@ -66,7 +66,6 @@
 #include "String/LanguageSettings.h"
 
 #include "Widget/Widget.h"
-#include "Widget/Viewport.h"
 #include "Widget/MenuBar.h"
 
 #include "Net/Socket.h"

@@ -5,15 +5,15 @@ namespace Immortal
 
 std::unique_ptr<ThreadPool> Async::threadPool{ nullptr };
 
-ThreadPool::ThreadPool(uint32_t num)
+ThreadPool::ThreadPool(uint32_t numThreads)
 {
-    for (int i = 0; i < num; i++)
+    threads.reserve(numThreads);
+    for (int i = 0; i < numThreads; i++)
     {
-        semaphores[i] = Thread::State::Idle;
         threads.emplace_back([=, this]() -> void {
             while (true)
             {
-                static Thread::Semaphore *semaphore = semaphores + i;
+                Anonymous semaphore = nullptr;
                 Task task;
                 {
                     std::unique_lock<std::mutex> lock{ mutex };
@@ -26,12 +26,15 @@ ThreadPool::ThreadPool(uint32_t num)
                         break;
                     }
 
-                    *semaphore = Thread::State::Block;
-                    task = std::move(tasks.front());
+                    auto &refTask = tasks.front();
+                    task = refTask;
+                    semaphore = &refTask;
                     tasks.pop();
                 }
                 task();
-                *semaphore = Thread::State::Idle;
+                
+                std::lock_guard lock{mutex};
+                semaphores.erase(semaphore);
             }
             });
     }
@@ -54,25 +57,8 @@ ThreadPool::~ThreadPool()
 #pragma sl_disable_optimizations
 void ThreadPool::Join()
 {
-    bool tasking{ true };
-    while (!tasks.empty()) { }
-
-    while (1)
-    {
-        tasking = false;
-        for (int i = 0; i < threads.size(); i++)
-        {
-            if (semaphores[i] == Thread::State::Block)
-            {
-                tasking = true;
-                break;
-            }
-        }
-        if (!tasking)
-        {
-            break;
-        }
-    }
+    while (!tasks.empty()) {}
+    while (!semaphores.empty()) {}
 }
 #pragma sl_enable_optimizations
 

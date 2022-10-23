@@ -18,6 +18,8 @@ class IMMORTAL_API WMenu : public Widget
 {
 public:
 	WIDGET_SET_PROPERTIES(WMenu)
+	WIDGET_PROPERTY_TEXT
+	WIDGET_PROPERTY_COLOR
 
 public:
     WMenu(Widget *parent = nullptr) :
@@ -26,7 +28,8 @@ public:
 		Connect([this] {
 			WidgetLock lock{this};
 			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, colors.hovered);
-            if (ImGui::BeginMenu(props.text.c_str()))
+			PUSH_PADDING
+            if (ImGui::BeginMenu(text.c_str()))
             {
 			    for (auto &item : items)
 				{
@@ -37,6 +40,7 @@ public:
 				}
 				ImGui::EndMenu();
             }
+			POP_PADDING
 			ImGui::PopStyleColor(1);
 		});
     }
@@ -71,6 +75,7 @@ class IMMORTAL_API WMenuBar : public Widget
 {
 public:
 	WIDGET_SET_PROPERTIES(WMenuBar)
+	WIDGET_PROPERTY_COLOR
 
 public:
 	WMenuBar(Widget *parent = nullptr) :
@@ -78,16 +83,27 @@ public:
 	{
 		Connect([this] {
 			WidgetLock lock{this};
-			ImGui::PushStyleColor(ImGuiCol_Text, props.color);
-			ImGui::PushStyleColor(ImGuiCol_PopupBg, props.backgroundColor);
+			__PreCalculateSize();
+			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			ImGui::PushStyleColor(ImGuiCol_PopupBg, backgroundColor);
             if (ImGui::BeginMenuBar())
             {
-				__Trampoline();
+				position = ImGui::GetItemRectMin();
+				auto [x, y] = ImGui::GetWindowSize();
+				renderWidth = x;
+				renderHeight = y;
+
+				__RelativeTrampoline();
 				ImGui::EndMenuBar();
             }
 			ImGui::PopStyleColor(2);
 		});
 	}
+
+	WIDGET_SET_PROPERTY(BackgroundColor, backgroundColor, const ImVec4 &)
+
+protected:
+	ImVec4 backgroundColor;
 };
 
 struct WItem
@@ -100,14 +116,16 @@ class WItemList : public Widget
 {
 public:
 	WIDGET_SET_PROPERTIES(WItemList)
+	WIDGET_PROPERTY_COLOR
 
 public:
 	WItemList(Widget *parent = nullptr) :
 	    Widget{parent}
 	{
 		Connect([&] {
+			__PreCalculateSize();
 			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, colors.hovered);
-			ImGui::PushStyleColor(ImGuiCol_Text, props.color);
+			ImGui::PushStyleColor(ImGuiCol_Text, color);
 			for (auto &item : items)
 			{
 				if (ImGui::MenuItem(item.name.c_str()))

@@ -111,12 +111,6 @@ public:
 
     void SetupDescriptor();
 
-    void SetupExtent(Extent2D extent)
-    {
-        desc.Width  = extent.width;
-        desc.Height = extent.height;
-    }
-
     void IssueTimeline(const Timeline &value)
     { 
         timeline = value;
@@ -138,11 +132,11 @@ private:
 
     Ref<RenderPass> renderPass;
 
-    MonoRef<Framebuffer> framebuffer;
+    URef<Framebuffer> framebuffer;
 
-    MonoRef<DescriptorSet> descriptorSet;
+    URef<DescriptorSet> descriptorSet;
 
-    MonoRef<ImageDescriptor> descriptor;
+    URef<ImageDescriptor> descriptor;
 
     Sampler sampler;
 

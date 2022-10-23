@@ -22,14 +22,13 @@ namespace Vulkan
 class Instance;
 template <class T>
 concept ExposedType = (
-    std::is_same_v<T, Instance>       || std::is_same_v<T, Instance&>       ||
-    std::is_same_v<T, PhysicalDevice> || std::is_same_v<T, PhysicalDevice&> ||
-    std::is_same_v<T, Device>         || std::is_same_v<T, Device&>         ||
-    std::is_same_v<T, Queue>          || std::is_same_v<T, Queue&>          ||
-    std::is_same_v<T, RenderPass>     || std::is_same_v<T, RenderPass&>     ||
-    std::is_same_v<T, RenderTarget>   || std::is_same_v<T, RenderTarget&>   ||
-    std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain&>      ||
-    std::is_same_v<T, Extent2D>       || std::is_same_v<T, Extent2D&>       
+    std::is_same_v<T, Instance>       || std::is_same_v<T, Instance &>       ||
+    std::is_same_v<T, PhysicalDevice> || std::is_same_v<T, PhysicalDevice &> ||
+    std::is_same_v<T, Device>         || std::is_same_v<T, Device &>         ||
+    std::is_same_v<T, Queue>          || std::is_same_v<T, Queue &>          ||
+    std::is_same_v<T, RenderPass>     || std::is_same_v<T, RenderPass &>     ||
+    std::is_same_v<T, RenderTarget>   || std::is_same_v<T, RenderTarget &>   ||
+    std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain &> 
     );
 
 struct RenderSemaphore
@@ -48,7 +47,7 @@ public:
 
     static VkResult Status;
     static VkDescriptorSetLayout DescriptorSetLayout;
-    static MonoRef<Sampler> ImmutableSampler;
+    static URef<Sampler> ImmutableSampler;
     static std::unordered_map<const char *, bool> InstanceExtensions;
     static std::unordered_map<const char *, bool> DeviceExtensions;
 
@@ -121,7 +120,7 @@ public:
 
     void SetupDescriptorSetLayout();
 
-    VkExtent2D GetViewport() const
+    VkExtent2D GetViewportSize() const
     {
         return surfaceExtent;
     }
@@ -148,10 +147,6 @@ public:
         if constexpr (IsPrimitiveOf<Swapchain, T>())
         {
             return *swapchain;
-        }
-        if constexpr (IsPrimitiveOf<Extent2D, T>())
-        {
-            return surfaceExtent;
         }
     }
 

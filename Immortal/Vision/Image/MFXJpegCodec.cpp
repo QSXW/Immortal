@@ -55,7 +55,7 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
         Format::RGBA8
     };
 
-    MonoRef<uint8_t> temp = new uint8_t[picture.desc.Size()];
+    URef<uint8_t> temp = new uint8_t[picture.desc.Size()];
 
     surface.Info = videoParam.mfx.FrameInfo;
     surface.Data.PitchLow = surface.Info.Width;

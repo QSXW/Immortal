@@ -3,6 +3,7 @@
 #include "Framework/Utils.h"
 #include "Descriptor.h"
 #include "GuiLayer.h"
+#include "VideoCommon.h"
 
 namespace Immortal
 {
@@ -336,6 +337,11 @@ void RenderContext::RefResource(ID3D12Resource *pResource)
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
 	UpdateSwapchain(width, height);
+}
+
+Anonymous RenderContext::GetDevice() const
+{
+	return (Anonymous)(ID3D12Device *)*device;
 }
 
 SuperGuiLayer *RenderContext::CreateGuiLayer()

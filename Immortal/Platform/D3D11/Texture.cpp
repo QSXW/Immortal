@@ -10,8 +10,7 @@ namespace D3D11
 {
 
 Texture::Texture(Device *device, const std::string &filepath, const Description &description) :
-    device{ device },
-    Super{ filepath }
+    device{ device }
 {
     Frame frame{ filepath };
 
@@ -21,20 +20,16 @@ Texture::Texture(Device *device, const std::string &filepath, const Description 
         return;
     }
 
-    Super::Update(picture.desc.width, picture.desc.height);
+	SetProperties(picture.desc.width, picture.desc.height, description.mipLevels);
+
     format = picture.desc.format;
 	__Create(picture.Data());
 }
 
 Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description) :
     device{ device },
-    Super{ width, height }
+    Super{ width, height, description.mipLevels }
 {
-	if (!description.mipLevels)
-	{
-		mipLevels = 1;
-	}
-
     format = description.format;
 	__Create(data);
 }

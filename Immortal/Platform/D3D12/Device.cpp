@@ -23,19 +23,8 @@ Device::Device()
     }
 #endif
     Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
-
-    if (UseWarpDevice)
-    {
-        ComPtr<IDXGIAdapter> warpAdapter;
-        Check(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
-        Check(D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&handle)));
-    }
-    else
-    {
-        ComPtr<IDXGIAdapter1> hardwareAdapter;
-        GetHardwareAdapter(dxgiFactory.Get(), &hardwareAdapter);
-        Check(D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&handle)));
-    }
+    GetHardwareAdapter(dxgiFactory.Get(), &adapter);
+	Check(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&handle)));
 }
 
 Device::~Device()
@@ -55,13 +44,26 @@ Device::~Device()
 #endif
 }
 
+void Device::EnumerateAdapters(std::vector<AdapterProperty> &pAdapters)
+{
+	for (UINT adapterIndex = 0; ; adapterIndex++)
+	{
+		ComPtr<IDXGIAdapter1> pAdapter;
+		if (dxgiFactory->EnumAdapters1(adapterIndex, pAdapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND)
+		{
+			break;
+		}
+
+        AdapterProperty props = { .pAdapter = pAdapter };
+		Check(pAdapter->GetDesc(&props.desc));
+		pAdapters.emplace_back(props);
+	}
+}
+
 DXGI_ADAPTER_DESC Device::GetAdapterDesc()
 {
-    ComPtr<IDXGIAdapter> dxgiAdapter{ nullptr };
-    Check(dxgiFactory->EnumAdapters(0, &dxgiAdapter));
-
     DXGI_ADAPTER_DESC adapterDesc{};
-    Check(dxgiAdapter->GetDesc(&adapterDesc));
+	Check(adapter->GetDesc(&adapterDesc));
 
     return adapterDesc;
 }

@@ -219,7 +219,7 @@ const char *Stringify(VkCompositeAlphaFlagBitsKHR compositeAlpha)
     }
 }
 
-VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, const std::vector<VkFormat>& depthFormatPriorities)
+VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, const std::vector<VkFormat> &depthFormatPriorities)
 {
     VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
 
@@ -248,5 +248,6 @@ VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, co
     SLASSERT(false && "No suitable depth format could be determined");
     return VK_FORMAT_UNDEFINED;
 }
+
 }
 }

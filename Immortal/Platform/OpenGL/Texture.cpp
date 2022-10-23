@@ -166,7 +166,6 @@ static uint32_t CreateTexture(GLenum target, uint32_t width, uint32_t height, co
 }
 
 Texture::Texture(const std::string &path, const Description &description) :
-    Super{ path },
     handle{}
 {
 	mipLevels = 1;
@@ -193,7 +192,7 @@ Texture::Texture(const std::string &path, const Description &description) :
 }
 
 Texture::Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description) :
-    Super{ width, height }
+    Super{ width, height, description.mipLevels }
 {
 	mipLevels = 1;
     type   = NativeTypeToOpenGl(description);

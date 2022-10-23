@@ -40,34 +40,31 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         {
             queueProps[index][0] = 1.0f;
         }
-        queueCreateInfos[index].pNext = nullptr;
+        queueCreateInfos[index].pNext            = nullptr;
         queueCreateInfos[index].queueFamilyIndex = index;
-        queueCreateInfos[index].queueCount = prop.queueCount;
+        queueCreateInfos[index].queueCount       = prop.queueCount;
         queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
     }
 
-    std::vector<VkExtensionProperties> deviceExtensions;
-    uint32_t deviceExtensionCount;
-    Check(physicalDevice->EnumerateDeviceExtensionProperties(nullptr, &deviceExtensionCount, nullptr));
+    std::vector<VkExtensionProperties> availableExtensions;
+	Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions)); 
 
-    deviceExtensions.resize(deviceExtensionCount);
-    Check(physicalDevice->EnumerateDeviceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtensions.data()));
-
-    for (auto &e : deviceExtensions)
+    for (auto &extension : availableExtensions)
     {
-        availableExtensions.insert(e.extensionName);
+		deviceExtensions.insert(extension.extensionName);
     }
 
-#if SLDEBUG
+#if _DEBUG
     if (!deviceExtensions.empty())
     {
         LOG::DEBUG<isLogNeed>("Device supports the following extensions: ");
-        for (auto &ext : deviceExtensions)
+		for (auto &extension : availableExtensions)
         {
-            LOG::DEBUG<isLogNeed>("  \t{0}", ext.extensionName);
+			LOG::DEBUG<isLogNeed>("  \t{0}", extension.extensionName);
         }
     }
 #endif
+
     if (IsExtensionSupport("VK_KHR_get_memory_requirements2") && IsExtensionSupport("VK_KHR_dedicated_allocation"))
     {
         enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
@@ -157,6 +154,7 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         const auto& queueFamilyProps = physicalDevice->QueueFamilyProperties[queueFamilyIndex];
         VkBool32 presentSupported = surface ? physicalDevice->IsPresentSupported(surface, queueFamilyIndex) : false;
 
+        queues[queueFamilyIndex].reserve(queueFamilyProps.queueCount);
         for (uint32_t queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
         {
             queues[queueFamilyIndex].emplace_back(this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
@@ -178,11 +176,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
-    commandPool.reset(new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() });
+    commandPool = new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() };
 
-    fencePool.reset(new FencePool{ this });
+    fencePool = new FencePool{ this };
 
-    descriptorPool.reset(new DescriptorPool{ this, Limit::PoolSize });
+    descriptorPool = new DescriptorPool{ this, Limit::PoolSize };
 
     timelineCommandBuffers[0] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
     timelineCommandBuffers[1] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
@@ -209,7 +207,7 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
 
     for (size_t i = 0; i < queueFamilyProperties.size(); i++)
     {
-        auto queueFlags = queueFamilyProperties[i].queueFlags;
+		VkQueueFlags queueFlags = queueFamilyProperties[i].queueFlags;
         if (queueFlags & requestFlags && !(queueFlags & mask))
         {
             return U32(i);
@@ -217,7 +215,6 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
         }
     }
 
-    // LOG::ERR("Counld not find a matching queue family index");
     return 0;
 }
 
@@ -229,8 +226,8 @@ Device::~Device()
     {
         cmd.Reset();
     }
-    commandPool.reset();
-    fencePool.reset();
+    commandPool.Reset();
+	fencePool.Reset();
     descriptorPool->Destroy();
 
     for (auto &queue : destroyCoroutine.queues)
@@ -243,7 +240,7 @@ Device::~Device()
         }
     }
 
-    descriptorPool.reset();
+    descriptorPool.Reset();
 
     if (memoryAllocator != VK_NULL_HANDLE)
     {

@@ -203,33 +203,33 @@ public:
 };
 
 template <class T>
-class MonoRef
+class URef
 {
 public:
-    MonoRef() :
+    URef() :
         _obj{ nullptr }
     {
 
     }
 
-    MonoRef(T *other) :
+    URef(T *other) :
         _obj{ other }
     {
 
     }
 
-    MonoRef(MonoRef &&other) :
+    URef(URef &&other) :
         _obj{ nullptr }
     {
         other.Swap(*this);
     }
 
-    ~MonoRef()
+    ~URef()
     {
         Release();
     }
 
-    void Swap(MonoRef &other)
+    void Swap(URef &other)
     {
         THROWIF(&other == this, SError::SelfAssignment);
         std::swap(other._obj, _obj);
@@ -237,7 +237,7 @@ public:
 
     void Reset(T *other)
     {
-        MonoRef(other).Swap(*this);
+        URef(other).Swap(*this);
     }
 
     void Reset()
@@ -279,9 +279,9 @@ public:
         return _obj;
     }
 
-    MonoRef &operator=(T *other)
+    URef &operator=(T *other)
     {
-        MonoRef(other).Swap(*this);
+        URef(other).Swap(*this);
         return *this;
     }
 
@@ -308,11 +308,8 @@ protected:
     T *_obj;
 
 private:
-    MonoRef(const MonoRef &) = delete;
-    MonoRef& operator=(const MonoRef &) = delete;
+    URef(const URef &) = delete;
+    URef& operator=(const URef &) = delete;
 };
-
-template <class T>
-using URef = MonoRef<T>;
 
 }

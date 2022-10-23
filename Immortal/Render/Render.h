@@ -101,6 +101,18 @@ public:
         SAPI = Sringify(type);
     }
 
+    template <class T>
+    requires std::is_same_v<RenderContext, T>
+    static T *GetAddress()
+    {
+		return renderContext;
+    }
+
+    static Anonymous GetDevice()
+    {
+		return renderContext->GetDevice();
+    }
+
     static void OnWindowResize(UINT32 width, UINT32 height)
     {
         renderContext->OnResize(0, 0, width, height);

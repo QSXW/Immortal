@@ -38,7 +38,7 @@ AudioDevice::AudioDevice() :
     {
         HRESULT hr = S_OK;
 
-        LOG::INFO("Create Audio Device at Thread: {}", (void*)(uint64_t)Thread::Self());
+        LOG::INFO("Create Audio Device at Thread: {}", (void*)(uint64_t)Thread::Id());
 
         Check(CoInitialize(NULL));
 
@@ -58,7 +58,7 @@ AudioDevice::AudioDevice() :
     }
 
     thread = new Thread{ [=] {
-        LOG::INFO("Create Audio Rendering at Thread: {}", (void *)(uint64_t)Thread::Self());
+        LOG::INFO("Create Audio Rendering at Thread: {}", (void *)(uint64_t)Thread::Id());
 
         HRESULT hr = S_OK;
 

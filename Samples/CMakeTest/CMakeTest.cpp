@@ -73,7 +73,7 @@ public:
         c = b;
 
         {
-            MonoRef<A> a = new A;
+            URef<A> a = new A;
             a.Reset(new A);
         }
 

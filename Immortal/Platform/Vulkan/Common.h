@@ -16,10 +16,6 @@ namespace Vulkan
 
 #define VKCPP_OPERATOR_HANDLE() Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{ VK_NULL_HANDLE };
 
-using ThreadIndex = UINT32;
-using FrameIndex  = UINT32;
-using Surface     = VkSurfaceKHR;
-
 namespace Limit
 {
 
@@ -48,9 +44,6 @@ enum class Level : int
     Secondary = VK_COMMAND_BUFFER_LEVEL_SECONDARY,
     Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
 };
-
-using Extent2D = VkExtent2D;
-using Extent3D = VkExtent3D;
 
 template <class T>
 constexpr inline UINT32 U32(T x)
@@ -202,6 +195,7 @@ static inline bool IsDepthOnlyFormat(VkFormat format)
 {
     return format == VK_FORMAT_D16_UNORM || format == VK_FORMAT_D32_SFLOAT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
+
 }
 }
 

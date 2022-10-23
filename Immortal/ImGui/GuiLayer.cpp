@@ -15,7 +15,7 @@
 namespace Immortal
 {
 
-#ifdef WINDOWS
+#ifdef _WIN32
     static const std::string SystemFontPath = { "C:\\Windows\\Fonts\\" };
 #endif
 
@@ -23,6 +23,9 @@ FontContext GuiLayer::NotoSans;
 FontContext GuiLayer::SimSun;
 
 GuiLayer *GuiLayer::__instance = nullptr;
+
+static uint64_t TotalFrame     = 0;
+static double TotalFrameRate = 0;
 
 GuiLayer::GuiLayer() :
     Layer{ "Immortal Graphics User Interface Layer" },
@@ -41,6 +44,8 @@ GuiLayer::~GuiLayer()
 {
     ImGui::DestroyContext();
 	__instance = nullptr;
+
+    LOG::INFO("Rendered {} frame(s), Avarage Frame Rate: {}", TotalFrame, TotalFrameRate / TotalFrame);
 }
 
 void GuiLayer::OnAttach()
@@ -86,15 +91,15 @@ void GuiLayer::OnAttach()
         "Assets/Fonts/NotoSansCJKsc-Bold.otf",
 	    20,
         nullptr,
-        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+	    io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 
-#ifdef WINDOWS
+#ifdef _WIN32
     SimSun.Regular = io.Fonts->AddFontFromFileTTF(
 	    std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
 	    16,
         nullptr,
-        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+	    io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
         );
 #else
     SimSun.Regular = NotoSans.Demilight;
@@ -254,7 +259,7 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::Render()
 {
-	ImGui::PushFont(SimSun.Regular);
+	ImGui::PushFont(NotoSans.Light);
     dockspace->Render();
 	ImGui::PopFont();
 
@@ -282,6 +287,8 @@ void GuiLayer::Render()
     );
 #endif
 
+    TotalFrame++;
+	TotalFrameRate += io.Framerate;
     Application::SetTitle(title);
 }
 
