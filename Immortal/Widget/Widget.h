@@ -218,12 +218,13 @@ struct WidgetLock
                                                          \
     const std::string &Id()                              \
 	{                                                    \
+        static std::string nullRef;                      \
         auto result = Widget2IdentifyTracker.find(this); \
         if (result != Widget2IdentifyTracker.end())      \
         {                                                \
             return result->second;                       \
         }                                                \
-        return std::string{};                            \
+        return nullRef;                                  \
 	}                                                    \
                                                          \
     WidgetType *Anchors(const Widget *widget)            \
