@@ -16,11 +16,22 @@ set(ALGORITHM_FILES
     Algorithm/LightVector.h
     Algorithm/Rotate.h)
 
-set(AUDIO_FILES
+set(AUDIO_COMMON_FILES
+    Audio/AudioRenderContext.cpp
+    Audio/AudioRenderContext.h
     Audio/AudioSource.cpp
     Audio/AudioSource.h
     Audio/Device.cpp
     Audio/Device.h)
+
+set(WASAPI_FILES
+    Audio/WASAPI.cpp
+    Audio/WASAPI.h)
+
+set(AUDIO_FILES
+    ${AUDIO_COMMON_FILES}
+    $<$<C_COMPILER_ID:MSVC>:${WASAPI_FILES}>
+)
 
 set(FRAMEWORK_FILES
     Framework/Application.cpp
@@ -352,7 +363,8 @@ set(NET_FILES
 
 source_group("\\"                  FILES ${CORE_FILES}      )
 source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )
-source_group("Audio\\"             FILES ${AUDIO_FILES} )
+source_group("Audio\\"             FILES ${AUDIO_FILES}     )
+source_group("Audio\\"             FILES ${WASAPI_FILES}    )
 source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
 source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Event\\"             FILES ${EVENT_FILES}     )

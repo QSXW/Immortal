@@ -10,6 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavutil/avutil.h>
+#include <libswresample/swresample.h>
 #include <libavutil/hwcontext_d3d12va.h>
 }
 
@@ -182,7 +183,6 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 		format = CAST(pixelFormat);
     }
 
-    ref->pts = ref->best_effort_timestamp;
     picture = Picture{ ref->width, ref->height, format, false };
 	picture.shared->type = type;
 
@@ -198,8 +198,55 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     });
     picture.SetProperty(ColorSpaceConverter(handle->colorspace));
 
-    if (frame->pts != AV_NOPTS_VALUE)
+    if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
+        AVRational tb{ 1, frame->sample_rate };
+        if (frame->pts != AV_NOPTS_VALUE)
+        {
+            frame->pts = av_rescale_q(frame->pts, packet->time_base, tb);
+        }
+
+        SwrContext *swrContext = swr_alloc_set_opts(
+            nullptr,
+            AV_CH_LAYOUT_STEREO,
+            AV_SAMPLE_FMT_FLT,
+            48000,
+            !handle->channel_layout ? AV_CH_LAYOUT_STEREO : handle->channel_layout,
+            handle->sample_fmt,
+            handle->sample_rate,
+            0,
+            nullptr
+            );
+
+        swr_init(swrContext);
+
+        int samples = av_rescale_rnd(
+            swr_get_delay(swrContext, handle->sample_rate) + frame->nb_samples,
+            48000,
+            handle->sample_rate,
+            AV_ROUND_UP
+            );
+
+        picture = Picture{ samples, 1, Format::VECTOR2 };
+        picture.pts = frame->pts;
+
+        int outSamples = swr_convert(swrContext, &picture.shared->data[0], samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
+        if (outSamples < 0)
+        {
+            LOG::ERR("Failed to rescale audio frame format!");
+        }
+
+        uint8_t *ptr = picture.shared->data[0] + outSamples * 2 * sizeof(float);
+        if (swr_get_out_samples(swrContext, 0) > 0)
+        {
+            outSamples = swr_convert(swrContext, &ptr, samples - outSamples, nullptr, 0);
+        }
+
+        swr_free(&swrContext);
+    }
+    else if (frame->pts != AV_NOPTS_VALUE)
+    {
+        frame->pts = frame->best_effort_timestamp;
         picture.pts = frame->pts * av_q2d(packet->time_base) * animator.FramesPerSecond;
     }
     else

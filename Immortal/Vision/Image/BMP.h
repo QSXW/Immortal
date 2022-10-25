@@ -21,7 +21,7 @@ public:
 
 public:
     BMPCodec() :
-        Super{ Type::BMP, Format::BGRA8 }
+        Super{ Format::BGRA8 }
     {
         memset(&identifer, 0, HeaderSize());
     }

@@ -5,6 +5,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "Audio/Device.h"
+#include "Audio/AudioSource.h"
+
 #include "Core.h"
 #include "Config.h"
 

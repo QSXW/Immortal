@@ -51,7 +51,12 @@ AudioClip AudioSource::GetAudioClip(int frames)
 {
     auto picture = codec->GetPicture();
 
-    AudioClip clip{};
+    if (!frames)
+    {
+        frames = picture.desc.width;
+    }
+
+    AudioClip clip{ picture };
     clip.pData  = (const uint8_t *)&picture.Data()[pts];
     clip.bytes  = frames /* sample rate per frame */ * 2 /* channels */ * sizeof(float) /* format */;
     clip.frames = frames;

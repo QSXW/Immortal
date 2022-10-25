@@ -43,7 +43,7 @@ IVFDemuxer::IVFDemuxer() :
 
 }
 
-CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
+CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
     uint8_t data[32];
     auto animator = codec->GetAddress<Animator>();
@@ -114,9 +114,6 @@ CodecError IVFDemuxer::Read(CodedFrame *codedFrame)
     {
         return CodecError::EndOfFile;
     }
-
-    codedFrame->offset = header.offset;
-    codedFrame->timestamp = header.timestamp;
 
     return CodecError::Succeed;
 }

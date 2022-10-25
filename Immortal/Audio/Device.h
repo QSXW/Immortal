@@ -10,11 +10,7 @@
 #include "Core.h"
 #include "Framework/Async.h"
 #include "Interface/IObject.h"
-
-#ifdef _MSC_VER
-#include <audioclient.h>
-#include <mmdeviceapi.h>
-#endif
+#include "AudioRenderContext.h"
 
 namespace Immortal
 {
@@ -32,26 +28,16 @@ public:
 
     void PlayClip(AudioClip pAudioClip);
 
+    void PlayFrame(Picture picture);
+
 public:
     URef<Thread> thread;
+
+    URef<AudioRenderContext> context;
 
     std::mutex mutex;
 
     std::queue<AudioClip> queue;
-
-#ifdef _MSC_VER
-    IMMDeviceEnumerator *pEnumerator;
-
-    IMMDevice *handle;
-
-    IAudioClient *pAudioClient;
-
-    IAudioRenderClient *pRenderClient;
-
-    WAVEFORMATEX *pWaveFormat;
-#endif
-
-    uint32_t bufferFrameCount;
 
     bool stopping;
 };

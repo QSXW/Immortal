@@ -104,9 +104,6 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
             YUV420PToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
             dav1d_picture_unref(&dav1dPicture);
-
-            picture.pts = codedFrame.timestamp;
-            animator.Timestamps.Current = codedFrame.timestamp;
         }      
     } while (dav1dData.sz > 0);
 

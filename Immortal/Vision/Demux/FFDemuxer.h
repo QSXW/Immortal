@@ -30,7 +30,7 @@ public:
 
     ~FFDemuxer();
 
-    virtual CodecError Open(const std::string &filepath, VideoCodec *codec) override;
+    virtual CodecError Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr) override;
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 

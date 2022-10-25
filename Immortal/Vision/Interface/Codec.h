@@ -13,10 +13,6 @@ namespace Vision
 
 struct CodedFrame
 {
-    int64_t timestamp;
-    int64_t duration;
-    int64_t offset;
-
     void Assign(std::vector<uint8_t> &&other)
     {
         buffer = std::move(other);
@@ -35,7 +31,10 @@ struct CodedFrame
         return *(T **)buffer.data();
     }
 
+public:
     std::vector<uint8_t> buffer;
+
+    MediaType Type;
 };
 
 using TimeStamp = uint64_t;
@@ -186,8 +185,7 @@ public:
 
     }
 
-    Codec(Type type, Format format) :
-        type{ type }
+    Codec(Format format)
     {
         picture.desc.format = format;
     }
@@ -248,8 +246,6 @@ public:
     }
 
 protected:
-    Type type{ Type::Unspecifed };
-
     Picture picture;
 };
 

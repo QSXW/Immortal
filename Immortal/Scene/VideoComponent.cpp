@@ -11,10 +11,11 @@ namespace Immortal
 
 #define forever for (;;)
 
-VideoPlayerContext::VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer) :
+VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
 	demuxerThread{},
 	mutex{},
 	decoder{decoder},
+	audioDecoder{ audioDecoder },
 	demuxer{demuxer},
 	lastPicture{},
 	state{}
@@ -23,10 +24,19 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Visi
 		while (!state.exited)
 		{
 			Vision::CodedFrame codedFrame;
-			while (!state.exited && (pictures.size() < 7 && pictureCodedFrames.size() < 14) && !demuxer->Read(&codedFrame))
+			while (!state.exited && (pictures.size() < 3 && queues[0].size() < 7) && !demuxer->Read(&codedFrame))
 			{
+				if (codedFrame.Type == MediaType::Subtitle)
+				{
+					continue;
+				}
+				if (!audioDecoder && codedFrame.Type == MediaType::Audio)
+				{
+					continue;
+				}
+				auto &queue = queues[(int)codedFrame.Type];
 				std::unique_lock lock{mutex};
-				pictureCodedFrames.push(codedFrame);
+				queue.push(codedFrame);
 			}
 		}
 	}};
@@ -35,13 +45,13 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Visi
 	    [=, this]() {
 		    while (!state.exited)
 			{
-			    while (!state.exited && pictures.size() < 7 && !pictureCodedFrames.empty())
+			    while (!state.exited && pictures.size() < 7 && !queues[0].empty())
 				{
 				    Vision::CodedFrame codedFrame;
 				    {
 					    std::unique_lock lock{mutex};
-					    codedFrame = pictureCodedFrames.front();
-					    pictureCodedFrames.pop();
+					    codedFrame = queues[0].front();
+						queues[0].pop();
 				    }
 				    if (decoder->Decode(codedFrame) == CodecError::Succeed)
 				    {
@@ -54,6 +64,34 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Visi
 		    }
 	    }};
 
+	if (audioDecoder)
+	{
+		audioDecodeThread = new Thread{
+			[=, this]() {
+				while (!state.exited)
+				{
+					while (!state.exited && audioFrames.size() < 7 && !queues[1].empty())
+					{
+						Vision::CodedFrame codedFrame;
+						{
+							std::unique_lock lock{mutex};
+							codedFrame = queues[1].front();
+							queues[1].pop();
+						}
+						if (audioDecoder->Decode(codedFrame) == CodecError::Succeed)
+						{
+							Vision::Picture picture = audioDecoder->GetPicture();
+
+							std::unique_lock lock{mutex};
+							audioFrames.push(picture);
+						}
+					}
+				}
+			}};
+
+		audioDecodeThread->Start();
+	}
+
 	demuxerThread->Start();
 	videoDecodeThread->Start();
 }
@@ -65,8 +103,8 @@ VideoPlayerContext::~VideoPlayerContext()
 	videoDecodeThread.Reset();
 }
 
-VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer) :
-    player{new VideoPlayerContext{decoder, demuxer}}
+VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
+    player{new VideoPlayerContext{demuxer, decoder, audioDecoder}}
 {
 
 }
@@ -81,9 +119,19 @@ Picture VideoPlayerComponent::GetPicture()
 	return player->GetPicture();
 }
 
+Picture VideoPlayerComponent::GetAudioFrame()
+{
+	return player->GetAudioFrame();
+}
+
 void VideoPlayerComponent::PopPicture()
 {
 	player->PopPicture();
+}
+
+void VideoPlayerComponent::PopAudioFrame()
+{
+	player->PopAudioFrame();
 }
 
 Animator *VideoPlayerComponent::GetAnimator() const

@@ -47,16 +47,7 @@ public:
     Format  format;
 };
 
-enum class Type
-{
-    Unspecifed,
-    BMP,
-    JPEG,
-    PNG,
-    EXIF,
-    MP4,
-    HEVC
-};
+}
 
 enum class MediaType
 {
@@ -66,5 +57,4 @@ enum class MediaType
     Subtitle = 3
 };
 
-}
 }

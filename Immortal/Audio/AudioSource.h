@@ -20,11 +20,11 @@ public:
 
 #ifdef _MSC_VER
     HRESULT LoadData(int numFramesAvaiable, void* pData, DWORD* flags);
-#endif 
+#endif
 
     bool InProgress() const;
 
-    AudioClip GetAudioClip(int frames);
+    AudioClip GetAudioClip(int frames = 0);
 
 protected:
     Ref<Vision::Interface::Codec> codec;
@@ -37,8 +37,20 @@ struct AudioClip
     AudioClip() :
         bytes{},
         pData{},
-        frames{}
-    {}
+        frames{},
+        picture{}
+    {
+
+    }
+
+    AudioClip(Picture picture) :
+        bytes{},
+        pData{ picture.shared->data[0] },
+        frames{},
+        picture{picture}
+    {
+        frames = picture.desc.width;
+    }
 
     int Cosume(void *dst, uint32_t frameRequested)
     {
@@ -56,6 +68,8 @@ struct AudioClip
     const uint8_t *pData;
 
     uint32_t frames;
+
+    Picture picture;
 };
 
 }

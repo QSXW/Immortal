@@ -369,7 +369,7 @@ struct FilterComponent : public Component
 struct VideoPlayerContext
 {
 public:
-	VideoPlayerContext(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer);
+	VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
 
 	~VideoPlayerContext();
 
@@ -382,11 +382,22 @@ public:
 		return pictures.empty() ? Vision::Picture{} : pictures.front();
 	}
 	
+    Picture GetAudioFrame() const
+    {
+        return audioFrames.empty() ? Vision::Picture{} : audioFrames.front();
+    }
+
 	void PopPicture()
 	{
 		std::unique_lock lock{mutex};
 		pictures.pop();
 	}
+
+    void PopAudioFrame()
+    {
+        std::unique_lock lock{ mutex };
+        audioFrames.pop();
+    }
 
 	const std::string &GetSource() const
 	{
@@ -404,15 +415,15 @@ public:
 
 	Ref<Vision::VideoCodec> decoder;
 
+    Ref<Vision::VideoCodec> audioDecoder;
+
 	Ref<Vision::Interface::Demuxer> demuxer;
 
 	std::queue<Picture> pictures;
 
 	std::queue<Picture> audioFrames;
 
-    std::queue<Vision::CodedFrame> pictureCodedFrames; 
-
-    std::queue<Vision::CodedFrame> audioCodedFrames;
+    std::array<std::queue<Vision::CodedFrame>, 2> queues; 
 
 	Picture lastPicture;
 
@@ -427,7 +438,7 @@ struct VideoPlayerComponent : public Component
 {
     DEFINE_COMP_TYPE(VideoPlayer)
 
-    VideoPlayerComponent(Ref<Vision::VideoCodec> decoder, Ref<Vision::Interface::Demuxer> demuxer);
+    VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
 
     ~VideoPlayerComponent();
 
@@ -438,7 +449,11 @@ struct VideoPlayerComponent : public Component
 
     Picture GetPicture();
 
+    Picture GetAudioFrame();
+
     void PopPicture();
+
+    void PopAudioFrame();
 
     VideoPlayerComponent &operator=(VideoPlayerComponent &&other)
     {

@@ -126,13 +126,24 @@ public:
 		FFDemuxer::Params params = { .stream = stream };
 		ffCodec->SetCodecContext(Anonymize(params));
 
+        auto animator = ffCodec->GetAddress<Animator>();
+
+        auto fps = stream->avg_frame_rate;
+        animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
+        animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
+        animator->Duration        = handle->duration / AV_TIME_BASE;
+
         return 0;
     }
 
-    AVStream *GetStream(MediaType type, int index = 0)
+    AVStream *GetStream(MediaType type)
     {
-        (void)index;
-        return handle->streams[(AVMediaType)type];
+        return handle->streams[streamIndex[(int)type]];
+    }
+
+    AVStream* GetStream(int index)
+    {
+        return handle->streams[index];
     }
 
     operator AVFormatContext *() const
@@ -178,7 +189,7 @@ void FFDemuxer::Destory()
 	formatContext.Reset();
 }
 
-CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
+CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
 	formatContext.Reset();
 
@@ -188,14 +199,10 @@ CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec)
     formatContext = new FormatContext{ filepath };
     formatContext->OpenStream(codec, MediaType::Video);
 
-    auto animator = codec->GetAddress<Animator>();
-
-    AVFormatContext *fc = *formatContext;
-    AVStream *stream = formatContext->GetStream(MediaType::Video);
-    auto fps = stream->avg_frame_rate;
-    animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
-    animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
-    animator->Duration = fc->duration / AV_TIME_BASE;
+    if (audioCodec)
+    {
+        formatContext->OpenStream(audioCodec, MediaType::Audio);
+    }
 
     return CodecError::Succeed;
 }
@@ -207,24 +214,21 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
     {
 		return CodecError::OutOfMemory;
     }
+
     codedFrame->RefTo(packet);
-
-    do
+    int ret = formatContext->ReadFrame(packet);
+    if (ret < 0)
     {
-        av_packet_unref(packet);
-        int ret = formatContext->ReadFrame(packet);
-        if (ret < 0)
+        if (ret == AVERROR_EOF)
         {
-            if (ret == AVERROR_EOF)
-            {
-				return CodecError::EndOfFile;
-            }
-            LOG::DEBUG("Failed to read frame: {}", ret);
-            return CodecError::EndOfFile;
+			return CodecError::EndOfFile;
         }
-    } while (packet->stream_index != formatContext->GetIndex(MediaType::Video));
+        LOG::DEBUG("Failed to read frame: {}", ret);
+        return CodecError::EndOfFile;
+    }
 
-    AVStream *stream = formatContext->GetStream(MediaType::Video);
+    auto stream = formatContext->GetStream(packet->stream_index);
+    codedFrame->Type = (MediaType)stream->codecpar->codec_type;
     packet->time_base = stream->time_base;
 
     return CodecError::Succeed;
