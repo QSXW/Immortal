@@ -8,8 +8,8 @@
 
 #include "Core.h"
 
-#define REFTIMES_PER_SEC       10000000
-#define REFTIMES_PER_MILLISEC  10000
+#define REFTIMES_PER_SEC       10000000ll
+#define REFTIMES_PER_MILLISEC  10000ll
 
 namespace Immortal
 {
@@ -37,6 +37,8 @@ public:
     virtual void Begin() = 0;
 
     virtual void End() = 0;
+
+    virtual void Reset() = 0;
 
     virtual void PlaySamples(uint32_t numberSamples, const uint8_t *pData) = 0;
 

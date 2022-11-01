@@ -11,6 +11,7 @@
 #include "Framework/Async.h"
 #include "Interface/IObject.h"
 #include "AudioRenderContext.h"
+#include "Sync/Semaphore.h"
 
 namespace Immortal
 {
@@ -30,6 +31,30 @@ public:
 
     void PlayFrame(Picture picture);
 
+    void Reset();
+
+    template <class T>
+    void SetCallBack(T &&task)
+    {
+        callBack = std::move(task);
+    }
+
+    void Flush()
+    {
+        flush = true;
+    }
+
+    void OnPauseDown()
+    {
+        pause = true;
+    }
+
+    void OnPauseRelease()
+    {
+        pause = false;
+        semaphore.Signal();
+    }
+
 public:
     URef<Thread> thread;
 
@@ -37,9 +62,15 @@ public:
 
     std::mutex mutex;
 
-    std::queue<AudioClip> queue;
+    Semaphore semaphore = { "Audio Device Sync Primitive" };
+
+    std::function<void(Picture &)> callBack;
 
     bool stopping;
+
+    bool flush;
+
+    bool pause = false;
 };
 
 }

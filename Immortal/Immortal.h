@@ -33,8 +33,8 @@
 #include "Vision/Image/Image.h"
 #include "Vision/Video/Video.h"
 
-#include "Utils/PlatformUtils.h"
-#include "Utils/json.h"
+#include "Helper/PlatformUtils.h"
+#include "Helper/json.h"
 
 #include "Render/DataSet.h"
 #include "Render/Shader.h"
@@ -52,7 +52,6 @@
 #include "Platform/Vulkan/GuiLayer.h"
 
 #include "Sync/Semaphore.h"
-#include "Sync/SemaphorePool.h"
 
 #include "Editor/EditorCamera.h"
 

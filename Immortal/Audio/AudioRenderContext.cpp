@@ -15,7 +15,7 @@ namespace Immortal
 
 AudioRenderContext *AudioRenderContext::CreateInstance()
 {
-#ifdef __WASAPI_CONTEXT__
+#ifdef WASAPI_CONTEXT_H_
     return new WASAPIContext;
 #endif
 

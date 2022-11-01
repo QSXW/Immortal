@@ -113,20 +113,23 @@ FFCodec::~FFCodec()
     }
 }
 
+#define RELEASE_PACKET av_packet_unref(packet); av_packet_free(&packet);
 CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 {
-    int ret = 0; 
+    int ret = 0;
     auto packet = codedFrame.DeRef<AVPacket>();
 
+    auto timeBase = packet->time_base;
     ret = avcodec_send_packet(handle, packet);
     if (ret < 0 && ret != AVERROR(EAGAIN))
     {
         if (ret != AVERROR(EOF))
         {
-            av_packet_unref(packet);
+            RELEASE_PACKET
             return CodecError::ExternalFailed;
         }
     }
+    RELEASE_PACKET
 
     ret = avcodec_receive_frame(handle, frame);
     if (ret < 0)
@@ -203,7 +206,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         AVRational tb{ 1, frame->sample_rate };
         if (frame->pts != AV_NOPTS_VALUE)
         {
-            frame->pts = av_rescale_q(frame->pts, packet->time_base, tb);
+            frame->pts = av_rescale_q(frame->pts, timeBase, tb);
         }
 
         SwrContext *swrContext = swr_alloc_set_opts(
@@ -246,17 +249,12 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     }
     else if (frame->pts != AV_NOPTS_VALUE)
     {
-        frame->pts = frame->best_effort_timestamp;
-        picture.pts = frame->pts * av_q2d(packet->time_base) * animator.FramesPerSecond;
+        picture.pts = frame->best_effort_timestamp * av_q2d(timeBase) * animator.FramesPerSecond;
     }
     else
     {
         picture.pts = NAN;
     }
-
-    animator.Timestamps.Current = picture.pts;
-    av_packet_unref(packet);
-	av_packet_free(&packet);
 
     return CodecError::Succeed;
 }

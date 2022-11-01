@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Utils/json.h"
+#include "Helper/json.h"
 
 namespace Immortal
 {
@@ -19,7 +19,6 @@ public:
         {
             const auto &item = it->items();
             words[it.key()] = it.value().get<std::string>();
-            int pause = 0;
         }
     }
 

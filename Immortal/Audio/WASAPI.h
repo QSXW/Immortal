@@ -6,8 +6,8 @@
 
 #pragma once
 
-#ifndef __WASAPI_CONTEXT__
-#define __WASAPI_CONTEXT__
+#ifndef WASAPI_CONTEXT_H_
+#define WASAPI_CONTEXT_H_
 
 #include "AudioRenderContext.h"
 #include "Platform/D3D/Interface.h"
@@ -33,6 +33,8 @@ public:
 
     virtual void End() override;
 
+    virtual void Reset() override;
+
     virtual void PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
 
     void Release();
@@ -45,6 +47,8 @@ protected:
     ComPtr<IAudioClient> audioClient;
 
     ComPtr<IAudioRenderClient> renderClient;
+
+    ComPtr<IAudioClock> clock;
 
     WAVEFORMATEX *waveFormat;
 };

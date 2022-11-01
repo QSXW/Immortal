@@ -63,6 +63,11 @@ void WASAPIContext::End()
     Check(audioClient->Stop());
 }
 
+void WASAPIContext::Reset()
+{
+    Check(audioClient->Reset());
+}
+
 void WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
 {
     while (numberSamples > 0)

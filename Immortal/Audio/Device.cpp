@@ -10,34 +10,56 @@
 namespace Immortal
 {
 
+static inline float Seconds2Nanoseconds(float seconds)
+{
+    return seconds * 1000000000;
+}
+
 AudioDevice::AudioDevice() :
     context{ AudioRenderContext::CreateInstance() },
-    stopping{ false }
+    stopping{ false },
+    flush{ false }
 {
     thread = new Thread{ [=, this] {
-        auto hnsActualDuration = (double)REFTIMES_PER_SEC * context->GetBufferSize() / context->GetSampleRate();
 
+        uint64_t duration = 0;
         context->Begin();
         while (!stopping)
         {
-            AudioClip audioClip{};
+            Picture picture;
+            if (callBack)
             {
-                std::unique_lock<std::mutex> lock{ mutex };
-                if (queue.empty())
-                {
-                    continue;
-                }
-                audioClip = queue.front();
-                queue.pop();
+                callBack(picture);
             }
 
-            context->PlaySamples(audioClip.frames, audioClip.pData);
+            if (picture.Available())
+            {
+                AudioClip audioClip{ picture };
+                context->PlaySamples(audioClip.frames, audioClip.pData);
+                uint64_t duration = Seconds2Nanoseconds(((float)audioClip.frames / context->GetSampleRate()));
+                duration >>= 1;
+                if (picture.desc.width <= 512)
+                {
+                    duration = 0;
+                }
+                std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+            }
 
-            auto hnsActualDuration = (double)REFTIMES_PER_SEC * audioClip.frames / context->GetSampleRate();
-            Sleep((DWORD)(hnsActualDuration / REFTIMES_PER_MILLISEC / 2));
+            if (pause)
+            {
+                context->End();
+                semaphore.Wait();
+                semaphore.Reset();
+                context->Begin();
+            }
+
+            if (flush)
+            {
+                Reset();
+                flush = false;
+            }
         }
         context->End();
-        Sleep((DWORD)(hnsActualDuration / REFTIMES_PER_MILLISEC / 2));
     } };
 
     thread->Start();
@@ -45,6 +67,7 @@ AudioDevice::AudioDevice() :
 
 AudioDevice::~AudioDevice()
 {
+    Flush();
     stopping = true;
     thread.Reset();
 }
@@ -67,15 +90,19 @@ void AudioDevice::PlayAudioStream(AudioSource *pAudioSource)
 
 void AudioDevice::PlayClip(AudioClip pAudioClip)
 {
-    std::unique_lock<std::mutex> lock{ mutex };
-    queue.push(pAudioClip);
+
 }
 
 void AudioDevice::PlayFrame(Picture picture)
 {
-    AudioClip clip{ picture };
-    std::unique_lock<std::mutex> lock{ mutex };
-    queue.push(clip);
+
+}
+
+void AudioDevice::Reset()
+{
+    context->End();
+    context->Reset();
+    context->Begin();
 }
 
 }

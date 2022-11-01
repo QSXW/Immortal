@@ -20,6 +20,7 @@
 #include "Framework/Timer.h"
 #include "ImGui/GuiLayer.h"
 #include "String/LanguageSettings.h"
+#include "Helper/PlatformUtils.h"
 #include "Resource.h"
 
 namespace Immortal
@@ -280,15 +281,15 @@ public:                                                \
         return text;                                   \
     }                                                  \
                                                        \
-    WidgetType *Text(const std::string &_text)          \
+    WidgetType *Text(const std::string &_text)         \
     {                                                  \
 	    if (!GuiLayer::IsLanguage(Language::English))  \
 	    {                                              \
-		    text = WordsMap::Get(_text);               \
+		    text = Byte2UTF8(WordsMap::Get(_text));    \
 	    }                                              \
 	    else                                           \
 	    {                                              \
-		    text = _text;                              \
+		    text = Byte2UTF8(_text);                   \
 	    }                                              \
                                                        \
 	    return this;                                   \
@@ -479,7 +480,7 @@ public:
                 SLASSERT(anchors.bottom == parent || anchors.bottom->parent == parent);
                 auto bottom = anchors.bottom;
 				const_cast<Widget *>(bottom)->__PreCalculateSize();
-				
+
 				position = ImVec2{ bottom->position.x, bottom->position.y };
 
 			    if (bottom == parent)

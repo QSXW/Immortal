@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "Sync/Semaphore.h"
-#include "Sync/SemaphorePool.h"
 
 namespace Immortal
 {
@@ -10,7 +8,7 @@ namespace Vulkan
 {
 
 class Device;
-class SemaphorePool : public SuperSemaphorePool
+class SemaphorePool
 {
 public:
 	SemaphorePool();

@@ -3,7 +3,7 @@
 #include "Vision/Video/FFCodec.h"
 #include "FileSystem/FileSystem.h"
 #include "Algorithm/LightVector.h"
-
+#include "Helper/PlatformUtils.h"
 #include <list>
 
 #if HAVE_FFMPEG
@@ -36,17 +36,7 @@ public:
 
         memset(streamIndex, -1, sizeof(streamIndex));
 
-#ifdef _WIN32
-		std::wstring wfilepath;
-		wfilepath.resize(MultiByteToWideChar(CP_ACP, 0, path.c_str(), -1, NULL, 0));
-		MultiByteToWideChar(CP_ACP, 0, path.c_str(), path.size(), wfilepath.data(), wfilepath.size());
-
-        std::string filepath;
-		filepath.resize(WideCharToMultiByte(CP_UTF8, 0, wfilepath.c_str(), -1, NULL, NULL, NULL, NULL));
-		WideCharToMultiByte(CP_UTF8, 0, wfilepath.c_str(), wfilepath.size(), filepath.data(), filepath.size(), NULL, NULL);
-#else
-		const std::string &filepath = path;
-#endif
+        std::string filepath = Byte2UTF8(path);
 
 		int ret = avformat_open_input(&handle, filepath.c_str(), NULL, NULL);
         if (ret < 0)
@@ -119,8 +109,12 @@ public:
         return options;
     }
 
-    int OpenStream(VideoCodec *ffCodec, MediaType type)
+    void OpenStream(VideoCodec *ffCodec, MediaType type)
     {
+        if (streamIndex[(size_t)type] < 0)
+        {
+            return;
+        }
         auto stream = handle->streams[GetIndex(type)];
 
 		FFDemuxer::Params params = { .stream = stream };
@@ -132,8 +126,6 @@ public:
         animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
         animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
         animator->Duration        = handle->duration / AV_TIME_BASE;
-
-        return 0;
     }
 
     AVStream *GetStream(MediaType type)
@@ -141,7 +133,7 @@ public:
         return handle->streams[streamIndex[(int)type]];
     }
 
-    AVStream* GetStream(int index)
+    AVStream *GetStream(int index)
     {
         return handle->streams[index];
     }

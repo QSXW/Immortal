@@ -280,6 +280,15 @@ set(WIN32_WINDOES_FILES
     Platform/Windows/NativeInput.cpp
     Platform/Windows/NativeInput.h)
 
+set(WIN32_SYNC_FILES
+    Platform/Windows/Sync/Semaphore.cpp)
+
+set(LINUX_SYNC_FILES
+    Platform/Linux/Sync/Semaphore.cpp)
+
+set(MACOS_SYNC_FILES
+    Platform/macOS/Sync/Semaphore.cpp)
+
 set(WINDOWS_FILES
     ${WINDOWS_FILES}
     $<$<C_COMPILER_ID:MSVC>:${WIN32_WINDOES_FILES}>)
@@ -342,15 +351,15 @@ set(STRING_FILES
     String/LanguageSettings.h)
 
 set(SYNC_FILES
-    Sync/Semaphore.cpp
     Sync/Semaphore.h
-    Sync/SemaphorePool.cpp
-    Sync/SemaphorePool.h)
+    $<$<PLATFORM_ID:Windows>:${WIN32_SYNC_FILES}>
+    $<$<PLATFORM_ID:Linux>:${LINUX_SYNC_FILES}>
+    $<$<PLATFORM_ID:Darwin>:${MACOS_SYNC_FILES}>)
 
-set(UTILS_FILES
-    Utils/nlohmann_json.h
-    Utils/json.h
-    Utils/PlatformUtils.h)
+set(HELPER_FILES
+    Helper/nlohmann_json.h
+    Helper/json.h
+    Helper/PlatformUtils.h)
 
 set(WIDGET_FILES
     Widget/MenuBar.h
@@ -387,7 +396,7 @@ source_group("Script\\"            FILES ${SCRIPT_FILES}    )
 source_group("Serializer\\"        FILES ${SERIALIZER_FILES})
 source_group("String\\"            FILES ${STRING_FILES}    )
 source_group("Sync\\"              FILES ${SYNC_FILES}      )
-source_group("Utils\\"             FILES ${UTILS_FILES}     )
+source_group("Helper\\"            FILES ${HELPER_FILES}    )
 source_group("Widget\\"            FILES ${WIDGET_FILES}    )
 source_group("Net\\"               FILES ${NET_FILES}       )
 
@@ -517,7 +526,7 @@ set(PROJECT_FILES
     ${SERIALIZER_FILES}
     ${STRING_FILES}
     ${SYNC_FILES}
-    ${UTILS_FILES}
+    ${HELPER_FILES}
     ${WIDGET_FILES}
     ${NET_FILES}
     ${VISION_FILES}
