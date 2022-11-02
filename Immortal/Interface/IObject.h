@@ -231,7 +231,6 @@ public:
 
     void Swap(URef &other)
     {
-        THROWIF(&other == this, SError::SelfAssignment);
         std::swap(other._obj, _obj);
     }
 
