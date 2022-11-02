@@ -18,7 +18,7 @@ public:
     D3D11_OPERATOR_HANDLE()
 
 public:
-    Device();
+    Device(int deviceId);
 
     ~Device();
 

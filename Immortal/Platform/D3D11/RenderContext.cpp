@@ -23,12 +23,12 @@ RenderContext::~RenderContext()
 
 void RenderContext::__Prepare()
 {
-	device = new Device;
+	device = new Device(desc.deviceId);
 
     DXGI_SWAP_CHAIN_DESC dxgiDesc = {
 		.BufferDesc = {
-		    .Width            = desc.Width,
-		    .Height           = desc.Height,
+		    .Width            = desc.width,
+		    .Height           = desc.height,
 		    .RefreshRate      = {
 		        .Numerator   = 0,
 		        .Denominator = 1,
@@ -42,8 +42,8 @@ void RenderContext::__Prepare()
 		    .Quality = 0,
 		},
 		.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-		.BufferCount  = U32(desc.FrameCount),
-		.OutputWindow = (HWND)desc.WindowHandle->Primitive(),
+		.BufferCount  = U32(desc.presentMode),
+		.OutputWindow = (HWND)desc.window->Primitive(),
         .Windowed     = true,
 	    .SwapEffect   = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 	    .Flags        = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
@@ -74,7 +74,7 @@ void RenderContext::SwapBuffers()
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
 	renderTarget.Reset();
-	Check(swapchain->ResizeBuffers(width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH, U32(desc.FrameCount)));
+	Check(swapchain->ResizeBuffers(width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH, U32(desc.presentMode)));
 	__UpdateSwapchain();
 }
 

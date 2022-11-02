@@ -105,7 +105,7 @@ public:
 		}
 		if constexpr (std::is_same_v<T, Window>)
 		{
-			return desc.WindowHandle;
+			return desc.window;
 		}
 		if constexpr (std::is_same_v<T, RenderTarget>)
 		{

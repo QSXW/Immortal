@@ -24,7 +24,7 @@ public:
 	D3D12_OPERATOR_HANDLE()
 
 public:
-    Device();
+    Device(int deviceId = AUTO_DEVICE_ID);
 
     ~Device();
 

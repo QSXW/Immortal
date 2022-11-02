@@ -27,11 +27,14 @@ Application::Application(const Window::Description &description) :
     window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
-    context = RenderContext::Create(RenderContext::Description{
-        window,
-        desc.Width,
-        desc.Height
-        });
+    context = RenderContext::CreateInstance({
+        .width       = description.Width,
+        .height      = description.Height,
+        .format      = Format::RGBA8,
+        .window      = window,
+        .presentMode = SwapchainPresentMode::TripleBuffer,
+        .deviceId    = Render::DeviceId,
+    });
 
     scriptEngine = new ScriptEngine{ description.Title, R"(C:\Users\qsxw\source\repos\ConsoleApp2\ConsoleApp2\bin\Debug\net6.0\ConsoleApp2.dll)" };
 

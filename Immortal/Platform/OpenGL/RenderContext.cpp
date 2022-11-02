@@ -33,7 +33,7 @@ Capabilities RenderContext::capabilites;
 CommandBuffer RenderContext::commandBuffer;
 
 RenderContext::RenderContext(const Description &desc) :
-	handle(static_cast<GLFWwindow *>(desc.WindowHandle->GetNativeWindow()))
+	handle(static_cast<GLFWwindow *>(desc.window->GetNativeWindow()))
 {
     SLASSERT(handle && "Window Handle is null!");
     Setup();

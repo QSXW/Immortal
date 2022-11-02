@@ -134,7 +134,7 @@ public:
         }
         if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
-            return instance->SuitablePhysicalDevice();
+            return device->Get<PhysicalDevice &>();
         }
         if constexpr (IsPrimitiveOf<Device, T>())
         {

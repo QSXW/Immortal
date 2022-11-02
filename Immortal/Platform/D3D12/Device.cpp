@@ -1,5 +1,6 @@
 #include "Device.h"
 #include "Framework/DLLLoader.h"
+#include "RenderContext.h"
 #include <dxgidebug.h>
 
 namespace Immortal
@@ -7,7 +8,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Device::Device()
+Device::Device(int deviceId)
 {
     uint32_t dxgiFactoryFlags = 0;
 
@@ -23,8 +24,17 @@ Device::Device()
     }
 #endif
     Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
-    GetHardwareAdapter(dxgiFactory.Get(), &adapter);
-	Check(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&handle)));
+
+    if (deviceId == AUTO_DEVICE_ID)
+    {
+        GetHardwareAdapter(dxgiFactory.Get(), &adapter);
+    }
+    else
+    {
+        dxgiFactory->EnumAdapters1(deviceId, &adapter);
+    }
+
+    Check(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&handle)));
 }
 
 Device::~Device()
@@ -46,24 +56,24 @@ Device::~Device()
 
 void Device::EnumerateAdapters(std::vector<AdapterProperty> &pAdapters)
 {
-	for (UINT adapterIndex = 0; ; adapterIndex++)
-	{
-		ComPtr<IDXGIAdapter1> pAdapter;
-		if (dxgiFactory->EnumAdapters1(adapterIndex, pAdapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND)
-		{
-			break;
-		}
+    for (UINT adapterIndex = 0; ; adapterIndex++)
+    {
+        ComPtr<IDXGIAdapter1> pAdapter;
+        if (dxgiFactory->EnumAdapters1(adapterIndex, pAdapter.GetAddressOf()) == DXGI_ERROR_NOT_FOUND)
+        {
+            break;
+        }
 
         AdapterProperty props = { .pAdapter = pAdapter };
-		Check(pAdapter->GetDesc(&props.desc));
-		pAdapters.emplace_back(props);
-	}
+        Check(pAdapter->GetDesc(&props.desc));
+        pAdapters.emplace_back(props);
+    }
 }
 
 DXGI_ADAPTER_DESC Device::GetAdapterDesc()
 {
     DXGI_ADAPTER_DESC adapterDesc{};
-	Check(adapter->GetDesc(&adapterDesc));
+    Check(adapter->GetDesc(&adapterDesc));
 
     return adapterDesc;
 }

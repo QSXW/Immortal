@@ -38,9 +38,7 @@ RenderContext::~RenderContext()
 
 void RenderContext::__Prepare()
 {
-    desc.FrameCount = Swapchain::SWAP_CHAIN_BUFFER_COUNT;
-
-    device = new Device;
+    device = new Device{ desc.deviceId };
 
     for (size_t i = 0; i < SL_ARRAY_LENGTH(descriptorAllocators); i++)
     {
@@ -60,22 +58,22 @@ void RenderContext::__Prepare()
     __InitQueue();
 
 	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {
-        .Width       = desc.Width,
-        .Height      = desc.Height,
+        .Width       = desc.width,
+        .Height      = desc.height,
         .Format      = desc.format,
         .Stereo      = FALSE,
 		.SampleDesc  = { .Count = 1, .Quality = 0 },
 		.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-        .BufferCount = UINT(desc.FrameCount),
+        .BufferCount = UINT(desc.presentMode),
 		.Scaling     = DXGI_SCALING_STRETCH,
 		.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD,
         .AlphaMode   = DXGI_ALPHA_MODE_UNSPECIFIED,
         .Flags       = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH,
     };
-    swapchain = new Swapchain{ this, graphicsDispatcher->GetAddress<Queue>(), desc.WindowHandle, swapchainDesc};
+    swapchain = new Swapchain{ this, graphicsDispatcher->GetAddress<Queue>(), desc.window, swapchainDesc};
 
     auto dxgiFactory = device->GetAddress<IDXGIFactory4>();
-    Check(dxgiFactory->MakeWindowAssociation((HWND)desc.WindowHandle->Primitive(), DXGI_MWA_NO_ALT_ENTER));
+    Check(dxgiFactory->MakeWindowAssociation((HWND)desc.window->Primitive(), DXGI_MWA_NO_ALT_ENTER));
 
     {
         CheckDisplayHDRSupport();
@@ -279,7 +277,7 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
     swapchain->GetDesc(&swapchainDesc);
 
-    if (desc.Width != width || desc.Height != height)
+    if (desc.width != width || desc.height != height)
     {
         WaitForGPU();
         swapchain->ClearRenderTarget();
@@ -289,7 +287,7 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
             height,
             DXGI_FORMAT_UNKNOWN,
             swapchainDesc.Flags,
-            desc.FrameCount
+            desc.presentMode
         );
 
         EnsureSwapChainColorSpace(color.bitDepth, color.enableST2084);

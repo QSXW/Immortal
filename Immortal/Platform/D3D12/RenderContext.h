@@ -141,13 +141,13 @@ public:
         }
         if constexpr (IsPrimitiveOf<Window, T>())
         {
-            return desc.WindowHandle;
+            return desc.window;
         }
     }
 
     UINT FrameSize()
     {
-        return desc.FrameCount;
+        return desc.presentMode;
     }
 
     DescriptorPool *ShaderResourceViewDescritorHeap()
@@ -167,10 +167,7 @@ public:
 
     Vector2 Extent()
     {
-        return Vector2{
-            ncast<float>(desc.Width),
-            ncast<float>(desc.Height)
-        };
+        return Vector2{ (float)desc.width, (float)desc.height };
     }
 
     void CheckDisplayHDRSupport();

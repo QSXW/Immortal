@@ -95,10 +95,11 @@ public:
         }
     }
 
-    static void Set(Type type)
+    static void Set(Type type, int id = AUTO_DEVICE_ID)
     {
-        API  = type;
-        SAPI = Sringify(type);
+        API      = type;
+        DeviceId = id;
+        SAPI     = Sringify(type);
     }
 
     template <class T>
@@ -261,9 +262,11 @@ private:
     static inline Vector2 viewport{ 1, 1 };
 
 public:
-    static inline Type API{ Type::None };
+    static inline Type API = Type::None;
 
-    static inline const char *SAPI{ nullptr };
+    static inline int DeviceId = 0;
+
+    static inline const char *SAPI = "";
 };
 
 SL_DEFINE_BITWISE_OPERATION(Render::Type, uint32_t)

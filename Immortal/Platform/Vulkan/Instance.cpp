@@ -290,15 +290,26 @@ void Instance::QueryPhysicalDevice()
     }
 }
 
-PhysicalDevice &Instance::SuitablePhysicalDevice()
+PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
 {
     ThrowIf(physicalDevices.empty(), "There is no GPU on this device.");
+
+    if (deviceId != AUTO_DEVICE_ID)
+    {
+        if (deviceId >= physicalDevices.size())
+        {
+            LOG::ERR("Failed to query physical device with `deviceId:{}`", deviceId);
+            throw RuntimeException("Invalid Device Id");
+        }
+
+        return physicalDevices[deviceId];
+    }
 
     for (auto &physicalDevice : physicalDevices)
     {
         if (physicalDevice->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
-            return *physicalDevice;
+            return physicalDevice;
         }
     }
 
@@ -308,7 +319,7 @@ PhysicalDevice &Instance::SuitablePhysicalDevice()
     }
 
     LOG::WARN("Couldn't find a discrete physical device. Picking the default.");
-    return *physicalDevices.at(0);
+    return physicalDevices[0];
 }
 
 VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator) const

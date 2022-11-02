@@ -10,14 +10,10 @@ namespace Immortal
 {
 
 class GuiLayer;
-class Swapchain
-{
-public:
-enum class PresentMode
+enum SwapchainPresentMode
 {
     DoubleBuffer = 2,
     TripleBuffer = 3
-};
 };
 
 class Shader;
@@ -25,38 +21,22 @@ class IMMORTAL_API RenderContext
 {
 public:
     struct Description
-    {
-        Description() { }
+    {	
+        uint32_t width;
 
-        Description(Window *handle, uint32_t width, uint32_t height, Swapchain::PresentMode mode = Swapchain::PresentMode::TripleBuffer) :
-            WindowHandle{ handle },
-            Width{ width },
-            Height{ height },
-            FrameCount{ ncast<int>(mode) }
-        {
+        uint32_t height;
 
-        }
+        Format format;
 
-        uint32_t Width{ 0 };
+        Window *window;
 
-        uint32_t Height{ 0 };
+        SwapchainPresentMode presentMode;
 
-        int FrameCount{ 3 };
-
-        Window *WindowHandle{ nullptr };
-
-        Format format{ Format::RGBA8 };
-
-        const char *ApplicationName{ "" };
-
-        void Set(Swapchain::PresentMode mode)
-        {
-            FrameCount = ncast<int>(mode);
-        }
+        int deviceId = 0;
     };
 
 public:
-    static RenderContext *Create(const Description &desc);
+    static RenderContext *CreateInstance(const Description &desc);
 
 public:
     RenderContext()
@@ -66,10 +46,10 @@ public:
 
     virtual ~RenderContext() = default;
 
-	virtual Anonymous GetDevice() const
-	{
-		return nullptr;
-	}
+    virtual Anonymous GetDevice() const
+    {
+        return nullptr;
+    }
 
     virtual GuiLayer *CreateGuiLayer()
     {
@@ -91,104 +71,104 @@ public:
         return vendor.c_str();
     }
 
-	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
-	{
-	
-	}
+    virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+    {
+    
+    }
 
     virtual void SwapBuffers()
-	{
-	
-	}
+    {
+    
+    }
 
-	virtual void PrepareFrame()
-	{
-	
-	}
+    virtual void PrepareFrame()
+    {
+    
+    }
 
-	virtual Shader *CreateShader(const std::string &filepath, Shader::Type type)
-	{
-		return nullptr;
-	}
+    virtual Shader *CreateShader(const std::string &filepath, Shader::Type type)
+    {
+        return nullptr;
+    }
 
-	virtual GraphicsPipeline *CreateGraphicsPipeline(Ref<Shader> shader)
-	{
-		return nullptr;
-	}
+    virtual GraphicsPipeline *CreateGraphicsPipeline(Ref<Shader> shader)
+    {
+        return nullptr;
+    }
 
-	virtual ComputePipeline *CreateComputePipeline(Shader *shader)
-	{
-		return nullptr;
-	}
+    virtual ComputePipeline *CreateComputePipeline(Shader *shader)
+    {
+        return nullptr;
+    }
 
-	virtual Texture *CreateTexture(const std::string &filepath, const Texture::Description &description = {})
-	{
-		return nullptr;
-	}
+    virtual Texture *CreateTexture(const std::string &filepath, const Texture::Description &description = {})
+    {
+        return nullptr;
+    }
 
-	virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {})
-	{
-		return nullptr;
-	}
+    virtual Texture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {})
+    {
+        return nullptr;
+    }
 
-	virtual TextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description = {})
-	{
-		return nullptr;
-	}
+    virtual TextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description = {})
+    {
+        return nullptr;
+    }
 
-	virtual Buffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type)
-	{
-		return nullptr;
-	}
+    virtual Buffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type)
+    {
+        return nullptr;
+    }
 
-	virtual Buffer *CreateBuffer(const size_t size, Buffer::Type type)
-	{
-		return nullptr;
-	}
+    virtual Buffer *CreateBuffer(const size_t size, Buffer::Type type)
+    {
+        return nullptr;
+    }
 
-	virtual Buffer *CreateBuffer(const size_t size, uint32_t binding)
-	{
-		return nullptr;
-	}
+    virtual Buffer *CreateBuffer(const size_t size, uint32_t binding)
+    {
+        return nullptr;
+    }
 
-	virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
-	{
-		return nullptr;
-	}
+    virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
+    {
+        return nullptr;
+    }
 
-	virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
-	{
-	}
+    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+    {
+    }
 
-	virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
-	{
-	}
+    virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
+    {
+    }
 
-	virtual void Draw(GraphicsPipeline *pipeline)
-	{
-	}
+    virtual void Draw(GraphicsPipeline *pipeline)
+    {
+    }
 
-	virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
-	{
-	}
+    virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+    {
+    }
 
-	virtual void Begin(RenderTarget *renderTarget)
-	{
-	}
+    virtual void Begin(RenderTarget *renderTarget)
+    {
+    }
 
-	virtual void End()
-	{
-	}
+    virtual void End()
+    {
+    }
 
-	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count)
-	{
-		return nullptr;
-	}
+    virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count)
+    {
+        return nullptr;
+    }
 
-	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count)
-	{
-		return nullptr;
-	}
+    virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count)
+    {
+        return nullptr;
+    }
 
 public:
     RenderContext(const RenderContext &) = delete;
@@ -222,7 +202,7 @@ using SuperRenderContext = RenderContext;
 
 namespace Interface
 {
-	using RenderContext = SuperRenderContext;
+    using RenderContext = SuperRenderContext;
 }
 
 }

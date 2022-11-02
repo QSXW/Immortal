@@ -31,7 +31,7 @@ public:
 
     ~Instance();
 
-    PhysicalDevice &SuitablePhysicalDevice();
+    PhysicalDevice *SuitablePhysicalDevice(int deviceId = AUTO_DEVICE_ID);
 
     void QueryPhysicalDevice();
 

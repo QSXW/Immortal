@@ -6,7 +6,7 @@ namespace Immortal
 namespace D3D11
 {
 
-Device::Device() :
+Device::Device(int deviceId) :
     featureLevel{}
 {
 	UINT deviceFlags = 0;
@@ -20,18 +20,26 @@ Device::Device() :
 	ComPtr<ID3D11Device> pDevice;
 	ComPtr<ID3D11DeviceContext> pDeviceContext;
 
-	GetHardwareAdapter(dxgiFactory.Get(), &adapter);
+	if (deviceId == AUTO_DEVICE_ID)
+	{
+		GetHardwareAdapter(dxgiFactory.Get(), &adapter);
+	}
+	else
+	{
+		dxgiFactory->EnumAdapters1(deviceId, &adapter);
+	}
+
 	Check(D3D11CreateDevice(
-	    adapter.Get(),                        
-	    D3D_DRIVER_TYPE_HARDWARE,       
-	    0,                              
-	    deviceFlags,                    
-	    FeatureLevels,                  
-	    SL_ARRAY_LENGTH(FeatureLevels), 
-	    D3D11_SDK_VERSION,              
-	    &pDevice,                        
-	    &featureLevel,                
-	    &pDeviceContext                        
+	    adapter.Get(),
+	    D3D_DRIVER_TYPE_HARDWARE,
+	    0,
+	    deviceFlags,
+	    FeatureLevels,
+	    SL_ARRAY_LENGTH(FeatureLevels),
+	    D3D11_SDK_VERSION,
+	    &pDevice,
+	    &featureLevel,
+	    &pDeviceContext
 	));
 
 	pDevice.As<ID3D11Device5>(&handle);

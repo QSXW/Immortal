@@ -45,9 +45,9 @@ static std::vector<const char *> ValidationLayers = {
 };
 
 RenderContext::RenderContext(const RenderContext::Description &desc) :
-    window{ desc.WindowHandle }
+    window{ desc.window }
 {
-    instance = new Instance{ desc.ApplicationName, InstanceExtensions, ValidationLayers };
+    instance = new Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
     if (!instance->Ready())
     {
         LOG::ERR("Vulkan Not Supported!");
@@ -60,17 +60,17 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
         AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
 
-    auto &physicalDevice = instance->SuitablePhysicalDevice();
-    physicalDevice.Activate(PhysicalDevice::Feature::SamplerAnisotropy);
-    physicalDevice.Activate(PhysicalDevice::Feature::RobustBufferAccess);
-    physicalDevice.Activate(PhysicalDevice::Feature::IndependentBlend);
+    auto physicalDevice = instance->SuitablePhysicalDevice(desc.deviceId);
+    physicalDevice->Activate(PhysicalDevice::Feature::SamplerAnisotropy);
+    physicalDevice->Activate(PhysicalDevice::Feature::RobustBufferAccess);
+    physicalDevice->Activate(PhysicalDevice::Feature::IndependentBlend);
 
-    depthFormat = physicalDevice.GetSuitableDepthFormat();
+    depthFormat = physicalDevice->GetSuitableDepthFormat();
 
-    device = new Device{ &physicalDevice, surface, DeviceExtensions };
+    device = new Device{ physicalDevice, surface, DeviceExtensions };
     queue  = device->SuitableGraphicsQueuePtr();
 
-    surfaceExtent = VkExtent2D{ desc.Width, desc.Height };
+    surfaceExtent = VkExtent2D{ desc.width, desc.height };
     if (surface != VK_NULL_HANDLE)
     {
 		swapchainPool.emplace_back(new Swapchain{device});
@@ -78,7 +78,7 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     }
     EnableGlobal();
 
-    Super::UpdateMeta(physicalDevice.Properties.deviceName, nullptr, nullptr);
+    Super::UpdateMeta(physicalDevice->Properties.deviceName, nullptr, nullptr);
 }
 
 RenderContext::~RenderContext()

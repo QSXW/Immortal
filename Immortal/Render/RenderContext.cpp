@@ -11,7 +11,7 @@
 namespace Immortal
 {
 
-RenderContext *RenderContext::Create(const Description &desc)
+RenderContext *RenderContext::CreateInstance(const Description &desc)
 {
     switch (Render::API)
     {
