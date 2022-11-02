@@ -327,7 +327,7 @@ public:
             else if (FileSystem::IsVideo(filepath))
             {
                 Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
-                Ref<Vision::VideoCodec> decoder = new Vision::D3D12::HEVCCodec;
+                Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
 
                 Vision::CodedFrame codecFrame;
 				demuxer->Open(res.value(), decoder);
@@ -337,7 +337,7 @@ public:
                 demuxer->Open(filepath, decoder);
                 Vision::CodedFrame codedFrame;
 
-                auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(decoder, demuxer);
+                auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(demuxer, decoder);
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
                 object.AddComponent<ColorMixingComponent>();
             }

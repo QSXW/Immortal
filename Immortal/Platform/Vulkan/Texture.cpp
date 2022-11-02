@@ -334,6 +334,7 @@ void Texture::Blit()
 }
 
 TextureCube::TextureCube(Device * device, uint32_t width, uint32_t height, const Description &desc) :
+    SuperTexture{ width, height, desc.mipLevels },
     Vulkan::Texture{ device, width, height, nullptr, desc, 6 }
 {
 
