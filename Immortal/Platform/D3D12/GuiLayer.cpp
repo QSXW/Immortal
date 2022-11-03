@@ -204,7 +204,7 @@ void GuiLayer::__RenderDrawData(CommandList *commandList)
         if (!vertex || vertex->Size() < totalVertexSize)
         {
             vertex = new Buffer{ context, totalVertexSize, Buffer::Type::Vertex};
-         }
+        }
 
         if (!index || index->Size() < totalIndexSize)
         {

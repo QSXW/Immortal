@@ -100,9 +100,7 @@ public:
 
     virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
 
-    virtual void *GetNativeWindow() const = 0;
-
-    virtual void *Primitive() const = 0;
+    virtual Anonymous Primitive() const = 0;
 
     virtual void ProcessEvents() = 0;
 
@@ -124,7 +122,7 @@ public:
     }
 
 public:
-    static Window *Create(const Description &description = Description{});
+    static Window *CreateInstance(const Description &description = Description{});
 };
 
 }

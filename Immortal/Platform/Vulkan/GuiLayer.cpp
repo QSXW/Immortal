@@ -9,6 +9,7 @@
 #include <imgui_internal.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_win32.h>
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -90,6 +91,15 @@ static std::vector<uint32_t> ImGuiFragSpirv = {
     0x00010038
 };
 
+static int CreateVkSurface(ImGuiViewport *viewport, ImU64 instance, const void *pAllocator, ImU64 *pSurface)
+{
+    HWND hWnd = *(HWND *)viewport->PlatformUserData;
+    return Instance::CreateSurface((VkInstance)instance, hWnd, (VkSurfaceKHR*)pSurface, (const VkAllocationCallbacks*)pAllocator);
+}
+
+static void (*ImGui_ImplImmortal_NewFrame)();
+static void (*ImGui_ImplImmortal_ShutDown)();
+
 GuiLayer::GuiLayer(RenderContext *context) :
     context{ context }
 {
@@ -118,7 +128,7 @@ GuiLayer::~GuiLayer()
 		buffer.index.Reset();
     }
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplImmortal_ShutDown();
 }
 
 void GuiLayer::OnAttach()
@@ -126,7 +136,22 @@ void GuiLayer::OnAttach()
     Super::OnAttach();
 
     Application *app = Application::App();
-    ImGui_ImplGlfw_InitForVulkan(rcast<GLFWwindow *>(app->GetNativeWindow()), true);
+    auto window = app->GetWindow();
+
+    if (window->GetType() == Window::Type::GLFW)
+    {
+        ImGui_ImplGlfw_InitForVulkan((GLFWwindow *)(app->GetWindow()->Primitive()), true);
+        ImGui_ImplImmortal_NewFrame = ImGui_ImplGlfw_NewFrame;
+        ImGui_ImplImmortal_ShutDown = ImGui_ImplGlfw_Shutdown;
+    }
+    else
+    {
+        ImGui_ImplWin32_Init(window->Primitive());
+        ImGuiPlatformIO &platformIO = ImGui::GetPlatformIO();
+        platformIO.Platform_CreateVkSurface = CreateVkSurface;
+        ImGui_ImplImmortal_NewFrame = ImGui_ImplWin32_NewFrame;
+        ImGui_ImplImmortal_ShutDown = ImGui_ImplWin32_Shutdown;
+    }
 
     auto device = context->GetAddress<Device>();
     descriptorPool = new DescriptorPool{ device, Limit::PoolSize };
@@ -159,7 +184,7 @@ void GuiLayer::OnAttach()
 void GuiLayer::OnDetach()
 {
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplImmortal_ShutDown();
     Super::OnDetach();
 }
 
@@ -177,7 +202,7 @@ void GuiLayer::OnEvent(Event &e)
 void GuiLayer::Begin()
 {
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplImmortal_NewFrame();
     Super::__Begin();
 }
 

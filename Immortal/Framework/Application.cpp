@@ -23,7 +23,7 @@ Application::Application(const Window::Description &description) :
 
     Async::Setup();
 
-    window = Window::Create(desc);
+    window = Window::CreateInstance(desc);
     window->SetIcon("Assets/Icon/terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
@@ -44,7 +44,7 @@ Application::Application(const Window::Description &description) :
     }
     else
     {
-            Async::Execute([&]() { Render::Setup(context); timer.Start(); });
+        Async::Execute([&]() { Render::Setup(context); timer.Start(); });
     }
 
 	gui = context->CreateGuiLayer();

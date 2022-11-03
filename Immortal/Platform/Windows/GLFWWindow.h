@@ -38,12 +38,7 @@ public:
         desc.EventCallback = callback;
     }
 
-    virtual void *GetNativeWindow() const override
-    {
-        return window;
-    }
-
-    virtual void *Primitive() const override;
+    virtual Anonymous Primitive() const override;
 
     float Time() const override;
 

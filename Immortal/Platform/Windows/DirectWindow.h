@@ -34,11 +34,6 @@ public:
         EventDispatcher = callback;
     }
 
-    virtual void *GetNativeWindow() const override
-    {
-        return handle;
-    }
-
     virtual void *Primitive() const override;
 
     virtual void Show() override;

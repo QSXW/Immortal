@@ -28,7 +28,7 @@ void GuiLayer::OnAttach()
     Super::OnAttach();
     Application *app = Application::App();
 
-    ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)app->GetWindow().GetNativeWindow(), true);
+    ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)app->GetWindow()->Primitive(), true);
     ImGui_ImplOpenGL3_Init("#version 410");
 }
 

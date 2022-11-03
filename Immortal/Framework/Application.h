@@ -49,14 +49,9 @@ public:
         return gui;
     }
 
-    virtual Window &GetWindow() const
+    virtual Window *GetWindow() const
     {
-        return *window;
-    }
-
-    void *GetNativeWindow() const
-    {
-        return window->GetNativeWindow();
+        return window;
     }
 
     RenderContext *Context()

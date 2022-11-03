@@ -183,13 +183,9 @@ void GLFWWindow::Shutdown()
     }
 }
 
-void *GLFWWindow::Primitive() const
+Anonymous GLFWWindow::Primitive() const
 {
-#ifdef _WIN32
-    return glfwGetWin32Window(window);
-#else
     return Anonymize(window);
-#endif
 }
 
 float GLFWWindow::Time() const

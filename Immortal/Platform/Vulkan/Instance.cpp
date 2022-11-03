@@ -320,13 +320,27 @@ PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
 
     LOG::WARN("Couldn't find a discrete physical device. Picking the default.");
     return physicalDevices[0];
+} 
+
+VkResult Instance::CreateSurface(VkInstance instance, HWND hwnd, VkSurfaceKHR *pSurface, const VkAllocationCallbacks* pAllocator)
+{
+#ifdef _WIN32
+        VkWin32SurfaceCreateInfoKHR createInfo{};
+        createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        createInfo.hinstance = GetModuleHandle(NULL);
+        createInfo.hwnd      = hwnd;
+        return vkCreateWin32SurfaceKHR(instance, &createInfo, pAllocator, pSurface);
+#else
+        LOG::WARN("Native surface creation is not supported on Linux and Mac yet!");
+        return VK_ERROR_INITIALIZATION_FAILED;
+#endif
 }
 
 VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator) const
 {
     if (!window || window->GetType() == Window::Type::Headless)
     {
-        LOG::WARN("Failed to create surface without valid window. Enable the headless Vulkan rendering.");
+        LOG::INFO("Failed to create surface without valid window. Enable the headless Vulkan rendering.");
         *pSurface = VK_NULL_HANDLE;
         return VK_SUCCESS;
     }
@@ -334,20 +348,13 @@ VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const V
     switch (window->GetType())
     {
     case  Window::Type::GLFW:
-        return glfwCreateWindowSurface(handle, static_cast<GLFWwindow *>(window->GetNativeWindow()), pAllocator, pSurface);
+        return glfwCreateWindowSurface(handle, (GLFWwindow *)(window->Primitive()), pAllocator, pSurface);
 
+    case Window::Type::Win32:
     default:
-#ifdef _WIN32
-        VkWin32SurfaceCreateInfoKHR createInfo{};
-        createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hinstance = GetModuleHandle(NULL);
-        createInfo.hwnd      = static_cast<HWND>(window->Primitive());
-        return vkCreateWin32SurfaceKHR(handle, &createInfo, pAllocator, nullptr);
-#else
-        LOG::WARN("Native surface creation is not supported on Linux and Mac yet!");
-        return VK_ERROR_INITIALIZATION_FAILED;
-#endif
+        return CreateSurface(handle, (HWND)window->Primitive(), pSurface);
     }
+
 }
 
 }

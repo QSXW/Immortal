@@ -70,7 +70,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     device = new Device{ physicalDevice, surface, DeviceExtensions };
     queue  = device->SuitableGraphicsQueuePtr();
 
-    surfaceExtent = VkExtent2D{ desc.width, desc.height };
     if (surface != VK_NULL_HANDLE)
     {
 		swapchainPool.emplace_back(new Swapchain{device});
@@ -115,8 +114,7 @@ void RenderContext::Prepare(size_t threadCount)
 
     renderPass = new RenderPass{device, swapchainPool[0]->Get<VkFormat>(), depthFormat};
 
-	UpdateSwapchain(surfaceExtent, regisry.preTransform);
-	swapchain = swapchainPool[0];
+	UpdateSurface();
 
     SetupDescriptorSetLayout();
     __InitSyncObjects();

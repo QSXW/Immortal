@@ -55,6 +55,9 @@ public: /* vk api */
     VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr) const;
 
 public:
+    static VkResult CreateSurface(VkInstance instance, HWND hwnd, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
+
+public:
     bool IsEnabled(const char *extension) const
     {
         return std::find_if(enabledExtensions.begin(), enabledExtensions.end(),

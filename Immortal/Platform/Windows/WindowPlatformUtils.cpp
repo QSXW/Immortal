@@ -17,7 +17,7 @@ std::optional<std::string> FileDialogs::OpenFile(const char *filter)
     CHAR szFile[260] = { 0 };
     ZeroMemory(&ofn, sizeof(OPENFILENAMEA));
     ofn.lStructSize = sizeof(OPENFILENAMEA);
-    ofn.hwndOwner = reinterpret_cast<HWND>(Application::App()->GetWindow().Primitive());
+    ofn.hwndOwner   = GetActiveWindow();;
 
     ofn.lpstrFile = szFile;
     ofn.nMaxFile = sizeof(szFile);
@@ -61,9 +61,9 @@ std::optional<std::string> FileDialogs::SaveFile(const char *filter)
     CHAR currentDir[256] = { 0 };
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner = reinterpret_cast<HWND>(Application::App()->GetWindow().Primitive());
-    ofn.lpstrFile = szFile;
-    ofn.nMaxFile = sizeof(szFile);
+    ofn.hwndOwner   = GetActiveWindow();
+    ofn.lpstrFile   = szFile;
+    ofn.nMaxFile    = sizeof(szFile);
     if (GetCurrentDirectoryA(256, currentDir))
     {
         ofn.lpstrInitialDir = currentDir;
