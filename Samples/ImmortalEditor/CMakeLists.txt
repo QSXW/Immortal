@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(VulkanSample LANGUAGES CXX)
+project("ImmortalEditor" LANGUAGES CXX)
 
 set(PANEL_FILES
     Panel/HierarchyGraphics.h
@@ -9,8 +9,7 @@ set(PANEL_FILES
     Panel/Tools.h)
 
 set(SRC_FILES
-    src/VulkanSample.cpp
-    src/VulkanSample.h
+    src/Main.cpp
     src/RenderLayer.h)
 
 add_executable(${PROJECT_NAME}
@@ -26,7 +25,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME}
-    Immortal
-)
+    Immortal)
 
 target_link_runtime(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR})
