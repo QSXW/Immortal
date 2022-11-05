@@ -10,26 +10,65 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  Windows-MSVC-Build:
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
 
+    - name: Add MSBuild to Path
+      uses: microsoft/setup-msbuild@v1.1
+      with:
+        msbuild-architecture: x64
+
     - name: Update CMake
       run: cmake --version
-
-    - name: Install Dependencies
-      run: sudo apt update && sudo apt upgrade -y &&
-           sudo apt-get install libxrandr-dev xorg-dev ninja-build gcc-11 g++-11 &&
-           sudo ln -s -f /usr/bin/gcc-11 /usr/bin/gcc &&
-           sudo ln -s -f /usr/bin/g++-11 /usr/bin/g++
 
     - name: Fetch Submodule
       run: git submodule update --init
 
     - name: Configure CMake
-      run: ls && cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
+      run: ls && cmake -G"Visual Studio 17 2022" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
+
+    - name: Build
+      run: ls ${{github.workspace}}/build && cd ${{github.workspace}}/build && MSBuild.exe ALL_BUILD.vcxproj -t:rebuild -property:Configuration=${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
+
+  Linux-Build:
+    strategy:
+      matrix:
+        compiler: ["gcc", "clang"]
+        include:
+          - compiler: gcc
+            c: gcc-11
+            cxx: g++-11
+          - compiler: clang
+            c: clang
+            cxx: clang++
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: sudo apt update && sudo apt upgrade -y &&
+          sudo apt-get install libxrandr-dev xorg-dev ninja-build gcc-11 g++-11
+
+    - name: Update CMake
+      run: cmake --version
+
+    - name: Fetch Submodule
+      run: git submodule update --init
+
+    - name: Configure CMake
+      run: ls && cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+            -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
+            -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/${{ matrix.c }}
+            -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/${{ matrix.cxx }}
 
     - name: Build
       run: cd ${{github.workspace}}/build && ninja
