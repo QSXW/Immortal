@@ -27,7 +27,7 @@ public:
     {
 #ifndef __GNUC__
         return GetCurrentThreadId();
-#else 
+#else
         return (long)pthread_self();
 #endif
     }

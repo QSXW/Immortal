@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
 #pragma once
 
 #include "Core.h"
@@ -7,6 +13,7 @@ namespace Immortal
 
 enum class AddressFamily
 {
+#ifdef _WIN32
     Unspecified   = 0,
     Unix          = 1,
     InterNetwork  = 2,
@@ -37,6 +44,12 @@ enum class AddressFamily
     _12844        = 25,
     IRDA          = 26,
     NETDES        = 28,
+#else
+    Unspecified   = 0,
+    Unix          = 1,
+    InterNetwork  = 2,
+    InterNetwork6 = 10,
+#endif
     IPV4          = InterNetwork,
     IPV6          = InterNetwork6,
 };
@@ -53,8 +66,13 @@ enum class SocketType
 
 enum class Protocol
 {
+#ifdef _WIN32
     TCP,
     UDP,
+#else
+    TCP = 6,
+    UDP = 17,
+#endif
 };
 
 enum class SocketOperation
@@ -62,6 +80,16 @@ enum class SocketOperation
     Receive,
     Send,
     Both,
+};
+
+class SocketExecption : public RuntimeException
+{
+public:
+    SocketExecption(const std::string &what) :
+        RuntimeException{ "Socket::" + what }
+    {
+
+    }
 };
 
 struct SocketHandle

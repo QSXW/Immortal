@@ -610,9 +610,10 @@ public:
         Connect([&] { ImGui::ShowDemoWindow(&isOpen); });
     }
 
-    bool Triggle()
+    bool Toggle()
     {
         isOpen = !isOpen;
+        return isOpen;
     }
 
 protected:

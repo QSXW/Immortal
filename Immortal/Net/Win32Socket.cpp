@@ -1,3 +1,9 @@
+/**
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ *
+ * This library is distributed under the Apache-2.0 license.
+ */
+
 #include "Socket.h"
 
 #pragma comment(lib, "ws2_32.lib")
@@ -43,7 +49,7 @@ static void ProcessSocketError(int error)
     case WSANOTINITIALISED:
         exception = "A successful WSAStartup call must occur before using this function.";
         break;
-      
+
     case WSAENETDOWN:
         exception = "The network subsystem has failed";
         break;
@@ -95,11 +101,11 @@ static void ProcessSocketError(int error)
     case WSAEPROTOTYPE:
         exception = "The specified protocol is the wrong type for this socket";
         break;
-        
+
     case WSAEPROVIDERFAILEDINIT:
         exception = "The service provider failed to initialize.This error is returned if a layered service provider(LSP) or namespace provider was improperly installed or the provider fails to operate correctly.";
         break;
-            
+
     case WSAESOCKTNOSUPPORT:
         exception = "The specified socket type is not supported in this address family";
         break;
@@ -109,7 +115,7 @@ static void ProcessSocketError(int error)
         break;
     }
 
-    throw RuntimeException(exception);    
+    throw RuntimeException(exception);
 }
 
 struct SocketWrapper
@@ -281,12 +287,12 @@ int Socket::Receive(char*buffer, int size)
 
 std::string Socket::GetIpString() const
 {
-    Socket_ char ret[48] = {};
+    Socket_ char str[48] = {};
 
     if (pAddress->ai_family == int(AddressFamily::IPV6))
     {
         SOCKADDR_IN6 *addr = (SOCKADDR_IN6 *)pAddress->ai_addr;
-        RtlIpv6AddressToStringA(&addr->sin6_addr, ret);
+        RtlIpv6AddressToStringA(&addr->sin6_addr, str);
     }
     else
     {
@@ -294,7 +300,7 @@ std::string Socket::GetIpString() const
         return inet_ntoa(addr->sin_addr);
     }
 
-    return ret;
+    return str;
 }
 
 }

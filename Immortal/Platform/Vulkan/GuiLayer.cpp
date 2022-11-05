@@ -91,11 +91,13 @@ static std::vector<uint32_t> ImGuiFragSpirv = {
     0x00010038
 };
 
+#ifdef _WIN32
 static int CreateVkSurface(ImGuiViewport *viewport, ImU64 instance, const void *pAllocator, ImU64 *pSurface)
 {
     HWND hWnd = *(HWND *)viewport->PlatformUserData;
     return Instance::CreateSurface((VkInstance)instance, hWnd, (VkSurfaceKHR*)pSurface, (const VkAllocationCallbacks*)pAllocator);
 }
+#endif
 
 static void (*ImGui_ImplImmortal_NewFrame)();
 static void (*ImGui_ImplImmortal_ShutDown)();
@@ -146,11 +148,15 @@ void GuiLayer::OnAttach()
     }
     else
     {
+#ifdef _WIN32
         ImGui_ImplWin32_Init(window->Primitive());
         ImGuiPlatformIO &platformIO = ImGui::GetPlatformIO();
         platformIO.Platform_CreateVkSurface = CreateVkSurface;
         ImGui_ImplImmortal_NewFrame = ImGui_ImplWin32_NewFrame;
         ImGui_ImplImmortal_ShutDown = ImGui_ImplWin32_Shutdown;
+#else
+        assert(0 && "Invalid Windows Type!");
+#endif
     }
 
     auto device = context->GetAddress<Device>();
@@ -213,7 +219,7 @@ void GuiLayer::End()
     ImGuiIO &io = ImGui::GetIO();
 
     const auto &[width, height] = context->GetViewportSize();
-    
+
     if (width > 0 && height > 0)
 	{
 		io.DisplaySize = ImVec2{(float) width, (float) height};
@@ -286,7 +292,7 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
         cmdbuf->BindPipeline(*pipeline, pipeline->BindPoint);
         cmdbuf->BindVertexBuffers(vertex);
         cmdbuf->BindIndexBuffer(index, sizeof(ImDrawIdx) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
-        
+
         struct {
             float scale[2];
             float translate[2];
@@ -302,8 +308,8 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
         };
         cmdbuf->PushConstants(pipeline->Layout(), Shader::Stage::Vertex, 0, sizeof(pushConstant), &pushConstant);
 
-        ImVec2 clipOff = drawData->DisplayPos;         
-        ImVec2 clipScale = drawData->FramebufferScale; 
+        ImVec2 clipOff = drawData->DisplayPos;
+        ImVec2 clipScale = drawData->FramebufferScale;
         int globalVertexOffset = 0;
         int globalIndexOffset = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++)
@@ -340,7 +346,7 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
                             .height = (uint32_t)(clip_max.y - clip_min.y),
                         },
                     };
-    
+
                      cmdbuf->SetScissor(0, 1, &scissor);
 
                     VkDescriptorSet descriptorSets[1] = { (VkDescriptorSet)pcmd->TextureId };

@@ -320,15 +320,15 @@ PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
 
     LOG::WARN("Couldn't find a discrete physical device. Picking the default.");
     return physicalDevices[0];
-} 
+}
 
-VkResult Instance::CreateSurface(VkInstance instance, HWND hwnd, VkSurfaceKHR *pSurface, const VkAllocationCallbacks* pAllocator)
+VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks* pAllocator)
 {
 #ifdef _WIN32
         VkWin32SurfaceCreateInfoKHR createInfo{};
         createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         createInfo.hinstance = GetModuleHandle(NULL);
-        createInfo.hwnd      = hwnd;
+        createInfo.hwnd      = (HWND)window;
         return vkCreateWin32SurfaceKHR(instance, &createInfo, pAllocator, pSurface);
 #else
         LOG::WARN("Native surface creation is not supported on Linux and Mac yet!");
@@ -352,7 +352,7 @@ VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const V
 
     case Window::Type::Win32:
     default:
-        return CreateSurface(handle, (HWND)window->Primitive(), pSurface);
+        return CreateSurface(handle, window->Primitive(), pSurface);
     }
 
 }

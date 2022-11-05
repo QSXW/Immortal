@@ -164,7 +164,7 @@ public:
 
     virtual void CopyImage(const uint8_t *const *data, const int *pLinesize, int height, int planes) {}
 
-    virtual void PlatformSpecifiedUpdate(Anonymous resource, UINT subresource) {}
+    virtual void PlatformSpecifiedUpdate(Anonymous resource, uint32_t subresource) {}
 
     virtual void Blit() {}
 

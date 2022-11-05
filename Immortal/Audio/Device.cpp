@@ -74,18 +74,18 @@ AudioDevice::~AudioDevice()
 
 void AudioDevice::PlayAudioStream(AudioSource *pAudioSource)
 {
-    auto hnsActualDuration = (double)REFTIMES_PER_SEC * context->GetBufferSize() / context->GetSampleRate();
+    uint64_t duration = Seconds2Nanoseconds((float)context->GetBufferSize() / context->GetSampleRate());
 
     context->Begin();
     {
         auto audioClip = pAudioSource->GetAudioClip();
         context->PlaySamples(audioClip.frames, audioClip.pData);
 
-        auto hnsActualDuration = (double)REFTIMES_PER_SEC * audioClip.frames / context->GetSampleRate();
-        Sleep((DWORD)(hnsActualDuration / REFTIMES_PER_MILLISEC / 2));
+        uint64_t duration = Seconds2Nanoseconds(((float)audioClip.frames / context->GetSampleRate()));
+        std::this_thread::sleep_for(std::chrono::nanoseconds(duration >> 1));
     }
     context->End();
-    Sleep((DWORD)(hnsActualDuration / REFTIMES_PER_MILLISEC / 2));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(duration >> 1));
 }
 
 void AudioDevice::PlayClip(AudioClip pAudioClip)
