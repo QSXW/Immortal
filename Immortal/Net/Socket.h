@@ -2,205 +2,117 @@
 
 #include "Core.h"
 
-#ifdef _WIN32
-#include <Winsock2.h>
-#include <ws2tcpip.h>
-#include <iphlpapi.h>
-#if defined( _MSC_VER )
-#pragma comment(lib, "ws2_32.lib")
-#endif
-#endif
-
 namespace Immortal
 {
 
-#ifdef _WIN32
-enum Family
+enum class AddressFamily
 {
-    Ipv4       = AF_INET,
-    Ipv6       = AF_INET6,
-    Unspecifed = AF_UNSPEC
+    Unspecified   = 0,
+    Unix          = 1,
+    InterNetwork  = 2,
+    ImpLink       = 3,
+    PUP           = 4,
+    Chaos         = 5,
+    IPX           = 6,
+    NS            = 6,
+    ISO           = 7,
+    OSI           = 7,
+    ECMA          = 8,
+    Datakit       = 9,
+    CCITT         = 10,
+    SNA           = 11,
+    DECnet        = 12,
+    DLI           = 13,
+    LAT           = 14,
+    HYLINK        = 15,
+    AppleTalk     = 16,
+    NetBios       = 17,
+    VoiceView     = 18,
+    FireFox       = 19,
+    UNKNOWN1      = 20,
+    Banyan        = 21,
+    ATM           = 22,
+    InterNetwork6 = 23,
+    Cluster       = 24,
+    _12844        = 25,
+    IRDA          = 26,
+    NETDES        = 28,
+    IPV4          = InterNetwork,
+    IPV6          = InterNetwork6,
 };
 
 enum class SocketType
 {
-    Stream = SOCK_STREAM
+    None,
+    Stream,
+    Datagram,
+    Raw,
+    ReliablyDeliveredMessage,
+    SequencedPacketStream,
 };
 
-enum Protocol
+enum class Protocol
 {
-    TCP = IPPROTO_TCP,
-    UDP = IPPROTO_UDP
+    TCP,
+    UDP,
 };
 
-enum SocketStatus
+enum class SocketOperation
 {
-    Invalid = INVALID_SOCKET,
-    Error   = SOCKET_ERROR
+    Receive,
+    Send,
+    Both,
 };
 
-class AddrInfo
+struct SocketHandle
 {
-public:
-    AddrInfo() :
-        response{ nullptr }
-    {
-        CleanUpObject(&hints);
-    }
-
-    AddrInfo(const int addressFamily, const int socketType, const int protocol) :
-        response{ nullptr }
-    {
-        CleanUpObject(&hints);
-        hints.ai_family   = addressFamily;
-        hints.ai_socktype = socketType;
-        hints.ai_protocol = protocol;
-    }
-
-    ~AddrInfo()
-    {
-        freeaddrinfo(response);
-    }
-
-    int Get(const std::string &ip, const std::string &port)
-    {
-        return getaddrinfo(ip.c_str(), port.c_str(), &hints, &response);
-    }
-
-    int Connect(SOCKET socket)
-    {
-        return connect(socket, response->ai_addr, response->ai_addrlen);
-    }
-
-    int Close(SOCKET socket)
-    {
-        return closesocket(socket);
-    }
-
-private:
-    struct addrinfo *response;
-    struct addrinfo  hints;
+    uint8_t Reserved[64];
 };
 
 class Socket
 {
 public:
-    enum class Error
-    {
-        Running,
-        Closed,
-        NotInitialized,
-        NotRecoverable,
-        Undefined = ~0
-    };
+    Socket();
 
-    enum Status : SOCKET
-    {
-        Invalid = INVALID_SOCKET,
-        Fault   = SOCKET_ERROR
-    };
+    Socket(Anonymous socket);
 
-    std::map<uint32_t, Error> InternalErrorMap = {
-        { WSANOTINITIALISED, Error::NotInitialized },
-        { WSANO_RECOVERY,    Error::NotRecoverable }
-    };
+    ~Socket();
 
-public:
-    Socket() :
-        handle{ Status::Invalid },
-        wsaData{ }
-    {
+    operator Anonymous() const;
 
-    }
+    operator bool() const;
 
-    Socket(const std::string &ip, const std::string &port, const int addressFamily = Family::Ipv4, const int socketType = int(SocketType::Stream), const int protocol = Protocol::TCP) :
-        handle{ Status::Invalid },
-        addrInfo{ addressFamily, socketType, protocol }
-    {
-        if (WSAStartup(MAKEWORD(2,2), &wsaData))
-        {
-            return;
-        }
-        if (addrInfo.Get(ip, port))
-        {
-            goto cleanup;
-        }
+    void Open(AddressFamily addressFamily, SocketType socketType, Protocol protocol);
 
-        handle = socket(addressFamily, socketType, protocol);
-        if (handle == Status::Invalid)
-        {
-            goto cleanup;
-        }
+    void Bind(const std::string &ip, int port, AddressFamily addressFamily, SocketType socketType, Protocol protocol);
 
-        if (addrInfo.Connect(*this) == Status::Fault)
-        {
-            addrInfo.Close(*this);
-            goto cleanup;
-        }
-        return;
-    cleanup:
-        WSACleanup();
-    }
+    void Listen(int backlog);
 
-    Socket(const std::string &ip, const int port, const int addressFamily = Family::Ipv4, const int socketType = int(SocketType::Stream), const int protocol = Protocol::TCP)
-        : Socket{ ip, std::to_string(port), addressFamily, socketType, protocol }
-    {
+    void Connect(const std::string &ip, int port, AddressFamily addressFamily, SocketType socketType, Protocol protocol);
 
-    }
+    void Close();
 
-    ~Socket()
-    {
-        WSACleanup();
-    }
+    int ShutDown(SocketOperation operation);
 
-    operator SOCKET() const
-    {
-        return handle;
-    }
+    Socket *Accept();
 
-    Error GetLastError()
-    {
-        auto it = InternalErrorMap.find(::GetLastError());
-        if (it == InternalErrorMap.end())
-        {
-            return Error::Undefined;
-        }
-        return it->second;
-    }
+    int Send(const char *buffer, int size);
 
-    bool Readable()
-    {
-        return !(handle == Status::Invalid);
-    }
+    int Receive(char*buffer, int size);
 
-    /** Send for CPP Standard Containers
-     */
+    std::string GetIpString() const;
+
     template <class T>
     int Send(const T &data)
     {
-        return send(handle, reinterpret_cast<const char *>(data.data()), data.size(), 0);
+        return Send((const char *)(data.data()), data.size());
     }
 
-    template <class T>
-    int Send(const T *data, size_t size)
-    {
-        return send(handle, reinterpret_cast<const char *>(data), size, 0);
-    }
-
-    template <class T>
-    int Receive(T *out, size_t size)
-    {
-        return recv(handle, reinterpret_cast<char *>(out), sizeof(T) * size, 0);
-    }
-
-    /** Receive for CPP Standard Containers
-     * 
-     */
     template <class T>
     int Receive(T &out)
     {
         int status = 0;
-        uint8_t buffer[4096];
+        char buffer[4096];
 
         while(true)
         {
@@ -217,11 +129,7 @@ public:
     }
 
 private:
-    SOCKET    handle;
-    WSAData   wsaData;
-    AddrInfo  addrInfo;
+    SocketHandle handle;
 };
-
-#endif
 
 }

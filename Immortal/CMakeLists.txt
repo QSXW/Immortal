@@ -16,22 +16,13 @@ set(ALGORITHM_FILES
     Algorithm/LightVector.h
     Algorithm/Rotate.h)
 
-set(AUDIO_COMMON_FILES
-    Audio/AudioRenderContext.cpp
-    Audio/AudioRenderContext.h
-    Audio/AudioSource.cpp
-    Audio/AudioSource.h
-    Audio/Device.cpp
-    Audio/Device.h)
-
-set(WASAPI_FILES
-    Audio/WASAPI.cpp
-    Audio/WASAPI.h)
-
 set(AUDIO_FILES
-    ${AUDIO_COMMON_FILES}
-    $<$<C_COMPILER_ID:MSVC>:${WASAPI_FILES}>
-)
+    AudioRenderContext.cpp
+    AudioRenderContext.h
+    AudioSource.cpp
+    AudioSource.h
+    Device.cpp
+    Device.h)
 
 set(FRAMEWORK_FILES
     Framework/Application.cpp
@@ -280,15 +271,6 @@ set(WIN32_WINDOES_FILES
     Platform/Windows/NativeInput.cpp
     Platform/Windows/NativeInput.h)
 
-set(WIN32_SYNC_FILES
-    Platform/Windows/Sync/Semaphore.cpp)
-
-set(LINUX_SYNC_FILES
-    Platform/Linux/Sync/Semaphore.cpp)
-
-set(MACOS_SYNC_FILES
-    Platform/macOS/Sync/Semaphore.cpp)
-
 set(WINDOWS_FILES
     ${WINDOWS_FILES}
     $<$<C_COMPILER_ID:MSVC>:${WIN32_WINDOES_FILES}>)
@@ -351,10 +333,7 @@ set(STRING_FILES
     String/LanguageSettings.h)
 
 set(SYNC_FILES
-    Sync/Semaphore.h
-    $<$<PLATFORM_ID:Windows>:${WIN32_SYNC_FILES}>
-    $<$<PLATFORM_ID:Linux>:${LINUX_SYNC_FILES}>
-    $<$<PLATFORM_ID:Darwin>:${MACOS_SYNC_FILES}>)
+    Semaphore.h)
 
 set(HELPER_FILES
     Helper/nlohmann_json.h
@@ -368,12 +347,34 @@ set(WIDGET_FILES
     Widget/Widget.h)
 
 set(NET_FILES
-    Net/Socket.h)
+    Socket.h
+    TCP.h
+    LTP.h)
+
+if (WIN32)
+    list(APPEND NET_FILES
+        Win32Socket.cpp)
+
+    list(APPEND AUDIO_FILES
+        WASAPI.cpp
+        WASAPI.h)
+
+    list(APPEND SYNC_FILES
+        Win32Semaphore.cpp)
+else()
+    list(APPEND NET_FILES
+        UnixSocket.cpp)
+    list(APPEND SYNC_FILES
+        UnixSemaphore.cpp)
+endif()
+
+list(TRANSFORM AUDIO_FILES PREPEND "Audio/")
+list(TRANSFORM NET_FILES   PREPEND "Net/")
+list(TRANSFORM SYNC_FILES  PREPEND "Sync/")
 
 source_group("\\"                  FILES ${CORE_FILES}      )
 source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )
 source_group("Audio\\"             FILES ${AUDIO_FILES}     )
-source_group("Audio\\"             FILES ${WASAPI_FILES}    )
 source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
 source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Event\\"             FILES ${EVENT_FILES}     )

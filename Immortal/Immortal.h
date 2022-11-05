@@ -71,5 +71,7 @@
 #include "Widget/MenuBar.h"
 
 #include "Net/Socket.h"
+#include "Net/TCP.h"
+#include "Net/LTP.h"
 
 #include "Physics/Physics.h"
