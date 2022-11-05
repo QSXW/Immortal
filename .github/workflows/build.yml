@@ -20,7 +20,10 @@ jobs:
       run: cmake --version
 
     - name: Install Dependencies
-      run: sudo apt-get install libxrandr-dev xorg-dev ninja-build
+      run: sudo apt update && sudo apt upgrade -y &&
+           sudo apt-get install libxrandr-dev xorg-dev ninja-build gcc-11 g++-11 &&
+           sudo ln -s -f /usr/bin/gcc-11 /usr/bin/gcc &&
+           sudo ln -s -f /usr/bin/g++-11 /usr/bin/g++
 
     - name: Fetch Submodule
       run: git submodule update --init
