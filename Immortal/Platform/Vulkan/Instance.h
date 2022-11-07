@@ -19,6 +19,91 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
+    void Destroy(VkAllocationCallbacks const *pAllocator)
+    {
+        vkDestroyInstance(handle, pAllocator);
+    }
+
+    VkResult EnumeratePhysicalDevices(uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices)
+    {
+        return vkEnumeratePhysicalDevices(handle, pPhysicalDeviceCount, pPhysicalDevices);
+    }
+
+    PFN_vkVoidFunction GetProcAddr(char const *pName)
+    {
+        return vkGetInstanceProcAddr(handle, pName);
+    }
+
+    VkResult CreateDisplayPlaneSurfaceKHR(VkDisplaySurfaceCreateInfoKHR const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateDisplayPlaneSurfaceKHR(handle, pCreateInfo, pAllocator, pSurface);
+    }
+
+    void DestroySurfaceKHR(VkSurfaceKHR surface, VkAllocationCallbacks const *pAllocator)
+    {
+        vkDestroySurfaceKHR(handle, surface, pAllocator);
+    }
+
+    VkResult CreateDebugReportCallbackEXT(VkDebugReportCallbackCreateInfoEXT const *pCreateInfo, VkDebugReportCallbackEXT *pCallback, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateDebugReportCallbackEXT(handle, pCreateInfo, pAllocator, pCallback);
+    }
+
+    void DestroyDebugReportCallbackEXT(VkDebugReportCallbackEXT callback, VkAllocationCallbacks const *pAllocator)
+    {
+        vkDestroyDebugReportCallbackEXT(handle, callback, pAllocator);
+    }
+
+    void DebugReportMessageEXT(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, char const *pLayerPrefix, char const *pMessage)
+    {
+        vkDebugReportMessageEXT(handle, flags, objectType, object, location, messageCode, pLayerPrefix, pMessage);
+    }
+
+    VkResult EnumeratePhysicalGroups(uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties)
+    {
+        return vkEnumeratePhysicalDeviceGroups(handle, pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    }
+
+    VkResult CreateDebugUtilsMessengerEXT(VkDebugUtilsMessengerCreateInfoEXT const *pCreateInfo, VkDebugUtilsMessengerEXT *pMessenger, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateDebugUtilsMessengerEXT(handle, pCreateInfo, pAllocator, pMessenger);
+    }
+
+    void DestroyDebugUtilsMessengerEXT(VkDebugUtilsMessengerEXT messenger, VkAllocationCallbacks const *pAllocator)
+    {
+        vkDestroyDebugUtilsMessengerEXT(handle, messenger, pAllocator);
+    }
+
+    void SubmitDebugUtilsMessageEXT(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, VkDebugUtilsMessengerCallbackDataEXT const *pCallbackData)
+    {
+        vkSubmitDebugUtilsMessageEXT(handle, messageSeverity, messageTypes, pCallbackData);
+    }
+
+    VkResult CreateHeadlessSurfaceEXT(VkHeadlessSurfaceCreateInfoEXT const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateHeadlessSurfaceEXT(handle, pCreateInfo, pAllocator, pSurface);
+    }
+
+#ifdef _WIN32
+    VkResult CreateWin32SurfaceKHR(VkWin32SurfaceCreateInfoKHR const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateWin32SurfaceKHR(handle, pCreateInfo, pAllocator, pSurface);
+    }
+#endif
+
+#ifdef __APPLE__
+    VkResult CreateIOSSurfaceMVK(VkIOSSurfaceCreateInfoMVK const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateIOSSurfaceMVK(handle, pCreateInfo, pAllocator, pSurface);
+    }
+
+    VkResult CreateMacOSSurfaceMVK(VkMacOSSurfaceCreateInfoMVK const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
+    {
+        return vkCreateMacOSSurfaceMVK(handle, pCreateInfo, pAllocator, pSurface);
+    }
+#endif
+
+public:
     Instance() = default;
 
     Instance(const char*                                  applicationName,
@@ -35,26 +120,9 @@ public:
 
     void QueryPhysicalDevice();
 
-public: /* vk api */
-    VkResult EnumeratePhysicalDevices(uint32_t *physicalDeviceCount, VkPhysicalDevice *pPhysicalDevice) const
-    {
-        return vkEnumeratePhysicalDevices(handle, physicalDeviceCount, pPhysicalDevice);
-    }
-
-    template <class T>
-    T GetProcAddr(const std::string &func) const
-    {
-        return (T)vkGetInstanceProcAddr(handle, func.c_str());
-    }
-
-    void DestroySurface(VkSurfaceKHR surface, const VkAllocationCallbacks *pAllocator = nullptr) const
-    {
-        vkDestroySurfaceKHR(handle, surface, pAllocator);
-    }
-
-    VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr) const;
-
 public:
+    VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
+
     static VkResult CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
 
 public:

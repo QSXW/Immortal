@@ -8,6 +8,7 @@
 #include "Core.h"
 #include "volk.h"
 #include "vk_mem_alloc.h"
+#include "Interface/IObject.h"
 
 namespace Immortal
 {
@@ -45,10 +46,28 @@ enum class Level : int
     Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
 };
 
-template <class T>
-constexpr inline UINT32 U32(T x)
+
+/**
+ * @brief Vulkan API 
+ */
+static inline VkResult EnumerateInstanceVersion(uint32_t *pApiVersion)
 {
-    return static_cast<UINT32>(x);
+    return vkEnumerateInstanceVersion(pApiVersion);
+}
+
+static inline VkResult EnumerateInstanceLayerProperties(uint32_t *pPropertyCount, VkLayerProperties *pProperties)
+{
+    return vkEnumerateInstanceLayerProperties(pPropertyCount, pProperties);
+}
+
+static inline VkResult EnumerateInstanceExtensionProperties(char const *pLayerName, uint32_t *pPropertyCount, VkExtensionProperties *pProperties)
+{
+    return vkEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
+}
+
+static inline VkResult CreateInstance(VkInstanceCreateInfo const *pCreateInfo, VkInstance *pInstance, VkAllocationCallbacks const *pAllocator = nullptr)
+{
+    return vkCreateInstance(pCreateInfo, pAllocator, pInstance);
 }
 
 template <class T, class F>
@@ -176,10 +195,9 @@ inline const std::string Stringify(VkSurfaceFormatKHR surfaceFormat)
 #if defined( _DEBUG )
 inline void Check(VkResult status)
 {
-    auto msg = Stringify(status);
     if (status)
     {
-        LOG::ERR("Detected Vulkan error: {0}", msg);
+        LOG::ERR("Detected Vulkan error: {}", Stringify(status));
         abort();
     }
 }

@@ -423,7 +423,7 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         U32(barriers.size())
     );
 
-    cmdbuf->BindPipeline(handle, BindPoint);
+    cmdbuf->BindPipeline(BindPoint, handle);
 
     cmdbuf->BindDescriptorSets(
         BindPoint,
@@ -459,15 +459,11 @@ void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGro
 
 void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
 {
-    device->ComputeAsync([&](CommandBuffer *cmdbuf) {
-        cmdbuf->PushConstants(
-            layout,
-            Shader::Stage::Compute,
-            offset,
-            size,
-            data
-        );
-        });
+    device->ComputeAsync(
+        [=, this](CommandBuffer *cmdbuf) {
+            cmdbuf->PushConstants(layout, Shader::Stage::Compute, offset, size, data);
+        }
+    );
 }
 
 }

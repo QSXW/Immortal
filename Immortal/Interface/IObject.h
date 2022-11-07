@@ -165,6 +165,12 @@ public:
             return (U *)_obj;
         }
     }
+    
+    template <class U>
+    U *GetPrimitive()
+    {
+        return (U *)((uint8_t *)_obj + sizeof(IObject));
+    }
 
     template <class U>
     U &DeRef() const
@@ -222,6 +228,26 @@ public:
         _obj{ nullptr }
     {
         other.Swap(*this);
+    }
+
+    template <class U>
+    URef(URef<U> &&other) :
+        _obj{ nullptr }
+    {
+        other.Swap(*this);
+    }
+
+    URef &operator=(URef &&other)
+    {
+        URef(other).Swap(*this);
+        return *this;
+    }
+
+    template <class U>
+    URef &operator=(URef<U> &&other)
+    {
+        URef(other).Swap(*this);
+        return *this;
     }
 
     ~URef()
@@ -303,12 +329,12 @@ public:
         return *InterpretAs<U>();
     }
 
+    URef(const URef &) = delete;
+
+    URef &operator=(const URef &) = delete;
+
 protected:
     T *_obj;
-
-private:
-    URef(const URef &) = delete;
-    URef& operator=(const URef &) = delete;
 };
 
 }

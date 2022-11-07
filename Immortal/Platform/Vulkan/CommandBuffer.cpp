@@ -13,23 +13,18 @@ CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
     count{ 0 },
     level{ level }
 {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool        = *cmdPool;
-    allocInfo.level              = ncast<VkCommandBufferLevel>(level);
-    allocInfo.commandBufferCount = 1;
-    Check(vkAllocateCommandBuffers(*cmdPool->GetAddress<Device>(), &allocInfo, &handle));
+    Check(commandPool->Allocate(&handle, 1, (VkCommandBufferLevel)level));
 }
 
 CommandBuffer::~CommandBuffer()
 {
     if (handle != VK_NULL_HANDLE)
     {
-       vkFreeCommandBuffers(*commandPool->GetAddress<Device>(), *commandPool, 1, &handle);
+        commandPool->Release(&handle, 1);
     }
 }
 
-VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
+VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer, const VkCommandBufferInheritanceInfo *pInheritanceInfo)
 {
     if (level == Level::Secondary)
     {
@@ -43,19 +38,10 @@ VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer)
     }
     state = State::Recording;
 
-    // Reset =>
-    // Pipeline State
-    // ResourceBinding State
-    // Descriptor set layout binding state
-    // Stored Push Constants
-
-    VkCommandBufferInheritanceInfo inheritanceInfo{};
-    inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags            = ncast<VkCommandBufferUsageFlags>(flags);
-    beginInfo.pInheritanceInfo = nullptr;
+    beginInfo.flags            = (VkCommandBufferUsageFlags)(flags);
+    beginInfo.pInheritanceInfo = pInheritanceInfo;
 
     return vkBeginCommandBuffer(handle, &beginInfo);
 }

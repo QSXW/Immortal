@@ -289,7 +289,7 @@ void GuiLayer::__RenderDrawData(CommandBuffer *cmdbuf)
 		vertex->Unmap();
 		index->Unmap();
 
-        cmdbuf->BindPipeline(*pipeline, pipeline->BindPoint);
+        cmdbuf->BindPipeline(pipeline->BindPoint, *pipeline);
         cmdbuf->BindVertexBuffers(vertex);
         cmdbuf->BindIndexBuffer(index, sizeof(ImDrawIdx) == 2 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32);
 

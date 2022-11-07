@@ -75,6 +75,22 @@ void CommandPool::Destory()
     }
 }
 
+VkResult CommandPool::Allocate(VkCommandBuffer *pCommandBuffer, uint32_t size, VkCommandBufferLevel level)
+{
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool        = *this;
+    allocInfo.level              = level;
+    allocInfo.commandBufferCount = size;
+
+    return device->AllocateCommandBuffers(&allocInfo, pCommandBuffer);
+}
+
+void CommandPool::Release(VkCommandBuffer *pCommandBuffer, uint32_t size)
+{
+    device->FreeCommandBuffers(*this, size, pCommandBuffer);
+}
+
 CommandBuffer *CommandPool::RequestBuffer(Level level)
 {
     CommandBuffer *ret{};

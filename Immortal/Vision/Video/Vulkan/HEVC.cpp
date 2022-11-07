@@ -39,7 +39,7 @@ static inline VkVideoChromaSubsamplingFlagBitsKHR SelectChromaSampling(Format fo
         return VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR;
 
     default:
-        return VK_VIDEO_CHROMA_SUBSAMPLING_INVALID_BIT_KHR;
+        return VK_VIDEO_CHROMA_SUBSAMPLING_INVALID_KHR;
         break;
     }
 }
@@ -54,33 +54,31 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
         desc.width  = sps->pic_width_in_luma_samples;
         desc.height = sps->pic_height_in_luma_samples;
 
-        VkVideoProfileKHR profile{};
+        VkVideoProfileInfoKHR profile{};
         profile.pNext               = nullptr;
-        profile.sType               = VK_STRUCTURE_TYPE_VIDEO_PROFILE_KHR;
+        profile.sType               = VK_STRUCTURE_TYPE_VIDEO_PROFILE_INFO_KHR;
         profile.lumaBitDepth        = SelectBitDepth(sps->bit_depth_luma);
         profile.chromaBitDepth      = SelectBitDepth(sps->bit_depth_chroma);
         profile.chromaSubsampling   = SelectChromaSampling(desc.format);
         profile.videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT;
 
-        session.reset(new VideoSession{
+        session = new VideoSession{
             Device::That,
             desc.format,
             VkExtent2D{ U32(desc.width), U32(desc.height) },
             &profile,
-            vps->vps_max_dec_pic_buffering[0]
-            });
+            };
     }
 
     TransferParameterSet();
 
-    VkVideoBeginCodingInfoKHR beginInfo{};
-    beginInfo.pNext                  = nullptr;
-    beginInfo.sType                  = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR;
-    beginInfo.videoSession           = *session;
-    beginInfo.codecQualityPreset     = VK_VIDEO_CODING_QUALITY_PRESET_NORMAL_BIT_KHR;
-    beginInfo.videoSessionParameters = session->GetParameters();
-    beginInfo.referenceSlotCount     = 16;
-
+    VkVideoBeginCodingInfoKHR beginInfo = {
+        .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+        .pNext                  = nullptr,
+        .videoSession           = *session,
+        .videoSessionParameters = session->GetParameters(),
+        .referenceSlotCount     = 16,
+    };
     VkVideoEndCodingInfoKHR endInfo{};
 
     VkVideoDecodeInfoKHR decodeInfo{};
@@ -88,7 +86,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
     auto cmdbuf = Device::That->RequestCommandBuffer(Vulkan::Level::Primary);
 
     cmdbuf->Begin(&beginInfo);
-    cmdbuf->Decode(&decodeInfo);
+    cmdbuf->DecodeVideoKHR(&decodeInfo);
     cmdbuf->End(&endInfo);
 
     return CodecError::Succeed;
@@ -96,14 +94,24 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 
 void HEVCCodec::UpdateSequenceParameterSet()
 {
-    ps.sps.profile_idc                                    = (StdVideoH265ProfileIdc)sps->profile_tier_level.general.profile_idc;
-    ps.sps.level_idc                                      = (StdVideoH265Level)sps->profile_tier_level.general.level_idc;
+    StdVideoH265ProfileTierLevel profileTierLevel = {
+        .flags = {
+            .general_progressive_source_flag    = sps->profile_tier_level.general.progressive_source_flag,
+            .general_interlaced_source_flag     = sps->profile_tier_level.general.interlaced_source_flag,
+            .general_non_packed_constraint_flag = sps->profile_tier_level.general.non_packed_constraint_flag,
+            .general_frame_only_constraint_flag = sps->profile_tier_level.general.frame_only_constraint_flag,
+        },
+        .general_profile_idc = (StdVideoH265ProfileIdc)sps->profile_tier_level.general.profile_idc,
+        .general_level_idc   = (StdVideoH265LevelIdc)sps->profile_tier_level.general.level_idc,
+    };
+
+    ps.sps.pProfileTierLevel                              = &profileTierLevel;
     ps.sps.pic_width_in_luma_samples                      = sps->pic_width_in_luma_samples;
     ps.sps.pic_height_in_luma_samples                     = sps->pic_height_in_luma_samples;
     ps.sps.sps_video_parameter_set_id                     = sps->sps_video_parameter_set_id;
     ps.sps.sps_max_sub_layers_minus1                      = sps->sps_max_sub_layers_minus1;
     ps.sps.sps_seq_parameter_set_id                       = sps->sps_seq_parameter_set_id;
-    ps.sps.chroma_format_idc                              = sps->chroma_format_idc;
+    ps.sps.chroma_format_idc                              = (StdVideoH265ChromaFormatIdc)sps->chroma_format_idc;
     ps.sps.bit_depth_luma_minus8                          = sps->bit_depth_luma - 8;
     ps.sps.bit_depth_chroma_minus8                        = sps->bit_depth_chroma - 8;
     ps.sps.log2_max_pic_order_cnt_lsb_minus4              = sps->log2_max_pic_order_cnt_lsb_minus4;
@@ -120,14 +128,9 @@ void HEVCCodec::UpdateSequenceParameterSet()
     ps.sps.log2_min_pcm_luma_coding_block_size_minus3     = sps->log2_min_pcm_luma_coding_block_size_minus3;
     ps.sps.log2_diff_max_min_pcm_luma_coding_block_size   = sps->log2_diff_max_min_pcm_luma_coding_block_size;
     ps.sps.conf_win_left_offset                           = sps->conf_win_left_offset;
-    ps.sps.conf_win_right_offset                          = sps->conf_win_right_offset ;
+    ps.sps.conf_win_right_offset                          = sps->conf_win_right_offset;
     ps.sps.conf_win_top_offset                            = sps->conf_win_top_offset;
     ps.sps.conf_win_bottom_offset                         = sps->conf_win_bottom_offset;
-
-    for (int i = 0; i < SL_ARRAY_LENGTH(vps->vps_max_dec_pic_buffering); i++)
-    {
-        ps.sps.sps_max_dec_pic_buffering_minus1[i] = vps->vps_max_dec_pic_buffering[i] + 1;
-    }
 
     StdVideoH265SpsFlags *flags = &ps.sps.flags;
     flags->sps_temporal_id_nesting_flag        = sps->sps_temporal_id_nesting_flag;

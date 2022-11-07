@@ -43,7 +43,7 @@ private:
     void TransferParameterSet();
 
 private:
-    std::unique_ptr<VideoSession> session;
+    URef<VideoSession> session;
 
     ParameterSet ps;
 };

@@ -35,6 +35,10 @@ public:
 
     ~CommandPool();
 
+    VkResult Allocate(VkCommandBuffer *pCommandBuffer, uint32_t size, VkCommandBufferLevel level);
+
+    void Release(VkCommandBuffer* pCommandBuffer, uint32_t size);
+
     CommandBuffer *RequestBuffer(Level level);
 
     void DiscardBuffer(CommandBuffer *commandBuffer);

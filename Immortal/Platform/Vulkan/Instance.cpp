@@ -228,19 +228,19 @@ Instance::Instance(const char                                   *applicationName
     }
 #endif
 
-    Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
+    Check(CreateInstance(&instanceInfo, &handle));
     volkLoadInstance(handle);
 
 #ifdef _DEBUG
     if (extensionsFlags & BIT(0))
     {
         SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
-        Check(vkCreateDebugUtilsMessengerEXT(handle, &debugUtilsCreateInfo, nullptr, &debugUtilsMessengers));
+        Check(CreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, &debugUtilsMessengers));
     }
     else
     {
         SLASSERT(vkCreateDebugReportCallbackEXT != nullptr && "");
-        Check(vkCreateDebugReportCallbackEXT(handle, &debugReportCreateInfo, nullptr, &debugReportCallback));
+        Check(CreateDebugReportCallbackEXT(&debugReportCreateInfo, &debugReportCallback));
     }
 #endif
     QueryPhysicalDevice();
@@ -322,7 +322,7 @@ PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
     return physicalDevices[0];
 }
 
-VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks* pAllocator)
+VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)
 {
 #ifdef _WIN32
         VkWin32SurfaceCreateInfoKHR createInfo{};
@@ -336,7 +336,7 @@ VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfac
 #endif
 }
 
-VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator) const
+VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)
 {
     if (!window || window->GetType() == Window::Type::Headless)
     {
@@ -352,7 +352,7 @@ VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const V
 
     case Window::Type::Win32:
     default:
-        return CreateSurface(handle, window->Primitive(), pSurface);
+        return CreateSurface(*this, window->Primitive(), pSurface);
     }
 
 }

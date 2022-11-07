@@ -84,14 +84,14 @@ void GuiLayer::OnAttach()
         "Assets/Fonts/NotoSansCJKsc-Light.otf",
         20,
         nullptr,
-        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+        io.Fonts->GetGlyphRangesChineseFull()
         );
 
     NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
         "Assets/Fonts/NotoSansCJKsc-Bold.otf",
 	    20,
         nullptr,
-	    io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+	    io.Fonts->GetGlyphRangesChineseFull()
         );
 
 #ifdef _WIN32
@@ -99,7 +99,7 @@ void GuiLayer::OnAttach()
 	    std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
 	    16,
         nullptr,
-	    io.Fonts->GetGlyphRangesChineseSimplifiedCommon()
+	    io.Fonts->GetGlyphRangesChineseFull()
         );
 #else
     SimSun.Regular = NotoSans.Demilight;

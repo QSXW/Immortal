@@ -30,19 +30,18 @@ static inline Queue::Type SelectQueueType(VkVideoCodecOperationFlagBitsKHR codec
     }
 }
 
-VideoSession::VideoSession(Device *device, Format format, VkExtent2D extend, const VkVideoProfileKHR *pVideoProfile, uint32_t maxReferencePicturesSlotsCount, uint32_t maxReferencePicturesActiveCount) :
+VideoSession::VideoSession(Device *device, Format format, VkExtent2D extend, const VkVideoProfileInfoKHR *pVideoProfile, uint32_t maxReferencePicturesSlotsCount, uint32_t maxReferencePicturesActiveCount) :
     device{ device }
 {
     VkVideoSessionCreateInfoKHR createInfo{};
     createInfo.sType                           = VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR;
-    createInfo.pNext                           = nullptr;
     createInfo.pVideoProfile                   = pVideoProfile;
     createInfo.queueFamilyIndex                = device->QueueFailyIndex(SelectQueueType(pVideoProfile->videoCodecOperation));
     createInfo.pictureFormat                   = Format{ Format::RGBA8 };
-    createInfo.referencePicturesFormat         = createInfo.pictureFormat;
+    createInfo.referencePictureFormat          = createInfo.pictureFormat;
     createInfo.maxCodedExtent                  = extend;
-    createInfo.maxReferencePicturesSlotsCount  = maxReferencePicturesSlotsCount;
-    createInfo.maxReferencePicturesActiveCount = maxReferencePicturesSlotsCount;
+    createInfo.maxDpbSlots                     = maxReferencePicturesSlotsCount;
+    createInfo.maxActiveReferencePictures      = maxReferencePicturesSlotsCount;
 
     Check(device->Create(&createInfo, &handle));
 }

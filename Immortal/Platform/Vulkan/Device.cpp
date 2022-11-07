@@ -47,20 +47,20 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     }
 
     std::vector<VkExtensionProperties> availableExtensions;
-	Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions)); 
+    Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions)); 
 
     for (auto &extension : availableExtensions)
     {
-		deviceExtensions.insert(extension.extensionName);
+        deviceExtensions.insert(extension.extensionName);
     }
 
 #if _DEBUG
     if (!deviceExtensions.empty())
     {
         LOG::DEBUG<isLogNeed>("Device supports the following extensions: ");
-		for (auto &extension : availableExtensions)
+        for (auto &extension : availableExtensions)
         {
-			LOG::DEBUG<isLogNeed>("  \t{0}", extension.extensionName);
+            LOG::DEBUG<isLogNeed>("  \t{0}", extension.extensionName);
         }
     }
 #endif
@@ -79,8 +79,8 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
     if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
     {
-        auto &perfCounterFeatures = physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
-        auto &host_query_reset_features = physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
         LOG::DEBUG<isLogNeed>("Performance query enabled");
     }
 
@@ -151,7 +151,7 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     queues.resize(propsCount);
     for (uint32_t queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {
-        const auto& queueFamilyProps = physicalDevice->QueueFamilyProperties[queueFamilyIndex];
+        const auto &queueFamilyProps = physicalDevice->QueueFamilyProperties[queueFamilyIndex];
         VkBool32 presentSupported = surface ? physicalDevice->IsPresentSupported(surface, queueFamilyIndex) : false;
 
         queues[queueFamilyIndex].reserve(queueFamilyProps.queueCount);
@@ -207,7 +207,7 @@ uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
 
     for (size_t i = 0; i < queueFamilyProperties.size(); i++)
     {
-		VkQueueFlags queueFlags = queueFamilyProperties[i].queueFlags;
+        VkQueueFlags queueFlags = queueFamilyProperties[i].queueFlags;
         if (queueFlags & requestFlags && !(queueFlags & mask))
         {
             return U32(i);
@@ -227,7 +227,7 @@ Device::~Device()
         cmd.Reset();
     }
     commandPool.Reset();
-	fencePool.Reset();
+    fencePool.Reset();
     descriptorPool->Destroy();
 
     for (auto &queue : destroyCoroutine.queues)
@@ -253,7 +253,10 @@ Device::~Device()
         vmaDestroyAllocator(memoryAllocator);
     }
 
-    IfNotNullThen(vkDestroyDevice, handle);
+    if (handle)
+    {
+        DestroyDevice(nullptr);
+    }
 }
 
 Queue &Device::SuitableGraphicsQueue()

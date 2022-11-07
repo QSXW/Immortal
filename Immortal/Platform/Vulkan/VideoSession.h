@@ -16,7 +16,7 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
-    VideoSession(Device *device, Format format, VkExtent2D extend, const VkVideoProfileKHR *pVideoProfile, uint32_t maxReferencePicturesSlotsCount = 32, uint32_t maxReferencePicturesActiveCount = 32);
+    VideoSession(Device* device, Format format, VkExtent2D extend, const VkVideoProfileInfoKHR* pVideoProfile, uint32_t maxReferencePicturesSlotsCount = 32, uint32_t maxReferencePicturesActiveCount = 32);
 
 public:
     const VkVideoSessionParametersKHR &GetParameters() const

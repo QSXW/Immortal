@@ -19,6 +19,62 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
+    VkResult Submit(uint32_t submitCount, VkSubmitInfo const *pSubmits, VkFence fence)
+    {
+        return vkQueueSubmit(handle, submitCount, pSubmits, fence);
+    }
+
+    VkResult WaitIdle()
+    {
+        return vkQueueWaitIdle(handle);
+    }
+
+    VkResult BindSparse(uint32_t bindInfoCount, VkBindSparseInfo const *pBindInfo, VkFence fence)
+    {
+        return vkQueueBindSparse(handle, bindInfoCount, pBindInfo, fence);
+    }
+
+    VkResult PresentKHR(VkPresentInfoKHR const *pPresentInfo)
+    {
+        return vkQueuePresentKHR(handle, pPresentInfo);
+    }
+
+    void BeginDebugUtilsLabelEXT(VkDebugUtilsLabelEXT const *pLabelInfo)
+    {
+        vkQueueBeginDebugUtilsLabelEXT(handle, pLabelInfo);
+    }
+
+    void EndDebugUtilsLabelEXT()
+    {
+        vkQueueEndDebugUtilsLabelEXT(handle);
+    }
+
+    void InsertDebugUtilsLabelEXT(VkDebugUtilsLabelEXT const *pLabelInfo)
+    {
+        vkQueueInsertDebugUtilsLabelEXT(handle, pLabelInfo);
+    }
+
+    void GetCheckpointDataNV(uint32_t *pCheckpointDataCount, VkCheckpointDataNV *pCheckpointData)
+    {
+        vkGetQueueCheckpointDataNV(handle, pCheckpointDataCount, pCheckpointData);
+    }
+
+    VkResult SetPerformanceConfigurationINTEL(VkPerformanceConfigurationINTEL configuration)
+    {
+        return vkQueueSetPerformanceConfigurationINTEL(handle, configuration);
+    }
+
+    VkResult Submit2(uint32_t submitCount, VkSubmitInfo2 const *pSubmits, VkFence fence)
+    {
+        return vkQueueSubmit2(handle, submitCount, pSubmits, fence);
+    }
+
+    void GetCheckpointData2NV(uint32_t *pCheckpointDataCount, VkCheckpointData2NV *pCheckpointData)
+    {
+        vkGetQueueCheckpointData2NV(handle, pCheckpointDataCount, pCheckpointData);
+    }
+
+public:
     Queue(Device *device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
 
     Queue(const Queue &) = default;
@@ -27,19 +83,9 @@ public:
 
     virtual ~Queue();
 
-    VkResult Submit(uint32_t submitCount, const VkSubmitInfo *pSubmitInfo, VkFence fence)
-    {
-        return vkQueueSubmit(handle, submitCount, pSubmitInfo, fence);
-    }
-
     VkResult Submit(const VkSubmitInfo &submitInfo, VkFence fence)
     {
         return Submit(1, &submitInfo, fence);
-    }
-
-    void Wait()
-    {
-        vkQueueWaitIdle(handle);
     }
 
     template <class T>
@@ -68,7 +114,7 @@ public:
             return VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
         }
 
-        return vkQueuePresentKHR(handle, &presentInfo);
+        return PresentKHR(&presentInfo);
     }
 
 private:
@@ -83,7 +129,7 @@ private:
     VkQueueFamilyProperties properties{};
 
 private:
-    //Queue &operator=(const Queue &) = delete;
+    Queue &operator=(const Queue &) = delete;
     Queue &operator=(Queue &&) = delete;
 };
 

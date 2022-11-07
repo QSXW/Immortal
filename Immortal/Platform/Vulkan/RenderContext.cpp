@@ -87,7 +87,7 @@ RenderContext::~RenderContext()
         device->DestroyAsync(DescriptorSetLayout);
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
-    
+
     for (auto &s : swapchainPool)
     {
 		s.Reset();
@@ -98,7 +98,7 @@ RenderContext::~RenderContext()
     present.renderTargets.clear();
     renderPass.Reset();
     device.Reset();
-    instance->DestroySurface(surface, nullptr);
+    instance->DestroySurfaceKHR(surface, nullptr);
 }
 
 void RenderContext::CreateSurface()
@@ -343,7 +343,7 @@ void RenderContext::SwapBuffers()
 #ifdef __linux__
 	// If the resize event triggered on ubuntu, the device->wait(fence) will get hang.
 	// Not sure what exactly cause the problem at the present time.
-	queue->Wait();
+	queue->WaitIdle();
 #endif
 
 	if (swapchain)
@@ -371,8 +371,8 @@ void RenderContext::Draw(GraphicsPipeline::Super *superPipeline)
 		    0, 0);
 
 		cmdbuf->BindPipeline(
-		    *pipeline,
-		    GraphicsPipeline::BindPoint);
+			VK_PIPELINE_BIND_POINT_GRAPHICS,
+		    *pipeline);
 
 		Ref<Buffer> buffer = pipeline->Get<Buffer::Type::Vertex>();
 		VkBuffer vertex = *buffer;
@@ -383,9 +383,7 @@ void RenderContext::Draw(GraphicsPipeline::Super *superPipeline)
 		    &offsets);
 
 		buffer = pipeline->Get<Buffer::Type::Index>();
-		cmdbuf->BindIndexBuffer(
-		    *buffer,
-		    buffer->Offset());
+		cmdbuf->BindIndexBuffer(buffer);
 
 		cmdbuf->DrawIndexed(
 		    pipeline->ElementCount,
