@@ -336,9 +336,13 @@ set(SYNC_FILES
     Semaphore.h)
 
 set(HELPER_FILES
-    Helper/nlohmann_json.h
-    Helper/json.h
-    Helper/PlatformUtils.h)
+    Arguments.cpp
+    Arguments.h
+    nlohmann_json.h
+    json.h
+    PlatformUtils.h)
+
+list(TRANSFORM HELPER_FILES PREPEND "Helper/")
 
 set(WIDGET_FILES
     Widget/MenuBar.h

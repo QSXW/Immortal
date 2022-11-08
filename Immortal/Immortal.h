@@ -19,6 +19,8 @@
 #include "Framework/Log.h"
 #include "Framework/Input.h"
 
+#include "Helper/Arguments.h"
+
 #include "ImGui/GuiLayer.h"
 #include "ImGui/ImGuizmo.h"
 #include "ImGui/Utils.h"

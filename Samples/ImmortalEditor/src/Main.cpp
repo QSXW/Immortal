@@ -29,7 +29,35 @@ int main(int argc, char **argv)
 
     try
     {
-        Render::Set(Render::Type::Vulkan);
+        Render::Type type = Render::Type::Vulkan;
+
+        Arguments args{ argc, argv };
+        auto &api = args["api"];
+        if (api == "vk")
+        {
+            type = Render::Type::Vulkan;
+        }
+        else if (api == "ogl")
+        {
+            type = Render::Type::OpenGL;
+        }
+        else if (api == "d3d11")
+        {
+            type = Render::Type::D3D11;
+        }
+        else if (api == "d3d12")
+        {
+            type = Render::Type::D3D12;
+        }
+
+        int deviceId = AUTO_DEVICE_ID;
+        const std::string &device = args["device"];
+        if (!device.empty())
+        {
+            deviceId = std::atoi(device.c_str());
+        }
+
+        Render::Set(type, deviceId);
         URef<Application> app{ new ImmortalEditor() };
         app->Run();
     }
