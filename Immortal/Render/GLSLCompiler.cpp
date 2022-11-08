@@ -4,7 +4,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/GlslangToSpv.h>
-#include <StandAlone/ResourceLimits.h>
+#include <Public/ResourceLimits.h>
 #include <glslang/Include/ShHandle.h>
 #include <glslang/OSDependent/osinclude.h>
 #include <spirv_glsl.hpp>
@@ -31,7 +31,7 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     glslang::InitializeProcess();
 
     EShMessages messages = ncast<EShMessages>(EShMsgDefault | EShMsgSpvRules);
-    
+
     if (api == Shader::API::Vulkan)
     {
         messages = ncast<EShMessages>(messages | EShMsgVulkanRules);
@@ -54,7 +54,8 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
 
 	shader.setPreamble("#define " PLATFORM_STRING "\n");
 
-    if (!shader.parse(&glslang::DefaultTBuiltInResource, 100, false, messages))
+    auto defaultTBuiltInResource = GetDefaultResources();
+    if (!shader.parse(defaultTBuiltInResource, 100, false, messages))
     {
         error = std::string(shader.getInfoLog()) + "\n" + std::string(shader.getInfoDebugLog());
 		return false;
@@ -77,14 +78,13 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     {
         error += std::string(program.getInfoLog()) + "\n" + std::string(program.getInfoDebugLog());
     }
-   
-    
+
     glslang::TIntermediate *intermediate = program.getIntermediate(language);
     if (!intermediate)
     {
         error += "Failed to get shared intermediate code.\n";
         return false;
-    }  
+    }
 
     spv::SpvBuildLogger logger{};
     glslang::GlslangToSpv(*intermediate, spriv, &logger);
@@ -108,13 +108,13 @@ inline Shader::Resource GetDecoration(spirv_cross::CompilerGLSL &glsl, spirv_cro
 
 bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shader::Resource> &resouces)
 {
-    std::unique_ptr<spirv_cross::CompilerGLSL> glsl{ new spirv_cross::CompilerGLSL{ spirv } };
+    URef<spirv_cross::CompilerGLSL> glsl{ new spirv_cross::CompilerGLSL{ spirv } };
     if (!glsl)
     {
         return false;
     }
 
-    std::unique_ptr<spirv_cross::ShaderResources> spirvResources{ new spirv_cross::ShaderResources{ glsl->get_shader_resources() } };
+    URef<spirv_cross::ShaderResources> spirvResources{ new spirv_cross::ShaderResources{ glsl->get_shader_resources() } };
     if (!glsl)
     {
         return false;

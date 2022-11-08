@@ -137,8 +137,9 @@ if (NOT TARGET glslang-default-resource-limits)
 
     set_property(TARGET glslang-default-resource-limits PROPERTY FOLDER "3rdparty")
 
-    target_include_directories(glslang-default-resource-limits
-                                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang/StandAlone)
+    target_include_directories(glslang-default-resource-limits PUBLIC
+                                ${CMAKE_CURRENT_SOURCE_DIR}/glslang/
+                                ${CMAKE_CURRENT_SOURCE_DIR}/glslang/glslang)
 endif()
 
 if(NOT MSVC)
@@ -147,13 +148,23 @@ if(NOT MSVC)
     target_compile_options(SPIRV PRIVATE "-Wno-logical-op-parentheses" "-Wno-unused-parameter")
 endif()
 
-set_property(TARGET glslang PROPERTY FOLDER "3rdparty")
+set_property(TARGET glslang     PROPERTY FOLDER "3rdparty")
 set_property(TARGET OGLCompiler PROPERTY FOLDER "3rdparty")
 set_property(TARGET OSDependent PROPERTY FOLDER "3rdparty")
-set_property(TARGET SPIRV PROPERTY FOLDER "3rdparty")
+set_property(TARGET SPIRV       PROPERTY FOLDER "3rdparty")
 
 # SPIRV-Cross
 add_subdirectory(SPIRV-Cross)
+
+set_property(TARGET spirv-cross         PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-c       PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-core    PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-cpp     PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-glsl    PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-hlsl    PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-msl     PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-reflect PROPERTY FOLDER "3rdparty")
+set_property(TARGET spirv-cross-util    PROPERTY FOLDER "3rdparty")
 
 set(SHARED_SUFFIX "")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -274,6 +285,9 @@ endif()
 # LibRaw
 set(LIBRAW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/LibRaw/" CACHE STRING "LibRaw Path" FORCE)
 add_subdirectory(LibRaw-cmake)
+
+set_property(TARGET raw   PROPERTY FOLDER "3rdparty")
+set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 
 add_library("external" INTERFACE)
 
