@@ -345,10 +345,13 @@ set(HELPER_FILES
 list(TRANSFORM HELPER_FILES PREPEND "Helper/")
 
 set(WIDGET_FILES
-    Widget/MenuBar.h
-    Widget/Resource.h
-    Widget/Widget.cpp
-    Widget/Widget.h)
+    MenuBar.h
+    Resource.h
+    Widget.cpp
+    Widget.h
+    WImageButton.h)
+
+list(TRANSFORM WIDGET_FILES PREPEND "Widget/")
 
 set(NET_FILES
     Socket.h
