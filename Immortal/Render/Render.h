@@ -176,6 +176,16 @@ public:
         return renderContext->CreateBuffer(size, type);
     }
 
+    static Image *CreateImage(const std::string &filepath, const Texture::Description &desc = {})
+    {
+        return renderContext->CreateTexture(filepath, desc);
+    }
+
+    static Texture *CreateTexture(const std::string &filepath, const Texture::Description &desc = {})
+    {
+        return renderContext->CreateTexture(filepath, desc);
+    }
+
     static Buffer *CreateBuffer(const size_t size, uint32_t binding = 0)
     {
         return renderContext->CreateBuffer(size, binding);
