@@ -70,6 +70,7 @@
 #include "String/LanguageSettings.h"
 
 #include "Widget/Widget.h"
+#include "Widget/WImageButton.h"
 #include "Widget/MenuBar.h"
 
 #include "Net/Socket.h"
