@@ -103,6 +103,9 @@ public:
     };
 
 public:
+    static Texture *CreateInstance(const std::string& filepath, const Description &description = {});
+
+public:
     Texture()
     {
 

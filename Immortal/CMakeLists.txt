@@ -276,33 +276,36 @@ set(WINDOWS_FILES
     $<$<C_COMPILER_ID:MSVC>:${WIN32_WINDOES_FILES}>)
 
 set(RENDER_FILES
-    Render/Buffer.h
-    Render/Camera.cpp
-    Render/Camera.h
-    Render/CommandBuffer.cpp
-    Render/CommandBuffer.h
-    Render/DataSet.h
-    Render/Descriptor.h
-    Render/Frame.cpp
-    Render/Frame.h
-    Render/RenderTarget.h
-    Render/Mesh.cpp
-    Render/Mesh.h
-    Render/OrthographicCamera.cpp
-    Render/OrthographicCamera.h
-    Render/Pipeline.h
-    Render/Queue.h
-    Render/Render.cpp
-    Render/Render.h
-    Render/RenderContext.cpp
-    Render/RenderContext.h
-    Render/Render2D.cpp
-    Render/Render2D.h
-    Render/Shader.h
-    Render/Texture.h
-    Render/Types.h
-    Render/GLSLCompiler.cpp
-    Render/GLSLCompiler.h)
+    Buffer.h
+    Camera.cpp
+    Camera.h
+    CommandBuffer.cpp
+    CommandBuffer.h
+    DataSet.h
+    Descriptor.h
+    Frame.cpp
+    Frame.h
+    RenderTarget.h
+    Mesh.cpp
+    Mesh.h
+    OrthographicCamera.cpp
+    OrthographicCamera.h
+    Pipeline.h
+    Queue.h
+    Render.cpp
+    Render.h
+    RenderContext.cpp
+    RenderContext.h
+    Render2D.cpp
+    Render2D.h
+    Shader.h
+    Texture.cpp
+    Texture.h
+    Types.h
+    GLSLCompiler.cpp
+    GLSLCompiler.h)
+
+list(TRANSFORM RENDER_FILES PREPEND "Render/")
 
 set(SCENE_FILES
     Scene/Component.cpp
