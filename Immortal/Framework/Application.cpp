@@ -24,7 +24,7 @@ Application::Application(const Window::Description &description) :
     Async::Setup();
 
     window = Window::CreateInstance(desc);
-    window->SetIcon("Assets/Icon/terminal.png");
+    window->SetIcon("Assets/Icon/Terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
     context = RenderContext::CreateInstance({
