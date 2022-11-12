@@ -211,6 +211,7 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
     int ret = formatContext->ReadFrame(packet);
     if (ret < 0)
     {
+        av_packet_free(&packet);
         if (ret == AVERROR_EOF)
         {
 			return CodecError::EndOfFile;
