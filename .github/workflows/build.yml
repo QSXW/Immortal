@@ -31,7 +31,7 @@ jobs:
       run: ls && cmake -G"Visual Studio 17 2022" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
 
     - name: Build
-      run: ls ${{github.workspace}}/build && cd ${{github.workspace}}/build && MSBuild.exe ALL_BUILD.vcxproj -t:rebuild -property:Configuration=${{env.BUILD_TYPE}}
+      run: ls ${{github.workspace}}/build && cd ${{github.workspace}}/build && MSBuild.exe ./Samples/ImmortalEditor/ImmortalEditor.vcxproj -t:rebuild -property:Configuration=${{env.BUILD_TYPE}}
 
     - name: Test
       working-directory: ${{github.workspace}}/build
@@ -65,13 +65,13 @@ jobs:
       run: git submodule update --init
 
     - name: Configure CMake
-      run: ls && cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: ls && ${{ matrix.c }} -v && ${{ matrix.cxx }} -v && cmake -G"Ninja" -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
             -DLIBRAW_PATH=${{github.workspace}}/3rdparty/LibRaw
             -DCMAKE_C_COMPILER:FILEPATH=/usr/bin/${{ matrix.c }}
             -DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/${{ matrix.cxx }}
 
     - name: Build
-      run: cd ${{github.workspace}}/build && ninja
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ImmortalEditor --
 
     - name: Test
       working-directory: ${{github.workspace}}/build
