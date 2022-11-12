@@ -78,10 +78,13 @@ set(MATH_FILES
    Math/Vector.h)
 
 set(MEMORY_FILES
-    Memory/Allocator.h
-    Memory/Memory.cpp
-    Memory/Memory.h
-    )
+    Allocator.h
+    Memory.cpp
+    Memory.h
+    MemoryAllocator.cpp
+    MemoryAllocator.h)
+
+list(TRANSFORM MEMORY_FILES PREPEND "Memory/")
 
 set(FS_FILES
     FileSystem/FileSystem.cpp
