@@ -9,6 +9,12 @@
 namespace Immortal
 {
 
+DLLLoader::DLLLoader() :
+    handle{}
+{
+    
+}
+
 #ifdef _WIN32
 DLLLoader::DLLLoader(const std::string &path) :
     handle { nullptr }
@@ -18,7 +24,11 @@ DLLLoader::DLLLoader(const std::string &path) :
 
 DLLLoader::~DLLLoader()
 {
-    FreeLibrary(handle);
+    if (handle)
+    {
+        FreeLibrary(handle);
+        handle = nullptr;
+    }
 }
 
 void *DLLLoader::GetProcessAddress(const std::string &func)
@@ -35,7 +45,11 @@ DLLLoader::DLLLoader(const std::string &path) :
 
 DLLLoader::~DLLLoader()
 {
-    dlclose(handle);
+    if (handle)
+    {
+        dlclose(handle);
+        handle = nullptr;
+    }
 }
 
 void *DLLLoader::GetProcessAddress(const std::string &func)

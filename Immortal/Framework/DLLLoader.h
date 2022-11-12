@@ -5,6 +5,12 @@
 namespace Immortal
 {
 
+struct Entry
+{
+    Anonymous *pAddress;
+    const char *name;
+};
+
 class IMMORTAL_API DLLLoader
 {
 public:
@@ -15,6 +21,8 @@ public:
 #endif
 
 public:
+    DLLLoader();
+
     DLLLoader(const std::string &path);
 
     virtual ~DLLLoader();
@@ -22,16 +30,42 @@ public:
     virtual void *GetProcessAddress(const std::string &func_name);
 
 public:
+    DLLLoader(DLLLoader &&other) :
+        handle{}
+    {
+        other.Swap(*this);
+    }
+
+    DLLLoader &operator=(DLLLoader &&other)
+    {
+        DLLLoader(std::move(other)).Swap(*this);
+        return *this;
+    }
+
+    void Swap(DLLLoader &other)
+    {
+        std::swap(handle, other.handle);
+    }
+
     bool IsAvailable() const
     {
         return !!handle;
     }
 
-    template <class T>
+    operator bool() const
+    {
+        return !!handle;
+    }
+
+    template <class T = Anonymous>
     T GetFunc(const std::string & func_name)
     {
         return reinterpret_cast<T>(GetProcessAddress(func_name));
     }
+
+    DLLLoader(const DLLLoader &other) = delete;
+
+    DLLLoader &operator=(const DLLLoader &other) = delete;
 
 protected:
     Handle handle;
