@@ -904,19 +904,36 @@ class IMMORTAL_API WHBox : public Widget
 {
 public:
     WIDGET_SET_PROPERTIES(WHBox)
+    WIDGET_PROPERTY_ALIGN
 
 public:
     WHBox(Widget *parent = nullptr) :
         Widget{parent}
     {
         Connect([this] {
-            position += ImVec2{ padding.left, padding.top };
-            auto relative = position;
+            auto pos = position + ImVec2{ padding.left, padding.top };
+            auto relative = pos;
             for (auto &child : children)
             {
                 child->RelativeTo(relative);
                 child->__PreCalculateSize();
                 relative.x += child->padding.left + child->renderWidth + child->padding.right;
+            }
+
+            size_t totalWidth = relative.x - position.x;
+            if (align & WAlignMode::HCenter && totalWidth < renderWidth)
+            {
+                auto paddingLeft = (renderWidth - totalWidth) * 0.5;
+                position.x += paddingLeft;
+
+                for (auto &child : children)
+                {
+                    child->position.x += paddingLeft;
+                }
+            }
+            else
+            {
+                position = pos;
             }
 
             PUSH_WINDOW_POS(position)
