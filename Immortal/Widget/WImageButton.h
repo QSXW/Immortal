@@ -27,8 +27,6 @@ public:
         Connect([&]() {
             WidgetLock lock{ this };
 
-            __PreCalculateSize();
-
             ImGuiWindow* window = ImGui::GetCurrentWindow();
             window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });

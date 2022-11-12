@@ -437,11 +437,6 @@ public:
 
     void __PreCalculateSize()
     {
-		if (Id() == "#player")
-		{
-			int i = 0;
-		}
-
         float x = width;
         float y = height;
         if (width == WInherit)
@@ -541,22 +536,28 @@ public:
     #define POP_WINDOW_POS 	window->DC.CursorPos = __pos;
     void __RelativeTrampoline()
     {
-		position += ImVec2{padding.left, padding.top};
+        position += ImVec2{ padding.left, padding.top };
         auto relative = position;
-        PUSH_WINDOW_POS(relative)
         for (auto &child : children)
         {
             child->RelativeTo(relative);
-            child->RealRender();
-            if ((relative.x - position.x + child->renderWidth) < renderWidth)
+            child->__PreCalculateSize();
+            auto size = child->padding.left + child->padding.right + child->renderWidth;
+            if ((relative.x - position.x + size) < renderWidth)
             {
-                relative.x += child->renderWidth;
+                relative.x += size;
             }
             else
             {
-                relative.y += child->renderHeight;
+                relative.y += child->padding.top + child->padding.bottom + child->renderHeight;
             }
-            window->DC.CursorPos = relative;
+        }
+
+        PUSH_WINDOW_POS(position)
+        for (auto &child : children)
+        {
+            window->DC.CursorPos = child->position;
+            child->render();
         }
         POP_WINDOW_POS
     }
@@ -682,7 +683,6 @@ public:
     {
         Connect([&]() {
             WidgetLock lock{this};
-            __PreCalculateSize();
 
             ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{padding.right, padding.bottom});
@@ -728,7 +728,6 @@ public:
         Connect([&]() {
             WidgetLock lock{ this };
 
-            __PreCalculateSize();
             __PreClaculateImageSize();
 
             ImVec2 offset = ImGui::GetWindowPos();
@@ -852,7 +851,6 @@ public:
 
             ImVec4 backgroupColor = color;
             backgroupColor.w *= std::sin(factor);
-            __PreCalculateSize();
             ImGui::SetNextWindowSize({ renderWidth, renderHeight });
             ImGui::PushStyleColor(ImGuiCol_PopupBg, backgroupColor);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{padding.right, padding.bottom});
@@ -912,16 +910,20 @@ public:
         Widget{parent}
     {
         Connect([this] {
-            __PreCalculateSize();
-
+            position += ImVec2{ padding.left, padding.top };
             auto relative = position;
-            PUSH_WINDOW_POS(relative)
             for (auto &child : children)
             {
                 child->RelativeTo(relative);
-                child->RealRender();
-                relative.x += child->renderWidth;
-                window->DC.CursorPos = relative;
+                child->__PreCalculateSize();
+                relative.x += child->padding.left + child->renderWidth + child->padding.right;
+            }
+
+            PUSH_WINDOW_POS(position)
+            for (auto &child : children)
+            {
+                window->DC.CursorPos = child->position;
+                child->render();
             }
             POP_WINDOW_POS
         });
@@ -938,8 +940,6 @@ public:
         Widget{parent}
     {
         Connect([this] {
-            __PreCalculateSize();
-
             __RelativeTrampoline();
         });
     }
@@ -958,8 +958,6 @@ public:
         Widget{parent}
     {
         Connect([&] {
-            (void)__PreCalculateSize();
-
             if (align & WAlignMode::VCenter)
             {
                 renderHeight += padding.top + padding.bottom;
