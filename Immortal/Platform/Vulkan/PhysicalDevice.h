@@ -420,8 +420,8 @@ public:
             return (T *)it->second.get();
         }
 
-        std::shared_ptr<void> shared = std::make_shared<T>(type);
-        T *pExtension = (T *)shared.get();
+        auto shared = std::make_shared<T>(T{ type });
+        T *pExtension = shared.get();
         VkPhysicalDeviceFeatures2KHR physicalDeviceFeatures{};
         physicalDeviceFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR;
         physicalDeviceFeatures.pNext    = pExtension;
