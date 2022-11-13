@@ -62,6 +62,11 @@ public:
         imageResources[status] = resource;
         return this;
     }
+    
+    Status GetStatus() const
+    {
+        return (Status)status;
+    }
 
 protected:
     WImageResource imageResources[2];
