@@ -27,7 +27,10 @@ public:
         bufferFrameCount{},
         format{}
     {
+        format.Channels = 2;
+        format.SampleRate = 48000;
 
+        bufferFrameCount = format.SampleRate;
     }
 
     virtual ~AudioRenderContext() { }
@@ -40,7 +43,9 @@ public:
 
     virtual void Reset() = 0;
 
-    virtual void PlaySamples(uint32_t numberSamples, const uint8_t *pData) = 0;
+    virtual void Pause(bool enable) = 0;
+
+    virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) = 0;
 
 public:
     uint32_t GetBufferSize() const

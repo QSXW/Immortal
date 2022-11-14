@@ -377,6 +377,11 @@ if (WIN32)
 else()
     list(APPEND NET_FILES
         UnixSocket.cpp)
+
+    list(APPEND AUDIO_FILES
+        ALSA.cpp
+        ALSA.h)
+
     list(APPEND SYNC_FILES
         UnixSemaphore.cpp)
 endif()

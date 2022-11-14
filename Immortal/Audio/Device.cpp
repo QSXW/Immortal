@@ -35,22 +35,18 @@ AudioDevice::AudioDevice() :
             if (picture.Available())
             {
                 AudioClip audioClip{ picture };
-                context->PlaySamples(audioClip.frames, audioClip.pData);
-                uint64_t duration = Seconds2Nanoseconds(((float)audioClip.frames / context->GetSampleRate()));
+                int frameLeft = context->PlaySamples(audioClip.frames, audioClip.pData);
+                uint64_t duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
                 duration >>= 1;
-                if (picture.desc.width <= 512)
-                {
-                    duration = 0;
-                }
                 std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
             }
 
             if (pause)
             {
-                context->End();
+                context->Pause(true);
                 semaphore.Wait();
                 semaphore.Reset();
-                context->Begin();
+                context->Pause(false);
             }
 
             if (flush)

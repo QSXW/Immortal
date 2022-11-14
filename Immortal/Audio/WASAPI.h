@@ -35,7 +35,9 @@ public:
 
     virtual void Reset() override;
 
-    virtual void PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
+    virtual void Pause(bool enable) override;
+
+    virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
 
     void Release();
 

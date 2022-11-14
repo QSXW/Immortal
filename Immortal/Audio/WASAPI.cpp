@@ -68,8 +68,21 @@ void WASAPIContext::Reset()
     Check(audioClient->Reset());
 }
 
-void WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
+void WASAPIContext::Pause(bool enable)
 {
+    if (enable)
+    {
+        Check(audioClient->Stop());
+    }
+    else
+    {
+        Check(audioClient->Start());
+    }
+}
+
+int WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
+{
+    uint32_t frameRequested = 0;
     while (numberSamples > 0)
     {
         uint8_t *pData;
@@ -77,7 +90,7 @@ void WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
         uint32_t numFramesPadding;
         Check(audioClient->GetCurrentPadding(&numFramesPadding));
 
-        uint32_t frameRequested = std::min(numberSamples, bufferFrameCount - numFramesPadding);
+        frameRequested = std::min(numberSamples, bufferFrameCount - numFramesPadding);
 
         Check(renderClient->GetBuffer(frameRequested, &pData));
 
@@ -88,6 +101,8 @@ void WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
 
         Check(renderClient->ReleaseBuffer(frameRequested, 0));
     }
+
+    return frameRequested;
 }
 
 void WASAPIContext::Release()

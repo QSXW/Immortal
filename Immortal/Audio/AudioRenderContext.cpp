@@ -8,6 +8,8 @@
 
 #ifdef _WIN32
 #include "WASAPI.h"
+#elif defined(__linux__)
+#include "ALSA.h"
 #endif
 
 namespace Immortal
@@ -17,6 +19,10 @@ AudioRenderContext *AudioRenderContext::CreateInstance()
 {
 #ifdef WASAPI_CONTEXT_H_
     return new WASAPIContext;
+#endif
+
+#ifdef ALSA_CONTEXT_H_
+    return new ALSAContext;
 #endif
 
     return nullptr;
