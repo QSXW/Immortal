@@ -75,6 +75,7 @@ inline void aligned_free(void* ptr)
 #define SLALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 #define SLROTATE(a, b) (a) = ((a) + 1) % (b)
 #define SL_ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
+#define SL_OPERATOR_HANDLE(T) using Primitive = T; Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{};
 
 /*
  * @brief: Type Definitions
