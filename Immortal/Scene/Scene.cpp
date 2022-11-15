@@ -10,7 +10,7 @@
 #include "GameObject.h"
 #include "Serializer/SceneSerializer.h"
 #include "String/LanguageSettings.h"
-#include "Helper/PlatformUtils.h"
+#include "Helper/Platform.h"
 #include "ImGui/Utils.h"
 #include "Math/Math.h"
 
@@ -105,7 +105,7 @@ void Scene::RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, 
     }
 
     UniformBuffer::Model model;
-    
+
     auto &nodeList = mesh.Mesh->NodeList();
     for (auto &node : nodeList)
     {
@@ -187,7 +187,7 @@ void Scene::LoadEnvironment()
         0.0f, 0.0f, 0.0f, 1.0f,
     };
     textures.skybox = Render::Create<Texture>(2, 1, black, Texture::Description{ Format::RGBA32F, Wrap::Clamp, Filter::Bilinear, false });
-    
+
     ReloadSkyBoxCube();
     Equirect2Cube();
 }
@@ -349,7 +349,7 @@ void Scene::OnGuiRender()
 
 void Scene::OnEvent()
 {
-    
+
 }
 
 void Scene::OnRenderRuntime()
@@ -446,7 +446,7 @@ void Scene::OnRender(const Camera &camera)
                 pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Sprite, 0);
                 pipelines.colorMixing->Bind(sprite.Result, 1);
-                pipelines.colorMixing->Dispatch(SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);     
+                pipelines.colorMixing->Dispatch(SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);
                 sprite.Result->Blit();
                 color.Initialized = true;
             }

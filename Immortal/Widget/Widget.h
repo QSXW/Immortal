@@ -20,7 +20,7 @@
 #include "Framework/Timer.h"
 #include "ImGui/GuiLayer.h"
 #include "String/LanguageSettings.h"
-#include "Helper/PlatformUtils.h"
+#include "Helper/Platform.h"
 #include "Resource.h"
 
 namespace Immortal

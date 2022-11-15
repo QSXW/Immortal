@@ -262,21 +262,10 @@ set(VULKAN_FILES
 list(TRANSFORM VULKAN_FILES PREPEND "Platform/Vulkan/")
 
 set(WINDOWS_FILES
-    Platform/Windows/GLFWWindow.cpp
-    Platform/Windows/GLFWWindow.h
-    Platform/Windows/GLFWInput.cpp
-    Platform/Windows/GLFWInput.h
-    Platform/Windows/WindowPlatformUtils.cpp)
-
-set(WIN32_WINDOES_FILES
-    Platform/Windows/DirectWindow.cpp
-    Platform/Windows/DirectWindow.h
-    Platform/Windows/NativeInput.cpp
-    Platform/Windows/NativeInput.h)
-
-set(WINDOWS_FILES
-    ${WINDOWS_FILES}
-    $<$<C_COMPILER_ID:MSVC>:${WIN32_WINDOES_FILES}>)
+    GLFWWindow.cpp
+    GLFWWindow.h
+    GLFWInput.cpp
+    GLFWInput.h)
 
 set(RENDER_FILES
     Buffer.h
@@ -346,9 +335,7 @@ set(HELPER_FILES
     Arguments.h
     nlohmann_json.h
     json.h
-    PlatformUtils.h)
-
-list(TRANSFORM HELPER_FILES PREPEND "Helper/")
+    Platform.h)
 
 set(WIDGET_FILES
     MenuBar.h
@@ -372,6 +359,15 @@ if (WIN32)
         WASAPI.cpp
         WASAPI.h)
 
+    list(APPEND HELPER_FILES
+        Win32Platform.cpp)
+
+    list(APPEND WINDOWS_FILES
+        DirectWindow.cpp
+        DirectWindow.h
+        NativeInput.cpp
+        NativeInput.h)
+
     list(APPEND SYNC_FILES
         Win32Semaphore.cpp)
 else()
@@ -382,13 +378,18 @@ else()
         ALSA.cpp
         ALSA.h)
 
+    list(APPEND HELPER_FILES
+        LinuxPlatform.cpp)
+
     list(APPEND SYNC_FILES
         UnixSemaphore.cpp)
 endif()
 
-list(TRANSFORM AUDIO_FILES PREPEND "Audio/")
-list(TRANSFORM NET_FILES   PREPEND "Net/")
-list(TRANSFORM SYNC_FILES  PREPEND "Sync/")
+list(TRANSFORM AUDIO_FILES   PREPEND "Audio/"           )
+list(TRANSFORM HELPER_FILES  PREPEND "Helper/"          )
+list(TRANSFORM NET_FILES     PREPEND "Net/"             )
+list(TRANSFORM SYNC_FILES    PREPEND "Sync/"            )
+list(TRANSFORM WINDOWS_FILES PREPEND "Platform/Windows/")
 
 source_group("\\"                  FILES ${CORE_FILES}      )
 source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )

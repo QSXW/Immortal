@@ -1,16 +1,11 @@
-#include "Framework/Application.h"
-#include "Helper/PlatformUtils.h"
-
-#ifdef _WIN32
+#include "Platform.h"
 #include <commdlg.h>
-#endif
 
 namespace Immortal
 {
 
 std::optional<std::string> FileDialogs::OpenFile(const char *filter)
 {
-#ifdef _WIN32
     static char lastDir[1024] = { 0 };
 
     OPENFILENAMEA ofn;
@@ -35,27 +30,12 @@ std::optional<std::string> FileDialogs::OpenFile(const char *filter)
         strcat(lastDir, ofn.lpstrFile);
         return ofn.lpstrFile;
     }
-#else
-    char path[1024];
-    FILE *f = popen("zenity --file-selection", "r");
-    (void)fgets(path, 1024, f);
-
-    int ret = pclose(f);
-    if(ret< 0 )
-    {
-        perror("file_name_dialog()");
-    }
-    
-    path[strlen(path) - 1] = '\0';
-    return path;
-#endif
 
     return std::nullopt;
 }
 
 std::optional<std::string> FileDialogs::SaveFile(const char *filter)
 {
-#ifdef _WIN32
     OPENFILENAMEA ofn;
     CHAR szFile[260] = { 0 };
     CHAR currentDir[256] = { 0 };
@@ -80,7 +60,6 @@ std::optional<std::string> FileDialogs::SaveFile(const char *filter)
     {
         return ofn.lpstrFile;
     }
-#endif
 
     return std::nullopt;
 }

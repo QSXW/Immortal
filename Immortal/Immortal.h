@@ -35,7 +35,7 @@
 #include "Vision/Image/Image.h"
 #include "Vision/Video/Video.h"
 
-#include "Helper/PlatformUtils.h"
+#include "Helper/Platform.h"
 #include "Helper/json.h"
 
 #include "Render/DataSet.h"

@@ -3,7 +3,7 @@
 #include "Vision/Video/FFCodec.h"
 #include "FileSystem/FileSystem.h"
 #include "Algorithm/LightVector.h"
-#include "Helper/PlatformUtils.h"
+#include "Helper/Platform.h"
 #include <list>
 
 #if HAVE_FFMPEG

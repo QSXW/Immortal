@@ -5,7 +5,7 @@
  */
 
 #include "AudioSource.h"
-#include "Helper/PlatformUtils.h"
+#include "Helper/Platform.h"
 
 #ifdef _MSC_VER
 #include <audioclient.h>
