@@ -83,29 +83,34 @@ Layer *Application::PushOverlay(Layer *overlay)
     return overlay;
 }
 
+void Application::OnRender()
+{
+    Render::PrepareFrame();
+    Time::DeltaTime = timer.tick<Timer::Seconds>();
+
+    for (Layer* layer : layerStack)
+    {
+        layer->OnUpdate();
+    }
+
+    if (!runtime.minimized)
+    {
+        gui->Begin();
+        gui->Render();
+        gui->End();
+    }
+
+    Render::SwapBuffers();
+
+    window->SetTitle(desc.Title);
+    window->ProcessEvents();
+}
+
 void Application::Run()
 {
     while (runtime.running)
     {
-        Render::PrepareFrame();
-        Time::DeltaTime = timer.tick<Timer::Seconds>();
-
-        for (Layer *layer : layerStack)
-        {
-            layer->OnUpdate();
-        }
-
-        if (!runtime.minimized)
-        {
-			gui->Begin();
-			gui->Render();
-			gui->End();
-        }
-
-        Render::SwapBuffers();
-
-        window->SetTitle(desc.Title);
-        window->ProcessEvents();
+        OnRender();
     }
 }
 
@@ -145,8 +150,8 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     }
     else
     {
-        runtime.minimized = false;
         Render::OnWindowResize(e.Width(), e.Height());
+        OnRender();
     }
 
     return runtime.minimized;

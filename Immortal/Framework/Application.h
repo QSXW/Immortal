@@ -38,6 +38,8 @@ public:
 
     void OnEvent(Event &e);
 
+    void OnRender();
+
     void UpdateMeta(const Window::Description &desc);
 
     virtual Layer *PushLayer(Layer *layer);
