@@ -280,14 +280,15 @@ void RenderContext::__SubmitFrame()
 
 void RenderContext::SwapBuffers()
 {
-	uint64_t signalValues[3] = {0};
+	uint64_t lastWaitValue   = 0;
+	uint64_t lastSignalValue = 0;
 
 	if (device->IsCommandBufferRecorded<Queue::Type::Transfer>())
 	{
-		signalValues[0] = ++syncValues[sync];
-		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({timelineSemaphore, signalValues[0]});
+		lastWaitValue = ++syncValues[sync];
+		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({ timelineSemaphore, lastSignalValue });
 		TimelineSubmitter timelineSubmitter{};
-		timelineSubmitter.Signal(signalValues[0]);
+		timelineSubmitter.Signal(lastWaitValue);
 
 		Submitter submitter{};
 		submitter.SignalSemaphore(timelineSemaphore);
@@ -300,12 +301,13 @@ void RenderContext::SwapBuffers()
 
 	if (device->IsCommandBufferRecorded<Queue::Type::Compute>())
 	{
-		signalValues[1] = ++syncValues[sync];
-		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Compute>({timelineSemaphore, signalValues[1]});
+		lastWaitValue = lastSignalValue;
+		lastSignalValue = ++syncValues[sync];
+		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Compute>({ timelineSemaphore, lastSignalValue });
 
 		TimelineSubmitter timelineSubmitter{};
-		timelineSubmitter.Wait(signalValues[0]);
-		timelineSubmitter.Signal(signalValues[1]);
+		timelineSubmitter.Wait(lastWaitValue);
+		timelineSubmitter.Signal(lastSignalValue);
 
 		Submitter submitter{};
 		submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -317,16 +319,16 @@ void RenderContext::SwapBuffers()
 		computeQueue.Submit(submitter, nullptr);
 	}
 
-	uint64_t graphicsSignalValue = ++syncValues[sync];
+	lastSignalValue = ++syncValues[sync];
 
 	TimelineSubmitter timelineSubmitter{};
-	timelineSubmitter.Wait(signalValues[1]);
-	timelineSubmitter.Signal(graphicsSignalValue);
+	timelineSubmitter.Wait(lastWaitValue);
+	timelineSubmitter.Signal(lastSignalValue);
 
 	Submitter submitter{};
 	submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 	submitter.SignalSemaphore(timelineSemaphore);
-	submitter.Execute(device->GetCommandBuffers<Queue::Type::Graphics>({timelineSemaphore, graphicsSignalValue}));
+	submitter.Execute(device->GetCommandBuffers<Queue::Type::Graphics>({timelineSemaphore, lastSignalValue}));
 
 	if (swapchain)
 	{
