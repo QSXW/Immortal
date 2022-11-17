@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Image.h"
 #include "ImageView.h"
 
@@ -6,11 +8,17 @@ namespace Immortal
 namespace Vulkan
 {
 
-struct Attachment
+class Attachment
 {
-    Attachment() = default;
+public:
+    Attachment() :
+        image{},
+        view{}
+    {
 
-    Attachment(std::unique_ptr<Image> &&image,  std::unique_ptr<ImageView> &&view) :
+    }
+
+    Attachment(Image &&image, ImageView &&view) :
         image{ std::move(image) },
         view{ std::move(view) }
     {
@@ -26,15 +34,17 @@ struct Attachment
 
     Attachment &operator=(Attachment &&other)
     {
-        image.swap(other.image);
-        view.swap(other.view);
-
+        image = std::move(other.image);
+        view  = std::move(other.view);
         return *this;
     }
 
-    std::unique_ptr<Image> image;
+    Attachment(const Attachment &) = delete;
+    Attachment &operator =(const Attachment &) = delete;
 
-    std::unique_ptr<ImageView> view;
+    Image image;
+
+    ImageView view;
 };
 
 }

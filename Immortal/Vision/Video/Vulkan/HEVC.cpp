@@ -48,6 +48,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 {
     Super::Decode(rbsp);
 
+    auto device = Deanonymize<Immortal::Vulkan::Device *>(Render::GetDevice());
     auto &desc = picture.desc;
     if (!session)
     {
@@ -63,7 +64,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
         profile.videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT;
 
         session = new VideoSession{
-            Device::That,
+            device,
             desc.format,
             VkExtent2D{ U32(desc.width), U32(desc.height) },
             &profile,
@@ -83,7 +84,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 
     VkVideoDecodeInfoKHR decodeInfo{};
 
-    auto cmdbuf = Device::That->RequestCommandBuffer(Vulkan::Level::Primary);
+    auto cmdbuf = device->RequestCommandBuffer(Vulkan::Level::Primary);
 
     cmdbuf->Begin(&beginInfo);
     cmdbuf->DecodeVideoKHR(&decodeInfo);

@@ -15,7 +15,7 @@ namespace Immortal
 namespace Vulkan
 {
 
-#define VKCPP_OPERATOR_HANDLE() Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{ VK_NULL_HANDLE };
+#define VKCPP_OPERATOR_HANDLE() Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{ VK_NULL_HANDLE }; public: operator bool() const { return handle != VK_NULL_HANDLE; }
 
 namespace Limit
 {

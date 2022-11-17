@@ -104,13 +104,9 @@ public:
 #endif
 
 public:
-    Instance() = default;
+    Instance();
 
-    Instance(const char*                                  applicationName,
-             const std::unordered_map<const char*, bool> &requiredExtension        = {},
-             const std::vector<const char*>&              requiredValidationLayers = {},
-             bool                                         headless                 = false,
-             uint32_t                                     apiVersion               = VK_API_VERSION_1_2);
+    Instance(const char *applicationName, const std::unordered_map<const char*, bool> &requiredExtension = {}, const std::vector<const char*> &requiredValidationLayers = {}, bool headless = false, uint32_t apiVersion = VK_API_VERSION_1_2);
 
     Instance(VkInstance instance);
 
@@ -135,12 +131,7 @@ public:
         }) != enabledExtensions.end();
     }
 
-    bool Ready() const
-    {
-        return !!handle;
-    }
-
-private:
+protected:
     std::vector<const char*> enabledExtensions;
 
     std::vector<URef<PhysicalDevice>> physicalDevices;

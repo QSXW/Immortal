@@ -65,24 +65,21 @@ Sampler::~Sampler()
 }
 
 Sampler::Sampler(Sampler &&other) :
-    device{ other.device },
-    handle{ other.handle }
+    Sampler{}
 {
-    other.device = nullptr;
-    other.handle = VK_NULL_HANDLE;
+    other.Swap(*this);
 }
 
 Sampler &Sampler::operator =(Sampler &&other)
 {
-    THROWIF(&other == this, SError::SelfAssignment);
-
-    device = other.device;
-    handle = other.handle;
-
-    other.device = nullptr;
-    other.handle = VK_NULL_HANDLE;
-
+    Sampler(std::move(other)).Swap(*this);
     return *this;
+}
+
+void Sampler::Swap(Sampler &other)
+{
+    std::swap(device, other.device);
+    std::swap(handle, other.handle);
 }
 
 }

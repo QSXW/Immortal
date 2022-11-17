@@ -16,44 +16,31 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
-    ImageView(Image          *image,
-              VkImageViewType viewType,
-              VkFormat        format         = VK_FORMAT_UNDEFINED,
-              uint32_t          baseMipLevel   = 0,
-              uint32_t          baseArrayLevel = 0,
-              uint32_t          nMipLevels     = 0,
-              uint32_t          nArrayLayers   = 0);
+    ImageView();
 
-    ImageView(Device          *device,
-              VkImage          image,
-              VkImageViewType  viewType,
-              VkFormat         format,
-              uint32_t           baseMipLevel,
-              uint32_t           baseArrayLevel,
-              uint32_t           nMipLevels,
-              uint32_t           nArrayLayers
-              );
+    ImageView(Image *image, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t mipLevels = 0, uint32_t arrayLayers = 0);
+
+    ImageView(Image *image, VkImageViewType type, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t mipLevels = 0, uint32_t arrayLayers = 0);
+
+    ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers);
 
     ImageView(ImageView &&other);
 
+    ImageView &operator =(ImageView &&other);
+
+    void Swap(ImageView &other);
+
     ~ImageView();
 
-    void Set(Image *image)
-    {
-        this->refImage = image;
-    }
+    void Instantiate(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers);
 
-private:
-    void Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers);
+    ImageView(const ImageView &other) = delete;
+    ImageView &operator=(const ImageView &other) = delete;
 
-private:
-    Device *device{ nullptr };
+protected:
+    Device *device;
 
-    Image *refImage{ nullptr };
-
-    VkFormat format{};
-
-    VkImageSubresourceRange subresourceRange{};
+    VkFormat format;
 };
 }
 }

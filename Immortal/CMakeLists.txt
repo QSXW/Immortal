@@ -62,7 +62,6 @@ set(IMAGE_FILES
 set(GUI_FILES
     ImGui/GuiLayer.cpp
     ImGui/GuiLayer.h
-    ImGui/ImGuiBuild.cpp
     ImGui/ImGuizmo.cpp
     ImGui/ImGuizmo.h
     ImGui/Utils.h)

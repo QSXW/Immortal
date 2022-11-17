@@ -246,7 +246,7 @@ void GuiLayer::UpdateTheme()
      XX(ModalWindowDimBg);
  #undef XX
 
-     if (UI::Button(WordsMap::Get("Save Theme"), ImVec2{ 128.0f, 72.0f }))
+     if (ImGui::Button(WordsMap::Get("Save Theme").c_str(), ImVec2{128.0f, 72.0f}))
      {
          GuiLayer *that = this;
          Async::Execute([&]() -> void {

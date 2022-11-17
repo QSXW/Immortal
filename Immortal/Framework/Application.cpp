@@ -88,7 +88,7 @@ void Application::OnRender()
     Render::PrepareFrame();
     Time::DeltaTime = timer.tick<Timer::Seconds>();
 
-    for (Layer* layer : layerStack)
+    for (Layer *layer : layerStack)
     {
         layer->OnUpdate();
     }
@@ -150,6 +150,7 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     }
     else
     {
+        runtime.minimized = false;
         Render::OnWindowResize(e.Width(), e.Height());
         OnRender();
     }

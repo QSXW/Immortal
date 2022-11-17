@@ -16,11 +16,19 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
+    DescriptorSet();
+
     DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout);
 
     DescriptorSet(const VkDescriptorSet other);
 
+    DescriptorSet(DescriptorSet &&other);
+
+    DescriptorSet &operator =(DescriptorSet &&other);
+
     ~DescriptorSet();
+
+    void Swap(DescriptorSet &other);
 
     void Update(VkWriteDescriptorSet *desc);
 
@@ -51,8 +59,11 @@ public:
 
     operator uint64_t() const
     {
-        return rcast<uint64_t>(handle);
+        return (uint64_t)(handle);
     }
+
+    DescriptorSet(const DescriptorSet &other) = delete;
+    DescriptorSet &operator=(const DescriptorSet &other) = delete;
 
 protected:
     Device *device{ nullptr };

@@ -52,7 +52,7 @@ private:
 private:
     HWND handle;
 
-    WNDCLASSEX wc;
+    WNDCLASSEXW wc;
 
     Description desc;
 

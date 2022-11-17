@@ -8,6 +8,7 @@
 
 #include "Core.h"
 #include "LightVector.h"
+#include <cstring>
 
 namespace Immortal
 {
@@ -37,6 +38,22 @@ public:
     
     }
 
+    LightArray(LightArray &&other) :
+        _size{ other._size }
+    {
+        memcpy(_data, other._data, sizeof(T) * _size);
+        other.clear();
+    }
+
+    LightArray &operator=(LightArray &&other)
+    {
+        _size = other._size;
+        memcpy(_data, other._data, sizeof(T) *_size);
+        other.clear();
+
+        return *this;
+    }
+
     /**
      * @brief Align to stl 
      */
@@ -46,9 +63,9 @@ public:
     }
 
     T *data()
-	{
-		return _data;
-	}
+    {
+        return _data;
+    }
 
     const T *data() const
     {
@@ -57,17 +74,17 @@ public:
 
     T &front()
     {
-		return _data[0];
+        return _data[0];
     }
 
     T &back()
     {
-		return _data[_size - 1];
+        return _data[_size - 1];
     }
 
     void resize(size_t size)
     {
-		_size = size;
+        _size = size;
     }
 
     size_t capacity() const
@@ -83,11 +100,11 @@ public:
     }
 
     void emplace_back(T &&object)
-	{
-		SLASSERT(_size < Capacity && "Too big size for current LightArray."
-		                             "Please specify a bigger capacity for LightArray or use LightVector instead.");
-		_data[_size++] = std::move(object);
-	}
+    {
+        SLASSERT(_size < Capacity && "Too big size for current LightArray."
+                                     "Please specify a bigger capacity for LightArray or use LightVector instead.");
+        _data[_size++] = std::move(object);
+    }
 
     T &operator[](size_t index)
     {
@@ -96,10 +113,10 @@ public:
     }
 
     const T &operator[](size_t index) const
-	{
-		SLASSERT(index < _size);
-		return _data[index];
-	}
+    {
+        SLASSERT(index < _size);
+        return _data[index];
+    }
 
     void clear()
     {

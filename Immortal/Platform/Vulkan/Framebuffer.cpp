@@ -10,7 +10,14 @@ namespace Immortal
 namespace Vulkan
 {
 
-Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, const VkExtent2D &extent) :
+Framebuffer::Framebuffer() :
+    handle{},
+    device{}
+{
+
+}
+
+Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const LightArray<VkImageView> &views, const VkExtent2D &extent) :
     device{ device }
 {
     VkFramebufferCreateInfo createInfo{};
@@ -24,6 +31,24 @@ Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const std::vec
     createInfo.layers          = 1;
 
     Check(device->Create(&createInfo, &handle));
+}
+
+Framebuffer::Framebuffer(Framebuffer &&other) :
+    Framebuffer{}
+{
+    other.Swap(*this);
+}
+
+Framebuffer &Framebuffer::operator =(Framebuffer &&other)
+{
+    Framebuffer(std::move(other)).Swap(*this);
+    return *this;
+}
+
+void Framebuffer::Swap(Framebuffer &other)
+{
+    std::swap(device, other.device);
+    std::swap(handle, other.handle);
 }
 
 Framebuffer::~Framebuffer()

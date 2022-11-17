@@ -3,8 +3,6 @@
 #ifndef __IMMORTAL_CORE_H__
 #define __IMMORTAL_CORE_H__
 
-#define UNICODE
-
 #include "impch.h"
 #include <cstdint>
 #include <memory>

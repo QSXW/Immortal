@@ -6,9 +6,15 @@ namespace Immortal
 namespace Vulkan
 {
 
+RenderPass::RenderPass() :
+    handle{},
+    device{}
+{
+
+}
+
 RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat, bool isPresent) :
-    device{ device },
-    depthFormat{ depthFormat }
+    device{ device }
 {
     std::array<VkAttachmentDescription, 2> attachments{};
 
@@ -82,13 +88,42 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     Check(device->Create(&createInfo, &handle));
 }
 
-RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo * pCreateInfo) :
+RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo *pCreateInfo) :
     device{ device }
 {
     Check(device->Create(pCreateInfo, &handle));
 }
 
+RenderPass::RenderPass(RenderPass &&other) :
+    RenderPass{}
+{
+    other.Swap(*this);
+}
+
+RenderPass &RenderPass::operator =(RenderPass &&other)
+{
+    RenderPass(std::move(other)).Swap(*this);
+    return *this;
+}
+
+void RenderPass::Swap(RenderPass &other)
+{
+    std::swap(device, other.device);
+    std::swap(handle, other.handle);
+}
+
 RenderPass::~RenderPass()
+{
+    Destroy();
+}
+
+void RenderPass::Invalidate(VkRenderPass other)
+{
+    Destroy();
+    handle = other;
+}
+
+void RenderPass::Destroy()
 {
     if (device)
     {

@@ -28,6 +28,11 @@ public:
 
     ~Sampler();
 
+    void Swap(Sampler &other);
+
+    Sampler(const Sampler &other) = delete;
+    Sampler &operator=(const Sampler &other) = delete;
+
 private:
     Device *device{ nullptr };
 };

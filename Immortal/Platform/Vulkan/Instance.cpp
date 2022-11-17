@@ -91,7 +91,7 @@ static std::vector<const char *> ValidateLayers(const std::vector<const char *> 
 
 static inline void CheckDynamicLoadedLibarary()
 {
-    if (RenderContext::Status == VK_NOT_READY)
+    if (!vkGetInstanceProcAddr)
     {
         if ((RenderContext::Status = volkInitialize()) != VK_SUCCESS)
         {
@@ -106,6 +106,12 @@ static inline void CheckDynamicLoadedLibarary()
 static inline void VkEnableExtension(const char *message)
 {
     LOG::INFO("{0} is available. Enabling it!", message);
+}
+
+Instance::Instance() :
+    handle{}
+{
+    CheckDynamicLoadedLibarary();
 }
 
 Instance::Instance(const char                                   *applicationName,
@@ -215,14 +221,14 @@ Instance::Instance(const char                                   *applicationName
     {
         debugUtilsCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
         debugUtilsCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugUtilsCreateInfo.pfnUserCallback =DebugUtilsMessengerCallback;
+        debugUtilsCreateInfo.pfnUserCallback = DebugUtilsMessengerCallback;
 
         instanceInfo.pNext = &debugUtilsCreateInfo;
     }
     else
     {
         debugReportCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        debugReportCreateInfo.pfnCallback =DebugCallback;
+        debugReportCreateInfo.pfnCallback = DebugCallback;
 
         instanceInfo.pNext = &debugReportCallback;
     }

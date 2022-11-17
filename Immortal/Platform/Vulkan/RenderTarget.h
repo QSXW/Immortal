@@ -8,6 +8,7 @@
 #include "DescriptorSet.h"
 #include "Framebuffer.h"
 #include "Submitter.h"
+#include "Algorithm/LightArray.h"
 
 namespace Immortal
 {
@@ -27,10 +28,8 @@ class RenderTarget : public SuperRenderTarget
 public:
     using Super = SuperRenderTarget;
 
-    static URef<RenderTarget> Create(std::unique_ptr<Image> &&image);
-
 public:
-    RenderTarget(std::vector<std::unique_ptr<Image>> images);
+    RenderTarget();
 
     RenderTarget(Device *device, const Description &description);
 
@@ -39,6 +38,13 @@ public:
     ~RenderTarget();
 
     RenderTarget &operator=(RenderTarget &&other);
+
+    void Invalidate(Image &&image, Ref<RenderPass> renderPass);
+
+    void InvalidateFrameBuffer();
+
+    RenderTarget(const RenderTarget &) = delete;
+    RenderTarget &operator=(const RenderTarget &) = delete;
 
     template <class T>
     requires std::is_same_v<T, RenderPass> || std::is_same_v<T, Framebuffer>
@@ -50,7 +56,7 @@ public:
         }
         if constexpr (IsPrimitiveOf<Framebuffer, T>())
         {
-            return *framebuffer;
+            return framebuffer;
         }
     }
 
@@ -64,7 +70,7 @@ public:
         }
         if constexpr (IsPrimitiveOf<Framebuffer, T>())
         {
-            return framebuffer;
+            return &framebuffer;
         }
     }
 
@@ -75,26 +81,7 @@ public:
 
     VkFramebuffer GetFramebuffer()
     {
-        return *framebuffer;
-    }
-
-    void SetupFramebuffer()
-    {
-        std::vector<VkImageView> views;
-
-        for (auto &color : attachments.colors)
-        {
-            views.emplace_back(color.view->Handle());
-        }
-        views.emplace_back(attachments.depth.view->Handle());
-
-        framebuffer = new Framebuffer{ device, *renderPass, views, VkExtent2D{ desc.Width, desc.Height }};
-    }
-
-    void Set(Ref<RenderPass> value)
-    {
-        renderPass = value;
-        SetupFramebuffer();
+        return framebuffer;
     }
 
     uint32_t ColorAttachmentCount() const
@@ -104,7 +91,7 @@ public:
 
     const Image &GetColorImage(uint32_t index = 0) const
     {
-        return *attachments.colors[index].image;
+        return attachments.colors[index].image;
     }
 
     void Create();
@@ -132,11 +119,9 @@ private:
 
     Ref<RenderPass> renderPass;
 
-    URef<Framebuffer> framebuffer;
+    Framebuffer framebuffer;
 
-    URef<DescriptorSet> descriptorSet;
-
-    URef<ImageDescriptor> descriptor;
+    DescriptorSet descriptorSet;
 
     Sampler sampler;
 
@@ -144,7 +129,7 @@ private:
     {
         Attachment depth;
 
-        std::vector<Attachment> colors;
+        LightArray<Attachment, 3> colors;
     } attachments;
 
     std::vector<std::unique_ptr<Image>> stagingImages;

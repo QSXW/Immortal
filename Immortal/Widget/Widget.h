@@ -26,17 +26,17 @@
 namespace Immortal
 {
 
-static inline ImVec2 operator + (const ImVec2 &a, const ImVec2 &b)
-{
-    return { a.x + b.x, a.y + b. y };
-}
-
-static inline ImVec2 &operator+=(ImVec2 &a, const ImVec2 &b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    return a;
-}
+//static inline ImVec2 operator + (const ImVec2 &a, const ImVec2 &b)
+//{
+//    return { a.x + b.x, a.y + b. y };
+//}
+//
+//static inline ImVec2 &operator+=(ImVec2 &a, const ImVec2 &b)
+//{
+//    a.x += b.x;
+//    a.y += b.y;
+//    return a;
+//}
 
 enum class Theme
 {

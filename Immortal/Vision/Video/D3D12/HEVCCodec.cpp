@@ -22,10 +22,10 @@ namespace D3D12
 #if HAVE_FFMPEG
 HEVCCodec::HEVCCodec()
 {
-	auto renderContext = Render::GetAddress<RenderContext>();
+	auto renderContext = Render::GetAddress<Immortal::RenderContext>();
 	if (renderContext)
 	{
-		auto device = Deanonymize<Device *>(renderContext->GetDevice());
+		auto device = Deanonymize<Immortal::D3D12::Device *>(renderContext->GetDevice());
 		videoDevice = new VideoDevice(device);
 	}
 	else

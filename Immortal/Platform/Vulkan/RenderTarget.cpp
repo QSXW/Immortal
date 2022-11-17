@@ -10,28 +10,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-URef<RenderTarget> RenderTarget::Create(std::unique_ptr<Image> &&colorImage)
-{
-    std::vector<std::unique_ptr<Image>> images;
-
-    auto device = colorImage->GetAddress<Device>();
-
-    VkFormat depthFormat = SuitableDepthFormat(device->Get<PhysicalDevice>());
-
-    auto depthImage = std::make_unique<Image>(
-        device,
-        colorImage->Extent(),
-        depthFormat,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
-
-    images.emplace_back(std::move(colorImage));
-    images.emplace_back(std::move(depthImage));
-
-    return new RenderTarget{std::move(images)};
-};
-
 RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &description) :
     Super{ description },
     device{ device },
@@ -40,47 +18,11 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
     Create();
 }
 
-RenderTarget::RenderTarget(std::vector<std::unique_ptr<Image>> images) :
-    device{ images.back()->GetAddress<Device>() }
+RenderTarget::RenderTarget() :
+    device{},
+    timeline{}
 {
-    SLASSERT(!images.empty() && "Should specify at least 1 image");
-    std::set<VkExtent2D, CompareExtent2D> uniqueExtent;
 
-    auto ImageExtent = [](std::unique_ptr<Image> &image) -> VkExtent2D
-    {
-        auto &extent = image->Extent();
-        return { extent.width,  extent.height };
-    };
-
-    std::transform(images.begin(), images.end(), std::inserter(uniqueExtent, uniqueExtent.end()), ImageExtent);
-    SLASSERT(uniqueExtent.size() == 1 && "Extent size is not unique");
-
-    auto &extent = *uniqueExtent.begin();
-
-    desc.Width  = extent.width;
-	desc.Height = extent.height;
-
-    for (auto &image : images)
-    {
-        if (image->Type() != VK_IMAGE_TYPE_2D)
-        {
-            LOG::ERR("Image type is not 2D");
-        }
-
-        Attachment attachment{
-            std::move(image),
-            std::make_unique<ImageView>(image.get(), VK_IMAGE_VIEW_TYPE_2D)
-        };
-
-        if (attachment.image->IsDepth())
-        {
-            attachments.depth = std::move(attachment);
-        }
-        else
-        {
-            attachments.colors.emplace_back(std::move(attachment));
-        }
-    }
 }
 
 RenderTarget::RenderTarget(RenderTarget &&other) :
@@ -111,6 +53,49 @@ RenderTarget &RenderTarget::operator=(RenderTarget &&other)
     return *this;
 }
 
+void RenderTarget::Invalidate(Image &&image, Ref<RenderPass> _renderPass)
+{
+    device = image.GetAddress<Device>();
+
+    VkFormat depthFormat = attachments.depth.image ? attachments.depth.image.GetFormat() : SuitableDepthFormat(device->Get<PhysicalDevice>());
+
+    renderPass = _renderPass;
+
+    attachments.colors.clear();
+
+    Attachment attachment{ std::move(image), std::move(ImageView(&image, VK_IMAGE_VIEW_TYPE_2D)) };
+    attachments.colors.emplace_back(std::move(attachment));
+
+    attachments.depth.image = std::move(Image{
+        device,
+        attachments.colors[0].image.GetExtent(),
+        depthFormat,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY
+        });
+
+    attachments.depth.view = std::move(ImageView(&attachments.depth.image, VK_IMAGE_VIEW_TYPE_2D));
+
+    InvalidateFrameBuffer();
+}
+
+void RenderTarget::InvalidateFrameBuffer()
+{
+    LightArray<VkImageView> views;
+
+    for (auto &color : attachments.colors)
+    {
+        views.emplace_back(color.view);
+    }
+    views.emplace_back(attachments.depth.view);
+
+    auto &extent = attachments.colors[0].image.GetExtent();
+    desc.Width  = extent.width;
+    desc.Height = extent.height;
+
+    framebuffer = std::move(Framebuffer{ device, *renderPass, views, VkExtent2D{ extent.width, extent.height } });
+}
+
 void RenderTarget::Create()
 {
     VkExtent3D extent = { desc.Width, desc.Height, 1 };
@@ -128,14 +113,14 @@ void RenderTarget::Create()
             depthClearValue->depth   = 1.0f;
             depthClearValue->stencil = 0.0f;
             depthFormat = attachment.format;
-            attachments.depth.image.reset(new Image{
+            attachments.depth.image = std::move(Image{
                 device,
                 extent,
                 depthFormat,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VMA_MEMORY_USAGE_GPU_ONLY
                 });
-            attachments.depth.view.reset(new ImageView{ attachments.depth.image.get(), VK_IMAGE_VIEW_TYPE_2D });
+            attachments.depth.view = std::move(ImageView{ &attachments.depth.image, VK_IMAGE_VIEW_TYPE_2D });
         }
         else
         {
@@ -145,14 +130,14 @@ void RenderTarget::Create()
             attachments.colors.resize(attachments.colors.size() + 1);
             auto &color = attachments.colors.back();
             colorFormat = attachment.format;
-            color.image.reset(new Image{
+            color.image = std::move(Image{
                 device,
                 extent,
                 colorFormat,
                 flags,
-                VMA_MEMORY_USAGE_GPU_ONLY,
+                VMA_MEMORY_USAGE_GPU_ONLY
                 });
-            color.view.reset(new ImageView{ color.image.get(), VK_IMAGE_VIEW_TYPE_2D });
+            color.view = std::move(ImageView{ &color.image, VK_IMAGE_VIEW_TYPE_2D });
 
             auto image = new Image{
                 device,
@@ -176,10 +161,10 @@ void RenderTarget::Create()
     std::vector<VkAttachmentDescription> attchmentDescriptions{};
     std::vector<VkAttachmentReference> colorRefs{};
 
-    for (auto &c : attachments.colors)
+    for (auto &color : attachments.colors)
     {
         VkAttachmentDescription desc{};
-        desc.format         = c.image->Format();
+        desc.format         = color.image.GetFormat();
         desc.samples        = VK_SAMPLE_COUNT_1_BIT;
         desc.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         desc.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -246,25 +231,22 @@ void RenderTarget::Create()
 
     renderPass = new RenderPass(device, &renderPassInfo);
 
-    SetupFramebuffer();
+    InvalidateFrameBuffer();
     SetupDescriptor();
 }
 
 void RenderTarget::SetupDescriptor()
 {
-    if (!descriptor)
-    {
-       descriptor = new ImageDescriptor{};
-    }
-    descriptor->Update(sampler, *attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    ImageDescriptor descriptor{};
+    descriptor.Update(sampler, attachments.colors[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    descriptorSet = new DescriptorSet{ device, RenderContext::DescriptorSetLayout };
-    descriptorSet->Update(*descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptorSet = std::move(DescriptorSet{ device, RenderContext::DescriptorSetLayout });
+    descriptorSet.Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
 RenderTarget::operator uint64_t() const
 {
-    return *descriptorSet;
+    return (uint64_t)descriptorSet;
 }
 
 void RenderTarget::Resize(uint32_t x, uint32_t y)
@@ -282,7 +264,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     uint64_t pixel = 0;
 
     uint8_t *ptr   = nullptr;
-    Image *src = attachments.colors[index].image.get();
+    Image *src = &attachments.colors[index].image;
     Image *dst = stagingImages[index].get();
 
     VkImageSubresourceLayers subresourceLayers{};
@@ -292,7 +274,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     subresourceLayers.mipLevel       = 0;
 
     VkImageCopy region{};
-    region.extent         = src->Extent();
+    region.extent         = src->GetExtent();
     region.srcOffset      = VkOffset3D{ 0, 0, 0 };
     region.srcSubresource = subresourceLayers;
     region.dstOffset      = VkOffset3D{ 0, 0, 0 };
@@ -359,7 +341,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
 
     dst->Map((void **)&ptr);
     {
-        auto &extent = dst->Extent();
+        auto &extent = dst->GetExtent();
         auto align = SLALIGN(extent.width, 8) - extent.width;
         size_t stride = format.Size();
 

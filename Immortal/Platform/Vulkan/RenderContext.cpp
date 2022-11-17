@@ -44,11 +44,13 @@ static std::vector<const char *> ValidationLayers = {
 #endif
 };
 
+static Swapchain PrimarySwapchain;
+
 RenderContext::RenderContext(const RenderContext::Description &desc) :
     window{ desc.window }
 {
     instance = new Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
-    if (!instance->Ready())
+    if (!instance)
     {
         LOG::ERR("Vulkan Not Supported!");
         return;
@@ -65,14 +67,16 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     physicalDevice->Activate(PhysicalDevice::Feature::RobustBufferAccess);
     physicalDevice->Activate(PhysicalDevice::Feature::IndependentBlend);
 
-    depthFormat = physicalDevice->GetSuitableDepthFormat();
-
     device = new Device{ physicalDevice, surface, DeviceExtensions };
     queue  = device->SuitableGraphicsQueuePtr();
 
+	surfaceExtent.width  = desc.width;
+	surfaceExtent.height = desc.height;
     if (surface != VK_NULL_HANDLE)
     {
-		swapchainPool.emplace_back(new Swapchain{device});
+		VkFormat depthFormat = physicalDevice->GetSuitableDepthFormat();
+		swapchainPool[0] = std::move(Swapchain{ swapchainPool[0], device });
+		renderPass = new RenderPass{ device, swapchainPool[0].Get<VkFormat>(), depthFormat };
         Prepare();
     }
     EnableGlobal();
@@ -88,15 +92,17 @@ RenderContext::~RenderContext()
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
 
-    for (auto &s : swapchainPool)
+    for (auto &swapchain : swapchainPool)
     {
-		s.Reset();
+		swapchain.Destroy();
     }
+
+	swapchainPool[0].Destroy();
 
 	semaphorePool.Reset();
     ImmutableSampler.Reset();
-    present.renderTargets.clear();
-    renderPass.Reset();
+	present.renderTargets.clear();
+	renderPass.Reset();
     device.Reset();
     instance->DestroySurfaceKHR(surface, nullptr);
 }
@@ -109,10 +115,11 @@ void RenderContext::CreateSurface()
 void RenderContext::Prepare(size_t threadCount)
 {
     device->Wait();
-
-    swapchainPool[0]->Create();
-
-    renderPass = new RenderPass{device, swapchainPool[0]->Get<VkFormat>(), depthFormat};
+	present.renderTargets.resize(3);
+	for (auto &r : present.renderTargets)
+	{
+		r = new RenderTarget;
+	}
 
 	UpdateSurface();
 
@@ -135,7 +142,7 @@ Swapchain *RenderContext::UpdateSurface()
     {
         surfaceExtent = properties.currentExtent;
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
-		swapchain = swapchainPool[0];
+		swapchain = &swapchainPool[0];
     }
 
     return swapchain;
@@ -143,32 +150,23 @@ Swapchain *RenderContext::UpdateSurface()
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
 {
-	auto &swapchain = swapchainPool[0];
-    present.renderTargets.clear();
+	auto swapchain = &swapchainPool[0];
 
-    if (transform & VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR || transform & VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR)
-    {
-        swapchain = new Swapchain{ *swapchain, VkExtent2D{ extent.height, extent.width }, transform };
-    }
-    else
-    {
-        swapchain = new Swapchain{ *swapchain, extent, transform };;
-    }
+	swapchain->Invalidate(extent);
     regisry.preTransform = transform;
 
-    for (auto &handle : swapchain->Get<Swapchain::Images&>())
+	auto &swapchainImages = swapchain->Get<Swapchain::Images &>();
+    for (size_t i = 0; i < swapchainImages.size(); i++)
     {
-        auto image = std::make_unique<Image>(
+		Image image = std::move(Image(
             device,
-            handle,
+			swapchainImages[i],
             VkExtent3D{ extent.width, extent.height, 1 },
             swapchain->Get<VkFormat>(),
             swapchain->Get<VkImageUsageFlags>()
-        );
+        ));
 
-        auto renderTarget = RenderTarget::Create(std::move(image));
-        renderTarget->Set(renderPass);
-        present.renderTargets.emplace_back(std::move(renderTarget));
+		present.renderTargets[i]->Invalidate(std::move(image), renderPass);
     }
 }
 
@@ -285,10 +283,10 @@ void RenderContext::SwapBuffers()
 
 	if (device->IsCommandBufferRecorded<Queue::Type::Transfer>())
 	{
-		lastWaitValue = ++syncValues[sync];
+		lastSignalValue = ++syncValues[sync];
 		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({ timelineSemaphore, lastSignalValue });
 		TimelineSubmitter timelineSubmitter{};
-		timelineSubmitter.Signal(lastWaitValue);
+		timelineSubmitter.Signal(lastSignalValue);
 
 		Submitter submitter{};
 		submitter.SignalSemaphore(timelineSemaphore);
@@ -319,6 +317,7 @@ void RenderContext::SwapBuffers()
 		computeQueue.Submit(submitter, nullptr);
 	}
 
+	lastWaitValue = lastSignalValue;
 	lastSignalValue = ++syncValues[sync];
 
 	TimelineSubmitter timelineSubmitter{};

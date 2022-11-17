@@ -7,47 +7,71 @@ namespace Immortal
 namespace Vulkan
 {
 
-ImageView::ImageView(Image *image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers) :
-    device{ image->GetAddress<Device>() },
-    refImage{ image },
-    format{ format }
+inline VkImageViewType GetViewType(VkImageType type, uint32_t arrayLayers)
 {
-    if (format == VK_FORMAT_UNDEFINED)
+    VkImageViewType ret = VK_IMAGE_VIEW_TYPE_2D;
+
+    if (type == VK_IMAGE_TYPE_2D)
     {
-        this->format = format = image->Format();
+        ret = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+    }
+    else if (type == VK_IMAGE_TYPE_1D)
+    {
+        ret = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+    }
+    else if (type == VK_IMAGE_TYPE_3D)
+    {
+        ret = VK_IMAGE_VIEW_TYPE_3D;
     }
 
-    Setup(
-        image->Handle(),
-        viewType,
-        baseMipLevel,
-        baseArrayLevel,
-        nMipLevels == 0 ? image->Subresource().mipLevel : nMipLevels,
-        nArrayLayers == 0 ? image->Subresource().arrayLayer : nArrayLayers
-        );
-
-    refImage->Views().emplace(this);
+    return ret;
 }
 
-ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers) :
+ImageView::ImageView() :
+    device{},
+    handle{},
+    format{}
+{
+
+}
+
+ImageView::ImageView(Image *image, VkImageViewType type, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevels, uint32_t arrayLayers) :
+    device{ image->GetAddress<Device>() },
+    format{ image->GetFormat() }
+{
+    auto &props = image->GetProperties();
+    Instantiate(*image, type, baseMipLevel, baseArrayLayer,!mipLevels ? props.mipLevels : mipLevels, !arrayLayers ? props.arrayLayers : arrayLayers);
+}
+
+ImageView::ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevels, uint32_t arrayLayers) :
+    ImageView{ image, GetViewType(image->GetType(), arrayLayers ? arrayLayers : image->GetArrayLayer()), baseMipLevel, baseArrayLayer , mipLevels, arrayLayers }
+{ 
+
+}
+
+ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers) :
     device{ device },
     format{ format }
 {
-    Setup(image, viewType, baseMipLevel, baseArrayLevel, nMipLevels, nArrayLayers);
+    Instantiate(image, viewType, baseMipLevel, baseArrayLevel, mipLevels, arrayLayers);
 }
 
-ImageView::ImageView(ImageView&& other) :
-    device{ other.device },
-    refImage{ other.refImage },
-    handle{ other.handle },
-    format{ other.format },
-    subresourceRange{ other.subresourceRange }
+ImageView::ImageView(ImageView &&other) :
+    ImageView{}
 {
-    auto &views = refImage->Views();
-    views.erase(&other);
-    views.emplace(this);
+    other.Swap(*this);
+}
 
-    other.handle = VK_NULL_HANDLE;
+ImageView &ImageView::operator =(ImageView &&other)
+{
+    ImageView(std::move(other)).Swap(*this);
+    return *this;
+}
+
+void ImageView::Swap(ImageView &other)
+{
+    std::swap(device, other.device);
+    std::swap(handle, other.handle);
 }
 
 ImageView::~ImageView()
@@ -58,12 +82,13 @@ ImageView::~ImageView()
     }
 }
 
-void ImageView::Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t nMipLevels, uint32_t nArrayLayers)
+void ImageView::Instantiate(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers)
 {
+    VkImageSubresourceRange subresourceRange{};
     subresourceRange.baseMipLevel   = baseMipLevel;
     subresourceRange.baseArrayLayer = baseArrayLevel;
-    subresourceRange.levelCount     = nMipLevels;
-    subresourceRange.layerCount     = nArrayLayers;
+    subresourceRange.levelCount     = mipLevels;
+    subresourceRange.layerCount     = arrayLayers;
     subresourceRange.aspectMask     = IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
 
     VkImageViewCreateInfo viewInfo{};
@@ -73,6 +98,7 @@ void ImageView::Setup(VkImage image, VkImageViewType viewType, uint32_t baseMipL
     viewInfo.subresourceRange = subresourceRange;
     viewInfo.image            = image;
     viewInfo.components       = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
+
     Check(device->Create(&viewInfo, &handle));
 }
 

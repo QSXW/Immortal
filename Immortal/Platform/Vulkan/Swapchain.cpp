@@ -180,112 +180,111 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
     }
 }
 
-Swapchain::Swapchain(Swapchain &oldSwapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform) :
-    Swapchain{ oldSwapchain, oldSwapchain.device, extent, oldSwapchain.properties.ImageCount, transform, oldSwapchain.properties.PresentMode, oldSwapchain.properties.ImageUsage }
+Swapchain::Swapchain(Device *device, const VkExtent2D &extent, const uint32_t imageCount, const VkSurfaceTransformFlagBitsKHR transform, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags) :
+    device{ device },
+    handle{},
+    properties{}
 {
-    Create();
+    properties.sType         = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    properties.imageExtent   = extent;
+    properties.minImageCount = imageCount;
+    properties.preTransform  = transform;
+    properties.presentMode   = presentMode;
+    properties.imageUsage    = imageUsageFlags;
 }
 
-Swapchain::Swapchain(Device                               *device,
-                     const VkExtent2D &extent,
-                     const uint32_t                       imageCount,
-                     const VkSurfaceTransformFlagBitsKHR  transform,
-                     const VkPresentModeKHR               presentMode,
-                           VkImageUsageFlags              imageUsageFlags) :
-    Swapchain{ *this, device, extent, imageCount, transform, presentMode, imageUsageFlags }
-{
-
-}
-
-Swapchain::Swapchain(Swapchain                           &oldSwapchain,
-                     Device                              *device,
-                     const VkExtent2D                    &extent,
-                     const uint32_t                       imageCount,
-                     const VkSurfaceTransformFlagBitsKHR  transform,
-                     const VkPresentModeKHR               presentMode,
-                           VkImageUsageFlags              imageUsageFlags) :
-    device{ device }
+Swapchain::Swapchain(Swapchain &oldSwapchain, Device *device, const VkExtent2D &extent, const uint32_t imageCount, const VkSurfaceTransformFlagBitsKHR  transform, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags) :
+    Swapchain{ device }
 {
     auto surface = device->GetSurface();
 
-    VkPhysicalDevice physicalDevice = device->Get<PhysicalDevice&>();
+    PhysicalDevice *physicalDevice = &device->Get<PhysicalDevice &>();
     VkSurfaceCapabilitiesKHR surfaceCapabilities{};
     Check(device->GetSurfaceCapabilities(&surfaceCapabilities));
 
+    std::vector<VkSurfaceFormatKHR> surfaceFormats;
     uint32_t surfaceFormatCount = 0;
-    Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, nullptr));
-    surfaceFormats.resize(surfaceFormatCount);
-    Check(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &surfaceFormatCount, surfaceFormats.data()));
+    Check(physicalDevice->GetSurfaceFormatsKHR(surface, &surfaceFormatCount, nullptr));
 
-    LOG::DEBUG<false>("Surface supports the following surface formats:");
+    surfaceFormats.resize(surfaceFormatCount);
+    Check(physicalDevice->GetSurfaceFormatsKHR(surface, &surfaceFormatCount, surfaceFormats.data()));
+
+    LOG::DEBUG("Surface supports the following surface formats:");
     for (auto &f : surfaceFormats)
     {
-        LOG::DEBUG<false>("  \t{0}", Stringify(f));
+        LOG::DEBUG("  \t{0}", Stringify(f));
     }
 
+    std::vector<VkPresentModeKHR> presentModes{};
     uint32_t presentModeCount = 0;
-    Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr));
+    Check(physicalDevice->GetSurfacePresentModesKHR(surface, &presentModeCount, nullptr));
     presentModes.resize(presentModeCount);
-    Check(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
+    Check(physicalDevice->GetSurfacePresentModesKHR( surface, &presentModeCount, presentModes.data()));
+    properties.presentMode = SelectPresentMode(properties.presentMode, presentModes, priorities.PresentMode);
 
-    LOG::DEBUG<false>("Surface supports the following present modes:");
+    LOG::DEBUG("Surface supports the following present modes:");
     for (auto &p : presentModes)
     {
-        LOG::DEBUG<false>("  \t{0}", Stringify(p));
+        LOG::DEBUG("  \t{0}", Stringify(p));
     }
 
-    this->properties.ImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-    this->properties.Extent        = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
-    this->properties.ArrayLayers   = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
-    this->properties.SurfaceFormat = SelectSurfaceFormat(this->properties.SurfaceFormat, surfaceFormats, priorities.SurfaceFormat);
+    properties.minImageCount    = SelectImageCount(imageCount, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+    properties.imageExtent      = SelectExtent(extent, surfaceCapabilities.minImageExtent, surfaceCapabilities.maxImageExtent, surfaceCapabilities.currentExtent);
+    properties.imageArrayLayers = SelectImageArrayLayers(1U, surfaceCapabilities.maxImageArrayLayers);
+
+    VkSurfaceFormatKHR surfaceFormat = {
+        .format     = properties.imageFormat,
+        .colorSpace = properties.imageColorSpace,
+    };
+
+    auto [format, colorSpace] = SelectSurfaceFormat(surfaceFormat, surfaceFormats, priorities.SurfaceFormat);
+    properties.imageFormat     = format;
+    properties.imageColorSpace = colorSpace;
 
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(physicalDevice, this->properties.SurfaceFormat.format, &formatProperties);
-    this->properties.ImageUsage     = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
-    this->properties.PreTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
-    this->properties.CompositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
+    physicalDevice->GetFormatProperties(properties.imageFormat, &formatProperties);
+    properties.imageUsage     = SelectImageUsage(imageUsageFlags, surfaceCapabilities.supportedUsageFlags, formatProperties.optimalTilingFeatures);
+    properties.preTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
+    properties.compositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
 
-    this->properties.OldSwapchain   = oldSwapchain.handle;
-    this->properties.PresentMode    = presentMode;
+    handle   = oldSwapchain.handle;
+    Invalidate(properties.imageExtent);
 }
 
 Swapchain::~Swapchain()
 {
+    Destroy();
+}
+
+void Swapchain::Destroy()
+{
     if (handle)
     {
         device->DestroyAsync(handle);
+        handle = VK_NULL_HANDLE;
     }
 }
 
-void Swapchain::Create()
+void Swapchain::Invalidate(VkExtent2D extent)
 {
-    // Revalidate the present mode and surface format
-    properties.PresentMode   = SelectPresentMode(properties.PresentMode, presentModes, priorities.PresentMode);
-    properties.SurfaceFormat = SelectSurfaceFormat(properties.SurfaceFormat, surfaceFormats, priorities.SurfaceFormat);
+    properties.imageExtent = extent;
+    properties.oldSwapchain = handle;
 
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.pNext            = nullptr;
-    createInfo.minImageCount    = properties.ImageCount;
-    createInfo.imageExtent      = properties.Extent;
-    createInfo.presentMode      = properties.PresentMode;
-    createInfo.imageFormat      = properties.SurfaceFormat.format;
-    createInfo.imageColorSpace  = properties.SurfaceFormat.colorSpace;
-    createInfo.imageArrayLayers = properties.ArrayLayers;
-    createInfo.imageUsage       = properties.ImageUsage;
-    createInfo.preTransform     = properties.PreTransform;
-    createInfo.compositeAlpha   = properties.CompositeAlpha;
-    createInfo.oldSwapchain     = properties.OldSwapchain;
-    createInfo.surface          = device->GetSurface();
-    createInfo.clipped          = VK_TRUE; // Get the best performance by enabling clipping.
+    properties.surface = device->GetSurface();
+    properties.clipped = VK_TRUE; // Get the best performance by enabling clipping.
 
-    device->Create(&createInfo, &handle);
+    device->Create(&properties, &handle);
 
     uint32_t count = 0;
-    Check(vkGetSwapchainImagesKHR(*device, handle, &count, nullptr));
+    Check(device->GetSwapchainImagesKHR(handle, &count, nullptr));
 
     images.resize(count);
-    Check(vkGetSwapchainImagesKHR(*device, handle, &count, images.data()));
+    Check(device->GetSwapchainImagesKHR(handle, &count, images.data()));
+
+    if (properties.oldSwapchain)
+    {
+        device->DestroyAsync(properties.oldSwapchain);
+    }
 }
 
 }

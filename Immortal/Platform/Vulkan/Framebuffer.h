@@ -5,6 +5,7 @@
 #include "Image.h"
 #include "ImageView.h"
 #include "Sampler.h"
+#include "Algorithm/LightArray.h"
 
 namespace Immortal
 {
@@ -18,9 +19,20 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
-    Framebuffer(Device *device, VkRenderPass renderPass, const std::vector<VkImageView> &views, const VkExtent2D &extent);
+    Framebuffer();
+
+    Framebuffer(Device *device, VkRenderPass renderPass, const LightArray<VkImageView> &views, const VkExtent2D &extent);
+
+    Framebuffer(Framebuffer &&other);
+
+    Framebuffer &operator =(Framebuffer &&other);
+
+    void Swap(Framebuffer &other);
 
     ~Framebuffer();
+
+    Framebuffer(const Framebuffer &other) = delete;
+    Framebuffer &operator = (const Framebuffer &other) = delete;
 
 private:
     Device *device{ nullptr };

@@ -47,18 +47,24 @@ inline VkImageType ImageType(VkExtent3D extent)
     return result;
 }
 
-Image::Image(Device *device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
+Image::Image() :
+    handle{},
+    device{}
+{
+
+}
+
+Image::Image(Device *device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
     device{ device },
     handle{ handle }
 {
-    subresource.mipLevel   = 1;
-    subresource.arrayLayer = 1;
-    
-    info.imageType = ImageType(extent);
-    info.extent    = extent;
-    info.format    = format;
-    info.samples   = sampleCount;
-    info.usage     = imageUsage;
+    properties.imageType   = ImageType(extent);
+    properties.extent      = extent;
+    properties.format      = format;
+    properties.samples     = sampleCount;
+    properties.usage       = imageUsage;
+    properties.arrayLayers = 1;
+    properties.mipLevels   = 1;
 }
 
 Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage, VkSampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers, VkImageTiling tiling, VkImageCreateFlags flags, uint32_t numQueueFamilies, const uint32_t* queueFamilies) :
@@ -66,97 +72,70 @@ Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageU
 {
     SLASSERT(mipLevels > 0 && "Image should have at least one level");
     SLASSERT(arrayLayers > 0 && "Image should have at least one layer");
-
-    subresource.mipLevel   = mipLevels;
-    subresource.arrayLayer = arrayLayers;
  
-    info.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    info.imageType     = Vulkan::ImageType(extent);
-    info.format        = format;
-    info.extent        = extent;
-    info.mipLevels     = mipLevels;
-    info.arrayLayers   = arrayLayers;
-    info.samples       = sampleCount;
-    info.tiling        = tiling;
-    info.usage         = imageUsage;
-    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    properties.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    properties.imageType     = ImageType(extent);
+    properties.format        = format;
+    properties.extent        = extent;
+    properties.mipLevels     = mipLevels;
+    properties.arrayLayers   = arrayLayers;
+    properties.samples       = sampleCount;
+    properties.tiling        = tiling;
+    properties.usage         = imageUsage;
+    properties.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     if (numQueueFamilies != 0)
     {
-        info.sharingMode           = VK_SHARING_MODE_CONCURRENT;
-        info.queueFamilyIndexCount = numQueueFamilies;
-        info.pQueueFamilyIndices   = queueFamilies;
+        properties.sharingMode           = VK_SHARING_MODE_CONCURRENT;
+        properties.queueFamilyIndexCount = numQueueFamilies;
+        properties.pQueueFamilyIndices   = queueFamilies;
     }
 
-    VmaAllocationCreateInfo memoryInfo{};
-    memoryInfo.usage = memoryUsage;
-    if (imageUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
-    {
-        memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-    }
-
-    Check(device->Create(&info, &memoryInfo, &handle, &memory, nullptr));
+    Instantiate(memoryUsage);
 }
 
-Image::Image(Device *device, VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage) :
+Image::Image(Device *device, const VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage) :
     device{ device }
 {
-    CopyProps(&this->info, &createInfo);
-
-    subresource.mipLevel = createInfo.mipLevels;
-    subresource.arrayLayer = createInfo.arrayLayers;
-
-    VmaAllocationCreateInfo memoryInfo{};
-    memoryInfo.usage = memoryUsage;
-
-    if (info.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
-    {
-        memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-    }
-
-    Check(device->Create(&info, &memoryInfo, &handle, &memory));
+    Invalidate(createInfo, memoryUsage);
 }
 
 Image::Image(Image &&other) :
-    device{ other.device },
-    handle{ other.handle },
-    memory{ other.memory },
-    subresource{ other.subresource },
-    mappedData{ other.mappedData },
-    mapped{ other.mapped },
-    views{ std::move(other.views) }
+    device{},
+    handle{},
+    memory{}
 {
-    CopyProps(&this->info, &other.info);
-
-    other.handle     = VK_NULL_HANDLE;
-    other.memory     = VK_NULL_HANDLE;
-    other.mappedData = nullptr;
-    other.mapped     = false;
-
-    for (auto& v : views)
-    {
-        v->Set(this);
-    }
-}
-
-Image::Image(const Image &other) :
-    device{ other.device },
-    handle{ other.handle },
-    memory{ other.memory },
-    subresource{ other.subresource },
-    mappedData{ other.mappedData },
-    mapped{ other.mapped },
-    views{ other.views }
-{
-    CopyProps(&this->info, &other.info);
-
-    for (auto& v : views)
-    {
-        v->Set(this);
-    }
+    other.Swap(*this);
+    CopyProps(&properties, &other.properties);
 }
 
 Image::~Image()
+{
+    Destroy();
+}
+
+void Image::Invalidate(const VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage)
+{
+    properties = createInfo;
+    Instantiate(memoryUsage);
+}
+
+void Image::Instantiate(VmaMemoryUsage memoryUsage)
+{
+    Destroy();
+
+    VmaAllocationCreateInfo memoryInfo{};
+    memoryInfo.usage = memoryUsage;
+
+    if (properties.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
+    {
+        memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+    }
+
+    Check(device->Create(&properties, &memoryInfo, &handle, &memory));
+}
+
+void Image::Destroy()
 {
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != nullptr)
     {
@@ -164,63 +143,33 @@ Image::~Image()
             Device *device = nullptr;
             VmaAllocation memory = nullptr;
             VkImage image = VK_NULL_HANDLE;
-        } dpack {
+        } dpack{
             device,
             memory,
             handle
         };
 
-        device->DestroyAsync([dpack] () {
+        device->DestroyAsync([dpack]() {
             dpack.device->Destroy(
                 dpack.image,
                 dpack.memory
-                );
+            );
             });
     }
 }
 
 Image &Image::operator=(Image &&other)
 {
-    THROWIF(&other != this, SError::SelfAssignment);
-
-    device          = other.device;
-    handle          = other.handle;
-    memory          = other.memory;
-    views           = std::move(other.views);
-    mappedData      = other.mappedData;
-    mapped          = other.mapped;
-    CopyProps(&this->info, &other.info);
-
-    for (auto& v : views)
-    {
-        v->Set(this);
-    }
-
-    other.device = nullptr;
-    other.handle = VK_NULL_HANDLE;
-    other.memory = VK_NULL_HANDLE;
-
+    Image(std::move(other)).Swap(*this);
+    CopyProps(&properties, &other.properties);
     return *this;
 }
 
-Image &Image::operator=(const Image &other)
+void Image::Swap(Image &other)
 {
-    THROWIF(&other != this, SError::SelfAssignment);
-
-    device          = other.device;
-    handle          = other.handle;
-    memory          = other.memory;
-    views           = other.views;
-    mappedData      = other.mappedData;
-    mapped          = other.mapped;
-    CopyProps(&this->info, &other.info);
-
-    for (auto& v : views)
-    {
-        v->Set(this);
-    }
-
-    return *this;
+    std::swap(device, other.device);
+    std::swap(handle, other.handle);
+    std::swap(memory, other.memory);
 }
 
 void Image::Map(void **dataMapped)

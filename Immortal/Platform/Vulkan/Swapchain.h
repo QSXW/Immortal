@@ -54,9 +54,7 @@ public:
     VKCPP_OPERATOR_HANDLE()
 
 public:
-    Swapchain(Swapchain &swapchain, const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
-
-    Swapchain(Device                              *device,
+    Swapchain(Device                              *device      = nullptr,
               const VkExtent2D                    &extent      = {},
               const uint32_t                       imageCount  = 3,
               const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
@@ -73,19 +71,42 @@ public:
 
     ~Swapchain();
 
-    void Create();
+    void Invalidate(VkExtent2D extent);
+
+    void Destroy();
 
 public:
-    using Images = std::vector<VkImage>;
+    using Images = LightArray<VkImage, 3>;
     using Format = VkFormat;
     using Usage  = VkImageUsageFlags;
+
+    Swapchain(Swapchain &&other)
+    {
+        Transplant(std::move(other));
+        other.handle = nullptr;
+    }
+
+    Swapchain &operator =(Swapchain &&other)
+    {
+        Transplant(std::move(other));
+        return *this;
+    }
+
+    void Transplant(Swapchain &&other)
+    {
+        device       = other.device;
+        handle       = other.handle;
+        images       = std::move(other.images);
+        properties   = other.properties;
+        other.handle = nullptr;
+    }
 
     template <class T>
     T &Get()
     {
         if constexpr (IsPrimitiveOf<VkImageUsageFlags, T>())
         {
-            return properties.ImageUsage;
+            return properties.imageUsage;
         }
         if constexpr (IsPrimitiveOf<Properties, T>())
         {
@@ -93,11 +114,11 @@ public:
         }
         if constexpr (IsPrimitiveOf<VkExtent2D, T>())
         {
-            return properties.Extent;
+            return properties.imageExtent;
         }
         if constexpr (IsPrimitiveOf <VkFormat, T>())
         {
-            return properties.SurfaceFormat.format;
+            return properties.imageFormat;
         }
         if constexpr (IsPrimitiveOf<Images, T>())
         {
@@ -107,12 +128,12 @@ public:
 
     void Set(const VkPresentModeKHR mode)
     {
-        properties.PresentMode = mode;
+        properties.presentMode = mode;
     }
 
     void Set(const VkFormat format)
     {
-        properties.SurfaceFormat.format = format;
+        properties.imageFormat = format;
     }
 
     void Set(std::vector<VkPresentModeKHR> &presentModePriorities)
@@ -133,13 +154,9 @@ public:
 private:
     Device *device{ nullptr };
 
-    std::vector<VkImage> images;
+    Images images;
 
-    std::vector<VkSurfaceFormatKHR> surfaceFormats{};
-
-    std::vector<VkPresentModeKHR> presentModes{};
-
-    Swapchain::Properties properties;
+    VkSwapchainCreateInfoKHR properties;
 };
 
 }

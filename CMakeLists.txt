@@ -15,7 +15,10 @@ set(IMMORTAL_RUMTIME_DIR ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Scripts/cmake)
 include(utils)
 
-add_compile_definitions($<$<CONFIG:DEBUG>:_DEBUG>)
+add_compile_definitions(
+    $<$<CONFIG:DEBUG>:_DEBUG>
+    "_UNICODE"
+    "UNICODE")
 
 add_subdirectory(3rdparty)
 set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets")

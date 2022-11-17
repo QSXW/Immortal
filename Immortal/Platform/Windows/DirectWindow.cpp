@@ -1,14 +1,9 @@
 #include "DirectWindow.h"
-#include <d3d12.h>
-#include <dxgi1_4.h>
 
 #include <string>
 #include <locale>
 #include <codecvt>
 
-#ifndef _UNICODE
-#define _UNICODE
-#endif
 #include <backends/imgui_impl_win32.cpp>
 
 #include "Framework/Utils.h"
@@ -186,7 +181,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
 
 end:
-    return ::DefWindowProc(hWnd, msg, wParam, lParam);
+    return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
 DirectWindow::DirectWindow(const Description &description)
@@ -240,7 +235,7 @@ void DirectWindow::Setup(const Description &description)
         WndProc,
         0L,
         0L,
-        GetModuleHandle(nullptr),
+        GetModuleHandleW(nullptr),
         nullptr,
         nullptr,
         nullptr,
@@ -249,14 +244,18 @@ void DirectWindow::Setup(const Description &description)
         nullptr
     };
 
-    ::RegisterClassEx(&wc);
+    ::RegisterClassExW(&wc);
 
-    handle = ::CreateWindow(
+    auto width = GetSystemMetrics(SM_CXSCREEN);
+    auto height = GetSystemMetrics(SM_CYSCREEN);
+
+    handle = ::CreateWindowExW(
+        0,
         wc.lpszClassName,
         title.c_str(),
         WS_OVERLAPPEDWINDOW,
-        100,
-        100,
+        (width - desc.Width) / 2,
+        (height - desc.Height) / 2,
         desc.Width,
         desc.Height,
         nullptr,
@@ -275,6 +274,6 @@ DirectWindow::~DirectWindow()
 void DirectWindow::Shutdown()
 {
     ::DestroyWindow(handle);
-    ::UnregisterClass(wc.lpszClassName, wc.hInstance);
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 }
 }

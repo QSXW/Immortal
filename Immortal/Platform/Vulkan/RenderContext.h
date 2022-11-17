@@ -157,10 +157,6 @@ public:
         {
             return device;
         }
-        if constexpr (IsPrimitiveOf<RenderPass, T>())
-        {
-            return renderPass;
-        }
         if constexpr (IsPrimitiveOf<Queue, T>())
         {
             return queue;
@@ -223,17 +219,15 @@ private:
 
     URef<Device> device;
 
-    std::vector<URef<Swapchain>> swapchainPool;
+    std::array<Swapchain, 1> swapchainPool;
 
     Swapchain *swapchain = nullptr;
 
     Queue *queue{ nullptr };
 
-    Ref<RenderPass> renderPass;
-
     struct
     {
-		std::vector<URef<RenderTarget>> renderTargets;
+	    std::vector<URef<RenderTarget>> renderTargets;
     } present;
 
     uint32_t swapchainIndex = 0;
@@ -242,9 +236,7 @@ private:
 
     VkExtent2D surfaceExtent{ 0, 0 };
 
-    Swapchain::Properties swapchainProperties;
-
-    VkFormat depthFormat{ VK_FORMAT_UNDEFINED };
+    Ref<RenderPass> renderPass;
 
     struct
     {
@@ -270,3 +262,4 @@ private:
 
 }
 }
+ 

@@ -88,11 +88,7 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
 
     view = new ImageView{
          image,
-         layers == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_CUBE,
-         imageCreateInfo.format,
-         0, 0,
-         mipLevels,
-         layers
+         layers == 1 ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_CUBE
         };
 
     descriptor.Update(*sampler, *view, Layout);

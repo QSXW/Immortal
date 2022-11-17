@@ -277,7 +277,7 @@ void RenderContext::UpdateSwapchain(UINT width, UINT height)
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc{};
     swapchain->GetDesc(&swapchainDesc);
 
-    if (desc.width != width || desc.height != height)
+    if (swapchainDesc.Width != width || swapchainDesc.Height != height)
     {
         WaitForGPU();
         swapchain->ClearRenderTarget();
