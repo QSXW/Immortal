@@ -10,6 +10,10 @@
 #include "Framebuffer.h"
 #include "GuiLayer.h"
 
+#if !defined(VK_SYNC_TIMELINE_SEMAPHORE) && !defined(VK_SYNC_FENCE)
+#define VK_SYNC_TIMELINE_SEMAPHORE
+#endif
+
 namespace Immortal
 {
 namespace Vulkan
@@ -230,8 +234,20 @@ void RenderContext::PrepareFrame()
 		}
 	}
 
+#ifdef VK_SYNC_TIMELINE_SEMAPHORE
+#ifndef __linux__
+	uint64_t completion = 0;
+	Check(device->GetCompletion(timelineSemaphore, &completion));
+	if (completion < syncValues[sync])
+	{
+		Check(device->Wait(&timelineSemaphore, &syncValues[sync]));
+	}
+#endif
+#endif
+
 	syncValues[sync] = lastSync;
 
+#ifdef VK_SYNC_FENCE
 #ifndef __linux__
 	if (fences[sync] != VK_NULL_HANDLE)
 	{
@@ -241,6 +257,7 @@ void RenderContext::PrepareFrame()
 	{
 		fences[sync] = device->RequestFence();
 	}
+#endif
 #endif
 }
 
