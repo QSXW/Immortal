@@ -38,6 +38,16 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         DirectWindow::EventDispatcher(resizeEvent);
         return 0;
     }
+
+    case WM_MOVE:
+    {
+        WindowMoveEvent moveEvent{
+            (int)LOWORD(lParam),
+            (int)HIWORD(lParam)
+        };
+        DirectWindow::EventDispatcher(moveEvent);
+        return 0;
+    }
     case WM_KEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYDOWN:

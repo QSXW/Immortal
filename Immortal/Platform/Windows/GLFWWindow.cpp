@@ -97,6 +97,14 @@ void GLFWWindow::Setup(const Description &description)
         desc->EventCallback(event);
     });
 
+    /* Set callbacks */
+    glfwSetWindowPosCallback(window, [](GLFWwindow *window, int x, int y)
+    {
+        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+        WindowMoveEvent event(x, y);
+        desc->EventCallback(event);
+    });
+
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window)
     {
         Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
@@ -104,7 +112,7 @@ void GLFWWindow::Setup(const Description &description)
         desc->EventCallback(event);
     });
 
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int modes)
+    glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode, int action, int modes)
     {
         Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
 

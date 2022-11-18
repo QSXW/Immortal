@@ -97,6 +97,8 @@ private:
 
     bool OnWindowResize(WindowResizeEvent &e);
 
+    bool OnWindowMove(WindowMoveEvent &e);
+
 private:
 	URef<Window> window;
 

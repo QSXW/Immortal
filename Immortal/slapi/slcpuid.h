@@ -1,7 +1,10 @@
 #pragma once
 
 #include <cstdint>
+
+#ifdef _MSC_VER
 #include <intrin.h>
+#endif
 
 enum class CPUFlag : uint32_t
 {

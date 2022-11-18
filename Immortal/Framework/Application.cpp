@@ -18,6 +18,7 @@ Application::Application(const Window::Description &description) :
 
     eventSink.Listen(&Application::OnWindowClosed, Event::Type::WindowClose);
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
+    eventSink.Listen(&Application::OnWindowMove,   Event::Type::WindowMove);
 
     UpdateMeta(description);
 
@@ -156,6 +157,12 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     }
 
     return runtime.minimized;
+}
+
+bool Application::OnWindowMove(WindowMoveEvent &e)
+{
+    OnRender();
+    return true;
 }
 
 void Application::UpdateMeta(const Window::Description &description)

@@ -38,6 +38,7 @@ public:
         None = 0,
         WindowClose,
         WindowResize,
+        WindowMove,
         WindowFocus,
         WindowLostFocus,
         WindowMoved,
@@ -163,7 +164,7 @@ private:
     std::array<Func, U64(Event::Type::MaxCount)> pool;
 };
 
-inline std::ostream& operator<<(std::ostream &os, const Event &e)
+inline std::ostream &operator<<(std::ostream &os, const Event &e)
 {
     return os << e.Stringify();
 }
