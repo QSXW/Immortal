@@ -31,7 +31,7 @@ Device::Device(int deviceId) :
 
 	Check(D3D11CreateDevice(
 	    adapter.Get(),
-	    D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_UNKNOWN,
 	    0,
 	    deviceFlags,
 	    FeatureLevels,
