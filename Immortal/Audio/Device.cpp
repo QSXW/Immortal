@@ -37,7 +37,7 @@ AudioDevice::AudioDevice() :
             if (picture.Available())
             {
                 int frameLeft = 0;
-                if (picture.desc.width < 1024)
+                if (picture.desc.samples < 1024)
                 {
                     size_t bytes = picture.desc.width << 3;
                     memcpy(ptr, picture.shared->data[0], bytes);
