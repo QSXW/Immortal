@@ -42,7 +42,12 @@ public:
         return Spatial() * format.ComponentCount() * format.ElementSize();
     }
 
-    uint32_t width;
+    union 
+    {
+        uint32_t width;
+        uint32_t samples;
+    };
+
     uint32_t height;
     Format  format;
 };

@@ -138,6 +138,11 @@ struct Picture
         return !!shared;
     }
 
+    operator bool() const
+    {
+        return !!shared;
+    }
+
     uint8_t*&operator[](size_t index)
     {
         return shared->data[index];

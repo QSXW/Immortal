@@ -24,6 +24,8 @@ AudioDevice::AudioDevice() :
 
         uint64_t duration = 0;
         context->Begin();
+        Vector2 buffer[2048] = {};
+        Vector2 *ptr = buffer;
         while (!stopping)
         {
             Picture picture;
@@ -34,8 +36,23 @@ AudioDevice::AudioDevice() :
 
             if (picture.Available())
             {
-                AudioClip audioClip{ picture };
-                int frameLeft = context->PlaySamples(audioClip.frames, audioClip.pData);
+                int frameLeft = 0;
+                if (picture.desc.width < 1024)
+                {
+                    size_t bytes = picture.desc.width << 3;
+                    memcpy(ptr, picture.shared->data[0], bytes);
+                    ptr += picture.desc.width;
+                    size_t frames = ptr - buffer;
+                    if (frames > 1024)
+                    {
+                        frameLeft = context->PlaySamples(frames, (const uint8_t *)buffer);
+                        ptr = buffer;
+                    }
+                }
+                else
+                {
+                    frameLeft = context->PlaySamples(picture.desc.samples, picture.shared->data[0]);
+                }
                 uint64_t duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
                 duration >>= 1;
                 std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
