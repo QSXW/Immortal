@@ -11,7 +11,7 @@ struct InputElement
 {
     InputElement()
     {
-    
+
     }
 
     InputElement(Format foramt, const std::string &name) :
@@ -56,7 +56,7 @@ struct InputElement
 
     ~InputElement()
     {
-        
+
     }
 
     template <class T>
@@ -89,7 +89,7 @@ struct InputElementDescription
 {
     InputElementDescription()
     {
-    
+
     }
 
     InputElementDescription(const InputElementDescription &other) :
@@ -233,7 +233,7 @@ public:
     Buffer(Type type) :
         type{ type }
     {
-    
+
     }
 
     Buffer(Type type, uint32_t size) :
@@ -241,7 +241,7 @@ public:
         size{ size },
         count{ size >> 2 }
     {
-    
+
     }
 
     virtual ~Buffer() { }
@@ -253,7 +253,7 @@ public:
 
     virtual void Update(uint32_t size, const void *data, uint32_t offset = 0)
     {
-        
+
     }
 
     virtual Anonymous Descriptor() const
@@ -272,7 +272,7 @@ public:
         Update(U32(data.size() * sizeof(T)), data.data(), offset);
     }
 
-    uint32_t Size() const 
+    uint32_t Size() const
     {
         return size;
     }
@@ -297,6 +297,6 @@ namespace Interface
     using Buffer = SuperBuffer;
 }
 
-SL_DEFINE_BITWISE_OPERATION(Buffer::Type, uint32_t)
+SL_ENABLE_BITWISE_OPERATOR(Buffer::Type)
 
 }

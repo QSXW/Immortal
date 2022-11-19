@@ -186,6 +186,6 @@ namespace Interface
     using Shader = SuperShader;
 }
 
-SL_DEFINE_BITWISE_OPERATION(Shader::Resource::Type, uint32_t)
+SL_ENABLE_BITWISE_OPERATOR(Shader::Resource::Type)
 
 }

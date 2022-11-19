@@ -22,6 +22,6 @@ public:
 
 using SuperQueue = Queue;
 
-SL_DEFINE_BITWISE_OPERATION(Queue::Type, uint32_t)
+SL_ENABLE_BITWISE_OPERATOR(Queue::Type)
 
 }

@@ -279,26 +279,6 @@ public:
     static inline const char *SAPI = "";
 };
 
-SL_DEFINE_BITWISE_OPERATION(Render::Type, uint32_t)
-
-template <class SuperType, class OPENGL, class VULKAN, class D3D12, class ... Args>
-inline constexpr std::shared_ptr<SuperType> CreateSuper(Args&& ... args)
-{
-    if (Render::API == Render::Type::OpenGL)
-    {
-        return std::make_shared<OPENGL>(std::forward<Args>(args)...);
-    }
-    if (Render::API == Render::Type::Vulkan)
-    {
-        return std::make_shared<VULKAN>(std::forward<Args>(args)...);
-    }
-    if (Render::API == Render::Type::D3D12)
-    {
-        return std::make_shared<D3D12>(std::forward<Args>(args)...);
-    }
-
-    SLASSERT(false && "Render API is currently not supported! or Forgot to set the Graphics API!");
-    return nullptr;
-}
+SL_ENABLE_BITWISE_OPERATOR(Render::Type)
 
 }

@@ -232,34 +232,47 @@ namespace SError
     DERROR(UnableToOpenFile,     "Unable to open the file specified"       )
 }
 
-#define SL_DEFINE_ENUM_OP_AND(T, U) \
-    inline constexpr U operator&(T lhs, T rhs) \
-    { \
-        return static_cast<U>(lhs) & static_cast<U>(rhs); \
+#define SL_ENABLE_ENUM_OP_AND(T)                                                \
+    inline constexpr typename std::underlying_type<T>::type operator&(T a, T b) \
+    {                                                                           \
+        using U = typename std::underlying_type<T>::type;                       \
+        return ((U)a & (U)b);                                                   \
     }
 
-#define SL_DEFINE_ENUM_OP_AND_EQUAL(T, U) \
-    inline constexpr T operator&=(T lhs, T rhs) \
-    { \
-        return static_cast<T>(static_cast<U>(lhs) & static_cast<U>(rhs)); \
+#define SL_ENABLE_ENUM_OP_AND_EQUAL(T)                    \
+    inline constexpr T operator&=(T &a, T b)              \
+    {                                                     \
+        using U = typename std::underlying_type<T>::type; \
+        return (T)((U &)a &= (U)b);                       \
     }
 
-#define SL_DEFINE_ENUM_OP_OR(T, U) \
-    inline constexpr T operator|(T lhs, T rhs) \
-    { \
-        return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
+#define SL_ENABLE_ENUM_OP_OR(T)                           \
+    inline constexpr T operator|(T a, T b)                \
+    {                                                     \
+        using U = typename std::underlying_type<T>::type; \
+        return (T)((U)a | (U)b);                          \
     }
 
-#define SL_DEFINE_ENUM_OP_OR_EQUAL(T, U) \
-    inline constexpr T operator|=(T lhs, T rhs) \
-    { \
-        return static_cast<T>(static_cast<U>(lhs) | static_cast<U>(rhs)); \
+#define SL_ENABLE_ENUM_OP_OR_EQUAL(T)                      \
+    inline constexpr T operator|=(T &a, T b)               \
+    {                                                      \
+        using U = typename std::underlying_type<T>::type;  \
+        return (T)((U &)a |= (U)b);                        \
     }
 
-#define SL_DEFINE_BITWISE_OPERATION(T, U) \
-    SL_DEFINE_ENUM_OP_AND(T, U) \
-    SL_DEFINE_ENUM_OP_AND_EQUAL(T, U) \
-    SL_DEFINE_ENUM_OP_OR(T, U) \
-    SL_DEFINE_ENUM_OP_OR_EQUAL(T, U)
+#define SL_ENABLE_ENUM_NOT_OR(T)                           \
+    inline constexpr bool operator!(T a)                   \
+    {                                                      \
+        using U = typename std::underlying_type<T>::type;  \
+        return !(U)a;                                      \
+    }
+
+
+#define SL_ENABLE_BITWISE_OPERATOR(T) \
+    SL_ENABLE_ENUM_OP_AND(T)          \
+    SL_ENABLE_ENUM_OP_AND_EQUAL(T)    \
+    SL_ENABLE_ENUM_OP_OR(T)           \
+    SL_ENABLE_ENUM_OP_OR_EQUAL(T)     \
+    SL_ENABLE_ENUM_NOT_OR(T)
 
 }

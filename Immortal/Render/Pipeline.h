@@ -201,9 +201,9 @@ namespace Interface
 {
     using Pipeline         = SuperPipeline;
     using ComputePipeline  = SuperComputePipeline;
-    using GraphicsPipeline = SuperGraphicsPipeline; 
+    using GraphicsPipeline = SuperGraphicsPipeline;
 }
 
-SL_DEFINE_BITWISE_OPERATION(Pipeline::State, uint32_t)
+SL_ENABLE_BITWISE_OPERATOR(Pipeline::State)
 
 }

@@ -83,7 +83,7 @@ public:
     bool Handled = false;
 };
 
-SL_DEFINE_BITWISE_OPERATION(Event::Category, int32_t)
+SL_ENABLE_BITWISE_OPERATOR(Event::Category)
 
 inline bool Event::IsInCategory(Event::Category category)
 {
@@ -93,8 +93,8 @@ inline bool Event::IsInCategory(Event::Category category)
 class EventDispatcher
 {
 public:
-    EventDispatcher(Event &event)
-        : e(event)
+    EventDispatcher(Event &event) :
+        e(event)
     {
 
     }

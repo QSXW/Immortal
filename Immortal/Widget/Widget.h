@@ -26,18 +26,6 @@
 namespace Immortal
 {
 
-//static inline ImVec2 operator + (const ImVec2 &a, const ImVec2 &b)
-//{
-//    return { a.x + b.x, a.y + b. y };
-//}
-//
-//static inline ImVec2 &operator+=(ImVec2 &a, const ImVec2 &b)
-//{
-//    a.x += b.x;
-//    a.y += b.y;
-//    return a;
-//}
-
 enum class Theme
 {
     Text                  = ImGuiCol_Text,
@@ -116,7 +104,7 @@ enum class WAlignMode
     HVCenter = BITS(VCenter, HCenter),
 };
 
-SL_DEFINE_BITWISE_OPERATION(WAlignMode, uint32_t)
+SL_ENABLE_BITWISE_OPERATOR(WAlignMode)
 
 #define WIDGET_ \
     float renderWidth  = 0;      \

@@ -52,7 +52,7 @@ void Render::Setup(RenderContext *context)
         auto asset = API & Type::D3D ? 1 : 0;
         for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)
         {
-            if (ncast<Render::Type>(ShaderProperties[i].API) & API)
+            if ((Type)ShaderProperties[i].API & API)
             {
                 Ref<Shader> shader = Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Name, ShaderProperties[i].Type);
                 ShaderManager.emplace(ShaderProperties[i].Name, std::move(shader));
