@@ -57,16 +57,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags,
     return VK_FALSE;
 }
 
-static std::vector<const char *> ValidateLayers(const std::vector<const char *> &required)
-{
-	std::vector<const char *> enabledValidationLayers;
 
+static void EnumerateValidateLayers(const std::vector<Instance::Extension> &required, std::vector<Instance::Extension> &enabledValidationLayers)
+{
 #ifdef _DEBUG
-    uint32_t layerCount;
-	Check(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+    uint32_t layerCount = 0;
+	Check(EnumerateInstanceLayerProperties(&layerCount, nullptr));
 
 	std::vector<VkLayerProperties> availableLayers{layerCount};
-	Check(vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()));
+	Check(EnumerateInstanceLayerProperties(&layerCount, availableLayers.data()));
 
     for (auto &layer : required)
     {
@@ -85,17 +84,15 @@ static std::vector<const char *> ValidateLayers(const std::vector<const char *> 
         }
     }
 #endif
-
-    return enabledValidationLayers;
 }
 
-static inline void CheckDynamicLoadedLibarary()
+static inline void LoadVulkanModule()
 {
     if (!vkGetInstanceProcAddr)
     {
         if ((RenderContext::Status = volkInitialize()) != VK_SUCCESS)
         {
-            LOG::FATAL("Unable to initialize Vulkan Library. Please confirm your device support "
+            throw RuntimeException("Unable to initialize Vulkan Library. Please confirm your device support "
                         "and get Vulkan Installed");
             Check(RenderContext::Status);
         }
@@ -103,31 +100,37 @@ static inline void CheckDynamicLoadedLibarary()
     }
 }
 
-static inline void VkEnableExtension(const char *message)
+enum class InternalExtension : uint64_t
 {
-    LOG::INFO("{0} is available. Enabling it!", message);
-}
+    None = 0,
+    DebugUtils = BIT(0),
+    HeadlessSurface = BIT(1),
+    GetPhysicalDeviceProperties2 = BIT(2)
+};
+
+SL_ENABLE_BITWISE_OPERATOR(InternalExtension)
 
 Instance::Instance() :
-    handle{}
+    handle{},
+    debugUtilsMessengers{},
+    debugReportCallback{}
 {
-    CheckDynamicLoadedLibarary();
+    LoadVulkanModule();
 }
 
 Instance::Instance(const char                                   *applicationName,
                     const std::unordered_map<const char *, bool> &requiredExtension,
                     const std::vector<const char *>              &requiredValidationLayers,
                     bool                                          headless,
-                    uint32_t                                      apiVersion)
+                    uint32_t                                      apiVersion) :
+    Instance{}
 {
-    CheckDynamicLoadedLibarary();
-
     uint32_t extensionCount;
-    Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
+    Check(EnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr));
     std::vector<VkExtensionProperties> availableExtension{ extensionCount };
-    Check(vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
+    Check(EnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtension.data()));
 
-    uint64_t extensionsFlags = 0;
+    InternalExtension extensionsFlags = InternalExtension::None;
     static std::vector<const char*> utilsExtensions = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
         VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
@@ -141,23 +144,23 @@ Instance::Instance(const char                                   *applicationName
         {
             if (Equals(availableExtension[j].extensionName, extension))
             {
-                extensionsFlags |= BIT(i);
-                VkEnableExtension(extension);
+                extensionsFlags |= (InternalExtension)BIT(i);
+                LOG::INFO("Extension Enabled: {}", extension);
                 enabledExtensions.push_back(extension);
             }
         }
     }
 
-    if (headless && !(extensionsFlags & BIT(1)))
+    if (headless && !(extensionsFlags & InternalExtension::HeadlessSurface))
     {
-        LOG::WARN("{0} is not available. Disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
+        LOG::WARN("{} is not available. Disabling swapchain creation", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
     else
     {
         enabledExtensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
     }
 
-    if (!(extensionsFlags & BIT(0)) /* not debug utils */)
+    if (!(extensionsFlags & InternalExtension::DebugUtils) /* not debug utils */)
     {
         enabledExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
@@ -188,7 +191,8 @@ Instance::Instance(const char                                   *applicationName
         }
     }
 
-    std::vector<const char *> validLayers = ValidateLayers(requiredValidationLayers);
+    std::vector<const char *> validationLayers;
+    EnumerateValidateLayers(requiredValidationLayers, validationLayers);
 
     VkApplicationInfo appInfo = {
         .sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -207,8 +211,8 @@ Instance::Instance(const char                                   *applicationName
         .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
 #endif
         .pApplicationInfo        = &appInfo,
-        .enabledLayerCount       = U32(validLayers.size()),
-        .ppEnabledLayerNames     = validLayers.data(),
+        .enabledLayerCount       = U32(validationLayers.size()),
+        .ppEnabledLayerNames     = validationLayers.data(),
 	    .enabledExtensionCount   = U32(enabledExtensions.size()),
 	    .ppEnabledExtensionNames = enabledExtensions.data(),
     };
@@ -217,10 +221,10 @@ Instance::Instance(const char                                   *applicationName
     VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
     VkDebugReportCallbackCreateInfoEXT debugReportCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT };
 
-    if (extensionsFlags & BIT(0))
+    if (!!(extensionsFlags & InternalExtension::DebugUtils))
     {
         debugUtilsCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        debugUtilsCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugUtilsCreateInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugUtilsCreateInfo.pfnUserCallback = DebugUtilsMessengerCallback;
 
         instanceInfo.pNext = &debugUtilsCreateInfo;
@@ -238,18 +242,19 @@ Instance::Instance(const char                                   *applicationName
     volkLoadInstance(handle);
 
 #ifdef _DEBUG
-    if (extensionsFlags & BIT(0))
+    if (!!(extensionsFlags & InternalExtension::DebugUtils))
     {
-        SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr && "");
+        SLASSERT(vkCreateDebugUtilsMessengerEXT != nullptr);
         Check(CreateDebugUtilsMessengerEXT(&debugUtilsCreateInfo, &debugUtilsMessengers));
     }
     else
     {
-        SLASSERT(vkCreateDebugReportCallbackEXT != nullptr && "");
+        SLASSERT(vkCreateDebugReportCallbackEXT != nullptr);
         Check(CreateDebugReportCallbackEXT(&debugReportCreateInfo, &debugReportCallback));
     }
 #endif
-    QueryPhysicalDevice();
+
+    EnumeratePhysicalDevice();
 }
 
 Instance::Instance(VkInstance instance) :
@@ -259,7 +264,7 @@ Instance::Instance(VkInstance instance) :
     {
         throw RuntimeException("Instance is not valid!");
     }
-    QueryPhysicalDevice();
+    EnumeratePhysicalDevice();
 }
 
 Instance::~Instance()
@@ -280,9 +285,44 @@ Instance::~Instance()
     }
 }
 
-void Instance::QueryPhysicalDevice()
+Instance::Instance(Instance &&other) :
+    Instance{}
 {
-    uint32_t count{ 0 };
+    other.Swap(*this);
+
+    for (auto &physicalDevice : physicalDevices)
+    {
+        physicalDevice.Invalidate(this);
+    }
+}
+
+Instance &Instance::operator =(Instance &&other)
+{
+    Instance(std::move(other)).Swap(*this);
+
+    for (auto &physicalDevice : physicalDevices)
+    {
+        physicalDevice.Invalidate(this);
+    }
+
+    return *this;
+}
+
+void Instance::Swap(Instance &other)
+{
+    std::swap(handle,            other.handle           );
+    std::swap(enabledExtensions, other.enabledExtensions);
+    std::swap(physicalDevices,   other.physicalDevices  );
+
+#if defined (_DEBUG) || defined (VKB_VALIDATION_LAYERS)
+    std::swap(debugUtilsMessengers, other.debugUtilsMessengers);
+    std::swap(debugReportCallback,  other.debugReportCallback );
+#endif
+}
+
+void Instance::EnumeratePhysicalDevice()
+{
+    uint32_t count = 0;
     Check(EnumeratePhysicalDevices(&count, nullptr));
 
     ThrowIf(!count, "Couldn't find a physical device that supports Vulkan.");
@@ -292,11 +332,11 @@ void Instance::QueryPhysicalDevice()
 
     for (auto &pd : physicalDevices)
     {
-        this->physicalDevices.emplace_back(new PhysicalDevice(this, pd));
+        this->physicalDevices.emplace_back(this, pd);
     }
 }
 
-PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
+PhysicalDevice *Instance::GetSuitablePhysicalDevice(int deviceId)
 {
     ThrowIf(physicalDevices.empty(), "There is no GPU on this device.");
 
@@ -308,24 +348,33 @@ PhysicalDevice *Instance::SuitablePhysicalDevice(int deviceId)
             throw RuntimeException("Invalid Device Id");
         }
 
-        return physicalDevices[deviceId];
+        return &physicalDevices[deviceId];
     }
 
     for (auto &physicalDevice : physicalDevices)
     {
-        if (physicalDevice->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        if (physicalDevice.Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
-            return physicalDevice;
+            return &physicalDevice;
         }
     }
 
-    if (physicalDevices[0]->Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+    if (physicalDevices[0].Properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
     {
         throw RuntimeException("No physical device available on this host!");
     }
 
     LOG::WARN("Couldn't find a discrete physical device. Picking the default.");
-    return physicalDevices[0];
+    return &physicalDevices[0];
+}
+
+bool Instance::IsEnabled(Extension extension) const
+{
+    return std::find_if(enabledExtensions.begin(), enabledExtensions.end(),
+        [extension](Extension enabledExtension)
+        {
+            return Equals(extension, enabledExtension);
+        }) != enabledExtensions.end();
 }
 
 VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)

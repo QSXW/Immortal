@@ -368,6 +368,16 @@ public:
 
     PhysicalDevice(Instance *instance, VkPhysicalDevice physicalDevice);
 
+    PhysicalDevice(PhysicalDevice &&other);
+
+    PhysicalDevice &operator =(PhysicalDevice &&other);
+
+    void Swap(PhysicalDevice &other);
+
+    PhysicalDevice(const PhysicalDevice &other) = delete;
+
+    PhysicalDevice &operator =(const PhysicalDevice &other) = delete;
+
     void Activate(Feature feature) const;
 
     void Deactivate(Feature feature) const;
@@ -436,6 +446,11 @@ public:
         LastRequestedExtensionFeature = pExtension;
 
         return pExtension;
+    }
+
+    void Invalidate(Instance *_instance)
+    {
+        instance = _instance;
     }
 
 protected:

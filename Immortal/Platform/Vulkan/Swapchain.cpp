@@ -267,11 +267,10 @@ void Swapchain::Destroy()
 
 void Swapchain::Invalidate(VkExtent2D extent)
 {
-    properties.imageExtent = extent;
+    properties.imageExtent  = extent;
     properties.oldSwapchain = handle;
-
-    properties.surface = device->GetSurface();
-    properties.clipped = VK_TRUE; // Get the best performance by enabling clipping.
+    properties.surface      = device->GetSurface();
+    properties.clipped      = VK_TRUE;
 
     device->Create(&properties, &handle);
 

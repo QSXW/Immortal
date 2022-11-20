@@ -48,12 +48,10 @@ static std::vector<const char *> ValidationLayers = {
 #endif
 };
 
-static Swapchain PrimarySwapchain;
-
 RenderContext::RenderContext(const RenderContext::Description &desc) :
     window{ desc.window }
 {
-    instance = new Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
+    instance = Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
     if (!instance)
     {
         LOG::ERR("Vulkan Not Supported!");
@@ -61,12 +59,12 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     }
     CreateSurface();
 
-    if (instance->IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
+    if (instance.IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
     {
         AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
     }
 
-    auto physicalDevice = instance->SuitablePhysicalDevice(desc.deviceId);
+    auto physicalDevice = instance.GetSuitablePhysicalDevice(desc.deviceId);
     physicalDevice->Activate(PhysicalDevice::Feature::SamplerAnisotropy);
     physicalDevice->Activate(PhysicalDevice::Feature::RobustBufferAccess);
     physicalDevice->Activate(PhysicalDevice::Feature::IndependentBlend);
@@ -108,12 +106,12 @@ RenderContext::~RenderContext()
 	present.renderTargets.clear();
 	renderPass.Reset();
     device.Reset();
-    instance->DestroySurfaceKHR(surface, nullptr);
+    instance.DestroySurfaceKHR(surface, nullptr);
 }
 
 void RenderContext::CreateSurface()
 {
-    Check(instance->CreateSurface(window, &surface));
+    Check(instance.CreateSurface(window, &surface));
 }
 
 void RenderContext::Prepare(size_t threadCount)

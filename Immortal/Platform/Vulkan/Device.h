@@ -1148,7 +1148,7 @@ public:
 #endif
 
 public:
-    Device() = default;
+    Device();
 
     Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
 
@@ -1336,7 +1336,7 @@ public:
 
 public:
     template <class T>
-    T Get()
+    T &Get()
     {
         if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
@@ -1571,15 +1571,15 @@ public:
     }
 
 private:
-    PhysicalDevice *physicalDevice{ nullptr };
+    PhysicalDevice *physicalDevice;
 
-    VkSurfaceKHR surface{ VK_NULL_HANDLE };
+    VmaAllocator memoryAllocator;
+
+    VkSurfaceKHR surface;
 
     std::unordered_set<std::string> deviceExtensions;
 
     std::vector<const char *> enabledExtensions;
-
-    VmaAllocator memoryAllocator{ VK_NULL_HANDLE };
 
     std::vector<std::vector<Queue>> queues;
 

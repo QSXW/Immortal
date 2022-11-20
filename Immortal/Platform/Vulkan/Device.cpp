@@ -21,6 +21,15 @@ static inline std::array<const char *, 5> VideoCodecExtensions = {
     "VK_KHR_sampler_ycbcr_conversion"
 };
 
+Device::Device() :
+    handle{},
+    physicalDevice{},
+    memoryAllocator{},
+    surface{ VK_NULL_HANDLE }
+{
+
+}
+
 Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
     physicalDevice{ physicalDevice },
     surface{ surface }

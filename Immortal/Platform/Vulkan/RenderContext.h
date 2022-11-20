@@ -130,7 +130,7 @@ public:
     {
         if constexpr (IsPrimitiveOf<Instance, T>())
         {
-            return *instance;
+            return instance;
         }
         if constexpr (IsPrimitiveOf<PhysicalDevice, T>())
         {
@@ -215,7 +215,7 @@ protected:
 private:
     Window *window{ nullptr };
 
-    URef<Instance> instance;
+    Instance instance;
 
     URef<Device> device;
 

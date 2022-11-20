@@ -18,6 +18,8 @@ public:
     using Primitive = VkInstance;
     VKCPP_OPERATOR_HANDLE()
 
+    using Extension = const char *;
+
 public:
     void Destroy(VkAllocationCallbacks const *pAllocator)
     {
@@ -112,9 +114,19 @@ public:
 
     ~Instance();
 
-    PhysicalDevice *SuitablePhysicalDevice(int deviceId = AUTO_DEVICE_ID);
+    Instance(Instance &&other);
 
-    void QueryPhysicalDevice();
+    Instance &operator =(Instance &&other);
+
+    void Swap(Instance &other);
+
+    Instance(const Instance &other) = delete;
+
+    Instance &operator = (const Instance &other) = delete;
+
+    PhysicalDevice *GetSuitablePhysicalDevice(int deviceId = AUTO_DEVICE_ID);
+
+    void EnumeratePhysicalDevice();
 
 public:
     VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
@@ -122,24 +134,17 @@ public:
     static VkResult CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
 
 public:
-    bool IsEnabled(const char *extension) const
-    {
-        return std::find_if(enabledExtensions.begin(), enabledExtensions.end(),
-        [extension](const char *enabledExtension)
-        {
-            return Equals(extension, enabledExtension);
-        }) != enabledExtensions.end();
-    }
+    bool IsEnabled(Extension extension) const;
 
 protected:
-    std::vector<const char*> enabledExtensions;
+    std::vector<Extension> enabledExtensions;
 
-    std::vector<URef<PhysicalDevice>> physicalDevices;
+    std::vector<PhysicalDevice> physicalDevices;
 
 #if defined (_DEBUG) || defined (VKB_VALIDATION_LAYERS)
-    VkDebugUtilsMessengerEXT debugUtilsMessengers{ VK_NULL_HANDLE };
+    VkDebugUtilsMessengerEXT debugUtilsMessengers;
 
-    VkDebugReportCallbackEXT debugReportCallback{ VK_NULL_HANDLE };
+    VkDebugReportCallbackEXT debugReportCallback;
 #endif
 };
 
