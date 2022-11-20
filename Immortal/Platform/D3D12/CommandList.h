@@ -96,6 +96,12 @@ public:
         pResources = other;
     }
 
+    template <class T>
+    HRESULT QueryInterface(T *pp)
+    {
+        return handle->QueryInterface(__uuidof(T), (void **)pp);
+    }
+
     HRESULT Close()
     {
 		__Close();
@@ -251,6 +257,14 @@ public:
     {
 		__Record();
 		handle->OMSetBlendFactor(blendFactor);
+    }
+
+    void BuildRaytracingAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC *pDesc, UINT numPostbuildInfoDescs, const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC *pPostbuildInfoDescs)
+    {
+        __Record();
+        ComPtr<ID3D12GraphicsCommandList4> pRaytracingCommandList;
+        handle.As(&pRaytracingCommandList);
+        pRaytracingCommandList->BuildRaytracingAccelerationStructure(pDesc, numPostbuildInfoDescs, pPostbuildInfoDescs);
     }
 
 protected:

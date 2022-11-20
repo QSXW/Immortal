@@ -202,6 +202,20 @@ public:
             );
     }
 
+    void GetRaytracingAccelerationStructurePrebuildInfo(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS *pDesc,  D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO *pInfo)
+    {
+        ComPtr<ID3D12Device5> pDevice;
+        handle.As(&pDevice);
+        pDevice->GetRaytracingAccelerationStructurePrebuildInfo(pDesc, pInfo);
+    }
+
+    bool IsRayTracingSupported() const
+    {
+        D3D12_FEATURE_DATA_D3D12_OPTIONS5 features{};
+        Check(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features, sizeof(features)));
+        return features.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+    }
+
 protected:
     ComPtr<IDXGIFactory4> dxgiFactory;
 

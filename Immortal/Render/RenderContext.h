@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
+#include "AccelerationStructure.h"
 
 namespace Immortal
 {
@@ -132,6 +133,11 @@ public:
     }
 
     virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
+    {
+        return nullptr;
+    }
+
+    virtual AccelerationStructure *CreateAccelerationStructure(const Buffer *pVertexBuffer, const InputElementDescription &desc, const Buffer *pIndexBuffer, const Buffer *pTranformBuffer)
     {
         return nullptr;
     }

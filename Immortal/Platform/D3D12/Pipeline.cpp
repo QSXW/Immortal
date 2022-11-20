@@ -315,14 +315,6 @@ void Pipeline::Pipeline::Bind(Buffer::Super *super, uint32_t binding)
     Bind(buffer, binding);
 }
 
-void Pipeline::Bind(const std::string &name, const Buffer::Super *super)
-{
-    (void)name;
-
-    auto buffer = dcast<Buffer *>(ccast<Buffer::Super *>(super));
-    Bind(buffer, buffer->Binding());
-}
-
 void Pipeline::Bind(const CPUDescriptor *descriptors, uint32_t binding)
 {
     Device *device = context->GetAddress<Device>();

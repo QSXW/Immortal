@@ -68,8 +68,9 @@ struct Barrier : public D3D12_RESOURCE_BARRIER
 
     void UAV(ID3D12Resource *pResource) noexcept
     {
-        Primitive::Type           = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        Primitive::Type          = D3D12_RESOURCE_BARRIER_TYPE_UAV;
         Primitive::UAV.pResource = pResource;
+        Primitive::Flags         = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     }
 
     void Swap()

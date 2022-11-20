@@ -20,20 +20,15 @@ Buffer::Buffer(RenderContext *context, const size_t size, const void *data, Type
     context{ context }
 {
     __Create();
-    Update(size, data);
+    if (data)
+    {
+        Update(size, data);
+    }
 }
 
 Buffer::Buffer(RenderContext *context, const size_t size, Type type) :
     Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
     context{ context }
-{
-    __Create();
-}
-
-Buffer::Buffer(RenderContext *context, const size_t size, uint32_t binding) :
-    Super{ Buffer::Type::Uniform, SLALIGN(size, 256) },
-    context{ context },
-    binding{ binding }
 {
     __Create();
 }
@@ -49,6 +44,9 @@ Buffer::~Buffer()
 void Buffer::__Create()
 {
     Device *device = context->GetAddress<Device>();
+
+    D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_GENERIC_READ;
+
     D3D12_HEAP_PROPERTIES heapProperties = {
         .Type                 = D3D12_HEAP_TYPE_UPLOAD,
         .CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
@@ -70,14 +68,28 @@ void Buffer::__Create()
         .Flags            = D3D12_RESOURCE_FLAG_NONE,
     };
 
-    device->CreateCommittedResource(
+    if (type & Type::Scratch)
+    {
+        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+        state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    if (type & Type::AccelerationStructure)
+    {
+        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+        state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    Check(device->CreateCommittedResource(
         &heapProperties,
         D3D12_HEAP_FLAG_NONE,
         &desc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
+        state,
         nullptr,
         &resource
-    );
+    ));
 
     virtualAddress = resource->GetGPUVirtualAddress();
 

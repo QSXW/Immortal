@@ -52,9 +52,14 @@ public:
         virtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 
-    bool Ready()
+    operator bool() const
     {
         return !!resource;
+    }
+
+    D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const
+    {
+        return resource->GetGPUVirtualAddress();
     }
 
 protected:

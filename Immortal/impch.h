@@ -104,6 +104,7 @@
 #include "Platform/D3D11/Swapchain.h"
 #include "Platform/D3D11/Texture.h"
 
+#include "Platform/D3D12/AccelerationStructure.h"
 #include "Platform/D3D12/Barrier.h"
 #include "Platform/D3D12/Buffer.h"
 #include "Platform/D3D12/CommandAllocator.h"

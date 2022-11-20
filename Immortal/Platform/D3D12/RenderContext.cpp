@@ -357,11 +357,6 @@ SuperBuffer *RenderContext::CreateBuffer(const size_t size, Buffer::Type type)
 	return new Buffer{ this, size, type };
 }
 
-SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
-{
-	return new Buffer{ this, size, binding };
-}
-
 SuperShader *RenderContext::CreateShader(const std::string &filepath, Shader::Type type)
 {
 	return new Shader{filepath, type};
@@ -390,6 +385,11 @@ SuperTexture *RenderContext::CreateTexture(uint32_t width, uint32_t height, cons
 SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Description &description)
 {
 	return new RenderTarget{this, description};
+}
+
+AccelerationStructure *RenderContext::CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer)
+{
+    return new AccelerationStructure{ this, (Buffer *)pVertexBuffer, desc, (Buffer *)pIndexBuffer, (Buffer *)pTranformBuffer };
 }
 
 void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)

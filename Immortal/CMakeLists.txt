@@ -130,6 +130,8 @@ list(TRANSFORM D3D11_FILES PREPEND "Platform/D3D11/")
 
 set(D3D12_FILES
     Barrier.h
+    AccelerationStructure.cpp
+    AccelerationStructure.h
     Buffer.cpp
     Buffer.h
     CommandAllocator.cpp
@@ -267,6 +269,7 @@ set(WINDOWS_FILES
     GLFWInput.h)
 
 set(RENDER_FILES
+    AccelerationStructure.h
     Buffer.h
     Camera.cpp
     Camera.h

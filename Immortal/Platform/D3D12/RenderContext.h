@@ -38,6 +38,7 @@ public:
 #include "Shader.h"
 #include "Texture.h"
 #include "Pipeline.h"
+#include "AccelerationStructure.h"
 #include "ImGui/GuiLayer.h"
 
 namespace Immortal
@@ -77,8 +78,6 @@ public:
 
 	virtual SuperBuffer *CreateBuffer(const size_t size, Buffer::Type type) override;
 
-	virtual SuperBuffer *CreateBuffer(const size_t size, uint32_t binding) override;
-
 	virtual SuperShader *CreateShader(const std::string &filepath, Shader::Type type) override;
 
 	virtual SuperGraphicsPipeline *CreateGraphicsPipeline(Ref<SuperShader> shader) override;
@@ -90,6 +89,8 @@ public:
 	virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {}) override;
 
 	virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
+
+    virtual AccelerationStructure *CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer) override;
 
 	virtual void PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
@@ -189,7 +190,7 @@ public:
     template <class T>
     void Submit(T &&process)
     {
-        process(commandList);
+        process(graphicsDispatcher->GetCommandList());
     }
 
     template <class T>
@@ -200,7 +201,15 @@ public:
     }
 
     template <class T>
-    void TransferSync(T&& process)
+    void SubmitSync(T &&process)
+    {
+        process(graphicsDispatcher->GetCommandList());
+        graphicsDispatcher->Execute();
+        graphicsDispatcher->WaitIdle();
+    }
+
+    template <class T>
+    void TransferSync(T &&process)
     {
 		auto cmdlist = transferDispatcher->GetCommandList();
 		process(graphicsDispatcher->GetCommandList(), cmdlist);

@@ -196,6 +196,11 @@ public:
         return renderContext->CreateRenderTarget(description);
     }
 
+    static AccelerationStructure *CreateAccelerationStructure(const Buffer *pVertexBuffer, const InputElementDescription &desc, const Buffer *pIndexBuffer, const Buffer *pTranformBuffer)
+    {
+        return renderContext->CreateAccelerationStructure(pVertexBuffer, desc, pIndexBuffer, pTranformBuffer);
+    }
+
     template <class T, class... Args>
     static T *Create(Args&& ... args)
     {

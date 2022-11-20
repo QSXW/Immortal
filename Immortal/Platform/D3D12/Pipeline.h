@@ -38,8 +38,6 @@ public:
 
     virtual ~Pipeline();
 
-    virtual void Bind(const std::string &name, const Buffer::Super *uniform) override;
-
     virtual void Bind(const DescriptorBuffer *descriptors, uint32_t binding = 0) override;
 
     virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;

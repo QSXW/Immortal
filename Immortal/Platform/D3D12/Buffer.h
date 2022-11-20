@@ -63,8 +63,6 @@ public:
 
     Buffer(RenderContext *context, const size_t size, Type type);
 
-    Buffer(RenderContext *context, const size_t size, uint32_t binding);
-
     virtual ~Buffer() override;
 
     virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
@@ -94,11 +92,6 @@ public:
         return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, size };
     }
 
-    uint32_t Binding() const
-    {
-        return binding;
-    }
-
     CPUDescriptor GetDescriptor() const
     {
         return descriptor;
@@ -109,8 +102,6 @@ protected:
 
 protected:
     RenderContext *context;
-
-    uint32_t binding = 0;
 
     CPUDescriptor descriptor;
 };
