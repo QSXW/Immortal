@@ -111,9 +111,11 @@ enum class InternalExtension : uint64_t
 SL_ENABLE_BITWISE_OPERATOR(InternalExtension)
 
 Instance::Instance() :
-    handle{},
-    debugUtilsMessengers{},
+    handle{}
+#ifdef _DEBUG
+    , debugUtilsMessengers{},
     debugReportCallback{}
+#endif
 {
     LoadVulkanModule();
 }

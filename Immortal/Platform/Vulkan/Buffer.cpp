@@ -18,7 +18,7 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     {
         flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     }
-    if (type & Buffer::Type::Storage)
+    if (type & (Buffer::Type::Storage | Buffer::Type::Scratch))
     {
         flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
@@ -33,6 +33,14 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     if (type & Buffer::Type::TransferDestination)
     {
         flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+    if (type & Buffer::Type::AccelerationStructureSource)
+    {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+    if (type & Buffer::Type::AccelerationStructure)
+    {
+        flags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     }
 
     return flags;
@@ -111,6 +119,11 @@ void Buffer::Create(size_t size)
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.size        = size;
 
+    if (device->IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+    {
+        createInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
+
     VmaAllocationInfo allocInfo{};
     VmaAllocationCreateInfo allocCreateInfo{};
     allocCreateInfo.usage          = VMA_MEMORY_USAGE_CPU_ONLY;
@@ -174,6 +187,11 @@ Anonymous Buffer::Descriptor() const
 Buffer::Super *Buffer::Bind(const BindInfo &bindInfo) const
 {
     return new Buffer{ this, bindInfo };
+}
+
+VkDeviceAddress Buffer::GetDeviceAddress() const
+{
+    return device->GetBufferAddress(descriptor.buffer);
 }
 
 }

@@ -204,6 +204,8 @@ list(TRANSFORM OPENGL_FILES PREPEND "Platform/OpenGL/")
 set(VULKAN_FILES
    vk_mem_alloc.h
    volk.h
+   AccelerationStructure.cpp
+   AccelerationStructure.h
    Attachment.h
    Barrier.h
    Buffer.cpp

@@ -11,6 +11,7 @@
 #include "CommandBuffer.h"
 #include "Pipeline.h"
 #include "SemaphorePool.h"
+#include "AccelerationStructure.h"
 
 namespace Immortal
 {
@@ -96,6 +97,8 @@ public:
 	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
 
 	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
+
+    virtual AccelerationStructure *CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer) override;
 
 	virtual void PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 

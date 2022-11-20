@@ -34,11 +34,23 @@ std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
 };
 
 std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
-    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,          false },
-    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME, false },
-#ifdef __APPLE__
-    { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, false },
+    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false },
+    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,       false },
+#ifdef __APPLE__								      
+    { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,       false },
 #endif
+	{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true },
+	{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,     true },
+	{ VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,    true },
+	{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, true },
+	{ VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      true },
+    { VK_KHR_SPIRV_1_4_EXTENSION_NAME,                true },
+	{ VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,    true },
+	{ VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,        true },
+	{ VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true },
+	{ VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true },
+	{ VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true },
+	{ VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true },                       
 };
 
 static std::vector<const char *> ValidationLayers = {
@@ -471,6 +483,11 @@ SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
 SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Description &description)
 {
 	return new RenderTarget{device, description};
+}
+
+AccelerationStructure *RenderContext::CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer)
+{
+	return new AccelerationStructure{ device, (Buffer *)pVertexBuffer, desc, (Buffer *)pIndexBuffer, (Buffer *)pTranformBuffer };
 }
 
 SuperGuiLayer *RenderContext::CreateGuiLayer()

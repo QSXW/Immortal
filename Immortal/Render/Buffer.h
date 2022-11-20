@@ -194,22 +194,27 @@ public:
 
     enum class Type
     {
-        None                  = 0,
-        Vertex                = BIT(0),
-        Index                 = BIT(1),
-        Uniform               = BIT(2),
-        PushConstant          = BIT(3),
-        TransferSource        = BIT(4),
-        TransferDestination   = BIT(5),
-        Storage               = BIT(6),
-		VideoDecoder          = BIT(7),
-        VideoEncoder          = BIT(8),
-        Scratch               = BIT(9), // For Ray Tracing
-        AccelerationStructure = BIT(10),
+        None                          = 0,
+        Vertex                        = BIT(0),
+        Index                         = BIT(1),
+        Uniform                       = BIT(2),
+        PushConstant                  = BIT(3),
+        TransferSource                = BIT(4),
+        TransferDestination           = BIT(5),
+        Storage                       = BIT(6),
+		VideoDecoder                  = BIT(7),
+        VideoEncoder                  = BIT(8),
+        Scratch                       = BIT(9), // For Ray Tracing
+        AccelerationStructure         = BIT(10),
+        AccelerationStructureSource   = BIT(11),
+        ASVertex                      = AccelerationStructureSource | Vertex,
+        ASIndex                       = AccelerationStructureSource | Index,
+        Instance                      = BIT(11),
     };
 
     enum class Usage
     {
+        None,
         Persistent
     };
 

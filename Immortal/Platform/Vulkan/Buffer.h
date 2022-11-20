@@ -33,6 +33,17 @@ public:
 
     virtual Super *Bind(const BindInfo &bindInfo) const override;
 
+    VkDeviceAddress GetDeviceAddress() const;
+
+    template <class T>
+    T *GetAddress()
+    {
+        if constexpr (IsPrimitiveOf<T, Device>())
+        {
+            return device;
+        }
+    }
+
     VkDeviceSize Offset() const
     {
         return descriptor.offset;

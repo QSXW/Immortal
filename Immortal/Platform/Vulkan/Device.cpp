@@ -13,14 +13,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-static inline std::array<const char *, 5> VideoCodecExtensions = {
-    "VK_KHR_synchronization2",
-    "VK_KHR_video_queue",
-    "VK_KHR_video_decode_queue",
-    "VK_KHR_video_encode_queue",
-    "VK_KHR_sampler_ycbcr_conversion"
-};
-
 Device::Device() :
     handle{},
     physicalDevice{},
@@ -66,15 +58,15 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 #if _DEBUG
     if (!deviceExtensions.empty())
     {
-        LOG::DEBUG<isLogNeed>("Device supports the following extensions: ");
+        LOG::DEBUG("Device supports the following extensions: ");
         for (auto &extension : availableExtensions)
         {
-            LOG::DEBUG<isLogNeed>("  \t{0}", extension.extensionName);
+            LOG::DEBUG("  \t{}", extension.extensionName);
         }
     }
 #endif
 
-    if (IsExtensionSupport("VK_KHR_get_memory_requirements2") && IsExtensionSupport("VK_KHR_dedicated_allocation"))
+    if (IsExtensionSupported("VK_KHR_get_memory_requirements2") && IsExtensionSupported("VK_KHR_dedicated_allocation"))
     {
         enabledExtensions.emplace_back("VK_KHR_get_memory_requirements2");
         enabledExtensions.emplace_back("VK_KHR_dedicated_allocation");
@@ -83,67 +75,53 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         vmaVulkanFunc.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
         vmaVulkanFunc.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
 
-        LOG::DEBUG<isLogNeed>("Dedicated Allocation enabled");
+        LOG::DEBUG("Dedicated Allocation enabled");
     }
 
-    if (IsExtensionSupport("VK_KHR_performance_query") && IsExtensionSupport("VK_EXT_host_query_reset"))
+    for (auto &extension : requestedExtensions)
     {
-        physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
-        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
-        LOG::DEBUG<isLogNeed>("Performance query enabled");
-    }
-
-    if (IsExtensionSupport("VK_KHR_timeline_semaphore"))
-    {
-        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceTimelineSemaphoreFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR);
-    }
-
-    std::vector<const char*> unsupportedExtensions{};
-    for (auto &ext : requestedExtensions)
-    {
-        if (IsExtensionSupport(ext.first))
+        auto &extensionName = extension.first;
+        bool isOptional = extension.second;
+        if (IsExtensionSupported(extensionName))
         {
-            enabledExtensions.emplace_back(ext.first);
+            enabledExtensions.emplace_back(extensionName);
+            LOG::DEBUG("Enabled Device Extension: {}", extensionName);
         }
         else
         {
-            unsupportedExtensions.emplace_back(ext.first);
-        }
-    }
-
-    if (!enabledExtensions.empty())
-    {
-        LOG::DEBUG<isLogNeed>("Device supports the following requested extensions:");
-        for (auto& ext : enabledExtensions)
-        {
-            LOG::DEBUG<isLogNeed>("  \t{0}", ext);
-        }
-    }
-
-    if (!unsupportedExtensions.empty())
-    {
-        for (auto& ext : unsupportedExtensions)
-        {
-            auto isOptional = requestedExtensions[ext];
             if (isOptional)
             {
-                LOG::WARN("Optional device extension {0} not available. Some features may be disabled", ext);
+                LOG::WARN("Some features may be disabled for optional device extension not available. - `{}`", extensionName);
             }
             else
             {
-                LOG::ERR("Required device extension {0} not available. Stop running!", ext);
+                LOG::ERR("Stop running for required device extension not available - `{}`", extensionName);
                 Check(VK_ERROR_EXTENSION_NOT_PRESENT);
             }
         }
     }
 
-    /* Try to enable the video queue extension */
-    for (const auto &extension : VideoCodecExtensions)
+    if (IsEnabled("VK_KHR_performance_query") && IsEnabled("VK_EXT_host_query_reset"))
     {
-        if (IsExtensionSupport(extension))
-        {
-            enabledExtensions.emplace_back(extension);
-        }
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePerformanceQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR);
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceHostQueryResetFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES);
+        LOG::DEBUG("Performance query enabled");
+    }
+    if (IsEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
+    {
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceTimelineSemaphoreFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR);
+    }
+    if (IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+    {
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR);
+    }
+    if (IsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME))
+    {
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR);
+    }
+    if (IsEnabled(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+    {
+        physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceRayQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR);
     }
 
     VkDeviceCreateInfo createInfo{};
@@ -164,7 +142,7 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         VkBool32 presentSupported = surface ? physicalDevice->IsPresentSupported(surface, queueFamilyIndex) : false;
 
         queues[queueFamilyIndex].reserve(queueFamilyProps.queueCount);
-        for (uint32_t queueIndex = 0U; queueIndex < queueFamilyProps.queueCount; queueIndex++)
+        for (uint32_t queueIndex = 0; queueIndex < queueFamilyProps.queueCount; queueIndex++)
         {
             queues[queueFamilyIndex].emplace_back(this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
         }
@@ -178,7 +156,7 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     allocatorInfo.physicalDevice   = *physicalDevice;
     allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
 
-    if (IsExtensionSupport(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME) && IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+    if (IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     }

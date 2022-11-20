@@ -24,8 +24,6 @@ class Device : public IObject
 public:
     static inline Device *That = nullptr;
 
-    static inline constexpr bool isLogNeed = false;
-
     void EnableGlobal()
     {
         That = this;
@@ -1200,7 +1198,7 @@ public:
         }) != enabledExtensions.end();
     }
 
-    bool IsExtensionSupport(const std::string &extension) const
+    bool IsExtensionSupported(const std::string &extension) const
     {
 		return deviceExtensions.find(extension) != deviceExtensions.end();
     }
@@ -1283,7 +1281,9 @@ public:
 
     DEFINE_CREATE_VK_KHR_OBJECT(Swapchain)
     DEFINE_CREATE_VK_KHR_OBJECT(VideoSession)
+    DEFINE_CREATE_VK_KHR_OBJECT(AccelerationStructure)
 
+    DEFINE_DESTORY_VK_OBJECT(AccelerationStructureKHR)
     DEFINE_DESTORY_VK_OBJECT(Buffer)
     DEFINE_DESTORY_VK_OBJECT(CommandPool)
     DEFINE_DESTORY_VK_OBJECT(DescriptorPool)
@@ -1409,6 +1409,16 @@ public:
     {
         Check(Wait(pFence, fenceCount));
         Check(Reset(pFence, fenceCount));
+    }
+
+    VkDeviceAddress GetBufferAddress(VkBuffer buffer)
+    {
+        VkBufferDeviceAddressInfo bufferInfo{
+            .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+            .buffer = buffer
+        };
+
+        return GetBufferAddress(&bufferInfo);
     }
 
     VkSurfaceKHR GetSurface() const
