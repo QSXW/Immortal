@@ -239,14 +239,14 @@ public:
 
     URef &operator=(URef &&other)
     {
-        URef(other).Swap(*this);
+        URef(std::move(other)).Swap(*this);
         return *this;
     }
 
     template <class U>
     URef &operator=(URef<U> &&other)
     {
-        URef(other).Swap(*this);
+        URef(std::move(other)).Swap(*this);
         return *this;
     }
 
