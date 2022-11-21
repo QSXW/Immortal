@@ -149,14 +149,18 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
                 .geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR,
                 .geometry = {
                     .triangles = {
-                        .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
-                        .pNext = nullptr,
+                        .sType        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
+                        .pNext        = nullptr,
                         .vertexFormat = desc[0].format,
-                        .vertexData = pVertexBuffer->GetDeviceAddress(),
+                        .vertexData   = {
+                            .deviceAddress = pVertexBuffer->GetDeviceAddress(),
+                        },
                         .vertexStride = desc.Stride,
-                        .maxVertex = pVertexBuffer->Size() / 3,
-                        .indexType = VK_INDEX_TYPE_UINT16,
-                        .indexData = pIndexBuffer->GetDeviceAddress(),
+                        .maxVertex    = pVertexBuffer->Size() / 3,
+                        .indexType    = VK_INDEX_TYPE_UINT16,
+                        .indexData = {
+                            .deviceAddress = pIndexBuffer->GetDeviceAddress(),
+                        },
                         .transformData = {
                             .deviceAddress = pTranformBuffer ? pTranformBuffer->GetDeviceAddress() : 0,
                         },
