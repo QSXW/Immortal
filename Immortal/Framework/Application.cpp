@@ -99,11 +99,11 @@ void Application::OnRender()
         gui->Begin();
         gui->Render();
         gui->End();
+
+        window->SetTitle(desc.Title);
     }
 
     Render::SwapBuffers();
-
-    window->SetTitle(desc.Title);
     window->ProcessEvents();
 }
 
