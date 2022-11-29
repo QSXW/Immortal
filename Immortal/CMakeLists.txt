@@ -9,7 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CORE_FILES
     Immortal.h
     Core.h
-    Format.h)
+    Format.h
+    impch.cpp
+    impch.h)
 
 set(ALGORITHM_FILES
     Algorithm/LightArray.h
@@ -62,8 +64,6 @@ set(IMAGE_FILES
 set(GUI_FILES
     ImGui/GuiLayer.cpp
     ImGui/GuiLayer.h
-    ImGui/ImGuizmo.cpp
-    ImGui/ImGuizmo.h
     ImGui/Utils.h)
 
 set(INTERFACE_FILES
@@ -344,6 +344,7 @@ set(HELPER_FILES
 set(WIDGET_FILES
     MenuBar.h
     Resource.h
+    WFileDialog.h
     Widget.cpp
     Widget.h
     WImageButton.h)

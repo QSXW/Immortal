@@ -16,12 +16,12 @@ void CacheSpirv(const std::string &path, const std::string &shaderName, const st
 {
     std::string filename = std::to_string(std::hash<std::string>{}(shaderName)) + std::string{ ".spirv" };
 
-    if (!FileSystem::Path::Exsits(path))
+    if (!FileSystem::Exists(path))
     {
-        FileSystem::MakeDirectory(path);
+        FileSystem::CreateDirectory(path);
     }
 
-    RF rf{ FileSystem::Path::Join(path, filename), Stream::Mode::Write };
+    RF rf{ FileSystem::Join(path, filename), Stream::Mode::Write };
 
     if (!rf.Writable())
     {
@@ -38,12 +38,12 @@ bool ReadSpirv(const std::string &path, const std::string &shaderName, const std
 {
     std::string filename = std::to_string(std::hash<std::string>{}(shaderName)) + std::string{ ".spirv" };
 
-    if (!FileSystem::Path::Exsits(path))
+    if (!FileSystem::Exists(path))
     {
-        FileSystem::MakeDirectory(path);
+        FileSystem::CreateDirectory(path);
     }
 
-    RF rf{ FileSystem::Path::Join(path, filename), Stream::Mode::Read };
+    RF rf{ FileSystem::Join(path, filename), Stream::Mode::Read };
     if (!rf.Readable())
     {
         return false;

@@ -119,9 +119,14 @@ set(IMGUI_FILES
 
 list(TRANSFORM IMGUI_FILES PREPEND "${IMGUI_DIR}/")
 
-add_library(imgui STATIC ${IMGUI_FILES})
+add_library(imgui STATIC
+    ${IMGUI_FILES}
+    "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.h")
 
-target_include_directories(imgui PUBLIC ${IMGUI_DIR})
+target_include_directories(imgui PUBLIC
+    ${IMGUI_DIR}
+    "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo")
 
 target_link_libraries("imgui" PUBLIC glfw)
 

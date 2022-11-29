@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
@@ -8,8 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
-
-#include <iostream>
 
 namespace Immortal
 {

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <imgui.h>
+#include <imgui_internal.h>
+#include <ImGuizmo.h>
 
+#include "Core.h"
 #include "Framework/Layer.h"
 #include "Interface/IObject.h"
 #include "Event/KeyEvent.h"
@@ -167,7 +170,7 @@ protected:
 
 protected:
     Ref<WDockerSpace> dockspace;
-    
+
     bool blockEvents = true;
 
     float time = 0.0f;

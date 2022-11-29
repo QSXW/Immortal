@@ -10,23 +10,27 @@
 #include <functional>
 #include <unordered_map>
 
-#include <imgui.h>
-#include <imgui_internal.h>
-
 #include "Core.h"
+#include "ImGui/GuiLayer.h"
 #include "Math/Math.h"
 #include "Math/Vector.h"
 #include "Interface/IObject.h"
 #include "Framework/Timer.h"
-#include "ImGui/GuiLayer.h"
 #include "String/LanguageSettings.h"
 #include "Helper/Platform.h"
 #include "Resource.h"
 
+#define EXPORT_WINDOW auto window = ImGui::GetCurrentWindow();
+#define MOVEPOS(x, y) window->DC.CursorPos += { x, y }
+#define MOVEX(v) window->DC.CursorPos.x += v
+#define MOVEY(v) window->DC.CursorPos.y += v
+#define WIMAGE(x) (ImTextureID)(uint64_t)(x)
+#define IM_ANONY "###"
+
 namespace Immortal
 {
 
-enum class Theme
+enum ColorStyle
 {
     Text                  = ImGuiCol_Text,
     TextDisabled          = ImGuiCol_TextDisabled,
@@ -86,6 +90,32 @@ enum class Theme
     MaxCount
 };
 
+static inline ImVec2 operator-(const ImVec2 &a, const ImVec2 &b)
+{
+    return { a.x - b.x, a.y - b.y };
+}
+
+static inline ImVec2 operator+(const ImVec2 &a, const ImVec2 &b)
+{
+    return { a.x + b.x, a.y + b.y };
+}
+
+static inline ImVec2 &operator-=(ImVec2 &a, const ImVec2 &b)
+{
+    a.x -= b.x;
+    a.y -= b.y;
+
+    return a;
+}
+
+static inline ImVec2 &operator+=(ImVec2 &a, const ImVec2 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+
+    return a;
+}
+
 static constexpr float WInherit = -1.0f;
 
 struct WPadding
@@ -124,11 +154,12 @@ struct WidgetState
  *
  *  Used to limit the widget scope. Identifier is necessary for constructor
  */
+template <class T>
 struct WidgetLock
 {
-    WidgetLock(void *id)
+    WidgetLock(T *id)
     {
-        ImGui::PushID(id);
+        ImGui::PushID((void *)id);
     }
 
     ~WidgetLock()
@@ -285,23 +316,29 @@ public:                                                \
 protected:                                             \
     std::string text;
 
-#define WIDGET_PROPERTY_COLOR                                      \
-public:                                                            \
-    WIDGET_SET_PROPERTY(Color, color, const ImVec4 &)              \
-    WidgetType *Color(uint32_t rgba)                               \
-    {                                                              \
-        color = ImGui::RGBA32(rgba);                               \
-        return this;                                               \
-    }                                                              \
-                                                                   \
-    WidgetType *Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)  \
-	{                                                              \
-		color = ImGui::RGBA32(r, g, b, a);                         \
-		return this;                                               \
-	}                                                              \
-                                                                   \
-protected:                                                         \
-    ImVec4 color;
+#define WIDGET_PROPERTY_VAR_COLOR(U, L)                        \
+public:                                                        \
+    WIDGET_SET_PROPERTY(U, L, const ImVec4 &)                  \
+    WidgetType *U(uint32_t rgba)                               \
+    {                                                          \
+        L = ImGui::RGBA32(rgba);                               \
+        return this;                                           \
+    }                                                          \
+                                                               \
+    WidgetType *U(uint8_t r, uint8_t g, uint8_t b, uint8_t a)  \
+	{                                                          \
+		L = ImGui::RGBA32(r, g, b, a);                         \
+		return this;                                           \
+	}                                                          \
+                                                               \
+protected:                                                     \
+    ImVec4 L;
+
+#define WIDGET_PROPERTY_COLOR \
+    WIDGET_PROPERTY_VAR_COLOR(Color, color)
+
+#define WIDGET_PROPERTY_BACKGROUND_COLOR \
+    WIDGET_PROPERTY_VAR_COLOR(BackgroundColor, backgroundColor)
 
 #define WIDGET_PROPERTY_ALIGN                     \
 public:                                           \
@@ -634,7 +671,9 @@ public:
                 state.isFocused = ImGui::IsWindowFocused();
                 state.isHovered = ImGui::IsWindowHovered();
 
-                position = ImGui::GetItemRectMin();
+                ImGuiWindow *window = ImGui::GetCurrentWindow();
+                position = window->DC.CursorStartPos;
+                scroll   = window->Scroll;
                 __RelativeTrampoline();
 
                 ImGui::EndChild();
@@ -657,6 +696,8 @@ public:
 
 protected:
 	WidgetState state;
+
+    ImVec2 scroll;
 };
 
 class IMMORTAL_API WRect : public Widget
@@ -994,6 +1035,49 @@ protected:
     float fontSize = 16.0f;
 
     float spacing = 0;
+};
+
+template <class T>
+class IMMORTAL_API WDragDropTarget : public Widget
+{
+public:
+    WDragDropTarget(Widget *parent = nullptr) :
+        Widget{ parent },
+        type{}
+    {
+        width = 0;
+        height = 0;
+        Connect([&] {
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(type);
+                if (payload)
+                {
+                    auto data = *(const T **)payload->Data;
+                    callback(data);
+                }
+                ImGui::EndDragDropTarget();
+            }
+            });
+    }
+
+    WDragDropTarget *Type(const char *_type)
+    {
+        type = _type;
+        return this;
+    }
+
+    template <class C>
+    WDragDropTarget *Callback(C &&_callback)
+    {
+        callback = _callback;
+        return this;
+    }
+
+protected:
+    const char *type;
+
+    std::function<void(const T *)> callback;
 };
 
 class IMMORTAL_API WDockerSpace : public Widget

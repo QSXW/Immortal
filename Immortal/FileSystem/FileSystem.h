@@ -8,6 +8,10 @@
 namespace Immortal
 {
 
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
+
 constexpr uint64_t MakeIdentifier(
     uint8_t u0 = 0,
     uint8_t u1 = 0,
@@ -30,8 +34,16 @@ constexpr uint64_t MakeIdentifier(
 
 enum class FileType
 {
+    Directory,
+    RegularFile,
+    Picture,
+    Video,
+    Audio,
+    CPP,
+    Object,
+    Executable,
     Binary,
-    Text
+    Text,
 };
 
 enum class FileFormat : uint64_t
@@ -43,7 +55,9 @@ enum class FileFormat : uint64_t
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
 
     /** Audio formats */
-    WAV = MakeIdentifier('W', 'A', 'V' ),
+    WAV  = MakeIdentifier('W', 'A', 'V'     ),
+    FLAC = MakeIdentifier('F', 'L', 'A', 'C'),
+    MP3  = MakeIdentifier('M', 'P', '3'     ),
 
     /** Still Image formats */
     BMP   = MakeIdentifier('B', 'M', 'P'     ),
@@ -71,6 +85,11 @@ enum class FileFormat : uint64_t
 
     /** Immortal Scene */
     IML = MakeIdentifier('I', 'M', 'L'),
+
+    CPP = MakeIdentifier('C', 'P', 'P'),
+
+    EXE = MakeIdentifier('E', 'X', 'E'),
+
 };
 
 namespace FileSystem
@@ -119,10 +138,8 @@ static inline bool Is3DModel(const std::string &path)
            IsFormat<FileFormat::GLTF>(id);
 }
 
-static inline bool IsImage(const std::string &path)
+static inline bool IsImage(uint64_t id)
 {
-    auto id = MakeIdentifier(path);
-
     return IsFormat<FileFormat::BMP>(id)  ||
            IsFormat<FileFormat::JPEG>(id) ||
            IsFormat<FileFormat::JPG>(id)  ||
@@ -135,10 +152,14 @@ static inline bool IsImage(const std::string &path)
            IsFormat<FileFormat::JFIF>(id);
 }
 
-static inline bool IsVideo(const std::string &path)
+static inline bool IsImage(const std::string &path)
 {
     auto id = MakeIdentifier(path);
+    return IsImage(id);
+}
 
+static inline bool IsVideo(uint64_t id)
+{
     return IsFormat<FileFormat::IVF>(id)  ||
 	       IsFormat<FileFormat::MP4>(id)  ||
 	       IsFormat<FileFormat::H264>(id) ||
@@ -147,6 +168,63 @@ static inline bool IsVideo(const std::string &path)
 	       IsFormat<FileFormat::M2TS>(id) ||
 	       IsFormat<FileFormat::TS>(id)   ||
 	       IsFormat<FileFormat::WEBM>(id);
+}
+
+static inline bool IsVideo(const std::string &path)
+{
+    auto id = MakeIdentifier(path);
+    return IsVideo(id);
+}
+
+static FileType GetFileType(const std::string &path)
+{
+    auto id = DumpFileId(path);
+    switch (id)
+    {
+    case FileFormat::BLEND:
+    case FileFormat::GLTF:
+    case FileFormat::FBX:
+    case FileFormat::OBJ:
+        return FileType::Object;
+
+    case FileFormat::WAV:
+    case FileFormat::FLAC:
+    case FileFormat::MP3:
+        return FileType::Audio;
+
+    case FileFormat::BMP:
+    case FileFormat::PNG:
+    case FileFormat::PPM:
+    case FileFormat::JFIF:
+    case FileFormat::JPG:
+    case FileFormat::JPEG:
+    case FileFormat::HDR:
+    case FileFormat::ARW:
+    case FileFormat::NEF:
+    case FileFormat::CR2:
+    case FileFormat::CR3:
+        return FileType::Picture;
+
+    case FileFormat::IVF:
+    case FileFormat::MP4:
+    case FileFormat::H264:
+    case FileFormat::H265:
+    case FileFormat::MKV:
+    case FileFormat::TS:
+    case FileFormat::MOV:
+    case FileFormat::M2TS:
+    case FileFormat::WEBM:
+        return FileType::Video;
+
+    case FileFormat::CPP:
+        return FileType::CPP;
+
+    case FileFormat::EXE:
+        return FileType::Executable;
+
+    default:
+        return FileType::RegularFile;
+    }
 }
 
 static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint32_t align = sizeof(void*))
@@ -193,20 +271,115 @@ static std::string ExtractFileName(const std::string &path)
     return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
 }
 
-static void MakeDirectory(const std::string &path)
+static inline bool CreateDirectory(const std::string &path)
 {
-    std::filesystem::create_directory(path);
+    return std::filesystem::create_directory(path);
 }
 
-namespace Path
+class Path : public std::filesystem::path
 {
+public:
+    using Super = std::filesystem::path;
 
-static bool Exsits(const std::string &path)
+public:
+    Path() :
+        Super{}
+    {
+
+    }
+
+    Path(const Super &path) :
+        Super{ path }
+    {
+
+    }
+
+    Path(Super &&path) :
+        Super{ std::move(path) }
+    {
+
+    }
+    
+    Path(const char *path) :
+        Super{ path }
+    {
+
+    }
+
+    Path(const std::string &path) :
+        Super{ path }
+    {
+
+    }
+
+    Path(const std::wstring &path) :
+        Super{ path }
+    {
+        
+    }
+
+    operator bool() const
+    {
+        return std::filesystem::exists(*this);
+    }
+
+    static Path Current()
+    {
+        return std::move(std::filesystem::current_path());
+    }
+
+    Path Parent() const
+    {
+        return parent_path();
+    }
+
+    size_t Length() const
+    {
+        return string().size();
+    }
+};
+
+struct DirectoryEntry
+{
+    FileType type;
+    std::string path;
+
+    bool IsDirectory() const
+    {
+        return type == FileType::Directory;
+    }
+
+    bool IsRegularFile() const
+    {
+        return type == FileType::RegularFile;
+    }
+};
+
+static inline void List(const Path &path, std::vector<DirectoryEntry> &directories)
+{
+    for (auto &directory : std::filesystem::directory_iterator(path))
+    {
+        DirectoryEntry entry;
+        entry.path = directory.path().string();
+
+        if (directory.is_directory())
+        {
+            entry.type = FileType::Directory;
+        }
+        else if (directory.is_regular_file())
+        {
+            entry.type = FileType::RegularFile;
+        }
+        directories.emplace_back(std::move(entry));
+    }
+}
+
+static inline bool Exists(const std::string &path)
 {
     return std::filesystem::exists(path);
 }
 
-static std::string Join(const std::string &lpath, const std::string &rpath)
+static inline std::string Join(const std::string &lpath, const std::string &rpath)
 {
     /* Temporary */
     size_t pos = 0;
@@ -222,7 +395,5 @@ static std::string Join(const std::string &lpath, const std::string &rpath)
 }
 
 }
-
-};
 
 }
