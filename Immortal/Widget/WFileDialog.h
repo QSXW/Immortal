@@ -105,7 +105,7 @@ public:
             filepath[nextPos] = '\0';
             if (ImGui::Button(&filepath[pos], { 0, 24.0f }))
             {
-                Source(path.string().substr(0, nextPos + 1));
+                Source(path.string().substr(0, nextPos));
             }
             ImGui::SameLine();
             ImGui::Button(">");
@@ -316,8 +316,9 @@ public:
     {
         lastPath = path;
         path = _path;
-        offset = path.Length() + (path.Parent() == path ? 0 : 1);
+
         Async::Execute([&] {
+            offset = path.Length() + (path.Parent() == path ? 0 : 1);
             std::vector<FileSystem::DirectoryEntry> entries;
             FileSystem::List(path, entries);
             for (auto &dir : entries)
