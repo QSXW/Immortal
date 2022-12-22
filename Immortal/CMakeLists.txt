@@ -347,7 +347,8 @@ set(WIDGET_FILES
     WFileDialog.h
     Widget.cpp
     Widget.h
-    WImageButton.h)
+    WImageButton.h
+    WSlider.h)
 
 list(TRANSFORM WIDGET_FILES PREPEND "Widget/")
 

@@ -174,7 +174,7 @@ struct WidgetLock
     WidgetLock &operator=(WidgetLock &&) = delete;
 };
 
-#define WIDGET_SET_PROPERTY(U, L, T) \
+#define WIDGET_SET_PROPERTY_FUNC(U, L, T) \
 	WidgetType *U(T _##L)            \
 	{                                \
 		L = _##L;                    \
@@ -186,15 +186,21 @@ struct WidgetLock
 		return L;                    \
 	}
 
+#define WIDGET_SET_PROPERTY(U, L, T)          \
+public:                                       \
+    WIDGET_SET_PROPERTY_FUNC(U, L, const T &) \
+protected:                                    \
+    T L{}; \
+
 #define PUSH_PADDING ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {padding.right, padding.bottom}); ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom});
 #define POP_PADDING ImGui::PopStyleVar(2);
 
 #define WIDGET_SET_PROPERTIES(W) \
     using WidgetType = W;        \
-    WIDGET_SET_PROPERTY(Width,        width,        float) \
-    WIDGET_SET_PROPERTY(Height,       height,       float) \
-    WIDGET_SET_PROPERTY(RenderWidth,  renderWidth,  float) \
-    WIDGET_SET_PROPERTY(RenderHeight, renderHeight, float) \
+    WIDGET_SET_PROPERTY_FUNC(Width,        width,        float) \
+    WIDGET_SET_PROPERTY_FUNC(Height,       height,       float) \
+    WIDGET_SET_PROPERTY_FUNC(RenderWidth,  renderWidth,  float) \
+    WIDGET_SET_PROPERTY_FUNC(RenderHeight, renderHeight, float) \
                                                          \
     WidgetType *PaddingLeft(float left)                  \
     {                                                    \
@@ -318,7 +324,7 @@ protected:                                             \
 
 #define WIDGET_PROPERTY_VAR_COLOR(U, L)                        \
 public:                                                        \
-    WIDGET_SET_PROPERTY(U, L, const ImVec4 &)                  \
+    WIDGET_SET_PROPERTY_FUNC(U, L, const ImVec4 &)                  \
     WidgetType *U(uint32_t rgba)                               \
     {                                                          \
         L = ImGui::RGBA32(rgba);                               \
@@ -342,7 +348,7 @@ protected:                                                     \
 
 #define WIDGET_PROPERTY_ALIGN                     \
 public:                                           \
-	WIDGET_SET_PROPERTY(Align, align, WAlignMode) \
+	WIDGET_SET_PROPERTY_FUNC(Align, align, WAlignMode) \
                                                   \
 protected:                                        \
 	WAlignMode align = WAlignMode::None;
@@ -829,7 +835,7 @@ public:
         renderHeight = y;
     }
 
-    WIDGET_SET_PROPERTY(Descriptor, descriptor, uint64_t)
+    WIDGET_SET_PROPERTY_FUNC(Descriptor, descriptor, uint64_t)
 
     WidgetType *Source(const WImageResource &res)
     {
@@ -1029,7 +1035,7 @@ public:
         });
     }
 
-    WIDGET_SET_PROPERTY(FontSize, fontSize, float     )
+    WIDGET_SET_PROPERTY_FUNC(FontSize, fontSize, float     )
 
 protected:
     float fontSize = 16.0f;

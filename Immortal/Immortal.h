@@ -71,6 +71,7 @@
 #include "Widget/Widget.h"
 #include "Widget/WFileDialog.h"
 #include "Widget/WImageButton.h"
+#include "Widget/WSlider.h"
 #include "Widget/MenuBar.h"
 
 #include "Net/Socket.h"

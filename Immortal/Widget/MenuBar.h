@@ -76,6 +76,7 @@ class IMMORTAL_API WMenuBar : public Widget
 public:
 	WIDGET_SET_PROPERTIES(WMenuBar)
 	WIDGET_PROPERTY_COLOR
+	WIDGET_PROPERTY_BACKGROUND_COLOR
 
 public:
 	WMenuBar(Widget *parent = nullptr) :
@@ -99,11 +100,6 @@ public:
 			ImGui::PopStyleColor(2);
 		});
 	}
-
-	WIDGET_SET_PROPERTY(BackgroundColor, backgroundColor, const ImVec4 &)
-
-protected:
-	ImVec4 backgroundColor;
 };
 
 struct WItem
