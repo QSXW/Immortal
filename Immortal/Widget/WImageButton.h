@@ -14,6 +14,12 @@ namespace Immortal
 class IMMORTAL_API WImageButton : public Widget
 {
 public:
+   WIDGET_SET_PROPERTIES(WImageButton)
+   WIDGET_PROPERTY_COLOR
+   WIDGET_PROPERTY_VAR_COLOR(HoveredColor, hoveredColor, ImVec4)
+   WIDGET_PROPERTY_VAR_COLOR(ActiveColor, activeColor, ImVec4)
+
+public:
     enum Status
     {
         Disabled,
@@ -30,6 +36,9 @@ public:
             ImGuiWindow* window = ImGui::GetCurrentWindow();
             window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
+            ImGui::PushStyleColor(ColorStyle::Button,        color);
+            ImGui::PushStyleColor(ColorStyle::ButtonHovered, hoveredColor);
+            ImGui::PushStyleColor(ColorStyle::ButtonActive,  activeColor);
 
             auto resource = imageResources[status];
             ImGui::ImageButton(
@@ -44,8 +53,10 @@ public:
             {
                 Toggle();
             }
+            
+            ImGui::PopStyleColor(3);
             ImGui::PopStyleVar();
-
+            
             __RelativeTrampoline();
 
             });
