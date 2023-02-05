@@ -2,6 +2,7 @@
 #include "Vision/Demux/FFDemuxer.h"
 #include "Vision/Processing/ColorSpace.h"
 #include "Render/Render.h"
+#include <list>
 
 #if HAVE_FFMPEG
 extern "C" {
@@ -11,7 +12,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libavutil/avutil.h>
 #include <libswresample/swresample.h>
+#ifdef _WIN32
 #include <libavutil/hwcontext_d3d12va.h>
+#endif
 }
 
 namespace Immortal
@@ -160,10 +163,12 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     }
     else
     {
+#ifdef _WIN32
 		if (handle->pix_fmt == AV_PIX_FMT_D3D12)
 		{
 			av_d3d12va_wait_idle((AVD3D12VASyncContext *)frame->data[2]);
 		}
+#endif
         ref = av_frame_clone(frame);
     }
 
@@ -383,6 +388,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hwaccelType)
         {
+#ifdef _WIN32
             if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Render::API == Render::Type::D3D12)
             {
 				device = av_hwdevice_ctx_alloc(hwaccelType);
@@ -400,7 +406,9 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 
 				type = PictureType::Device;
             }
-            else if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
+            else
+#endif
+            if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
             {
                 LOG::ERR("Failed to create specified HW device.");
                 return CodecError::NotImplement;

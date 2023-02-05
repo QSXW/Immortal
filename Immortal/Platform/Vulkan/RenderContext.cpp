@@ -84,8 +84,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     device = new Device{ physicalDevice, surface, DeviceExtensions };
     queue  = device->SuitableGraphicsQueuePtr();
 
-	surfaceExtent.width  = desc.width;
-	surfaceExtent.height = desc.height;
     if (surface != VK_NULL_HANDLE)
     {
 		VkFormat depthFormat = physicalDevice->GetSuitableDepthFormat();

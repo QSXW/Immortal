@@ -97,6 +97,11 @@ struct Picture
 
     }
 
+    ~Picture()
+    {
+        shared.Reset();
+    }
+
     Picture(int width, int height, Format format, bool allocated = true) :
         desc{ uint32_t(width), uint32_t(height), format },
         pts{}

@@ -14,7 +14,7 @@ AccelerationStructureLevel::AccelerationStructureLevel() :
 
 AccelerationStructureLevel::AccelerationStructureLevel(Device *device, VkAccelerationStructureTypeKHR type, const VkAccelerationStructureGeometryKHR *pGeometry, uint32_t geometryCount, const uint32_t *pPrimitiveCount) :
     AccelerationStructureLevel{}
-{	
+{
     VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo = {
         .sType                    = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
         .pNext                    = nullptr,
@@ -179,7 +179,7 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
             &numTriangles
         };
     }
-    
+
     {
         VkTransformMatrixKHR transformMatrix = {
             1.0f, 0.0f, 0.0f, 0.0f,
@@ -212,13 +212,15 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
                     .instances = {
                         .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
                         .arrayOfPointers = VK_FALSE,
-                        .data = instanceBuffer->GetDeviceAddress()
+                        .data = {
+                            .deviceAddress = instanceBuffer->GetDeviceAddress(),
+                        },
                     },
                  },
                 .flags = VK_GEOMETRY_OPAQUE_BIT_KHR,
             }
         };
-        
+
         uint32_t primitiveCount = 1;
         bottomLevelAS = AccelerationStructureLevel{
             device,

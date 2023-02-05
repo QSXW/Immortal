@@ -125,7 +125,6 @@ void AudioDevice::PlayFrame(Picture picture)
 void AudioDevice::Reset()
 {
     context->End();
-    context->Reset();
     context->Begin();
 }
 
