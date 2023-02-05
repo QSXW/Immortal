@@ -175,6 +175,7 @@ struct WidgetLock
 };
 
 #define WIDGET_SET_PROPERTY_FUNC(U, L, T) \
+public:                              \
 	WidgetType *U(T _##L)            \
 	{                                \
 		L = _##L;                    \

@@ -36,7 +36,7 @@ public:
 
         memset(streamIndex, -1, sizeof(streamIndex));
 
-        std::string filepath = Byte2UTF8(path);
+        std::string filepath = path;
 
 		int ret = avformat_open_input(&handle, filepath.c_str(), NULL, NULL);
         if (ret < 0)
@@ -138,6 +138,11 @@ public:
         return handle->streams[index];
     }
 
+    int GetStreamIndex(MediaType type)
+    {
+        return streamIndex[(int)type];
+    }
+
     operator AVFormatContext *() const
     {
         return handle;
@@ -218,6 +223,12 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
         }
         LOG::DEBUG("Failed to read frame: {}", ret);
         return CodecError::EndOfFile;
+    }
+
+    if (packet->stream_index != formatContext->GetStreamIndex(MediaType::Video) &&
+        packet->stream_index != formatContext->GetStreamIndex(MediaType::Audio))
+    {
+        return CodecError::ExternalFailed;
     }
 
     auto stream = formatContext->GetStream(packet->stream_index);

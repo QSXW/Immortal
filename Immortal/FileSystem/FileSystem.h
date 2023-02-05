@@ -341,8 +341,9 @@ public:
 
 struct DirectoryEntry
 {
-    FileType type;
     std::string path;
+
+    FileType type;
 
     bool IsDirectory() const
     {

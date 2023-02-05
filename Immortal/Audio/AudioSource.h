@@ -50,6 +50,7 @@ struct AudioClip
         picture{picture}
     {
         frames = picture.desc.width;
+        bytes  = picture.desc.width << 3;
     }
 
     int Cosume(void *dst, uint32_t frameRequested)
@@ -58,6 +59,16 @@ struct AudioClip
         memcpy(dst, pData, samples);
         pData  += samples;
         bytes  -= samples;
+        frames -= frameRequested;
+
+        return bytes;
+    }
+
+    int Read(uint32_t frameRequested)
+    {
+        size_t samples = frameRequested * 2 * sizeof(float);
+        pData += samples;
+        bytes -= samples;
         frames -= frameRequested;
 
         return bytes;

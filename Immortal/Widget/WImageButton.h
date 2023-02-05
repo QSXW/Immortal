@@ -14,17 +14,18 @@ namespace Immortal
 class IMMORTAL_API WImageButton : public Widget
 {
 public:
-   WIDGET_SET_PROPERTIES(WImageButton)
-   WIDGET_PROPERTY_COLOR
-   WIDGET_PROPERTY_VAR_COLOR(HoveredColor, hoveredColor, ImVec4)
-   WIDGET_PROPERTY_VAR_COLOR(ActiveColor, activeColor, ImVec4)
-
-public:
     enum Status
     {
         Disabled,
         Active,
     };
+
+public:
+   WIDGET_SET_PROPERTIES(WImageButton)
+   WIDGET_PROPERTY_COLOR
+   WIDGET_PROPERTY_VAR_COLOR(HoveredColor, hoveredColor)
+   WIDGET_PROPERTY_VAR_COLOR(ActiveColor, activeColor)
+   WIDGET_SET_PROPERTY_FUNC(Callback, callback, const std::function<void(WImageButton::Status status)> &)
 
 public:
     WImageButton(Widget* v = nullptr) :
@@ -41,13 +42,19 @@ public:
             ImGui::PushStyleColor(ColorStyle::ButtonActive,  activeColor);
 
             auto resource = imageResources[status];
-            ImGui::ImageButton(
+            if (ImGui::ImageButton(
                 (ImTextureID)(uint64_t)*resource.image,
                 { renderWidth, renderHeight },
                 resource.uv._0,
                 resource.uv._1,
                 0
-            );
+            ))
+            {
+                if (callback)
+                {
+                    callback((Status)status);
+                }
+            }
 
             if (ImGui::IsItemClicked())
             {
@@ -81,6 +88,8 @@ public:
 
 protected:
     WImageResource imageResources[2];
+
+    std::function<void(WImageButton::Status status)> callback;
 
     int status = 0;
 };

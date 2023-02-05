@@ -21,14 +21,15 @@ AudioDevice::AudioDevice() :
     flush{ false }
 {
     thread = new Thread{ [=, this] {
-
         uint64_t duration = 0;
         context->Begin();
         Vector2 buffer[2048] = {};
         Vector2 *ptr = buffer;
+
+        static int lastSamples = 1024;
         while (!stopping)
         {
-            Picture picture;
+            Picture picture{};
             if (callBack)
             {
                 callBack(picture);
@@ -37,6 +38,7 @@ AudioDevice::AudioDevice() :
             if (picture.Available())
             {
                 int frameLeft = 0;
+                lastSamples = picture.desc.samples;
                 if (picture.desc.samples < 1024)
                 {
                     size_t bytes = picture.desc.width << 3;
@@ -53,10 +55,18 @@ AudioDevice::AudioDevice() :
                 {
                     frameLeft = context->PlaySamples(picture.desc.samples, picture.shared->data[0]);
                 }
-                uint64_t duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
-                duration >>= 1;
-                std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+                duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
             }
+            else
+            {
+                if (lastSamples >= 512)
+                {
+                    duration = Seconds2Nanoseconds(((float)1024 / context->GetSampleRate()));
+                }
+            }
+
+            duration >>= 1;
+            std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
 
             if (pause)
             {
@@ -72,6 +82,7 @@ AudioDevice::AudioDevice() :
                 flush = false;
             }
         }
+
         context->End();
     } };
 

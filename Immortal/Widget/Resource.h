@@ -8,7 +8,7 @@ namespace Immortal
 
 struct WImageResource
 {
-	WImageResource(Image *image = nullptr, const ImVec2 &uv0 = {}, const ImVec2 &uv1 = {}) :
+	WImageResource(Image *image = nullptr, const ImVec2 &uv0 = {}, const ImVec2 &uv1 = { 1, 1 }) :
 		image{ image },
 		uv{ uv0, uv1 }
 	{
