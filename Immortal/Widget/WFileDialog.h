@@ -174,7 +174,12 @@ public:
             }
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
             {
-                FileSystem::DirectoryEntry *entry = { &dir };
+                static FileSystem::DirectoryEntry file = {
+                    .path = dir.path,
+                    .type = FileType::RegularFile
+                };
+
+                FileSystem::DirectoryEntry *entry = { &file };
                 ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
                 ImGui::ImageButton((ImTextureID)(uint64_t)*icon, { 64, 64 }, uv0, uv1);
                 ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 64);
@@ -182,7 +187,6 @@ public:
                 ImGui::PopTextWrapPos();
                 ImGui::EndDragDropSource();
             }
-
         }
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor(1);
