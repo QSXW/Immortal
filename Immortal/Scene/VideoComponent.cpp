@@ -73,10 +73,13 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, 
                     Vision::CodedFrame codedFrame;
                     {
                         std::unique_lock lock{mutex};
-                        codedFrame = queues[0].front();
-                        queues[0].pop();
+                        if (!queues[0].empty())
+                        {
+                            codedFrame = queues[0].front();
+                            queues[0].pop();
+                        }
                     }
-                    if (decoder->Decode(codedFrame) == CodecError::Succeed)
+                    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Succeed)
                     {
                         Vision::Picture picture = decoder->GetPicture();
 
@@ -98,10 +101,13 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, 
                         Vision::CodedFrame codedFrame;
                         {
                             std::unique_lock lock{mutex};
-                            codedFrame = queues[1].front();
-                            queues[1].pop();
+                            if (!queues[1].empty())
+                            {
+                                codedFrame = queues[1].front();
+                                queues[1].pop();
+                            }
                         }
-                        if (audioDecoder->Decode(codedFrame) == CodecError::Succeed)
+                        if (codedFrame && audioDecoder->Decode(codedFrame) == CodecError::Succeed)
                         {
                             Vision::Picture picture = audioDecoder->GetPicture();
 

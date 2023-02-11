@@ -377,6 +377,19 @@ public:
 
 	VideoPlayerContext &operator=(const VideoPlayerContext &&other) = delete;
 
+    void Seek(int64_t timestamp, int64_t min, int64_t max)
+    {
+        std::queue<Vision::Picture> empty;
+        std::queue<Vision::CodedFrame> emptyFrame;
+
+        std::unique_lock lock{ mutex };
+        demuxer->Seek(MediaType::Video, timestamp, min, max);
+        pictures.swap(empty);
+        audioFrames.swap(empty);
+        queues[1].swap(emptyFrame);
+        queues[0].swap(emptyFrame);
+    }
+
 	Picture GetPicture() const
 	{
 		return pictures.empty() ? Vision::Picture{} : pictures.front();
@@ -390,13 +403,19 @@ public:
 	void PopPicture()
 	{
 		std::unique_lock lock{mutex};
-		pictures.pop();
+        if (!pictures.empty())
+        {
+            pictures.pop();
+        }
 	}
 
     void PopAudioFrame()
     {
         std::unique_lock lock{ mutex };
-        audioFrames.pop();
+        if (!audioFrames.empty())
+        {
+            audioFrames.pop();
+        }
     }
 
 	const std::string &GetSource() const
@@ -454,6 +473,11 @@ struct VideoPlayerComponent : public Component
     void PopPicture();
 
     void PopAudioFrame();
+
+    void Seek(int64_t timestamp, int64_t min, int64_t max)
+    {
+        player->Seek(timestamp, min, max);
+    }
 
     VideoPlayerComponent &operator=(VideoPlayerComponent &&other)
     {

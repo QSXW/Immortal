@@ -94,7 +94,8 @@ static inline Format CAST(AVPixelFormat v)
 FFCodec::FFCodec() :
     handle{},
     device{},
-    type{ PictureType::System }
+    type{ PictureType::System },
+    startTimestamp{}
 {
     handle = avcodec_alloc_context3(nullptr);
     ThrowIf(!handle, "FFCodec::Failed to allocated memory!")
@@ -254,7 +255,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     }
     else if (frame->pts != AV_NOPTS_VALUE)
     {
-        picture.pts = frame->best_effort_timestamp * av_q2d(timeBase) * animator.FramesPerSecond;
+        picture.pts = (frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond;
     }
     else
     {
@@ -371,6 +372,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 {
     auto params = Deanonymize<FFDemuxer::Params *>(anonymous);
     const AVStream *stream = params->stream;
+    startTimestamp = stream->start_time;
 
     const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
     if (!codec)

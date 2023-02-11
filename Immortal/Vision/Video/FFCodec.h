@@ -37,6 +37,8 @@ protected:
 
     AVBufferRef *device;
 
+    int64_t startTimestamp;
+
     Format format;
 
     AVFrame *frame;

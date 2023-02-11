@@ -30,6 +30,11 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
+    virtual CodecError Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max)
+    {
+        return CodecError::FailedToCallDecoder;
+    }
+
     virtual const std::string &GetSource() const = 0;
 };
 

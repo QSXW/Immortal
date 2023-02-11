@@ -206,6 +206,7 @@ CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec, Video
 
 CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 {
+    std::unique_lock lock{ seekMutex };
 	AVPacket *packet = av_packet_alloc();
     if (!packet)
     {
@@ -239,6 +240,21 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 }
 #endif
 
+CodecError FFDemuxer::Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max)
+{
+    std::unique_lock lock{ seekMutex };
+    int streamIndex = formatContext->GetStreamIndex(type);
+    auto stream = formatContext->GetStream(streamIndex);
+    timestamp = av_rescale_q(timestamp * AV_TIME_BASE, { 1, AV_TIME_BASE }, stream->time_base) + stream->start_time;
+
+    if (avformat_seek_file(*formatContext, formatContext->GetStreamIndex(MediaType::Video), min, timestamp, max, 0) < 0)
+    {
+        return CodecError::ExternalFailed;
+    }
+
+    return CodecError::Succeed;
+}
+
 const std::string &FFDemuxer::GetSource() const
 {
     return filepath;
@@ -246,4 +262,3 @@ const std::string &FFDemuxer::GetSource() const
 
 }
 }
-

@@ -31,6 +31,11 @@ struct CodedFrame
         return *(T **)buffer.data();
     }
 
+    operator bool() const
+    {
+        return !buffer.empty();
+    }
+
 public:
     std::vector<uint8_t> buffer;
 
