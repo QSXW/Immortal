@@ -24,6 +24,7 @@ public:
     WIDGET_SET_PROPERTY(Radius,   radius,   float)
     WIDGET_SET_PROPERTY(Min,      min,      float)
     WIDGET_SET_PROPERTY(Max,      max,      float)
+    WIDGET_SET_PROPERTY(Callback, callback, std::function<void(float progress)>)
 
 public:
     WSlider(Widget *v = nullptr) :
@@ -109,15 +110,19 @@ public:
         ImGui::RenderFrame(bbFrame.Min, bbFrame.Max, frameColor, true, g.Style.FrameRounding);
 
         ImRect outGrab;
-        if (ImGui::SliderBehavior(bbFrame, id, ImGuiDataType_Float, &progress, &min, &max, "", 0, &outGrab))
+        if (ImGui::SliderBehavior(bbFrame, id, ImGuiDataType_Float, &progress, &min, &max, "", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_NoInput, &outGrab))
         {
+            if (std::abs(outGrab.GetCenter().x - bbGrab.GetCenter().x) > 1.0f)
+            {
+                callback(progress);
+            }
             ImGui::MarkItemEdited(id);
         }
 
         if (outGrab.Max.x > outGrab.Min.x)
         {
             auto center = outGrab.GetCenter();
-            center.x = IM_ROUND(center.x);
+            center.x = IM_ROUND(center.x); 
             center.y = IM_ROUND(center.y);
             window->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(g.ActiveId == grabId ? grabHoveredColor : grabColor), 16);
             bbGrab = ImRect({ center.x - radius, center.y - radius }, { center.x + radius, center.y + radius });
