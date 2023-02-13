@@ -238,7 +238,6 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 
     return CodecError::Succeed;
 }
-#endif
 
 CodecError FFDemuxer::Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max)
 {
@@ -254,6 +253,7 @@ CodecError FFDemuxer::Seek(MediaType type, int64_t timestamp, int64_t min, int64
 
     return CodecError::Succeed;
 }
+#endif
 
 const std::string &FFDemuxer::GetSource() const
 {
