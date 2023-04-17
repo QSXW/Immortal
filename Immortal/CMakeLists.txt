@@ -124,7 +124,9 @@ set(D3D11_FILES
     Shader.cpp
     Shader.h
     Texture.cpp
-    Texture.h)
+    Texture.h
+    WindowCapture.cpp
+    WindowCapture.h)
 
 list(TRANSFORM D3D11_FILES PREPEND "Platform/D3D11/")
 
@@ -281,6 +283,8 @@ set(RENDER_FILES
     Descriptor.h
     Frame.cpp
     Frame.h
+    GLSLCompiler.cpp
+    GLSLCompiler.h
     RenderTarget.h
     Mesh.cpp
     Mesh.h
@@ -298,8 +302,7 @@ set(RENDER_FILES
     Texture.cpp
     Texture.h
     Types.h
-    GLSLCompiler.cpp
-    GLSLCompiler.h)
+    WindowCapture.h)
 
 list(TRANSFORM RENDER_FILES PREPEND "Render/")
 

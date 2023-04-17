@@ -16,7 +16,6 @@ Device::Device(int deviceId) :
 
 	Check(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");
 
-	ComPtr<IDXGIAdapter1> adapter;
 	ComPtr<ID3D11Device> pDevice;
 	ComPtr<ID3D11DeviceContext> pDeviceContext;
 

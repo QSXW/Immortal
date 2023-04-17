@@ -128,6 +128,11 @@ SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Descrip
 	return new RenderTarget{ device, description};
 }
 
+WindowCapture *RenderContext::CreateWindowCapture()
+{
+	return new WindowCapture{ device };
+}
+
 void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
 

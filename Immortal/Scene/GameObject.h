@@ -52,7 +52,7 @@ public:
 
 struct NativeScriptComponent : public Component
 {
-    DEFINE_COMP_TYPE(NativeScript)
+    DEFINE_COMPONENT_TYPE(NativeScript)
 
     NativeScriptComponent() :
         Status{ Status::NotLoaded }

@@ -50,11 +50,11 @@ struct Component
     }
 };
 
-#define DEFINE_COMP_TYPE(T) static Component::Type GetType() { return Component::Type::T; }
+#define DEFINE_COMPONENT_TYPE(T) static Component::Type GetType() { return Component::Type::T; }
 
 struct IDComponent : public Component
 {
-    DEFINE_COMP_TYPE(ID)
+    DEFINE_COMPONENT_TYPE(ID)
 
     IDComponent(uint64_t id = 0) :
         uid(id)
@@ -67,7 +67,7 @@ struct IDComponent : public Component
 
 struct TagComponent : public Component
 {
-    DEFINE_COMP_TYPE(Tag)
+    DEFINE_COMPONENT_TYPE(Tag)
 
     TagComponent(const std::string &tag = "") :
         Tag{ tag }
@@ -80,7 +80,7 @@ struct TagComponent : public Component
 
 struct TransformComponent : public Component
 {
-    DEFINE_COMP_TYPE(Transform)
+    DEFINE_COMPONENT_TYPE(Transform)
 
     void Set(Vector3 position, Vector3 rotation, Vector3 scale)
     {
@@ -114,7 +114,7 @@ struct TransformComponent : public Component
 
 struct MeshComponent : public Component
 {
-    DEFINE_COMP_TYPE(Mesh)
+    DEFINE_COMPONENT_TYPE(Mesh)
 
     MeshComponent()
     {
@@ -143,7 +143,7 @@ struct MeshComponent : public Component
 
 struct MaterialComponent : public Component
 {
-    DEFINE_COMP_TYPE(Material)
+    DEFINE_COMPONENT_TYPE(Material)
 
     MaterialComponent()
     {
@@ -182,7 +182,7 @@ struct MaterialComponent : public Component
 
 struct LightComponent : public Component
 {
-    DEFINE_COMP_TYPE(Light)
+    DEFINE_COMPONENT_TYPE(Light)
 
     Vector4 Radiance{ 1.0f };
     bool Enabled = true;
@@ -190,12 +190,12 @@ struct LightComponent : public Component
 
 struct SceneComponent : public Component
 {
-    DEFINE_COMP_TYPE(Scene)
+    DEFINE_COMPONENT_TYPE(Scene)
 };
 
 struct SpriteRendererComponent : public Component
 {
-    DEFINE_COMP_TYPE(SpriteRenderer)
+    DEFINE_COMPONENT_TYPE(SpriteRenderer)
 
     static inline Texture::Description Desc = {
         Format::RGBA8,
@@ -232,7 +232,7 @@ struct SpriteRendererComponent : public Component
 
 struct CameraComponent : public Component
 {
-    DEFINE_COMP_TYPE(Camera)
+    DEFINE_COMPONENT_TYPE(Camera)
 
     CameraComponent()
     {
@@ -258,7 +258,7 @@ struct CameraComponent : public Component
 
 struct DirectionalLightComponent : public Component
 {
-    DEFINE_COMP_TYPE(DirectionalLight)
+    DEFINE_COMPONENT_TYPE(DirectionalLight)
 
     Vector3 Radiance{ 1.0f, 1.0f, 1.0f };
 
@@ -270,7 +270,7 @@ struct DirectionalLightComponent : public Component
 
 struct ScriptComponent : public Component
 {
-    DEFINE_COMP_TYPE(Script)
+    DEFINE_COMPONENT_TYPE(Script)
 
     ScriptComponent() :
         path{},
@@ -310,14 +310,14 @@ struct ScriptComponent : public Component
 
 struct MetaComponent : public Component
 {
-    DEFINE_COMP_TYPE(Meta)
+    DEFINE_COMPONENT_TYPE(Meta)
 
     void *Meta = nullptr;
 };
 
 struct ColorMixingComponent : public Component
 {
-    DEFINE_COMP_TYPE(ColorMixing)
+    DEFINE_COMPONENT_TYPE(ColorMixing)
 
     bool Modified    = false;
     bool Initialized = false;
@@ -352,18 +352,6 @@ enum class FilterType
     GaussianBlur,
     AverageBlur,
     DCT
-};
-
-struct FilterComponent : public Component
-{
-    DEFINE_COMP_TYPE(Filter)
-
-    FilterComponent()
-    {
-
-    }
-
-    std::vector<FilterType> Filter;
 };
 
 struct VideoPlayerContext
@@ -455,7 +443,7 @@ public:
 
 struct VideoPlayerComponent : public Component
 {
-    DEFINE_COMP_TYPE(VideoPlayer)
+    DEFINE_COMPONENT_TYPE(VideoPlayer)
 
     VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
 
@@ -496,6 +484,26 @@ struct VideoPlayerComponent : public Component
 
 public:
 	URef<VideoPlayerContext> player;
+};
+
+struct FilterComponent : public Component
+{
+public:
+    DEFINE_COMPONENT_TYPE(Filter)
+
+    FilterComponent() :
+        filters{}
+    {
+
+    }
+
+    void PushFilter(const std::string &name, const Ref<Pipeline> &filter)
+    {
+        filters[name] = filter;
+    }
+
+public:
+    std::map<std::string, Ref<Pipeline>> filters;
 };
 
 }

@@ -17,9 +17,11 @@ public:
     using Super = SuperTexture;
 
 public:
-	Texture(Device *device, const std::string &filepath, const Description &description);
+	  Texture(Device *device, const std::string &filepath, const Description &description);
 
     Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
+
+    Texture(Device *device, const ComPtr<ID3D11Texture2D> &texture);
 
     ~Texture();
 
@@ -46,8 +48,10 @@ public:
 protected:
     void __Create(const void *data);
 
+    void CreateView(UINT flags);
+
 protected:
-	Device *device;
+	  Device *device;
 
     Descriptor<SRV> descriptor;
 

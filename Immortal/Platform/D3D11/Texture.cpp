@@ -34,6 +34,20 @@ Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *da
 	__Create(data);
 }
 
+Texture::Texture(Device *device, const ComPtr<ID3D11Texture2D> &texture) :
+	device{ device }
+{
+	D3D11_TEXTURE2D_DESC desc{};
+	texture->GetDesc(&desc);
+
+	width  = desc.Width;
+	height = desc.Height;
+	format = Format::RGBA8; // desc.Format;
+	__Create(nullptr);
+
+	device->CopyResource(*this, texture.Get());
+}
+
 Texture::~Texture()
 {
 
@@ -53,7 +67,12 @@ void Texture::__Create(const void *data)
 		Update(data, width);
 	}
 
-    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {
+	CreateView(flags);
+}
+
+void Texture::CreateView(UINT flags)
+{
+	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {
 		.Format        = format,
 	    .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
 		.Texture2D     = { .MostDetailedMip = 0, .MipLevels = mipLevels, }
@@ -61,14 +80,17 @@ void Texture::__Create(const void *data)
 
 	Check(device->CreateShaderResourceView(*this, &viewDesc, &descriptor));
 
-	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
-	    .Format = format,
-	    .ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
-	    .Texture2D = {
-	        .MipSlice = 0,
-	    },
-	};
-	Check(device->CreateUnorderedAccessView(*this, &uavDesc, &uav));
+	if (flags & D3D11_BIND_UNORDERED_ACCESS)
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
+			.Format = format,
+			.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
+			.Texture2D = {
+				.MipSlice = 0,
+			},
+		};
+		Check(device->CreateUnorderedAccessView(*this, &uavDesc, &uav));
+	}
 }
 
 void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)

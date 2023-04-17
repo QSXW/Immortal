@@ -20,7 +20,7 @@ Device::Device(int deviceId)
         debugController->EnableDebugLayer();
 
         dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-        LOG::INFO("Enable Debug Layer: {0}", rcast<void*>(debugController.Get()));
+        LOG::INFO("Enable Debug Layer: {0}", (void *)(debugController.Get()));
     }
 #endif
     Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "Failed to create DXGI Factory");

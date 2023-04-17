@@ -6,6 +6,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "Descriptor.h"
+#include "WindowCapture.h"
 #include "Math/Vector.h"
 
 namespace Immortal
@@ -184,6 +185,11 @@ public:
     static Texture *CreateTexture(const std::string &filepath, const Texture::Description &desc = {})
     {
         return renderContext->CreateTexture(filepath, desc);
+    }
+
+    static WindowCapture *CreateWindowCapture()
+    {
+        return renderContext->CreateWindowCapture();
     }
 
     static Buffer *CreateBuffer(const size_t size, uint32_t binding = 0)

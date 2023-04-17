@@ -97,6 +97,11 @@ public:
         return context->Unmap(pResource, subresource);
     }
 
+    void CopyResource(ID3D11Resource *pDstResource, ID3D11Resource *pSrcResource)
+    {
+        context->CopyResource(pDstResource, pSrcResource);
+    }
+
     HRESULT CreateSwapchain(Swapchain *pSwapchain, DXGI_SWAP_CHAIN_DESC *pDesc);
 
 public:
@@ -114,8 +119,17 @@ public:
         return context.Get();
     }
 
+    template <class T = IDXGIAdapter1>
+    requires std::is_base_of_v<IDXGIAdapter, T>
+    T *GetAdapter() const
+    {
+        return adapter.Get();
+    }
+
 protected:
     ComPtr<IDXGIFactory4> dxgiFactory;
+
+    ComPtr<IDXGIAdapter1> adapter;
 
     ComPtr<ID3D11DeviceContext4> context;
 

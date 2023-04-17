@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
+#include "WindowCapture.h"
 #include "AccelerationStructure.h"
 
 namespace Immortal
@@ -133,6 +134,11 @@ public:
     }
 
     virtual RenderTarget *CreateRenderTarget(const RenderTarget::Description &description)
+    {
+        return nullptr;
+    }
+
+    virtual WindowCapture *CreateWindowCapture()
     {
         return nullptr;
     }

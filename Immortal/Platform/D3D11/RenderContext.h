@@ -28,6 +28,7 @@ public:
 #include "Device.h"
 #include "Swapchain.h"
 #include "RenderTarget.h"
+#include "WindowCapture.h"
 #include "ImGui/GuiLayer.h"
 
 namespace Immortal
@@ -72,6 +73,8 @@ public:
 	virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description = {}) override;
 
 	virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
+
+	virtual WindowCapture *CreateWindowCapture() override;
 
 	virtual void PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
