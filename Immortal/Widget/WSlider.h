@@ -97,7 +97,7 @@ public:
             ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
         }
 
-        if (isActive)
+        if (isActive && id != 0)
         {
             ImGui::SetActiveID(id, window);
             ImGui::SetFocusID(id, window);
