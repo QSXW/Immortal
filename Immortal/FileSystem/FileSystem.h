@@ -75,8 +75,11 @@ enum class FileFormat : uint64_t
     /** Video file format extensions */
     IVF   = MakeIdentifier('I', 'V', 'F'     ),
     MP4   = MakeIdentifier('M', 'P', '4'     ),
+    VVC   = MakeIdentifier('V', 'V', 'C'     ),
     H264  = MakeIdentifier('H', '2', '6', '4'),
     H265  = MakeIdentifier('H', '2', '6', '5'),
+    H266  = MakeIdentifier('H', '2', '6', '6'),
+    _266  = MakeIdentifier('2', '6', '6'     ),
     MKV   = MakeIdentifier('M', 'K', 'V'     ),
     TS    = MakeIdentifier('T', 'S'          ),
 	MOV   = MakeIdentifier('M', 'O', 'V'     ),
@@ -162,8 +165,11 @@ static inline bool IsVideo(uint64_t id)
 {
     return IsFormat<FileFormat::IVF>(id)  ||
 	       IsFormat<FileFormat::MP4>(id)  ||
+           IsFormat<FileFormat::VVC>(id)  ||
 	       IsFormat<FileFormat::H264>(id) ||
 	       IsFormat<FileFormat::H265>(id) ||
+           IsFormat<FileFormat::H266>(id) ||
+           IsFormat<FileFormat::_266>(id)  ||
 	       IsFormat<FileFormat::MKV>(id)  ||
 	       IsFormat<FileFormat::M2TS>(id) ||
 	       IsFormat<FileFormat::TS>(id)   ||
