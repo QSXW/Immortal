@@ -48,7 +48,7 @@ enum class Level : int
 
 
 /**
- * @brief Vulkan API 
+ * @brief Vulkan API
  */
 static inline VkResult EnumerateInstanceVersion(uint32_t *pApiVersion)
 {
@@ -68,51 +68,6 @@ static inline VkResult EnumerateInstanceExtensionProperties(char const *pLayerNa
 static inline VkResult CreateInstance(VkInstanceCreateInfo const *pCreateInfo, VkInstance *pInstance, VkAllocationCallbacks const *pAllocator = nullptr)
 {
     return vkCreateInstance(pCreateInfo, pAllocator, pInstance);
-}
-
-template <class T, class F>
-constexpr inline void IfNotNullThen(F func, T handle, const VkAllocationCallbacks* pAllocator = nullptr)
-{
-    if (handle != VK_NULL_HANDLE)
-    {
-        func(handle, pAllocator);
-    }
-}
-
-template <class T, class F>
-constexpr inline void IfNotNullThen(F func, VkDevice device, T handle, const VkAllocationCallbacks* pAllocator = nullptr)
-{
-    if (handle != VK_NULL_HANDLE)
-    {
-        func(device, handle, pAllocator);
-    }
-}
-
-template <class T, void (*F)(VkDevice, T, const VkAllocationCallbacks *)>
-constexpr inline void IfNotNullThen(VkDevice device, T handle)
-{
-    if (handle != VK_NULL_HANDLE)
-    {
-        F(device, handle, nullptr);
-    }
-}
-
-template <class T, void (*F)(T, const VkAllocationCallbacks *)>
-constexpr inline void IfNotNullThen(T handle)
-{
-    if (handle != VK_NULL_HANDLE)
-    {
-        F(handle, nullptr);
-    }
-}
-
-template <class T, void (*F)(T)>
-constexpr inline void IfNotNullThen(T handle)
-{
-    if (handle != VK_NULL_HANDLE)
-    {
-        F(handle);
-    }
 }
 
 #define VK_CASE(x) case x: return #x;

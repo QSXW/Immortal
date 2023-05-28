@@ -91,13 +91,15 @@ static std::vector<uint32_t> ImGuiFragSpirv = {
     0x00010038
 };
 
-#ifdef _WIN32
 static int CreateVkSurface(ImGuiViewport *viewport, ImU64 instance, const void *pAllocator, ImU64 *pSurface)
 {
+#ifdef _WIN32
     HWND hWnd = *(HWND *)viewport->PlatformUserData;
-    return Instance::CreateSurface((VkInstance)instance, hWnd, (VkSurfaceKHR*)pSurface, (const VkAllocationCallbacks*)pAllocator);
-}
+    return Instance::CreateSurface((VkInstance)instance, Window::Type::Win32, Anonymize(hWnd), (VkSurfaceKHR *)pSurface, (const VkAllocationCallbacks *)pAllocator);
+#else
+    assert(false && "Native surface creation is only supported on Windows!");
 #endif
+}
 
 static void (*ImGui_ImplImmortal_NewFrame)();
 static void (*ImGui_ImplImmortal_ShutDown)();
@@ -140,7 +142,10 @@ void GuiLayer::OnAttach()
     Application *app = Application::App();
     auto window = app->GetWindow();
 
-    if (window->GetType() == Window::Type::GLFW)
+    if (window->GetType() == Window::Type::GLFW    ||
+        window->GetType() == Window::Type::Wayland ||
+        window->GetType() == Window::Type::X11     ||
+        window->GetType() == Window::Type::XCB)
     {
         ImGui_ImplGlfw_InitForVulkan((GLFWwindow *)(app->GetWindow()->Primitive()), true);
         ImGui_ImplImmortal_NewFrame = ImGui_ImplGlfw_NewFrame;

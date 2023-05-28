@@ -3,13 +3,8 @@
 #include "Framework/Window.h"
 #include "Framework/Input.h"
 
-#ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#endif
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+struct GLFWwindow;
 
 namespace Immortal
 {
@@ -17,8 +12,6 @@ namespace Immortal
 class GLFWWindow : public Window
 {
 public:
-    DEFINE_WINDOW_TYPE(GLFW)
-
     GLFWWindow(const Description &description);
 
     virtual ~GLFWWindow();
@@ -42,10 +35,7 @@ public:
 
     float Time() const override;
 
-    virtual void ProcessEvents() override
-    {
-        glfwPollEvents();
-    }
+    virtual void ProcessEvents() override;
 
     virtual float DpiFactor() const override;
 
@@ -58,6 +48,8 @@ private:
 
     virtual void Shutdown();
 
+    void SelectPlatformType();
+
 private:
     GLFWwindow *window;
 
@@ -68,4 +60,5 @@ private:
 public:
     static uint8_t GLFWWindowCount;
 };
+
 }

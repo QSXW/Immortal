@@ -53,7 +53,7 @@ void RenderContext::__Prepare()
     shaderVisibleDescriptorAllocator->Init(device);
 
     auto adapterDesc = device->GetAdapterDesc();
-    Super::UpdateMeta(Utils::ws2s(adapterDesc.Description).c_str(), "12", std::to_string(adapterDesc.VendorId).c_str());
+    Super::UpdateMeta(ToString(adapterDesc.Description).c_str(), "12", std::to_string(adapterDesc.VendorId).c_str());
 
     __InitQueue();
 

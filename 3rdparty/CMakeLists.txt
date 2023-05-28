@@ -43,9 +43,6 @@ endif()
 # spdlog
 add_subdirectory(spdlog)
 
-# glfw
-add_subdirectory(GLFW)
-
 # glad
 add_library(glad INTERFACE)
 set(GLAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Glad)
@@ -72,6 +69,7 @@ elseif(WIN32)
 elseif(APPLE)
     target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_MACOS_MVK)
 elseif(UNIX)
+    find_package(PkgConfig REQUIRED)
     # Choose WSI based on VKB_WSI_SELECTION
     if (VKB_WSI_SELECTION STREQUAL XCB OR VKB_WSI_SELECTION STREQUAL XLIB OR VKB_WSI_SELECTION STREQUAL WAYLAND)
         find_package(PkgConfig REQUIRED)
@@ -96,9 +94,33 @@ elseif(UNIX)
         set(DIRECT_TO_DISPLAY TRUE PARENT_SCOPE)
         target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_DISPLAY_KHR)
     else()
-        message("Unknown WSI")
+        pkg_check_modules(XCB xcb)
+        if (XCB_FOUND)
+            target_compile_definitions(vulkan INTERFACE IMMORTAL_VK_USE_PLATFORM_XCB_KHR)
+            message(STATUS "Enable VK_USE_PLATFORM_XCB_KHR")
+        endif()
+        pkg_check_modules(X11 x11)
+        if (X11_FOUND)
+            target_compile_definitions(vulkan INTERFACE IMMORTAL_VK_USE_PLATFORM_XLIB_KHR)
+            message(STATUS "Enable VK_USE_PLATFORM_XLIB_KHR")
+        endif()
+        pkg_check_modules(WAYLAND wayland-client)
+        if (WAYLAND_FOUND)
+            target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
+            message(STATUS "Enable VK_USE_PLATFORM_WAYLAND_KHR")
+        endif()
+        if (NOT (XCB_FOUND OR X11_FOUND OR WAYLAND_FOUND))
+            message("Unknown WSI")
+        endif()
     endif()
 endif()
+
+# glfw
+if (WAYLAND_FOUND)
+    message(STATUS "Enable GLFW_BUILD_WAYLAND")
+    set(GLFW_BUILD_WAYLAND ON)
+endif()
+add_subdirectory(GLFW)
 
 # imgui
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")

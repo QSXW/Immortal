@@ -6,6 +6,9 @@
 #include "Render/Render.h"
 #include "Render/Frame.h"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 namespace Immortal
 {
 
@@ -13,6 +16,10 @@ uint8_t GLFWWindow::GLFWWindowCount = 0;
 
 static void GLFWErrorCallback(int error, const char *description)
 {
+    if (error == GLFW_FEATURE_UNAVAILABLE && glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
+    {
+        return;
+    }
     LOG::ERR("GLFW Error ({0}): {1}", error, description);
 }
 
@@ -63,6 +70,29 @@ void GLFWWindow::SetIcon(const std::string &filepath)
     glfwSetWindowIcon(window, 1, &image);
 }
 
+void GLFWWindow::SelectPlatformType()
+{
+    int platform = glfwGetPlatform();
+    switch (platform)
+    {
+        case GLFW_PLATFORM_WAYLAND:
+            type = Type::Wayland;
+            break;
+
+        case GLFW_PLATFORM_X11:
+            type = Type::XCB;
+            break;
+
+        case GLFW_PLATFORM_COCOA:
+            type = Type::Cocoa;
+            break;
+
+        default:
+            type = Type::GLFW;
+            break;
+    }
+}
+
 void GLFWWindow::Setup(const Description &description)
 {
     desc = description;
@@ -72,10 +102,22 @@ void GLFWWindow::Setup(const Description &description)
     if (GLFWWindowCount == 0)
     {
         glfwSetErrorCallback(GLFWErrorCallback);
+#ifdef __linux__
+        const char *session =getenv("XDG_SESSION_TYPE");
+        if (!strcmp(session, "wayland"))
+        {
+            glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
+        }
+        else if(!strcmp(session, "x11"))
+        {
+            glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, true);
+        }
+#endif
         auto error = glfwInit();
         ThrowIf(!error, "Failed to initialize GLFW Window!");
     }
 
+    SelectPlatformType();
     if (Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -199,6 +241,11 @@ Anonymous GLFWWindow::Primitive() const
 float GLFWWindow::Time() const
 {
     return ncast<float>(glfwGetTime());
+}
+
+void GLFWWindow::ProcessEvents()
+{
+    glfwPollEvents();
 }
 
 }

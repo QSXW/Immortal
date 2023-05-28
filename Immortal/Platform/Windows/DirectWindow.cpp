@@ -256,12 +256,12 @@ void DirectWindow::SetIcon(const std::string &filepath)
 
 void DirectWindow::Setup(const Description &description)
 {
+    type = Type::Win32;
     desc = description;
 
     EventDispatcher = desc.EventCallback;
 
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    std::wstring title = Utils::s2ws(desc.Title);
+    std::wstring title = ToWString(desc.Title);
 
     wc = { 
         sizeof(WNDCLASSEX),

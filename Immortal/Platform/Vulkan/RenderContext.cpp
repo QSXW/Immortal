@@ -22,21 +22,13 @@ namespace Vulkan
 VkResult RenderContext::Status = VK_NOT_READY;
 
 std::unordered_map<const char *, bool> RenderContext::InstanceExtensions{
-#if defined( _WIN32 )
-    { "VK_KHR_win32_surface", false },
-#elif defined(__linux__)
-    { "VK_KHR_xcb_surface",   false },
-#endif
-#if defined(__APPLE__)
-    { "VK_EXT_metal_surface",           false },
-    { "VK_KHR_portability_enumeration", false },
-#endif
+
 };
 
 std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
     { VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false },
     { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,       false },
-#ifdef __APPLE__								      
+#ifdef __APPLE__
     { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,       false },
 #endif
 	{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true },
@@ -50,7 +42,7 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 	{ VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true },
 	{ VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true },
 	{ VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true },
-	{ VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true },                       
+	{ VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true },
 };
 
 static std::vector<const char *> ValidationLayers = {
@@ -63,13 +55,43 @@ static std::vector<const char *> ValidationLayers = {
 RenderContext::RenderContext(const RenderContext::Description &desc) :
     window{ desc.window }
 {
+	switch (window->GetType())
+	{
+	case Window::Type::Win32:
+		InstanceExtensions.insert({ "VK_KHR_win32_surface", false });
+		break;
+
+	case Window::Type::Wayland:
+		InstanceExtensions.insert({ "VK_KHR_wayland_surface", false });
+		break;
+
+	case Window::Type::XCB:
+		InstanceExtensions.insert({ "VK_KHR_xcb_surface", false });
+		break;
+
+	case Window::Type::X11:
+		InstanceExtensions.insert({ "VK_KHR_xlib_surface", false });
+		break;
+
+#if defined(__APPLE__)
+	case Window::Type::Cocoa:
+		InstanceExtensions.insert({ "VK_EXT_metal_surface", false });
+		InstanceExtensions.insert({ "VK_KHR_portability_enumeration", false });
+		break;
+#endif
+
+	default:
+		break;
+	}
+
     instance = Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
     if (!instance)
     {
         LOG::ERR("Vulkan Not Supported!");
         return;
     }
-    CreateSurface();
+
+    Check(instance.CreateSurface(window, &surface));
 
     if (instance.IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
     {
@@ -86,8 +108,9 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
     if (surface != VK_NULL_HANDLE)
     {
+		surfaceExtent = { desc.width, desc.height };
 		VkFormat depthFormat = physicalDevice->GetSuitableDepthFormat();
-		swapchainPool[0] = std::move(Swapchain{ swapchainPool[0], device });
+		swapchainPool[0] = std::move(Swapchain{ swapchainPool[0], device, surfaceExtent, desc.presentMode });
 		renderPass = new RenderPass{ device, swapchainPool[0].Get<VkFormat>(), depthFormat };
         Prepare();
     }
@@ -116,12 +139,7 @@ RenderContext::~RenderContext()
 	present.renderTargets.clear();
 	renderPass.Reset();
     device.Reset();
-    instance.DestroySurfaceKHR(surface, nullptr);
-}
-
-void RenderContext::CreateSurface()
-{
-    Check(instance.CreateSurface(window, &surface));
+    instance.DestroySurface(&surface);
 }
 
 void RenderContext::Prepare(size_t threadCount)
@@ -133,29 +151,36 @@ void RenderContext::Prepare(size_t threadCount)
 		r = new RenderTarget;
 	}
 
-	UpdateSurface();
+	UpdateSurface(surfaceExtent);
 
     SetupDescriptorSetLayout();
     __InitSyncObjects();
     Status = VK_SUCCESS;
 }
 
-Swapchain *RenderContext::UpdateSurface()
+Swapchain *RenderContext::UpdateSurface(VkExtent2D extent)
 {
     VkSurfaceCapabilitiesKHR properties;
     Check(device->GetSurfaceCapabilities(&properties));
 
-    if (properties.currentExtent.width == 0xFFFFFFFF || (properties.currentExtent.width <= 0 || properties.currentExtent.height <= 0))
+    if (Swapchain::IsValidExtent(properties.currentExtent))
     {
-        surfaceExtent = properties.currentExtent;
-		swapchain = nullptr;
+		surfaceExtent = properties.currentExtent;
     }
-    if (properties.currentExtent.width != surfaceExtent.width || properties.currentExtent.height != surfaceExtent.height)
-    {
-        surfaceExtent = properties.currentExtent;
+	else
+	{
+		surfaceExtent = extent;
+	}
+
+	if (Swapchain::IsValidExtent(surfaceExtent))
+	{
         UpdateSwapchain(surfaceExtent, regisry.preTransform);
 		swapchain = &swapchainPool[0];
-    }
+	}
+	else
+	{
+		swapchain = nullptr;
+	}
 
     return swapchain;
 }
@@ -164,9 +189,13 @@ void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTra
 {
 	auto swapchain = &swapchainPool[0];
 
-	swapchain->Invalidate(extent);
-    regisry.preTransform = transform;
+	VkExtent2D swapchainExtent = swapchain->Get<VkExtent2D &>();
+	if (extent.width != swapchainExtent.width || extent.height != swapchainExtent.height)
+    {
+		swapchain->Invalidate(extent);
+    }
 
+    regisry.preTransform = transform;
 	auto &swapchainImages = swapchain->Get<Swapchain::Images &>();
     for (size_t i = 0; i < swapchainImages.size(); i++)
     {
@@ -217,7 +246,7 @@ void RenderContext::SetupDescriptorSetLayout()
 
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	__Resize();
+	UpdateSurface(VkExtent2D{ width, height });
 }
 
 void RenderContext::PrepareFrame()
@@ -229,7 +258,7 @@ void RenderContext::PrepareFrame()
 		Check(device->GetSurfaceCapabilities(&properties));
 		if (properties.currentExtent.width > 0 && properties.currentExtent.height > 0)
 		{
-			__Resize();
+			UpdateSurface(properties.currentExtent);
 		}
 	}
 
@@ -269,11 +298,6 @@ void RenderContext::PrepareFrame()
 #endif
 }
 
-void RenderContext::__Resize()
-{
-	UpdateSurface();
-}
-
 void RenderContext::__InitSyncObjects()
 {
 	semaphorePool = new SemaphorePool(device);
@@ -295,7 +319,7 @@ void RenderContext::__SubmitFrame()
 	VkResult ret = queue->Present(submitter);
 	if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
 	{
-		__Resize();
+		UpdateSurface(surfaceExtent);
 		return;
 	}
 	Check(ret);

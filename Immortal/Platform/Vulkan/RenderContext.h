@@ -12,6 +12,7 @@
 #include "Pipeline.h"
 #include "SemaphorePool.h"
 #include "AccelerationStructure.h"
+#include "Surface.h"
 
 namespace Immortal
 {
@@ -29,7 +30,7 @@ concept ExposedType = (
     std::is_same_v<T, Queue>          || std::is_same_v<T, Queue &>          ||
     std::is_same_v<T, RenderPass>     || std::is_same_v<T, RenderPass &>     ||
     std::is_same_v<T, RenderTarget>   || std::is_same_v<T, RenderTarget &>   ||
-    std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain &> 
+    std::is_same_v<T, Swapchain>      || std::is_same_v<T, Swapchain &>
     );
 
 struct RenderSemaphore
@@ -113,13 +114,11 @@ public:
 	virtual void End() override;
 
 public:
-    void CreateSurface();
-
-    Swapchain *UpdateSurface();
+    Swapchain *UpdateSurface(VkExtent2D extent);
 
     void Prepare(size_t threadCount = 1);
 
-    void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform);
+    void UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
     void SetupDescriptorSetLayout();
 
@@ -208,10 +207,8 @@ public:
 
 protected:
 	void __InitSyncObjects();
-    
+
     void __SubmitFrame();
-    
-    void __Resize();
 
     void __PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
 
@@ -235,7 +232,7 @@ private:
 
     uint32_t swapchainIndex = 0;
 
-    VkSurfaceKHR surface{ VK_NULL_HANDLE };
+    Surface surface;
 
     VkExtent2D surfaceExtent{ 0, 0 };
 
@@ -265,4 +262,3 @@ private:
 
 }
 }
- 

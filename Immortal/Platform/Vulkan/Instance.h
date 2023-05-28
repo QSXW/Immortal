@@ -12,6 +12,7 @@ namespace Vulkan
 {
 
 class PhysicalDevice;
+class Surface;
 class Instance
 {
 public:
@@ -129,12 +130,21 @@ public:
     void EnumeratePhysicalDevice();
 
 public:
-    VkResult CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
+    VkResult CreateSurface(Window *window, Surface *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
 
-    static VkResult CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
+    void DestroySurface(Surface *pSurface);
+
+    bool IsEnabled(Extension extension) const;
 
 public:
-    bool IsEnabled(Extension extension) const;
+    static VkResult CreateSurface(VkInstance instance, Window::Type type, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);
+
+public:
+    template<class T>
+    T GetProcAddr(char const *pName)
+    {
+        return (T)vkGetInstanceProcAddr(handle, pName);
+    }
 
 protected:
     std::vector<Extension> enabledExtensions;

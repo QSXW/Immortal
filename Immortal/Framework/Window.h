@@ -25,8 +25,12 @@ public:
     enum Type : int
     {
         None = 0,
-        GLFW,
+        Wayland,
+        X11,
+        XCB,
+        Cocoa,
         Win32,
+        GLFW,
         Headless = None
     };
 
@@ -116,10 +120,13 @@ public:
 
     virtual void SetIcon(const std::string &filepath) {}
 
-    virtual Type GetType() const
+    Type GetType() const
     {
-        return Type::None;
+        return type;
     }
+
+protected:
+    Type type = Type::None;
 
 public:
     static Window *CreateInstance(const Description &description = Description{});

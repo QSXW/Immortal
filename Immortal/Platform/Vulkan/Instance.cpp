@@ -1,11 +1,9 @@
 #include "Instance.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include "Device.h"
 #include "PhysicalDevice.h"
 #include "RenderContext.h"
+#include "Surface.h"
 #include "Framework/Window.h"
 
 namespace Immortal
@@ -281,9 +279,9 @@ Instance::~Instance()
         vkDestroyDebugReportCallbackEXT(handle, debugReportCallback, nullptr);
     }
 #endif
-    if (handle)
+    if (handle != VK_NULL_HANDLE)
     {
-        IfNotNullThen<VkInstance>(vkDestroyInstance, handle, nullptr);
+        vkDestroyInstance(handle, nullptr);
     }
 }
 
@@ -379,39 +377,19 @@ bool Instance::IsEnabled(Extension extension) const
         }) != enabledExtensions.end();
 }
 
-VkResult Instance::CreateSurface(VkInstance instance, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)
+VkResult Instance::CreateSurface(Window *window, Surface *pSurface, const VkAllocationCallbacks *pAllocator)
 {
-#ifdef _WIN32
-        VkWin32SurfaceCreateInfoKHR createInfo{};
-        createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hinstance = GetModuleHandle(NULL);
-        createInfo.hwnd      = (HWND)window;
-        return vkCreateWin32SurfaceKHR(instance, &createInfo, pAllocator, pSurface);
-#else
-        LOG::WARN("Native surface creation is not supported on Linux and Mac yet!");
-        return VK_ERROR_INITIALIZATION_FAILED;
-#endif
+    return pSurface->Create(this, window, pAllocator);
 }
 
-VkResult Instance::CreateSurface(Window *window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)
+void Instance::DestroySurface(Surface *pSurface)
 {
-    if (!window || window->GetType() == Window::Type::Headless)
-    {
-        LOG::INFO("Failed to create surface without valid window. Enable the headless Vulkan rendering.");
-        *pSurface = VK_NULL_HANDLE;
-        return VK_SUCCESS;
-    }
+    pSurface->Release(this);
+}
 
-    switch (window->GetType())
-    {
-    case  Window::Type::GLFW:
-        return glfwCreateWindowSurface(handle, (GLFWwindow *)(window->Primitive()), pAllocator, pSurface);
-
-    case Window::Type::Win32:
-    default:
-        return CreateSurface(*this, window->Primitive(), pSurface);
-    }
-
+VkResult Instance::CreateSurface(VkInstance instance, Window::Type type, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator)
+{
+    return Surface::CreateObject(instance, type, window, pSurface, pAllocator);
 }
 
 }

@@ -11,27 +11,29 @@ static inline constexpr bool SwapchainOutput = false;
 
 inline uint32_t SelectImageCount(uint32_t request, uint32_t min, uint32_t max)
 {
-    Utils::Clamp(request, min, max);
-    return request;
+    return std::clamp(request, min, max);
 }
 
 inline uint32_t SelectImageArrayLayers(uint32_t request, uint32_t max)
 {
-    Utils::Clamp(request, 1u, max);
-    return request;
+    return std::clamp(request, 1u, max);
 }
 
 inline VkExtent2D SelectExtent(VkExtent2D request, const VkExtent2D &min, const VkExtent2D &max, const VkExtent2D &current)
 {
     if (request.width < 1 || request.height < 1)
     {
-        LOG::WARN<false>("(Swapchain) Image extent ({0}, {1}) not supported. Selecting ({2}, {3}).",
-            request.width, request.height, current.width, current.height);
-        return current;
+        LOG::WARN<false>("(Swapchain) Image extent ({0}, {1}) not supported",
+            request.width, request.height);
+        if (Swapchain::IsValidExtent(current))
+        {
+            request = current;
+        }
     }
 
-    Utils::Clamp<uint32_t>(request.width, min.width, max.width);
-    Utils::Clamp<uint32_t>(request.height, min.height, max.height);
+    request.width  = std::clamp(request.width, min.width, max.width);
+    request.height = std::clamp(request.height, min.height, max.height);
+
     return request;
 }
 
@@ -272,7 +274,7 @@ void Swapchain::Invalidate(VkExtent2D extent)
     properties.surface      = device->GetSurface();
     properties.clipped      = VK_TRUE;
 
-    device->Create(&properties, &handle);
+    Check(device->Create(&properties, &handle));
 
     uint32_t count = 0;
     Check(device->GetSwapchainImagesKHR(handle, &count, nullptr));

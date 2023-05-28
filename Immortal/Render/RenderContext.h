@@ -12,7 +12,7 @@ namespace Immortal
 {
 
 class GuiLayer;
-enum SwapchainPresentMode
+enum SwapchainPresentMode : uint32_t
 {
     DoubleBuffer = 2,
     TripleBuffer = 3

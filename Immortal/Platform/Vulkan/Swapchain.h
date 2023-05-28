@@ -151,6 +151,12 @@ public:
         return vkAcquireNextImageKHR(*device, handle, std::numeric_limits<uint32_t>::max(), semaphore, fence, index);
     }
 
+public:
+    static bool IsValidExtent(const VkExtent2D &extent)
+    {
+        return extent.width > 0 && extent.height > 0 && extent.width < 0xFFFFFFFF && extent.height < 0xFFFFFFFF;
+    }
+
 private:
     Device *device{ nullptr };
 

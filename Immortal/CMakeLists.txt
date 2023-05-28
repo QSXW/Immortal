@@ -257,6 +257,8 @@ set(VULKAN_FILES
    Shader.cpp
    Shader.h
    Submitter.h
+   Surface.cpp
+   Surface.h
    Texture.cpp
    Texture.h
    VideoSession.cpp
