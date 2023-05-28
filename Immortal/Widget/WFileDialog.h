@@ -40,7 +40,7 @@ public:
             resources[(int)i].Resource(icon, { i * factor, 0 }, { (i + 1) * factor, splitPos });
         }
 
-        Source("C:/");
+        Source(std::filesystem::current_path());
         Connect([=, this] {
             if (!path)
             {
@@ -102,6 +102,11 @@ public:
         while ((nextPos = filepath.find('/', pos)) != std::string::npos ||
             (nextPos = filepath.find('\\', pos)) != std::string::npos)
         {
+            if (nextPos == 0)
+            {
+                pos = nextPos + 1;
+                continue;
+            }
             filepath[nextPos] = '\0';
             if (ImGui::Button(&filepath[pos], { 0, 24.0f }))
             {
