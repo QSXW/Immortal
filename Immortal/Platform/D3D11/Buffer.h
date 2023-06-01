@@ -26,12 +26,12 @@ public:
     Buffer(Device *device, const size_t size, const void *data, Type type);
 
     Buffer(Device *device, const size_t size, Type type);
-    
+
     Buffer(Device *device, const size_t size, uint32_t binding);
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
+    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
 
     virtual Buffer *Bind(const BindInfo &bindInfo) const override;
 

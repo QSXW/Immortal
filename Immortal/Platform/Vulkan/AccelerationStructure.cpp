@@ -156,7 +156,7 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
                             .deviceAddress = pVertexBuffer->GetDeviceAddress(),
                         },
                         .vertexStride = desc.Stride,
-                        .maxVertex    = pVertexBuffer->Size() / 3,
+                        .maxVertex    = U32(pVertexBuffer->Size() / 3),
                         .indexType    = VK_INDEX_TYPE_UINT16,
                         .indexData = {
                             .deviceAddress = pIndexBuffer->GetDeviceAddress(),

@@ -65,7 +65,7 @@ public:
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
+    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
 
     virtual Buffer *Bind(const BindInfo &bindInfo) const override;
 
@@ -89,7 +89,7 @@ public:
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC Desc() const
     {
-        return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, size };
+        return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, U32(size) };
     }
 
     CPUDescriptor GetDescriptor() const

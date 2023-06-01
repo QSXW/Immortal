@@ -61,7 +61,7 @@ Buffer::Buffer(Device *device, const size_t size, const void *data, Type type, U
 }
 
 Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
-    Super{ type, U32(size) },
+    Super{ type, size },
     device{ device },
     persistent{ usage == Usage::Persistent }
 {
@@ -71,7 +71,7 @@ Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
 }
 
 Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
-    Super{ Type::Uniform, U32(size) },
+    Super{ Type::Uniform, size },
     device{ device },
     persistent{ true }
 {
@@ -163,7 +163,7 @@ void Buffer::Flush()
     vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
 }
 
-void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
+void Buffer::Update(uint64_t size, const void *data, uint64_t offset)
 {
     if (persistent)
     {

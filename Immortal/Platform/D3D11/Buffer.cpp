@@ -95,7 +95,7 @@ void Buffer::__Create(const void *data)
     Check(device->CreateBuffer(&desc, data ? &subresource : nullptr, &handle));
 }
 
-void Buffer::Update(uint32_t updateSize, const void *data, uint32_t offset)
+void Buffer::Update(uint64_t updateSize, const void *data, uint64_t offset)
 {
     THROWIF(updateSize > size, SError::OutOfBound);
 

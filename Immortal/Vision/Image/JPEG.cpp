@@ -1,7 +1,7 @@
 #include "JPEG.h"
 #include "Vision/LookupTable/LookupTable.h"
 
-#ifdef _MSC_VER
+#ifdef SL_HAVE_INTRISIC
 #include "slintrinsic.h"
 #endif
 
@@ -10,7 +10,7 @@ namespace Immortal
 namespace Vision
 {
 
-#ifdef _MSC_VER
+#ifdef SL_HAVE_INTRISIC
 static inline void Dequantize(int16_t *block, int16_t *table)
 {
     INT16X32 b1, b2, t1, t2;
@@ -37,7 +37,7 @@ static inline void Levelup(int16_t *block)
 
     b1 = b1 + level;
     b2 = b2 + level;
-    
+
     UINT8X32(b1.cvt2uint8()).storeu((uint8_t *)block);
     UINT8X32(b2.cvt2uint8()).storeu((uint8_t *)(block + 16));
 }
@@ -137,7 +137,7 @@ inline constexpr void InverseDCT8x8(T *block)
 #define COPY_64BITS(n) *(uint64_t *)(dst + n * stride) = *(((uint64_t *)block) + n)
 static void Backward(uint8_t *dst, size_t stride, int16_t *block, int16_t *table)
 {
-#ifdef _MSC_VER
+#ifdef SL_HAVE_INTRISIC
     Dequantize(block, table);
     InverseDCT8x8(block);
     Levelup(block);

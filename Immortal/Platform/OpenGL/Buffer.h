@@ -17,15 +17,15 @@ public:
 	GLCPP_OPERATOR_HANDLE()
 
 public:
-    Buffer(uint32_t size, Type type);
+    Buffer(uint64_t size, Type type);
 
-    Buffer(uint32_t size, const void *data, Type type);
+    Buffer(uint64_t size, const void *data, Type type);
 
-    Buffer(uint32_t size, uint32_t binding);
+    Buffer(uint64_t size, uint32_t binding);
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
+    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
 
     void Bind() const
     {
@@ -65,14 +65,14 @@ public:
     using Super = Buffer;
 
 public:
-    UniformBuffer(uint32_t size, uint32_t binding);
+    UniformBuffer(uint64_t size, uint32_t binding);
 
     GLuint Binding() const
     {
         return binding;
     }
 
-    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0) override;
+    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
 
 private:
     uint32_t binding{ 0 };

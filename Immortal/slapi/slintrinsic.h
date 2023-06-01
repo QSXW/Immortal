@@ -4,6 +4,15 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
+#pragma once
+
+#ifndef SLINTRINSIC_H_
+#define SLINTRINSIC_H_
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#define SL_HAVE_INTRISIC
+#endif
+
 #include <cstdint>
 #include <concepts>
 #include <immintrin.h>
@@ -2832,3 +2841,5 @@ static inline T clip(const T &a, const T &b, const T &c) noexcept
 {
     return min(max(a, b), c);
 }
+
+#endif

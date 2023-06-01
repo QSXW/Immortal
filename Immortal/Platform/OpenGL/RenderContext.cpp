@@ -99,17 +99,17 @@ SuperTexture *RenderContext::CreateTexture(uint32_t width, uint32_t height, cons
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
 {
-	return new UniformBuffer{U32(size), binding};
+	return new UniformBuffer{ size, binding};
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, const void *data, Buffer::Type type)
 {
-	return new Buffer{U32(size), data, type};
+	return new Buffer{ size, data, type};
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, Buffer::Type type)
 {
-	return new Buffer{U32(size), type};
+	return new Buffer{ size, type};
 }
 
 SuperGraphicsPipeline *RenderContext::CreateGraphicsPipeline(Ref<SuperShader> shader)

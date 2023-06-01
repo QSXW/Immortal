@@ -27,7 +27,7 @@ public:
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint32_t size, const void *src, uint32_t offset = 0) override;
+    virtual void Update(uint64_t size, const void *src, uint64_t offset = 0) override;
 
     virtual Anonymous Descriptor() const override;
 

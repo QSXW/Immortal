@@ -561,9 +561,9 @@ set(PROJECT_FILES
     ${WIDGET_FILES}
     ${NET_FILES}
     ${VISION_FILES}
-    $<$<C_COMPILER_ID:MSVC>:${D3D_FILES}>
-    $<$<C_COMPILER_ID:MSVC>:${D3D11_FILES}>
-    $<$<C_COMPILER_ID:MSVC>:${D3D12_FILES}>
+    $<$<PLATFORM_ID:Windows>:${D3D_FILES}>
+    $<$<PLATFORM_ID:Windows>:${D3D11_FILES}>
+    $<$<PLATFORM_ID:Windows>:${D3D12_FILES}>
 )
 
 source_group("\\" FILES ${PROJECT_FILES})

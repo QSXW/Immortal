@@ -243,10 +243,10 @@ public:
 
     }
 
-    Buffer(Type type, uint32_t size) :
+    Buffer(Type type, uint64_t size) :
         type{ type },
         size{ size },
-        count{ size >> 2 }
+        count{ U32(size >> 2) }
     {
 
     }
@@ -258,7 +258,7 @@ public:
         return type;
     }
 
-    virtual void Update(uint32_t size, const void *data, uint32_t offset = 0)
+    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0)
     {
 
     }
@@ -274,12 +274,12 @@ public:
     }
 
     template <class T>
-    void Update(const std::vector<T> &data, uint32_t offset = 0)
+    void Update(const std::vector<T> &data, uint64_t offset = 0)
     {
         Update(U32(data.size() * sizeof(T)), data.data(), offset);
     }
 
-    uint32_t Size() const
+    uint64_t Size() const
     {
         return size;
     }
@@ -292,7 +292,7 @@ public:
 protected:
     Type type;
 
-    uint32_t size{ 0 };
+    uint64_t size{ 0 };
 
     uint32_t count{ 0 };
 };

@@ -27,8 +27,8 @@ AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffe
                 .Transform3x4 = pTranformBuffer ? *pTranformBuffer : D3D12_GPU_VIRTUAL_ADDRESS(0),
                 .IndexFormat  = DXGI_FORMAT_R16_UINT,
                 .VertexFormat = desc[0].format,
-                .IndexCount   = pIndexBuffer->Size() >> 1,
-                .VertexCount  = pVertexBuffer->Size() / desc.Stride,
+                .IndexCount   = U32(pIndexBuffer->Size() >> 1),
+                .VertexCount  = U32(pVertexBuffer->Size() / desc.Stride),
                 .IndexBuffer  = *pIndexBuffer,
                 .VertexBuffer = {
                     .StartAddress  = *pVertexBuffer,

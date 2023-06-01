@@ -7,7 +7,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-Buffer::Buffer(uint32_t size, Type type) :
+Buffer::Buffer(uint64_t size, Type type) :
     Super{ type, size }
 {
     SelectBindPoint(type);
@@ -18,7 +18,7 @@ Buffer::Buffer(uint32_t size, Type type) :
     glBindBuffer(bindPoint, 0);
 }
 
-Buffer::Buffer(uint32_t size, const void *data, Type type) :
+Buffer::Buffer(uint64_t size, const void *data, Type type) :
     Super{ type, size }
 {
     SelectBindPoint(type);
@@ -29,7 +29,7 @@ Buffer::Buffer(uint32_t size, const void *data, Type type) :
     glBindBuffer(bindPoint, 0);
 }
 
-Buffer::Buffer(uint32_t size, uint32_t binding) :
+Buffer::Buffer(uint64_t size, uint32_t binding) :
     Super{ Type::Uniform, size }
 {
     SelectBindPoint(type);
@@ -46,20 +46,20 @@ Buffer::~Buffer()
     glDeleteBuffers(1, &handle);
 }
 
-void Buffer::Update(uint32_t size, const void *data, uint32_t offset)
+void Buffer::Update(uint64_t size, const void *data, uint64_t offset)
 {
     glBindBuffer(bindPoint, handle);
     glBufferSubData(bindPoint, offset, size, data);
 }
 
-UniformBuffer::UniformBuffer(uint32_t size, uint32_t binding) :
+UniformBuffer::UniformBuffer(uint64_t size, uint32_t binding) :
     Super{ size, binding },
     binding{ U32(binding) }
 {
 
 }
 
-void UniformBuffer::Update(uint32_t size, const void *data, uint32_t offset)
+void UniformBuffer::Update(uint64_t size, const void *data, uint64_t offset)
 {
     glBindBuffer(bindPoint, handle);
     glBufferSubData(bindPoint, offset, size, data);

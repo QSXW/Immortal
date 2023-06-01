@@ -4,7 +4,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/GlslangToSpv.h>
-#include <Public/ResourceLimits.h>
+#include <glslang/Public/ResourceLimits.h>
 #include <glslang/Include/ShHandle.h>
 #include <glslang/OSDependent/osinclude.h>
 #include <spirv_glsl.hpp>
