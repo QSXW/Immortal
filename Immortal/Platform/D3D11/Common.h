@@ -37,7 +37,7 @@ static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **p
 
 		if (SUCCEEDED(D3D11CreateDevice(
 			pAdapter,
-			D3D_DRIVER_TYPE_HARDWARE,
+		    D3D_DRIVER_TYPE_UNKNOWN,
 			0,
 			0,
 			FeatureLevels,
