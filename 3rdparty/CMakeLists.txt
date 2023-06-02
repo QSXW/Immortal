@@ -52,7 +52,11 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 # spdlog
+if (WIN32)
+    set(SPDLOG_USE_STD_FORMAT ON)
+endif()
 add_subdirectory(spdlog)
+set_property(TARGET spdlog PROPERTY FOLDER "3rdparty")
 
 # glad
 add_library(glad INTERFACE)
@@ -339,7 +343,7 @@ add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
-    vulkan imgui spdlog::spdlog_header_only
+    vulkan imgui spdlog_header_only
     SPIRV spirv-cross-glsl libraw::libraw
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>

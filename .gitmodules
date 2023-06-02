@@ -20,3 +20,6 @@
 [submodule "3rdparty/GLFW"]
 	path = 3rdparty/GLFW
 	url = https://github.com/QSXW/glfw.git
+[submodule "3rdparty/spdlog"]
+	path = 3rdparty/spdlog
+	url = https://github.com/gabime/spdlog.git

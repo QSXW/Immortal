@@ -27,7 +27,6 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
     cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
     {
-        LOG::ERR("Failed to load image -> {{0}}", buf.data());
         return CodecError::CorruptedBitstream;
     }
     if (src.data)

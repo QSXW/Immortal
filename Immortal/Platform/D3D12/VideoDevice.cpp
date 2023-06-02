@@ -70,24 +70,6 @@ HRESULT VideoDevice::CheckDecoderSupport(const D3D12_VIDEO_DECODE_CONFIGURATION 
 
 	if (!(feature.SupportFlags & D3D12_VIDEO_DECODE_SUPPORT_FLAG_SUPPORTED))
 	{
-		char uuid[64] = {};
-		Guid2String(uuid, configuration.DecodeProfile);
-
-		LOG::INFO("D3D12 video device doesn't support:\n",
-		          ".Configuration = (.guid = {}, .BitstreamEncryption = {}, .InterlaceType = {})\n"
-		          ".Width         = {}\n"
-		          ".Height        = {}\n"
-		          ".DecodeFormat  = {}\n"
-		          ".FrameRate     = {}/{}\n"
-		          ".BitRate       = {}",
-		          uuid, configuration.BitstreamEncryption, configuration.InterlaceType,
-		          width,
-		          height,
-		          TypeString(format),
-		          feature.FrameRate.Numerator, feature.FrameRate.Denominator,
-		          feature.BitRate
-		);
-
 		return S_FALSE;
 	}
 	
