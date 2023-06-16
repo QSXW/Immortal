@@ -133,7 +133,6 @@ Instance::Instance(const char                                   *applicationName
     InternalExtension extensionsFlags = InternalExtension::None;
     static std::vector<const char*> utilsExtensions = {
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-        VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME,
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
     };
 

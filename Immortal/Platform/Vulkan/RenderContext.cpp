@@ -49,6 +49,7 @@ static std::vector<const char *> ValidationLayers = {
 #ifdef _DEBUG
     "VK_LAYER_KHRONOS_validation",
     "VK_LAYER_KHRONOS_synchronization2",
+    "VK_LAYER_LIGHTWSI_Light",
 #endif
 };
 
@@ -73,6 +74,10 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 		InstanceExtensions.insert({ "VK_KHR_xlib_surface", false });
 		break;
 
+	case Window::Type::Headless:
+		InstanceExtensions.insert({"VK_EXT_headless_surface", false});
+		break;
+
 #if defined(__APPLE__)
 	case Window::Type::Cocoa:
 		InstanceExtensions.insert({ "VK_EXT_metal_surface", false });
@@ -92,11 +97,6 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
     }
 
     Check(instance.CreateSurface(window, &surface));
-
-    if (instance.IsEnabled(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME))
-    {
-        AddDeviceExtension(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
-    }
 
     auto physicalDevice = instance.GetSuitablePhysicalDevice(desc.deviceId);
     physicalDevice->Activate(PhysicalDevice::Feature::SamplerAnisotropy);
@@ -144,7 +144,6 @@ RenderContext::~RenderContext()
 
 void RenderContext::Prepare(size_t threadCount)
 {
-    device->Wait();
 	present.renderTargets.resize(3);
 	for (auto &r : present.renderTargets)
 	{

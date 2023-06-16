@@ -23,3 +23,6 @@
 [submodule "3rdparty/spdlog"]
 	path = 3rdparty/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "3rdparty/LightWSI"]
+	path = 3rdparty/LightWSI
+	url = https://github.com/QSXW/LightWSI.git

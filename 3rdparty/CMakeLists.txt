@@ -72,6 +72,7 @@ add_library(vulkan INTERFACE)
 set(VULKAN_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan/include)
 target_sources(vulkan INTERFACE ${VULKAN_INCLUDE_DIR}/vulkan/vulkan.h)
 target_include_directories(vulkan INTERFACE ${VULKAN_INCLUDE_DIR})
+add_library(Vulkan-Headers ALIAS vulkan)
 
 target_compile_definitions(vulkan INTERFACE
     "VK_NO_PROTOTYPES"
@@ -339,11 +340,14 @@ add_subdirectory(LibRaw-cmake)
 set_property(TARGET raw   PROPERTY FOLDER "3rdparty")
 set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 
+# LightWSL
+add_subdirectory(LightWSI)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
-    vulkan imgui spdlog_header_only
+    Vulkan-Headers imgui spdlog_header_only
     SPIRV spirv-cross-glsl libraw::libraw
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>
