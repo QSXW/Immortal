@@ -17,7 +17,7 @@ public:
     using Super = SuperTexture;
 
 public:
-	  Texture(Device *device, const std::string &filepath, const Description &description);
+    Texture(Device *device, const std::string &filepath, const Description &description);
 
     Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
 
@@ -25,6 +25,9 @@ public:
 
     ~Texture();
 
+    void Blit();
+
+public:
     virtual operator uint64_t() const override;
 
     virtual bool operator==(const Super &other) const override;
@@ -33,16 +36,15 @@ public:
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
-    virtual void Blit() override;
-
+public:
     const Descriptor<SRV> GetDescriptor() const
     {
-		return descriptor;
+        return descriptor;
     }
 
     const Descriptor<UAV> GetUAV() const
     {
-		return uav;
+        return uav;
     }
 
 protected:
@@ -51,7 +53,7 @@ protected:
     void CreateView(UINT flags);
 
 protected:
-	  Device *device;
+      Device *device;
 
     Descriptor<SRV> descriptor;
 

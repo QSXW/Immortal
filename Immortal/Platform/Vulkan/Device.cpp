@@ -163,15 +163,14 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
-    commandPool = new CommandPool{ this, FindQueueByType(Queue::Type::Graphics | Queue::Type::Compute, 0).Get<Queue::FamilyIndex>() };
+    queue = &FindQueueByType(Queue::Type::Transfer, 0);
+	commandPool = new TimelineCommandPool{this, queue->Get<Queue::FamilyIndex>()};
 
-    fencePool = new FencePool{ this };
+    semaphorePool = new SemaphorePool(this);
 
     descriptorPool = new DescriptorPool{ this, Limit::PoolSize };
 
-    timelineCommandBuffers[0] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
-    timelineCommandBuffers[1] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
-    timelineCommandBuffers[2] = new TimelineCommandBuffer{ this, Queue::Type::Graphics };
+    Check(AllocateSemaphore(&semaphore));
 
     EnableGlobal();
 }
@@ -209,13 +208,10 @@ Device::~Device()
 {
     Wait();
 
-    for (auto &cmd : timelineCommandBuffers)
-    {
-        cmd.Reset();
-    }
-    commandPool.Reset();
-    fencePool.Reset();
+    Release(std::move(semaphore));
+	commandPool.Reset();
     descriptorPool->Destroy();
+	semaphorePool.Reset();
 
     for (auto &queue : destroyCoroutine.queues)
     {

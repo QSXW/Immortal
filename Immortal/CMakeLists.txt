@@ -231,6 +231,7 @@ set(VULKAN_FILES
    Framebuffer.h
    GuiLayer.cpp
    GuiLayer.h
+   Handle.h
    Image.cpp
    Image.h
    ImageView.cpp
@@ -254,6 +255,7 @@ set(VULKAN_FILES
    Swapchain.h
    Sampler.cpp
    Sampler.h
+   Semaphore.h
    Shader.cpp
    Shader.h
    Submitter.h
@@ -261,6 +263,10 @@ set(VULKAN_FILES
    Surface.h
    Texture.cpp
    Texture.h
+   TimelineCommandBuffer.cpp
+   TimelineCommandBuffer.h
+   TimelineCommandPool.cpp
+   TimelineCommandPool.h
    VideoSession.cpp
    VideoSession.h
    RenderPass.cpp

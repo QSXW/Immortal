@@ -148,30 +148,6 @@ public:
         return nullptr;
     }
 
-    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
-    {
-    }
-
-    virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
-    {
-    }
-
-    virtual void Draw(GraphicsPipeline *pipeline)
-    {
-    }
-
-    virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
-    {
-    }
-
-    virtual void Begin(RenderTarget *renderTarget)
-    {
-    }
-
-    virtual void End()
-    {
-    }
-
     virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count)
     {
         return nullptr;
@@ -180,6 +156,41 @@ public:
     virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count)
     {
         return nullptr;
+    }
+
+    virtual void PushConstant(GraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+    {
+
+    }
+
+    virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
+    {
+
+    }
+
+    virtual void Draw(GraphicsPipeline *pipeline)
+    {
+
+    }
+
+    virtual void Dispatch(ComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+    {
+
+    }
+
+    virtual void Blit(Texture *texture)
+    {
+
+    }
+
+    virtual void Begin(RenderTarget *renderTarget)
+    {
+
+    }
+
+    virtual void End()
+    {
+
     }
 
 public:

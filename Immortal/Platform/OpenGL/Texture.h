@@ -29,18 +29,20 @@ public:
 
     Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description);
 
+    void Blit();
+
+public:
     virtual ~Texture();
 
     virtual operator uint64_t() const override;
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
 
-    virtual void Blit() override;
-
     virtual bool operator==(const Super &super) const override;
 
     virtual void As(DescriptorBuffer *descriptors, size_t index) override;
 
+public:
     uint32_t MipLevels() const override
     {
 		return mipLevels;

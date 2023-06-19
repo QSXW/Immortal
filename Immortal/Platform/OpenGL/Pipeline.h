@@ -44,9 +44,9 @@ public:
 
     virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
 
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+    void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
 
-    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) override;
+    void PushConstant(uint32_t size, const void *data, uint32_t offset = 0);
 
     template <Buffer::Type type>
     Ref<Buffer> Get()

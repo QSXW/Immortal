@@ -109,10 +109,6 @@ public:
 
     virtual ~GraphicsPipeline() { }
 
-    virtual void Map() { }
-
-    virtual void Unmap() { }
-
     virtual void Set(Ref<Buffer> buffer)
     {
         if (buffer->GetType() == Buffer::Type::Vertex)
@@ -187,10 +183,7 @@ public:
 
 class IMMORTAL_API ComputePipeline : public virtual Pipeline
 {
-public:
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) = 0;
 
-    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) = 0;
 };
 
 using SuperPipeline         = Pipeline;

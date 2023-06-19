@@ -17,7 +17,7 @@ cbuffer push_constant : register(b0)
     int _10Bits;
 };
 
-[numthreads(1, 1, 1)]
+[numthreads(32, 32, 1)]
 void main(uint3 Gid : SV_GroupID, uint GI : SV_GroupIndex, uint3 GTid : SV_GroupThreadID, uint3 DTid : SV_DispatchThreadID)
 {
     float4 pixel = float4(0, 0, 0, 1.0f);

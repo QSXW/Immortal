@@ -27,11 +27,12 @@ public:
 
     void Setup(const Description &description, uint32_t size, const void *data = nullptr, uint32_t layer = 1);
 
+    void Blit(CommandBuffer *cmdbuf);
+
+public:
     virtual operator uint64_t() const override;
 
     virtual void Update(const void *data, uint32_t pitchX = 0) override;
-
-    virtual void Blit() override;
 
     virtual void As(DescriptorBuffer *descriptorBuffer, size_t index) override;
 
@@ -48,14 +49,14 @@ public:
         return *image;
     }
 
-private:
-    void InternalUpdate(const void *data, uint32_t pitchX = 0);
+protected:
+    void InternalUpdate(const void *data, uint32_t pitchX, VkImageLayout dstImageLayout);
 
-    void Synchronize(VkImageLayout newLayout);
+    void Synchronize(CommandBuffer *cmdbuf, VkImageLayout newLayout);
 
-    void GenerateMipMaps();
+    void GenerateMipMaps(CommandBuffer *cmdbuf);
 
-private:
+protected:
     Device *device{ nullptr };
 
     Description desc;

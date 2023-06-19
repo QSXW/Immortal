@@ -60,11 +60,11 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
         SamplingFactor samplingFactor{ picture.desc.format };
 
         auto width = picture.shared->linesize[0] / desc.format.BytesPerPixel();
-		auto height = picture.desc.height;
+        auto height = picture.desc.height;
 
         if (picture.shared->type == Vision::PictureType::Device)
         {
-			width = picture.desc.width;
+            width = picture.desc.width;
         }
 
         pNext->input[0] = Render::Create<Image>(width, height, nullptr, desc);
@@ -98,11 +98,11 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
     /* Upload frame data for each plane to the texture */
     if (picture.shared->type == Vision::PictureType::Device)
     {
-		pNext->input[0]->PlatformSpecifiedUpdate(picture[0], 0);
+        pNext->input[0]->PlatformSpecifiedUpdate(picture[0], 0);
     }
     else
     {
-		pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
+        pNext->input[0]->Update(picture[0], picture.shared->linesize[0] / desc.format.BytesPerPixel());
     }
     colorSpacePipeline->Bind(pNext->input[0], 0);
 
@@ -120,20 +120,19 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
     }
 
     if (picture.shared->type == Vision::PictureType::Device)
-	{
-		pNext->input[1]->PlatformSpecifiedUpdate(picture[0], 1);
-	}
-	else
-	{
-		pNext->input[1]->Update(picture[1], samplingWidth / pNext->chromaFormat.BytesPerPixel());
-	}
+    {
+        pNext->input[1]->PlatformSpecifiedUpdate(picture[0], 1);
+    }
+    else
+    {
+        pNext->input[1]->Update(picture[1], samplingWidth / pNext->chromaFormat.BytesPerPixel());
+    }
 
     colorSpacePipeline->Bind(pNext->input[1], 1);
 
-    colorSpacePipeline->PushConstant(sizeof(properties), &properties);
-    colorSpacePipeline->Dispatch(SLALIGN(picture.shared->linesize[0] / pNext->chromaFormat.BytesPerPixel(), 1), SLALIGN(height, 1), 1);
-
-    Sprite->Blit();
+    Render::PushConstant(colorSpacePipeline, sizeof(properties), &properties, 0);
+    Render::Dispatch(colorSpacePipeline, SLALIGN(picture.shared->linesize[0] / pNext->chromaFormat.BytesPerPixel(), 32) / 32, SLALIGN(height, 32) / 32, 1);
+	Render::Blit(Sprite);
 }
 
 }

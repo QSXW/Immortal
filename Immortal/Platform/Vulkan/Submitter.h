@@ -2,7 +2,6 @@
 
 #include "Common.h"
 #include "CommandBuffer.h"
-#include "Timeline.h"
 #include "Algorithm/LightArray.h"
 
 namespace Immortal
@@ -155,7 +154,8 @@ class PresentSubmitter
 {
 public:
     PresentSubmitter() :
-        handle{}
+        handle{},
+	    imageIndices{}
     {
         handle.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     }

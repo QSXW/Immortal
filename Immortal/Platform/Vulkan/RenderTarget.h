@@ -98,11 +98,6 @@ public:
 
     void SetupDescriptor();
 
-    void IssueTimeline(const Timeline &value)
-    { 
-        timeline = value;
-    }
-
 public:
     virtual operator uint64_t() const override;
 
@@ -133,8 +128,6 @@ private:
     } attachments;
 
     std::vector<std::unique_ptr<Image>> stagingImages;
-
-    Timeline timeline;
 };
 
 }

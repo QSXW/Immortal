@@ -76,12 +76,13 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
 
     if (data)
     {
-        InternalUpdate((void*)data);
-        Synchronize(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		InternalUpdate((void *)data, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
     else
     {
-        Synchronize(VK_IMAGE_LAYOUT_GENERAL);
+		device->Submit([this](CommandBuffer *copyCmd) -> void {
+			Synchronize(copyCmd, VK_IMAGE_LAYOUT_GENERAL);
+		});
     }
 
     sampler = new Sampler{ device, desc, mipLevels };
@@ -97,14 +98,19 @@ void Texture::Setup(const Description &description, uint32_t size, const void *d
     descriptorSet->Update(descriptor, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void Texture::Update(const void *data, uint32_t pitchX)
+void Texture::Blit(CommandBuffer *cmdbuf)
 {
-    auto backup = Layout;
-    InternalUpdate(data, pitchX);
-    Synchronize(backup);
+	auto backup = Layout;
+	GenerateMipMaps(cmdbuf);
+	Synchronize(cmdbuf, backup);
 }
 
-void Texture::InternalUpdate(const void *data, uint32_t pitchX)
+void Texture::Update(const void *data, uint32_t pitchX)
+{
+    InternalUpdate(data, pitchX, Layout);
+}
+
+void Texture::InternalUpdate(const void *data, uint32_t pitchX, VkImageLayout dstImageLayout)
 {
     size_t size = (pitchX ? pitchX : width) * height * desc.format.Size();
     Buffer stagingBuffer{ device, size, data, Buffer::Type::TransferSource };
@@ -142,7 +148,7 @@ void Texture::InternalUpdate(const void *data, uint32_t pitchX)
         VK_ACCESS_TRANSFER_WRITE_BIT
     };
 
-    device->TransferAsync([&](CommandBuffer *copyCmd) -> void {
+    device->Submit([&](CommandBuffer *copyCmd) -> void {
         copyCmd->PipelineImageBarrier(
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -166,9 +172,10 @@ void Texture::InternalUpdate(const void *data, uint32_t pitchX)
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             &barrier
             );
-        });
 
-    GenerateMipMaps();
+        GenerateMipMaps(copyCmd);
+		Synchronize(copyCmd, dstImageLayout);
+        });
 }
 
 /** Generate Mipmaps
@@ -177,132 +184,133 @@ void Texture::InternalUpdate(const void *data, uint32_t pitchX)
  * @OutputImageLayout: VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
  * 
  */
-void Texture::GenerateMipMaps()
+void Texture::GenerateMipMaps(CommandBuffer *cmdbuf)
 {
+    if (mipLevels == 1)
+    {
+		return;
+    }
+
     uint32_t layers = image->Info().arrayLayers;
-    device->TransferAsync([&](CommandBuffer *cmdbuf) {
-        if (Layout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-        {
-            VkImageSubresourceRange subresourceRange{};
-            subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            subresourceRange.baseMipLevel = 0;
-            subresourceRange.baseArrayLayer = 0;
-            subresourceRange.levelCount = 1;
-            subresourceRange.layerCount = 1;
+    if (Layout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+    {
+        VkImageSubresourceRange subresourceRange{};
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.baseArrayLayer = 0;
+        subresourceRange.levelCount = 1;
+        subresourceRange.layerCount = 1;
 
-            ImageBarrier barrier{
-                *image,
-                subresourceRange,
-                Layout,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                0,
-                VK_ACCESS_TRANSFER_READ_BIT
-            };
+        ImageBarrier barrier{
+            *image,
+            subresourceRange,
+            Layout,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            0,
+            VK_ACCESS_TRANSFER_READ_BIT
+        };
 
-            Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            cmdbuf->PipelineImageBarrier(
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                &barrier
-            );
-        }
+        Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        cmdbuf->PipelineImageBarrier(
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            &barrier
+        );
+    }
 
-        for (uint32_t i = 1; i < mipLevels; i++)
-        {
-            VkImageBlit imageBlit{};
+    for (uint32_t i = 1; i < mipLevels; i++)
+    {
+        VkImageBlit imageBlit{};
 
-            uint32_t srcMipLevel = i - 1;
-            imageBlit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageBlit.srcSubresource.baseArrayLayer = 0;
-            imageBlit.srcSubresource.layerCount     = layers;
-            imageBlit.srcSubresource.mipLevel       = srcMipLevel;
-            imageBlit.srcOffsets[1].x               = width >> srcMipLevel;
-            imageBlit.srcOffsets[1].y               = height >> srcMipLevel;
-            imageBlit.srcOffsets[1].z               = 1;
+        uint32_t srcMipLevel = i - 1;
+        imageBlit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.srcSubresource.baseArrayLayer = 0;
+        imageBlit.srcSubresource.layerCount     = layers;
+        imageBlit.srcSubresource.mipLevel       = srcMipLevel;
+        imageBlit.srcOffsets[1].x               = width >> srcMipLevel;
+        imageBlit.srcOffsets[1].y               = height >> srcMipLevel;
+        imageBlit.srcOffsets[1].z               = 1;
 
-            imageBlit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageBlit.dstSubresource.baseArrayLayer = 0;
-            imageBlit.dstSubresource.layerCount     = layers;
-            imageBlit.dstSubresource.mipLevel       = i;
-            imageBlit.dstOffsets[1].x               = width >> i;
-            imageBlit.dstOffsets[1].y               = height >> i;
-            imageBlit.dstOffsets[1].z               = 1;
+        imageBlit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.dstSubresource.baseArrayLayer = 0;
+        imageBlit.dstSubresource.layerCount     = layers;
+        imageBlit.dstSubresource.mipLevel       = i;
+        imageBlit.dstOffsets[1].x               = width >> i;
+        imageBlit.dstOffsets[1].y               = height >> i;
+        imageBlit.dstOffsets[1].z               = 1;
 
-            VkImageSubresourceRange mipSubRange = {};
-            mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-            mipSubRange.baseMipLevel = i;
-            mipSubRange.levelCount   = 1;
-            mipSubRange.layerCount   = layers;
+        VkImageSubresourceRange mipSubRange = {};
+        mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+        mipSubRange.baseMipLevel = i;
+        mipSubRange.levelCount   = 1;
+        mipSubRange.layerCount   = layers;
 
-            ImageBarrier barrier{
-                *image,
-                mipSubRange,
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                0,
-                VK_ACCESS_TRANSFER_WRITE_BIT
-            };
+        ImageBarrier barrier{
+            *image,
+            mipSubRange,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            0,
+            VK_ACCESS_TRANSFER_WRITE_BIT
+        };
 
-            cmdbuf->PipelineImageBarrier(
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                &barrier
-            );
+        cmdbuf->PipelineImageBarrier(
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            &barrier
+        );
 
-            cmdbuf->BlitImage(
-                *image,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                *image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &imageBlit,
-                VK_FILTER_LINEAR
-            );
+        cmdbuf->BlitImage(
+            *image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            *image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &imageBlit,
+            VK_FILTER_LINEAR
+        );
 
-            // Prepare current mip level as image blit source for next level
-            Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            barrier.Swap();
-            barrier.To(Layout);
-            barrier.To(VK_ACCESS_TRANSFER_READ_BIT);
+        // Prepare current mip level as image blit source for next level
+        Layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.Swap();
+        barrier.To(Layout);
+        barrier.To(VK_ACCESS_TRANSFER_READ_BIT);
 
-            cmdbuf->PipelineImageBarrier(
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                &barrier
-            );
-        }
-    });
+        cmdbuf->PipelineImageBarrier(
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            &barrier
+        );
+    }
 }
 
 /** Synchronize the desired new image layout
  *
  */
-void Texture::Synchronize(VkImageLayout newLayout)
+void Texture::Synchronize(CommandBuffer *cmdbuf, VkImageLayout newLayout)
 {
     const auto &info = image->Info();
-    device->TransferAsync([&](CommandBuffer *cmdbuf) {
-        VkImageSubresourceRange subresourceRange{};
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        subresourceRange.levelCount = mipLevels;
-        subresourceRange.layerCount = info.arrayLayers;
+    VkImageSubresourceRange subresourceRange{};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.levelCount = mipLevels;
+    subresourceRange.layerCount = info.arrayLayers;
     
-        ImageBarrier barrier = {
-            *image,
-            subresourceRange,
-            Layout,
-            newLayout,
-            VK_ACCESS_TRANSFER_WRITE_BIT,
-            0
-        };
+    ImageBarrier barrier = {
+        *image,
+        subresourceRange,
+        Layout,
+        newLayout,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        0
+    };
      
-        Layout = newLayout;
+    Layout = newLayout;
 
-        cmdbuf->PipelineImageBarrier(
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-            &barrier
-        );
-    });
+    cmdbuf->PipelineImageBarrier(
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+        &barrier
+    );
 }
 
 void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
@@ -320,13 +328,6 @@ bool Texture::operator==(const Texture::Super &super) const
 {
     const Texture &other = dynamic_cast<const Texture &>(super);
     return image == other.image;
-}
-
-void Texture::Blit()
-{
-    auto backup = Layout;
-    GenerateMipMaps();
-    Synchronize(backup);
 }
 
 TextureCube::TextureCube(Device * device, uint32_t width, uint32_t height, const Description &desc) :

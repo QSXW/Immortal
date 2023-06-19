@@ -15,6 +15,7 @@ namespace Immortal
 namespace Vulkan
 {
 
+#define VKCPP_SWAPPABLE(T) T(T &&other) : T{} { other.Swap(*this); } T &operator=(T &&other) { T(std::move(other)).Swap(*this); return *this; }  T(const T &) = delete; T &operator=(const T &) = delete;
 #define VKCPP_OPERATOR_HANDLE() Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{ VK_NULL_HANDLE }; public: operator bool() const { return handle != VK_NULL_HANDLE; }
 
 namespace Limit
@@ -37,15 +38,6 @@ static std::vector<VkDescriptorPoolSize> PoolSize{
 };
 
 }
-
-enum class Level : int
-{
-    None      = -1,
-    Primary   = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-    Secondary = VK_COMMAND_BUFFER_LEVEL_SECONDARY,
-    Max       = VK_COMMAND_BUFFER_LEVEL_MAX_ENUM
-};
-
 
 /**
  * @brief Vulkan API

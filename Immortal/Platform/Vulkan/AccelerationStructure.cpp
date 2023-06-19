@@ -69,7 +69,7 @@ AccelerationStructureLevel::AccelerationStructureLevel(Device *device, VkAcceler
 
     buildGeometryInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
 
-    device->SubmitSync([&](CommandBuffer *cmdbuf) {
+    device->Submit([&](CommandBuffer *cmdbuf) {
         VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo = {
             .primitiveCount  = *pPrimitiveCount,
             .primitiveOffset = 0,

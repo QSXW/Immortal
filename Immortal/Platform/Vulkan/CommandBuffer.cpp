@@ -8,25 +8,33 @@ namespace Immortal
 namespace Vulkan
 {
 
-CommandBuffer::CommandBuffer(CommandPool *cmdPool, Level level) :
-    commandPool{ cmdPool },
+CommandBuffer::CommandBuffer(CommandPool *commandPool, VkCommandBufferLevel level) :
+    Handle{},
+    commandPool{ commandPool },
     count{ 0 },
+    state{ State::Initial },
     level{ level }
 {
-    Check(commandPool->Allocate(&handle, 1, (VkCommandBufferLevel)level));
+    Check(commandPool->Allocate(&handle, 1, level));
 }
 
 CommandBuffer::~CommandBuffer()
 {
+	Destroy(commandPool);
+}
+
+void CommandBuffer::Destroy(CommandPool *commandPool)
+{
     if (handle != VK_NULL_HANDLE)
     {
         commandPool->Release(&handle, 1);
+        handle = VK_NULL_HANDLE;
     }
 }
 
 VkResult CommandBuffer::Begin(Usage flags, CommandBuffer *primaryCommandBuffer, const VkCommandBufferInheritanceInfo *pInheritanceInfo)
 {
-    if (level == Level::Secondary)
+    if (level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
     {
         SLASSERT(primaryCommandBuffer && "A primary command buffer pointer must be provided when calling begin from a second one");
     }
@@ -63,21 +71,11 @@ VkResult CommandBuffer::Execute()
     return VK_SUCCESS;
 }
 
-VkResult CommandBuffer::Reset(ResetMode resetMode)
+VkResult CommandBuffer::Reset(VkCommandBufferResetFlags flags)
 {
-    VkResult result = VK_SUCCESS;
-
-    SLASSERT(resetMode == commandPool->Get<ResetMode>() &&
-        "The resetMode of Command buffer must match the one used by the pool to allocated it");
-
     count = 0;
     state = State::Initial;
-    if (resetMode == ResetMode::ResetIndividually)
-    {
-        result = vkResetCommandBuffer(handle, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-    }
-
-    return result;
+	return ResetCommandBuffer(flags);
 }
 
 }

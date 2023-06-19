@@ -183,10 +183,6 @@ public:
 
     virtual void Bind(SuperTexture *texture, uint32_t slot) override;
 
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
-
-    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset) override;
-
     void Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ);
 
     const VkDescriptorSet &GetDescriptorSet() const

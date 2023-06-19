@@ -5,9 +5,12 @@
 #include "Instance.h"
 #include "PhysicalDevice.h"
 #include "Queue.h"
-#include "CommandPool.h"
 #include "FencePool.h"
+#include "SemaphorePool.h"
 #include "Interface/IObject.h"
+#include "TimelineCommandBuffer.h"
+#include "TimelineCommandPool.h"
+#include "Submitter.h"
 
 #include <queue>
 #include <future>
@@ -1200,7 +1203,7 @@ public:
 
     bool IsExtensionSupported(const std::string &extension) const
     {
-		return deviceExtensions.find(extension) != deviceExtensions.end();
+        return deviceExtensions.find(extension) != deviceExtensions.end();
     }
 
 public:
@@ -1436,148 +1439,70 @@ public:
         return physicalDevice->GetSurfaceCapabilitiesKHR(surface, properties);
     }
 
-    CommandBuffer *RequestCommandBuffer(Level level)
+    template <class T>
+    requires std::derived_from<T, Semaphore>
+    VkResult AllocateSemaphore(T *pSemaphore)
     {
-        return commandPool->RequestBuffer(level);
-    }
-
-    VkFence RequestFence()
-    {
-        return fencePool->Request();
-    }
-
-    void Discard(CommandBuffer *commandBuffer)
-    {
-        commandPool->DiscardBuffer(commandBuffer);
-    }
-
-    void Discard(VkFence *pFence)
-    {
-        fencePool->Discard(pFence);
-    }
-
-    CommandBuffer *Begin()
-    {
-        auto *copyCmd = RequestCommandBuffer(Level::Primary);
-        copyCmd->Begin();
-        return copyCmd;
-    }
-
-    template <Queue::Type T>
-    void End(CommandBuffer *cmdbuf)
-    {
-        cmdbuf->End();
-
-        auto &queue = FindQueueByType(T, QueueFailyIndex(T));
-
-        VkCommandBuffer commandBuffers[1] = { *cmdbuf };
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = commandBuffers;
-
-        auto fence = RequestFence();
-
-        queue.Submit(submitInfo, fence);
-        Check(Wait(&fence, 1, VK_TRUE, FencePool::Timeout));
-
-        Discard(&fence);
+        if constexpr (std::is_same_v<T, TimelineSemaphore>)
+        {
+            *pSemaphore = std::move(semaphorePool->Allocate(0));
+        }
+        else
+        {
+            *pSemaphore = semaphorePool->Allocate();
+        }
+        return VK_SUCCESS;
     }
 
     template <class T>
-    void Transfer(T &&process)
+    requires std::derived_from<T, Semaphore>
+    void Release(T &&semaphore)
     {
-        auto *copyCmd = Begin();
-
-        process(copyCmd);
-
-        End<Queue::Type::Transfer>(copyCmd);
-        Discard(copyCmd);
-    }
-
-    template <class T>
-    void Compute(T &&process)
-    {
-        auto *cmd = Begin();
-
-        process(cmd);
-
-        End<Queue::Type::Compute>(cmd);
-        Discard(cmd);
-    }
-
-    template <class T>
-    void SubmitSync(T &&process)
-    {
-        auto *cmd = Begin();
-
-        process(cmd);
-
-        End<Queue::Type::Graphics>(cmd);
-        Discard(cmd);
+        if constexpr (std::is_same_v<T, TimelineSemaphore>)
+        {
+            semaphorePool->Release(std::move(semaphore));
+        }
+        else
+        {
+            semaphorePool->Release(semaphore);
+        }
     }
 
     template <class T>
     void Submit(T &&process)
     {
-        CommandBuffer *cmdbuf = timelineCommandBuffers[0]->GetRecordableCommandBuffer();
-        process(cmdbuf);
+        isSubmitted = true;
+        auto commandBuffer = commandPool->Allocate();
+        commandBuffer->Begin();
+        process(commandBuffer);
+        commandBuffer->End();
+
+        auto commandBufferSemaphore = commandBuffer->GetTimelineSemaphore();
+
+        TimelineSubmitter timelineSubmitter{};
+        timelineSubmitter.Signal(++commandBufferSemaphore->value);
+        timelineSubmitter.Signal(++semaphore.value);
+
+        Submitter submitter{};
+        submitter.SignalSemaphore(*commandBufferSemaphore);
+        submitter.SignalSemaphore(semaphore);
+        submitter.Execute(*commandBuffer);
+        submitter.Trampoline(timelineSubmitter);
+
+        queue->Submit(submitter, VK_NULL_HANDLE);
+
+        commandPool->Free(commandBuffer);
     }
 
-    template <class T>
-    void ComputeAsync(T &&process)
+    TimelineSemaphore *GetTimelineSemaphore()
     {
-        CommandBuffer *cmdbuf = timelineCommandBuffers[1]->GetRecordableCommandBuffer();
-        process(cmdbuf);
-    }
+        if (!isSubmitted)
+        {
+            return nullptr;
+        }
 
-    template <class T>
-    void TransferAsync(T &&process)
-    {
-        CommandBuffer *cmdbuf = timelineCommandBuffers[2]->GetRecordableCommandBuffer();
-        process(cmdbuf);
-    }
-
-    template <Queue::Type T>
-    const LightArray<CommandBuffer *> &GetCommandBuffers(const Timeline &timeline)
-    {
-        if constexpr (T == Queue::Type::Graphics)
-        {
-            return timelineCommandBuffers[0]->GetCommandBuffers(timeline);
-        }
-        else if constexpr (T == Queue::Type::Compute)
-        {
-            return timelineCommandBuffers[1]->GetCommandBuffers(timeline);
-        }
-        else if constexpr (T == Queue::Type::Transfer)
-        {
-            return timelineCommandBuffers[2]->GetCommandBuffers(timeline);
-        }
-        else
-        {
-            SLASSERT(false && "Invalid queue type!");
-        }
-    }
-
-    template <Queue::Type T>
-    bool IsCommandBufferRecorded()
-    {
-        if constexpr (T == Queue::Type::Graphics)
-        {
-            return timelineCommandBuffers[0]->IsRecorded();
-        }
-        else if constexpr (T == Queue::Type::Compute)
-        {
-            return timelineCommandBuffers[1]->IsRecorded();
-        }
-        else if constexpr (T == Queue::Type::Transfer)
-        {
-            return timelineCommandBuffers[2]->IsRecorded();
-        }
-        else
-        {
-            SLASSERT(false && "Invalid queue type!");
-        }
+        isSubmitted = false;
+        return &semaphore;
     }
 
 private:
@@ -1593,13 +1518,17 @@ private:
 
     std::vector<std::vector<Queue>> queues;
 
-    URef<CommandPool> commandPool;
-
-    URef<FencePool> fencePool;
+    Queue *queue = nullptr;
+   
+    URef<SemaphorePool> semaphorePool;
 
     URef<DescriptorPool> descriptorPool;
 
-    std::array<URef<TimelineCommandBuffer>, 3> timelineCommandBuffers;
+    URef<TimelineCommandPool> commandPool;
+
+    TimelineSemaphore semaphore;
+
+    bool isSubmitted = false;
 
     struct {
         std::array<std::queue<std::function<void()>>, 6> queues;

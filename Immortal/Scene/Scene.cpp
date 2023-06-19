@@ -153,19 +153,19 @@ void Scene::ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma
     uniforms.gaussianKernal->Update(kernal);
 
     pipelines.horizontalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
-    pipelines.horizontalGaussianBlur->PushConstant(sizeof(properties), &properties);
     pipelines.horizontalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
     pipelines.horizontalGaussianBlur->Bind(input, 0);
     pipelines.horizontalGaussianBlur->Bind(tmp, 1);
-    pipelines.horizontalGaussianBlur->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+	Render::PushConstant(pipelines.horizontalGaussianBlur, sizeof(properties), &properties);
+    Render::Dispatch(pipelines.horizontalGaussianBlur, SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
 
     properties.blurDirection = 0;
     pipelines.verticalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
-    pipelines.verticalGaussianBlur->PushConstant(sizeof(properties), &properties);
     pipelines.verticalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
     pipelines.verticalGaussianBlur->Bind(tmp, 0);
     pipelines.verticalGaussianBlur->Bind(output, 1);
-    pipelines.verticalGaussianBlur->Dispatch(SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+	Render::PushConstant(pipelines.verticalGaussianBlur, sizeof(properties), &properties);
+	Render::Dispatch(pipelines.verticalGaussianBlur, SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
 }
 
 void Scene::Init()
@@ -199,7 +199,7 @@ void Scene::Equirect2Cube()
 		pipelines.equirect2Cube->AllocateDescriptorSet((uint64_t) textures.skybox.Get());
 		pipelines.equirect2Cube->Bind(textures.skybox, 0);
 		pipelines.equirect2Cube->Bind(textures.skyboxCube, 1);
-		pipelines.equirect2Cube->Dispatch(SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
+		Render::Dispatch(pipelines.equirect2Cube, SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
 	}
 }
 
@@ -443,11 +443,11 @@ void Scene::OnRender(const Camera &camera)
             if (color.Modified || !color.Initialized)
             {
                 pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
-                pipelines.colorMixing->PushConstant(ColorMixingComponent::Length, &color.RGBA);
                 pipelines.colorMixing->Bind(sprite.Sprite, 0);
                 pipelines.colorMixing->Bind(sprite.Result, 1);
-                pipelines.colorMixing->Dispatch(SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);
-                sprite.Result->Blit();
+				Render::PushConstant(pipelines.colorMixing, ColorMixingComponent::Length, &color.RGBA);
+				Render::Dispatch(pipelines.colorMixing, SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);
+				Render::Blit(sprite.Result);
                 color.Initialized = true;
             }
 

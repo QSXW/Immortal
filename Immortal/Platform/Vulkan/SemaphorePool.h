@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "Semaphore.h"
+#include <list>
 
 namespace Immortal
 {
@@ -11,27 +13,35 @@ class Device;
 class SemaphorePool
 {
 public:
-	SemaphorePool();
+    VKCPP_SWAPPABLE(SemaphorePool)
 
-    SemaphorePool(Device *device);
+public:
+    SemaphorePool(Device *device = nullptr);
 
     ~SemaphorePool();
 
-    VkSemaphore Request();
+    Semaphore Allocate();
 
-    VkSemaphore Request(uint64_t initialValue);
+    TimelineSemaphore Allocate(uint64_t initialValue);
 
-    void Reset();
+    void Release(Semaphore &semaphore);
 
-private:
-    VkSemaphore InternalRequest(const VkSemaphoreCreateInfo &createInfo);
+    void Release(TimelineSemaphore &&semaphore);
 
-private:
+public:
+	void Swap(SemaphorePool &other)
+    {
+		std::swap(device, other.device);
+		handles.swap(other.handles);
+    }
+
+protected:
+    Semaphore InternalAllocate(const VkSemaphoreCreateInfo &createInfo);
+
+protected:
     Device *device{ nullptr };
 
-    std::vector<VkSemaphore> handles;
-
-    uint32_t activeCount{ 0 };
+    std::queue<VkSemaphore> handles;
 };
 
 }

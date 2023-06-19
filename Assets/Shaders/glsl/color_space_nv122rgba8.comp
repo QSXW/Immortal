@@ -56,7 +56,7 @@ layout (push_constant) uniform Properties
     int _10Bits;
 } uProperties;
 
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 void main()
 {
     const ivec2 pos = ivec2(gl_GlobalInvocationID.xy);

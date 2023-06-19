@@ -100,13 +100,17 @@ public:
 
 	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
 
+    void PushConstant(Pipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
+
 	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
+
+    virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+    virtual void Blit(SuperTexture *texture) override;
 
 	virtual void Begin(SuperRenderTarget *renderTarget) override;
 
 	virtual void End() override;
-
-	void PushConstant(Pipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
 
 public:
     template <class T>

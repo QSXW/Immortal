@@ -86,6 +86,10 @@ public:
 
 	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
 
+	virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+	virtual void Blit(SuperTexture *texture) override;
+
 	virtual void Begin(SuperRenderTarget *renderTarget) override;
 
 	virtual void End() override;

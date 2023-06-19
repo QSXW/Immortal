@@ -145,16 +145,10 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
 {
     desc.Width  = e.Width();
     desc.Height = e.Height();
-    if (e.Width() == 0 || e.Height() == 0)
-    {
-        runtime.minimized = true;
-    }
-    else
-    {
-        runtime.minimized = false;
-        Render::OnWindowResize(e.Width(), e.Height());
-        OnRender();
-    }
+
+	runtime.minimized = e.Width() == 0 || e.Height() == 0;
+    Render::OnWindowResize(e.Width(), e.Height());
+    OnRender();
 
     return runtime.minimized;
 }

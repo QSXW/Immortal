@@ -138,10 +138,35 @@ DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
 	ret->Request<uint32_t>(count);
 	return ret;
 }
+
+void RenderContext::PushConstant(SuperGraphicsPipeline *superPipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
+{
+	auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
+	pipeline->PushConstant(size, data, offset);
+}
+
+void RenderContext::PushConstant(SuperComputePipeline *superPipeline, uint32_t size, const void *data, uint32_t offset)
+{
+	auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
+	pipeline->PushConstant(size, data, offset);
+}
+
 void RenderContext::Draw(SuperGraphicsPipeline *superPipeline)
 {
 	auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
 	pipeline->Draw();
+}
+
+void RenderContext::Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+	auto pipeline = dynamic_cast<Pipeline *>(superPipeline);
+	pipeline->Dispatch(nGroupX, nGroupY, nGroupZ);
+}
+
+void RenderContext::Blit(SuperTexture *superTexture)
+{
+	auto texture = dynamic_cast<Texture *>(superTexture);
+	texture->Blit();
 }
 
 void RenderContext::Begin(RenderTarget::Super *superRenderTarget)
@@ -155,11 +180,6 @@ void RenderContext::End()
 	Submit([] {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	});
-}
-
-void RenderContext::PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
-{
-	pipeline->PushConstant(size, data, offset);
 }
 
 }

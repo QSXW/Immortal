@@ -394,16 +394,13 @@ AccelerationStructure *RenderContext::CreateAccelerationStructure(const SuperBuf
 
 void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
-	PushConstant(dcast<Pipeline *>(super), stage, size, data, offset);
+    PushConstant(dcast<Pipeline *>(super), stage, size, data, offset);
 }
 
-void RenderContext::PushConstant(SuperComputePipeline *super, uint32_t size, const void *data, uint32_t offset)
+void RenderContext::PushConstant(SuperComputePipeline *superPipeline, uint32_t size, const void *data, uint32_t offset)
 {
-    Compute([&](CommandList *cmdlist) {
-        auto pipeline = dynamic_cast<Pipeline*>(super);
-        cmdlist->SetComputeRootSignature(pipeline->Get<RootSignature&>());
-        cmdlist->PushConstant(size, data, offset);
-        });
+	auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+	pipeline->PushConstant(commandList, size, data, offset);
 }
 
 DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
@@ -499,8 +496,22 @@ void RenderContext::PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32
 {
 	(void)stage;
 
-	commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature &>());
-	commandList->PushConstant(size, data, offset);
+    if (pipeline->HasRootConstant())
+    {
+		commandList->SetGraphicsRootSignature(pipeline->Get<RootSignature &>());
+		commandList->PushConstant(size, data, offset);
+    }
+}
+
+void RenderContext::Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+	auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+	pipeline->Dispatch(commandList, nGroupX, nGroupY, nGroupZ);
+}
+
+void RenderContext::Blit(SuperTexture *superTexture)
+{
+	(void)superTexture;
 }
 
 }

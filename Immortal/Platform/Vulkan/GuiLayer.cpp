@@ -229,7 +229,7 @@ void GuiLayer::End()
 	{
 		io.DisplaySize = ImVec2{(float) width, (float) height};
 
-		context->Record([&](CommandBuffer *cmdbuf) -> void {
+		context->Submit([&](CommandBuffer *cmdbuf) -> void {
 			auto renderTarget = context->GetAddress<RenderTarget>();
 			context->Begin(renderTarget);
 			__RenderDrawData(cmdbuf);

@@ -56,13 +56,19 @@ public:
 
 	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
 
+	virtual void PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+
+	virtual void PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
+
 	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
+
+	virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+	virtual void Blit(SuperTexture *texture) override;
 
 	virtual void Begin(SuperRenderTarget *renderTarget) override;
 
 	virtual void End() override;
-
-	virtual void PushConstant(ComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
 
 public:
 	static const Capabilities &GetCapabilites()

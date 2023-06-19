@@ -19,8 +19,7 @@ RenderTarget::RenderTarget(Device *device, const RenderTarget::Description &desc
 }
 
 RenderTarget::RenderTarget() :
-    device{},
-    timeline{}
+    device{}
 {
 
 }
@@ -280,7 +279,7 @@ uint64_t RenderTarget::PickPixel(uint32_t index, uint32_t x, uint32_t y, Format 
     region.dstOffset      = VkOffset3D{ 0, 0, 0 };
     region.dstSubresource = subresourceLayers;
 
-    device->TransferAsync([&](CommandBuffer *copyCmdBuf) -> void {
+    device->Submit([&](CommandBuffer *copyCmdBuf) -> void {
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.baseMipLevel = 0;

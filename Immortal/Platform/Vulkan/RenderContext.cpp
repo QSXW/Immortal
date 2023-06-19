@@ -31,18 +31,18 @@ std::unordered_map<const char *, bool> RenderContext::DeviceExtensions{
 #ifdef __APPLE__
     { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,       false },
 #endif
-	{ VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true },
-	{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,     true },
-	{ VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,    true },
-	{ VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, true },
-	{ VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      true },
+    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true },
+    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,     true },
+    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,    true },
+    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, true },
+    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      true },
     { VK_KHR_SPIRV_1_4_EXTENSION_NAME,                true },
-	{ VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,    true },
-	{ VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,        true },
-	{ VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true },
-	{ VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true },
-	{ VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true },
-	{ VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true },
+    { VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,    true },
+    { VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,        true },
+    { VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true },
+    { VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true },
+    { VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true },
+    { VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true },
 };
 
 static std::vector<const char *> ValidationLayers = {
@@ -56,38 +56,38 @@ static std::vector<const char *> ValidationLayers = {
 RenderContext::RenderContext(const RenderContext::Description &desc) :
     window{ desc.window }
 {
-	switch (window->GetType())
-	{
-	case Window::Type::Win32:
-		InstanceExtensions.insert({ "VK_KHR_win32_surface", false });
-		break;
+    switch (window->GetType())
+    {
+    case Window::Type::Win32:
+        InstanceExtensions.insert({ "VK_KHR_win32_surface", false });
+        break;
 
-	case Window::Type::Wayland:
-		InstanceExtensions.insert({ "VK_KHR_wayland_surface", false });
-		break;
+    case Window::Type::Wayland:
+        InstanceExtensions.insert({ "VK_KHR_wayland_surface", false });
+        break;
 
-	case Window::Type::XCB:
-		InstanceExtensions.insert({ "VK_KHR_xcb_surface", false });
-		break;
+    case Window::Type::XCB:
+        InstanceExtensions.insert({ "VK_KHR_xcb_surface", false });
+        break;
 
-	case Window::Type::X11:
-		InstanceExtensions.insert({ "VK_KHR_xlib_surface", false });
-		break;
+    case Window::Type::X11:
+        InstanceExtensions.insert({ "VK_KHR_xlib_surface", false });
+        break;
 
-	case Window::Type::Headless:
-		InstanceExtensions.insert({"VK_EXT_headless_surface", false});
-		break;
+    case Window::Type::Headless:
+        InstanceExtensions.insert({"VK_EXT_headless_surface", false});
+        break;
 
 #if defined(__APPLE__)
-	case Window::Type::Cocoa:
-		InstanceExtensions.insert({ "VK_EXT_metal_surface", false });
-		InstanceExtensions.insert({ "VK_KHR_portability_enumeration", false });
-		break;
+    case Window::Type::Cocoa:
+        InstanceExtensions.insert({ "VK_EXT_metal_surface", false });
+        InstanceExtensions.insert({ "VK_KHR_portability_enumeration", false });
+        break;
 #endif
 
-	default:
-		break;
-	}
+    default:
+        break;
+    }
 
     instance = Instance{ "Immortal Graphics API", InstanceExtensions, ValidationLayers};
     if (!instance)
@@ -108,12 +108,15 @@ RenderContext::RenderContext(const RenderContext::Description &desc) :
 
     if (surface != VK_NULL_HANDLE)
     {
-		surfaceExtent = { desc.width, desc.height };
-		VkFormat depthFormat = physicalDevice->GetSuitableDepthFormat();
-		swapchainPool[0] = std::move(Swapchain{ swapchainPool[0], device, surfaceExtent, desc.presentMode });
-		renderPass = new RenderPass{ device, swapchainPool[0].Get<VkFormat>(), depthFormat };
+        surfaceExtent = { desc.width, desc.height };
+        VkFormat depthFormat = physicalDevice->GetSuitableDepthFormat();
+        swapchainPool[0] = std::move(Swapchain{ swapchainPool[0], device, surfaceExtent, desc.presentMode });
+        renderPass = new RenderPass{ device, swapchainPool[0].Get<VkFormat>(), depthFormat };
         Prepare();
     }
+
+	commandPool = new TimelineCommandPool{ device, queue->Get<Queue::FamilyIndex>() };
+
     EnableGlobal();
 
     Super::UpdateMeta(physicalDevice->Properties.deviceName, nullptr, nullptr);
@@ -127,30 +130,38 @@ RenderContext::~RenderContext()
         DescriptorSetLayout = VK_NULL_HANDLE;
     }
 
+    for (int i = 0; i < FrameSize(); i++)
+	{
+		device->Release(std::move(semaphores[i].acquiredImageReady));
+		device->Release(std::move(semaphores[i].renderComplete));
+	}
+	device->Release(std::move(timelineSemaphore));
+
     for (auto &swapchain : swapchainPool)
     {
-		swapchain.Destroy();
+        swapchain.Destroy();
     }
 
-	swapchainPool[0].Destroy();
+    commandBuffer.Reset();
+    commandPool.Reset();
+    swapchainPool[0].Destroy();
 
-	semaphorePool.Reset();
     ImmutableSampler.Reset();
-	present.renderTargets.clear();
-	renderPass.Reset();
+    present.renderTargets.clear();
+    renderPass.Reset();
     device.Reset();
     instance.DestroySurface(&surface);
 }
 
 void RenderContext::Prepare(size_t threadCount)
 {
-	present.renderTargets.resize(3);
-	for (auto &r : present.renderTargets)
-	{
-		r = new RenderTarget;
-	}
+    present.renderTargets.resize(3);
+    for (auto &r : present.renderTargets)
+    {
+        r = new RenderTarget;
+    }
 
-	UpdateSurface(surfaceExtent);
+    UpdateSurface(surfaceExtent);
 
     SetupDescriptorSetLayout();
     __InitSyncObjects();
@@ -164,50 +175,49 @@ Swapchain *RenderContext::UpdateSurface(VkExtent2D extent)
 
     if (Swapchain::IsValidExtent(properties.currentExtent))
     {
-		surfaceExtent = properties.currentExtent;
+		extent = properties.currentExtent;
     }
-	else
-	{
-		surfaceExtent = extent;
-	}
 
-	if (Swapchain::IsValidExtent(surfaceExtent))
-	{
-        UpdateSwapchain(surfaceExtent, regisry.preTransform);
-		swapchain = &swapchainPool[0];
-	}
-	else
-	{
-		swapchain = nullptr;
-	}
+    if (Swapchain::IsValidExtent(extent))
+    {
+		UpdateSwapchain(extent, regisry.preTransform);
+        swapchain = &swapchainPool[0];
+    }
+    else
+    {
+		surfaceExtent = { 0, 0 };
+        swapchain = nullptr;
+    }
 
     return swapchain;
 }
 
 void RenderContext::UpdateSwapchain(const VkExtent2D &extent, const VkSurfaceTransformFlagBitsKHR transform)
 {
-	auto swapchain = &swapchainPool[0];
+    auto swapchain = &swapchainPool[0];
 
-	VkExtent2D swapchainExtent = swapchain->Get<VkExtent2D &>();
-	if (extent.width != swapchainExtent.width || extent.height != swapchainExtent.height)
+    VkExtent2D swapchainExtent = swapchain->Get<VkExtent2D &>();
+	if (extent.width != surfaceExtent.width || extent.height != surfaceExtent.height)
     {
-		swapchain->Invalidate(extent);
+		surfaceExtent = extent;
+        swapchain->Invalidate(extent);
+
+        auto &swapchainImages = swapchain->Get<Swapchain::Images &>();
+        for (size_t i = 0; i < swapchainImages.size(); i++)
+        {
+            Image image = std::move(Image(
+                device,
+                swapchainImages[i],
+                VkExtent3D{ extent.width, extent.height, 1 },
+                swapchain->Get<VkFormat>(),
+                swapchain->Get<VkImageUsageFlags>()
+            ));
+
+            present.renderTargets[i]->Invalidate(std::move(image), renderPass);
+        }
     }
 
     regisry.preTransform = transform;
-	auto &swapchainImages = swapchain->Get<Swapchain::Images &>();
-    for (size_t i = 0; i < swapchainImages.size(); i++)
-    {
-		Image image = std::move(Image(
-            device,
-			swapchainImages[i],
-            VkExtent3D{ extent.width, extent.height, 1 },
-            swapchain->Get<VkFormat>(),
-            swapchain->Get<VkImageUsageFlags>()
-        ));
-
-		present.renderTargets[i]->Invalidate(std::move(image), renderPass);
-    }
 }
 
 VkDescriptorSetLayout RenderContext::DescriptorSetLayout{ VK_NULL_HANDLE };
@@ -245,270 +255,212 @@ void RenderContext::SetupDescriptorSetLayout()
 
 void RenderContext::OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
-	UpdateSurface(VkExtent2D{ width, height });
+    UpdateSurface(VkExtent2D{ width, height });
 }
 
 void RenderContext::PrepareFrame()
 {
-	VkResult ret = VK_SUCCESS;
-	if (!swapchain)
-	{
-		VkSurfaceCapabilitiesKHR properties;
-		Check(device->GetSurfaceCapabilities(&properties));
-		if (properties.currentExtent.width > 0 && properties.currentExtent.height > 0)
+    VkResult ret = VK_SUCCESS;
+
+    if (swapchain)
+    {
+        ret = swapchain->AcquireNextImage(&swapchainIndex, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
+        if (ret != VK_ERROR_OUT_OF_DATE_KHR && ret != VK_SUBOPTIMAL_KHR)
+        {
+            Check(ret);
+        }
+
+        uint64_t completion = 0;
+		Check(device->GetCompletion(timelineSemaphore, &completion));
+		if (completion < syncValues[sync])
 		{
-			UpdateSurface(properties.currentExtent);
+			VkSemaphore semapohre = timelineSemaphore;
+			Check(device->Wait(&semapohre, &syncValues[sync]));
 		}
-	}
+    }
 
-	if (swapchain)
-	{
-		ret = swapchain->AcquireNextImage(&swapchainIndex, semaphores[sync].acquiredImageReady, VK_NULL_HANDLE);
-		if (ret != VK_ERROR_OUT_OF_DATE_KHR && ret != VK_SUBOPTIMAL_KHR)
-		{
-			Check(ret);
-		}
-	}
+    commandBuffer = commandPool->Allocate();
+    commandBuffer->Begin();
 
-#ifdef VK_SYNC_TIMELINE_SEMAPHORE
-#ifndef __linux__
-	uint64_t completion = 0;
-	Check(device->GetCompletion(timelineSemaphore, &completion));
-	if (completion < syncValues[sync])
-	{
-		Check(device->Wait(&timelineSemaphore, &syncValues[sync]));
-	}
-#endif
-#endif
-
-	syncValues[sync] = lastSync;
-
-#ifdef VK_SYNC_FENCE
-#ifndef __linux__
-	if (fences[sync] != VK_NULL_HANDLE)
-	{
-		device->WaitAndReset(&fences[sync]);
-	}
-	else
-	{
-		fences[sync] = device->RequestFence();
-	}
-#endif
-#endif
+    syncValues[sync] = lastSync;
 }
 
 void RenderContext::__InitSyncObjects()
 {
-	semaphorePool = new SemaphorePool(device);
-	for (int i = 0; i < FrameSize(); i++)
-	{
-		semaphores[i].acquiredImageReady = semaphorePool->Request();
-		semaphores[i].renderComplete = semaphorePool->Request();
-	}
+    for (int i = 0; i < FrameSize(); i++)
+    {
+        Check(device->AllocateSemaphore(&semaphores[i].acquiredImageReady));
+        Check(device->AllocateSemaphore(&semaphores[i].renderComplete));
+    }
 
-	timelineSemaphore = semaphorePool->Request(0);
+    Check(device->AllocateSemaphore(&timelineSemaphore));
 }
 
-void RenderContext::__SubmitFrame()
+void RenderContext::SubmitFrame()
 {
-	PresentSubmitter submitter{};
-	submitter.Wait(semaphores[sync].renderComplete);
-	submitter.Present(*swapchain, swapchainIndex);
+    PresentSubmitter submitter{};
+    submitter.Wait(semaphores[sync].renderComplete);
+    submitter.Present(*swapchain, swapchainIndex);
 
-	VkResult ret = queue->Present(submitter);
-	if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
-	{
-		UpdateSurface(surfaceExtent);
-		return;
-	}
-	Check(ret);
+    VkResult ret = queue->Present(submitter);
+    if (ret == VK_ERROR_OUT_OF_DATE_KHR || ret == VK_SUBOPTIMAL_KHR)
+    {
+		UpdateSurface({ 0, 0 });
+        return;
+    }
+    Check(ret);
 }
 
 void RenderContext::SwapBuffers()
 {
-	uint64_t lastWaitValue   = 0;
-	uint64_t lastSignalValue = 0;
+    uint64_t lastWaitValue   = 0;
+    uint64_t lastSignalValue = 0;
 
-	if (device->IsCommandBufferRecorded<Queue::Type::Transfer>())
-	{
-		lastSignalValue = ++syncValues[sync];
-		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Transfer>({ timelineSemaphore, lastSignalValue });
-		TimelineSubmitter timelineSubmitter{};
-		timelineSubmitter.Signal(lastSignalValue);
+    commandBuffer->End();
+    Submitter submitter{};
+    TimelineSubmitter timelineSubmitter{};
 
-		Submitter submitter{};
-		submitter.SignalSemaphore(timelineSemaphore);
-		submitter.Execute(commandBuffers);
-		submitter.Trampoline(timelineSubmitter);
+    if (auto semaphore = device->GetTimelineSemaphore(); semaphore)
+    {
+        timelineSubmitter.Wait(semaphore->value);
+        submitter.WaitSemaphore(*semaphore, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    }
 
-		auto &transferQueue = device->FindQueueByType(Queue::Type::Transfer, device->QueueFailyIndex(Queue::Type::Transfer));
-		transferQueue.Submit(submitter, nullptr);
-	}
-
-	if (device->IsCommandBufferRecorded<Queue::Type::Compute>())
-	{
-		lastWaitValue = lastSignalValue;
-		lastSignalValue = ++syncValues[sync];
-		auto &commandBuffers = device->GetCommandBuffers<Queue::Type::Compute>({ timelineSemaphore, lastSignalValue });
-
-		TimelineSubmitter timelineSubmitter{};
-		timelineSubmitter.Wait(lastWaitValue);
-		timelineSubmitter.Signal(lastSignalValue);
-
-		Submitter submitter{};
-		submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-		submitter.SignalSemaphore(timelineSemaphore);
-		submitter.Execute(commandBuffers);
-		submitter.Trampoline(timelineSubmitter);
-
-		auto &computeQueue = device->FindQueueByType(Queue::Type::Compute, device->QueueFailyIndex(Queue::Type::Compute));
-		computeQueue.Submit(submitter, nullptr);
-	}
-
-	lastWaitValue = lastSignalValue;
-	lastSignalValue = ++syncValues[sync];
-
-	TimelineSubmitter timelineSubmitter{};
-	timelineSubmitter.Wait(lastWaitValue);
-	timelineSubmitter.Signal(lastSignalValue);
-
-	Submitter submitter{};
-	submitter.WaitSemaphore(timelineSemaphore, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+    timelineSubmitter.Signal(++commandBuffer->semaphore.value);
+    submitter.SignalSemaphore(commandBuffer->semaphore);
+    timelineSubmitter.Signal(++syncValues[sync]);
 	submitter.SignalSemaphore(timelineSemaphore);
-	submitter.Execute(device->GetCommandBuffers<Queue::Type::Graphics>({timelineSemaphore, lastSignalValue}));
 
-	if (swapchain)
-	{
-		timelineSubmitter.Wait(0);
+    if (swapchain)
+    {
+        timelineSubmitter.Wait(0);
+        submitter.WaitSemaphore(semaphores[sync].acquiredImageReady, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
 		timelineSubmitter.Signal(0);
-
-		submitter.WaitSemaphore(semaphores[sync].acquiredImageReady, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 		submitter.SignalSemaphore(semaphores[sync].renderComplete);
-	}
+    }
 
-	submitter.Trampoline(timelineSubmitter);
-	queue->Submit(submitter, fences[sync]);
+    submitter.Execute(commandBuffer);
+	commandPool->Free(commandBuffer);
+	commandBuffer = nullptr;
 
-#ifdef __linux__
-	// If the resize event triggered on ubuntu, the device->wait(fence) will get hang.
-	// Not sure what exactly cause the problem at the present time.
-	queue->WaitIdle();
-#endif
+    submitter.Trampoline(timelineSubmitter);
+    queue->Submit(submitter, nullptr);
 
-	if (swapchain)
-	{
-		__SubmitFrame();
-	}
+    if (swapchain)
+    {
+		SubmitFrame();
+    }
 
-	lastSync = syncValues[sync];
-	SLROTATE(sync, FrameSize());
+    lastSync = syncValues[sync];
+    SLROTATE(sync, FrameSize());
 
-	device->DestroyObjects();
+    device->DestroyObjects();
 }
 
 void RenderContext::Draw(GraphicsPipeline::Super *superPipeline)
 {
-	Submit([&](CommandBuffer *cmdbuf) {
-		auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
+    Submit([&](CommandBuffer *cmdbuf) {
+        auto pipeline = dynamic_cast<GraphicsPipeline *>(superPipeline);
 
-		VkDescriptorSet descriptorSets[] = {pipeline->GetDescriptorSet()};
-		cmdbuf->BindDescriptorSets(
-		    GraphicsPipeline::BindPoint,
-		    pipeline->Layout(),
-		    0, 1,
-		    descriptorSets,
-		    0, 0);
+        VkDescriptorSet descriptorSets[] = {pipeline->GetDescriptorSet()};
+        cmdbuf->BindDescriptorSets(
+            GraphicsPipeline::BindPoint,
+            pipeline->Layout(),
+            0, 1,
+            descriptorSets,
+            0, 0);
 
-		cmdbuf->BindPipeline(
-			VK_PIPELINE_BIND_POINT_GRAPHICS,
-		    *pipeline);
+        cmdbuf->BindPipeline(
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            *pipeline);
 
-		Ref<Buffer> buffer = pipeline->Get<Buffer::Type::Vertex>();
-		VkBuffer vertex = *buffer;
-		VkDeviceSize offsets = buffer->Offset();
-		cmdbuf->BindVertexBuffers(
-		    0, 1,
-		    &vertex,
-		    &offsets);
+        Ref<Buffer> buffer = pipeline->Get<Buffer::Type::Vertex>();
+        VkBuffer vertex = *buffer;
+        VkDeviceSize offsets = buffer->Offset();
+        cmdbuf->BindVertexBuffers(
+            0, 1,
+            &vertex,
+            &offsets);
 
-		buffer = pipeline->Get<Buffer::Type::Index>();
-		cmdbuf->BindIndexBuffer(buffer);
+        buffer = pipeline->Get<Buffer::Type::Index>();
+        cmdbuf->BindIndexBuffer(buffer);
 
-		cmdbuf->DrawIndexed(
-		    pipeline->ElementCount,
-		    1, 0, 0, 0);
-	});
+        cmdbuf->DrawIndexed(
+            pipeline->ElementCount,
+            1, 0, 0, 0);
+    });
 }
 
 DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
 {
-	auto ret = new DescriptorBuffer;
-	ret->Request<ImageDescriptor>(count);
+    auto ret = new DescriptorBuffer;
+    ret->Request<ImageDescriptor>(count);
 
-	return ret;
+    return ret;
 }
 
 DescriptorBuffer *RenderContext::CreateBufferDescriptor(uint32_t count)
 {
-	auto ret = new DescriptorBuffer;
-	ret->Request<BufferDescriptor>(count);
+    auto ret = new DescriptorBuffer;
+    ret->Request<BufferDescriptor>(count);
 
-	return ret;
+    return ret;
 }
 
 SuperShader *RenderContext::CreateShader(const std::string &filepath, Shader::Type type)
 {
-	return new Shader{device, filepath, type};
+    return new Shader{device, filepath, type};
 }
 
 SuperGraphicsPipeline *RenderContext::CreateGraphicsPipeline(Ref<Shader::Super> shader)
 {
-	return new GraphicsPipeline{ device, shader };
+    return new GraphicsPipeline{ device, shader };
 }
 
 SuperComputePipeline *RenderContext::CreateComputePipeline(Shader::Super *shader)
 {
-	return new ComputePipeline{device, shader};
+    return new ComputePipeline{device, shader};
 }
 
 SuperTexture *RenderContext::CreateTexture(const std::string &filepath, const Texture::Description &description)
 {
-	return new Texture{device, filepath, description};
+    return new Texture{device, filepath, description};
 }
 
 SuperTexture *RenderContext::CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description)
 {
-	return new Texture{device, width, height, data, description};
+    return new Texture{device, width, height, data, description};
 }
 
 SuperTextureCube *RenderContext::CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description)
 {
-	return new TextureCube{device, width, height, description};
+    return new TextureCube{device, width, height, description};
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, const void *data, Buffer::Type type)
 {
-	return new Buffer{device, size, data, type};
+    return new Buffer{device, size, data, type};
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, Buffer::Type type)
 {
-	return new Buffer{device, size, type};
+    return new Buffer{device, size, type};
 }
 
 SuperBuffer *RenderContext::CreateBuffer(const size_t size, uint32_t binding)
 {
-	return new Buffer{device, size, binding};
+    return new Buffer{device, size, binding};
 }
 
 SuperRenderTarget *RenderContext::CreateRenderTarget(const RenderTarget::Description &description)
 {
-	return new RenderTarget{device, description};
+    return new RenderTarget{device, description};
 }
 
 AccelerationStructure *RenderContext::CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer)
 {
-	return new AccelerationStructure{ device, (Buffer *)pVertexBuffer, desc, (Buffer *)pIndexBuffer, (Buffer *)pTranformBuffer };
+    return new AccelerationStructure{ device, (Buffer *)pVertexBuffer, desc, (Buffer *)pIndexBuffer, (Buffer *)pTranformBuffer };
 }
 
 SuperGuiLayer *RenderContext::CreateGuiLayer()
@@ -518,12 +470,12 @@ SuperGuiLayer *RenderContext::CreateGuiLayer()
 
 void RenderContext::PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset)
 {
-	__PushConstant(dynamic_cast<Pipeline *>(pipeline), stage, size, data, offset);
+    __PushConstant(dynamic_cast<Pipeline *>(pipeline), stage, size, data, offset);
 }
 
 void RenderContext::PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset)
 {
-	__PushConstant(dynamic_cast<Pipeline *>(pipeline), Shader::Stage::Compute, size, data, offset);
+    __PushConstant(dynamic_cast<Pipeline *>(pipeline), Shader::Stage::Compute, size, data, offset);
 }
 
 void RenderContext::__PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void * data, uint32_t offset)
@@ -541,15 +493,23 @@ void RenderContext::__PushConstant(Pipeline *pipeline, Shader::Stage stage, uint
 
 void RenderContext::Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
+    Submit([&](CommandBuffer *cmdbuf) {
+        auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+        pipeline->Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
+    });
+}
+
+void RenderContext::Blit(SuperTexture *superTexture)
+{
 	Submit([&](CommandBuffer *cmdbuf) {
-		auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
-		pipeline->Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
+		auto texture = dynamic_cast<Texture *>(superTexture);
+		texture->Blit(cmdbuf);
 	});
 }
 
 void RenderContext::Begin(SuperRenderTarget *iRenderTarget)
 {
-	auto renderTarget = dynamic_cast<RenderTarget *>(iRenderTarget);
+    auto renderTarget = dynamic_cast<RenderTarget *>(iRenderTarget);
     Submit([&](CommandBuffer *cmdbuf) {
         auto &desc = renderTarget->Desc();
 

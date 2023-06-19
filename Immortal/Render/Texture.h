@@ -169,8 +169,6 @@ public:
 
     virtual void PlatformSpecifiedUpdate(Anonymous resource, uint32_t subresource) {}
 
-    virtual void Blit() {}
-
     virtual void Map(uint32_t slot = 0) { }
 
     virtual bool operator==(const Texture &other) const

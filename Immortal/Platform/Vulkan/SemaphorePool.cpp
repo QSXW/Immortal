@@ -8,12 +8,6 @@ namespace Immortal
 namespace Vulkan
 {
 
-SemaphorePool::SemaphorePool() :
-    device{}
-{
-
-}
-
 SemaphorePool::SemaphorePool(Device *device) :
     device{ device }
 {
@@ -22,55 +16,70 @@ SemaphorePool::SemaphorePool(Device *device) :
 
 SemaphorePool::~SemaphorePool()
 {
-    Reset();
-    for (auto &h : handles)
+    while (!handles.empty())
     {
-        device->DestroyAsync(h);
+        device->DestroyAsync((VkSemaphore)handles.front());
+        handles.pop();
     }
-    handles.clear();
 }
 
-VkSemaphore SemaphorePool::Request()
+Semaphore SemaphorePool::Allocate()
 {
-    VkSemaphoreCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo createInfo{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+    };
 
-    return InternalRequest(createInfo);
+    return InternalAllocate(createInfo);
 }
 
-VkSemaphore SemaphorePool::Request(uint64_t initialValue)
+TimelineSemaphore SemaphorePool::Allocate(uint64_t initialValue)
 {
-    VkSemaphoreTypeCreateInfo timelineInfo{};
-    timelineInfo.sType         = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
-    timelineInfo.pNext         = nullptr;
-    timelineInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    timelineInfo.initialValue  = initialValue;
+    VkSemaphoreTypeCreateInfo timelineInfo{
+        .sType         = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+        .pNext         = nullptr,
+        .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+        .initialValue  = initialValue,
+    };
 
-    VkSemaphoreCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    createInfo.pNext = &timelineInfo;
-    createInfo.flags = 0;
+    VkSemaphoreCreateInfo createInfo{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = &timelineInfo,
+        .flags = 0,
+    };
 
-    return InternalRequest(createInfo);
-}
-
-void SemaphorePool::Reset()
-{
-    activeCount = 0;
-}
-
-VkSemaphore SemaphorePool::InternalRequest(const VkSemaphoreCreateInfo &createInfo)
-{
-    if (activeCount < handles.size())
-    {
-        return handles.at(activeCount++);
-    }
-
-    VkSemaphore semaphore{ VK_NULL_HANDLE };
+    VkSemaphore semaphore = VK_NULL_HANDLE;
     Check(device->Create(&createInfo, &semaphore));
 
-    handles.push_back(semaphore);
-    activeCount++;
+    return semaphore;
+}
+
+void SemaphorePool::Release(Semaphore &semaphore)
+{
+    handles.push(semaphore);
+}
+
+void SemaphorePool::Release(TimelineSemaphore &&semaphore)
+{
+    if (semaphore)
+    {
+        device->DestroyAsync((VkSemaphore)semaphore);
+    }
+}
+
+Semaphore SemaphorePool::InternalAllocate(const VkSemaphoreCreateInfo &createInfo)
+{
+    VkSemaphore semaphore{VK_NULL_HANDLE};
+    if (!handles.empty())
+    {
+        semaphore = handles.front();
+        handles.pop();
+    }
+    else
+    {
+        Check(device->Create(&createInfo, &semaphore));
+    }
 
     return semaphore;
 }

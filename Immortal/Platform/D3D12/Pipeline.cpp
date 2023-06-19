@@ -415,33 +415,32 @@ ComputePipeline::ComputePipeline(RenderContext *context, Shader::Super *superSha
     Check(device->Create(&desc, &handle));
 }
 
-void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+void ComputePipeline::Dispatch(CommandList *cmdlist, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
-    context->Compute([&, this](CommandList *cmdlist) {
-        cmdlist->SetPipelineState(*this);
-        cmdlist->SetComputeRootSignature(*rootSignature);
-        cmdlist->SetDescriptorHeaps(&*descriptorHeap.active, 1);
+    cmdlist->SetPipelineState(*this);
+    cmdlist->SetComputeRootSignature(*rootSignature);
+    cmdlist->SetDescriptorHeaps(&*descriptorHeap.active, 1);
 
-        GPUDescriptor descriptors{ descriptorHeap.active->StartOfGPU() };
-        for (uint32_t i = 0; i < descriptorTables.size(); i++)
-        {
-            GPUDescriptor descriptor = descriptors;
-            descriptor.Offset(descriptorTables[i].Offset, descriptorHeap.active->GetIncrement());
-			cmdlist->SetComputeRootDescriptorTable(descriptorTables[i].RootParameterIndex, descriptor);
-        }
+    GPUDescriptor descriptors{ descriptorHeap.active->StartOfGPU() };
+    for (uint32_t i = 0; i < descriptorTables.size(); i++)
+    {
+        GPUDescriptor descriptor = descriptors;
+        descriptor.Offset(descriptorTables[i].Offset, descriptorHeap.active->GetIncrement());
+		cmdlist->SetComputeRootDescriptorTable(descriptorTables[i].RootParameterIndex, descriptor);
+    }
 
-        if (HasRootConstant())
-        {
-			cmdlist->PushComputeConstant(pushConstants.size(), pushConstants.data(), 0);
-        }
-        cmdlist->Dispatch(nGroupX, nGroupY, nGroupZ);
-        });
+    if (HasRootConstant())
+    {
+		cmdlist->PushComputeConstant(pushConstants.size(), pushConstants.data(), 0);
+    }
+    cmdlist->Dispatch(nGroupX, nGroupY, nGroupZ);
 
     pushConstants.clear();
 }
 
-void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
+void ComputePipeline::PushConstant(CommandList *cmdlist, uint32_t size, const void *data, uint32_t offset)
 {  
+    (void)cmdlist;
     if (HasRootConstant())
     {
 		pushConstants.resize(size + offset);

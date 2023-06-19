@@ -182,9 +182,9 @@ public:
 public:
     ComputePipeline(RenderContext *context, Shader::Super *shader);
 
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+    void Dispatch(CommandList *cmdlist, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
 
-    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) override;
+    void PushConstant(CommandList *cmdlist, uint32_t size, const void *data, uint32_t offset = 0);
 
 protected:
     LightArray<uint8_t, 128> pushConstants;

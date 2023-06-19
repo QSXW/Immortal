@@ -275,6 +275,11 @@ public:
 		renderContext->Dispatch(pipeline, nGroupX, nGroupY, nGroupZ);
     }
 
+    static void Blit(Texture *texture)
+    {
+		renderContext->Blit(texture);
+    }
+
 private:
 	static RenderContext *renderContext;
 

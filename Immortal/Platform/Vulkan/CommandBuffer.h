@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Handle.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "Interface/IObject.h"
@@ -11,16 +12,9 @@ namespace Vulkan
 {
 
 class CommandPool;
-class CommandBuffer : public IObject
+class CommandBuffer : public IObject, public Handle<VkCommandBuffer>
 {
 public:
-    enum class ResetMode
-    {
-        ResetPool,
-        ResetIndividually,
-        AlwaysAllocated
-    };
-
     enum class State
     {
         Invalid,
@@ -37,11 +31,10 @@ public:
         SimultaneousUse    = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
     };
 
-    using Primitive = VkCommandBuffer;
-    VKCPP_OPERATOR_HANDLE()
+    VKCPP_SWAPPABLE(CommandBuffer)
 
 public:
-        VkResult BeginCommandBuffer(VkCommandBufferBeginInfo const *pBeginInfo)
+    VkResult BeginCommandBuffer(VkCommandBufferBeginInfo const *pBeginInfo)
     {
         __Record();
         return vkBeginCommandBuffer(handle, pBeginInfo);
@@ -1170,9 +1163,11 @@ public:
     }
 
 public:
-    CommandBuffer(CommandPool *cmdPool, Level level);
+    CommandBuffer(CommandPool *commandPool = nullptr, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     ~CommandBuffer();
+
+    void Destroy(CommandPool *commandPool);
 
     VkResult Begin(Usage flags = Usage::OneTimeSubmit, CommandBuffer *primaryCommandBuffer = nullptr, const VkCommandBufferInheritanceInfo *pInheritanceInfo = nullptr);
 
@@ -1180,7 +1175,7 @@ public:
 
     VkResult Execute();
 
-    VkResult Reset(ResetMode reset_mode);
+    VkResult Reset(VkCommandBufferResetFlags flags = VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
     void SetState(State _state)
     {
@@ -1266,14 +1261,22 @@ protected:
         count++;
     }
 
-private:
-    CommandPool *commandPool{ nullptr };
+    void Swap(CommandBuffer &other)
+    {
+        Handle::Swap((Handle &)other);
+        std::swap(count, other.count);
+        std::swap(state, other.state);
+        std::swap(level, other.level);
+    }
 
-    std::atomic<uint32_t> count;
+protected:
+    CommandPool *commandPool;
 
-    State state{ State::Initial };
+    uint32_t count;
 
-    Level level{ Level::Primary };
+    State state;
+
+    VkCommandBufferLevel level;
 };
 
 }

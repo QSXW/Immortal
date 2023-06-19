@@ -122,9 +122,9 @@ public:
 public:
     ComputePipeline(Device *device, Shader::Super *shader);
 
-    virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0) override;
+    void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
 
-    virtual void PushConstant(uint32_t size, const void *data, uint32_t offset = 0) override;
+    void PushConstant(uint32_t size, const void *data, uint32_t offset = 0);
 
     virtual void Bind(SuperTexture *texture, uint32_t binding = 0) override;
 };

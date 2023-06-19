@@ -84,12 +84,6 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 
     VkVideoDecodeInfoKHR decodeInfo{};
 
-    auto cmdbuf = device->RequestCommandBuffer(Vulkan::Level::Primary);
-
-    cmdbuf->Begin(&beginInfo);
-    cmdbuf->DecodeVideoKHR(&decodeInfo);
-    cmdbuf->End(&endInfo);
-
     return CodecError::Succeed;
 }
 

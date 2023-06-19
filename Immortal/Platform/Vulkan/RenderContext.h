@@ -13,6 +13,8 @@
 #include "SemaphorePool.h"
 #include "AccelerationStructure.h"
 #include "Surface.h"
+#include "TimelineCommandBuffer.h"
+#include "TimelineCommandPool.h"
 
 namespace Immortal
 {
@@ -35,8 +37,8 @@ concept ExposedType = (
 
 struct RenderSemaphore
 {
-	VkSemaphore acquiredImageReady;
-	VkSemaphore renderComplete;
+    Semaphore acquiredImageReady;
+    Semaphore renderComplete;
 };
 
 class RenderContext : public SuperRenderContext
@@ -71,47 +73,49 @@ public:
 
     virtual void SwapBuffers() override;
 
-	virtual void PrepareFrame() override;
+    virtual void PrepareFrame() override;
 
-	virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
+    virtual void OnResize(uint32_t x, uint32_t y, uint32_t width, uint32_t height) override;
 
-	virtual SuperShader *CreateShader(const std::string &filepath, Shader::Type type) override;
+    virtual SuperShader *CreateShader(const std::string &filepath, Shader::Type type) override;
 
-	virtual SuperGraphicsPipeline *CreateGraphicsPipeline(Ref<Shader::Super> shader) override;
+    virtual SuperGraphicsPipeline *CreateGraphicsPipeline(Ref<Shader::Super> shader) override;
 
-	virtual SuperComputePipeline *CreateComputePipeline(Shader::Super *shader) override;
+    virtual SuperComputePipeline *CreateComputePipeline(Shader::Super *shader) override;
 
-	virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override;
+    virtual SuperTexture *CreateTexture(const std::string &filepath, const Texture::Description &description = {}) override;
 
-	virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override;
+    virtual SuperTexture *CreateTexture(uint32_t width, uint32_t height, const void *data, const Texture::Description &description) override;
 
-	virtual SuperTextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description) override;
+    virtual SuperTextureCube *CreateTextureCube(uint32_t width, uint32_t height, const Texture::Description &description) override;
 
-	virtual SuperBuffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
+    virtual SuperBuffer *CreateBuffer(const size_t size, const void *data, Buffer::Type type) override;
 
-	virtual SuperBuffer *CreateBuffer(const size_t size, Buffer::Type type) override;
+    virtual SuperBuffer *CreateBuffer(const size_t size, Buffer::Type type) override;
 
-	virtual SuperBuffer *CreateBuffer(const size_t size, uint32_t binding) override;
+    virtual SuperBuffer *CreateBuffer(const size_t size, uint32_t binding) override;
 
-	virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
+    virtual SuperRenderTarget *CreateRenderTarget(const RenderTarget::Description &description) override;
 
-	virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
+    virtual DescriptorBuffer *CreateImageDescriptor(uint32_t count) override;
 
-	virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
+    virtual DescriptorBuffer *CreateBufferDescriptor(uint32_t count) override;
 
     virtual AccelerationStructure *CreateAccelerationStructure(const SuperBuffer *pVertexBuffer, const InputElementDescription &desc, const SuperBuffer *pIndexBuffer, const SuperBuffer *pTranformBuffer) override;
 
-	virtual void PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
+    virtual void PushConstant(SuperGraphicsPipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset) override;
 
-	virtual void PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
+    virtual void PushConstant(SuperComputePipeline *pipeline, uint32_t size, const void *data, uint32_t offset) override;
 
-	virtual void Draw(SuperGraphicsPipeline *pipeline) override;
+    virtual void Draw(SuperGraphicsPipeline *pipeline) override;
 
-	virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+    virtual void Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
-	virtual void Begin(SuperRenderTarget *renderTarget) override;
+    virtual void Blit(SuperTexture *texture) override;
 
-	virtual void End() override;
+    virtual void Begin(SuperRenderTarget *renderTarget) override;
+
+    virtual void End() override;
 
 public:
     Swapchain *UpdateSurface(VkExtent2D extent);
@@ -180,7 +184,7 @@ public:
 
     RenderTarget *GetRenderTarget()
     {
-		return present.renderTargets[swapchainIndex];
+        return present.renderTargets[swapchainIndex];
     }
 
     Framebuffer *GetFramebuffer()
@@ -194,21 +198,15 @@ public:
     }
 
     template <class T>
-    void Record(T &&process = [](CommandBuffer *) -> void {}, CommandBuffer::Usage usage = CommandBuffer::Usage::OneTimeSubmit)
-    {
-        device->Submit(process);
-    }
-
-    template <class T>
     void Submit(T &&process = [](CommandBuffer *) -> void {})
     {
-        device->Submit(process);
+		process(commandBuffer.Get());
     }
 
 protected:
-	void __InitSyncObjects();
+    void __InitSyncObjects();
 
-    void __SubmitFrame();
+    void SubmitFrame();
 
     void __PushConstant(Pipeline *pipeline, Shader::Stage stage, uint32_t size, const void *data, uint32_t offset);
 
@@ -227,7 +225,7 @@ private:
 
     struct
     {
-	    std::vector<URef<RenderTarget>> renderTargets;
+        std::vector<URef<RenderTarget>> renderTargets;
     } present;
 
     uint32_t swapchainIndex = 0;
@@ -245,19 +243,19 @@ private:
 
     size_t threadCount{ 1 };
 
-	URef<SemaphorePool> semaphorePool;
+    TimelineSemaphore timelineSemaphore;
 
-	VkSemaphore timelineSemaphore{VK_NULL_HANDLE};
+    uint64_t syncValues[3] = {0, 0, 0};
 
-	uint64_t syncValues[3] = {0, 0, 0};
+    uint64_t lastSync = 0;
 
-	uint64_t lastSync = 0;
+    Ref<TimelineCommandBuffer> commandBuffer;
 
-	std::array<RenderSemaphore, 3> semaphores;
+    Ref<TimelineCommandPool> commandPool;
 
-	std::array<VkFence, 3> fences{VK_NULL_HANDLE};
+    std::array<RenderSemaphore, 3> semaphores;
 
-	uint32_t sync{0};
+    uint32_t sync{0};
 };
 
 }

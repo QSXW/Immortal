@@ -146,7 +146,7 @@ void Pipeline::Bind(const std::string &name, const Buffer::Super *uniform)
 
 void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t slot)
 {
-	Bind(descriptorBuffer->DeRef<Descriptor>(), slot);
+    Bind(descriptorBuffer->DeRef<Descriptor>(), slot);
 }
 
 void Pipeline::Bind(const Descriptor *pDescriptor, uint32_t slot)
@@ -154,11 +154,11 @@ void Pipeline::Bind(const Descriptor *pDescriptor, uint32_t slot)
     auto &writeDescriptor = descriptor.setUpdater->WriteDescriptorSets[slot];
     if (writeDescriptor.descriptorType <= VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-		writeDescriptor.pImageInfo = (ImageDescriptor *)pDescriptor;
+        writeDescriptor.pImageInfo = (ImageDescriptor *)pDescriptor;
     }
     else
     {
-		writeDescriptor.pBufferInfo = (BufferDescriptor *)pDescriptor;
+        writeDescriptor.pBufferInfo = (BufferDescriptor *)pDescriptor;
     }
     writeDescriptor.dstSet = descriptor.set;
     Update();
@@ -416,13 +416,6 @@ void ComputePipeline::Bind(Texture::Super *superTexture, uint32_t slot)
 
 void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
-    cmdbuf->PipelineImageBarrier(
-        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        barriers.data(),
-        U32(barriers.size())
-    );
-
     cmdbuf->BindPipeline(BindPoint, handle);
 
     cmdbuf->BindDescriptorSets(
@@ -432,6 +425,12 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
         &descriptor.set,
         0, nullptr
     );
+
+     cmdbuf->PipelineImageBarrier(
+	    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+	    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+	    barriers.data(),
+	    U32(barriers.size()));
 
     cmdbuf->Dispatch(nGroupX, nGroupY, nGroupZ);
 
@@ -448,22 +447,6 @@ void ComputePipeline::Dispatch(CommandBuffer *cmdbuf, uint32_t nGroupX, uint32_t
     );
 
     barriers.clear();
-}
-
-void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
-{
-    device->ComputeAsync([&](CommandBuffer *cmdbuf) {
-        Dispatch(cmdbuf, nGroupX, nGroupY, nGroupZ);
-        });
-}
-
-void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
-{
-    device->ComputeAsync(
-        [=, this](CommandBuffer *cmdbuf) {
-            cmdbuf->PushConstants(layout, Shader::Stage::Compute, offset, size, data);
-        }
-    );
 }
 
 }

@@ -138,9 +138,22 @@ void RenderContext::PushConstant(SuperGraphicsPipeline *super, Shader::Stage sta
 
 }
 
-void RenderContext::PushConstant(SuperComputePipeline *super, uint32_t size, const void *data, uint32_t offset)
+void RenderContext::PushConstant(SuperComputePipeline *superPipeline, uint32_t size, const void *data, uint32_t offset)
 {
+	auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+	pipeline->PushConstant(size, data, offset);
+}
 
+void RenderContext::Dispatch(SuperComputePipeline *superPipeline, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+{
+	auto pipeline = dynamic_cast<ComputePipeline *>(superPipeline);
+	pipeline->Dispatch(nGroupX, nGroupY, nGroupZ);
+}
+
+void RenderContext::Blit(SuperTexture *superTexture)
+{
+	auto texture = dynamic_cast<Texture *>(superTexture);
+	texture->Blit();
 }
 
 DescriptorBuffer *RenderContext::CreateImageDescriptor(uint32_t count)
