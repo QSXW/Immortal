@@ -64,10 +64,6 @@ public:
         "Assets/Shaders/hlsl/"
     };
 
-    static const Shader::Properties ShaderProperties[];
-
-    static Shader::Manager ShaderManager;
-
     static Ref<Shader> GetShader(const std::string &name);
 
     static auto *Preset()

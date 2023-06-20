@@ -10,32 +10,50 @@ Ref<ComputePipeline> Pipelines::ColorSpaceNV122RGBA8;
 
 RenderContext *Render::renderContext;
 
-Shader::Manager Render::ShaderManager;
-
 Render::Data Render::data{};
 
-const Shader::Properties Render::ShaderProperties[] = {
-    { "AnimatedBasic3D",        U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
-    { "Basic",                  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
-    { "Basic3D",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
-    { "Texture",                U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
-    { "Render2D",               U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics },
-    { "Outline",                U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
-    { "Skybox",                 U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics },
-    { "PhysicalBasedRendering", U32(Render::Type::Vulkan                                           ), Shader::Type::Graphics },
-    { "ColorMixing",            U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
-    { "color_space_yuv2rgba8",  U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
-    { "color_space_nv122rgba8", U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  },
-    { "GaussianBlur",           U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
-    { "SimpleBlur",             U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
-    { "Equirect2Cube",          U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  },
+struct ShaderProperty
+{
+	uint32_t API;
+
+	Shader::Type Type;
+};
+
+std::unordered_map<std::string, Ref<Shader>> shaderData;
+
+const std::unordered_map <std::string, ShaderProperty> shaderProperties = {
+    { "AnimatedBasic3D",        { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics }},
+    { "Basic",                  { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics }},
+    { "Basic3D",                { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics }},
+    { "Texture",                { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics }},
+    { "Render2D",               { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Graphics }},
+    { "Outline",                { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics }},
+    { "Skybox",                 { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Graphics }},
+    { "PhysicalBasedRendering", { U32(Render::Type::Vulkan                                           ), Shader::Type::Graphics }},
+    { "ColorMixing",            { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  }},
+    { "color_space_yuv2rgba8",  { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  }},
+    { "color_space_nv122rgba8", { U32(Render::Type::Vulkan | Render::Type::OpenGL | Render::Type::D3D), Shader::Type::Compute  }},
+    { "GaussianBlur",           { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  }},
+    { "SimpleBlur",             { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  }},
+    { "Equirect2Cube",          { U32(Render::Type::Vulkan | Render::Type::OpenGL                    ), Shader::Type::Compute  }},
 };
 
 Ref<Shader> Render::GetShader(const std::string &name)
 {
-    if (auto it = ShaderManager.find(name); it != ShaderManager.end())
+	if (auto it = shaderData.find(name); it != shaderData.end())
     {
         return it->second;
+    }
+	else if (auto it = shaderProperties.find(name); it != shaderProperties.end())
+    {
+		auto &[name, shaderProperty] = *it;
+        if ((Type)shaderProperty.API & API)
+        {
+			auto asset = API & Type::D3D ? 1 : 0;
+			Ref<Shader> shader = Create<Shader>(std::string{AssetsPathes[asset]} + name, shaderProperty.Type);
+			shaderData.insert({ name, shader });
+			return shader;
+        }
     }
 
     LOG::WARN("Request Shader {} Not Found!", name);
@@ -46,19 +64,6 @@ void Render::Setup(RenderContext *context)
 {
     LOG::INFO("Initialize Renderer With Graphics API: {}", Sringify(Render::API));
 	renderContext = context;
-
-    {
-        Profiler profiler{ "Loading Shader" };
-        auto asset = API & Type::D3D ? 1 : 0;
-        for (int i = 0; i < SL_ARRAY_LENGTH(ShaderProperties); i++)
-        {
-            if ((Type)ShaderProperties[i].API & API)
-            {
-                Ref<Shader> shader = Create<Shader>(std::string{ AssetsPathes[asset] } + ShaderProperties[i].Name, ShaderProperties[i].Type);
-                ShaderManager.emplace(ShaderProperties[i].Name, std::move(shader));
-            }
-        }
-    }
 
     Pipelines::ColorSpace = Create<ComputePipeline>(GetShader("color_space_yuv2rgba8"));
 	Pipelines::ColorSpaceNV122RGBA8 = Create<ComputePipeline>(GetShader("color_space_nv122rgba8"));
@@ -102,7 +107,7 @@ void Render::Release()
     data.Textures.Transparent.Reset();
     data.Textures.Normal.Reset();
     data.Target.Reset();
-    ShaderManager.clear();
+	shaderData.clear();
 
     Render2D::Release();
 }
