@@ -2,12 +2,14 @@
 
 #include "Core.h"
 #include "Log.h"
+#include "Utils.h"
 #include "Interface/IObject.h"
 
 #include <thread>
 #include <queue>
 #include <future>
 #include <functional>
+#include <atomic>
 
 namespace Immortal
 {
@@ -56,20 +58,37 @@ public:
 
     void Start()
     {
-        handle = new std::jthread{ stub };
+        handle = std::jthread{ stub };
     }
 
     void Join()
     {
-        if (handle->joinable())
+        if (handle.joinable())
         {
-			handle->join();
+			handle.join();
         }
     }
 
+    void SetDescription(const std::string &name)
+    {
+#ifdef _WIN32
+        SetThreadDescription(handle.native_handle(), ToWString(name).c_str());
+#endif
+    }
+
+    void SetDebugDescription(const std::string &name)
+    {
+#ifdef _DEBUG
+        SetDescription(name);
+#else
+		(void) name;
+#endif
+    }
+
+protected:
     std::function<void()> stub;
 
-    URef<std::jthread> handle;
+    std::jthread handle;
 };
 
 using Task = std::function<void()>;
@@ -83,27 +102,34 @@ public:
 
     void Join();
 
+    void RemoveTasks();
+
+    const std::atomic<uint32_t> &TaskSize() const;
+
 public:
     template <class T>
     auto Enqueue(T task)->std::future<decltype(task())>
     {
+		tasked = true;
+		taskRef++;
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
         {
             std::unique_lock<std::mutex> lock{ mutex };
             tasks.emplace([=]() -> void {
                 (*wrapper)();
             });
-            semaphores.insert((Anonymous) &tasks.back());
         }
 
         condition.notify_one();
         return wrapper->get_future();
     }
 
-private:
+protected:
     std::vector<std::thread> threads;
+    
+    std::atomic<uint32_t> taskRef;
 
-    std::set<Anonymous> semaphores;
+    std::atomic<bool> tasked;
 
     std::condition_variable condition;
 

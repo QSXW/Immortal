@@ -5,7 +5,8 @@ namespace Immortal
 
 std::unique_ptr<ThreadPool> Async::threadPool{ nullptr };
 
-ThreadPool::ThreadPool(uint32_t numThreads)
+ThreadPool::ThreadPool(uint32_t numThreads) :
+    taskRef{0}
 {
     threads.reserve(numThreads);
     for (int i = 0; i < numThreads; i++)
@@ -13,7 +14,6 @@ ThreadPool::ThreadPool(uint32_t numThreads)
         threads.emplace_back([=, this]() -> void {
             while (true)
             {
-                Anonymous semaphore = nullptr;
                 Task task;
                 {
                     std::unique_lock<std::mutex> lock{ mutex };
@@ -26,15 +26,16 @@ ThreadPool::ThreadPool(uint32_t numThreads)
                         break;
                     }
 
-                    auto &refTask = tasks.front();
-                    task = refTask;
-                    semaphore = &refTask;
-                    tasks.pop();
+                    task = std::move(tasks.front());
+					tasks.pop();
                 }
                 task();
-                
-                std::lock_guard lock{mutex};
-                semaphores.erase(semaphore);
+                taskRef--;
+				if (taskRef.load() == 0)
+				{
+					tasked.store(true);
+					tasked.notify_all();
+				}
             }
             });
     }
@@ -54,12 +55,31 @@ ThreadPool::~ThreadPool()
     }
 }
 
-#pragma sl_disable_optimizations
 void ThreadPool::Join()
 {
-    while (!tasks.empty()) {}
-    while (!semaphores.empty()) {}
+    tasked.wait(false);
 }
-#pragma sl_enable_optimizations
+
+void ThreadPool::RemoveTasks()
+{
+    {
+		std::unique_lock<std::mutex> lock{mutex};
+		while (!tasks.empty())
+		{
+			tasks.pop();
+			taskRef--;
+		}
+    }
+    if (taskRef.load() == 0)
+    {
+		tasked.store(true);
+		tasked.notify_all();
+    }
+}
+
+const std::atomic<uint32_t> &ThreadPool::TaskSize() const
+{
+	return taskRef;
+}
 
 }
