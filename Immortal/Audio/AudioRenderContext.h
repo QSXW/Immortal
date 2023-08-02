@@ -47,6 +47,8 @@ public:
 
     virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) = 0;
 
+    virtual double GetPostion() = 0;
+
 public:
     uint32_t GetBufferSize() const
     {

@@ -41,7 +41,7 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         );
     }
 
-    picture = Picture{ width, height, format, false };
+    picture = Picture{ width, height, format };
     picture.Reset(data);
     if (!data)
     {

@@ -5,15 +5,89 @@
  */
 
 #include "Component.h"
+#include <shared_mutex>
 
 namespace Immortal
 {
 
-#define forever for (;;)
+struct VideoPlayerContext
+{
+public:
+    VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
+
+    ~VideoPlayerContext();
+
+    VideoPlayerContext(const VideoPlayerContext &&other) = delete;
+
+    VideoPlayerContext &operator=(const VideoPlayerContext &&other) = delete;
+
+    void Seek(double seconds, int64_t min, int64_t max);
+
+    Picture GetPicture();
+
+    Picture GetAudioFrame();
+
+    void PopPicture();
+
+    void PopAudioFrame();
+
+    const std::string &GetSource() const
+    {
+        return demuxer->GetSource();
+    }
+
+public:
+    URef<Thread> demuxerThread;
+
+    std::unique_ptr<ThreadPool> videoThreadPool;
+
+    std::unique_ptr<ThreadPool> audioThreadPool;
+
+    struct
+    {
+        std::mutex demux;
+
+        std::shared_mutex video;
+
+        std::shared_mutex audio;
+    } mutex;
+
+    std::condition_variable condition;
+
+    Ref<Vision::VideoCodec> decoder;
+
+    Ref<Vision::VideoCodec> audioDecoder;
+
+    Ref<Vision::Interface::Demuxer> demuxer;
+
+    std::queue<Picture> pictures;
+
+    std::queue<Picture> audioFrames;
+
+    Picture lastPicture;
+
+    struct State
+    {
+        bool playing = false;
+        bool exited = false;
+        bool flush = false;
+    } state;
+};
+
+Vision::Picture AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interface::Codec *decoder)
+{
+    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Succeed)
+    {
+        return decoder->GetPicture();
+    }
+
+    return Vision::Picture{};
+}
 
 VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
     demuxerThread{},
-    mutex{},
+    videoThreadPool{ new ThreadPool{1} },
+    audioThreadPool{ new ThreadPool{1} },
     decoder{decoder},
     audioDecoder{ audioDecoder },
     demuxer{demuxer},
@@ -21,30 +95,19 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, 
     state{}
 {
     demuxerThread = new Thread{[=, this]() {
-        while (!state.exited)
+        while (true)
         {
+            std::unique_lock lock{ mutex.demux };
+            condition.wait(lock, [this] {
+                return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
+            });
+
+            if (state.exited)
+            {
+                break;
+            }
+
             Vision::CodedFrame codedFrame;
-
-            if (pictures.size() > 3 && audioFrames.size() != 0)
-            {
-                continue;
-            }
-
-            if (pictures.size() != 0 && audioFrames.size() > 7)
-            {
-                continue;
-            }
-
-            if (queues[0].size() > 7 && queues[1].size() != 0)
-            {
-                continue;
-            }
-
-            if (queues[0].size() != 0 && queues[1].size() > 7)
-            {
-                continue;
-            }
-
             if (demuxer->Read(&codedFrame) != CodecError::Succeed)
             {
                 continue;
@@ -54,82 +117,104 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, 
             {
                 continue;
             }
-            if (!audioDecoder && codedFrame.Type == MediaType::Audio)
+
+            if (audioDecoder && codedFrame.Type == MediaType::Audio)
             {
-                continue;
+                audioThreadPool->Enqueue([=, this] () -> void {
+                    Vision::Picture picture = AsyncDecode(codedFrame, audioDecoder);
+                    if (picture)
+                    {
+                        std::unique_lock lock{ mutex.audio };
+                        audioFrames.push(picture);
+                    }
+                });
             }
-            auto &queue = queues[(int)codedFrame.Type];
-            std::unique_lock lock{mutex};
-            queue.push(codedFrame);
+
+            if (codedFrame.Type == MediaType::Video)
+            {
+                videoThreadPool->Enqueue([=, this] () -> void {
+                    Vision::Picture picture = AsyncDecode(codedFrame, decoder);
+                    if (picture)
+                    {
+                        std::unique_lock lock{ mutex.video };
+                        pictures.push(picture);
+                    }
+                });
+            }
         }
     }};
 
-    videoDecodeThread = new Thread{
-        [=, this]() {
-            while (!state.exited)
-            {
-                while (!state.exited && pictures.size() < 7 && !queues[0].empty())
-                {
-                    Vision::CodedFrame codedFrame;
-                    {
-                        std::unique_lock lock{mutex};
-                        if (!queues[0].empty())
-                        {
-                            codedFrame = queues[0].front();
-                            queues[0].pop();
-                        }
-                    }
-                    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Succeed)
-                    {
-                        Vision::Picture picture = decoder->GetPicture();
+    demuxerThread->Start();
+    demuxerThread->SetDescription("VideoDemux");
+}
 
-                        std::unique_lock lock{mutex};
-                        pictures.push(picture);
-                    }
-                }
-            }
-        }};
+void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
+{
+    std::unique_lock lock{ mutex.demux };
+    videoThreadPool->RemoveTasks();
+    audioThreadPool->RemoveTasks();
+    videoThreadPool->Join();
+    audioThreadPool->Join();
 
-    if (audioDecoder)
     {
-        audioDecodeThread = new Thread{
-            [=, this]() {
-                while (!state.exited)
-                {
-                    while (!state.exited && audioFrames.size() < 7 && !queues[1].empty())
-                    {
-                        Vision::CodedFrame codedFrame;
-                        {
-                            std::unique_lock lock{mutex};
-                            if (!queues[1].empty())
-                            {
-                                codedFrame = queues[1].front();
-                                queues[1].pop();
-                            }
-                        }
-                        if (codedFrame && audioDecoder->Decode(codedFrame) == CodecError::Succeed)
-                        {
-                            Vision::Picture picture = audioDecoder->GetPicture();
-
-                            std::unique_lock lock{mutex};
-                            audioFrames.push(picture);
-                        }
-                    }
-                }
-            }};
-
-        audioDecodeThread->Start();
+        std::unique_lock lock{ mutex.video };
+        pictures = std::queue<Vision::Picture>{};
     }
 
-    demuxerThread->Start();
-    videoDecodeThread->Start();
+    {
+        std::unique_lock lock{ mutex.audio };
+        audioFrames = std::queue<Vision::Picture>{};
+    }
+
+    demuxer->Seek(MediaType::Video, seconds, min, max);
+    condition.notify_all();
 }
 
 VideoPlayerContext::~VideoPlayerContext()
 {
     state.exited = true;
+    condition.notify_all();
+
+    videoThreadPool->RemoveTasks();
+    audioThreadPool->RemoveTasks();
+    videoThreadPool->Join();
+    audioThreadPool->Join();
+
     demuxerThread.Reset();
-    videoDecodeThread.Reset();
+}
+
+Picture VideoPlayerContext::GetPicture()
+{
+    std::shared_lock lock{ mutex.video };
+    return pictures.empty() ? Vision::Picture{} : pictures.front();
+}
+
+Picture VideoPlayerContext::GetAudioFrame()
+{
+    std::shared_lock lock{ mutex.audio };
+    return audioFrames.empty() ? Vision::Picture{} : audioFrames.front();
+}
+
+void VideoPlayerContext::PopPicture()
+{
+    std::unique_lock lock{ mutex.video };
+    pictures.pop();
+    condition.notify_one();
+}
+
+void VideoPlayerContext::PopAudioFrame()
+{
+    std::unique_lock lock{ mutex.audio };
+    if (!audioFrames.empty())
+    {
+        audioFrames.pop();
+    }
+}
+
+VideoPlayerComponent::VideoPlayerComponent() :
+    player{}
+{
+    
 }
 
 VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
@@ -161,6 +246,16 @@ void VideoPlayerComponent::PopPicture()
 void VideoPlayerComponent::PopAudioFrame()
 {
     player->PopAudioFrame();
+}
+
+void VideoPlayerComponent::Seek(double seconds, int64_t min, int64_t max)
+{
+    player->Seek(seconds, min, max);
+}
+
+void VideoPlayerComponent::Swap(VideoPlayerComponent &other)
+{
+    player.Swap(other.player);
 }
 
 Animator *VideoPlayerComponent::GetAnimator() const

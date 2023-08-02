@@ -2,6 +2,7 @@
 #include "Vision/Demux/FFDemuxer.h"
 #include "Vision/Processing/ColorSpace.h"
 #include "Render/Render.h"
+#include "Audio/Device.h"
 #include <list>
 
 #if HAVE_FFMPEG
@@ -16,6 +17,8 @@ extern "C" {
 #include <libavutil/hwcontext_d3d12va.h>
 #endif
 }
+
+#include "Framework/Async.h"
 
 namespace Immortal
 {
@@ -101,7 +104,9 @@ FFCodec::FFCodec() :
     ThrowIf(!handle, "FFCodec::Failed to allocated memory!")
 
     frame = av_frame_alloc();
-    ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
+	ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
+
+	memoryResource = new MemoryResource(sizeof(SharedPictureData));
 }
 
 FFCodec::~FFCodec()
@@ -115,6 +120,9 @@ FFCodec::~FFCodec()
     {
         av_buffer_unref(&device);
     }
+
+    Flush();
+	memoryResource.Reset();
 }
 
 #define RELEASE_PACKET av_packet_unref(packet); av_packet_free(&packet);
@@ -192,34 +200,38 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 		format = CAST(pixelFormat);
     }
 
-    picture = Picture{ ref->width, ref->height, format, false };
-	picture.shared->type = type;
+    if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        picture = Picture{ref->width, ref->height, format, memoryResource};
+	    picture.shared->type = type;
 
-    picture[0] = (uint8_t *)ref->data[0];
-    picture[1] = (uint8_t *)ref->data[1];
-    picture[2] = (uint8_t *)ref->data[2];
+        picture[0] = (uint8_t *)ref->data[0];
+        picture[1] = (uint8_t *)ref->data[1];
+        picture[2] = (uint8_t *)ref->data[2];
 
-    memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
+        memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
 
-    picture.Connect([ref] {
-        av_frame_unref(ref);
-        av_frame_free((AVFrame**)&ref);
-    });
-    picture.SetProperty(ColorSpaceConverter(handle->colorspace));
-
-    if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
+        picture.Connect([ref] {
+		    Async::Execute([ref] {
+			    av_frame_unref(ref);
+			    av_frame_free((AVFrame **)&ref);
+		    });
+        });
+        picture.SetProperty(ColorSpaceConverter(handle->colorspace));
+    }
+    else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
         AVRational tb{ 1, frame->sample_rate };
         if (frame->pts != AV_NOPTS_VALUE)
         {
-            frame->pts = av_rescale_q(frame->pts, timeBase, tb);
+            frame->pts = av_rescale_q(frame->pts - startTimestamp, timeBase, tb);
         }
 
         SwrContext *swrContext = swr_alloc_set_opts(
             nullptr,
             AV_CH_LAYOUT_STEREO,
             AV_SAMPLE_FMT_FLT,
-            48000,
+            AudioDevice::GetSampleRate(),
             !handle->channel_layout ? AV_CH_LAYOUT_STEREO : handle->channel_layout,
             handle->sample_fmt,
             handle->sample_rate,
@@ -231,13 +243,14 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 
         int samples = av_rescale_rnd(
             swr_get_delay(swrContext, handle->sample_rate) + frame->nb_samples,
-            48000,
+            AudioDevice::GetSampleRate(),
             handle->sample_rate,
             AV_ROUND_UP
             );
 
-        picture = Picture{ samples, 1, Format::VECTOR2 };
-        picture.pts = frame->pts;
+        Format format = Format::VECTOR2;
+        picture = Picture{ samples, 1,  format, nullptr, true };
+        picture.pts = frame->pts / frame->nb_samples;
 
         int outSamples = swr_convert(swrContext, &picture.shared->data[0], samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
         if (outSamples < 0)
@@ -253,7 +266,8 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 
         swr_free(&swrContext);
     }
-    else if (frame->pts != AV_NOPTS_VALUE)
+    
+    if (frame->pts != AV_NOPTS_VALUE)
     {
         picture.pts = (frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond;
     }
@@ -265,7 +279,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Succeed;
 }
 
-uint8_t * FFCodec::Data() const
+uint8_t *FFCodec::Data() const
 {
     return nullptr;
 }
@@ -273,6 +287,11 @@ uint8_t * FFCodec::Data() const
 Picture FFCodec::GetPicture() const
 {
     return picture;
+}
+
+void FFCodec::Flush()
+{
+	picture = Picture{};
 }
 
 static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)

@@ -42,6 +42,7 @@ public:
         if (ret < 0)
         {
             LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", filepath, ret);
+            return;
         }
         auto options = GenerateStreamInfo();
 
@@ -206,7 +207,6 @@ CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec, Video
 
 CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 {
-    std::unique_lock lock{ seekMutex };
 	AVPacket *packet = av_packet_alloc();
     if (!packet)
     {
@@ -239,12 +239,11 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
     return CodecError::Succeed;
 }
 
-CodecError FFDemuxer::Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max)
+CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t max)
 {
-    std::unique_lock lock{ seekMutex };
     int streamIndex = formatContext->GetStreamIndex(type);
     auto stream = formatContext->GetStream(streamIndex);
-    timestamp = av_rescale_q(timestamp * AV_TIME_BASE, { 1, AV_TIME_BASE }, stream->time_base) + stream->start_time;
+	int64_t timestamp = av_rescale_q(seconds * AV_TIME_BASE, {1, AV_TIME_BASE}, stream->time_base) + stream->start_time;
 
     if (avformat_seek_file(*formatContext, formatContext->GetStreamIndex(MediaType::Video), min, timestamp, max, 0) < 0)
     {

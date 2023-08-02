@@ -30,7 +30,7 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual CodecError Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max)
+    virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max)
     {
         return CodecError::FailedToCallDecoder;
     }

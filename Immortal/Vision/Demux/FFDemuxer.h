@@ -34,7 +34,7 @@ public:
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 
-    virtual CodecError Seek(MediaType type, int64_t timestamp, int64_t min, int64_t max) override;
+    virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max) override;
 
     void Destory();
 
@@ -47,8 +47,6 @@ public:
 
 protected:
     std::string filepath;
-
-    std::mutex seekMutex;
 };
 
 }

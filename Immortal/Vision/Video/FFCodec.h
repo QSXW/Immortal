@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "Vision/Interface/Codec.h"
 #include "Vision/Common/Animator.h"
+#include "Memory/MemoryResource.h"
 
 struct AVFrame;
 struct AVCodec;
@@ -29,6 +30,8 @@ public:
 
     virtual Picture GetPicture() const override;
 
+    virtual void Flush() override;
+
 public:
 	virtual CodecError SetCodecContext(Anonymous anonymous) override;
 
@@ -44,6 +47,8 @@ protected:
     AVFrame *frame;
 
     PictureType type;
+
+    URef<MemoryResource> memoryResource;
 #endif // HAVE_FFMPEG
 };
 

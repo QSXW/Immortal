@@ -33,44 +33,54 @@ public:
 
     void Reset();
 
-    template <class T>
-    void SetCallBack(T &&task)
-    {
-        callBack = std::move(task);
-    }
+    void OnPauseDown();
 
-    void Flush()
-    {
-        flush = true;
-    }
+    void OnPauseRelease();
 
-    void OnPauseDown()
-    {
-        pause = true;
-    }
+    double GetPosition() const;
 
-    void OnPauseRelease()
+    double Sync(uint64_t videoTimestamp, double framesPerSecond, double delta);
+
+    uint64_t Sync(double framesPerSecond);
+
+public:
+	template <class T>
+	void SetCallBack(T &&task)
+	{
+		callBack = std::move(task);
+	}
+
+    void DisableCallBack()
     {
-        pause = false;
-        semaphore.Signal();
+		callBack = {};
     }
 
 public:
+    static int GetSampleRate();
+
+protected:
+    static AudioDevice *instance;
+
+protected:
     URef<Thread> thread;
 
     URef<AudioRenderContext> context;
 
     std::mutex mutex;
 
-    Semaphore semaphore = { "Audio Device Sync Primitive" };
+    std::atomic_bool status;
 
     std::function<void(Picture &)> callBack;
 
+    uint64_t pts;
+
+    double startpts;
+
+    int samples;
+
     bool stopping;
 
-    bool flush;
-
-    bool pause = false;
+    bool reset;
 };
 
 }

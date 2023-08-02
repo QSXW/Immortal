@@ -81,7 +81,9 @@ set(MEMORY_FILES
     Memory.cpp
     Memory.h
     MemoryAllocator.cpp
-    MemoryAllocator.h)
+    MemoryAllocator.h
+    MemoryResource.cpp
+    MemoryResource.h)
 
 list(TRANSFORM MEMORY_FILES PREPEND "Memory/")
 

@@ -39,8 +39,9 @@ struct CAllocator
         return (T *)malloc(sizeof(T) * n);
     }
 
-    void deallocate(T *const ptr, size_t) const noexcept
+    void deallocate(T *const ptr, size_t size = 0) const noexcept
     {
+        (void)size;
         free(ptr);
     }
 };
@@ -78,8 +79,9 @@ struct AAllocator
         return sl::aligned_malloc<T, A>(n);
     }
 
-    void deallocate(T *const ptr, size_t) const noexcept
+    void deallocate(T *const ptr, size_t size = A) const noexcept
     {
+        (void)size;
         sl::aligned_free(ptr);
     }
 };

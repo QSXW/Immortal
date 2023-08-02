@@ -5,6 +5,8 @@
 #include "Vision/Types.h"
 #include "Vision/Common/Error.h"
 #include "Vision/Common/Animator.h"
+#include "Framework/Async.h"
+#include "Memory/MemoryResource.h"
 
 namespace Immortal
 {
@@ -44,11 +46,6 @@ public:
 
 using TimeStamp = uint64_t;
 
-struct PictureExtension : public IObject
-{
-    ColorSpace colorSpace;
-};
-
 enum class PictureType
 {
     System,
@@ -58,36 +55,48 @@ enum class PictureType
 /** Shared Picture Data
  *
  *  This struct only can used as a shared pointer
- *  Constructor once and Deconstructor once
+ *  Construct once and Deconstruct once
  */
 struct SharedPictureData : IObject
 {
-    SharedPictureData() :
+	SharedPictureData(MemoryResource *memoryResource = nullptr) :
+	    memoryResource{memoryResource},
         data{},
         linesize{},
+	    type{},
+	    colorSpace{},
         destory{}
     {
 
     }
 
-    SharedPictureData(int width, int height, Format format) :
-        data{},
-        linesize{},
-        destory{}
+    SharedPictureData(int width, int height, Format format, MemoryResource *memoryResource = nullptr) :
+	    SharedPictureData{ memoryResource }
     {
-        data[0] = new uint8_t[width * height * format.Size()];
+		auto ptr = new uint8_t[width * height * format.Size()];
+        destory = [=] {
+			delete []ptr;
+        };
+		data[0] = ptr;
     }
 
     ~SharedPictureData()
     {
-        destory ? destory() : delete[]data[0];
+		if (destory)
+		{
+			destory();
+		}
     }
+
+    MemoryResource *memoryResource;
 
     uint8_t *data[8];
 
     int linesize[8];
 
 	PictureType type;
+
+    ColorSpace colorSpace;
 
     std::function<void()> destory;
 };
@@ -104,25 +113,79 @@ struct Picture
 
     ~Picture()
     {
-        shared.Reset();
+		ReleaseSharedData();
     }
 
-    Picture(int width, int height, Format format, bool allocated = true) :
-        desc{ uint32_t(width), uint32_t(height), format },
-        pts{}
+	Picture(int width, int height, Format format, MemoryResource *memoryResource = nullptr, bool allocated = false) :
+	    desc{ width, height, format },
+	    shared{},
+	    pts{}
     {
-		if (desc.format.IsType(Format::YUV))
+		if (memoryResource)
+		{
+			void *object = memoryResource->Allocate();
+			if (allocated)
+			{
+				shared = new (object) SharedPictureData{width, height, format, memoryResource};
+			}
+			else
+			{
+				shared = new (object) SharedPictureData{memoryResource};
+			}
+		}
+		else
+		{
+			if (allocated)
+			{
+				shared = new SharedPictureData{width, height, format};
+			}
+			else
+			{
+				shared = new SharedPictureData{};
+			}
+		}
+    }
+
+    Picture(const Picture &other) :
+	    desc{ other.desc },
+	    pts{other.pts},
+	    shared{ other.shared }
+    {
+
+    }
+
+    Picture &operator=(const Picture &other)
+    {
+        if (this != &other)
         {
-            extension = new PictureExtension;
+			ReleaseSharedData();
+			desc   = other.desc;
+			pts    = other.pts;
+			shared = other.shared;
         }
-        if (allocated)
+
+        return *this;
+    }
+
+    void ReleaseSharedData()
+    {
+		if (shared && shared->memoryResource)
         {
-            shared = new SharedPictureData{ width, height, format };
+			if (shared->UnRef() == 0)
+			{
+				MemoryResource *memoryResource = shared->memoryResource;
+				shared->~SharedPictureData();
+				memoryResource->Release(shared);
+			}
+			shared._obj = nullptr;
         }
-        else
-        {
-            shared = new SharedPictureData{};
-        }
+    }
+
+    void Swap(Picture &other)
+    {
+		std::swap(desc,   other.desc  );
+		std::swap(pts,    other.pts   );
+		std::swap(shared, other.shared);
     }
 
     template <class T>
@@ -130,8 +193,8 @@ struct Picture
     {
         if (IsPrimitiveOf<ColorSpace, T>())
         {
-            extension.DeRef<PictureExtension>().colorSpace = v;
-        }    
+            shared->colorSpace = v;
+        }
     }
 
     template <class T>
@@ -139,7 +202,7 @@ struct Picture
     {
         if constexpr (IsPrimitiveOf<ColorSpace, T>())
         {
-            return extension.DeRef<PictureExtension>().colorSpace;
+			return shared->colorSpace;
         }
     }
 
@@ -182,11 +245,9 @@ struct Picture
 
     Description desc;
 
-    Ref<SharedPictureData> shared;
-
     TimeStamp pts;
 
-    Ref<IObject> extension;
+    Ref<SharedPictureData> shared;
 };
 
 namespace Interface
@@ -258,6 +319,11 @@ public:
     virtual Picture GetPicture() const
     {
         return picture;
+    }
+
+    virtual void Flush()
+    {
+        picture = Picture{};
     }
 
 protected:

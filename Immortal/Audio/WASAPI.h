@@ -11,6 +11,8 @@
 
 #include "AudioRenderContext.h"
 #include "Platform/D3D/Interface.h"
+
+#include <mutex>
 #include <audioclient.h>
 #include <mmdeviceapi.h>
 
@@ -39,6 +41,8 @@ public:
 
     virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
 
+    virtual double GetPostion() override;
+
     void Release();
 
 protected:
@@ -51,6 +55,8 @@ protected:
     ComPtr<IAudioRenderClient> renderClient;
 
     ComPtr<IAudioClock> clock;
+
+    std::mutex mutex;
 
     WAVEFORMATEX *waveFormat;
 };

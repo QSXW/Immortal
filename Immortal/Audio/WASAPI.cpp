@@ -47,6 +47,8 @@ void WASAPIContext::OpenDevice()
 
     Check(audioClient->GetService(IID_PPV_ARGS(&renderClient)));
 
+    Check(audioClient->GetService(IID_PPV_ARGS(&clock)));
+
     Check(audioClient->GetBufferSize(&bufferFrameCount));
 
     format.Channels = waveFormat->nChannels;
@@ -103,6 +105,17 @@ int WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
     }
 
     return frameRequested;
+}
+
+double WASAPIContext::GetPostion()
+{
+    uint64_t position;
+    Check(clock->GetPosition(&position, nullptr));
+
+    uint64_t frequency;
+    Check(clock->GetFrequency(&frequency));
+
+    return (double)position / (double)frequency;
 }
 
 void WASAPIContext::Release()

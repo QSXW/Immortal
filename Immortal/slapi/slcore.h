@@ -76,6 +76,7 @@ inline void aligned_free(void* ptr)
 #define SLROTATE(a, b) (a) = ((a) + 1) % (b)
 #define SL_ARRAY_LENGTH(a) sizeof(a) / sizeof((a)[0])
 #define SL_OPERATOR_HANDLE(T) using Primitive = T; Primitive Handle() const { return handle; } operator Primitive() const { return handle; } protected: Primitive handle{};
+#define SL_SWAPPABLE(T) T(T &&other) : T{} { other.Swap(*this); } T &operator=(T &&other) { T(std::move(other)).Swap(*this); return *this; }  T(const T &) = delete; T &operator=(const T &) = delete;
 
 /*
  * @brief: Type Definitions

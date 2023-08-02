@@ -17,9 +17,14 @@ static inline float Seconds2Nanoseconds(float seconds)
 
 AudioDevice::AudioDevice() :
     context{ AudioRenderContext::CreateInstance() },
+    pts{ 0 },
+    samples{ 0 },
     stopping{ false },
-    flush{ false }
+    startpts{ 0 },
+    reset{ true },
+    status{false}
 {
+    instance = this;
     thread = new Thread{ [=, this] {
         uint64_t duration = 0;
         context->Begin();
@@ -37,6 +42,12 @@ AudioDevice::AudioDevice() :
 
             if (picture.Available())
             {
+                if (reset)
+                {
+                    startpts = picture.pts;
+                    samples  = picture.desc.samples;
+                    reset = false;
+                }
                 int frameLeft = 0;
                 lastSamples = picture.desc.samples;
                 if (picture.desc.samples < 1024)
@@ -53,6 +64,8 @@ AudioDevice::AudioDevice() :
                 }
                 else
                 {
+                    pts = picture.pts;
+                    samples = picture.desc.samples;
                     frameLeft = context->PlaySamples(picture.desc.samples, picture.shared->data[0]);
                 }
                 duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
@@ -68,31 +81,23 @@ AudioDevice::AudioDevice() :
             duration >>= 1;
             std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
 
-            if (pause)
-            {
-                context->Pause(true);
-                semaphore.Wait();
-                semaphore.Reset();
-                context->Pause(false);
-            }
-
-            if (flush)
-            {
-                Reset();
-                flush = false;
-            }
+            status.wait(true);
         }
 
         context->End();
     } };
 
     thread->Start();
+    thread->SetDebugDescription("AudioThread");
 }
 
 AudioDevice::~AudioDevice()
 {
-    Flush();
-    stopping = true;
+	status = false;
+	status.notify_one();
+
+	stopping = true;
+	thread->Join();
     thread.Reset();
 }
 
@@ -122,10 +127,51 @@ void AudioDevice::PlayFrame(Picture picture)
 
 }
 
+void AudioDevice::OnPauseDown()
+{
+	status = true;
+    context->Pause(true);
+}
+
+void AudioDevice::OnPauseRelease()
+{
+    context->Pause(false);
+	status = false;
+	status.notify_one();
+}
+
 void AudioDevice::Reset()
 {
-    context->End();
-    context->Begin();
+    reset = true;
+    context->Reset();
+}
+
+double AudioDevice::GetPosition() const
+{
+	return context->GetPostion();
+}
+
+double AudioDevice::Sync(uint64_t videoTimestamp, double framesPerSecond, double delta)
+{
+    double start = (double)startpts * ((double)samples / context->GetSampleRate());
+    double time = (double)videoTimestamp * (1.0 / framesPerSecond) + delta;
+    return time - (start + GetPosition());
+}
+
+uint64_t AudioDevice::Sync(double framesPerSecond)
+{
+    double audioTimestamp = (double)startpts * 512.0 / 48000.0; // ((double)samples / context->GetSampleRate());
+    audioTimestamp += GetPosition();
+
+    double videoTimestamp = audioTimestamp / (1.0 / framesPerSecond);
+    return videoTimestamp;
+}
+
+AudioDevice *AudioDevice::instance;
+
+int AudioDevice::GetSampleRate()
+{
+    return instance ? instance->context->GetSampleRate() : 48000;
 }
 
 }

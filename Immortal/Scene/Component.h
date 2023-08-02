@@ -354,105 +354,18 @@ enum class FilterType
     DCT
 };
 
-struct VideoPlayerContext
-{
-public:
-	VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
-
-	~VideoPlayerContext();
-
-	VideoPlayerContext(const VideoPlayerContext &&other) = delete;
-
-	VideoPlayerContext &operator=(const VideoPlayerContext &&other) = delete;
-
-    void Seek(int64_t timestamp, int64_t min, int64_t max)
-    {
-        std::queue<Vision::Picture> empty;
-        std::queue<Vision::CodedFrame> emptyFrame;
-
-        std::unique_lock lock{ mutex };
-        demuxer->Seek(MediaType::Video, timestamp, min, max);
-        pictures.swap(empty);
-        audioFrames.swap(empty);
-        queues[1].swap(emptyFrame);
-        queues[0].swap(emptyFrame);
-    }
-
-	Picture GetPicture() const
-	{
-		return pictures.empty() ? Vision::Picture{} : pictures.front();
-	}
-	
-    Picture GetAudioFrame() const
-    {
-        return audioFrames.empty() ? Vision::Picture{} : audioFrames.front();
-    }
-
-	void PopPicture()
-	{
-		std::unique_lock lock{mutex};
-        if (!pictures.empty())
-        {
-            pictures.pop();
-        }
-	}
-
-    void PopAudioFrame()
-    {
-        std::unique_lock lock{ mutex };
-        if (!audioFrames.empty())
-        {
-            audioFrames.pop();
-        }
-    }
-
-	const std::string &GetSource() const
-	{
-		return demuxer->GetSource();
-	}
-
-public:
-	URef<Thread> demuxerThread;
-
-    URef<Thread> videoDecodeThread;
-
-    URef<Thread> audioDecodeThread;
-
-	std::mutex mutex;
-
-	Ref<Vision::VideoCodec> decoder;
-
-    Ref<Vision::VideoCodec> audioDecoder;
-
-	Ref<Vision::Interface::Demuxer> demuxer;
-
-	std::queue<Picture> pictures;
-
-	std::queue<Picture> audioFrames;
-
-    std::array<std::queue<Vision::CodedFrame>, 2> queues; 
-
-	Picture lastPicture;
-
-	struct State
-	{
-		bool playing = false;
-		bool exited = false;
-	} state;
-};
-
+class VideoPlayerContext;
 struct VideoPlayerComponent : public Component
 {
-    DEFINE_COMPONENT_TYPE(VideoPlayer)
+	SL_SWAPPABLE(VideoPlayerComponent)
+
+	DEFINE_COMPONENT_TYPE(VideoPlayer)
+
+	VideoPlayerComponent();
 
     VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
 
     ~VideoPlayerComponent();
-
-    VideoPlayerComponent(VideoPlayerComponent &&other)
-    {
-        Swap(other);
-    }
 
     Picture GetPicture();
 
@@ -462,21 +375,9 @@ struct VideoPlayerComponent : public Component
 
     void PopAudioFrame();
 
-    void Seek(int64_t timestamp, int64_t min, int64_t max)
-    {
-        player->Seek(timestamp, min, max);
-    }
+    void Seek(double seconds, int64_t min, int64_t max);
 
-    VideoPlayerComponent &operator=(VideoPlayerComponent &&other)
-    {
-        Swap(other);
-        return *this;
-    }
-
-    void Swap(VideoPlayerComponent &other)
-    {
-		player.Swap(other.player);
-    }
+    void Swap(VideoPlayerComponent &other);
 
     Animator *GetAnimator() const;
 
