@@ -40,6 +40,7 @@ Device::Device(int deviceId)
 Device::~Device()
 {
     handle.Reset();
+    adapter.Reset();
     dxgiFactory.Reset();
 
 #ifdef _DEBUG
