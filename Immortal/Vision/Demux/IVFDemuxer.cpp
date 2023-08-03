@@ -43,7 +43,7 @@ IVFDemuxer::IVFDemuxer() :
 
 }
 
-CodecError IVFDemuxer::Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec)
+CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
     uint8_t data[32];
     auto animator = codec->GetAddress<Animator>();
@@ -118,7 +118,7 @@ CodecError IVFDemuxer::Read(CodedFrame *codedFrame)
     return CodecError::Succeed;
 }
 
-const std::string & IVFDemuxer::GetSource() const
+const String &IVFDemuxer::GetSource() const
 {
     return stream.GetFilePath();
 }

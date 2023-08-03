@@ -22,11 +22,11 @@ public:
 public:
     IVFDemuxer();
 
-    virtual CodecError Open(const std::string &filepath, VideoCodec *codec, VideoCodec* audioCodec = nullptr) override;
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec* audioCodec = nullptr) override;
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 
-    virtual const std::string &GetSource() const override;
+    virtual const String &GetSource() const override;
 
 private:
     Header ReadHeader();

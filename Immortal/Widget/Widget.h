@@ -16,8 +16,8 @@
 #include "Math/Vector.h"
 #include "Interface/IObject.h"
 #include "Framework/Timer.h"
+#include "String/IString.h"
 #include "String/LanguageSettings.h"
-#include "Helper/Platform.h"
 #include "Resource.h"
 
 #define EXPORT_WINDOW auto window = ImGui::GetCurrentWindow();
@@ -300,32 +300,32 @@ protected:                                    \
         return this;                                     \
     }
 
-#define WIDGET_PROPERTY_TEXT                           \
-public:                                                \
-    const std::string &Text() const                    \
-    {                                                  \
-        return text;                                   \
-    }                                                  \
-                                                       \
-    WidgetType *Text(const std::string &_text)         \
-    {                                                  \
-	    if (!GuiLayer::IsLanguage(Language::English))  \
-	    {                                              \
-		    text = Byte2UTF8(WordsMap::Get(_text));    \
-	    }                                              \
-	    else                                           \
-	    {                                              \
-		    text = Byte2UTF8(_text);                   \
-	    }                                              \
-                                                       \
-	    return this;                                   \
-    }                                                  \
-protected:                                             \
-    std::string text;
+#define WIDGET_PROPERTY_TEXT                             \
+public:                                                  \
+    const String &Text() const                           \
+    {                                                    \
+        return text;                                     \
+    }                                                    \
+                                                         \
+    WidgetType *Text(const String &_text)                \
+    {                                                    \
+	    if (!GuiLayer::IsLanguage(Language::English))    \
+	    {                                                \
+		    text = WordsMap::Get(_text);                 \
+	    }                                                \
+	    else                                             \
+	    {                                                \
+		    text = _text;                                \
+	    }                                                \
+                                                         \
+	    return this;                                     \
+    }                                                    \
+protected:                                               \
+    String text;
 
 #define WIDGET_PROPERTY_VAR_COLOR(U, L)                        \
 public:                                                        \
-    WIDGET_SET_PROPERTY_FUNC(U, L, const ImVec4 &)                  \
+    WIDGET_SET_PROPERTY_FUNC(U, L, const ImVec4 &)             \
     WidgetType *U(uint32_t rgba)                               \
     {                                                          \
         L = ImGui::RGBA32(rgba);                               \

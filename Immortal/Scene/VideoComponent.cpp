@@ -31,7 +31,7 @@ public:
 
     void PopAudioFrame();
 
-    const std::string &GetSource() const
+    const String &GetSource() const
     {
         return demuxer->GetSource();
     }
@@ -263,7 +263,7 @@ Animator *VideoPlayerComponent::GetAnimator() const
     return player->decoder->GetAddress<Animator>();
 }
 
-const std::string &VideoPlayerComponent::GetSource() const
+const String &VideoPlayerComponent::GetSource() const
 {
     return player->GetSource();
 }

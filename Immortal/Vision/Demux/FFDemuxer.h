@@ -4,8 +4,7 @@
 #include "Vision/Interface/Codec.h"
 #include "Vision/Interface/Demuxer.h"
 #include "FileSystem/Stream.h"
-
-
+#include "String/IString.h"
 
 struct AVCodec;
 struct AVStream;
@@ -30,7 +29,7 @@ public:
 
     ~FFDemuxer();
 
-    virtual CodecError Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr) override;
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr) override;
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 
@@ -43,10 +42,10 @@ private:
 #endif
 
 public:
-    virtual const std::string &GetSource() const override;
+    virtual const String &GetSource() const override;
 
 protected:
-    std::string filepath;
+    String filepath;
 };
 
 }

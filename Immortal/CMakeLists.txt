@@ -341,6 +341,7 @@ set(SERIALIZER_FILES
     Serializer/SceneSerializer.h)
 
 set(STRING_FILES
+    String/IString.h
     String/LanguageSettings.cpp
     String/LanguageSettings.h)
 

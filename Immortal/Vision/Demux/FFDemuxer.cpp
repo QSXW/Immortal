@@ -4,6 +4,7 @@
 #include "FileSystem/FileSystem.h"
 #include "Algorithm/LightVector.h"
 #include "Helper/Platform.h"
+
 #include <list>
 
 #if HAVE_FFMPEG
@@ -28,7 +29,7 @@ public:
         handle{}
     {}
 
-    FormatContext(const std::string &path) :
+    FormatContext(const String &path) :
         handle{ avformat_alloc_context() },
         streamIndex{}
     {
@@ -36,12 +37,10 @@ public:
 
         memset(streamIndex, -1, sizeof(streamIndex));
 
-        std::string filepath = path;
-
-		int ret = avformat_open_input(&handle, filepath.c_str(), NULL, NULL);
+		int ret = avformat_open_input(&handle, path.c_str(), NULL, NULL);
         if (ret < 0)
         {
-            LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", filepath, ret);
+            LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", path, ret);
             return;
         }
         auto options = GenerateStreamInfo();
@@ -49,9 +48,9 @@ public:
         ret = avformat_find_stream_info(handle, options);
         if (ret < 0)
         {
-            LOG::ERR("FFDemuxer::FormatContext::FindStreamInfo::{}::{}", filepath, ret);
+            LOG::ERR("FFDemuxer::FormatContext::FindStreamInfo::{}::{}", path, ret);
         }
-        av_dump_format(handle, 0, filepath.c_str(), 0);
+        av_dump_format(handle, 0, path.c_str(), 0);
 
         streamIndex[AVMEDIA_TYPE_VIDEO]    = FindBestStream(MediaType::Video, streamIndex[AVMEDIA_TYPE_VIDEO]);
         streamIndex[AVMEDIA_TYPE_AUDIO]    = FindBestStream(MediaType::Audio, streamIndex[AVMEDIA_TYPE_AUDIO], streamIndex[AVMEDIA_TYPE_VIDEO]);
@@ -187,7 +186,7 @@ void FFDemuxer::Destory()
 	formatContext.Reset();
 }
 
-CodecError FFDemuxer::Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec)
+CodecError FFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
 	formatContext.Reset();
 
@@ -254,7 +253,7 @@ CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t 
 }
 #endif
 
-const std::string &FFDemuxer::GetSource() const
+const String &FFDemuxer::GetSource() const
 {
     return filepath;
 }

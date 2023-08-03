@@ -94,19 +94,19 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             MouseCode button;
             if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONDBLCLK)
-            { 
+            {
                 button = MouseCode::Left;
             }
             if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONDBLCLK)
-            { 
+            {
                 button = MouseCode::Right;
             }
             if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONDBLCLK)
-            { 
+            {
                 button = MouseCode::Middle;
             }
             if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONDBLCLK)
-            { 
+            {
                 button = GET_XBUTTON_WPARAM(wParam) == XBUTTON1 ? MouseCode::Button3 : MouseCode::Button4;;
             }
             DirectWindow::Input->MouseDown[U32(button)] = true;
@@ -202,8 +202,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
             static FileSystem::DirectoryEntry dir;
             dir = {
-                .path     = Byte2UTF8(path),
-                .type     = FileType::RegularFile
+                .path = path,
+                .type = FileType::RegularFile
             };
 
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
@@ -263,7 +263,7 @@ void DirectWindow::Setup(const Description &description)
 
     std::wstring title = ToWString(desc.Title);
 
-    wc = { 
+    wc = {
         sizeof(WNDCLASSEX),
         CS_CLASSDC,
         WndProc,

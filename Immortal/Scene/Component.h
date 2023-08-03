@@ -381,7 +381,7 @@ struct VideoPlayerComponent : public Component
 
     Animator *GetAnimator() const;
 
-    const std::string &GetSource() const;
+    const String &GetSource() const;
 
 public:
 	URef<VideoPlayerContext> player;

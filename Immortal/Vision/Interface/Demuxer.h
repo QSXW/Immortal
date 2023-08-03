@@ -20,7 +20,7 @@ class Demuxer : public IObject
 public:
     virtual ~Demuxer() {}
 
-    virtual CodecError Open(const std::string &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr)
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr)
     {
         return CodecError::FailedToCallDecoder;
     }
@@ -35,7 +35,7 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual const std::string &GetSource() const = 0;
+    virtual const String &GetSource() const = 0;
 };
 
 }

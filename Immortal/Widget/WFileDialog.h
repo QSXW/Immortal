@@ -247,7 +247,7 @@ public:
                         if (dir.type == FileType::CPP)
                         {
                             Async::Execute([=]() {
-                                system(("code " + dir.path).c_str());
+                                system(("code " + (std::string &)dir.path).c_str());
                                 });
                         }
                         else if (dir.type == FileType::Executable)
@@ -313,11 +313,11 @@ public:
     {
         if (dir.IsDirectory())
         {
-            Source(UTF82Byte(dir.path));
+            Source(dir.path);
         }
         else
         {
-            callback(UTF82Byte(dir.path));
+            callback(dir.path);
         }
     }
 
@@ -336,7 +336,6 @@ public:
                 {
                     dir.type = FileSystem::GetFileType(dir.path);
                 }
-                dir.path = Byte2UTF8(dir.path);
             }
 
             std::unique_lock lock{ mutex };
@@ -367,7 +366,7 @@ protected:
 
     std::vector<FileSystem::DirectoryEntry> directories;
 
-    std::function<void(const std::string &path)> callback;
+    std::function<void(const String &path)> callback;
 
     URef<Image> icon;
 

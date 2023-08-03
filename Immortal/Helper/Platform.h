@@ -36,38 +36,4 @@ public:
     static std::optional<std::string> SaveFile(const char *filter = FileFilter::None);
 };
 
-static inline std::string Byte2UTF8(const std::string &str)
-{
-#ifdef _WIN32
-    std::wstring wstr;
-    wstr.resize(MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0) - 1);
-    MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.size(), wstr.data(), wstr.size());
-
-    std::string ret;
-    ret.resize(WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, NULL, NULL, NULL, NULL) - 1);
-    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.size(), ret.data(), ret.size(), NULL, NULL);
-
-    return ret;
-#else
-    return str;
-#endif
-}
-
-static inline std::string UTF82Byte(const std::string &str)
-{
-#ifdef _WIN32
-    std::wstring wstr;
-    wstr.resize(MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0) - 1);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.size(), wstr.data(), wstr.size());
-
-    std::string ret;
-    ret.resize(WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, NULL, NULL, NULL) - 1);
-    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), wstr.size(), ret.data(), ret.size(), NULL, NULL);
-
-    return ret;
-#else
-    return str;
-#endif
-}
-
 }

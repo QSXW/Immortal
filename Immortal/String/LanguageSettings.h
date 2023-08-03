@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Helper/json.h"
+#include "IString.h"
 
 namespace Immortal
 {
@@ -9,7 +10,7 @@ namespace Immortal
 class WordsMap
 {
 public:
-    WordsMap(const std::string &path)
+    WordsMap(const String &path)
     {
         auto json = JSON::Parse(path);
 
@@ -18,18 +19,18 @@ public:
         for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
         {
             const auto &item = it->items();
-            words[it.key()] = it.value().get<std::string>();
+            words[it.key()] = { it.value().get<std::string>(), String::Type::Unicode8 };
         }
     }
 
-    static const std::string &Get(const std::string &key)
+    static const String &Get(const String &key)
     {
         const auto &it = That.words.find(key);
         return it == That.words.end() ? key : it->second;
     }
 
 private:
-    std::map<std::string, std::string> words;
+    std::map<String, String> words;
 
     static WordsMap That;
 };

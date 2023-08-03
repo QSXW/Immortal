@@ -4,6 +4,7 @@
 
 #include "Core.h"
 #include "Stream.h"
+#include "String/IString.h"
 
 namespace Immortal
 {
@@ -137,7 +138,7 @@ static inline bool Is3DModel(const std::string &path)
 
     return IsFormat<FileFormat::OBJ>(id) ||
            IsFormat<FileFormat::FBX>(id) ||
-           IsFormat<FileFormat::BLEND>(id) || 
+           IsFormat<FileFormat::BLEND>(id) ||
            IsFormat<FileFormat::GLTF>(id);
 }
 
@@ -273,7 +274,7 @@ static std::string ExtractFileName(const std::string &path)
     auto lastDot   = path.rfind('.');
 
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
-        
+
     return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
 }
 
@@ -305,7 +306,7 @@ public:
     {
 
     }
-    
+
     Path(const char *path) :
         Super{ path }
     {
@@ -321,7 +322,13 @@ public:
     Path(const std::wstring &path) :
         Super{ path }
     {
-        
+
+    }
+
+    Path(const String &path) :
+        Super{ (const std::string &)path }
+    {
+
     }
 
     operator bool() const
@@ -347,7 +354,7 @@ public:
 
 struct DirectoryEntry
 {
-    std::string path;
+    String path;
 
     FileType type;
 
