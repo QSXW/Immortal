@@ -5,9 +5,16 @@
 
 #include "Queue.h"
 #include "Descriptor.h"
+#include "Render/Sampler.h"
+#include "Render/DescriptorSet.h"
+#include "PhysicalDevice.h"
+
+#include <unordered_map>
+#include <shared_mutex>
 
 namespace Immortal
 {
+
 namespace D3D12
 {
 
@@ -17,29 +24,67 @@ struct AdapterProperty
 	DXGI_ADAPTER_DESC desc;
 };
 
-class Device
+class DescriptorPool;
+class DescriptorHeap;
+class Sampler;
+class Pipeline;
+class IMMORTAL_API Device : public SuperDevice
 {
 public: 
     using Primitive = ID3D12Device;
 	D3D12_OPERATOR_HANDLE()
 
 public:
-    Device(int deviceId = AUTO_DEVICE_ID);
+	Device(PhysicalDevice *physicalDevice);
 
-    ~Device();
+    virtual ~Device() override;
 
-    void EnumerateAdapters(std::vector<AdapterProperty> &pAdapters);
-  
-    DXGI_ADAPTER_DESC GetAdapterDesc();
+    virtual Anonymous GetBackendHandle() const override;
+
+    virtual BackendAPI GetBackendAPI() override;
+
+    virtual SuperQueue *CreateQueue(QueueType type, QueuePriority priority) override;
+
+    virtual SuperCommandBuffer *CreateCommandBuffer(QueueType type) override;
+
+    virtual SuperSwapchain *CreateSwapchain(SuperQueue *queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode) override;
+        
+    virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
+
+    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+
+    virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
+
+    virtual SuperComputePipeline *CreateComputePipeline(SuperShader *shader) override;
+
+    virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
+
+    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+
+    virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
+
+    virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
+
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
 
 public:
-    template <class T>
-	requires std::is_base_of_v<IDXGIFactory, T>
-    T *GetAddress() const
-    {
-        return dxgiFactory.Get();
-    }
+	IDXGIAdapter1 *GetAdapter() const;
 
+	IDXGIFactory4 *GetDXGIFactory() const;
+
+    void CreateSampler(const D3D12_SAMPLER_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptor);
+
+    Pipeline *GetPipeline(const std::string &name);
+
+    Sampler *GetSampler(Filter filter);
+
+    Descriptor AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount = 1);
+
+    void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount);
+
+    void Destory(ID3D12Resource *pResource);
+
+public:
 #define DEFINE_CRETE_FUNC(U, T, O) \
     HRESULT Create(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \
     { \
@@ -63,43 +108,27 @@ public:
         return handle->GetDescriptorHandleIncrementSize(type);
     }
 
-#define DEFINE_CREATE_VIEW(T, F) \
-    void CreateView(ID3D12Resource *p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
-    { \
-        handle->Create##F##View(p##F, pDesc, descriptor); \
-    } \
-    void CreateView(ComPtr<ID3D12Resource> &p##F, D3D12_##T##_VIEW_DESC *pDesc, CPUDescriptor &descriptor) const \
-	{                                                                                                    \
-		handle->Create##F##View(p##F.Get(), pDesc, descriptor);                                                \
+	void CreateRenderTargetView(ID3D12Resource *pRenderTarget, const D3D12_RENDER_TARGET_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor) const
+	{
+		handle->CreateRenderTargetView(pRenderTarget, pDesc, descriptor);
 	}
 
-    DEFINE_CREATE_VIEW(RENDER_TARGET,    RenderTarget   )
-    DEFINE_CREATE_VIEW(SHADER_RESOURCE,  ShaderResource )
-    DEFINE_CREATE_VIEW(DEPTH_STENCIL,    DepthStencil   )
+	void CreateShaderResourceView(ID3D12Resource *pShaderResource, const D3D12_SHADER_RESOURCE_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor) const
+	{
+		handle->CreateShaderResourceView(pShaderResource, pDesc, descriptor);
+	}
 
-    void CreateView(ID3D12Resource *pResource, ID3D12Resource *pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE destDescriptor)
+	void CreateDepthStencilView(ID3D12Resource *pDepthStencil, const D3D12_DEPTH_STENCIL_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor) const
+	{
+		handle->CreateDepthStencilView(pDepthStencil, pDesc, descriptor);
+	}
+
+    void CreateUnorderedAccessView(ID3D12Resource *pResource, ID3D12Resource *pCounterResource, const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE destDescriptor)
     {
 		handle->CreateUnorderedAccessView(pResource, pCounterResource, pDesc, destDescriptor);
     }
 
-    template <class T>
-	requires std::is_same_v<ID3D12Resource*, T> || std::is_same_v<ComPtr<ID3D12Resource>, T>
-    void CreateView(T pResource,
-        ID3D12Resource *pCounterResouce,
-        const D3D12_UNORDERED_ACCESS_VIEW_DESC *pDesc,
-        CPUDescriptor descriptor)
-    {
-        if constexpr (std::is_same_v<ID3D12Resource*, T>)
-        {
-			handle->CreateUnorderedAccessView(pResource, pCounterResouce, pDesc, descriptor);
-        }
-        else
-        {
-			handle->CreateUnorderedAccessView(pResource.Get(), pCounterResouce, pDesc, descriptor);
-        }
-    }
-
-    void CreateView(const D3D12_CONSTANT_BUFFER_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)
+    void CreateConstantBufferView(const D3D12_CONSTANT_BUFFER_VIEW_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)
     {
         handle->CreateConstantBufferView(pDesc, descriptor);
     }
@@ -217,9 +246,23 @@ public:
     }
 
 protected:
-    ComPtr<IDXGIFactory4> dxgiFactory;
+	PhysicalDevice *physicalDevice;
 
-    ComPtr<IDXGIAdapter1> adapter;
+	URef<DescriptorPool> descriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+
+    URef<DescriptorPool> shaderVisibleDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+
+    struct
+    {
+		URef<Sampler> nearest;
+		URef<Sampler> linear;
+    } samplers;
+
+    std::shared_mutex pipelineMutex;
+    std::unordered_map<std::string, URef<Pipeline>> pipelines;
+
+    std::mutex resourceMutex;
+	std::vector<ID3D12Resource *> resources;
 };
 
 }

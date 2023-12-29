@@ -19,8 +19,8 @@ struct SamplingFactor
 
         case Format::YUV422P:
         case Format::YUV422P10:
-            x = 0;
-            y = 1;
+            x = 1;
+            y = 0;
             break;
 
         case Format::YUV420P:

@@ -4,68 +4,55 @@
 #include "Descriptor.h"
 #include "Render/RenderTarget.h"
 #include "Algorithm/LightArray.h"
-#include "Image.h"
+#include "Texture.h"
 
 namespace Immortal
 {
 namespace D3D11
 {
 
-class Device;
-class RenderTarget : public SuperRenderTarget
+class IMMORTAL_API RenderTarget : public SuperRenderTarget
 {
 public:
     using Super = SuperRenderTarget;
-
-    template <class T>
-    struct Attachment
-    {
-        Ref<Image> image;
-        Descriptor<T> descriptor;
-    };
+    D3D11_SWAPPABLE(RenderTarget)
 
 public:
     RenderTarget();
 
-    RenderTarget(Device *device, const Super::Description &descrition);
+    virtual ~RenderTarget() override;
 
-    RenderTarget(Device *device, Ref<Image> image);
+	virtual void Resize(uint32_t width, uint32_t height) override;
 
-    ~RenderTarget();
+	SuperTexture *GetColorAttachment(uint32_t index) override;
 
-    virtual void Map(uint32_t slot) override;
+	SuperTexture *GetDepthAttachment() override;
 
-    virtual void Unmap() override;
+    void AddColorAttachment(Texture &&texture);
 
-    virtual void Resize(UINT32 width, UINT32 height) override;
+    void ClearAttachments();
 
-    virtual operator uint64_t() const;
-
-    RTV * const *GetViews(size_t index = 0) const
+public:
+    const LightArray<Texture> &GetColorAttachments() const
     {
-		return descriptors.data();
+        return colorAttachments;
     }
 
-    const LightArray<Attachment<RTV>> &GetColorBuffer() const
+    const Texture &InternalGetDepthAttachment() const
     {
-		return colorAttachments;
+        return depthAttachment;
     }
 
-    const Attachment<DSV> &GetDepthBuffer() const
+    void Swap(RenderTarget &other)
     {
-		return depthAttachment;
+        std::swap(colorAttachments, other.colorAttachments);
+        std::swap(depthAttachment,  other.depthAttachment );
     }
 
-private:
-    Device *device;
+protected:
+    LightArray<Texture> colorAttachments;
 
-    Descriptor<SRV> descriptor;
-
-    LightArray<Attachment<RTV>> colorAttachments;
-
-    LightArray<RTV *> descriptors;
-
-    Attachment<DSV> depthAttachment;
+    Texture depthAttachment;
 };
 
 }

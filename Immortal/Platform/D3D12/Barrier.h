@@ -14,6 +14,9 @@ enum class BarrierType
     UAV
 };
 
+constexpr auto Transition = BarrierType::Transition;
+constexpr auto UAV        = BarrierType::UAV;
+
 template <BarrierType T>
 struct Barrier : public D3D12_RESOURCE_BARRIER
 {

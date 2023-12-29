@@ -6,6 +6,7 @@
 
 #include "WindowCapture.h"
 #include "Device.h"
+#include "Texture.h"
 
 namespace Immortal
 {

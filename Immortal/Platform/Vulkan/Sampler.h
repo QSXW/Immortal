@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Common.h"
-#include "Render/Texture.h"
+#include "Handle.h"
+#include "Render/Sampler.h"
 
 namespace Immortal
 {
@@ -9,32 +10,30 @@ namespace Vulkan
 {
 
 class Device;
-class Sampler
+class Sampler : public SuperSampler, public Handle<VkSampler>
 {
 public:
-    using Primitive = VkSampler;
-    VKCPP_OPERATOR_HANDLE()
 
 public:
-    Sampler() = default;
+    Sampler();
 
-    Sampler(Device *device, const VkSamplerCreateInfo &info);
+    Sampler(Device *device, const VkSamplerCreateInfo *pCreateInfo);
 
-    Sampler(Device *device, const Texture::Description &desc, uint32_t mipLevels = 1);
+    Sampler(Device *device, Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod);
 
-    Sampler(Sampler &&other);
+    virtual ~Sampler() override;
 
-    Sampler &operator =(Sampler &&other);
+    void Release();
 
-    ~Sampler();
-
-    void Swap(Sampler &other);
-
-    Sampler(const Sampler &other) = delete;
-    Sampler &operator=(const Sampler &other) = delete;
+public:
+    void Swap(Sampler &other)
+    {
+        Handle::Swap(other);
+        std::swap(device, other.device);
+    }
 
 private:
-    Device *device{ nullptr };
+    Device *device;
 };
 
 }

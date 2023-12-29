@@ -85,11 +85,6 @@ public:
 
     static void Release();
 
-    static void Setup(const Ref<RenderTarget> &renderTarget)
-    {
-        pipeline->Reconstruct(renderTarget);
-    }
-
     static void Shutdown();
 
     static void Flush();
@@ -115,14 +110,14 @@ public:
     static void BeginScene(const Camera &camera)
     {
         auto viewProjection = camera.ViewProjection();
-        uniform->Update(sizeof(Matrix4), &viewProjection);
+        // uniform->Update(sizeof(Matrix4), &viewProjection);
         NextBatch();
     }
 
     static void BeginScene(const Camera &camera, const Matrix4 &view)
     {
         auto viewProjection = camera.Projection() * Vector::Inverse(view);
-        uniform->Update(sizeof(Matrix4), &viewProjection);
+        // uniform->Update(sizeof(Matrix4), &viewProjection);
         NextBatch();
     }
 

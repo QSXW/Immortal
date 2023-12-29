@@ -313,7 +313,7 @@ public:
     template <class U>
     U *InterpretAs() const
     {
-        if constexpr (std::is_base_of_v<T, U> || std::is_base_of_v<U, T>)
+		if constexpr (std::is_polymorphic_v<T> && (std::is_base_of_v<T, U> || std::is_base_of_v<U, T>))
         {
             return dynamic_cast<U*>(_obj);
         }

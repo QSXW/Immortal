@@ -14,19 +14,19 @@ namespace Immortal
 namespace Vulkan
 {
 
-static inline Queue::Type SelectQueueType(VkVideoCodecOperationFlagBitsKHR codecOperation)
+static inline VkQueueFlagBits SelectQueueType(VkVideoCodecOperationFlagBitsKHR codecOperation)
 {
     switch (codecOperation)
     {
     case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT:
     case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT:
-        return Queue::Type::VideoDecoding;
+        return VK_QUEUE_VIDEO_DECODE_BIT_KHR;
 
     case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT:
-        return Queue::Type::VideoEncoding;
+        return VK_QUEUE_VIDEO_ENCODE_BIT_KHR;
 
     default:
-        return Queue::Type::None;
+		return VK_QUEUE_VIDEO_DECODE_BIT_KHR;
     }
 }
 
@@ -36,7 +36,7 @@ VideoSession::VideoSession(Device *device, Format format, VkExtent2D extend, con
     VkVideoSessionCreateInfoKHR createInfo{};
     createInfo.sType                           = VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR;
     createInfo.pVideoProfile                   = pVideoProfile;
-    createInfo.queueFamilyIndex                = device->QueueFailyIndex(SelectQueueType(pVideoProfile->videoCodecOperation));
+    createInfo.queueFamilyIndex                = device->GetQueueFailyIndex(SelectQueueType(pVideoProfile->videoCodecOperation));
     createInfo.pictureFormat                   = Format{ Format::RGBA8 };
     createInfo.referencePictureFormat          = createInfo.pictureFormat;
     createInfo.maxCodedExtent                  = extend;

@@ -218,14 +218,41 @@ end:
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-DirectWindow::DirectWindow(const Description &description)
+DirectWindow::DirectWindow(Anonymous handle) :
+    Window{},
+    wc{},
+    handle{ (HWND)handle },
+    owned{}
 {
-    Setup(description);
+	type = Type::Win32;
 }
 
-void *DirectWindow::Primitive() const
+DirectWindow::DirectWindow(const std::string &title, uint32_t width, uint32_t height) :
+    Window{},
+    wc{},
+    handle{},
+    owned{ true }
 {
-    return handle;
+	Construct(title, width, height);
+}
+
+DirectWindow::~DirectWindow()
+{
+    if (owned)
+    {
+		Shutdown();
+    }
+}
+
+
+Anonymous DirectWindow::GetBackendHandle() const
+{
+    return Anonymize(handle);
+}
+
+Anonymous DirectWindow::GetPlatformSpecificHandle() const
+{
+    return Anonymize(handle);
 }
 
 void DirectWindow::Show()
@@ -254,14 +281,11 @@ void DirectWindow::SetIcon(const std::string &filepath)
 
 }
 
-void DirectWindow::Setup(const Description &description)
+void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t height)
 {
     type = Type::Win32;
-    desc = description;
 
-    EventDispatcher = desc.EventCallback;
-
-    std::wstring title = ToWString(desc.Title);
+    std::wstring title = ToWString(_title);
 
     wc = {
         sizeof(WNDCLASSEX),
@@ -280,18 +304,18 @@ void DirectWindow::Setup(const Description &description)
 
     ::RegisterClassExW(&wc);
 
-    auto width = GetSystemMetrics(SM_CXSCREEN);
-    auto height = GetSystemMetrics(SM_CYSCREEN);
+    auto x = GetSystemMetrics(SM_CXSCREEN);
+    auto y = GetSystemMetrics(SM_CYSCREEN);
 
     handle = ::CreateWindowExW(
         0,
         wc.lpszClassName,
         title.c_str(),
         WS_OVERLAPPEDWINDOW,
-        (width - desc.Width) / 2,
-        (height - desc.Height) / 2,
-        desc.Width,
-        desc.Height,
+        (x - width) / 2,
+        (y - height) / 2,
+	    width,
+	    height,
         nullptr,
         nullptr,
         wc.hInstance,
@@ -302,9 +326,23 @@ void DirectWindow::Setup(const Description &description)
     Input.reset(new NativeInput{ this });
 }
 
-DirectWindow::~DirectWindow()
+uint32_t DirectWindow::GetWidth() const
 {
-    Shutdown();
+    RECT rect{};
+    GetClientRect(handle, &rect);
+    return rect.right - rect.left;
+}
+
+uint32_t DirectWindow::GetHeight() const
+{
+    RECT rect{};
+    GetClientRect(handle, &rect);
+    return rect.bottom - rect.top;
+}
+
+void DirectWindow::SetEventCallback(const EventCallbackFunc &callback)
+{
+    EventDispatcher = callback;
 }
 
 void DirectWindow::Shutdown()
@@ -312,4 +350,5 @@ void DirectWindow::Shutdown()
     ::DestroyWindow(handle);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 }
+
 }

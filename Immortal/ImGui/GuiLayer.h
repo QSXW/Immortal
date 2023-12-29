@@ -9,6 +9,7 @@
 #include "Interface/IObject.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
+#include "Render/LightGraphics.h"
 
 #define DEFINE_CPP_STRING_API(FN_NAME, ...) \
     template <class...  Args> \
@@ -85,6 +86,8 @@ struct FontContext
 namespace Immortal
 {
 
+class Window;
+class Device;
 enum class Language
 {
 	Chinese,
@@ -105,7 +108,7 @@ public:
     static FontContext SimSun;
 
 public:
-    GuiLayer();
+    GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swapchain);
 
     virtual ~GuiLayer();
 
@@ -115,9 +118,11 @@ public:
 
     virtual void OnDetach() override;
 
-    virtual void Begin() = 0;
+    virtual void Begin();
 
-    virtual void End() = 0;
+    virtual void End();
+
+    void SubmitRenderDrawCommands(CommandBuffer *commandBuffer);
 
     void Render();
 
@@ -148,13 +153,13 @@ public:
 
     static void Inject2Dockspace(Widget *widget)
 	{
-		SLASSERT(__instance && "ImGui is not initialized yet!");
-		__instance->AddChild(widget);
+		SLASSERT(This && "ImGui is not initialized yet!");
+		This->AddChild(widget);
 	}
 
     static bool IsLanguage(Language lang)
     {
-		return __instance->language == lang;
+		return This->language == lang;
     }
 
 protected:
@@ -169,6 +174,16 @@ protected:
 	}
 
 protected:
+	Device *device;
+
+    Queue *queue;
+
+    Swapchain *swapchain;
+
+	Window *window;
+
+    std::function<void()> platformSpecificNewFrame;
+
     Ref<WDockerSpace> dockspace;
 
     bool blockEvents = true;
@@ -177,7 +192,7 @@ protected:
 
     Language language = Language::Chinese;
 
-    static GuiLayer *__instance;
+    static GuiLayer *This;
 
     URef<WWindow> themeEditor;
 };

@@ -3,62 +3,57 @@
 #include "Framework/Window.h"
 #include "Framework/Input.h"
 
-
 struct GLFWwindow;
 
 namespace Immortal
 {
 
-class GLFWWindow : public Window
+class IMMORTAL_API GLFWWindow : public Window
 {
 public:
-    GLFWWindow(const Description &description);
+	GLFWWindow(Anonymous handle);
 
-    virtual ~GLFWWindow();
+	GLFWWindow(const std::string &title, uint32_t width, uint32_t height, Window *parent = nullptr);
 
-    uint32_t Width() const override
-    {
-        return desc.Width;
-    }
+    virtual ~GLFWWindow() override;
 
-    uint32_t Height() const override
-    {
-        return desc.Height;
-    }
+    virtual uint32_t GetWidth() const override;
 
-    void SetEventCallback(const EventCallbackFunc& callback) override
-    {
-        desc.EventCallback = callback;
-    }
+    virtual uint32_t GetHeight() const override;
 
-    virtual Anonymous Primitive() const override;
+    virtual void SetEventCallback(const EventCallbackFunc &callback) override;
 
-    float Time() const override;
+    virtual Anonymous GetBackendHandle() const override;
+
+    virtual Anonymous GetPlatformSpecificHandle() const override;
+
+    virtual void Show() override;
 
     virtual void ProcessEvents() override;
-
-    virtual float DpiFactor() const override;
 
     virtual void SetTitle(const std::string &title) override;
 
     virtual void SetIcon(const std::string &filepath) override;
 
-private:
-    virtual void Setup(const Description &descrition);
+protected:
+	void Construct(const std::string &title, uint32_t width, uint32_t height);
 
-    virtual void Shutdown();
+    void Shutdown();
 
     void SelectPlatformType();
 
-private:
+protected:
     GLFWwindow *window;
 
-    Description desc{};
+    EventCallbackFunc eventCallback;
+
+    GLFWWindow *parent;
+
+    uint32_t childWindow;
+    
+    bool owned;
 
     std::unique_ptr<Input> input;
-
-public:
-    static uint8_t GLFWWindowCount;
 };
 
 }

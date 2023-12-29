@@ -47,24 +47,26 @@ inline VkImageType ImageType(VkExtent3D extent)
     return result;
 }
 
-Image::Image() :
-    handle{},
-    device{}
+Image::Image(Device *device) :
+    Handle{},
+    device{ device },
+    memory{}
 {
 
 }
 
-Image::Image(Device *device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount) :
+Image::Image(Device *device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, uint32_t mipLevels, uint32_t arrayLayers, VkSampleCountFlagBits sampleCount) :
+    Handle{ handle },
     device{ device },
-    handle{ handle }
+    memory{}
 {
     properties.imageType   = ImageType(extent);
     properties.extent      = extent;
     properties.format      = format;
     properties.samples     = sampleCount;
     properties.usage       = imageUsage;
-    properties.arrayLayers = 1;
-    properties.mipLevels   = 1;
+	properties.arrayLayers = arrayLayers;
+    properties.mipLevels   = mipLevels;
 }
 
 Image::Image(Device *device, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage, VkSampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers, VkImageTiling tiling, VkImageCreateFlags flags, uint32_t numQueueFamilies, const uint32_t* queueFamilies) :
@@ -100,18 +102,9 @@ Image::Image(Device *device, const VkImageCreateInfo &createInfo, VmaMemoryUsage
     Invalidate(createInfo, memoryUsage);
 }
 
-Image::Image(Image &&other) :
-    device{},
-    handle{},
-    memory{}
-{
-    other.Swap(*this);
-    CopyProps(&properties, &other.properties);
-}
-
 Image::~Image()
 {
-    Destroy();
+	Release();
 }
 
 void Image::Invalidate(const VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage)
@@ -122,7 +115,7 @@ void Image::Invalidate(const VkImageCreateInfo &createInfo, VmaMemoryUsage memor
 
 void Image::Instantiate(VmaMemoryUsage memoryUsage)
 {
-    Destroy();
+	Release();
 
     VmaAllocationCreateInfo memoryInfo{};
     memoryInfo.usage = memoryUsage;
@@ -135,7 +128,7 @@ void Image::Instantiate(VmaMemoryUsage memoryUsage)
     Check(device->Create(&properties, &memoryInfo, &handle, &memory));
 }
 
-void Image::Destroy()
+void Image::Release()
 {
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != nullptr)
     {
@@ -155,27 +148,17 @@ void Image::Destroy()
                 dpack.memory
             );
             });
+
+        handle = VK_NULL_HANDLE;
+		device = nullptr;
     }
 }
 
-Image &Image::operator=(Image &&other)
+void Image::Map(void **ppData)
 {
-    Image(std::move(other)).Swap(*this);
-    CopyProps(&properties, &other.properties);
-    return *this;
+	Check(vmaMapMemory(device->MemoryAllocator(), memory, ppData));
 }
 
-void Image::Swap(Image &other)
-{
-    std::swap(device, other.device);
-    std::swap(handle, other.handle);
-    std::swap(memory, other.memory);
-}
-
-void Image::Map(void **dataMapped)
-{
-    Check(vmaMapMemory(device->MemoryAllocator(), memory, dataMapped));
-}
 
 void Image::Unmap()
 {

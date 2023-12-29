@@ -2,7 +2,6 @@
 #include "Framework/Utils.h"
 #include "FileSystem/FileSystem.h"
 #include "Device.h"
-
 #include <d3d11shader.h>
 
 namespace Immortal
@@ -10,28 +9,48 @@ namespace Immortal
 namespace D3D11
 {
 
-Shader::Shader(Device *device, const std::string &filepath, Type type) :
-    Super{ type },
-    handles{}
+static const char *GetShaderTarget(ShaderStage stage)
 {
-	std::string path = filepath + ".hlsl";
-	auto source = FileSystem::ReadString(path);
-	LoadByteCodes(device, source, path, type);
+	switch (stage)
+	{
+		case ShaderStage::Vertex:
+			return "vs_5_0";
+		case ShaderStage::Pixel:
+			return "ps_5_0";
+		case ShaderStage::Compute:
+			return "cs_5_0";
+		default:
+			return nullptr;
+	}
 }
 
-Shader::Shader(Device *device, const std::string &name, const std::string &source, Type type) :
-    Super{ type },
-    handles{}
-{
-	LoadByteCodes(device, source, name);
-}
-
-Shader::~Shader()
+Shader::Shader() :
+    NonDispatchableHandle{},
+    handle{},
+    stage{},
+    pushConstant{}
 {
 
 }
 
-void Shader::LoadByteCodes(Device *device, const std::string &source, const std::string &name, Type type)
+Shader::Shader(Device *device, const std::string &name, ShaderSourceType sourceType, ShaderStage stage, const std::string &source, const std::string &entryPoint) :
+    NonDispatchableHandle{ device },
+    handle{},
+    stage{ stage },
+    pushConstant{}
+{
+	LoadByteCodesFromSource(name, stage, source, entryPoint);
+
+	auto size       = byteCodes->GetBufferSize();
+	auto pByteCodes = byteCodes->GetBufferPointer();
+
+	ComPtr<ID3D11ShaderReflection> shaderReflection;
+	Check(D3DReflect(pByteCodes, size, IID_PPV_ARGS(&shaderReflection)));
+	Reflect(shaderReflection.Get());
+	ConstructHandle(pByteCodes, size);
+}
+
+void Shader::LoadByteCodesFromSource(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
 {
 	UINT compileFlags = 0;
 #ifdef _DEBUG
@@ -39,107 +58,81 @@ void Shader::LoadByteCodes(Device *device, const std::string &source, const std:
 #endif
 
     ComPtr<ID3DBlob> error;
-	const char *target = "vs_5_0";
-	const char *entryPoint = "VSMain";
-
-	if (type == Type::Compute)
-	{
-		target = "cs_5_0";
-		entryPoint = "main";
-	}
-
-	ShaderByteCodes shaderByteCodes;
-
 	D3D_SHADER_MACRO defines[] = {
 	    { .Name = "__D3D11__", .Definition = NULL  },
 	    { .Name = NULL,        .Definition = NULL  },
 	};
 
-	__Check(
-	    D3DCompile(
-	        source.c_str(),
-	        source.size(),
-	        name.c_str(),
-	        defines,
-	        nullptr,
-	        entryPoint,
-	        target,
-	        compileFlags,
-	        0,
-	        &shaderByteCodes.Graphics.Vertex,
-	        &error),
-	    &error,
-	    &shaderByteCodes.Graphics.Vertex);
-
-	if (type == Type::Graphics)
+	if (FAILED(D3DCompile(
+		source.c_str(),
+		source.size(),
+		name.c_str(),
+		defines,
+		nullptr,
+		entryPoint.c_str(),
+		GetShaderTarget(stage),
+		compileFlags,
+		0,
+		&byteCodes,
+		&error)
+	))
 	{
-		__Check(
-		    D3DCompile(
-		        source.c_str(),
-		        source.size(),
-		        name.c_str(),
-		        defines,
-		        nullptr,
-		        "PSMain",
-		        "ps_5_0",
-		        compileFlags,
-		        0,
-		        &shaderByteCodes.Graphics.Pixel,
-		        &error),
-		    &error,
-		    &shaderByteCodes.Graphics.Pixel);
-
-		VSByteCodes = shaderByteCodes.Graphics.Vertex;
-		__Create<ID3D11VertexShader, 0>(device, shaderByteCodes.Graphics.Vertex.Get());
-		__Create<ID3D11PixelShader,  1>(device, shaderByteCodes.Graphics.Pixel.Get());
-		
-		__Reflect(shaderByteCodes.Graphics.Vertex.Get());
-		__Reflect(shaderByteCodes.Graphics.Pixel.Get());
-	}
-	else
-	{
-		__Create<ID3D11ComputeShader, 0>(device, shaderByteCodes.Compute.Get());
-		__Reflect(shaderByteCodes.Compute.Get());
+		LOG::ERR("Shader `{}` Compiling Error: \n\n{}", name, (const char *)error->GetBufferPointer());
+		throw std::runtime_error("Failed to compiler shader!");
 	}
 }
 
-void Shader::__Check(HRESULT result, ID3DBlob **error, ID3DBlob **toBeReleased)
+Shader::~Shader()
 {
-    if (FAILED(result) || !*toBeReleased)
-    {
-        if (*error)
-        {
-            LOG::ERR("D3D12 Shader Compiling failed with...\n{}", rcast<char *>((*error)->GetBufferPointer()));
-        }
-
-        if (*toBeReleased)
-        {
-            (*toBeReleased)->Release();
-            *toBeReleased = nullptr;
-        }
-
-        SLASSERT(false && "Failed to compile shader source");
-    }
+	handle.Reset();
 }
 
-void Shader::__Reflect(ID3DBlob *byteCodes)
+void Shader::Reflect(ID3D11ShaderReflection *shaderRelection)
 {
-	ComPtr<ID3D11ShaderReflection> reflection = NULL;
-	Check(D3DReflect(byteCodes->GetBufferPointer(), byteCodes->GetBufferSize(), IID_PPV_ARGS(&reflection)));
-
 	D3D11_SHADER_DESC desc;
-	Check(reflection->GetDesc(&desc));
+	Check(shaderRelection->GetDesc(&desc));
 	for (size_t i = 0; i < desc.ConstantBuffers; i++)
 	{
-		auto buffer = reflection->GetConstantBufferByIndex(i);
+		auto buffer = shaderRelection->GetConstantBufferByIndex(i);
 		D3D11_SHADER_BUFFER_DESC bufferDesc;
 		Check(buffer->GetDesc(&bufferDesc));
 
-		if (!strcmp(bufferDesc.Name, "push_constant"))
+		if (!strcmp(bufferDesc.Name, "push_constant") ||
+			!strcmp(bufferDesc.Name, "$Globals"))
 		{
-			pushConstants.Binding = i;
-			pushConstants.Size = bufferDesc.Size;
+			pushConstant.Binding = i;
+			pushConstant.Size = bufferDesc.Size;
 		}
+	}
+}
+
+void Shader::ConstructHandle(const void *bufferPointer, size_t bufferSize)
+{
+	switch (stage)
+	{
+		case ShaderStage::Vertex:
+		{
+			ComPtr<ID3D11VertexShader> pShader;
+			Check(device->CreateVertexShader(bufferPointer, bufferSize, nullptr, &pShader));
+			pShader.As<ID3D11DeviceChild>(&handle);
+			break;
+		}
+		case ShaderStage::Pixel:
+		{
+			ComPtr<ID3D11PixelShader> pShader;
+			Check(device->CreatePixelShader(bufferPointer, bufferSize, nullptr, &pShader));
+			pShader.As<ID3D11DeviceChild>(&handle);
+			break;
+		}
+		case ShaderStage::Compute:
+		{
+			ComPtr<ID3D11ComputeShader> pShader;
+			Check(device->CreateComputeShader(bufferPointer, bufferSize, nullptr, &pShader));
+			pShader.As<ID3D11DeviceChild>(&handle);
+			break;
+		}
+		default:
+			break;
 	}
 }
 

@@ -8,11 +8,10 @@ namespace Vulkan
 {
 
 class Instance;
-class Surface
+class Surface : public Handle<VkSurfaceKHR>
 {
 public:
-    using Primitive = VkSurfaceKHR;
-    VKCPP_OPERATOR_HANDLE()
+	VKCPP_SWAPPABLE(Surface)
 
 public:
     Surface();
@@ -22,6 +21,12 @@ public:
     VkResult Create(Instance *instance, Window *window, const VkAllocationCallbacks *pAllocator = nullptr);
 
     void Release(Instance *instance);
+
+public:
+	void Swap(Surface &other)
+    {
+		Handle::Swap(other);
+    }
 
 public:
     static VkResult CreateObject(VkInstance instance, Window::Type type, Anonymous window, VkSurfaceKHR *pSurface, const VkAllocationCallbacks *pAllocator = nullptr);

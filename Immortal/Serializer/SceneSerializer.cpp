@@ -201,11 +201,8 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
             auto &s = object.AddComponent<SpriteRendererComponent>();
             ns::from_json(sprite["Color"], s.Color);
             s.TilingFactor = sprite["TilingFactor"];
-            s.Sprite = Render::Create<Texture>(sprite["Source"]);
-            s.Result = Render::Create<Texture>(s.Sprite->Width(), s.Sprite->Height(), nullptr, Texture::Description{
-                Format::RGBA8,
-                Wrap::Clamp
-                });
+			s.Sprite = Graphics::CreateTexture(sprite["Source"]);
+			s.Result = Graphics::CreateTexture(Format::RGBA8, s.Sprite->GetWidth(), s.Sprite->GetHeight());
 
             object.AddComponent<ColorMixingComponent>();
         }
@@ -227,8 +224,7 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
             auto LoadTexture = [&](Ref<Texture> &texture, const std::string &path) {
                 if (!path.empty())
                 {
-                    Texture::Description desc{ Format::None, Wrap::Mirror, Filter::Linear };
-                    texture = Render::Create<Texture>(path, desc);
+					texture = Graphics::CreateTexture(path);
                 }
             };
             for (size_t i = 0; i < materialObject.size(); i++)

@@ -1,50 +1,39 @@
 #include "Buffer.h"
 #include "Device.h"
-#include "RenderContext.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-Buffer::Buffer(const Buffer &other, const BindInfo &bindInfo) :
-    Super{ bindInfo.type, bindInfo.size },
-    context{},
-    descriptor{ other.descriptor }
+Buffer::Buffer() :
+    Super{},
+    NonDispatchableHandle{}
 {
-    virtualAddress = other.virtualAddress + bindInfo.offset;
+
 }
 
-Buffer::Buffer(RenderContext *context, const size_t size, const void *data, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
-    context{ context }
+Buffer::Buffer(Device *device, Type type, size_t size, const void *data) :
+    Super{ type, type == Type::ConstantBuffer ? SLALIGN(size, 256) : size },
+    NonDispatchableHandle{ device }
 {
-    __Create();
+    Construct();
     if (data)
     {
-        Update(size, data);
+		void *mapped = nullptr;
+		Map(&mapped);
+		memcpy(mapped, data, size);
+		Unmap();
     }
-}
-
-Buffer::Buffer(RenderContext *context, const size_t size, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
-    context{ context }
-{
-    __Create();
 }
 
 Buffer::~Buffer()
 {
-    if (context)
-    {
-        context->RefResource(resource.Get());
-    }
+    
 }
 
-void Buffer::__Create()
+void Buffer::Construct()
 {
-    Device *device = context->GetAddress<Device>();
-
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_GENERIC_READ;
 
     D3D12_HEAP_PROPERTIES heapProperties = {
@@ -58,7 +47,7 @@ void Buffer::__Create()
     D3D12_RESOURCE_DESC desc = {
         .Dimension        = D3D12_RESOURCE_DIMENSION_BUFFER,
         .Alignment        = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // Zero is effectively 64KB also
-        .Width            = size,
+        .Width            = GetSize(),
         .Height           = 1,
         .DepthOrArraySize = 1,
         .MipLevels        = 1,
@@ -67,7 +56,8 @@ void Buffer::__Create()
         .Layout           = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
         .Flags            = D3D12_RESOURCE_FLAG_NONE,
     };
-
+    
+    const auto &type = GetType();
     if (type & Type::Scratch)
     {
         heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -93,30 +83,38 @@ void Buffer::__Create()
 
     virtualAddress = resource->GetGPUVirtualAddress();
 
-    if (type & Type::Uniform)
+    if (type & Type::ConstantBuffer)
     {
         D3D12_CONSTANT_BUFFER_VIEW_DESC desc = Desc();
-        descriptor = context->AllocateDescriptor(DescriptorHeap::Type::ShaderResourceView);
-        device->CreateView(&desc, descriptor);
+		descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        device->CreateConstantBufferView(&desc, descriptor);
     }
 #ifdef _DEBUG
     resource->SetName(L"Buffer");
 #endif
 }
 
-void Buffer::Update(uint64_t updateSize, const void *data, uint64_t offset)
+Anonymous Buffer::GetBackendHandle() const
 {
-    THROWIF(updateSize > size, SError::OutOfBound);
-
-    uint8_t *memory = nullptr;
-    Check(Map(rcast<void **>(&memory)));
-    memcpy(memory + offset, data, updateSize);
-    Unmap();
+	return (void *) resource.Get();
 }
 
-Buffer *Buffer::Bind(const BindInfo &bindInfo) const
+void Buffer::Map(void **ppData, size_t size, uint64_t offset)
 {
-    return new Buffer{ *this, bindInfo };
+    D3D12_RANGE range = {
+        .Begin = offset,
+        .End   = offset + size
+    };
+
+    if (FAILED(resource->Map(0, &range, ppData)))
+    {
+		*ppData = nullptr;
+    }
+}
+
+void Buffer::Unmap()
+{
+	resource->Unmap(0, nullptr);
 }
 
 }

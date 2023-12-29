@@ -9,7 +9,7 @@ namespace Immortal
 namespace OpenGL
 {
 
-class VertexArray
+class VertexArray : public Handle
 {
 public:
 	GL_FORMAT GetBaseType(Format _format)
@@ -29,16 +29,28 @@ public:
 			case GL_FORMAT_RGB32I:
 			case GL_FORMAT_RGBA32I:
 				return GL_FORMAT_INT;
+        
+            case GL_FORMAT_RGBA8:
+				return GL_FORMAT_UNSIGNED_BYTE;
 
 			default:
 				return format;
         }
     }
 
-    GLCPP_OPERATOR_HANDLE()
+    
+    GLCPP_SWAPPABLE(VertexArray)
 
 public:
-    VertexArray()
+    VertexArray() :
+        Handle{}
+    {
+
+    }
+
+	VertexArray(const InputElementDescription &inputElementDescription) :
+	    Handle{},
+	    inputElementDescription{ inputElementDescription }
     {
         glCreateVertexArrays(1, &handle);
         glBindVertexArray(handle);
@@ -47,7 +59,11 @@ public:
 
     ~VertexArray()
     {
-        glDeleteVertexArrays(1, &handle);
+        if (handle)
+        {
+			glDeleteVertexArrays(1, &handle);
+			handle = 0;
+        }
     }
 
     void Bind() const
@@ -60,52 +76,51 @@ public:
         glBindVertexArray(0);
     }
 
-    void Set(const Buffer *buffer, const InputElementDescription &inputElementDescription)
+    void Activate(Buffer *vertexBuffer)
     {
         Bind();
-        buffer->Bind();
+		vertexBuffer->Bind();
         uint32_t attributeIndex = 0;
-        for (const auto &e : inputElementDescription)
+        for (const auto &inputElement : inputElementDescription)
         {
-			GL_FORMAT glBaseType = GetBaseType(e.format);
+			GL_FORMAT glBaseType = GetBaseType(inputElement.format);
 			if (glBaseType == GL_FORMAT_INT)
             {
                 glVertexAttribIPointer(attributeIndex,
-                    e.ComponentCount(),
+                    inputElement.ComponentCount(),
                     glBaseType,
-                    inputElementDescription.Stride,
-                    (const void*)(intptr_t)e.Offset());
+                    inputElementDescription.GetStride(),
+                    (const void*)(intptr_t)inputElement.GetOffset()
+                );
             }
             else
             {
+				bool nomalize = GL_FALSE;
+                if (inputElement.format == Format::RGBA8)
+                {
+					nomalize = GL_TRUE;
+                }
                 glVertexAttribPointer(attributeIndex,
-                    e.ComponentCount(),
+                    inputElement.ComponentCount(),
                     glBaseType,
-                    GL_FALSE,
-                    inputElementDescription.Stride,
-                    rcast<const void *>((intptr_t)e.Offset()));
+					nomalize,
+                    inputElementDescription.GetStride(),
+                    (const void *)((intptr_t)inputElement.GetOffset()));
             }
             glEnableVertexAttribArray(attributeIndex++);
         }
-        buffer->Unbind();
+		vertexBuffer->Unbind();
         Unbind();
     }
 
-    void Bind(const Buffer *buffer)
+    void Swap(VertexArray &other)
     {
-        Bind();
-        buffer->Bind();
-        if (buffer->GetType() == Buffer::Type::Vertex)
-        {
-
-        }
-        else if (buffer->GetType() == Buffer::Type::Index)
-        {
-            glVertexArrayElementBuffer(handle, *buffer);
-        }
-        buffer->Unbind();
-        Unbind();
+		std::swap(handle, other.handle);
+		std::swap(inputElementDescription, other.inputElementDescription);
     }
+
+protected:
+	InputElementDescription inputElementDescription;
 };
 
 }

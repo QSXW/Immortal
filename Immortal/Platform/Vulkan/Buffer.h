@@ -3,6 +3,7 @@
 #include "Common.h"
 #include "Render/Buffer.h"
 #include "Descriptor.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -10,31 +11,33 @@ namespace Vulkan
 {
 
 class Device;
-class Buffer : public SuperBuffer
+class Buffer : public SuperBuffer, public Handle<VkBuffer>
 {
 public:
     using Super  = SuperBuffer;
-    using Primitive = VkBuffer;
+	VKCPP_SWAPPABLE(Buffer)
 
 public:
-    Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage = Usage::Persistent);
+	Buffer(Device *device = nullptr);
 
-    Buffer(Device *device, const size_t size, Type type, Usage usage = Usage::Persistent);
-
-    Buffer(Device *device, const size_t size, uint32_t binding);
-
-    Buffer(const Buffer *host, const BindInfo &bindInfo);
+    Buffer(Device *device, Type type, size_t size, const void *data = nullptr);
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint64_t size, const void *src, uint64_t offset = 0) override;
+    Anonymous GetBackendHandle() const override;
 
-    virtual Anonymous Descriptor() const override;
+    virtual void Map(void **ppData, size_t size, uint64_t offset) override;
 
-    virtual Super *Bind(const BindInfo &bindInfo) const override;
+    virtual void Unmap() override;
 
+public:
     VkDeviceAddress GetDeviceAddress() const;
+    
+    void Construct();
 
+    void Flush();
+
+public:
     template <class T>
     T *GetAddress()
     {
@@ -44,7 +47,7 @@ public:
         }
     }
 
-    VkDeviceSize Offset() const
+    VkDeviceSize GetOffset() const
     {
         return descriptor.offset;
     }
@@ -54,16 +57,17 @@ public:
         return descriptor.buffer;
     }
 
+    VkBufferUsageFlags GetUsage() const
+    {
+		return usage;
+    }
+
     operator VkBuffer() const
     {
         return descriptor.buffer;
     }
 
-    void Create(size_t size = 0);
-
     void Map();
-
-    void Unmap();
 
     template <class T>
     void Map(T **ppData)
@@ -72,18 +76,33 @@ public:
         *ppData = (T *)mappedData;
     }
 
-    void Flush();
+    VkDescriptorBufferInfo GetDescriptorInfo() const
+	{
+		return descriptor;
+	}
+
+    void Swap(Buffer &other)
+    {
+		Handle::Swap(other);
+		std::swap(device,     other.device    );
+		std::swap(memory,     other.memory    );
+		std::swap(descriptor, other.descriptor);
+		std::swap(mappedData, other.mappedData);
+		std::swap(persistent, other.persistent);
+    }
 
 private:
-    Device *device{ nullptr };
+    Device *device;
 
-    VmaAllocation memory{ VK_NULL_HANDLE };
+    VmaAllocation memory;
 
     BufferDescriptor descriptor;
 
-    uint8_t *mappedData{ nullptr };
+    VkBufferUsageFlags usage;
 
-    bool persistent{ false };
+    uint8_t *mappedData;
+
+    bool persistent;
 };
 
 }

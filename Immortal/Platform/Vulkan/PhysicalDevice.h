@@ -3,6 +3,8 @@
 #include "Core.h"
 #include "Common.h"
 
+#include "Render/Device.h"
+#include "Render/PhysicalDevice.h"
 #include "Instance.h"
 #include <set>
 
@@ -10,9 +12,13 @@ namespace Immortal
 {
 namespace Vulkan
 {
-class PhysicalDevice
+
+class Device;
+class PhysicalDevice : public SuperPhysicalDevice, public Handle<VkPhysicalDevice>
 {
 public:
+	VKCPP_SWAPPABLE(PhysicalDevice)
+
     enum Feature : int
     {
         RobustBufferAccess = 0,
@@ -72,8 +78,8 @@ public:
         InheritedQueries,
     };
 
-    using Primitive = VkPhysicalDevice;
-    VKCPP_OPERATOR_HANDLE()
+public:
+	virtual ~PhysicalDevice() override;
 
 public:
     void GetProperties(VkPhysicalDeviceProperties *pProperties)
@@ -368,20 +374,11 @@ public:
 
     PhysicalDevice(Instance *instance, VkPhysicalDevice physicalDevice);
 
-    PhysicalDevice(PhysicalDevice &&other);
-
-    PhysicalDevice &operator =(PhysicalDevice &&other);
-
-    void Swap(PhysicalDevice &other);
-
-    PhysicalDevice(const PhysicalDevice &other) = delete;
-
-    PhysicalDevice &operator =(const PhysicalDevice &other) = delete;
-
     void Activate(Feature feature) const;
 
     void Deactivate(Feature feature) const;
 
+public:
     template <class T>
     VkResult EnumerateDeviceExtensionProperties(T &container)
     {
@@ -397,11 +394,11 @@ public:
     }
 
     template <class T>
-    T Get()
+    T *Get()
     {
         if constexpr (IsPrimitiveOf<Instance, T>())
         {
-            return *instance;
+            return instance;
         }
     }
 
@@ -451,6 +448,20 @@ public:
     void Invalidate(Instance *_instance)
     {
         instance = _instance;
+    }
+
+    void Swap(PhysicalDevice &other)
+    {
+		Handle::Swap(other);
+		std::swap(instance,                      other.instance                     );
+		std::swap(QueueFamilyProperties,         other.QueueFamilyProperties        );
+		std::swap(ExtensionFeatures,             other.ExtensionFeatures            );
+		std::swap(Features,                      other.Features                     );
+		std::swap(Properties,                    other.Properties                   );
+		std::swap(MemoryProperties,              other.MemoryProperties             );
+		std::swap(RequestedFeatures,             other.RequestedFeatures            );
+		std::swap(LastRequestedExtensionFeature, other.LastRequestedExtensionFeature);
+		std::swap(HighPriorityGraphicsQueue,     other.HighPriorityGraphicsQueue    );
     }
 
 protected:

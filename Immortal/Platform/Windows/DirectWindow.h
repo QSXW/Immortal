@@ -13,26 +13,21 @@ namespace Immortal
 class IMMORTAL_API DirectWindow : public Window
 {
 public:
-    DirectWindow(const Description &description);
+	DirectWindow(Anonymous handle);
+
+	DirectWindow(const std::string &title, uint32_t width, uint32_t height);
 
     virtual ~DirectWindow();
 
-    virtual uint32_t Width() const override
-    {
-        return desc.Width;
-    }
+    virtual uint32_t GetWidth() const override;
 
-    virtual uint32_t Height() const override
-    {
-        return desc.Height;
-    }
+    virtual uint32_t GetHeight() const override;
 
-    virtual void SetEventCallback(const EventCallbackFunc &callback) override
-    {
-        EventDispatcher = callback;
-    }
+    virtual void SetEventCallback(const EventCallbackFunc &callback) override;
 
-    virtual void *Primitive() const override;
+    virtual Anonymous GetBackendHandle() const override;
+	
+    virtual Anonymous GetPlatformSpecificHandle() const override;
 
     virtual void Show() override;
 
@@ -42,17 +37,17 @@ public:
 
     virtual void ProcessEvents() override;
 
-private:
-    virtual void Setup(const Description &description);
+protected:
+	void Construct(const std::string &title, uint32_t width, uint32_t height);
 
-    virtual void Shutdown();
+    void Shutdown();
 
-private:
+protected:
     HWND handle;
 
     WNDCLASSEXW wc;
 
-    Description desc;
+    bool owned;
 
 public:
     static Window::EventCallbackFunc EventDispatcher;

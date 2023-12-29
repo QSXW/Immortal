@@ -120,7 +120,11 @@ public:
 
     void clear()
     {
-        _size = 0;
+        for (size_t i = 0; i < _size; i++)
+        {
+			_data[i] = {};
+        }
+		_size = 0;
     }
 
     bool empty() const

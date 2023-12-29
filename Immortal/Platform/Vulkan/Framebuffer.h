@@ -1,10 +1,6 @@
 #pragma once
 
 #include "Common.h"
-#include "RenderPass.h"
-#include "Image.h"
-#include "ImageView.h"
-#include "Sampler.h"
 #include "Algorithm/LightArray.h"
 
 namespace Immortal
@@ -12,27 +8,26 @@ namespace Immortal
 namespace Vulkan
 {
 
-class Framebuffer
+class Framebuffer : public Handle<VkFramebuffer>
 {
 public:
-    using Primitive = VkFramebuffer;
-    VKCPP_OPERATOR_HANDLE()
+	VKCPP_SWAPPABLE(Framebuffer)
 
 public:
     Framebuffer();
 
     Framebuffer(Device *device, VkRenderPass renderPass, const LightArray<VkImageView> &views, const VkExtent2D &extent);
 
-    Framebuffer(Framebuffer &&other);
-
-    Framebuffer &operator =(Framebuffer &&other);
-
-    void Swap(Framebuffer &other);
-
     ~Framebuffer();
 
-    Framebuffer(const Framebuffer &other) = delete;
-    Framebuffer &operator = (const Framebuffer &other) = delete;
+    void Release();
+
+public:
+    void Swap(Framebuffer &other)
+    {
+		Handle::Swap(other);
+		std::swap(device, other.device);
+    }
 
 private:
     Device *device{ nullptr };

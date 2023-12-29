@@ -41,16 +41,11 @@
 #include "Render/Shader.h"
 #include "Render/Texture.h"
 #include "Render/RenderTarget.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"
 #include "Render/Frame.h"
 #include "Render/Mesh.h"
-#include "Render/Render.h"
-
-#include "Platform/Vulkan/Common.h"
-#include "Platform/Vulkan/RenderContext.h"
-#include "Platform/Vulkan/GuiLayer.h"
 
 #include "Sync/Semaphore.h"
 

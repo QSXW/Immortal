@@ -1,6 +1,6 @@
 #include "Render2D.h"
 
-#include "Render.h"
+#include "Graphics.h"
 #include "FileSystem/FileSystem.h"
 #include <array>
 
@@ -15,22 +15,22 @@ Ref<Buffer> Render2D::uniform;
 
 void Render2D::Setup()
 {
-	data.textureDescriptorBuffer = Render::CreateDescriptor<Texture>(Data::MaxTextureSlots);
+	//data.textureDescriptorBuffer = Render::CreateDescriptor<Texture>(Data::MaxTextureSlots);
 
     data.RectVertexBuffer.resize(data.MaxVertices);
-    pipeline = Render::Create<Pipeline::Graphics>(Render::GetShader("Render2D"));
-    uniform = Render::Create<Buffer>(sizeof(Matrix4), 0);
+	//pipeline = Render::CreateGraphicsPipeline(Render::GetShader("Render2D"));
+	uniform = Graphics::CreateBuffer(sizeof(Matrix4), BufferType::ConstantBuffer);
 
-    pipeline->Set({
-        { Format::VECTOR3, "POSITION"      },
-        { Format::VECTOR4, "COLOR"         },
-        { Format::VECTOR2, "TEXCOORD"      },
-        { Format::FLOAT,   "INDEX"         },
-        { Format::FLOAT,   "TILING_FACTOR" },
-        { Format::R32,     "OBJECT_ID"     }
-    });
+    //pipeline->Set({
+    //    { Format::VECTOR3, "POSITION"      },
+    //    { Format::VECTOR4, "COLOR"         },
+    //    { Format::VECTOR2, "TEXCOORD"      },
+    //    { Format::FLOAT,   "INDEX"         },
+    //    { Format::FLOAT,   "TILING_FACTOR" },
+    //    { Format::R32,     "OBJECT_ID"     }
+    //});
 
-    pipeline->Set(Render::Create<Buffer>(data.MaxVertices * sizeof(RectVertex), Buffer::Type::Vertex));
+    //pipeline->Set(Render::CreateBuffer(data.MaxVertices * sizeof(RectVertex), Buffer::Type::Vertex));
 
     {
         std::unique_ptr<uint32_t> rectIndices;
@@ -49,16 +49,16 @@ void Render2D::Setup()
 
             offset += 4;
         }
-        pipeline->Set(Render::Create<Buffer>(data.MaxIndices * sizeof(uint32_t), rectIndices.get(), Buffer::Type::Index));
+		//pipeline->Set(Render::CreateBuffer(data.MaxIndices * sizeof(uint32_t), Buffer::Type::Index), rectIndices.get());
     }
     pipeline->Enable(Pipeline::State::Blend);
-    pipeline->Create(Render::Preset()->Target);
+    //pipeline->Create(Render::Preset()->Target);
 
-    data.WhiteTexture = Render::Preset()->Textures.White;
+    data.WhiteTexture = Graphics::Preset()->Textures.White;
 
     for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
     {
-		data.WhiteTexture->As(data.textureDescriptorBuffer, i);
+		//data.WhiteTexture->As(data.textureDescriptorBuffer, i);
         data.ActiveTextures[i] = data.WhiteTexture;
     }
     isTextureChanged = true;
@@ -98,18 +98,18 @@ void Render2D::Flush()
     }
 
     uint32_t dataSize = data.pRectVertex - data.RectVertexBuffer.data();
-    pipeline->Update(dataSize, data.RectVertexBuffer.data());
+    //pipeline->Update(dataSize, data.RectVertexBuffer.data());
 
     if (isTextureChanged)
     {
-        pipeline->AllocateDescriptorSet((uint64_t)&data);
-        pipeline->Bind(uniform,                       0);
-		pipeline->Bind(data.textureDescriptorBuffer,  1);
-        isTextureChanged = false;
+  //      pipeline->AllocateDescriptorSet((uint64_t)&data);
+  //      pipeline->Bind(uniform,                       0);
+		//pipeline->Bind(data.textureDescriptorBuffer,  1);
+  //      isTextureChanged = false;
     }
 
-    pipeline->ElementCount = data.RectIndexCount;
-    Render::Draw(pipeline);
+    //pipeline->ElementCount = data.RectIndexCount;
+    //Render::Draw(pipeline);
 
     data.RectIndexCount = 0;
     data.pRectVertex = data.RectVertexBuffer.data();
@@ -164,7 +164,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, f
     uint32_t textureIndex;
     for (textureIndex = 0; textureIndex < SL_ARRAY_LENGTH(data.ActiveTextures); textureIndex++)
     {
-        if (*data.ActiveTextures[textureIndex] == *texture)
+        //if (*data.ActiveTextures[textureIndex] == *texture)
         {
             break;
         }
@@ -172,7 +172,7 @@ void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, f
     if (textureIndex == SL_ARRAY_LENGTH(data.ActiveTextures))
     {
         data.ActiveTextures[data.TextureSlotIndex] = texture;
-		texture->As(data.textureDescriptorBuffer, data.TextureSlotIndex);
+		//texture->As(data.textureDescriptorBuffer, data.TextureSlotIndex);
         textureIndex = data.TextureSlotIndex++;
         isTextureChanged = true;
     }

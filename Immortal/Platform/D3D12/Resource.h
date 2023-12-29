@@ -17,7 +17,15 @@ public:
     Resource() :
         resource{},
         virtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL },
-        state{ D3D12_RESOURCE_STATE_COMMON, (D3D12_RESOURCE_STATES)-1 }
+        state{ D3D12_RESOURCE_STATE_COMMON }
+    {
+
+    }
+
+    Resource(ID3D12Resource *resource, D3D12_RESOURCE_STATES state) :
+	    resource{ resource },
+	    virtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL },
+	    state{ state }
     {
 
     }
@@ -62,14 +70,20 @@ public:
         return resource->GetGPUVirtualAddress();
     }
 
+    void SetState(D3D12_RESOURCE_STATES value)
+    {
+		state = value;
+    }
+
+    D3D12_RESOURCE_STATES GetState() const
+	{
+		return state;
+	}
+
 protected:
     D3D12_GPU_VIRTUAL_ADDRESS virtualAddress;
 
-    struct
-    {
-        D3D12_RESOURCE_STATES usage;
-        D3D12_RESOURCE_STATES transition;
-    } state;
+    D3D12_RESOURCE_STATES state;
 };
 
 }

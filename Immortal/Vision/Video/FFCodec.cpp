@@ -1,7 +1,7 @@
 #include "FFCodec.h"
 #include "Vision/Demux/FFDemuxer.h"
 #include "Vision/Processing/ColorSpace.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Audio/Device.h"
 #include <list>
 
@@ -15,6 +15,7 @@ extern "C" {
 #include <libswresample/swresample.h>
 #ifdef _WIN32
 #include <libavutil/hwcontext_d3d12va.h>
+#include <d3d12.h>
 #endif
 }
 
@@ -74,13 +75,13 @@ static inline Format CAST(AVPixelFormat v)
 {
     switch (v)
     {
-    case AV_PIX_FMT_YUV420P10LE:
+    case AV_PIX_FMT_YUV420P10:
         return Format::YUV420P10;
 
-    case AV_PIX_FMT_YUV422P10LE:
+    case AV_PIX_FMT_YUV422P10:
         return Format::YUV422P10;
 
-    case AV_PIX_FMT_YUV444P10LE:
+    case AV_PIX_FMT_YUV444P10:
         return Format::YUV444P10;
 
     case AV_PIX_FMT_NV12:
@@ -89,6 +90,8 @@ static inline Format CAST(AVPixelFormat v)
     case AV_PIX_FMT_P010LE:
         return Format::P010LE;
 
+    case AV_PIX_FMT_Y210:
+		return Format::Y210;
     default:
         return Format::YUV420P;
     }
@@ -100,8 +103,8 @@ FFCodec::FFCodec() :
     type{ PictureType::System },
     startTimestamp{}
 {
-    handle = avcodec_alloc_context3(nullptr);
-    ThrowIf(!handle, "FFCodec::Failed to allocated memory!")
+    //handle = avcodec_alloc_context3(nullptr);
+    //ThrowIf(!handle, "FFCodec::Failed to allocated memory!")
 
     frame = av_frame_alloc();
 	ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
@@ -113,6 +116,10 @@ FFCodec::~FFCodec()
 {
     if (handle)
     {
+        if (handle->extradata)
+        {
+		    av_freep(&handle->extradata);
+        }
         av_frame_free(&frame);
         avcodec_free_context(&handle);
     }
@@ -172,26 +179,24 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     }
     else
     {
-#ifdef _WIN32
-		if (handle->pix_fmt == AV_PIX_FMT_D3D12)
-		{
-			av_d3d12va_wait_idle((AVD3D12VASyncContext *)frame->data[2]);
-		}
-#endif
         ref = av_frame_clone(frame);
     }
 
     if (format == Format::None)
     {
 		enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
-		if (device)
+		if (type == PictureType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
 		{
 			switch (pixelFormat)
 			{
-				case AV_PIX_FMT_YUV420P10LE:
-					pixelFormat = AV_PIX_FMT_P010LE;
+				case AV_PIX_FMT_YUV444P10:
+				case AV_PIX_FMT_YUV422P10:
+				case AV_PIX_FMT_YUV420P10:
+					pixelFormat = AV_PIX_FMT_P010;
 					break;
 
+                case AV_PIX_FMT_YUV444P:
+                case AV_PIX_FMT_YUV422P:
 				case AV_PIX_FMT_YUV420P:
 				default:
 					pixelFormat = AV_PIX_FMT_NV12;
@@ -202,22 +207,33 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-        picture = Picture{ref->width, ref->height, format, memoryResource};
-	    picture.shared->type = type;
+        picture = Picture{ref->width, ref->height, format };
+		picture.shared->type = PictureType::System;
 
         picture[0] = (uint8_t *)ref->data[0];
         picture[1] = (uint8_t *)ref->data[1];
         picture[2] = (uint8_t *)ref->data[2];
 
-        memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
+#ifdef _WIN32
+if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
+{
+    auto &[texture, syncCtx] = *(AVD3D12VAFrame *)frame->data[0];
+    picture.shared->type = PictureType::Device;
+    picture[0] = (uint8_t *)texture;
+    picture[1] = (uint8_t *)syncCtx.fence;
+    picture[2] = (uint8_t *)syncCtx.fence_value;
+}
+#endif
 
-        picture.Connect([ref] {
-		    Async::Execute([ref] {
-			    av_frame_unref(ref);
-			    av_frame_free((AVFrame **)&ref);
-		    });
+memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
+
+picture.Connect([ref] {
+    Async::Execute([ref] {
+        av_frame_unref(ref);
+        av_frame_free((AVFrame **)&ref);
         });
-        picture.SetProperty(ColorSpaceConverter(handle->colorspace));
+    });
+picture.SetProperty(ColorSpaceConverter(handle->colorspace));
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
@@ -237,7 +253,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
             handle->sample_rate,
             0,
             nullptr
-            );
+        );
 
         swr_init(swrContext);
 
@@ -246,7 +262,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
             AudioDevice::GetSampleRate(),
             handle->sample_rate,
             AV_ROUND_UP
-            );
+        );
 
         Format format = Format::VECTOR2;
         picture = Picture{ samples, 1,  format, nullptr, true };
@@ -266,7 +282,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 
         swr_free(&swrContext);
     }
-    
+
     if (frame->pts != AV_NOPTS_VALUE)
     {
         picture.pts = (frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond;
@@ -275,6 +291,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     {
         picture.pts = NAN;
     }
+    av_frame_unref(frame);
 
     return CodecError::Succeed;
 }
@@ -291,7 +308,21 @@ Picture FFCodec::GetPicture() const
 
 void FFCodec::Flush()
 {
-	picture = Picture{};
+    picture = Picture{};
+}
+
+AVHWDeviceType GetDeviceType(const std::string &name)
+{
+    if (name.find("qsv") != std::string::npos)
+    {
+		return AV_HWDEVICE_TYPE_QSV;
+    }
+    if (name.find("cuvid") != std::string::npos || name.find("nvdec") != std::string::npos)
+    {
+		return AV_HWDEVICE_TYPE_CUDA;
+    }
+
+    return AV_HWDEVICE_TYPE_NONE;
 }
 
 static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)
@@ -306,8 +337,8 @@ static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)
 
     case AV_CODEC_ID_HEVC:
         return {
+			"hevc_qsv",
             "hevc_cuvid",
-            "hevc_qsv",
         };
 
     case AV_CODEC_ID_AV1:
@@ -371,8 +402,8 @@ static AVHWDeviceType QueryDecoderHWAccelType()
 
     static std::list<const char *> priorities = {
 	    "d3d12va",
-	    "dxva2",
-        "d3d11va",
+	    //"dxva2",
+     //   "d3d11va",
     };
 
     for (auto &p : priorities)
@@ -410,22 +441,22 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hwaccelType)
         {
 #ifdef _WIN32
-            if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Render::API == Render::Type::D3D12)
+			if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
             {
-				device = av_hwdevice_ctx_alloc(hwaccelType);
+			    device = av_hwdevice_ctx_alloc(hwaccelType);
                 if (!device)
                 {
-					return CodecError::OutOfMemory;
+				    return CodecError::OutOfMemory;
                 }
 
-				AVHWDeviceContext *deviceContext  = (AVHWDeviceContext *)device->data;
-				AVD3D12VADeviceContext *d3d12vaContext = (AVD3D12VADeviceContext *)deviceContext->hwctx;
+			    AVHWDeviceContext *deviceContext  = (AVHWDeviceContext *)device->data;
+			    AVD3D12VADeviceContext *d3d12vaContext = (AVD3D12VADeviceContext *)deviceContext->hwctx;
 
-				d3d12vaContext->device = (ID3D12Device *) Render::GetDevice();
-				d3d12vaContext->device->AddRef();
+			    d3d12vaContext->device = (ID3D12Device *)Graphics::GetDevice()->GetBackendHandle();
+			    d3d12vaContext->device->AddRef();
                 av_hwdevice_ctx_init(device);
 
-				type = PictureType::Device;
+			    type = PictureType::Device;
             }
             else
 #endif
@@ -434,7 +465,6 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
                 LOG::ERR("Failed to create specified HW device.");
                 return CodecError::NotImplement;
             }
-            handle->hw_device_ctx = av_buffer_ref(device);
             break;
         }
     }
@@ -447,11 +477,43 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
             const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
             if (externalCodec)
             {
+				auto type = GetDeviceType(p);
+                if (type != AV_HWDEVICE_TYPE_NONE)
+                {
+					if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
+					{
+						LOG::ERR("Cannot open the hardware device\n");
+						continue;
+					}
+                }
                 codec = externalCodec;
                 break;
             }
         }
     }
+
+    handle = avcodec_alloc_context3(codec);
+    if (!handle)
+    {
+		LOG::ERR("Failed to allocate decode context!");
+		return CodecError::OutOfMemory;
+    }
+
+    if (device)
+    {
+		handle->hw_device_ctx = av_buffer_ref(device);
+    }
+    if (stream->codecpar->extradata_size)
+	{
+		handle->extradata = (uint8_t *)av_mallocz(stream->codecpar->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+		if (!handle->extradata)
+		{
+			LOG::ERR("Failed to allocate extra data!");
+			return CodecError::OutOfMemory;
+		}
+		memcpy(handle->extradata, stream->codecpar->extradata, stream->codecpar->extradata_size);
+		handle->extradata_size = stream->codecpar->extradata_size;
+	}
 
     int ret = avcodec_parameters_to_context(handle, stream->codecpar);
     if (ret < 0)
@@ -459,8 +521,10 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         LOG::ERR("FFCodec::Failed to fill AVCodecContext parameters");
     }
 
+    handle->pkt_timebase = stream->time_base;
+
     AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
-    av_dict_set(opts, "threads", "1", 0);
+    //av_dict_set(opts, "threads", "16", 0);
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");

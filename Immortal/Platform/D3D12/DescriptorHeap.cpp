@@ -7,67 +7,27 @@ namespace Immortal
 namespace D3D12
 {
 
-DescriptorHeap::DescriptorHeap(Device * device, D3D12_DESCRIPTOR_HEAP_DESC *desc) :
-    increment{ device->GetDescriptorIncrement(desc->Type) }
+DescriptorHeap::DescriptorHeap() :
+    increment{}
 {
-    Check(device->Create(desc, &handle));
+
 }
 
-DescriptorHeap::DescriptorHeap(Device * device, uint32_t descriptorCount, Type type, Flag flags) :
+DescriptorHeap::DescriptorHeap(Device * device, uint32_t descriptorCount, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags) :
     increment{ device->GetDescriptorIncrement(D3D12_DESCRIPTOR_HEAP_TYPE(type)) }
 {
-    DescriptorHeap::Description desc{ type, descriptorCount, flags, 1 };
+    D3D12_DESCRIPTOR_HEAP_DESC desc{
+        .Type           = type,
+	    .NumDescriptors = descriptorCount,
+        .Flags          = flags,
+        .NodeMask       = 0,
+    };
     Check(device->Create(&desc, &handle));
 }
 
-DescriptorHeap *DescriptorAllocator::Request(Device *device, DescriptorHeap::Type type, DescriptorHeap::Flag flags)
+DescriptorHeap::~DescriptorHeap()
 {
-    std::lock_guard<std::mutex> lock{ mutex };
-    descriptorHeaps.emplace_back(new DescriptorHeap{ device, NumDescriptorPerPool, type, flags });
-
-    return descriptorHeaps.back();
-}
-
-void DescriptorAllocator::Init(Device * device, uint32_t count)
-{
-    if (activeDescriptorHeap == nullptr || freeDescritorCount < count)
-    {
-        activeDescriptorHeap = Request(device, type, flag);
-        avtiveDescriptor     = activeDescriptorHeap->Get<Descriptor>();
-        freeDescritorCount   = NumDescriptorPerPool;
-    }
-}
-
-CPUDescriptor DescriptorAllocator::Allocate(Device *device, uint32_t count)
-{
-    Init(device, count);
-
-    CPUDescriptor descriptor = avtiveDescriptor.cpu;
-    avtiveDescriptor.Offset(count, Increment());
-    freeDescritorCount -= count;
-
-    return descriptor;
-}
-
-Descriptor DescriptorAllocator::Allocate(Device *device)
-{
-    Init(device, 1);
-
-    Descriptor descriptor = avtiveDescriptor;
-    avtiveDescriptor.Offset(1, Increment());
-    freeDescritorCount--;
-
-    return descriptor;
-}
-
-Descriptor DescriptorAllocator::Bind(Device *device, size_t pos)
-{
-    Init(device, 1);
-
-    Descriptor descriptor = activeDescriptorHeap->Get<Descriptor>();
-    descriptor.Offset(pos, Increment());
-
-    return descriptor;
+	handle.Reset();
 }
 
 }

@@ -44,7 +44,6 @@ set(FRAMEWORK_FILES
     Framework/Utils.h
     Framework/Window.cpp
     Framework/Window.h
-    Framework/Device.h
     Framework/Async.cpp
     Framework/Async.h)
 
@@ -64,6 +63,8 @@ set(IMAGE_FILES
 set(GUI_FILES
     ImGui/GuiLayer.cpp
     ImGui/GuiLayer.h
+    ImGui/imgui_impl_immortal.cpp
+    ImGui/imgui_impl_immortal.h
     ImGui/Utils.h)
 
 set(INTERFACE_FILES
@@ -98,25 +99,38 @@ set(PHYSICS_FILES
     Physics/Physics.h)
 
 set(D3D_FILES
-    Platform/D3D/Interface.h)
+    Platform/D3D/Interface.h
+    Platform/D3D/Instance.cpp
+    Platform/D3D/Instance.h
+    Platform/D3D/PhysicalDevice.cpp
+    Platform/D3D/PhysicalDevice.h)
 
 set(D3D11_FILES
     Buffer.cpp
     Buffer.h
+    CommandBuffer.cpp
+    CommandBuffer.h
     Common.h
     Descriptor.h
+    DescriptorSet.cpp
+    DescriptorSet.h
     Device.cpp
     Device.h
     Fence.cpp
     Fence.h
-    GuiLayer.cpp
-    GuiLayer.h
+    GPUEvent.cpp
+    GPUEvent.h
+    Handle.h
     Image.cpp
     Image.h
+    Instance.cpp
+    Instance.h
+    PhysicalDevice.cpp
+    PhysicalDevice.h
     Pipeline.cpp
     Pipeline.h
-    RenderContext.cpp
-    RenderContext.h
+    Queue.cpp
+    Queue.h
     RenderTarget.cpp
     RenderTarget.h
     Swapchain.cpp
@@ -140,31 +154,42 @@ set(D3D12_FILES
     Buffer.h
     CommandAllocator.cpp
     CommandAllocator.h
+    CommandBuffer.cpp
+    CommandBuffer.h
     CommandList.cpp
     CommandList.h
     Common.h
     DescriptorHeap.cpp
     DescriptorHeap.h
+    DescriptorPool.cpp
+    DescriptorPool.h
     Descriptor.cpp
     Descriptor.h
+    DescriptorSet.cpp
+    DescriptorSet.h
     Device.cpp
     Device.h
+    Event.cpp
+    Event.h
     Fence.cpp
     Fence.h
-    GuiLayer.cpp
-    GuiLayer.h
+    Handle.h
+    Instance.cpp
+    Instance.h
+    PhysicalDevice.cpp
+    PhysicalDevice.h
     Pipeline.cpp
     Pipeline.h
     Queue.cpp
     Queue.h
-    RenderContext.cpp
-    RenderContext.h
     RenderTarget.cpp
     RenderTarget.h
     Resource.h
     RootSignature.h
     Swapchain.cpp
     Swapchain.h
+    Sampler.cpp
+    Sampler.h
     Shader.cpp
     Shader.h
     Texture.cpp
@@ -186,19 +211,29 @@ set(OPENGL_FILES
     CommandBuffer.h
     Common.h
     Descriptor.h
+    DescriptorSet.cpp
+    DescriptorSet.h
+    Device.cpp
+    Device.h
     GLFormat.h
-    Framebuffer.cpp
-    Framebuffer.h
-    GuiLayer.cpp
-    GuiLayer.h
-    RenderContext.cpp
-    RenderContext.h
+    GPUEvent.cpp
+    GPUEvent.h
+    Instance.cpp
+    Instance.h
+    PhysicalDevice.cpp
+    PhysicalDevice.h
     RenderTarget.cpp
     RenderTarget.h
-    Shader.cpp
-    Shader.h
     Pipeline.cpp
     Pipeline.h
+    Queue.cpp
+    Queue.h
+    Sampler.cpp
+    Sampler.h
+    Shader.cpp
+    Shader.h
+    Swapchain.cpp
+    Swapchain.h
     Texture.cpp
     Texture.h
     VertexArray.h)
@@ -231,8 +266,8 @@ set(VULKAN_FILES
    FencePool.h
    Framebuffer.cpp
    Framebuffer.h
-   GuiLayer.cpp
-   GuiLayer.h
+   GPUEvent.cpp
+   GPUEvent.h
    Handle.h
    Image.cpp
    Image.h
@@ -247,8 +282,6 @@ set(VULKAN_FILES
    PhysicalDevice.h
    Queue.cpp
    Queue.h
-   RenderContext.cpp
-   RenderContext.h
    RenderTarget.cpp
    RenderTarget.h
    SemaphorePool.cpp
@@ -284,31 +317,43 @@ set(WINDOWS_FILES
 
 set(RENDER_FILES
     AccelerationStructure.h
+    AsyncCompute.cpp
+    AsyncCompute.h
+    Buffer.cpp
     Buffer.h
     Camera.cpp
     Camera.h
-    CommandBuffer.cpp
     CommandBuffer.h
     DataSet.h
     Descriptor.h
+    DescriptorSet.h
+    Device.h
+    DirectXShaderCompiler.cpp
+    DirectXShaderCompiler.h
+    GPUEvent.h
     Frame.cpp
     Frame.h
     GLSLCompiler.cpp
     GLSLCompiler.h
+    Instance.cpp
+    Instance.h
+    LightGraphics.h
     RenderTarget.h
     Mesh.cpp
     Mesh.h
     OrthographicCamera.cpp
     OrthographicCamera.h
+    PhysicalDevice.h
     Pipeline.h
+    Queue.cpp
     Queue.h
-    Render.cpp
-    Render.h
-    RenderContext.cpp
-    RenderContext.h
+    Graphics.cpp
+    Graphics.h
     Render2D.cpp
     Render2D.h
+    Sampler.h
     Shader.h
+    Swapchain.h
     Texture.cpp
     Texture.h
     Types.h

@@ -1,20 +1,22 @@
 #include "AccelerationStructure.h"
+#include "Device.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-AccelerationStructure::AccelerationStructure()
+AccelerationStructure::AccelerationStructure() :
+    NonDispatchableHandle{}
 {
 
 }
 
 
-AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffer *pVertexBuffer, const InputElementDescription &desc, const Buffer *pIndexBuffer, const Buffer *pTranformBuffer) :
-    AccelerationStructure{}
+AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVertexBuffer, const InputElementDescription &desc, const Buffer *pIndexBuffer, const Buffer *pTranformBuffer) :
+    NonDispatchableHandle{ device }
 {
-    auto device = context->GetAddress<Device>();
     if (!device->IsRayTracingSupported())
     {
         return;
@@ -27,12 +29,12 @@ AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffe
                 .Transform3x4 = pTranformBuffer ? *pTranformBuffer : D3D12_GPU_VIRTUAL_ADDRESS(0),
                 .IndexFormat  = DXGI_FORMAT_R16_UINT,
                 .VertexFormat = desc[0].format,
-                .IndexCount   = U32(pIndexBuffer->Size() >> 1),
-                .VertexCount  = U32(pVertexBuffer->Size() / desc.Stride),
+                .IndexCount   = U32(pIndexBuffer->GetSize() >> 1),
+                .VertexCount  = U32(pVertexBuffer->GetSize() / desc.GetStride()),
                 .IndexBuffer  = *pIndexBuffer,
                 .VertexBuffer = {
                     .StartAddress  = *pVertexBuffer,
-                    .StrideInBytes = desc.Stride,
+                    .StrideInBytes = desc.GetStride(),
                 },
             },
     };
@@ -62,19 +64,22 @@ AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffe
     ThrowIf(bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes <= 0, "Incorrect bottom level prebuild ResultDataMaxSizeInBytes");
 
     URef<Buffer> scratchBuffer = new Buffer{
-        context,
-        std::max(topLevelPrebuildInfo.ScratchDataSizeInBytes, bottomLevelPrebuildInfo.ScratchDataSizeInBytes),
-        Buffer::Type::Scratch };
+        device,
+	    Buffer::Type::Scratch,
+        std::max(topLevelPrebuildInfo.ScratchDataSizeInBytes, bottomLevelPrebuildInfo.ScratchDataSizeInBytes)
+    };
 
     topLevelAS = new Buffer{
-        context,
-        topLevelPrebuildInfo.ResultDataMaxSizeInBytes,
-        Buffer::Type::AccelerationStructure };
+	    device,
+	    Buffer::Type::AccelerationStructure,
+        topLevelPrebuildInfo.ResultDataMaxSizeInBytes
+    };
 
     bottomLevelAS = new Buffer{
-        context,
-        bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes,
-        Buffer::Type::AccelerationStructure };
+	    device,
+	    Buffer::Type::AccelerationStructure,
+        bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes
+    };
 
     D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {
         .Transform = {
@@ -90,9 +95,10 @@ AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffe
     };
 
     URef<Buffer> instanceDescs = new Buffer(
-        context,
+	    device,
+	    Buffer::Type::TransferSource,
         sizeof(instanceDesc),
-        &instanceDesc, Buffer::Type::TransferSource);
+        &instanceDesc);
 
 #ifdef _DEBUG
     scratchBuffer->SetName("ScratchResource");
@@ -115,15 +121,6 @@ AccelerationStructure::AccelerationStructure(RenderContext *context, const Buffe
         .SourceAccelerationStructureData  = D3D12_GPU_VIRTUAL_ADDRESS_NULL,
         .ScratchAccelerationStructureData = *scratchBuffer,
     };
-
-    ComPtr<ID3D12GraphicsCommandList4> pRayTracingCommandList;
-    context->Submit([&](CommandList *cmdlist) {
-        Check(cmdlist->QueryInterface(pRayTracingCommandList.GetAddressOf()));
-        pRayTracingCommandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
-        Barrier<BarrierType::UAV> barrier(*bottomLevelAS);
-        pRayTracingCommandList->ResourceBarrier(1, &barrier);
-        pRayTracingCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
-     });
 }
 
 AccelerationStructure::~AccelerationStructure()

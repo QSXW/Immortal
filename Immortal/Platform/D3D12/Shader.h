@@ -51,29 +51,25 @@ class Shader : public SuperShader
 public:
     using Super = SuperShader;
 
-    enum
-    {
-        VertexShaderPos      = 0,
-        PixelShaderPos       = 1,
-        ComputeShaderPos     = 0,
-        MaxHandleCount       = 2
-    };
+public:
+    Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint);
+
+    Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t size);
+
+    virtual ~Shader() override;
+
+    void LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint);
 
 public:
-    Shader(const std::string &filepath, Type type = Type::Graphics);
-
-    Shader(const std::string &name, const std::string &source, Type type = Type::Graphics);
-
-    virtual ~Shader();
-
-    void LoadByteCodes(const std::string &source, const std::string &name, Type type = Type::Graphics);
-
-    const std::array<ShaderByteCode, MaxHandleCount> &ByteCodes() const
+    D3D12_SHADER_BYTECODE GetByteCodes() const
     {
-        return byteCodes;
+		return D3D12_SHADER_BYTECODE{
+		    .pShaderBytecode = dxil.data(),
+		    .BytecodeLength  = dxil.size(),
+        };
     }
 
-    const std::vector<std::pair<DescriptorRange, D3D12_SHADER_VISIBILITY>> &DescriptorRanges() const
+    const std::vector<DescriptorRange> &GetDescriptorRanges() const
     {
         return descriptorRanges;
     }
@@ -83,21 +79,31 @@ public:
 		return pushConstants;
     }
 
+    D3D12_SHADER_VISIBILITY GetVisibility() const
+    {
+		return visibility;
+    }
+
+    uint32_t GetPushConstantIndex() const
+    {
+		return pushConstantIndex;
+    }
+
 protected:
-    void __Check(HRESULT result, ID3DBlob **errorMsg, ID3DBlob **toBeReleased);
+    void Reflect();
 
-    void __Reflect();
+    void SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> reflector);
 
-    void __SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> reflector, D3D12_SHADER_VISIBILITY visibility, uint32_t *refBaseRegisters);
+protected:
+	std::vector<uint8_t> dxil;
 
-private:
-    std::array<ID3DBlob *, MaxHandleCount> handles;
-
-    std::array<ShaderByteCode, MaxHandleCount> byteCodes;
-
-    std::vector<std::pair<DescriptorRange, D3D12_SHADER_VISIBILITY>> descriptorRanges;
+    std::vector<DescriptorRange> descriptorRanges;
+    
+    D3D12_SHADER_VISIBILITY visibility;
 
     PushConstants pushConstants;
+
+    uint32_t pushConstantIndex;
 };
 
 }

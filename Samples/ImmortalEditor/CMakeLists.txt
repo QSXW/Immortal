@@ -28,3 +28,4 @@ target_link_libraries(${PROJECT_NAME}
     Immortal)
 
 target_link_runtime(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR})
+set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Examples")

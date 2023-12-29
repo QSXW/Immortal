@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "Device.h"
+#include "Handle.h"
 #include "Render/Shader.h"
 #include "Algorithm/LightArray.h"
 
@@ -10,80 +10,68 @@ namespace Immortal
 namespace D3D11
 {
 
-template <class T>
-concept ID3D11Shader =
-    std::is_same_v<T, ID3D11VertexShader> ||
-    std::is_same_v<T, ID3D11PixelShader>  ||
-    std::is_same_v<T, ID3D11ComputeShader>;
-
-class Shader : public SuperShader
+class Device;
+class IMMORTAL_API Shader : public SuperShader, public NonDispatchableHandle
 {
 public:
     using Super = SuperShader;
+	using Primitive = ID3D11DeviceChild;
+	D3D11_OPERATOR_HANDLE()
+	D3D11_SWAPPABLE(Shader)
 
 public:
-    Shader(Device *device, const std::string &filepath, Type type = Type::Graphics);
+	Shader();
 
-    Shader(Device *device, const std::string &name, const std::string &source, Type type = Type::Graphics);
+	Shader(Device *device, const std::string &name, ShaderSourceType sourceType, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
-    virtual ~Shader();
+    virtual ~Shader() override;
 
-    void LoadByteCodes(Device *device, const std::string &source, const std::string &name, Type type = Type::Graphics);
+	void LoadByteCodesFromSource(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
-    template <ID3D11Shader T>
-    void QueryInterface(ComPtr<T> *pShader)
-    {
-		if constexpr (std::is_same_v<T, ID3D11VertexShader> || std::is_same_v<T, ID3D11ComputeShader>)
-		{
-			handles[0].As<T>(pShader);
-		}
-		else if constexpr (std::is_same_v<T, ID3D11PixelShader>)
-		{
-			handles[1].As<T>(pShader);
-		}
-    }
-
-	void GetDesc(D3D_PUSH_CONSTANT_DESC *pDesc) const
+public:
+	D3D_PUSH_CONSTANT_DESC GetPushConstantDesc() const
 	{
-		*pDesc = pushConstants;
+		return pushConstant;
 	}
 
-	ID3DBlob *GetVSByteCoeds() const
+	ID3DBlob *GetByteCodes() const
 	{
-		return VSByteCodes.Get();
+		return byteCodes.Get();
+	}
+
+	const Stage &GetStage() const
+	{
+		return stage;
+	}
+
+	template <class T>
+	ComPtr<T> Get()
+	{
+		ComPtr<T> ret{};
+		Check(handle.As<T>(&ret));
+		return ret;
+	}
+
+	void Swap(Shader &other)
+	{
+		NonDispatchableHandle::Swap(other);
+		std::swap(handle,       other.handle      );
+		std::swap(byteCodes,    other.byteCodes   );
+		std::swap(stage,        other.stage       );
+		std::swap(pushConstant, other.pushConstant);
 	}
 
 protected:
-    void __Check(HRESULT result, ID3DBlob **errorMsg, ID3DBlob **toBeReleased);
+    void Reflect(ID3D11ShaderReflection *shaderRelection);
 
-    void __Reflect(ID3DBlob *byteCodes);
+	void ConstructHandle(const void *bufferPointer, size_t bufferSize);
 
-    template <ID3D11Shader T, size_t index>
-	void __Create(Device *device, ID3DBlob *bytesCodes)
-	{
-		ComPtr<T> pShader;
-        if constexpr (std::is_same_v<T, ID3D11VertexShader>)
-        {
-			Check(device->CreateVertexShader(bytesCodes->GetBufferPointer(), bytesCodes->GetBufferSize(), nullptr, &pShader));
-        }
-		else if constexpr (std::is_same_v<T, ID3D11PixelShader>)
-		{
-			Check(device->CreatePixelShader(bytesCodes->GetBufferPointer(), bytesCodes->GetBufferSize(), nullptr, &pShader));
-		}
-		else if constexpr (std::is_same_v<T, ID3D11ComputeShader>)
-		{
-			Check(device->CreateComputeShader(bytesCodes->GetBufferPointer(), bytesCodes->GetBufferSize(), nullptr, &pShader));
-		}
+protected:
+	ComPtr<ID3DBlob> byteCodes;
 
-        pShader.As<ID3D11DeviceChild>(&handles[index]);
-    }
+	ShaderStage stage;
 
-private:
-	ComPtr<ID3DBlob> VSByteCodes;
-
-	std::array<ComPtr<ID3D11DeviceChild>, 2> handles;
-
-	D3D_PUSH_CONSTANT_DESC pushConstants;
+	D3D_PUSH_CONSTANT_DESC pushConstant;
 };
 
 }

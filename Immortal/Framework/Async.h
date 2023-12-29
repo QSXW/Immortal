@@ -17,6 +17,8 @@ namespace Immortal
 class Thread
 {
 public:
+	SL_SWAPPABLE(Thread)
+
     enum class State : uint32_t
     {
         Block = BIT(0),
@@ -83,6 +85,12 @@ public:
 #else
 		(void) name;
 #endif
+    }
+
+    void Swap(Thread &other)
+    {
+		std::swap(stub,   other.stub  );
+		std::swap(handle, other.handle);
     }
 
 protected:

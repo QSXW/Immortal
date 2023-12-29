@@ -79,19 +79,19 @@ public:
         }
 
         bool hovered = false;
-        if (ImGui::ItemHoverable(bbGrab, grabId))
+		if (ImGui::ItemHoverable(bbGrab, grabId, ImGuiItemFlags_None))
         {
             hovered = true;
             id = grabId;
         }
-        if (!hovered && ImGui::ItemHoverable(bbFrame, frameId))
+		if (!hovered && ImGui::ItemHoverable(bbFrame, frameId, ImGuiItemFlags_None))
         {
             hovered = true;
             id = frameId;
         }
 
         const bool clicked = hovered && ImGui::IsMouseClicked(0, id);
-        const bool isActive = clicked || g.NavActivateId == id || g.NavActivateInputId == id;
+        const bool isActive = clicked || g.NavActivateId == id;
         if (isActive && clicked)
         {
             ImGui::SetKeyOwner(ImGuiKey_MouseLeft, id);
@@ -122,7 +122,7 @@ public:
         if (outGrab.Max.x > outGrab.Min.x)
         {
             auto center = outGrab.GetCenter();
-            center.x = IM_ROUND(center.x); 
+            center.x = IM_ROUND(center.x);
             center.y = IM_ROUND(center.y);
             window->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(g.ActiveId == grabId ? grabHoveredColor : grabColor), 16);
             bbGrab = ImRect({ center.x - radius, center.y - radius }, { center.x + radius, center.y + radius });

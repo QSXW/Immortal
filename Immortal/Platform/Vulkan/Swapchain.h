@@ -1,18 +1,27 @@
 #pragma once
 
 #include "Core.h"
+#include "Render/Swapchain.h"
 
 #include "Common.h"
 #include "Device.h"
+#include "Surface.h"
+#include "Semaphore.h"
 
 namespace Immortal
 {
+
+class Window;
+
 namespace Vulkan
 {
 
-class Swapchain
+class RenderTarget;
+class Swapchain : public SuperSwapchain, public Handle<VkSwapchainKHR>
 {
 public:
+	VKCPP_SWAPPABLE(Swapchain)
+
     struct Properties
     {
         VkSwapchainKHR                OldSwapchain;
@@ -50,105 +59,68 @@ public:
         std::vector<VkSurfaceFormatKHR> SurfaceFormat;
     } priorities;
 
-    using Primitive = VkSwapchainKHR;
-    VKCPP_OPERATOR_HANDLE()
+public:
+	Swapchain(Device *device, Surface &&surface, Format format, const VkExtent2D &extent, const uint32_t imageCount, SwapchainMode mode);
+
+    Swapchain(Device                              *device      = nullptr,
+              Surface                            &&surface     = {},
+              VkFormat                             format      = VK_FORMAT_B8G8R8A8_UNORM,
+              const VkExtent2D                    &extent      = {},
+              const uint32_t                       imageCount  = 3,
+              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
+              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+
+    Swapchain(Swapchain                          &&oldSwapchain,
+              Device                              *device,
+              Surface                            &&surface,
+              Format                               format,
+              const VkExtent2D                    &extent      = {},
+              const uint32_t                       imageCount  = 3,
+              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
+              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+
+    virtual ~Swapchain() override;
+
+    virtual void PrepareNextFrame() override;
+
+	virtual void Resize(uint32_t width, uint32_t height) override;
+
+	virtual SuperRenderTarget *GetCurrentRenderTarget() override;
 
 public:
-    Swapchain(Device                              *device      = nullptr,
-              const VkExtent2D                    &extent      = {},
-              const uint32_t                       imageCount  = 3,
-              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
-              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-
-    Swapchain(Swapchain                           &oldSwapchain,
-              Device                              *device,
-              const VkExtent2D                    &extent      = {},
-              const uint32_t                       imageCount  = 3,
-              const VkSurfaceTransformFlagBitsKHR  transform   = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-              const VkPresentModeKHR               presentMode = VK_PRESENT_MODE_FIFO_KHR,
-              VkImageUsageFlags                    imageUsage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-
-    ~Swapchain();
-
     void Invalidate(VkExtent2D extent);
 
     void Destroy();
 
+    void OnPresent();
+
 public:
     using Images = LightArray<VkImage, 3>;
-    using Format = VkFormat;
-    using Usage  = VkImageUsageFlags;
-
-    Swapchain(Swapchain &&other)
+        
+    void Swap(Swapchain &other)
     {
-        Transplant(std::move(other));
-        other.handle = nullptr;
-    }
-
-    Swapchain &operator =(Swapchain &&other)
-    {
-        Transplant(std::move(other));
-        return *this;
-    }
-
-    void Transplant(Swapchain &&other)
-    {
-        device       = other.device;
-        handle       = other.handle;
-        images       = std::move(other.images);
-        properties   = other.properties;
-        other.handle = nullptr;
-    }
-
-    template <class T>
-    T &Get()
-    {
-        if constexpr (IsPrimitiveOf<VkImageUsageFlags, T>())
-        {
-            return properties.imageUsage;
-        }
-        if constexpr (IsPrimitiveOf<Properties, T>())
-        {
-            return properties;
-        }
-        if constexpr (IsPrimitiveOf<VkExtent2D, T>())
-        {
-            return properties.imageExtent;
-        }
-        if constexpr (IsPrimitiveOf <VkFormat, T>())
-        {
-            return properties.imageFormat;
-        }
-        if constexpr (IsPrimitiveOf<Images, T>())
-        {
-            return images;
-        }
-    }
-
-    void Set(const VkPresentModeKHR mode)
-    {
-        properties.presentMode = mode;
-    }
-
-    void Set(const VkFormat format)
-    {
-        properties.imageFormat = format;
-    }
-
-    void Set(std::vector<VkPresentModeKHR> &presentModePriorities)
-    {
-        presentModePriorities = presentModePriorities;
-    }
-
-    void Set(std::vector<VkSurfaceFormatKHR> &surfaceFormatPriorities)
-    {
-        surfaceFormatPriorities = surfaceFormatPriorities;
+		Handle::Swap(other);
+		std::swap(surface,       other.surface      );
+		std::swap(device,        other.device       );
+		std::swap(renderTargets, other.renderTargets);
+		std::swap(properties,    other.properties   );
     }
 
     VkResult AcquireNextImage(uint32_t *index, VkSemaphore semaphore, VkFence fence)
     {
         return vkAcquireNextImageKHR(*device, handle, std::numeric_limits<uint32_t>::max(), semaphore, fence, index);
+    }
+
+    uint32_t GetCurrentBufferIndex() const
+    {
+		return bufferIndex;
+    }
+
+    VkSemaphore GetAcquiredImageReadySemaphore() const
+    {
+		return semaphores[syncPoint];
     }
 
 public:
@@ -157,12 +129,20 @@ public:
         return extent.width > 0 && extent.height > 0 && extent.width < 0xFFFFFFFF && extent.height < 0xFFFFFFFF;
     }
 
-private:
+protected:
     Device *device{ nullptr };
 
-    Images images;
+    Surface surface;
+
+    std::vector<URef<RenderTarget>> renderTargets;
 
     VkSwapchainCreateInfoKHR properties;
+
+    uint32_t bufferIndex;
+
+    uint32_t syncPoint;
+
+    std::vector<Semaphore> semaphores;
 };
 
 }

@@ -9,54 +9,70 @@ namespace Immortal
 namespace OpenGL
 {
 
-class RenderTarget : public SuperRenderTarget
+class IMMORTAL_API RenderTarget : public SuperRenderTarget, public Handle
 {
 public:
     using Super = SuperRenderTarget;
+	GLCPP_SWAPPABLE(RenderTarget)
 
 public:
-    RenderTarget(const RenderTarget::Description &descrition);
+	RenderTarget();
 
-    virtual ~RenderTarget();
+    RenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {});
+
+    virtual ~RenderTarget() override;
 
     virtual void Resize(uint32_t width, uint32_t height) override;
 
-    virtual void *ReadPixel(uint32_t index, int x, int y, Format format, int width = 1, int height = 1);
+	virtual SuperTexture *GetColorAttachment(uint32_t index) override;
 
-    virtual Attachment ColorAttachment(size_t index = 0) override;
+	virtual SuperTexture *GetDepthAttachment() override;
 
-    virtual Attachment DepthAttachment() override;
-
-    virtual operator uint64_t() const override
+public:
+    uint32_t GetWidth() const
     {
-        return colorAttachments[0];
-    }
- 
-    void Activate();
-
-	void Deactivate();
-
-    operator GLint() const
-    {
-        return handle;
+		return width;
     }
 
-private:
-    void Update();
-    void Clear();
+    uint32_t GetHeight() const
+    {
+		return height;
+    }
 
-private:
-    static void AttachColorTexture(uint32_t id, int samples, Texture::DataType type, uint32_t width, uint32_t height, int index);
-    static void AttachDepthTexture(uint32_t id, int samples, Texture::DataType type, uint32_t attachmentType, uint32_t width, uint32_t height);
+    void SetWidth(uint32_t value)
+    {
+		width = value;
+    }
 
-private:
-    uint32_t handle;
+    void SetHeight(uint32_t value)
+    {
+		height = value;
+    }
 
-    std::vector<Texture::Description> colorAttachmentDescriptions;
-    Texture::Description depthAttachmentDescription{ Format::RGBA8 };
+    void Swap(RenderTarget &other)
+    {
+		Handle::Swap(other);
+		std::swap(width,       other.width      );
+		std::swap(height,      other.height     );
+		std::swap(attachments, other.attachments); 
+    }
 
-    std::vector<uint32_t> colorAttachments;
-    uint32_t depthAttachment;
+protected:
+	void Construct(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {});
+
+    void Release();
+
+protected:
+	uint32_t width;
+
+    uint32_t height;
+
+    struct
+    {
+		std::vector<Texture> color;
+		Texture depth;
+    } attachments;
 };
+
 }
 }

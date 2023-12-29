@@ -198,7 +198,6 @@ if(NOT MSVC)
 endif()
 
 set_property(TARGET glslang     PROPERTY FOLDER "3rdparty")
-set_property(TARGET OGLCompiler PROPERTY FOLDER "3rdparty")
 set_property(TARGET OSDependent PROPERTY FOLDER "3rdparty")
 set_property(TARGET SPIRV       PROPERTY FOLDER "3rdparty")
 
@@ -343,12 +342,14 @@ set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 # LightWSL
 add_subdirectory(LightWSI)
 
+add_subdirectory(DirectXShaderCompilerHeaders)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     Vulkan-Headers imgui spdlog_header_only
-    SPIRV spirv-cross-glsl libraw::libraw
+    SPIRV spirv-cross-glsl libraw::libraw DirectXShaderCompilerHeaders
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>

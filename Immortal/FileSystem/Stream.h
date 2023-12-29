@@ -91,8 +91,9 @@ public:
     template <class T>
     size_t Read(T &contatiner)
     {
-        contatiner.resize(Size());
-        return Read(contatiner.data(), contatiner.size());
+		size_t size = Size();
+		contatiner.resize(size / sizeof(contatiner[0]));
+		return Read(contatiner.data(), size);
     }
 
     template <size_t size, size_t count = 1>

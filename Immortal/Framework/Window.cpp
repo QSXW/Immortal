@@ -1,6 +1,6 @@
 #include "Window.h"
 
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Platform/Windows/GLFWWindow.h"
 
 #ifdef _WIN32
@@ -10,17 +10,29 @@
 namespace Immortal
 {
 
-Window *Window::CreateInstance(const Description &description)
+Window *Window::CreateInstance(Anonymous handle, WindowType type)
 {
 #ifdef _WIN32
-    if (Render::API & (Render::Type::D3D | Render::Type::Vulkan))
+	if (type != WindowType::GLFW)
+	{
+		LOG::INFO("Creating window with Native Win32");
+		return new DirectWindow{ handle };
+	}
+#endif
+	return new GLFWWindow{ handle };
+}
+
+Window *Window::CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type)
+{
+#ifdef _WIN32
+	if (type != WindowType::GLFW)
     {
         LOG::INFO("Creating window with Native Win32");
-        return new DirectWindow{ description };
+        return new DirectWindow{ title, width, height };
     }
 #endif
     LOG::INFO("Creating window with GLFW");
-    return new GLFWWindow{ description };
+    return new GLFWWindow{ title, width, height };
 
     LOG::WARN("There is no Window implemented for the rendering API specified yet.");
     return nullptr;

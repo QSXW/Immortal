@@ -7,6 +7,7 @@
 #include "PipelineLayout.h"
 #include "Buffer.h"
 #include "Descriptor.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -14,83 +15,68 @@ namespace Vulkan
 {
 
 class Device;
-class Shader : public SuperShader
+class IMMORTAL_API Shader : public SuperShader, public Handle<VkShaderModule>
 {
 public:
     using Super = SuperShader;
+    VKCPP_SWAPPABLE(Shader)
 
 public:
-    Shader(Device *device, const std::string &filename, Type type = Type::Graphics);
+    Shader();
 
-    Shader(Device *device, const std::vector<uint32_t> &vsSpirv, const std::vector<uint32_t> &psSpirv);
+    Shader(Device *device, const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
-    virtual ~Shader();
+    virtual ~Shader() override;
+
+    VkShaderModule Load(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
     VkShaderModule Load(const std::string &filename, Stage stage);
 
     VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module, VkShaderStageFlagBits stage);
 
-    auto &GetStages()
+public:
+    const std::vector<VkDescriptorSetLayoutBinding> &GetDescriptorSetLayoutBinding() const
     {
-        return stages;
+        return descriptorSetLayoutBindings;
     }
 
-    template <class T>
-    T Get()
+    const std::vector<VkPushConstantRange> &GetPushConstantRanges() const
     {
-        if constexpr (IsPrimitiveOf<PipelineLayout, T>())
-        {
-            return pipelineLayout;
-        }
-        if constexpr (IsPrimitiveOf<VkDescriptorSetLayout, T>())
-        {
-            return descriptorSetLayout;
-        }
+        return pushConstantRanges;
     }
 
-    template <class T>
-    T *GetAddress()
+    VkShaderStageFlagBits GetStage() const
     {
-        if constexpr (IsPrimitiveOf<DescriptorSetUpdater, T>())
-        {
-            return &descriptorSetUpdater;
-        }
+        return stage;
     }
 
-    const std::vector<VkDescriptorPoolSize> &PoolSize() const
+    const char *GetEntryPoint() const
     {
-        return poolSizes;
+        return entryPoint.c_str();
+    }
+
+    void Swap(Shader &other)
+    {
+        Handle::Swap(other);
+        std::swap(device,                      other.device                     );
+        std::swap(pushConstantRanges,          other.pushConstantRanges         );
+        std::swap(descriptorSetLayoutBindings, other.descriptorSetLayoutBindings);
+        std::swap(stage,                       other.stage                      );
     }
  
-private:
-    VkShaderModule CreateModuleBySpriv(const std::vector<uint32_t> &spirv, Stage stage);
+protected:
+	VkShaderModule CreateModuleBySpriv(const std::vector<uint8_t> &spirv, VkShaderStageFlagBits stage);
 
-    void Reflect(const std::string &source);
-
-    void SetupDescriptorSetLayout(Stage stage);
-
-    void Setup();
-
-private:
-    Device *device{ nullptr };
-
-    std::vector<VkShaderModule> modules;
-
-    std::vector<Shader::Resource> resources;
-
-    std::array<VkPipelineShaderStageCreateInfo, 2> stages;
-
-    PipelineLayout pipelineLayout;
-
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    DescriptorSetUpdater descriptorSetUpdater;
-
-    std::vector<VkDescriptorPoolSize> poolSizes;
+protected:
+    Device *device;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
 
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
+
+    std::string entryPoint;
+
+    VkShaderStageFlagBits stage;
 };
 
 }

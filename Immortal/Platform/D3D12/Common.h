@@ -9,9 +9,6 @@
 #include <dxgi1_4.h>
 #include <dxgi1_6.h>
 
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "D3d12.lib")
-
 #if _DEBUG
 #include <D3d12SDKLayers.h>
 #endif
@@ -91,6 +88,11 @@ struct DisplayChromaticities
     float WhiteY;
 };
 
+struct ShaderVisibilityIndex
+{
+	int pushConstant;
+};
+
 static inline void GetHardwareAdapter(IDXGIFactory4 *pFactory, IDXGIAdapter1 **ppAdapter)
 {
     *ppAdapter = nullptr;
@@ -153,32 +155,6 @@ struct Viewport : public D3D12_VIEWPORT
         Height   = FLOAT(height);
         MinDepth = FLOAT(minDepth);
         MaxDepth = FLOAT(maxDepth);
-    }
-};
-
-struct Rect : public D3D12_RECT
-{
-    using Primitive = D3D12_RECT;
-
-    Rect()
-    {
-
-    }
-
-    explicit Rect(const Primitive &p) noexcept :
-        Primitive{ p }
-    {
-
-    }
-
-    template <class T0, class T1, class T2, class T3>
-    explicit Rect(T0 left, T1 top, T2 right, T3 bottom) noexcept
-    {
-        ASSERT_TYPES4(std::is_arithmetic, T, TYPE_HINT(Arithmetic))
-        Primitive::left   = LONG(left);
-        Primitive::top    = LONG(top);
-        Primitive::right  = LONG(right);
-        Primitive::bottom = LONG(bottom);
     }
 };
 

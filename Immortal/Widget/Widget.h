@@ -24,7 +24,7 @@
 #define MOVEPOS(x, y) window->DC.CursorPos += { x, y }
 #define MOVEX(v) window->DC.CursorPos.x += v
 #define MOVEY(v) window->DC.CursorPos.y += v
-#define WIMAGE(x) (ImTextureID)(uint64_t)(x)
+#define WIMAGE(x) (ImTextureID)(void *)(x)
 #define IM_ANONY "###"
 
 namespace Immortal
@@ -662,14 +662,17 @@ public:
 
 public:
     WFrame(Widget *parent = nullptr) :
-        Widget{ parent }
+        Widget{ parent },
+	    state{}
     {
         Connect([&]() {
             WidgetLock lock{this};
+			ImGui::PushStyleColor(ImGuiCol_TabActive, color);
             ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { padding.right, padding.bottom });
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { padding.right, padding.bottom });
-            if (ImGui::Begin(text.c_str(), nullptr, ImGuiWindowFlags_NoTitleBar))
+
+			if (ImGui::Begin(text.c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
             {
                 auto [x, y] = ImGui::GetContentRegionAvail();
                 RenderWidth(x);
@@ -687,7 +690,7 @@ public:
             }
             ImGui::End();
             ImGui::PopStyleVar(2);
-            ImGui::PopStyleColor();
+            ImGui::PopStyleColor(2);
             });
     }
 
@@ -790,7 +793,7 @@ public:
             else
             {
                 ImGui::Image(
-                    (ImTextureID)(uint64_t) *resource.image,
+                    (ImTextureID)(uint64_t)resource.image,
                     {renderWidth, renderHeight},
                     resource.uv._0,
                     resource.uv._1
@@ -810,14 +813,14 @@ public:
             return;
         }
 
-        auto scale = (float)resource.image->Width() / (float)resource.image->Height();
+        auto scale = (float)resource.image->GetWidth() / (float)resource.image->GetHeight();
         auto rscale = renderWidth / renderHeight;
 
         float x = renderWidth;
         float y = renderHeight;
         if (scale > rscale)
         {
-            y = x * ((float) resource.image->Height() / (float) resource.image->Width());
+            y = x * ((float) resource.image->GetHeight() / (float) resource.image->GetWidth());
         }
         else
         {
@@ -1098,7 +1101,7 @@ public:
             static bool optionalPadding = false;
             static bool optionalFullScreen = true;
             static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-            ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+            ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 
             if (optionalFullScreen)
             {

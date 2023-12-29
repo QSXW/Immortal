@@ -2,26 +2,54 @@
 
 #include "Framework/Utils.h"
 #include "Common.h"
+#include "Render/Device.h"
+#include "Render/LightGraphics.h"
+#include "PhysicalDevice.h"
 
 namespace Immortal
 {
 namespace D3D11
 {
 
-using CommandList = ID3D11DeviceContext;
-
 class Swapchain;
-class Device
+class IMMORTAL_API Device : public SuperDevice 
 {
 public: 
     using Primitive = ID3D11Device5;
     D3D11_OPERATOR_HANDLE()
 
 public:
-    Device(int deviceId);
+    Device(PhysicalDevice *physicalDevice);
 
-    ~Device();
+    virtual ~Device() override;
 
+    virtual Anonymous GetBackendHandle() const override;
+
+    virtual BackendAPI GetBackendAPI() override;
+
+    virtual SuperQueue *CreateQueue(QueueType type, QueuePriority priority = QueuePriority::Normal) override;
+
+    virtual SuperCommandBuffer *CreateCommandBuffer(QueueType type) override;
+
+    virtual SuperSwapchain *CreateSwapchain(SuperQueue *queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode) override;
+
+    virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = .0f, float maxLod = 1.0f) override;
+
+    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+
+    virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
+
+    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+
+    virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels = 1, uint16_t arrayLayers = 1, TextureType type = TextureType::None) override;
+
+    virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
+
+    virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
+
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
+
+public:
     HRESULT CreateFence(ID3D11Fence **ppFence, UINT64 initialValue, D3D11_FENCE_FLAG flags)
     {
         return handle->CreateFence(initialValue, flags, IID_PPV_ARGS(ppFence));
@@ -62,6 +90,16 @@ public:
         return handle->CreateRasterizerState(pRasterizerDesc, ppRasterizerState);
     }
 
+    HRESULT CreateBlendState(const D3D11_BLEND_DESC *pBlendDesc, ID3D11BlendState **ppBlendState)
+	{
+		return handle->CreateBlendState(pBlendDesc, ppBlendState);
+	}
+
+    HRESULT CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC *pDepthStencilStateDesc, ID3D11DepthStencilState **ppDepthStencilState)
+	{
+		return handle->CreateDepthStencilState(pDepthStencilStateDesc, ppDepthStencilState);
+	}
+
     HRESULT CreateVertexShader(const void *pShaderBytecode, SIZE_T bytecodeLength, ID3D11ClassLinkage *pClassLinkage, ID3D11VertexShader **ppVertexShader)
     {
         return handle->CreateVertexShader(pShaderBytecode, bytecodeLength, pClassLinkage, ppVertexShader);
@@ -92,7 +130,7 @@ public:
         return context->Map(pResource, subresource, mapType, mapFlags, pMappedResource);
     }
 
-    void Map(ID3D11Resource *pResource, UINT subresource)
+    void Unmap(ID3D11Resource *pResource, UINT subresource)
     {
         return context->Unmap(pResource, subresource);
     }
@@ -102,16 +140,12 @@ public:
         context->CopyResource(pDstResource, pSrcResource);
     }
 
-    HRESULT CreateSwapchain(Swapchain *pSwapchain, DXGI_SWAP_CHAIN_DESC *pDesc);
+public:
+	IDXGIFactory4 *GetDXGIFactory() const;
+
+	IDXGIAdapter1 *GetAdapter() const;
 
 public:
-    template <class T = IDXGIFactory4>
-    requires std::is_base_of_v<IDXGIFactory, T>
-    T *GetDxgiFactory() const
-    {
-        return dxgiFactory.Get();
-    }
-
     template <class T = ID3D11DeviceContext>
     requires std::is_base_of_v<ID3D11DeviceContext, T>
     T *GetContext() const
@@ -119,17 +153,8 @@ public:
         return context.Get();
     }
 
-    template <class T = IDXGIAdapter1>
-    requires std::is_base_of_v<IDXGIAdapter, T>
-    T *GetAdapter() const
-    {
-        return adapter.Get();
-    }
-
 protected:
-    ComPtr<IDXGIFactory4> dxgiFactory;
-
-    ComPtr<IDXGIAdapter1> adapter;
+	PhysicalDevice *physicalDevice;
 
     ComPtr<ID3D11DeviceContext4> context;
 

@@ -6,12 +6,9 @@
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
 #include "Render/Texture.h"
-#include "Shader.h"
-#include "Buffer.h"
+#include "Render/LightGraphics.h"
 #include "VertexArray.h"
-#include "Buffer.h"
 #include "Descriptor.h"
-#include "Texture.h"
 
 #include <vector>
 
@@ -20,64 +17,49 @@ namespace Immortal
 namespace OpenGL
 {
 
-class Pipeline : virtual public SuperGraphicsPipeline, virtual public ComputePipeline
+class Shader;
+class IMMORTAL_API Pipeline : virtual public SuperGraphicsPipeline, virtual public SuperComputePipeline, public Handle
 {
 public:
     using Super = SuperGraphicsPipeline;
 
 public:
-    Pipeline(Ref<Shader::Super> shader);
+	Pipeline();
 
-    virtual ~Pipeline();
+    virtual ~Pipeline() override;
 
-    virtual void Set(const InputElementDescription &description) override;
+    virtual void Construct(SuperShader **ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription);
 
-    virtual void Set(Ref<SuperBuffer> buffer) override;
+public:
+	void SetState();
 
-    virtual void Bind(const std::string &name, const SuperBuffer *uniform) override;
+public:
+	VertexArray *GetVextexArray()
+	{
+		return &vertexArray;
+	}
 
-    virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;
-
-    virtual void Bind(Texture::Super *texture, uint32_t binding = 0) override;
-
-    virtual void Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding) override;
-
-    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
-
-    void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
-
-    void PushConstant(uint32_t size, const void *data, uint32_t offset = 0);
-
-    template <Buffer::Type type>
-    Ref<Buffer> Get()
+    uint32_t GetPushConstantIndex() const
     {
-        if constexpr (type == Buffer::Type::Vertex)
-        {
-            return dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get());
-        }
-        if constexpr (type == Buffer::Type::Index)
-        {
-            return dynamic_cast<Buffer *>(desc.indexBuffer.Get());
-        }
+		return pushConstantIndex;
     }
 
-    void Draw();
+    const std::vector<Descriptor> &GetDescriptors() const
+    {
+		return descriptors;
+    }
 
-private:
-	void __BindDescriptorTable() const;
+protected:
+    void LikeProgram(Shader **ppShader, size_t shaderCount);
 
-private:
-    VertexArray handle;
+    void Reflect();
 
-    Shader *shader;
+protected:
+    VertexArray vertexArray;
 
-    LightArray<Descriptor> bufferDescriptorTable;
+    uint32_t pushConstantIndex;
 
-    LightArray<Descriptor, 32> imageDescriptorTable;
-
-    InputElementDescription inputElementDesription;
-
-    URef<UniformBuffer> pushConstants;
+	std::vector<Descriptor> descriptors;
 };
 
 }

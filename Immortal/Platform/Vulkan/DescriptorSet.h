@@ -2,6 +2,8 @@
 
 #include "Common.h"
 #include "Descriptor.h"
+#include "Handle.h"
+#include "Render/DescriptorSet.h"
 
 namespace Immortal
 {
@@ -9,64 +11,39 @@ namespace Vulkan
 {
 
 class Device;
-class DescriptorSet
+class Buffer;
+class Pipeline;
+class Texture;
+class Sampler;
+class DescriptorSet : public SuperDescriptorSet, public Handle<VkDescriptorSet>
 {
 public:
-    using Primitive = VkDescriptorSet;
-    VKCPP_OPERATOR_HANDLE()
+    using Super = SuperDescriptorSet;
+	VKCPP_SWAPPABLE(DescriptorSet)
 
 public:
-    DescriptorSet();
+	DescriptorSet(Device *device = nullptr, Pipeline *pipeline = nullptr);
 
-    DescriptorSet(Device *device, const VkDescriptorSetLayout &descriptorSetLayout);
+    virtual ~DescriptorSet() override;
 
-    DescriptorSet(const VkDescriptorSet other);
+    virtual void Set(uint32_t slot, SuperBuffer *buffer) override;
 
-    DescriptorSet(DescriptorSet &&other);
+	virtual void Set(uint32_t slot, SuperTexture *texture) override;
 
-    DescriptorSet &operator =(DescriptorSet &&other);
+	virtual void Set(uint32_t slot, SuperSampler *sampler) override;
 
-    ~DescriptorSet();
-
-    void Swap(DescriptorSet &other);
-
-    void Update(VkWriteDescriptorSet *desc);
-
-    template <class T>
-    void Update(T descriptorInfo, VkDescriptorType type, uint32_t slot = 0)
+    void Swap(DescriptorSet &other)
     {
-        VkWriteDescriptorSet desc{};
-        desc.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        desc.pNext           = nullptr;
-        desc.dstBinding      = slot;
-        desc.dstSet          = handle;
-        desc.descriptorCount = 1;
-        desc.descriptorType  = type;
-
-        if constexpr (IsPrimitiveOf<ImageDescriptor, T>())
-        {
-            desc.pImageInfo = &descriptorInfo;
-            Update(&desc);
-            return;
-        }
-        if constexpr (IsPrimitiveOf<BufferDescriptor, T>())
-        {
-            desc.pBufferInfo = &descriptorInfo;
-            Update(&desc);
-            return;
-        }
+		Handle::Swap(other);
+        std::swap(device, other.device);
     }
-
-    operator uint64_t() const
-    {
-        return (uint64_t)(handle);
-    }
-
-    DescriptorSet(const DescriptorSet &other) = delete;
-    DescriptorSet &operator=(const DescriptorSet &other) = delete;
 
 protected:
     Device *device{ nullptr };
+
+    LightArray<VkWriteDescriptorSet> writeDescriptorSets;
+
+    VkDescriptorUpdateTemplate descriptorUpdateTemplate;
 };
 
 }

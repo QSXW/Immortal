@@ -40,7 +40,7 @@ public:
 
 	uint32_t GetSize() const
 	{
-		return buffer->Size();
+		return buffer->GetSize();
 	}
 
 	operator uint64_t() const
@@ -65,7 +65,6 @@ public:
 	AccelerationStructure(Device *device, const Buffer *pVertexBuffer, const InputElementDescription &desc, const Buffer *pIndexBuffer, const Buffer *pTranformBuffer);
 
 	~AccelerationStructure();
-
 
 protected:
 	Device *device;

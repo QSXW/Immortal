@@ -4,14 +4,15 @@
 #include "Render/Buffer.h"
 #include "Resource.h"
 #include "Descriptor.h"
+#include "Handle.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
-class RenderContext;
-class Buffer : public SuperBuffer, public Resource
+class Device;
+class Buffer : public SuperBuffer, public Resource, public NonDispatchableHandle
 {
 public:
     using Super = SuperBuffer;
@@ -55,32 +56,24 @@ public:
     };
 
 public:
-    Buffer() = default;
+	Buffer();
 
-    Buffer(const Buffer &other, const BindInfo &bindInfo);
-
-    Buffer(RenderContext *context, const size_t size, const void *data, Type type);
-
-    Buffer(RenderContext *context, const size_t size, Type type);
+    Buffer(Device *device, Type type, const size_t size, const void *data = nullptr);
 
     virtual ~Buffer() override;
 
-    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
+    virtual Anonymous GetBackendHandle() const override;
 
-    virtual Buffer *Bind(const BindInfo &bindInfo) const override;
+    virtual void Map(void **ppData, size_t size, uint64_t offset) override;
+
+	virtual void Unmap() override;
 
     template <class T>
 	HRESULT Map(T **data)
 	{
-		D3D12_RANGE range{0, size};
+		D3D12_RANGE range{ 0, GetSize() };
 		return resource->Map(0, &range, (void **)data);
 	}
-
-    void Unmap()
-    {
-        D3D12_RANGE range{ 0, size };
-        resource->Unmap(0, &range);
-    }
 
     operator D3D12_GPU_VIRTUAL_ADDRESS() const
     {
@@ -89,38 +82,19 @@ public:
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC Desc() const
     {
-        return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, U32(size) };
+        return D3D12_CONSTANT_BUFFER_VIEW_DESC{ virtualAddress, U32(GetSize()) };
     }
 
-    CPUDescriptor GetDescriptor() const
+    Descriptor GetDescriptor() const
     {
         return descriptor;
     }
 
 protected:
-    void __Create();
+    void Construct();
 
 protected:
-    RenderContext *context;
-
-    CPUDescriptor descriptor;
-};
-
-template <class T>
-struct Mapper
-{
-	Mapper(Buffer *buffer, T mapped) :
-        buffer{ buffer }
-	{
-		Check(buffer->Map(mapped));
-    }
-
-    ~Mapper()
-    {
-		buffer->Unmap();
-    }
-
-    Buffer *buffer;
+    Descriptor descriptor;
 };
 
 }

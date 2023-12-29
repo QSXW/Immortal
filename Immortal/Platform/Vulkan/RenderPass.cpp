@@ -1,5 +1,6 @@
 #include "RenderPass.h"
 #include "Device.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -7,39 +8,56 @@ namespace Vulkan
 {
 
 RenderPass::RenderPass() :
-    handle{},
+    Handle{},
     device{}
 {
 
 }
 
-RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat, bool isPresent) :
+RenderPass::RenderPass(Device *device, const std::vector<Texture> &colorAttachments, const Texture &depthAttachment, bool isPresented) :
+    Handle{},
     device{ device }
 {
-    std::array<VkAttachmentDescription, 2> attachments{};
+    LightArray<VkAttachmentDescription> attachments{};
+	LightArray<VkAttachmentReference> colorRefs{};
 
-    auto &colorAttachment          = attachments[0];
-    colorAttachment.format         = colorFormat;
-    colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout    = isPresent ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    auto count = colorAttachments.size();
+	for (uint32_t i = 0; i < count; i++)
+    {
+        attachments.emplace_back({
+            .flags          = {},
+            .format         = colorAttachments[i].GetFormat(),
+            .samples        = colorAttachments[i].GetSamples(),
+            .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+		    .finalLayout    = isPresented ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        });
 
-    auto &depthAttachment          = attachments[1];
-    depthAttachment.format         = depthFormat;
-    depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        colorRefs.emplace_back(VkAttachmentReference {
+			.attachment = i,
+		    .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            });
+    }
+    
+    if (depthAttachment)
+    {
+		attachments.emplace_back({
+            .format         = depthAttachment.GetFormat(),
+            .samples        = depthAttachment.GetSamples(),
+            .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        });
+    };
 
     VkAttachmentReference colorReference{};
-    colorReference.attachment = 0;
+    colorReference.attachment = count;
     colorReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depthReference{};
@@ -48,9 +66,9 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
 
     VkSubpassDescription subpassDescription{};
     subpassDescription.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpassDescription.colorAttachmentCount    = 1;
-    subpassDescription.pColorAttachments       = &colorReference;
-    subpassDescription.pDepthStencilAttachment = &depthReference;
+    subpassDescription.colorAttachmentCount    = uint32_t(colorRefs.size());
+    subpassDescription.pColorAttachments       = colorRefs.data();
+	subpassDescription.pDepthStencilAttachment = depthAttachment ? &depthReference : nullptr;
     subpassDescription.inputAttachmentCount    = 0;
     subpassDescription.pInputAttachments       = nullptr;
     subpassDescription.preserveAttachmentCount = 0;
@@ -88,46 +106,31 @@ RenderPass::RenderPass(Device *device, VkFormat colorFormat, VkFormat depthForma
     Check(device->Create(&createInfo, &handle));
 }
 
-RenderPass::RenderPass(Device *device, VkRenderPassCreateInfo *pCreateInfo) :
-    device{ device }
+RenderPass::RenderPass(Device *device, const VkRenderPassCreateInfo *pCreateInfo) :
+    Handle{},
+    device{device}
 {
-    Check(device->Create(pCreateInfo, &handle));
-}
-
-RenderPass::RenderPass(RenderPass &&other) :
-    RenderPass{}
-{
-    other.Swap(*this);
-}
-
-RenderPass &RenderPass::operator =(RenderPass &&other)
-{
-    RenderPass(std::move(other)).Swap(*this);
-    return *this;
-}
-
-void RenderPass::Swap(RenderPass &other)
-{
-    std::swap(device, other.device);
-    std::swap(handle, other.handle);
+	Check(device->Create(pCreateInfo, &handle));
 }
 
 RenderPass::~RenderPass()
 {
-    Destroy();
+    Release();
 }
 
 void RenderPass::Invalidate(VkRenderPass other)
 {
-    Destroy();
+    Release();
     handle = other;
 }
 
-void RenderPass::Destroy()
+void RenderPass::Release()
 {
     if (device)
     {
         device->DestroyAsync(handle);
+		handle = VK_NULL_HANDLE;
+		device = nullptr;
     }
 }
 

@@ -182,11 +182,22 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
     }
 }
 
-Swapchain::Swapchain(Device *device, const VkExtent2D &extent, const uint32_t imageCount, const VkSurfaceTransformFlagBitsKHR transform, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags) :
-    device{ device },
-    handle{},
-    properties{}
+Swapchain::Swapchain(Device *device, Surface &&surface, Format format, const VkExtent2D &extent, const uint32_t imageCount, SwapchainMode mode) :
+    Swapchain{ std::move(Swapchain{}), device, std::move(surface), format, extent, imageCount, (mode == SwapchainMode::VerticalSync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_MAILBOX_KHR) }
 {
+  
+}
+
+Swapchain::Swapchain(Device *device, Surface &&surface, VkFormat format, const VkExtent2D &extent, const uint32_t imageCount, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags, const VkSurfaceTransformFlagBitsKHR transform) :
+    Handle{},
+    device{ device },
+    surface{ std::move(surface) },
+    properties{},
+    bufferIndex{},
+    syncPoint{},
+    semaphores{}
+{
+    properties.imageFormat   = format;
     properties.sType         = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     properties.imageExtent   = extent;
     properties.minImageCount = imageCount;
@@ -195,15 +206,14 @@ Swapchain::Swapchain(Device *device, const VkExtent2D &extent, const uint32_t im
     properties.imageUsage    = imageUsageFlags;
 }
 
-Swapchain::Swapchain(Swapchain &oldSwapchain, Device *device, const VkExtent2D &extent, const uint32_t imageCount, const VkSurfaceTransformFlagBitsKHR  transform, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags) :
-    Swapchain{ device }
+Swapchain::Swapchain(Swapchain &&oldSwapchain, Device *device, Surface &&_surface, Format _format, const VkExtent2D &extent, const uint32_t imageCount, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags, const VkSurfaceTransformFlagBitsKHR transform) :
+    Swapchain{ device, std::move(_surface), _format }
 {
-    auto surface = device->GetSurface();
-
     PhysicalDevice *physicalDevice = &device->Get<PhysicalDevice &>();
     VkSurfaceCapabilitiesKHR surfaceCapabilities{};
-    Check(device->GetSurfaceCapabilities(&surfaceCapabilities));
+    Check(device->GetSurfaceCapabilities(surface, &surfaceCapabilities));
 
+    VkFormat format = _format;
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     uint32_t surfaceFormatCount = 0;
     Check(physicalDevice->GetSurfaceFormatsKHR(surface, &surfaceFormatCount, nullptr));
@@ -222,7 +232,7 @@ Swapchain::Swapchain(Swapchain &oldSwapchain, Device *device, const VkExtent2D &
     Check(physicalDevice->GetSurfacePresentModesKHR(surface, &presentModeCount, nullptr));
     presentModes.resize(presentModeCount);
     Check(physicalDevice->GetSurfacePresentModesKHR( surface, &presentModeCount, presentModes.data()));
-    properties.presentMode = SelectPresentMode(properties.presentMode, presentModes, priorities.PresentMode);
+	properties.presentMode = SelectPresentMode(presentMode, presentModes, priorities.PresentMode);
 
     LOG::DEBUG("Surface supports the following present modes:");
     for (auto &p : presentModes)
@@ -239,9 +249,9 @@ Swapchain::Swapchain(Swapchain &oldSwapchain, Device *device, const VkExtent2D &
         .colorSpace = properties.imageColorSpace,
     };
 
-    auto [format, colorSpace] = SelectSurfaceFormat(surfaceFormat, surfaceFormats, priorities.SurfaceFormat);
-    properties.imageFormat     = format;
-    properties.imageColorSpace = colorSpace;
+    surfaceFormat = SelectSurfaceFormat(surfaceFormat, surfaceFormats, priorities.SurfaceFormat);
+    properties.imageFormat     = surfaceFormat.format;
+    properties.imageColorSpace = surfaceFormat.colorSpace;
 
     VkFormatProperties formatProperties;
     physicalDevice->GetFormatProperties(properties.imageFormat, &formatProperties);
@@ -249,7 +259,12 @@ Swapchain::Swapchain(Swapchain &oldSwapchain, Device *device, const VkExtent2D &
     properties.preTransform   = SelectTransform(transform, surfaceCapabilities.supportedTransforms, surfaceCapabilities.currentTransform);
     properties.compositeAlpha = SelectCompositeAlpha(VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR, surfaceCapabilities.supportedCompositeAlpha);
 
-    handle   = oldSwapchain.handle;
+    if (oldSwapchain.handle)
+    {
+        handle  = oldSwapchain.handle;
+        surface = std::move(oldSwapchain.surface);
+    }
+
     Invalidate(properties.imageExtent);
 }
 
@@ -260,21 +275,64 @@ Swapchain::~Swapchain()
 
 void Swapchain::Destroy()
 {
-    if (handle)
+	if (device)
     {
+		renderTargets.clear();
         device->DestroyAsync(handle);
+		surface.Release(device->Get<PhysicalDevice>().Get<Instance>());
         handle = VK_NULL_HANDLE;
+
+        for (auto &semaphore : semaphores)
+        {
+			device->Release(std::move(semaphore));
+        }
+		device = nullptr;
     }
+}
+
+void Swapchain::PrepareNextFrame()
+{
+	VkResult ret = AcquireNextImage(&bufferIndex, semaphores[syncPoint], VK_NULL_HANDLE);
+	if (ret != VK_ERROR_OUT_OF_DATE_KHR && ret != VK_SUBOPTIMAL_KHR)
+	{
+		Check(ret);
+	}
+}
+
+void Swapchain::Resize(uint32_t width, uint32_t height)
+{
+	VkExtent2D extent = { width, height };
+    if (extent.width == properties.imageExtent.width &&
+        extent.height == properties.imageExtent.height)
+    {
+		return;
+    }
+
+	VkSurfaceCapabilitiesKHR surfaceCapabilities{};
+	Check(device->GetSurfaceCapabilities(surface, &surfaceCapabilities));
+	if (IsValidExtent(surfaceCapabilities.currentExtent))
+    {
+		extent = surfaceCapabilities.currentExtent;
+    }
+
+	Invalidate(extent);
+}
+
+SuperRenderTarget *Swapchain::GetCurrentRenderTarget()
+{
+    return renderTargets[bufferIndex];
 }
 
 void Swapchain::Invalidate(VkExtent2D extent)
 {
     properties.imageExtent  = extent;
     properties.oldSwapchain = handle;
-    properties.surface      = device->GetSurface();
+    properties.surface      = surface;
     properties.clipped      = VK_TRUE;
 
     Check(device->Create(&properties, &handle));
+
+    LightArray<VkImage> images;
 
     uint32_t count = 0;
     Check(device->GetSwapchainImagesKHR(handle, &count, nullptr));
@@ -286,6 +344,53 @@ void Swapchain::Invalidate(VkExtent2D extent)
     {
         device->DestroyAsync(properties.oldSwapchain);
     }
+
+    if (semaphores.empty())
+    {
+		semaphores.clear();
+		semaphores.resize(properties.minImageCount);
+        for (auto &semaphore : semaphores)
+        {
+			Check(device->AllocateSemaphore(&semaphore));
+        }
+    }
+
+    VkExtent3D imageExtent = { properties.imageExtent.width, properties.imageExtent.height, 1 };
+    for (size_t i = 0; i < count; i++)
+    {
+        Texture texture = {device, 
+            std::move(Image{ 
+                device,
+                images[i],
+                imageExtent,
+                properties.imageFormat,
+                properties.imageUsage,
+                1,
+                properties.imageArrayLayers,
+                VK_SAMPLE_COUNT_1_BIT 
+            }),
+            std::move(ImageView{})
+        };
+
+        if (renderTargets.size() >= i)
+        {
+			std::vector<Texture> textures;
+			textures.emplace_back(std::move(texture));
+            renderTargets.emplace_back(new RenderTarget{ device });
+			renderTargets[i]->Construct(textures, {}, true);
+			renderTargets[i]->SetSwapchainTarget();
+        }
+        else
+        {
+			renderTargets[i]->SetColorAttachment(i, std::move(texture));
+			renderTargets[i]->Invalidate();
+        }
+    }
+}
+
+void Swapchain::OnPresent()
+{
+	SLROTATE(syncPoint, properties.minImageCount);
 }
 
 }

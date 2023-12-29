@@ -26,3 +26,6 @@
 [submodule "3rdparty/LightWSI"]
 	path = 3rdparty/LightWSI
 	url = https://github.com/QSXW/LightWSI.git
+[submodule "3rdparty/DirectXShaderCompilerHeaders"]
+	path = 3rdparty/DirectXShaderCompilerHeaders
+	url = https://github.com/QSXW/DirectXShaderCompilerHeaders.git

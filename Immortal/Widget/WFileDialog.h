@@ -26,11 +26,11 @@ public:
         Widget{ v },
         color{ 1.0f, 1.0f, 1.0f, 0.0f }
     {
-        icon = Render::CreateImage("Assets/Icon/WFileDialogIcons.png");
+		icon = Graphics::CreateTexture("Assets/Icon/WFileDialogIcons.png");
         constexpr int totalIconCount = 11;
         constexpr float factor = 1.0f / totalIconCount;
-        auto width = icon->Width();
-        auto height = icon->Height();
+        auto width = icon->GetWidth();
+        auto height = icon->GetHeight();
 
         float splitPos = 512.0f / height;
         float xFactor = 64.0f / width;
@@ -48,7 +48,7 @@ public:
             }
 
         ImGui::PushStyleColor(ColorStyle::ChildBg, navigateBackgroundColor);
-        ImGui::BeginChild(IM_ANONY, { ImGui::GetWindowWidth(), 32.0f }, true, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysUseWindowPadding);
+        ImGui::BeginChild(IM_ANONY, { ImGui::GetWindowWidth(), 32.0f }, true, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
         auto window = ImGui::GetCurrentWindow();
         MOVEPOS(10, 5);
@@ -56,12 +56,12 @@ public:
         ImGui::PushStyleColor(ColorStyle::Button, { 0, 0, 0, 0.0f });
         ImGui::PushStyleColor(ColorStyle::ButtonHovered, ImGui::RGBA32(0x007bffff));
 
-        if (ImGui::ImageButton(WIMAGE(*icon), buttonSize, { 0 * xFactor, splitPos }, { 1 * xFactor, splitPos + yFactor }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
+        if (ImGui::ImageButton(WIMAGE(icon), buttonSize, { 0 * xFactor, splitPos }, { 1 * xFactor, splitPos + yFactor }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
         {
             Source(lastPath);
         }
         ImGui::SameLine(0, 5);
-        if (ImGui::ImageButton(WIMAGE(*icon), buttonSize, { 1 * xFactor, splitPos + yFactor }, { 0 * xFactor, splitPos }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
+        if (ImGui::ImageButton(WIMAGE(icon), buttonSize, { 1 * xFactor, splitPos + yFactor }, { 0 * xFactor, splitPos }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
         {
             Source(path.Parent());
         }
@@ -70,7 +70,7 @@ public:
         static bool on = true;
         {
             WidgetLock lock{ "@FDType" };
-            if (ImGui::ImageButton(WIMAGE(*icon), buttonSize, { toggleIconPos * xFactor, splitPos }, { (toggleIconPos + 1.0f) * xFactor, splitPos + yFactor }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
+            if (ImGui::ImageButton(WIMAGE(icon), buttonSize, { toggleIconPos * xFactor, splitPos }, { (toggleIconPos + 1.0f) * xFactor, splitPos + yFactor }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
             {
                 toggleIconPos = toggleIconPos == 2.0f ? 3.0f : 2.0f;
                 on = !on;
@@ -164,7 +164,7 @@ public:
             auto &uv0 = resources[(int)dir.type].uv._0;
             auto &uv1 = resources[(int)dir.type].uv._1;
             MOVEPOS(12, 12);
-            ImGui::Image(WIMAGE(*icon), {height - 6, height - 6 }, uv0, uv1);
+            ImGui::Image(WIMAGE(icon), {height - 6, height - 6 }, uv0, uv1);
             ImGui::SameLine();
             MOVEY(-4);
             WidgetLock lock{ &dir };
@@ -186,7 +186,7 @@ public:
 
                 FileSystem::DirectoryEntry *entry = { &file };
                 ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
-                ImGui::ImageButton((ImTextureID)(uint64_t)*icon, { 64, 64 }, uv0, uv1);
+				ImGui::ImageButton(WIMAGE(icon), {64, 64}, uv0, uv1);
                 ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 64);
                 ImGui::Text("%s", dir.path.c_str() + offset);
                 ImGui::PopTextWrapPos();
@@ -231,7 +231,7 @@ public:
                 auto &uv1 = resources[(int)dir.type].uv._1;
 
                 WidgetLock lock{ &dir };
-                ImGui::ImageButton("###", (ImTextureID)(uint64_t)*icon, { height, height }, uv0, uv1);
+                ImGui::ImageButton("###", WIMAGE(icon), { height, height }, uv0, uv1);
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
                 {
                     if (ImGui::IsMouseDoubleClicked(0))
@@ -273,7 +273,7 @@ public:
                 {
                     FileSystem::DirectoryEntry *entry = { &dir };
                     ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
-                    ImGui::ImageButton((ImTextureID)(uint64_t)*icon, { height, height }, uv0, uv1);
+					ImGui::ImageButton(WIMAGE(icon), {height, height}, uv0, uv1);
                     ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + height);
                     ImGui::Text("%s", dir.path.c_str() + offset);
                     ImGui::PopTextWrapPos();

@@ -2,6 +2,7 @@
 
 #include "Common.h"
 #include "Core.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -10,50 +11,56 @@ namespace Vulkan
 
 class Device;
 class ImageView;
-class Image
+class Image : public Handle<VkImage>
 {
 public:
-    using Primitive = VkImage;
-    VKCPP_OPERATOR_HANDLE()
+	VKCPP_SWAPPABLE(Image)
 
 public:
-    Image();
+    Image(Device *device = nullptr);
 
-    Image(Device *device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
+    Image(Device *device, VkImage handle, const VkExtent3D &extent, VkFormat format, VkImageUsageFlags imageUsage, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT);
 
-    Image(Device *device, const VkExtent3D &extent, VkFormat format,VkImageUsageFlags imageUsage, VmaMemoryUsage memoryUsage,
-          VkSampleCountFlagBits sampleCount   = VK_SAMPLE_COUNT_1_BIT,
-          uint32_t mipLevels                  = 1,
-          uint32_t arrayLayers                = 1,
-          VkImageTiling      tiling           = VK_IMAGE_TILING_OPTIMAL,
-          VkImageCreateFlags flags            = 0,
-          uint32_t           numQueueFamilies = 0,
-          const uint32_t    *queueFamilies   = nullptr);
+    Image(Device                           *device,
+          const VkExtent3D                 &extent,
+          VkFormat                          format,
+          VkImageUsageFlags                 imageUsage,
+          VmaMemoryUsage                    memoryUsage,
+          VkSampleCountFlagBits             sampleCount      = VK_SAMPLE_COUNT_1_BIT,
+          uint32_t                          mipLevels        = 1,
+          uint32_t                          arrayLayers      = 1,
+          VkImageTiling                     tiling           = VK_IMAGE_TILING_OPTIMAL,
+          VkImageCreateFlags                flags            = 0,
+          uint32_t                          numQueueFamilies = 0,
+          const uint32_t                   *queueFamilies    = nullptr);
 
     Image(Device *device, const VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage);
 
-    Image(Image &&other);
-
     ~Image();
-
-    Image &operator=(Image &&other);
 
     void Invalidate(const VkImageCreateInfo &createInfo, VmaMemoryUsage memoryUsage);
 
     void Instantiate(VmaMemoryUsage memoryUsage);
 
-    void Destroy();
+    void Release();
 
-    void Swap(Image &other);
+    void Map(void **ppData);
+
+    void Unmap();
 
 public:
     template <class T>
-    T *GetAddress()
+    T *Get()
     {
         if constexpr (IsPrimitiveOf<Device, T>())
         {
             return device;
         }
+    }
+
+    Image *GetImage()
+    {
+		return this;
     }
 
     const VkImageCreateInfo &GetProperties() const
@@ -66,12 +73,17 @@ public:
         return properties.extent;
     }
 
+    VkImageCreateFlags GetFlags() const
+    {
+		return properties.flags;
+    }
+
     VkImageType GetType() const
     {
         return properties.imageType;
     }
 
-    uint32_t GetArrayLayer() const
+    uint32_t GetArrayLayers() const
     {
         return properties.arrayLayers;
     }
@@ -86,17 +98,17 @@ public:
         return properties.format;
     }
 
-    const VkSampleCountFlagBits& SampleCount() const
+    VkSampleCountFlagBits GetSamples() const
     {
         return properties.samples;
     }
 
-    const VkImageUsageFlags &Usage() const
+    const VkImageUsageFlags &GetUsage() const
     {
         return properties.usage;
     }
 
-    const VkImageCreateInfo &Info() const
+    const VkImageCreateInfo &GetInfo() const
     {
         return properties;
     }
@@ -105,15 +117,16 @@ public:
     {
         return IsDepthOnlyFormat(properties.format);
     }
+   
+    void Swap(Image &other)
+    {
+		Handle::Swap(other);
+		std::swap(device,     other.device    );
+		std::swap(memory,     other.memory    );
+		std::swap(properties, other.properties);
+    }
 
-    void Map(void **dataMapped);
-
-    void Unmap();
-
-    Image(const Image &other) = delete;
-    Image &operator=(const Image &other) = delete;
-
-private:
+protected:
     Device *device{ nullptr };
 
     VmaAllocation memory{ VK_NULL_HANDLE };

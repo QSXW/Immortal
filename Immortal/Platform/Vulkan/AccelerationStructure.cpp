@@ -41,9 +41,8 @@ AccelerationStructureLevel::AccelerationStructureLevel(Device *device, VkAcceler
 
     buffer = new Buffer{
         device,
+	    Buffer::Type::AccelerationStructure,
         buildSizeInfo.accelerationStructureSize,
-        Buffer::Type::AccelerationStructure,
-        Buffer::Usage::None
     };
 
     VkAccelerationStructureCreateInfoKHR createInfo = {
@@ -51,7 +50,7 @@ AccelerationStructureLevel::AccelerationStructureLevel(Device *device, VkAcceler
         .pNext         = nullptr,
         .createFlags   = 0,
         .buffer        = *buffer,
-        .offset        = buffer->Offset(),
+        .offset        = buffer->GetOffset(),
         .size          = buildSizeInfo.accelerationStructureSize,
         .type          = type,
         .deviceAddress = 0,
@@ -63,30 +62,11 @@ AccelerationStructureLevel::AccelerationStructureLevel(Device *device, VkAcceler
 
     URef<Buffer> scratchBuffer = new Buffer{
         device,
+	    Buffer::Type::Scratch,
         buildSizeInfo.buildScratchSize,
-        Buffer::Type::Scratch
     };
 
     buildGeometryInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
-
-    device->Submit([&](CommandBuffer *cmdbuf) {
-        VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo = {
-            .primitiveCount  = *pPrimitiveCount,
-            .primitiveOffset = 0,
-            .firstVertex     = 0,
-            .transformOffset = 0,
-        };
-
-        VkAccelerationStructureBuildRangeInfoKHR *buildRangeInfos[] = {
-            &buildRangeInfo
-        };
-
-        cmdbuf->BuildAccelerationStructuresKHR(
-            1,
-            &buildGeometryInfo,
-            buildRangeInfos
-        );
-        });
 
     VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo = {
         .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
@@ -155,8 +135,8 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
                         .vertexData   = {
                             .deviceAddress = pVertexBuffer->GetDeviceAddress(),
                         },
-                        .vertexStride = desc.Stride,
-                        .maxVertex    = U32(pVertexBuffer->Size() / 3),
+		                .vertexStride = desc.GetStride(),
+                        .maxVertex    = U32(pVertexBuffer->GetSize() / 3),
                         .indexType    = VK_INDEX_TYPE_UINT16,
                         .indexData = {
                             .deviceAddress = pIndexBuffer->GetDeviceAddress(),
@@ -198,9 +178,9 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
 
         URef<Buffer> instanceBuffer = new Buffer{
             device,
+		    Buffer::Type::AccelerationStructureSource,
             sizeof(VkAccelerationStructureInstanceKHR),
             &instance,
-            Buffer::Type::AccelerationStructureSource,
         };
 
         std::array<VkAccelerationStructureGeometryKHR, 1> geometry = {

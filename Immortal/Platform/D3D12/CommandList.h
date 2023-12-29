@@ -39,12 +39,16 @@ public:
 		Executable = 1,
 	    Reset,
         Pending,
+        Invalid,
     };
 
     using Primitive = ID3D12GraphicsCommandList;
     D3D12_OPERATOR_HANDLE()
+	D3D_SWAPPABLE(CommandList)
 
 public:
+	CommandList();
+
     CommandList(Device *device, Type type, CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
     CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
@@ -58,24 +62,6 @@ public:
         return (ID3D12CommandList *)handle.Get();
     }
 
-    bool IsSuitableSubmitted()
-    {
-        if (type == Type::Direct)
-        {
-            return count == 1000;
-        }
-        if (type == Type::Compute)
-        {
-            return count = 100;
-        }
-        if (type == Type::Copy)
-        {
-            return count == 10;
-        }
-
-        return false;
-    }
-
     void SetState(State other)
     {
 		state = other;
@@ -86,16 +72,6 @@ public:
 		return state == other;
     }
 
-    void RefResource(ID3D12Resource *pResource)
-    {
-        __RefResource(pResource);
-    }
-
-    void SetResource(std::list<ID3D12Resource *> *other)
-    {
-        pResources = other;
-    }
-
     template <class T>
     HRESULT QueryInterface(T *pp)
     {
@@ -104,31 +80,31 @@ public:
 
     HRESULT Close()
     {
-		__Close();
+		SetState(State::Executable);
         return handle->Close();
     }
 
     HRESULT Reset(ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitalState = nullptr)
     {
-        __Reset();
+        Reset();
         return handle->Reset(pAllocator, pInitalState);
     }
 
     void ResourceBarrier(const D3D12_RESOURCE_BARRIER *pBarrier, UINT num = 1)
     {
-        __Record();
+        Record();
         handle->ResourceBarrier(num, pBarrier);
     }
 
-    void ClearRenderTargetView(CPUDescriptor descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
+    void ClearRenderTargetView(D3D12_CPU_DESCRIPTOR_HANDLE descriptor, const float *clearColor, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
     {
-        __Record();
+        Record();
         handle->ClearRenderTargetView(descriptor, clearColor, numRects, pRects);
     }
 
-    void ClearDepthStencilView(CPUDescriptor descriptor, D3D12_CLEAR_FLAGS clearFlags, FLOAT depth, UINT8 stencil, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
+    void ClearDepthStencilView(D3D12_CPU_DESCRIPTOR_HANDLE descriptor, D3D12_CLEAR_FLAGS clearFlags, FLOAT depth, UINT8 stencil, UINT numRects = 0, const D3D12_RECT *pRects = nullptr)
     {
-        __Record();
+        Record();
         handle->ClearDepthStencilView(descriptor, clearFlags, depth, stencil, numRects, pRects);
     }
 
@@ -137,7 +113,7 @@ public:
                           bool                               RTsSingleHandleToDescriptorRange,
                           const D3D12_CPU_DESCRIPTOR_HANDLE *pDepthStencilDescriptor = nullptr)
     {
-        __Record();
+        Record();
         handle->OMSetRenderTargets(
             numRenderTargetDescriptors,
             pRenderTargetDescriptors,
@@ -148,103 +124,118 @@ public:
 
     void SetDescriptorHeaps(ID3D12DescriptorHeap *const *pDescriptroHeaps, UINT num)
     {
-        __Record();
+        Record();
         handle->SetDescriptorHeaps(num, pDescriptroHeaps);
     }
 
     void CopyTextureRegion(const D3D12_TEXTURE_COPY_LOCATION *pDst, UINT dstX, UINT dstY, UINT dstZ, const D3D12_TEXTURE_COPY_LOCATION *pSrc,  const D3D12_BOX *pSrcBox)
     {
-        __Record();
-        __RefResource(pSrc->pResource);
+        Record();
         handle->CopyTextureRegion(pDst, dstX, dstY, dstZ, pSrc, pSrcBox);
     }
     
     void RSSetViewports(const D3D12_VIEWPORT *pViewport, UINT num = 1)
     {
-        __Record();
+        Record();
         handle->RSSetViewports(num, pViewport);
     }
 
     void RSSetScissorRects(const D3D12_RECT *pRect, UINT num = 1)
     {
-        __Record();
+        Record();
         handle->RSSetScissorRects(num, pRect);
     }
 
     void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitiveTopology)
     {
-        __Record();
+        Record();
         handle->IASetPrimitiveTopology(primitiveTopology);
     }
 
     void SetPipelineState(ID3D12PipelineState *pPipelineState)
     {
-        __Record();
+        Record();
         handle->SetPipelineState(pPipelineState);
     }
 
     void SetGraphicsRootSignature(ID3D12RootSignature *rootSignature)
     {
-        __Record();
+        Record();
         handle->SetGraphicsRootSignature(rootSignature);
     }
 
     void SetComputeRootSignature(ID3D12RootSignature *rootSignature)
     {
-        __Record();
+        Record();
         handle->SetComputeRootSignature(rootSignature);
     }
 
     void SetGraphicsRootDescriptorTable(UINT parameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor)
     {
-        __Record();
+        Record();
         handle->SetGraphicsRootDescriptorTable(parameterIndex, baseDescriptor);
     }
 
     void SetComputeRootDescriptorTable(UINT parameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor)
     {
-        __Record();
+        Record();
         handle->SetComputeRootDescriptorTable(parameterIndex, baseDescriptor);
     }
 
     void SetVertexBuffers(const D3D12_VERTEX_BUFFER_VIEW *pViews, UINT numViews = 1, UINT startSlot = 0)
     {
-        __Record();
+        Record();
         handle->IASetVertexBuffers(startSlot, numViews, pViews);
     }
 
     void SetIndexBuffer(const D3D12_INDEX_BUFFER_VIEW *pView)
     {
-        __Record();
+        Record();
         handle->IASetIndexBuffer(pView);
     }
     
     void DrawIndexedInstanced(UINT indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, INT baseVertexLocation, UINT startInstanceLocation)
     {
-        __Record();
+        Record();
         handle->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
     }
 
     void Dispatch(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
     {
-        __Record();
+        Record();
         handle->Dispatch(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+    }
+
+    void DispatchMesh(UINT ThreadGroupCountX, UINT ThreadGroupCountY, UINT ThreadGroupCountZ)
+    {
+		Record();
+		ComPtr<ID3D12GraphicsCommandList6> commandList6;
+		handle.As(&commandList6);
+		commandList6->DispatchMesh(ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
+    }
+
+    void DispatchRays(const D3D12_DISPATCH_RAYS_DESC *pDesc)
+    {
+		Record();
+		ComPtr<ID3D12GraphicsCommandList6> commandList6;
+		handle.As(&commandList6);
+		commandList6->DispatchRays(pDesc);
     }
 
     void SetGraphicsRoot32BitConstants(UINT rootParameterIndex, UINT num32BitValuesToSet, const void *pSrcData, UINT dstOffsetIn32BitValues)
     {
-        __Record();
+        Record();
         handle->SetGraphicsRoot32BitConstants(rootParameterIndex, num32BitValuesToSet, pSrcData, dstOffsetIn32BitValues);
     }
     
-    void PushConstant(uint32_t size, const void *data, uint32_t offset)
+    void PushGraphicsConstant(uint32_t size, const void *data, uint32_t offset)
     {
         SetGraphicsRoot32BitConstants(0, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
     }
 
     void SetComputeRoot32BitConstants(UINT rootParameterIndex, UINT num32BitValuesToSet, const void *pSrcData, UINT dstOffsetIn32BitValues)
     {
-        __Record();
+        Record();
         handle->SetComputeRoot32BitConstants(rootParameterIndex, num32BitValuesToSet, pSrcData, dstOffsetIn32BitValues);
     }
 
@@ -255,130 +246,39 @@ public:
 
     void OMSetBlendFactor(const float *blendFactor)
     {
-		__Record();
+		Record();
 		handle->OMSetBlendFactor(blendFactor);
     }
 
     void BuildRaytracingAccelerationStructure(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC *pDesc, UINT numPostbuildInfoDescs, const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC *pPostbuildInfoDescs)
     {
-        __Record();
+        Record();
         ComPtr<ID3D12GraphicsCommandList4> pRaytracingCommandList;
         handle.As(&pRaytracingCommandList);
         pRaytracingCommandList->BuildRaytracingAccelerationStructure(pDesc, numPostbuildInfoDescs, pPostbuildInfoDescs);
     }
 
 protected:
-    void __RefResource(ID3D12Resource *resource)
+    void Reset()
     {
-        if (pResources)
-        {
-            (void)resource->AddRef();
-            pResources->emplace_back(resource);
-        }
-    }
-
-    void __Close()
-    {
-		SetState(State::Executable);
-    }
-
-    void __Reset()
-    {
-        pResources = nullptr;
 		SetState(State::Reset);
-        count = 0;
     }
 
-    void __Record()
+    void Record()
     {
-        count++;
+
+    }
+
+    void Swap(CommandList &other)
+    {
+		std::swap(handle, other.handle);
+        std::swap(state,  other.state );
     }
 
 protected:
     Type type;
 
 	State state;
-
-    std::atomic_uint64_t count;
-
-    std::list<ID3D12Resource *> *pResources;
-};
-
-class CommandListDispatcher
-{
-public:
-	CommandListDispatcher(Device *device, D3D12_COMMAND_LIST_TYPE type);
-
-    ~CommandListDispatcher();
-
-    void WaitIdle();
-
-    void Execute();
-
-    CommandList *GetCommandList()
-    {
-        if (commandList->IsSuitableSubmitted())
-        {
-            Execute();
-        }
-
-        if (!allocator || !commandList->IsState(CommandList::State::Reset))
-        {
-            __Begin();
-        }
-
-        return commandList;
-    }
-
-    template <class T>
-    requires std::is_same_v<Fence, T> || std::is_same_v<Queue, T>
-    T *GetAddress() const
-    {
-        if constexpr (std::is_same_v<Fence, T>)
-        {
-            return fence;
-        }
-        if constexpr (std::is_same_v<Queue, T>)
-        {
-            return queue;
-        }
-    }
-
-    uint64_t GetFenceValue() const
-    {
-        return fenceValue;
-    }
-
-    uint64_t IncreaseFence()
-    {
-        return ++fenceValue;
-    }
-
-private:
-    void __Begin();
-
-    void __Release();
-
-    void __ReleaseResource(const std::list<ID3D12Resource*> &resourceChain);
-
-    void __InjectSignal();
-
-protected:
-    URef<Queue> queue;
-
-	URef<CommandAllocatorPool> allocatorPool;
-
-	URef<CommandList> commandList;
-
-    URef<Fence> fence;
-
-    CommandAllocator *allocator;
-
-    uint64_t fenceValue;
-
-    std::list<ID3D12Resource *> resources;
-
-    std::queue<std::pair<uint64_t, std::list<ID3D12Resource *>>> resourceCache;
 };
 
 }

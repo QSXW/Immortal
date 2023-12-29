@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "FileSystem/FileSystem.h"
+#include "Render/DirectXShaderCompiler.h"
 
 namespace Immortal
 {
@@ -12,28 +13,60 @@ namespace OpenGL
 
 static constexpr size_t MAX_SHADER_SOURCE = 2;
 
-Shader::Shader(const std::string &filepath, Type type) :
-    Super{ type },
-    name{ std::move(FileSystem::ExtractFileName(filepath)) }
+GLenum CAST(ShaderStage stage)
 {
-    std::vector<GLuint> shaders;
-    shaders.reserve(MAX_SHADER_SOURCE);
-    if (type == Shader::Type::Graphics)
+	switch (stage)
+	{
+		case ShaderStage::Vertex:
+			return GL_VERTEX_SHADER;
+		case ShaderStage::TesselationControl:
+			return GL_TESS_CONTROL_SHADER;
+		case ShaderStage::TesselationEvaluation:
+			return GL_TESS_EVALUATION_SHADER;
+		case ShaderStage::Geometry:
+			return GL_GEOMETRY_SHADER;
+		case ShaderStage::Fragment:
+			return GL_FRAGMENT_SHADER;
+		case ShaderStage::Compute:
+			return GL_COMPUTE_SHADER;
+		default:
+			return GL_INVALID_ENUM;
+	}
+}
+
+Shader::Shader(const std::string &name, ShaderStage _stage, const std::string &source, const std::string &entryPoint) :
+    Handle{},
+    stage{ CAST(_stage) }
+{
+	std::string error;
+	std::vector<uint8_t> spriv;
+	DirectXShaderCompiler compiler;
+	if (compiler.Compile(name, ShaderSourceType::HLSL, ShaderBinaryType::SPIRV, _stage, source.size(), source.data(), entryPoint, spriv, error))
     {
-        shaders.emplace_back(CompileShader(GL_VERTEX_SHADER,   FileSystem::ReadString(filepath + ".vert").c_str()));
-        shaders.emplace_back(CompileShader(GL_FRAGMENT_SHADER, FileSystem::ReadString(filepath + ".frag").c_str()));
+		handle = glCreateShader(stage);
+		glShaderBinary(1, &handle, GL_SHADER_BINARY_FORMAT_SPIR_V, spriv.data(), spriv.size());
+		glSpecializeShader(handle, entryPoint.c_str(), 0, 0, 0);
     }
-    if (type == Type::Compute)
+    else
     {
-        shaders.emplace_back(CompileShader(GL_COMPUTE_SHADER, FileSystem::ReadString(filepath + ".comp").c_str()));
+		handle = CompileShader(stage, source);
     }
 
-    Link(shaders);
+	int status = 0;
+	glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
+	if (!status)
+    {
+		throw std::runtime_error("Failed to init shader!");
+    }
 }
 
 Shader::~Shader()
 {
-    glDeleteProgram(handle);
+    if (handle)
+    {
+		glDeleteShader(handle);
+		handle = 0;
+    }
 }
 
 GLuint Shader::Get(const std::string &name) const
@@ -77,7 +110,7 @@ void Shader::Link(const std::vector<GLuint> &shaders)
     }
 }
 
-std::string Shader::__InjectPreamble(const std::string &source)
+std::string Shader::InjectPreamble(const std::string &source)
 {
 	static std::string preamble = "#define push_constant binding=" PUSH_CONSTANT_LOCATION_STR "\n#define " PLATFORM_STRING "\n";
 	size_t index = source.find("layout");
@@ -86,7 +119,7 @@ std::string Shader::__InjectPreamble(const std::string &source)
 
 uint32_t Shader::CompileShader(GLenum type, const std::string &source)
 {
-	std::string shaderSource = __InjectPreamble(source);
+	std::string shaderSource = InjectPreamble(source);
     const char *pSource = shaderSource.c_str();
 
     uint32_t shader = glCreateShader(type);

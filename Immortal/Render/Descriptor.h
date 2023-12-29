@@ -16,7 +16,7 @@ public:
 	{
 
 	}
-	
+
 	template <class T>
 	void Request(size_t size)
 	{

@@ -3,16 +3,17 @@
 #include "Event/ApplicationEvent.h"
 #include "Event/MouseEvent.h"
 #include "Event/KeyEvent.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Render/Frame.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 namespace Immortal
 {
-
-uint8_t GLFWWindow::GLFWWindowCount = 0;
 
 static void GLFWErrorCallback(int error, const char *description)
 {
@@ -23,9 +24,30 @@ static void GLFWErrorCallback(int error, const char *description)
     LOG::ERR("GLFW Error ({0}): {1}", error, description);
 }
 
-GLFWWindow::GLFWWindow(const Description &description)
+GLFWWindow::GLFWWindow(Anonymous handle) :
+    window{ (GLFWwindow *)handle },
+    eventCallback{},
+    parent{},
+    childWindow{},
+    input{},
+    owned{}
 {
-    Setup(description);
+	type = Type::GLFW;
+}
+
+GLFWWindow::GLFWWindow(const std::string &title, uint32_t width, uint32_t height, Window *parent) :
+    window{},
+    eventCallback{},
+    parent{ (GLFWWindow *)parent },
+    childWindow{},
+    input{},
+    owned{ true }
+{
+	if (parent)
+	{
+		SLASSERT(parent->GetType() != Type::GLFW && "Invalid parent window type!");
+	}
+    Construct(title, width, height);
 }
 
 GLFWWindow::~GLFWWindow()
@@ -33,28 +55,28 @@ GLFWWindow::~GLFWWindow()
     Shutdown();
 }
 
-/// @brief It calculates the dpi factor using the density from GLFW physical size
-/// <a href="https://www.glfw.org/docs/latest/monitor_guide.html#monitor_size">GLFW docs for dpi</a>
-float GLFWWindow::DpiFactor() const
+uint32_t GLFWWindow::GetWidth() const
 {
-    auto primaryMonitor = glfwGetPrimaryMonitor();
-    auto videoMode = glfwGetVideoMode(primaryMonitor);
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    return width;
+}
 
-    INT32 mmWidth;
-    INT32 mmHeight;
-    glfwGetMonitorPhysicalSize(primaryMonitor, &mmWidth, &mmHeight);
+uint32_t GLFWWindow::GetHeight() const
+{
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    return height;
+}
 
-    static constexpr const float inch2mm = 25.0f;
-    static constexpr const float windowBaseDesity = 96.0f;
-
-    auto dpi = static_cast<UINT32>(videoMode->width / (mmWidth / inch2mm));
-    return dpi / windowBaseDesity;
+void GLFWWindow::SetEventCallback(const EventCallbackFunc &callback)
+{
+    eventCallback = callback;
 }
 
 void GLFWWindow::SetTitle(const std::string &title)
 {
-    desc.Title = title;
-    glfwSetWindowTitle(window, desc.Title.c_str());
+    glfwSetWindowTitle(window, title.c_str());
 }
 
 void GLFWWindow::SetIcon(const std::string &filepath)
@@ -93,17 +115,13 @@ void GLFWWindow::SelectPlatformType()
     }
 }
 
-void GLFWWindow::Setup(const Description &description)
+void GLFWWindow::Construct(const std::string &title, uint32_t width, uint32_t height)
 {
-    desc = description;
-
-    LOG::INFO("Creating window {} ({}, {})", desc.Title, desc.Width, desc.Height);
-
-    if (GLFWWindowCount == 0)
+    if (!parent)
     {
         glfwSetErrorCallback(GLFWErrorCallback);
 #ifdef __linux__
-        const char *session =getenv("XDG_SESSION_TYPE");
+        const char *session = getenv("XDG_SESSION_TYPE");
         if (!strcmp(session, "wayland"))
         {
             glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
@@ -118,65 +136,61 @@ void GLFWWindow::Setup(const Description &description)
     }
 
     SelectPlatformType();
-    if (Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12)
+    if (false/*Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12*/)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }
 
-    window = glfwCreateWindow((int)desc.Width, (int)desc.Height, description.Title.c_str(), nullptr, nullptr);
-    GLFWWindowCount++;
+    window = glfwCreateWindow((int)width, (int)height, title.c_str(), nullptr, nullptr);
 
-    glfwSetWindowUserPointer(window, &desc);
+    glfwSetWindowUserPointer(window, this);
 
     /* Set callbacks */
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
-        desc->Width = width;
-        desc->Height = height;
-
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
         WindowResizeEvent event(width, height);
-        desc->EventCallback(event);
+        This->eventCallback(event);
     });
 
     /* Set callbacks */
     glfwSetWindowPosCallback(window, [](GLFWwindow *window, int x, int y)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
         WindowMoveEvent event(x, y);
-        desc->EventCallback(event);
+        This->eventCallback(event);
     });
 
     glfwSetWindowCloseCallback(window, [](GLFWwindow* window)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
         WindowCloseEvent event;
-        desc->EventCallback(event);
+        This->eventCallback(event);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode, int action, int modes)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
 
         switch (action)
         {
             case GLFW_PRESS:
             {
                 KeyPressedEvent event(key, 0);
-                desc->EventCallback(event);
+                This->eventCallback(event);
                 break;
             }
             case GLFW_RELEASE:
             {
                 KeyReleasedEvent event(key);
-                desc->EventCallback(event);
+                This->eventCallback(event);
                 break;
             }
 
             case GLFW_REPEAT:
             {
                 KeyPressedEvent event(key, 1);
-                desc->EventCallback(event);
+                This->eventCallback(event);
                 break;
             }
         }
@@ -184,20 +198,20 @@ void GLFWWindow::Setup(const Description &description)
 
     glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int modes)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
 
         switch (action)
         {
             case GLFW_PRESS:
             {
                 MouseButtonPressedEvent event((MouseCode)button);
-                desc->EventCallback(event);
+                This->eventCallback(event);
                 break;
             }
             case GLFW_RELEASE:
             {
                 MouseButtonReleasedEvent event((MouseCode)button);
-                desc->EventCallback(event);
+                This->eventCallback(event);
                 break;
             }
         }
@@ -205,18 +219,18 @@ void GLFWWindow::Setup(const Description &description)
 
     glfwSetScrollCallback(window, [](GLFWwindow *window, double xOffset, double yOffset)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+		GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
 
         MouseScrolledEvent event((float)xOffset, (float)yOffset);
-        desc->EventCallback(event);
+		This->eventCallback(event);
     });
 
     glfwSetCursorPosCallback(window, [](GLFWwindow *window, double xPos, double yPos)
     {
-        Description *desc = bcast<Description *>(glfwGetWindowUserPointer(window));
+		GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
 
         MouseMoveEvent event((float)xPos, (float)yPos);
-        desc->EventCallback(event);
+		This->eventCallback(event);
     });
 
     input.reset(new GLFWInput{ this });
@@ -224,23 +238,31 @@ void GLFWWindow::Setup(const Description &description)
 
 void GLFWWindow::Shutdown()
 {
-    glfwDestroyWindow(window);
-    --GLFWWindowCount;
-
-    if (GLFWWindowCount == 0)
+    if (!owned)
     {
-        glfwTerminate();
+		return;
     }
+
+    glfwDestroyWindow(window);
+	if (!parent)
+	{
+		glfwTerminate();
+	}
 }
 
-Anonymous GLFWWindow::Primitive() const
+Anonymous GLFWWindow::GetBackendHandle() const
 {
     return Anonymize(window);
 }
 
-float GLFWWindow::Time() const
+Anonymous GLFWWindow::GetPlatformSpecificHandle() const
 {
-    return ncast<float>(glfwGetTime());
+    return Anonymous((void *) glfwGetWin32Window(window));
+}
+
+void GLFWWindow::Show()
+{
+
 }
 
 void GLFWWindow::ProcessEvents()
