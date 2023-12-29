@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include "Render.h"
+#include "Graphics.h"
 #include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
 
@@ -201,8 +201,8 @@ Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indici
 {
     Node head{ "Undefined" };
 
-    head.Vertex = Render::Create<Buffer>(vertices, Buffer::Type::Vertex);
-    head.Index  = Render::Create<Buffer>(indicies, Buffer::Type::Index);
+    head.Vertex = Graphics::CreateBuffer(vertices.size(), Buffer::Type::Vertex, vertices.data());
+	head.Index  = Graphics::CreateBuffer(indicies.size(), Buffer::Type::Index, indicies.data());
 
     nodes.emplace_back(head);
 }
@@ -255,7 +255,7 @@ void Mesh::CalculatedBoneTransform(const Matrix4 &parentTransform)
     }
 
     ReadHierarchyBoneNode(timestamp, rootNode, parentTransform);
-    transformBuffer->Update(transforms);
+    //transformBuffer->Update(transforms);
 }
 
 #if HAVE_ASSIMP
@@ -268,8 +268,8 @@ void Mesh::LoadModelData(const aiScene *scene)
     uint32_t totalVertices = 0;
     uint32_t totalFaces = 0;
 
-    Buffer::BindInfo vertexBindInfo{ Buffer::Type::Vertex, 0, 0 };
-    Buffer::BindInfo faceBindInfo{ Buffer::Type::Index, 0, 0 };
+    BufferBindInfo vertexBindInfo{Buffer::Type::Vertex, 0, 0};
+	BufferBindInfo faceBindInfo{Buffer::Type::Index, 0, 0};
 
     for (size_t i = 0; i < scene->mNumMeshes; i++)
     {
@@ -282,7 +282,7 @@ void Mesh::LoadModelData(const aiScene *scene)
 
     faceBindInfo.offset = totalVertices * sizeof(SkeletonVertex);
 
-    buffer = Render::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
+    buffer = Graphics::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
 
     nodes.resize(scene->mNumMeshes);
     for (uint32_t i = 0; i < scene->mNumMeshes; i++)
@@ -332,24 +332,24 @@ void Mesh::LoadModelData(const aiScene *scene)
         }
         faceBindInfo.size = mesh->mNumFaces * sizeof(Face);
 
-        node.Vertex = buffer->Bind(vertexBindInfo);
-        node.Index  = buffer->Bind(faceBindInfo);
+        //node.Vertex = buffer->Bind(vertexBindInfo);
+        //node.Index  = buffer->Bind(faceBindInfo);
 
-        vertexBindInfo.Increase();
-        faceBindInfo.Increase();
+        vertexBindInfo.offset += vertexBindInfo.size;
+		faceBindInfo.offset += faceBindInfo.size;
     }
 
     LoadAnimationData(scene);
 
     transforms.resize(numBones + scene->mNumMeshes);
-    transformBuffer = Render::CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type{ Buffer::Type::Uniform });
+	transformBuffer = Graphics::CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type::ConstantBuffer);
 
     rootNode = new BoneNode{};
     ReadAssimpNode(rootNode, scene->mRootNode);
     globalInverseTransform = Vector::Inverse(rootNode->Transform);
 
-    buffer->Update(vertices);
-    buffer->Update(faces, vertices.size() * sizeof(SkeletonVertex));
+    //buffer->Update(vertices);
+    //buffer->Update(faces, vertices.size() * sizeof(SkeletonVertex));
 }
 
 bool Mesh::LoadBoneData(const aiMesh *mesh, std::vector<SkeletonVertex> &vertices, uint32_t baseVertex, uint32_t &numBones)

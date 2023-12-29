@@ -48,7 +48,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 {
     Super::Decode(rbsp);
 
-    auto device = Deanonymize<Immortal::Vulkan::Device *>(Render::GetDevice());
+    auto device = Deanonymize<Immortal::Vulkan::Device *>(Graphics::GetDevice());
     auto &desc = picture.desc;
     if (!session)
     {

@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "Interface/IObject.h"
+#include "Render/LightGraphics.h"
 
 namespace Immortal
 {
@@ -12,7 +13,8 @@ namespace Vulkan
 {
 
 class CommandPool;
-class CommandBuffer : public IObject, public Handle<VkCommandBuffer>
+class Pipeline;
+class CommandBuffer : public SuperCommandBuffer, public Handle<VkCommandBuffer>
 {
 public:
     enum class State
@@ -166,13 +168,13 @@ public:
         vkCmdDrawIndexedIndirect(handle, buffer, offset, drawCount, stride);
     }
 
-    void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+    void _Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
     {
         __Record();
         vkCmdDispatch(handle, groupCountX, groupCountY, groupCountZ);
     }
 
-    void DispatchIndirect(VkBuffer buffer, VkDeviceSize offset)
+    void _DispatchIndirect(VkBuffer buffer, VkDeviceSize offset)
     {
         __Record();
         vkCmdDispatchIndirect(handle, buffer, offset);
@@ -1165,17 +1167,64 @@ public:
 public:
     CommandBuffer(CommandPool *commandPool = nullptr, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    ~CommandBuffer();
+    virtual ~CommandBuffer() override;
 
+    virtual bool IsActive() override;
+
+	virtual void Reset() override;
+
+	virtual void Begin() override;
+
+	virtual void End() override;
+
+	virtual void Close() override;
+
+	virtual void BeginEvent(const char *pData, size_t size) override;
+
+	virtual void EndEvent() override;
+
+	virtual void SetPipeline(SuperPipeline *pipeline) override;
+
+	virtual void SetDescriptorSet(SuperDescriptorSet *descriptorSet) override;
+
+	virtual void SetVertexBuffers(uint32_t firstSlot, uint32_t bufferCount, SuperBuffer **ppBuffer, uint32_t strideInBytes) override;
+
+	virtual void SetIndexBuffer(SuperBuffer *buffer, Format format) override;
+
+	virtual void SetScissors(uint32_t count, const Rect *pScissor) override;
+
+	virtual void SetBlendFactor(const float factor[4]) override;
+
+	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
+
+	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const float *pClearColor) override;
+
+	virtual void EndRenderTarget() override;
+
+    virtual void GenerateMipMaps(SuperTexture *texture, Filter filter) override;
+
+	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
+
+    virtual void MemoryCopy(SuperBuffer *buffer, uint32_t size, const void *data, uint32_t offset) override;
+
+    virtual void MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) override;
+
+	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
+
+	virtual void DrawInstanced(uint32_t vertexCountPerInstance, uint32_t instanceCount, uint32_t startVertexLocation, uint32_t startInstanceLocation) override;
+
+	virtual void DrawIndexedInstance(uint32_t indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation) override;
+
+	virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+	virtual void DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
+
+    virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
+
+public:
     void Destroy(CommandPool *commandPool);
 
-    VkResult Begin(Usage flags = Usage::OneTimeSubmit, CommandBuffer *primaryCommandBuffer = nullptr, const VkCommandBufferInheritanceInfo *pInheritanceInfo = nullptr);
-
-    VkResult End();
-
-    VkResult Execute();
-
-    VkResult Reset(VkCommandBufferResetFlags flags = VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+    VkResult Begin(VkCommandBufferUsageFlags flags, CommandBuffer *primaryCommandBuffer = nullptr, const VkCommandBufferInheritanceInfo *pInheritanceInfo = nullptr);
 
     void SetState(State _state)
     {
@@ -1210,13 +1259,13 @@ public:
     void BindVertexBuffers(Buffer *buffer)
     {
         VkBuffer buffers[1]     = { *buffer };
-        VkDeviceSize offsets[1] = { buffer->Offset() };
+        VkDeviceSize offsets[1] = { buffer->GetOffset() };
         BindVertexBuffers(0, 1, buffers, offsets);
     }
 
     void BindIndexBuffer(Buffer *buffer, VkIndexType indexType = VK_INDEX_TYPE_UINT32)
     {
-        BindIndexBuffer(*buffer, buffer->Offset(), indexType);
+        BindIndexBuffer(*buffer, buffer->GetOffset(), indexType);
     }
 
     void SetViewport(float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)
@@ -1277,6 +1326,10 @@ protected:
     State state;
 
     VkCommandBufferLevel level;
+
+    Pipeline *pipeline;
+
+    LightArray<ImageBarrier> dynamicRenderingBarriers;
 };
 
 }

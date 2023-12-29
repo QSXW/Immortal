@@ -14,7 +14,7 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     {
         flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     }
-    if (type & Buffer::Type::Uniform)
+    if (type & Buffer::Type::ConstantBuffer)
     {
         flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     }
@@ -46,46 +46,37 @@ inline VkBufferUsageFlags SelectBufferUsage(Buffer::Type type)
     return flags;
 }
 
-Buffer::Buffer(Device *device, const size_t size, const void *data, Type type, Usage usage) :
-    Super{ type, U32(size) },
+Buffer::Buffer(Device *device) :
+    Super{},
     device{ device },
-    persistent{ usage == Usage::Persistent }
+    memory{ VK_NULL_HANDLE },
+    descriptor{},
+    usage{},
+    mappedData{},
+    persistent{}
 {
-    ASSERT_ZERO_SIZE_BUFFER(size);
 
-    Create(size);
-    if (data)
-    {
-        Update(size, data);
-    }
 }
 
-Buffer::Buffer(Device *device, const size_t size, Type type, Usage usage) :
+Buffer::Buffer(Device *device, Type type, size_t size, const void *data) :
     Super{ type, size },
     device{ device },
-    persistent{ usage == Usage::Persistent }
+    memory{VK_NULL_HANDLE},
+    descriptor{},
+    usage{},
+    mappedData{},
+    persistent{ false }
 {
     ASSERT_ZERO_SIZE_BUFFER(size);
 
-    Create(size);
-}
-
-Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
-    Super{ Type::Uniform, size },
-    device{ device },
-    persistent{ true }
-{
-    ASSERT_ZERO_SIZE_BUFFER(size);
-    Create(size);
-}
-
-Buffer::Buffer(const Buffer *host, const BindInfo &bindInfo) :
-    Super{ bindInfo.type, bindInfo.size }
-{
-    THROWIF(!(bindInfo.type & host->type), "The type requested is not one of host buffer");
-    descriptor.buffer = host->descriptor.buffer;
-    descriptor.offset = bindInfo.offset;
-    descriptor.range  = bindInfo.size;
+    Construct();
+    if (data)
+    {
+		void *mapped = nullptr;
+		Map(&mapped);
+		memcpy(mapped, data, size);
+		Unmap();
+    }
 }
 
 Buffer::~Buffer()
@@ -99,7 +90,7 @@ Buffer::~Buffer()
         } dpack{
             device,
             memory,
-            descriptor.buffer
+            handle
         };
 
         device->DestroyAsync([dpack]() {
@@ -108,16 +99,25 @@ Buffer::~Buffer()
                 dpack.memory
                 );
             });
+
+        handle = VK_NULL_HANDLE;
+		memory = VK_NULL_HANDLE;
+		device = nullptr;
     }
 }
 
-void Buffer::Create(size_t size)
+Anonymous Buffer::GetBackendHandle() const
+{
+	return (void *)handle;
+}
+
+void Buffer::Construct()
 {
     VkBufferCreateInfo createInfo{};
     createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    createInfo.usage       = SelectBufferUsage(type);
+    createInfo.usage       = usage = SelectBufferUsage(GetType());
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.size        = size;
+    createInfo.size        = GetSize();
 
     if (device->IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
@@ -133,7 +133,8 @@ void Buffer::Create(size_t size)
         allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
 
-    Check(device->Create(&createInfo, &allocCreateInfo, &descriptor.buffer, &memory, &allocInfo));
+    Check(device->Create(&createInfo, &allocCreateInfo, &handle, &memory, &allocInfo));
+	descriptor.buffer = handle;
 
     if (persistent)
 	{
@@ -141,11 +142,20 @@ void Buffer::Create(size_t size)
 	}
 }
 
+void Buffer::Map(void **ppData, size_t size, uint64_t offset)
+{
+	if (!mappedData && !persistent)
+	{
+		vmaMapMemory(device->MemoryAllocator(), memory, (void **) &mappedData);
+	}
+	*ppData = (uint8_t *)mappedData + offset;
+}
+
 void Buffer::Map()
 {
     if (!mappedData && !persistent)
     {
-        vmaMapMemory(device->MemoryAllocator(), memory, (void **)&mappedData);
+        device->MapMemory(memory, (void **)&mappedData);
     }
 }
 
@@ -153,40 +163,14 @@ void Buffer::Unmap()
 {
     if (mappedData && !persistent)
     {
-        vmaUnmapMemory(device->MemoryAllocator(), memory);
+		device->UnmapMemory(memory);
         mappedData = nullptr;
     }
 }
 
 void Buffer::Flush()
 {
-    vmaFlushAllocation(device->MemoryAllocator(), memory, 0, size);
-}
-
-void Buffer::Update(uint64_t size, const void *data, uint64_t offset)
-{
-    if (persistent)
-    {
-        memcpy(mappedData + offset, data, size);
-        Flush();
-    }
-    else
-    {
-        Map();
-        memcpy(mappedData + offset, data, size);
-        Flush();
-        Unmap();
-    }
-}
-
-Anonymous Buffer::Descriptor() const
-{
-    return Anonymize(descriptor);
-}
-
-Buffer::Super *Buffer::Bind(const BindInfo &bindInfo) const
-{
-    return new Buffer{ this, bindInfo };
+    vmaFlushAllocation(device->MemoryAllocator(), memory, 0, GetSize());
 }
 
 VkDeviceAddress Buffer::GetDeviceAddress() const

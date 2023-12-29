@@ -4,6 +4,7 @@
 #include "Common.h"
 #include "Image.h"
 #include "Descriptor.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -11,51 +12,76 @@ namespace D3D11
 {
 
 class Device;
-class Texture : public SuperTexture, public Image
+class IMMORTAL_API Texture : public SuperTexture, public NonDispatchableHandle
 {
 public:
     using Super = SuperTexture;
+	using Primitive = ID3D11Texture2D;
+
+    D3D11_OPERATOR_HANDLE()
+	D3D11_SWAPPABLE(Texture)
 
 public:
-    Texture(Device *device, const std::string &filepath, const Description &description);
+	Texture(Device *device = nullptr);
 
-    Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description);
+	Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
 
-    Texture(Device *device, const ComPtr<ID3D11Texture2D> &texture);
+    Texture(Device *device, ComPtr<ID3D11Texture2D> pTexture);
 
-    ~Texture();
-
-    void Blit();
+	virtual ~Texture() override;
 
 public:
-    virtual operator uint64_t() const override;
+    operator bool() const
+    {
+		return handle != nullptr;
+    }
 
-    virtual bool operator==(const Super &other) const override;
-
-    virtual void As(DescriptorBuffer *descriptorBuffer, size_t index) override;
-
-    virtual void Update(const void *data, uint32_t pitchX = 0) override;
-
-public:
-    const Descriptor<SRV> GetDescriptor() const
+    const Descriptor<SRV> &GetDescriptor() const
     {
         return descriptor;
     }
 
-    const Descriptor<UAV> GetUAV() const
+    const Descriptor<UAV> &GetUAV() const
+	{
+		return uav;
+	}
+
+    const Descriptor<RTV> &GetRTV() const
+	{
+		return rtv;
+	}
+
+    const Descriptor<DSV> &GetDSV() const
     {
-        return uav;
+        return dsv;
+    }
+
+    uint32_t GetMipLevels() const
+    {
+		D3D11_TEXTURE2D_DESC desc{};
+		handle->GetDesc(&desc);
+		return desc.MipLevels;
+    }
+
+    void Swap(Texture &other)
+    {
+		NonDispatchableHandle::Swap(other);
+		std::swap(handle,     other.handle    );
+		std::swap(descriptor, other.descriptor);
+        std::swap(rtv,        other.rtv       );
+        std::swap(dsv,        other.dsv       );
+		std::swap(uav,        other.uav       );
     }
 
 protected:
-    void __Create(const void *data);
-
-    void CreateView(UINT flags);
+    void ConstructResourceView();
 
 protected:
-      Device *device;
-
     Descriptor<SRV> descriptor;
+
+    Descriptor<RTV> rtv;
+
+    Descriptor<DSV> dsv;
 
     Descriptor<UAV> uav;
 };

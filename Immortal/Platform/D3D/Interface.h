@@ -5,14 +5,17 @@ using Microsoft::WRL::ComPtr;
 
 #include <initguid.h>
 #include <dxgi.h>
+#include <dxgi1_4.h>
 #include <d3dcommon.h>
 #include <d3dcompiler.h>
-#pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace Immortal
 {
 namespace D3D
 {
+
+#define D3D_SWAPPABLE(T) T(T &&other) : T{} { other.Swap(*this); } T &operator=(T &&other) { T(std::move(other)).Swap(*this); return *this; }  T(const T &) = delete; T &operator=(const T &) = delete;
 
 #define D3D_OPERATOR_PRIMITIVE(handle) \
 protected:                             \
@@ -27,11 +30,6 @@ public:                                \
     operator Primitive*() const        \
     {                                  \
         return handle.Get();           \
-    }                                  \
-                                       \
-    Primitive **operator &()           \
-    {                                  \
-        return handle.GetAddressOf();  \
     }                                  \
                                        \
     Primitive **AddressOf()            \

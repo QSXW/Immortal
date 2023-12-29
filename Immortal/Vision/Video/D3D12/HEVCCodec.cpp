@@ -1,5 +1,5 @@
 #include "HEVCCodec.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Platform/D3D12/Device.h"
 
 #if HAVE_FFMPEG
@@ -22,16 +22,7 @@ namespace D3D12
 #if HAVE_FFMPEG
 HEVCCodec::HEVCCodec()
 {
-	auto renderContext = Render::GetAddress<Immortal::RenderContext>();
-	if (renderContext)
-	{
-		auto device = Deanonymize<Immortal::D3D12::Device *>(renderContext->GetDevice());
-		videoDevice = new VideoDevice(device);
-	}
-	else
-	{
-		LOG::WARN("Render is not initialized with a valid context yet!");
-	}
+
 }
 
 HEVCCodec::~HEVCCodec()

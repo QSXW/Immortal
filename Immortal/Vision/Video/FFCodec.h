@@ -5,6 +5,7 @@
 #include "Vision/Interface/Codec.h"
 #include "Vision/Common/Animator.h"
 #include "Memory/MemoryResource.h"
+#include "Render/LightGraphics.h"
 
 struct AVFrame;
 struct AVCodec;

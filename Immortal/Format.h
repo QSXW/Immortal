@@ -46,6 +46,8 @@ public:
 
         None = 0,
         INT,
+		UINT16,
+		UINT32,
         IVECTOR2,
         IVECTOR3,
         IVECTOR4,
@@ -85,6 +87,7 @@ public:
         NV12      = BITS(YUV, NV,          YUV420P + 6),
         P010LE    = BITS(YUV, NV, _10Bits, YUV420P + 7),
         P016LE    = BITS(YUV, NV, _16Bits, YUV420P + 8),
+        Y210      = BITS(YUV, NV, _10Bits, YUV420P + 9)
     };
 
     Format() :
@@ -98,6 +101,8 @@ public:
     {
 
     }
+
+    Format(VkFormat format);
 
     bool IsType(const Format other) const
     {
@@ -126,11 +131,15 @@ public:
 
     int ComponentCount() const;
 
+    int GetComponent() const;
+
     int ElementSize() const;
 
     int BytesPerPixel() const;
 
     size_t Size() const;
+
+    size_t GetTexelSize() const;
 
     operator VkFormat() const;
 
@@ -189,6 +198,8 @@ using bfloat = uint16_t;
 static inline FormatElement FormatElementTable[] = {
     { Format::None,            VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ),  GL_FORMAT_INVALID_ENUM,      FS_C(int,      0)     },
     { Format::INT,             VK_FORMAT_R32_SINT,                      DXF(DXGI_FORMAT_R32_SINT           ),  GL_FORMAT_INT,               FS_C(int,      1)     },
+    { Format::UINT16,          VK_FORMAT_R16_UINT,                      DXF(DXGI_FORMAT_R16_UINT           ),  GL_FORMAT_UNSIGNED_SHORT,    FS_C(uint16_t, 1)     },
+    { Format::UINT32,          VK_FORMAT_R32_UINT,                      DXF(DXGI_FORMAT_R32_UINT           ),  GL_FORMAT_UNSIGNED_INT,      FS_C(uint32_t, 1)     },
     { Format::IVECTOR2,        VK_FORMAT_R32G32_SINT,                   DXF(DXGI_FORMAT_R32G32_SINT        ),  GL_FORMAT_RG32I,             FS_C(int,      2)     },
     { Format::IVECTOR3,        VK_FORMAT_R32G32B32_SINT,                DXF(DXGI_FORMAT_R32G32B32_SINT     ),  GL_FORMAT_RGB32I,            FS_C(int,      3)     },
     { Format::IVECTOR4,        VK_FORMAT_R32G32B32A32_SINT,             DXF(DXGI_FORMAT_R32G32B32A32_SINT  ),  GL_FORMAT_RGBA32I,           FS_C(int,      4)     },
@@ -242,6 +253,11 @@ inline int Format::ComponentCount() const
     return StaticSpace::GetFormatElement(*this).ComponentCount;
 }
 
+inline int Format::GetComponent() const
+{
+	return StaticSpace::GetFormatElement(*this).ComponentCount;
+}
+
 inline Format::operator VkFormat() const
 {
     return StaticSpace::GetFormatElement(*this);
@@ -270,6 +286,24 @@ inline int Format::BytesPerPixel() const
 inline size_t Format::Size() const
 {
     return ElementSize() * ComponentCount();
+}
+
+inline size_t Format::GetTexelSize() const
+{
+	return ElementSize() * ComponentCount();
+}
+
+inline Format::Format(VkFormat format) :
+    v{}
+{
+    for (size_t i = 0; i < SL_ARRAY_LENGTH(StaticSpace::FormatElementTable); i++)
+    {
+		auto &table = StaticSpace::FormatElementTable[i];
+        if (table.vk == format)
+        {
+			v = ValueType(i);
+        }
+    }
 }
 
 }

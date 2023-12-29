@@ -4,55 +4,49 @@
 
 #include "Common.h"
 #include "Descriptor.h"
-#include "Device.h"
 #include "Resource.h"
+#include "Handle.h"
 
 namespace Immortal
 {
 namespace D3D12
 {
 
+class Device;
 class RenderContext;
-class Texture : public SuperTexture, public Resource
+class IMMORTAL_API Texture : public SuperTexture, public Resource, public NonDispatchableHandle
 {
 public:
     using Super = SuperTexture;
 
 public:
-    Texture(RenderContext *context, const std::string &filepath, const Description &description);
+    Texture(Device *device, ID3D12Resource *resource, D3D12_RESOURCE_STATES state);
 
-    Texture(RenderContext *context, uint32_t width, uint32_t height, const void *data, const Description &description);
+    Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
 
-    ~Texture();
+    virtual ~Texture() override;
 
-    virtual operator uint64_t() const override;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetDescriptor(uint32_t subresource = 0);
 
-    virtual bool operator==(const Super &other) const override;
+    D3D12_CPU_DESCRIPTOR_HANDLE GetUAVDescriptor(uint32_t subresource);
 
-    virtual void As(DescriptorBuffer *descriptorBuffer, size_t index) override;
+public:
+    DXGI_FORMAT GetFormat() const
+    {
+		return format;
+    }
 
-    virtual void Update(const void *data, uint32_t pitchX = 0) override;
+protected:
+    void Construct(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
 
-    virtual void CopyImage(const uint8_t *const *data, const int *pLinesize, int height, int planes) override;
+    void ConstructShaderResourceView();
 
-    virtual void PlatformSpecifiedUpdate(Anonymous resource, UINT subresource) override;
+protected:
+    DXGI_FORMAT format;
 
-    CPUDescriptor GetDescriptor() const;
+    Descriptor descriptor;
 
-private:
-    void __Create(const void *data);
-
-    void __InitViewWithDescriptor(CPUDescriptor descriptor);
-
-private:
-    RenderContext *context{ nullptr };
-
-    Format format = Format::None;
-
-    struct {
-        Descriptor visible;
-        CPUDescriptor invisible;
-    } descriptor;
+    Descriptor uav;
 };
 
 }

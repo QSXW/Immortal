@@ -4,10 +4,8 @@
 #include "Algorithm/LightArray.h"
 #include "Render/RenderTarget.h"
 #include "Render/Pipeline.h"
-#include "Buffer.h"
-#include "Shader.h"
-#include "Texture.h"
-#include "Sampler.h"
+#include "Render/Shader.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -15,100 +13,92 @@ namespace D3D11
 {
 
 class Device;
-class Pipeline : public virtual SuperPipeline
+class Shader;
+class IMMORTAL_API Pipeline : public virtual SuperPipeline, public NonDispatchableHandle
 {
 public:
     using Super = SuperPipeline;
 
 public:
-    Pipeline(Device *device);
+    Pipeline(Device *device = nullptr);
 
-    virtual ~Pipeline();
+    virtual ~Pipeline() override;
 
-    virtual void Bind(const DescriptorBuffer *descriptors, uint32_t binding = 0) override;
+    virtual void SetPiplineState(ID3D11DeviceContext4 *commandBuffer) = 0;
 
-    virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;
-
-    virtual void Bind(SuperTexture *texture, uint32_t binding = 0) override;
-
-    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
-
-    virtual void FreeDescriptorSet(uint64_t uuid) override;
-
-    void Bind(Buffer *buffer, uint32_t binding = 0);
+public:
+	const D3D_PUSH_CONSTANT_DESC &GetPushConstantDesc(uint32_t stage) const
+    {
+		return pushConstants[stage];
+    }
+    
+    void Swap(Pipeline &other)
+    {
+		NonDispatchableHandle::Swap(other);
+		std::swap(pushConstants, other.pushConstants);
+    }
 
 protected:
-	Device *device;
-
-    uint32_t bufferStartSlot = 0;
-	uint32_t nBuffer = 0;
-    std::array<ID3D11Buffer*, 16> buffers;
-
-    uint32_t shaderResourceStartSlot = 0;
-	uint32_t nShaderResource = 0;
-    std::array<uint64_t, 32> shaderResources;
-
-    struct
-    {
-		D3D_PUSH_CONSTANT_DESC desc;
-		URef<Buffer> buffer;
-    } pushConstants;
+	LightArray<D3D_PUSH_CONSTANT_DESC, PipelineStage::MaxTypes> pushConstants;
 };
 
-class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
+class IMMORTAL_API GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
 {
 public:
     using Super = SuperGraphicsPipeline;
 
     using Primitive = ID3D11RasterizerState;
 	D3D11_OPERATOR_HANDLE()
+	D3D11_SWAPPABLE(GraphicsPipeline)
 
 public:
-    GraphicsPipeline(Device *device, Ref<Shader::Super> shader);
+	GraphicsPipeline(Device *device = nullptr);
 
-    GraphicsPipeline(Device *device, Ref<Shader> shader);
+    virtual ~GraphicsPipeline() override;
 
-    virtual void Create(const SuperRenderTarget *renderTarget) override;
+    virtual void Construct(SuperShader **ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription) override;
 
-    virtual void Reconstruct(const SuperRenderTarget *renderTarget) override;
+    virtual void SetPiplineState(ID3D11DeviceContext4 *commandBuffer) override;
 
-    virtual void Set(Ref<Buffer::Super> buffer) override;
+    void ConstructInputLayout(const InputElementDescription &description, const void *pByteCodes, uint32_t byteCodesSize);
 
-    virtual void Set(const InputElementDescription &description) override;
+    void ConstructRasterizerState();
 
-    void Draw(CommandList *cmdlist);
+    void SetBlendFactor(ID3D11DeviceContext4 *commandBuffer, const float *factor);
 
 public:
-   template <Buffer::Type type>
-    Buffer *GetBuffer()
+    uint32_t GetStride() const
     {
-        if constexpr (type == Buffer::Type::Vertex)
-        {
-            return dynamic_cast<Buffer*>(desc.vertexBuffers[0].Get());
-        }
-        if constexpr (type == Buffer::Type::Index)
-        {
-            return dynamic_cast<Buffer*>(desc.indexBuffer.Get());
-        }
+		return stride;
     }
 
-public:
-	D3D11_PRIMITIVE_TOPOLOGY Topology;
+    void Swap(GraphicsPipeline &other)
+    {
+		Pipeline::Swap(other);
+		std::swap(handle,            other.handle           );
+		std::swap(topology,          other.topology         );
+		std::swap(blendState,        other.blendState       );
+		std::swap(depthStencilState, other.depthStencilState);
+		std::swap(inputLayout,       other.inputLayout      );
+		std::swap(vertexShader,      other.vertexShader     );
+		std::swap(pixelShader,       other.pixelShader      );
+		std::swap(stride,            other.stride           );
+    }
 
 protected:
-	ComPtr<ID3D11InputLayout> inputLayout;
+	D3D11_PRIMITIVE_TOPOLOGY topology;
 
-    ComPtr<ID3D11RasterizerState> rasterizerState;
+    ComPtr<ID3D11BlendState> blendState;
+
+    ComPtr<ID3D11DepthStencilState> depthStencilState;
+
+	ComPtr<ID3D11InputLayout> inputLayout;
 
     ComPtr<ID3D11VertexShader> vertexShader;
 
 	ComPtr<ID3D11PixelShader> pixelShader;
 
-    URef<Sampler> sampler;
-
-    std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements;
-
-    UINT stride = 0;
+    uint32_t stride;
 };
 
 class ComputePipeline : public Pipeline, public SuperComputePipeline
@@ -118,15 +108,21 @@ public:
 
     using Primitive = ID3D11ComputeShader;
 	D3D11_OPERATOR_HANDLE()
+	D3D11_SWAPPABLE(ComputePipeline)
 
 public:
-    ComputePipeline(Device *device, Shader::Super *shader);
+    ComputePipeline(Device *device = nullptr, SuperShader *shader = nullptr);
 
-    void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
+    virtual ~ComputePipeline() override;
 
-    void PushConstant(uint32_t size, const void *data, uint32_t offset = 0);
+	virtual void SetPiplineState(ID3D11DeviceContext4 *commandBuffer) override;
 
-    virtual void Bind(SuperTexture *texture, uint32_t binding = 0) override;
+public:
+    void Swap(ComputePipeline &other)
+    {
+		Pipeline::Swap(other);
+		std::swap(handle, other.handle);
+    }
 };
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -8,8 +9,10 @@ namespace Vulkan
 {
 
 class Device;
-struct PipelineLayout
+class PipelineLayout : public Handle<VkPipelineLayout>
 {
+public:
+    VKCPP_SWAPPABLE(PipelineLayout)
     PipelineLayout() = default;
 
     PipelineLayout(VkDevice device, uint32_t layoutCount, VkDescriptorSetLayout *pLayout, const VkPushConstantRange *pRange, uint32_t rangeCount = 1)
@@ -24,40 +27,20 @@ struct PipelineLayout
         vkCreatePipelineLayout(device, &createInfo, nullptr, &handle);
     }
 
-    PipelineLayout(PipelineLayout &&other) :
-        handle{ other.handle }
+    PipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo)
     {
-        other.handle = VK_NULL_HANDLE;
-    }
-
-    PipelineLayout(const PipelineLayout &other) :
-        handle{ other.handle }
-    {
-
+		Check(vkCreatePipelineLayout(device, pCreateInfo, nullptr, &handle));
     }
 
     ~PipelineLayout()
     {
 
     }
-
-    PipelineLayout &operator=(PipelineLayout &&other)
+    
+    void Swap(PipelineLayout &other)
     {
-        handle = other.handle;
-        other.handle = VK_NULL_HANDLE;
-
-        return *this;
+        Handle::Swap(other);
     }
-
-    PipelineLayout &operator=(const PipelineLayout &other)
-    {
-        handle = other.handle;
-        
-        return *this;
-    }
-
-    using Primitive = VkPipelineLayout;
-    VKCPP_OPERATOR_HANDLE()
 };
 
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core.h"
+
 #include "Common.h"
 #include "Render/Buffer.h"
 
@@ -8,25 +8,29 @@ namespace Immortal
 namespace OpenGL
 {
 
-class Buffer : public SuperBuffer
+class IMMORTAL_API Buffer : public SuperBuffer, public Handle
 {
 public:
     using Super         = SuperBuffer;
     using BindPointType = uint32_t;
-
-	GLCPP_OPERATOR_HANDLE()
 
 public:
     Buffer(uint64_t size, Type type);
 
     Buffer(uint64_t size, const void *data, Type type);
 
-    Buffer(uint64_t size, uint32_t binding);
-
     virtual ~Buffer() override;
 
-    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
+    virtual Anonymous GetBackendHandle() const override;
 
+    virtual void Map(void **ppData, size_t size, uint64_t offset);
+
+	virtual void Unmap();
+
+public:
+    void Update(uint64_t size, const void *data, uint64_t offset = 0);
+
+public:
     void Bind() const
     {
         glBindBuffer(bindPoint, handle);
@@ -37,45 +41,22 @@ public:
         glBindBuffer(bindPoint, 0);
     }
 
-    void SelectBindPoint(Type type)
+    const uint8_t *GetMemory() const
     {
-        switch (type)
-        {
-        case Type::Index:
-            bindPoint = GL_ELEMENT_ARRAY_BUFFER;
-            break;
+		return memory.data();
+    }
 
-        case Type::Uniform:
-            bindPoint = GL_UNIFORM_BUFFER;
-            break;
-
-        case Type::Vertex:
-        default:
-            break;
-        }
+    BindPointType GetBindPoint() const
+    {
+		return bindPoint;
     }
 
 protected:
     BindPointType bindPoint{ GL_ARRAY_BUFFER };
-};
 
-class UniformBuffer : public Buffer
-{
-public:
-    using Super = Buffer;
+    std::vector<uint8_t> memory;
 
-public:
-    UniformBuffer(uint64_t size, uint32_t binding);
-
-    GLuint Binding() const
-    {
-        return binding;
-    }
-
-    virtual void Update(uint64_t size, const void *data, uint64_t offset = 0) override;
-
-private:
-    uint32_t binding{ 0 };
+    uint32_t access;
 };
 
 }

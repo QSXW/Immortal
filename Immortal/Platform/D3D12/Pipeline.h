@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "RootSignature.h"
 #include "DescriptorHeap.h"
+#include "Handle.h"
 
 #include <queue>
 
@@ -17,60 +18,48 @@ namespace Immortal
 namespace D3D12
 {
 
-class RenderContext;
-class Pipeline : public virtual SuperPipeline
+class Device;
+class Shader;
+class Pipeline : public virtual SuperPipeline, public NonDispatchableHandle
 {
 public:
     using Super = SuperPipeline;
+
+    enum class Type
+    {
+        Graphics,
+        Compute
+    };
 
     struct DescriptorTable
     {
 		uint32_t RootParameterIndex;
         uint32_t DescriptorCount;
         uint32_t Offset;
+		D3D12_DESCRIPTOR_HEAP_TYPE HeapType;
     };
 
     using Primitive = ID3D12PipelineState;
     D3D12_OPERATOR_HANDLE()
 
 public:
-    Pipeline(RenderContext *context);
+	Pipeline(Device *device, Type type = Type::Graphics);
 
     virtual ~Pipeline();
 
-    virtual void Bind(const DescriptorBuffer *descriptors, uint32_t binding = 0) override;
+    void ConstructRootParameter(Shader *shader, std::vector<RootParameter> *pRootParameters, std::vector<D3D12_STATIC_SAMPLER_DESC> *pSamplerDesc = {});
 
-    virtual void Bind(SuperBuffer *buffer, uint32_t binding = 0) override;
-
-    virtual void Bind(SuperTexture *texture, uint32_t binding = 0) override;
-
-    virtual Anonymous AllocateDescriptorSet(uint64_t uuid) override;
-
-    virtual void FreeDescriptorSet(uint64_t uuid) override;
-
-    void Bind(Buffer *buffer, uint32_t binding = 0);
-
-    void Bind(const CPUDescriptor *descriptors, uint32_t binding = 0);
-
-    void InitRootSignature(const Shader *shader);
+    void ConstructRootSignature(Shader **ppShader, size_t shaderCount);
 
 public:
-    template <class T>
-    T *GetAddress()
+    const RootSignature &GetRootSignature() const
     {
-        if constexpr (IsPrimitiveOf<DescriptorHeap, T>())
-        {
-            return descriptorHeap.active;
-        }
+		return *rootSignature;
     }
 
-    template <class T>
-    T Get()
+    Type GetType() const
     {
-        if constexpr (IsPrimitiveOf<RootSignature, T>())
-        {
-            return *rootSignature;
-        }
+		return type;
     }
 
     const std::vector<DescriptorTable> &GetDescriptorTables() const
@@ -83,19 +72,28 @@ public:
 		return hasRootConstant;
     }
 
+    uint32_t GetDescriptorCount(D3D12_DESCRIPTOR_HEAP_TYPE type) const
+    {
+		return descriptorCount[type];
+    }
+
+    const uint32_t *GetDescriptorIndexMap(D3D12_DESCRIPTOR_HEAP_TYPE type) const
+    {
+		return descriptorIndexMap[type].data();
+    }
+
 protected:
-    RenderContext *context{};
+	Type type;
 
-    struct {
-        DescriptorHeap *active = nullptr;
-        std::unordered_map <uint64_t, URef<DescriptorHeap>> packs;
-        std::queue<DescriptorHeap*> freePacks;
-    } descriptorHeap;
+    std::vector<uint32_t> descriptorIndexMap[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 
-    uint32_t textureIndexInDescriptorTable = 0;
+    uint32_t descriptorCount[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
+
     std::vector<DescriptorTable> descriptorTables;
     
     URef<RootSignature> rootSignature;
+
+    ShaderVisibilityIndex shaderIndexes[D3D12_SHADER_VISIBILITY_MESH + 1] = {};
 
     bool hasRootConstant = false;
 };
@@ -105,73 +103,37 @@ class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline
 public:
     using Super = SuperGraphicsPipeline;
 
-    struct State
-    {
-        std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescription;
-    };
-
 public:
-    GraphicsPipeline(RenderContext *context, Ref<Shader::Super> shader);
+    GraphicsPipeline(Device *device, Ref<Shader::Super> shader);
 
-    GraphicsPipeline(RenderContext *context, Ref<Shader> shader);
+    GraphicsPipeline(Device *device, Ref<Shader> shader);
 
-    virtual void Create(const SuperRenderTarget *renderTarget) override;
+    GraphicsPipeline(Device *device);
 
-    virtual void Reconstruct(const SuperRenderTarget *renderTarget) override;
+    virtual ~GraphicsPipeline() override;
 
-    virtual void Set(Ref<Buffer::Super> buffer) override;
-
-    virtual void Set(const InputElementDescription &description) override;
-
-	void Create(ID3D12Resource *resource);
+	virtual void Construct(SuperShader **ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription) override;
 
 protected:
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC __GetDescription();
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC ConstructDescription();
+
+	void SetInputElementDescription(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputElementDescriptions, const InputElementDescription &description);
 
 public:
-    template <class T, Buffer::Type type = Buffer::Type::Index>
-    T Get()
+    uint32_t GetVertexEntryStride() const
     {
-        if constexpr (IsPrimitiveOf<Buffer::VertexView, T>())
-        {
-            return bufferViews.vertex;
-        }
-        if constexpr (IsPrimitiveOf<Buffer::IndexView, T>())
-        {
-            return bufferViews.index;
-        }
-        if constexpr (IsPrimitiveOf<D3D_PRIMITIVE_TOPOLOGY, T>())
-        {
-            return primitiveTopology;
-        }
-        if constexpr (IsPrimitiveOf<RootSignature, T>())
-        {
-            return *rootSignature;
-        }
+		return vertexEntryStride;
     }
 
-    template <Buffer::Type type>
-    Buffer *GetBuffer()
+    D3D_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const
     {
-        if constexpr (type == Buffer::Type::Vertex)
-        {
-            return dynamic_cast<Buffer*>(desc.vertexBuffers[0].Get());
-        }
-        if constexpr (type == Buffer::Type::Index)
-        {
-            return dynamic_cast<Buffer*>(desc.indexBuffer.Get());
-        }
+		return primitiveTopology;
     }
 
-private:
-    struct {
-        Buffer::VertexView vertex;
-        Buffer::IndexView index;
-    } bufferViews;
+protected:
+    uint32_t vertexEntryStride;
 
     D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
-
-    std::unique_ptr<State> state;
 };
 
 class ComputePipeline : public Pipeline, public SuperComputePipeline
@@ -180,14 +142,11 @@ public:
     using Super = SuperComputePipeline;
 
 public:
-    ComputePipeline(RenderContext *context, Shader::Super *shader);
+    ComputePipeline(Device *device, SuperShader *shader);
 
-    void Dispatch(CommandList *cmdlist, uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ = 0);
+    ComputePipeline(Device *device, Shader *shader);
 
-    void PushConstant(CommandList *cmdlist, uint32_t size, const void *data, uint32_t offset = 0);
-
-protected:
-    LightArray<uint8_t, 128> pushConstants;
+    virtual ~ComputePipeline() override;
 };
 
 }

@@ -16,13 +16,30 @@ using UAV = ID3D11UnorderedAccessView;
 template <class T>
 struct Descriptor
 {
-	using Primitive = T;
-	D3D11_OPERATOR_HANDLE()
+    using Primitive = T;
+    D3D11_OPERATOR_HANDLE()
+    D3D11_SWAPPABLE(Descriptor)
 
-	operator uint64_t() const
-	{
-		return (uint64_t)handle.Get();
-	}
+    Descriptor() :
+        handle{}
+    {
+
+    }
+
+    ~Descriptor()
+    {
+        handle.Reset();
+    }
+
+    void Swap(Descriptor &other)
+    {
+        std::swap(handle, other.handle);
+    }
+
+    operator uint64_t() const
+    {
+        return (uint64_t)handle.Get();
+    }
 };
 
 }

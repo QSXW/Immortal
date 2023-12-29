@@ -6,8 +6,15 @@
 #include <SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Include/ShHandle.h>
+#include <glslang/Public/ShaderLang.h>
 #include <glslang/OSDependent/osinclude.h>
 #include <spirv_glsl.hpp>
+#include "Framework/DLLLoader.h"
+
+#define INIT_GUID
+#include "C:\Users\qsxw\Desktop\inc\dxcapi.h"
+#include <wrl/client.h>
+using Microsoft::WRL::ComPtr;
 
 namespace Immortal
 {
@@ -25,20 +32,25 @@ static inline EShLanguage SelectLanguage(Shader::Stage stage)
     return EShLangVertex;
 }
 
-bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size, const char *data, const char *entryPoint, std::vector<uint32_t> &spriv, std::string &error)
+using PFN_DxcCreateInstance = HRESULT(*)(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
+
+bool GLSLCompiler::Compile(const std::string &name, ShaderSourceType sourceType, ShaderBinaryType binaryType, ShaderStage stage, uint32_t size, const char *data, const std::string &entryPoint, std::vector<uint32_t> &spriv, std::string &error)
 {
-    auto version = ncast<glslang::EShTargetLanguageVersion>(0);
+    using namespace glslang;
+    EShTargetLanguageVersion version = {};
     glslang::InitializeProcess();
 
-    EShMessages messages = ncast<EShMessages>(EShMsgDefault | EShMsgSpvRules);
+    EShMessages messages = EShMessages(EShMsgDefault | EShMsgSpvRules);
+    EShSource glslangSourceType = EShSourceGlsl;
 
-    if (api == Shader::API::Vulkan)
+    if (sourceType == ShaderSourceType::GLSL)
     {
-        messages = ncast<EShMessages>(messages | EShMsgVulkanRules);
+        messages = EShMessages(messages | EShMsgVulkanRules);
     }
-    if (api == Shader::API::D3D12)
+    if (sourceType == ShaderSourceType::HLSL)
     {
-        messages = ncast<EShMessages>(messages | EShMsgReadHlsl);
+        glslangSourceType = EShSourceHlsl;
+        messages = EShMessages(messages | EShMsgReadHlsl);
     }
 
     EShLanguage language = SelectLanguage(stage);
@@ -48,17 +60,17 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     const int length   = (int)size;
     glslang::TShader shader{ language };
     shader.setStringsWithLengthsAndNames(&source, &length, fileNameList, 1);
-    shader.setEntryPoint(entryPoint);
-    shader.setSourceEntryPoint(entryPoint);
-    shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetNone, version);
-
-	shader.setPreamble("#define " PLATFORM_STRING "\n");
+    shader.setEntryPoint(entryPoint.c_str());
+    shader.setSourceEntryPoint("main");
+    shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, version);
+    shader.setEnvInput(glslangSourceType, language, EShClientVulkan, version);
+    shader.setPreamble("#define " PLATFORM_STRING "\n");
 
     auto defaultTBuiltInResource = GetDefaultResources();
     if (!shader.parse(defaultTBuiltInResource, 100, false, messages))
     {
         error = std::string(shader.getInfoLog()) + "\n" + std::string(shader.getInfoDebugLog());
-		return false;
+        return false;
     }
 
     glslang::TProgram program;
@@ -67,7 +79,7 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     if (!program.link(messages))
     {
         error = std::string(program.getInfoLog()) + "\n" + std::string(program.getInfoDebugLog());
-		return false;
+        return false;
     }
 
     if (shader.getInfoLog())
@@ -95,80 +107,62 @@ bool GLSLCompiler::Src2Spirv(Shader::API api, Shader::Stage stage, uint32_t size
     return true;
 }
 
-inline Shader::Resource GetDecoration(spirv_cross::CompilerGLSL &glsl, spirv_cross::Resource &resource)
+inline VkDescriptorSetLayoutBinding GetDescriptorSetLayout(spirv_cross::CompilerGLSL *glsl, spirv_cross::Resource &resource, VkDescriptorType descriptorType)
 {
-    Shader::Resource ret{};
-    ret.set      = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-    ret.binding  = glsl.get_decoration(resource.id, spv::DecorationBinding);
-    ret.location = glsl.get_decoration(resource.id, spv::DecorationLocation);
-    ret.name     = std::string{ resource.name };
+    spirv_cross::SPIRType type = glsl->get_type(resource.type_id);
+    VkDescriptorSetLayoutBinding binding = {
+        .binding            = glsl->get_decoration(resource.id, spv::DecorationBinding),
+        .descriptorType     = descriptorType,
+        .descriptorCount    = type.array.empty() ? 1 : type.array[0],
+        .stageFlags         = {},
+        .pImmutableSamplers = nullptr,
+    };
 
-    return ret;
+    return binding;
 }
 
-bool GLSLCompiler::Reflect(const std::vector<uint32_t> &spirv, std::vector<Shader::Resource> &resouces)
+bool SPRIVReflector::Reflect(const std::vector<uint8_t> &spirv, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges)
 {
-    URef<spirv_cross::CompilerGLSL> glsl{ new spirv_cross::CompilerGLSL{ spirv } };
+	URef<spirv_cross::CompilerGLSL> glsl{new spirv_cross::CompilerGLSL{(const uint32_t *) spirv.data(), spirv.size() / sizeof(uint32_t)}};
     if (!glsl)
     {
         return false;
     }
 
-    URef<spirv_cross::ShaderResources> spirvResources{ new spirv_cross::ShaderResources{ glsl->get_shader_resources() } };
+    URef<spirv_cross::ShaderResources> spirvResources{new spirv_cross::ShaderResources{glsl->get_shader_resources()}};
     if (!glsl)
     {
         return false;
     }
 
-    for (auto &spirvResource : spirvResources->sampled_images)
+    for (auto &resource : spirvResources->uniform_buffers)
     {
-        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type = Shader::Resource::Type::ImageSampler | Shader::Resource::Type::Uniform;
-
-        spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
-        resource.count = type.array.empty() ? 1 : type.array[0];
-        resouces.emplace_back(std::move(resource));
+        descriptorSetLayoutBindings.emplace_back(GetDescriptorSetLayout(glsl, resource, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
     }
-    for (auto &spirvResource : spirvResources->uniform_buffers)
+    for (auto &resource : spirvResources->separate_images)
     {
-        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type = Shader::Resource::Type::Uniform;
-
-        spirv_cross::SPIRType type = glsl->get_type(spirvResource.base_type_id);
-        resource.size  = glsl->get_declared_struct_size(type);
-        resource.count = 1; /* resource.member_count = type.member_types.size(); */
-
-        resouces.emplace_back(std::move(resource));
+        descriptorSetLayoutBindings.emplace_back(GetDescriptorSetLayout(glsl, resource, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE));
     }
-    for (auto &spirvResource : spirvResources->push_constant_buffers)
+    for (auto &resource : spirvResources->separate_samplers)
     {
-        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type = Shader::Resource::Type::PushConstant;
-
-        spirv_cross::SPIRType type = glsl->get_type(spirvResource.base_type_id);
-        resource.size = glsl->get_declared_struct_size(type);
-
-        resouces.emplace_back(std::move(resource));
+        descriptorSetLayoutBindings.emplace_back(GetDescriptorSetLayout(glsl, resource, VK_DESCRIPTOR_TYPE_SAMPLER));
     }
-    for (auto &spirvResource : spirvResources->storage_images)
+    for (auto &resource : spirvResources->storage_images)
     {
-        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type = Shader::Resource::Type::ImageStorage | Shader::Resource::Type::Uniform;
-
-        spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
-        resource.count = type.array.empty() ? 1 : type.array[0];
-
-        resouces.emplace_back(std::move(resource));
+        descriptorSetLayoutBindings.emplace_back(GetDescriptorSetLayout(glsl, resource, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
     }
-    for (auto &spirvResource : spirvResources->storage_buffers)
+    for (auto &resource : spirvResources->storage_buffers)
     {
-        Shader::Resource resource = GetDecoration(*glsl, spirvResource);
-        resource.type = Shader::Resource::Type::Storage | Shader::Resource::Type::Uniform;
-
-        spirv_cross::SPIRType type = glsl->get_type(spirvResource.type_id);
-        resource.count = type.array.empty() ? 1 : type.array[0];
-
-        resouces.emplace_back(std::move(resource));
+        descriptorSetLayoutBindings.emplace_back(GetDescriptorSetLayout(glsl, resource, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
+    }
+    for (auto &resource : spirvResources->push_constant_buffers)
+    {
+        spirv_cross::SPIRType type = glsl->get_type(resource.base_type_id);
+        pushConstantRanges.emplace_back(VkPushConstantRange{
+            .stageFlags = {},
+            .offset     = 0,
+            .size       = uint32_t(glsl->get_declared_struct_size(type)),
+        });
     }
 
     return true;

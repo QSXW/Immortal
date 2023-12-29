@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Core.h"
+#include "Render/LightGraphics.h"
 
 #include "Common.h"
 #include "Instance.h"
@@ -22,7 +24,7 @@ namespace Vulkan
 
 class DescriptorPool;
 class Swapchain;
-class Device : public IObject
+class Device : public SuperDevice
 {
 public:
     static inline Device *That = nullptr;
@@ -1151,25 +1153,44 @@ public:
 public:
     Device();
 
-    Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requestedExtensions = {});
+    Device(PhysicalDevice *physicalDevice, std::unordered_map<const char *, bool> requestedExtensions = {});
 
-    ~Device();
+    virtual ~Device() override;
 
-    uint32_t QueueFailyIndex(VkQueueFlagBits queueFlag);
+    virtual Anonymous GetBackendHandle() const override;
 
-    uint32_t QueueFailyIndex(Queue::Type type)
-    {
-        return QueueFailyIndex(VkQueueFlagBits(type));
-    }
+    virtual BackendAPI GetBackendAPI() override;
 
-    Queue &FindQueueByType(Queue::Type type, uint32_t queueIndex);
+    virtual SuperQueue *CreateQueue(QueueType type, QueuePriority priority) override;
 
-    Queue &SuitableGraphicsQueue();
+	virtual SuperCommandBuffer *CreateCommandBuffer(QueueType type) override;
+
+	virtual SuperSwapchain *CreateSwapchain(SuperQueue *queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode) override;
+
+	virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
+
+	virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+
+	virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
+
+	virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
+
+	virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+
+	virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
+
+	virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
+
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
+
+public:
+    uint32_t GetQueueFailyIndex(VkQueueFlagBits queueFlag);
 
     uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
 
     void DestroyObjects();
 
+public:
     template <class T>
     void DestroyAsync(T task)
     {
@@ -1180,12 +1201,6 @@ public:
                 (*wrapper)();
                 });
         }
-    }
-
-    Queue *SuitableGraphicsQueuePtr()
-    {
-        auto &queue = SuitableGraphicsQueue();
-        return &queue;
     }
 
     VkFormat DepthFormat(bool depthOnly = false)
@@ -1232,10 +1247,13 @@ public:
     { \
         if (object != VK_NULL_HANDLE) \
         { \
-            std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex }; \
-            destroyCoroutine.queues[destroyCoroutine.working].push([=, this]{ \
-                vkDestroy##T(handle, object, pAllocator); \
-            }); \
+            vkDestroy##T(handle, object, pAllocator); \
+        } \
+    } \
+            //std::unique_lock<std::mutex> lock{ destroyCoroutine.mutex }; \
+            //destroyCoroutine.queues[destroyCoroutine.working].push([=, this]{ \
+            //    vkDestroy##T(handle, object, pAllocator); \
+            //}); \
         } \
     }
 
@@ -1424,17 +1442,22 @@ public:
         return GetBufferAddress(&bufferInfo);
     }
 
-    VkSurfaceKHR GetSurface() const
-    {
-        return surface;
-    }
-
     VmaAllocator MemoryAllocator() const
     {
         return memoryAllocator;
     }
 
-    VkResult GetSurfaceCapabilities(VkSurfaceCapabilitiesKHR *properties)
+    VkResult MapMemory(VmaAllocation memory, void **ppData)
+    {
+		return vmaMapMemory(memoryAllocator, memory, ppData);
+    }
+
+    void UnmapMemory(VmaAllocation memory)
+    {
+		vmaUnmapMemory(memoryAllocator, memory);
+    }
+
+    VkResult GetSurfaceCapabilities(VkSurfaceKHR surface, VkSurfaceCapabilitiesKHR *properties)
     {
         return physicalDevice->GetSurfaceCapabilitiesKHR(surface, properties);
     }
@@ -1468,65 +1491,24 @@ public:
         }
     }
 
-    template <class T>
-    void Submit(T &&process)
-    {
-        isSubmitted = true;
-        auto commandBuffer = commandPool->Allocate();
-        commandBuffer->Begin();
-        process(commandBuffer);
-        commandBuffer->End();
-
-        auto commandBufferSemaphore = commandBuffer->GetTimelineSemaphore();
-
-        TimelineSubmitter timelineSubmitter{};
-        timelineSubmitter.Signal(++commandBufferSemaphore->value);
-        timelineSubmitter.Signal(++semaphore.value);
-
-        Submitter submitter{};
-        submitter.SignalSemaphore(*commandBufferSemaphore);
-        submitter.SignalSemaphore(semaphore);
-        submitter.Execute(*commandBuffer);
-        submitter.Trampoline(timelineSubmitter);
-
-        queue->Submit(submitter, VK_NULL_HANDLE);
-
-        commandPool->Free(commandBuffer);
-    }
-
-    TimelineSemaphore *GetTimelineSemaphore()
-    {
-        if (!isSubmitted)
-        {
-            return nullptr;
-        }
-
-        isSubmitted = false;
-        return &semaphore;
-    }
-
-private:
+protected:
     PhysicalDevice *physicalDevice;
 
-    VmaAllocator memoryAllocator;
+    VkAllocationCallbacks allocationCallbacks;
 
-    VkSurfaceKHR surface;
+    VmaAllocator memoryAllocator;
 
     std::unordered_set<std::string> deviceExtensions;
 
     std::vector<const char *> enabledExtensions;
 
-    std::vector<std::vector<Queue>> queues;
-
-    Queue *queue = nullptr;
+    std::vector<std::vector<DeviceQueue>> queues;
    
     URef<SemaphorePool> semaphorePool;
 
     URef<DescriptorPool> descriptorPool;
 
-    URef<TimelineCommandPool> commandPool;
-
-    TimelineSemaphore semaphore;
+    URef<CommandPool> commandPool;
 
     bool isSubmitted = false;
 

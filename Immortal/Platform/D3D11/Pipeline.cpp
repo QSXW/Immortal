@@ -2,6 +2,7 @@
 #include "Device.h"
 #include "Buffer.h"
 #include "Texture.h"
+#include "Shader.h"
 #include "RenderTarget.h"
 #include "Device.h"
 
@@ -29,7 +30,7 @@ static inline D3D11_PRIMITIVE_TOPOLOGY CAST(const Pipeline::PrimitiveType type)
 }
 
 Pipeline::Pipeline(Device *device) :
-    device{ device }
+    NonDispatchableHandle{ device }
 {
 
 }
@@ -39,233 +40,178 @@ Pipeline::~Pipeline()
 
 }
 
-GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader::Super> _shader) :
-    Super{_shader},
-    Pipeline{ device }
+GraphicsPipeline::GraphicsPipeline(Device *device) :
+    Pipeline{ device },
+    handle{},
+    blendState{},
+    depthStencilState{},
+	inputLayout{},
+    topology{ D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST },
+    stride{}
 {
-	if (!_shader)
+
+}
+
+GraphicsPipeline::~GraphicsPipeline()
+{
+	vertexShader.Reset();
+	pixelShader.Reset();
+	inputLayout.Reset();
+	handle.Reset();
+}
+
+void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription)
+{
+	pushConstants.resize(PipelineStage::MaxTypes);
+	Shader **ppShader = (Shader **)_ppShader;
+	for (size_t i = 0; i < shaderCount; i++)
 	{
-		return;
+		Shader *shader = ppShader[i];		
+		if (shader->GetStage() == ShaderStage::Vertex)
+		{
+			vertexShader = shader->Get<ID3D11VertexShader>();
+			
+			auto byteCodesBlob = shader->GetByteCodes();
+			ConstructInputLayout(description, byteCodesBlob->GetBufferPointer(), byteCodesBlob->GetBufferSize());
+
+			pushConstants[PipelineStage::Vertex] = shader->GetPushConstantDesc();
+		}
+		else if (shader->GetStage() == ShaderStage::Pixel)
+		{
+			pixelShader = shader->Get<ID3D11PixelShader>();
+			pushConstants[PipelineStage::Pixel] = shader->GetPushConstantDesc();
+		}
 	}
 
-	sampler = new Sampler{ device, {} };
+	ConstructRasterizerState();
 
-	Topology = CAST(desc.primitiveType);
-
-	auto shader = _shader.InterpretAs<Shader>();
-	shader->QueryInterface<ID3D11VertexShader>(&vertexShader);
-	shader->QueryInterface<ID3D11PixelShader>(&pixelShader);
-
-	shader->GetDesc(&pushConstants.desc);
-	if (pushConstants.desc)
+	if (flags & State::Blend)
 	{
-		pushConstants.buffer = new Buffer{ device, pushConstants.desc.Size, Buffer::Type::PushConstant };
+		D3D11_BLEND_DESC blendDesc = {
+		    .AlphaToCoverageEnable  = false,
+		    .IndependentBlendEnable = true,
+		    .RenderTarget           = {}
+		};
+
+		for (size_t i = 0; i < outputDescription.size(); i++)
+		{
+			blendDesc.RenderTarget[i] = {
+				.BlendEnable           = true,
+				.SrcBlend              = D3D11_BLEND_SRC_ALPHA,
+			    .DestBlend             = D3D11_BLEND_INV_SRC_ALPHA,
+			    .BlendOp               = D3D11_BLEND_OP_ADD,
+			    .SrcBlendAlpha         = D3D11_BLEND_ONE,
+			    .DestBlendAlpha        = D3D11_BLEND_INV_SRC_ALPHA,
+			    .BlendOpAlpha          = D3D11_BLEND_OP_ADD,
+			    .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
+			};
+		}
+
+		Check(device->CreateBlendState(&blendDesc, &blendState));
+	}
+	
+	if (flags & State::Depth)
+	{
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {
+			.DepthEnable     = false,
+			.DepthWriteMask  = D3D11_DEPTH_WRITE_MASK_ALL,
+			.DepthFunc       = D3D11_COMPARISON_ALWAYS,
+			.StencilEnable   = false,
+			.FrontFace       = {
+			    .StencilFailOp      = D3D11_STENCIL_OP_KEEP,
+			    .StencilDepthFailOp = D3D11_STENCIL_OP_KEEP,
+				.StencilPassOp      = D3D11_STENCIL_OP_KEEP,
+			    .StencilFunc        = D3D11_COMPARISON_ALWAYS
+			},
+			.BackFace = depthStencilDesc.FrontFace,
+		};
+		device->CreateDepthStencilState(&depthStencilDesc, &depthStencilState);
 	}
 }
 
-GraphicsPipeline::GraphicsPipeline(Device *device, Ref<Shader> _shader) :
-    Super{_shader},
-    Pipeline{ device }
+void GraphicsPipeline::ConstructInputLayout(const InputElementDescription &description, const void *pByteCodes, uint32_t byteCodesSize)
 {
-	sampler = new Sampler{ device, {} };
-	Topology = CAST(desc.primitiveType);
-}
+	std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
+	inputElementDesc.reserve(description.Size());
 
-void GraphicsPipeline::Set(Ref<Buffer::Super> superBuffer)
-{
-    Super::Set(superBuffer);
-}
-
-void GraphicsPipeline::Set(const InputElementDescription &description)
-{
-    Super::Set(description);
-
-    inputElements.resize(desc.layout.Size());
-    for (size_t i = 0; i < desc.layout.Size(); i++)
-    {
-        inputElements[i].SemanticName         = desc.layout[i].Name().c_str();
-        inputElements[i].SemanticIndex        = 0;
-        inputElements[i].Format               = desc.layout[i].BaseType<DXGI_FORMAT>();
-        inputElements[i].InputSlot            = 0;
-        inputElements[i].AlignedByteOffset    = desc.layout[i].Offset();
-		inputElements[i].InputSlotClass       = D3D11_INPUT_PER_VERTEX_DATA;
-        inputElements[i].InstanceDataStepRate = 0;
-    }
-	stride = description.Stride;
-}
-
-void GraphicsPipeline::Create(const RenderTarget::Super *renderTarget)
-{
-    Reconstruct(renderTarget);
-}
-
-void GraphicsPipeline::Reconstruct(const RenderTarget::Super *superRenderTarget)
-{
-	if (!desc.shader)
+	for (size_t i = 0; i < description.Size(); i++)
 	{
-		return;
+		inputElementDesc.emplace_back(D3D11_INPUT_ELEMENT_DESC{
+		    .SemanticName         = description[i].GetSemanticsName().c_str(),
+			.SemanticIndex        = 0,
+			.Format               = description[i].GetFormat(),
+			.InputSlot            = 0,
+		    .AlignedByteOffset    = description[i].GetOffset(),
+			.InputSlotClass       = D3D11_INPUT_PER_VERTEX_DATA,
+			.InstanceDataStepRate = 0,
+		});
 	}
+	stride = description.GetStride();
 
+	Check(device->CreateInputLayout(inputElementDesc.data(), uint32_t(inputElementDesc.size()), pByteCodes, byteCodesSize, &inputLayout));
+}
+
+void GraphicsPipeline::ConstructRasterizerState()
+{
 	D3D11_RASTERIZER_DESC rasterizerDesc = {
 		.FillMode              = D3D11_FILL_SOLID,                
-	    .CullMode              = D3D11_CULL_BACK,
+	    .CullMode              = D3D11_CULL_NONE,
 	    .FrontCounterClockwise = FALSE,            
 	    .DepthBias             = 0,                
 	    .DepthBiasClamp        = 0,    
 	    .SlopeScaledDepthBias  = 0,          
 	    .DepthClipEnable       = TRUE,               
-	    .ScissorEnable         = FALSE,   
+	    .ScissorEnable         = TRUE,   
 	    .MultisampleEnable     = FALSE,    
 	    .AntialiasedLineEnable = FALSE,
     };
 
-    device->CreateRasterizerState(&rasterizerDesc, &handle);
-
-	Shader *shader = desc.shader.InterpretAs<Shader>();
-	auto VSByteCodes = shader->GetVSByteCoeds();
-	device->CreateInputLayout(inputElements.data(), U32(inputElements.size()), VSByteCodes->GetBufferPointer(), VSByteCodes->GetBufferSize(), &inputLayout);
+    Check(device->CreateRasterizerState(&rasterizerDesc, &handle));
 }
 
-void GraphicsPipeline::Draw(CommandList *cmdlist)
+void GraphicsPipeline::SetPiplineState(ID3D11DeviceContext4 *commandBuffer)
 {
-	cmdlist->IASetPrimitiveTopology(Topology);
-	cmdlist->RSSetState(*this);
-	cmdlist->IASetInputLayout(inputLayout.Get());
-	cmdlist->VSSetShader(vertexShader.Get(), nullptr, 0);
-	cmdlist->PSSetShader(pixelShader.Get(), nullptr, 0);
-
-	UINT offset[] = {0};
-	ID3D11Buffer *vertexBuffers[] = { *desc.vertexBuffers[0].As<Buffer>() };
-	cmdlist->IASetVertexBuffers(0, 1, vertexBuffers, &stride, offset);
-	cmdlist->IASetIndexBuffer(*desc.indexBuffer.As<Buffer>(), DXGI_FORMAT_R32_UINT, 0);
-
-	ID3D11SamplerState *samplers[] = { *sampler };
-	cmdlist->PSSetSamplers(0, 1, samplers);
-	
-	if (pushConstants.desc)
+	commandBuffer->IASetPrimitiveTopology(topology);
+	commandBuffer->RSSetState(handle.Get());
+	commandBuffer->IASetInputLayout(inputLayout.Get());
+	commandBuffer->VSSetShader(vertexShader.Get(), nullptr, 0);
+	commandBuffer->PSSetShader(pixelShader.Get(), nullptr, 0);
+	if (depthStencilState)
 	{
-		Bind(pushConstants.buffer, pushConstants.desc.Binding);
+		commandBuffer->OMSetDepthStencilState(depthStencilState.Get(), 0);
 	}
+}
 
-	if (nBuffer > 0)
+void GraphicsPipeline::SetBlendFactor(ID3D11DeviceContext4 *commandBuffer, const float *factor)
+{
+	if (blendState)
 	{
-		cmdlist->VSSetConstantBuffers(bufferStartSlot, nBuffer, buffers.data());
-		cmdlist->PSSetConstantBuffers(bufferStartSlot, nBuffer, buffers.data());
+		commandBuffer->OMSetBlendState(blendState.Get(), factor, 0xffffffff);
 	}
-	if (nShaderResource > 0)
-	{
-		cmdlist->PSSetShaderResources(shaderResourceStartSlot, nShaderResource, (SRV **)shaderResources.data());
-	}
-	cmdlist->DrawIndexed(ElementCount, 0, 0);
-
-	cmdlist->VSSetConstantBuffers(0, nBuffer, (ID3D11Buffer **)NullRef);
-	cmdlist->PSSetConstantBuffers(0, nBuffer, (ID3D11Buffer **)NullRef);
-	cmdlist->PSSetShaderResources(0, nShaderResource, (SRV **)NullRef);
 }
 
-void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
+ComputePipeline::ComputePipeline(Device *device, SuperShader *_shader) :
+    Pipeline{ device }
 {
-	nShaderResource += descriptorBuffer->size();
-	shaderResourceStartSlot = std::min(shaderResourceStartSlot, binding);
-	memcpy(shaderResources.data(), descriptorBuffer->DeRef<uint64_t>(), sizeof(uint64_t) * descriptorBuffer->size());
-}
-
-void Pipeline::Bind(Buffer *buffer, uint32_t binding)
-{
-	nBuffer++;
-	bufferStartSlot = std::min(bufferStartSlot, binding);
-	buffers[binding] = *buffer;
-}
-
-void Pipeline::Pipeline::Bind(Buffer::Super *buffer, uint32_t binding)
-{
-	Bind(dynamic_cast<Buffer *>(buffer));
-}
-
-void Pipeline::Bind(Texture::Super *_texture, uint32_t binding)
-{
-	nShaderResource++;
-	shaderResourceStartSlot  = std::min(shaderResourceStartSlot, binding);
-	shaderResources[binding] = *_texture;
-}
-
-Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
-{
-	bufferStartSlot = 0;
-	nBuffer = 0;
-
-    shaderResourceStartSlot = 0;
-	nShaderResource = 0;
-
-    return Anonymize(*this);
-}
-
-void Pipeline::FreeDescriptorSet(uint64_t uuid)
-{
-    
-}
-
-ComputePipeline::ComputePipeline(Device *context, Shader::Super *superShader) :
-    Pipeline{ context }
-{
-    if (!superShader)
+	Shader *shader = InterpretAs<Shader>(_shader);
+	if (shader->GetStage() != ShaderStage::Compute)
     {
-        LOG::ERR("Failed to create compute pipeline with a null shader");
+        LOG::ERR("Failed to create compute pipeline with a non compute stage shader");
         return;
     }
 
-    auto shader = dynamic_cast<Shader *>(superShader);
-	shader->QueryInterface<ID3D11ComputeShader>(&handle);
-
-	shader->GetDesc(&pushConstants.desc);
-	if (pushConstants.desc)
-	{
-		pushConstants.buffer = new Buffer{device, pushConstants.desc.Size, Buffer::Type::PushConstant};
-	}
+	handle = shader->Get<ID3D11ComputeShader>();
+	pushConstants[PipelineStage::Compute] = shader->GetPushConstantDesc();
 }
 
-void ComputePipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
+ComputePipeline::~ComputePipeline()
 {
-	auto context = device->GetContext();
-
-	if (pushConstants.desc)
-	{
-		Pipeline::Bind(pushConstants.buffer, pushConstants.desc.Binding);
-	}
-
-	if (nBuffer > 0)
-	{
-		context->CSSetConstantBuffers(bufferStartSlot, nBuffer, buffers.data());
-	}
-	if (nShaderResource > 0)
-    {
-		if (pushConstants.desc)
-		{
-			nBuffer--;
-		}
-		context->CSSetUnorderedAccessViews(shaderResourceStartSlot - nBuffer , nShaderResource, (UAV **) shaderResources.data(), nullptr);
-    }
-
-	context->CSSetShader(*this, nullptr, 0);
-	context->Dispatch(nGroupX, nGroupY, nGroupZ);
-	context->CSSetConstantBuffers(0, nBuffer, (ID3D11Buffer **)NullRef);
-	context->CSSetUnorderedAccessViews(0, nShaderResource, (UAV **)NullRef, 0);
+	handle.Reset();
 }
 
-void ComputePipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
-{  
-	if (pushConstants.buffer)
-	{
-		pushConstants.buffer->Update(size, data, offset);
-	}
-}
-
-void ComputePipeline::Bind(SuperTexture *_texture, uint32_t binding)
+void ComputePipeline::SetPiplineState(ID3D11DeviceContext4 *commandBuffer)
 {
-	Texture *texture = dynamic_cast<Texture *>(_texture);
-	nShaderResource++;
-	shaderResourceStartSlot  = std::min(shaderResourceStartSlot, binding);
-	shaderResources[binding] = texture->GetUAV();
+	commandBuffer->CSSetShader(handle.Get(), nullptr, 0);
 }
 
 }

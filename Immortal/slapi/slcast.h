@@ -105,10 +105,10 @@ inline bool Equals(const void *lhs, const void *rhs)
     return CAST<size_t>(lhs) == CAST<size_t>(rhs);
 }
 
-template <class T>
-inline constexpr T &InterpretAs(void *address)
+template <class T, class U>
+inline constexpr T *InterpretAs(U *address)
 {
-    return *reinterpret_cast<T*>(address);
+    return dynamic_cast<T *>(address);
 }
 
 }

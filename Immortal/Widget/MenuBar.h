@@ -7,11 +7,18 @@
 namespace Immortal
 {
 
+enum class MenuItemType
+{
+	Item,
+	Menu
+};
+
 struct MenuItem
 {
 	std::string name;
 	std::string tips;
 	std::function<void()> callback;
+	MenuItemType type;
 };
 
 class IMMORTAL_API WMenu : public Widget
@@ -26,22 +33,49 @@ public:
         Widget{ parent }
     {
 		Connect([this] {
-			WidgetLock lock{this};
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, colors.hovered);
-			PUSH_PADDING
+			ImVec4 popbgColor = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
+			popbgColor.w *= factor;
+			ImGui::PushStyleColor(ImGuiCol_PopupBg, popbgColor);
+
             if (ImGui::BeginMenu(text.c_str()))
             {
+				if (t < 1.0f)
+				{
+					t += Time::DeltaTime * 8.0f;
+
+					auto easeInOut = [](float t, float b, float c, float d)
+					{
+						return c * Math::Sin(t / d * (Math::PI / 2)) + b;
+					};
+					
+					factor = easeInOut(t, 0.0, 1.0f, 1.0f);
+				}
+				// factor = std::min(factor + Time::DeltaTime * 4.f, (float) (0.5f * Math::PI));
 			    for (auto &item : items)
 				{
-                    if (ImGui::MenuItem(item.name.c_str(), item.tips.c_str()))
-                    {
-						item.callback();
-                    }
+					if (item.type == MenuItemType::Item)
+					{
+						if (ImGui::MenuItem(item.name.c_str(), item.tips.c_str()))
+						{
+							item.callback();
+						}
+					}
+					else
+					{
+						if (ImGui::BeginMenu(item.name.c_str()))
+						{
+							item.callback();
+						}
+					}
 				}
 				ImGui::EndMenu();
             }
-			POP_PADDING
-			ImGui::PopStyleColor(1);
+			else
+			{
+				t = 0.0f;
+				factor = 0.0f;
+			}
+			ImGui::PopStyleColor();
 		});
     }
 
@@ -51,9 +85,21 @@ public:
 		{
 			item.name = WordsMap::Get(item.name);
 		}
+		item.type = MenuItemType::Item;
 		items.emplace_back(std::move(item));
 		return this;
     }
+
+	WMenu *Sub(MenuItem &&item)
+	{
+		if (!GuiLayer::IsLanguage(Language::English))
+		{
+			item.name = WordsMap::Get(item.name);
+		}
+		item.type = MenuItemType::Menu;
+		items.emplace_back(std::move(item));
+		return this;
+	}
 
 	WMenu *HoveredColor(const ImVec4 &color)
 	{
@@ -69,6 +115,10 @@ protected:
 	{
 		ImVec4 hovered;
 	} colors;
+	
+	float t = 0.0f;
+
+	float factor = 0.0f;
 };
 
 class IMMORTAL_API WMenuBar : public Widget
@@ -80,26 +130,38 @@ public:
 
 public:
 	WMenuBar(Widget *parent = nullptr) :
-	    Widget{parent}
+	    Widget{parent},
+	    spacing{}
 	{
 		Connect([this] {
-			WidgetLock lock{this};
 			__PreCalculateSize();
+
 			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, backgroundColor);
 			ImGui::PushStyleColor(ImGuiCol_PopupBg, backgroundColor);
-            if (ImGui::BeginMenuBar())
+            if (ImGui::BeginMainMenuBar())
             {
 				position = ImGui::GetItemRectMin();
 				auto [x, y] = ImGui::GetWindowSize();
 				renderWidth = x;
 				renderHeight = y;
 
-				__RelativeTrampoline();
-				ImGui::EndMenuBar();
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, spacing);
+				for (auto &child : children)
+				{
+					child->render();
+				}
+				ImGui::PopStyleVar(1);
+				ImGui::EndMainMenuBar();
             }
-			ImGui::PopStyleColor(2);
+			ImGui::PopStyleColor(3);
 		});
 	}
+
+	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
+
+protected:
+	ImVec2 spacing;
 };
 
 struct WItem

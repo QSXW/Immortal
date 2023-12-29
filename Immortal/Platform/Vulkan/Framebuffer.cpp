@@ -11,7 +11,7 @@ namespace Vulkan
 {
 
 Framebuffer::Framebuffer() :
-    handle{},
+    Handle{},
     device{}
 {
 
@@ -20,42 +20,33 @@ Framebuffer::Framebuffer() :
 Framebuffer::Framebuffer(Device *device, VkRenderPass renderPass, const LightArray<VkImageView> &views, const VkExtent2D &extent) :
     device{ device }
 {
-    VkFramebufferCreateInfo createInfo{};
-    createInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.pNext           = nullptr;
-    createInfo.attachmentCount = U32(views.size());
-    createInfo.pAttachments    = views.data();
-    createInfo.renderPass      = renderPass;
-    createInfo.width           = extent.width;
-    createInfo.height          = extent.height;
-    createInfo.layers          = 1;
+    VkFramebufferCreateInfo createInfo{
+        .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .pNext           = nullptr,
+        .flags           = {},
+        .renderPass      = renderPass,
+        .attachmentCount = uint32_t(views.size()),
+        .pAttachments    = views.data(),
+        .width           = extent.width,
+        .height          = extent.height,
+        .layers          = 1,
+    };
 
     Check(device->Create(&createInfo, &handle));
 }
 
-Framebuffer::Framebuffer(Framebuffer &&other) :
-    Framebuffer{}
-{
-    other.Swap(*this);
-}
-
-Framebuffer &Framebuffer::operator =(Framebuffer &&other)
-{
-    Framebuffer(std::move(other)).Swap(*this);
-    return *this;
-}
-
-void Framebuffer::Swap(Framebuffer &other)
-{
-    std::swap(device, other.device);
-    std::swap(handle, other.handle);
-}
-
 Framebuffer::~Framebuffer()
+{
+    Release();
+}
+
+void Framebuffer::Release()
 {
     if (device)
     {
         device->DestroyAsync(handle);
+        device = nullptr;
+        handle = VK_NULL_HANDLE;
     }
 }
 

@@ -2,16 +2,18 @@
 
 #include "Render/Texture.h"
 #include "Common.h"
-#include "Descriptor.h"
 
 namespace Immortal
 {
 namespace OpenGL
 {
 
-class Texture : public SuperTexture
+class IMMORTAL_API Texture : public SuperTexture, public Handle
 {
 public:
+    using Super = SuperTexture;
+	GLCPP_SWAPPABLE(Texture)
+
 	struct DataType
 	{
 		GL_FORMAT SizedFormat;
@@ -21,38 +23,45 @@ public:
 		GLSampler Wrap;
 	};
 
-    using Super = SuperTexture;
-	GLCPP_OPERATOR_HANDLE()
+public:
+	Texture();
+
+	Texture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
+
+    virtual ~Texture() override;
 
 public:
-    Texture(const std::string &path, const Description &description);
-
-    Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description);
-
-    void Blit();
-
-public:
-    virtual ~Texture();
-
-    virtual operator uint64_t() const override;
-
-    virtual void Update(const void *data, uint32_t pitchX = 0) override;
-
-    virtual bool operator==(const Super &super) const override;
-
-    virtual void As(DescriptorBuffer *descriptors, size_t index) override;
-
-public:
-    uint32_t MipLevels() const override
+    GL_FORMAT GetFormat() const
     {
-		return mipLevels;
+		return dataType.SizedFormat;
     }
 
+	GL_FORMAT GetBaseFormat() const
+    {
+		return dataType.BaseFormat;
+    }
+
+    GL_FORMAT GetBinaryFormat() const
+    {
+		return dataType.BinaryType;
+    }
+
+	operator bool() const
+	{
+		return handle != Handle::Invalid;
+	}
+
+	void Swap(Texture &other)
+	{
+		Handle::Swap(other);
+		std::swap(dataType, other.dataType);
+	}
+
 protected:
-    DataType type;
+    DataType dataType;
 };
 
-Texture::DataType NativeTypeToOpenGl(const Texture::Description &desc);
+Texture::DataType NativeTypeToOpenGl(Format format);
 
 }
 }

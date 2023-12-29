@@ -8,6 +8,12 @@
 #include "DescriptorPool.h"
 #include "Framework/Async.h"
 
+#include "Buffer.h"
+#include "DescriptorSet.h"
+#include "GPUEvent.h"
+#include "Pipeline.h"
+#include "Texture.h"
+
 namespace Immortal
 {
 namespace Vulkan
@@ -16,15 +22,14 @@ namespace Vulkan
 Device::Device() :
     handle{},
     physicalDevice{},
-    memoryAllocator{},
-    surface{ VK_NULL_HANDLE }
+    allocationCallbacks{},
+    memoryAllocator{}
 {
 
 }
 
-Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char*, bool> requestedExtensions) :
-    physicalDevice{ physicalDevice },
-    surface{ surface }
+Device::Device(PhysicalDevice *physicalDevice, std::unordered_map<const char*, bool> requestedExtensions) :
+    physicalDevice{ physicalDevice }
 {
     VmaVulkanFunctions     vmaVulkanFunc{};
     VmaAllocatorCreateInfo allocatorInfo{};
@@ -37,7 +42,7 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     {
         const VkQueueFamilyProperties &prop = physicalDevice->QueueFamilyProperties[index];
         queueProps[index].resize(prop.queueCount, 0.5f);
-        if (physicalDevice->HighPriorityGraphicsQueue && QueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
+        if (physicalDevice->HighPriorityGraphicsQueue && GetQueueFailyIndex(VK_QUEUE_GRAPHICS_BIT) == index)
         {
             queueProps[index][0] = 1.0f;
         }
@@ -46,7 +51,6 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
         queueCreateInfos[index].queueCount       = prop.queueCount;
         queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
     }
-
     std::vector<VkExtensionProperties> availableExtensions;
     Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions)); 
 
@@ -122,7 +126,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     if (IsEnabled(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
     {
         physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceRayQueryFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR);
-    }
+	}
+	if (IsEnabled(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME))
+    {
+		physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR);
+	}
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -139,10 +147,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     for (uint32_t queueFamilyIndex = 0U; queueFamilyIndex < propsCount; queueFamilyIndex++)
     {
         const auto &queueFamilyProps = physicalDevice->QueueFamilyProperties[queueFamilyIndex];
-        VkBool32 presentSupported = surface ? physicalDevice->IsPresentSupported(surface, queueFamilyIndex) : false;
+        VkBool32 presentSupported = VK_NULL_HANDLE ? physicalDevice->IsPresentSupported(VK_NULL_HANDLE, queueFamilyIndex) : false;
 
-        queues[queueFamilyIndex].reserve(queueFamilyProps.queueCount);
-        for (uint32_t queueIndex = 0; queueIndex < queueFamilyProps.queueCount; queueIndex++)
+        uint32_t queueCount = queueFamilyProps.queueCount;
+		queues[queueFamilyIndex].reserve(queueCount);
+		for (uint32_t queueIndex = 0; queueIndex < queueCount; queueIndex++)
         {
             queues[queueFamilyIndex].emplace_back(this, queueFamilyIndex, queueFamilyProps, presentSupported, queueIndex);
         }
@@ -151,10 +160,11 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
     vmaVulkanFunc.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
     vmaVulkanFunc.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
-    allocatorInfo.device           = handle;
-    allocatorInfo.instance         = physicalDevice->Get<Instance&>();
-    allocatorInfo.physicalDevice   = *physicalDevice;
-    allocatorInfo.pVulkanFunctions = &vmaVulkanFunc;
+    allocatorInfo.device               = handle;
+    allocatorInfo.instance             = *physicalDevice->Get<Instance>();
+    allocatorInfo.physicalDevice       = *physicalDevice;
+    allocatorInfo.pVulkanFunctions     = &vmaVulkanFunc;
+    allocatorInfo.pAllocationCallbacks = VK_NULL_HANDLE;
 
     if (IsEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
     {
@@ -163,19 +173,14 @@ Device::Device(PhysicalDevice *physicalDevice, VkSurfaceKHR surface, std::unorde
 
     Check(vmaCreateAllocator(&allocatorInfo, &memoryAllocator));
 
-    queue = &FindQueueByType(Queue::Type::Transfer, 0);
-	commandPool = new TimelineCommandPool{this, queue->Get<Queue::FamilyIndex>()};
-
     semaphorePool = new SemaphorePool(this);
 
     descriptorPool = new DescriptorPool{ this, Limit::PoolSize };
 
-    Check(AllocateSemaphore(&semaphore));
-
     EnableGlobal();
 }
 
-uint32_t Device::QueueFailyIndex(VkQueueFlagBits requestFlags)
+uint32_t Device::GetQueueFailyIndex(VkQueueFlagBits requestFlags)
 {
     const auto &queueFamilyProperties = physicalDevice->QueueFamilyProperties;
 
@@ -208,10 +213,9 @@ Device::~Device()
 {
     Wait();
 
-    Release(std::move(semaphore));
-	commandPool.Reset();
+    commandPool.Reset();
     descriptorPool->Destroy();
-	semaphorePool.Reset();
+    semaphorePool.Reset();
 
     for (auto &queue : destroyCoroutine.queues)
     {
@@ -242,42 +246,106 @@ Device::~Device()
     }
 }
 
-Queue &Device::SuitableGraphicsQueue()
+Anonymous Device::GetBackendHandle() const
 {
-    for (uint32_t familyIndex = 0; familyIndex < queues.size(); familyIndex++)
-    {
-        Queue &firstQueue = queues[familyIndex][0];
-
-        uint32_t queueCount = firstQueue.Properties().queueCount;
-
-        if (firstQueue.IsPresentSupported() && 0 < queueCount)
-        {
-            return queues[familyIndex][0];
-        }
-    }
-
-    return FindQueueByType(Queue::Type::Graphics, 0);
+	return (void *)handle;
 }
 
-Queue &Device::FindQueueByType(Queue::Type type, uint32_t queueIndex)
+BackendAPI Device::GetBackendAPI()
 {
-    VkQueueFlags flags = VkQueueFlags(type);
+	return BackendAPI::Vulkan;
+}
 
-    for (uint32_t familyIndex = 0U; familyIndex < queues.size(); familyIndex++)
-    {
-        Queue& firstQueue = queues[familyIndex][0];
+SuperQueue *Device::CreateQueue(QueueType type, QueuePriority priority)
+{
+	VkQueueFlags flags = VkQueueFlags(type);
 
-        VkQueueFlags queueFlags = firstQueue.Properties().queueFlags;
-        uint32_t     queueCount = firstQueue.Properties().queueCount;
-
-        if (((queueFlags & flags) == flags) && queueIndex < queueCount)
+	for (uint32_t familyIndex = 0; familyIndex < queues.size(); familyIndex++)
+	{
+        for (auto &queue : queues[familyIndex])
         {
-            return queues[familyIndex][queueIndex];
+			VkQueueFlags queueFlags = queue.Properties().queueFlags;
+			uint32_t queueCount     = queue.Properties().queueCount;
+			if (((queueFlags & flags) == flags) && !queue.IsOccupied())
+			{
+				queue.Occupy();
+				return new Queue{ &queue };
+			}
         }
+	}
+
+    queues[0][0].Occupy();
+    return new Queue{ &queues[0][0] };
+}
+
+SuperCommandBuffer *Device::CreateCommandBuffer(QueueType type)
+{
+    if (!commandPool)
+    {
+        commandPool = new CommandPool{ this };
     }
 
-    LOG::ERR("Queue not found");
-    return queues[0][0];
+    return new CommandBuffer{ commandPool };
+}
+
+SuperSwapchain *Device::CreateSwapchain(SuperQueue *_queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode)
+{
+    VkExtent2D extent = {
+        .width  = window->GetWidth(),
+        .height = window->GetHeight()
+    };
+
+    Surface surface{};
+    Instance *instance = physicalDevice->Get<Instance>();
+    instance->CreateSurface(window, &surface, nullptr);
+
+    Queue *queue = InterpretAs<Queue>(_queue);
+    if (!physicalDevice->IsPresentSupported(surface, queue->GetFamilyIndex()))
+    {
+		LOG::ERR("Physical Device doesn't support WSI!");
+    }
+
+    return new Swapchain{ this, std::move(surface), format, extent, bufferCount, mode };
+}
+
+SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
+{
+    return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
+}
+
+SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
+{
+    return new Shader{ this, name, stage, source, entryPoint };
+}
+
+SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
+{
+    return new GraphicsPipeline{ this };
+}
+
+SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type)
+{
+    return new Texture{ this, format, width, height, mipLevels, arrayLayers, type };
+}
+
+SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
+{
+    return new Buffer{ this, type, size };
+}
+
+SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
+{
+	return new DescriptorSet{ this, InterpretAs<Pipeline>(pipeline) };
+}
+
+SuperGPUEvent *Device::CreateGPUEvent(const std::string &name)
+{
+    return new GPUEvent{ this };
+}
+
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
+{
+	return nullptr;
 }
 
 uint32_t Device::GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound)

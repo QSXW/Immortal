@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -9,38 +10,36 @@ namespace Vulkan
 
 class Device;
 class Image;
-class ImageView
+class ImageView : public Handle<VkImageView>
 {
 public:
-    using Primitive = VkImageView;
-    VKCPP_OPERATOR_HANDLE()
+    VKCPP_SWAPPABLE(ImageView)
 
 public:
     ImageView();
 
-    ImageView(Image *image, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t mipLevels = 0, uint32_t arrayLayers = 0);
+    ImageView(Device *device, Image *image);
 
-    ImageView(Image *image, VkImageViewType type, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0, uint32_t mipLevels = 0, uint32_t arrayLayers = 0);
-
-    ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers);
-
-    ImageView(ImageView &&other);
-
-    ImageView &operator =(ImageView &&other);
-
-    void Swap(ImageView &other);
+    ImageView(Image *image, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0);
 
     ~ImageView();
 
-    void Instantiate(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers);
+    void Release();
 
-    ImageView(const ImageView &other) = delete;
-    ImageView &operator=(const ImageView &other) = delete;
+    void Instantiate(VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers);
+
+public:
+    void Swap(ImageView &other)
+    {
+        Handle::Swap(other);
+		std::swap(device, other.device);
+        std::swap(image,  other.image);
+    }
 
 protected:
     Device *device;
 
-    VkFormat format;
+    Image *image;
 };
 }
 }

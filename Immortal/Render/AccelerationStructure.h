@@ -10,10 +10,7 @@ class IMMORTAL_API AccelerationStructure
 public:
     AccelerationStructure() = default;
 
-    virtual ~AccelerationStructure()
-    {
-
-    }
+    virtual ~AccelerationStructure() = default;
 };
 
 using SuperAccelerationStructure = AccelerationStructure;

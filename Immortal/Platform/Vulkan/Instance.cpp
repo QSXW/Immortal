@@ -2,7 +2,6 @@
 
 #include "Device.h"
 #include "PhysicalDevice.h"
-#include "RenderContext.h"
 #include "Surface.h"
 #include "Framework/Window.h"
 
@@ -88,11 +87,12 @@ static inline void LoadVulkanModule()
 {
     if (!vkGetInstanceProcAddr)
     {
-        if ((RenderContext::Status = volkInitialize()) != VK_SUCCESS)
+		VkResult status = {};
+		if ((status = volkInitialize()) != VK_SUCCESS)
         {
             throw RuntimeException("Unable to initialize Vulkan Library. Please confirm your device support "
                         "and get Vulkan Installed");
-            Check(RenderContext::Status);
+			Check(status);
         }
         LOG::INFO("Load Vulkan library with success...");
     }
@@ -109,7 +109,7 @@ enum class InternalExtension : uint64_t
 SL_ENABLE_BITWISE_OPERATOR(InternalExtension)
 
 Instance::Instance() :
-    handle{}
+    Handle{}
 #ifdef _DEBUG
     , debugUtilsMessengers{},
     debugReportCallback{}
@@ -119,10 +119,10 @@ Instance::Instance() :
 }
 
 Instance::Instance(const char                                   *applicationName,
-                    const std::unordered_map<const char *, bool> &requiredExtension,
-                    const std::vector<const char *>              &requiredValidationLayers,
-                    bool                                          headless,
-                    uint32_t                                      apiVersion) :
+                   const std::unordered_map<const char *, bool> &requiredExtension,
+                   const std::vector<const char *>              &requiredValidationLayers,
+                   bool                                          headless,
+                   uint32_t                                      apiVersion) :
     Instance{}
 {
     uint32_t extensionCount;
@@ -237,7 +237,7 @@ Instance::Instance(const char                                   *applicationName
     }
 #endif
 
-    Check(CreateInstance(&instanceInfo, &handle));
+    Check(vkCreateInstance(&instanceInfo, nullptr, &handle));
     volkLoadInstance(handle);
 
 #ifdef _DEBUG
@@ -257,7 +257,7 @@ Instance::Instance(const char                                   *applicationName
 }
 
 Instance::Instance(VkInstance instance) :
-    handle(instance)
+    Handle{ instance }
 {
     if (handle != VK_NULL_HANDLE)
     {
@@ -284,39 +284,36 @@ Instance::~Instance()
     }
 }
 
-Instance::Instance(Instance &&other) :
-    Instance{}
+SuperDevice *Instance::CreateDevice(int deviceId)
 {
-    other.Swap(*this);
+	PhysicalDevice *physicalDevice = GetSuitablePhysicalDevice(deviceId);
+	physicalDevice->Activate(Vulkan::PhysicalDevice::Feature::SamplerAnisotropy);
+	physicalDevice->Activate(Vulkan::PhysicalDevice::Feature::RobustBufferAccess);
+	physicalDevice->Activate(Vulkan::PhysicalDevice::Feature::IndependentBlend);
 
-    for (auto &physicalDevice : physicalDevices)
-    {
-        physicalDevice.Invalidate(this);
-    }
-}
+	const std::unordered_map<const char *, bool> deviceExtensions{
+	    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false },
+	    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,       false },
+#ifdef __APPLE__                                          
+	    {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,        false },
+#endif                                                    
+	    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true  },
+	    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,     true  },
+	    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,    true  },
+	    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, true  },
+	    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      true  },
+	    { VK_KHR_SPIRV_1_4_EXTENSION_NAME,                true  },
+	    { VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,    true  },
+	    { VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,        true  },
+	    { VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true  },
+	    { VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true  },
+	    { VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true  },
+	    { VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true  },
+	    { VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,        false },
+	    { VK_KHR_MAINTENANCE1_EXTENSION_NAME,             false },
+	};
 
-Instance &Instance::operator =(Instance &&other)
-{
-    Instance(std::move(other)).Swap(*this);
-
-    for (auto &physicalDevice : physicalDevices)
-    {
-        physicalDevice.Invalidate(this);
-    }
-
-    return *this;
-}
-
-void Instance::Swap(Instance &other)
-{
-    std::swap(handle,            other.handle           );
-    std::swap(enabledExtensions, other.enabledExtensions);
-    std::swap(physicalDevices,   other.physicalDevices  );
-
-#if defined (_DEBUG) || defined (VKB_VALIDATION_LAYERS)
-    std::swap(debugUtilsMessengers, other.debugUtilsMessengers);
-    std::swap(debugReportCallback,  other.debugReportCallback );
-#endif
+	return new Device{ physicalDevice, deviceExtensions };
 }
 
 void Instance::EnumeratePhysicalDevice()

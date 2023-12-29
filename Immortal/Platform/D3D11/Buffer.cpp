@@ -1,6 +1,5 @@
 #include "Buffer.h"
 #include "Device.h"
-#include "RenderContext.h"
 
 namespace Immortal
 {
@@ -18,7 +17,7 @@ UINT CAST(Buffer::Type type)
 	{
 		flags |= D3D11_BIND_INDEX_BUFFER;
 	}
-	if (type & Buffer::Type::Uniform)
+	if (type & Buffer::Type::ConstantBuffer)
 	{
 		flags |= D3D11_BIND_CONSTANT_BUFFER;
 	}
@@ -42,46 +41,56 @@ UINT CAST(Buffer::Type type)
 	return flags;
 }
 
-Buffer::Buffer(const Buffer &other, const BindInfo &bindInfo) :
-    Super{ bindInfo.type, bindInfo.size },
-    device{}
+uint32_t GetAccessFlags(BufferType type, uint32_t *pUsage, uint32_t *pMapFlags)
+{
+	uint32_t flags = 0;
+	if (type & BufferType::TransferSource)
+	{
+		flags      |= D3D11_CPU_ACCESS_WRITE;
+		*pMapFlags = D3D11_MAP_WRITE;
+		*pUsage = D3D11_USAGE_STAGING;
+	}
+	if (type & BufferType::TransferDestination)
+	{
+		flags      |= D3D11_CPU_ACCESS_READ;
+		*pMapFlags = D3D11_MAP_READ;
+		*pUsage = D3D11_USAGE_STAGING;
+	}
+
+	return flags;
+}
+
+Buffer::Buffer():
+	Super{},
+    NonDispatchableHandle{},
+    mapFlags{}
 {
 
 }
 
-Buffer::Buffer(Device *device, const size_t size, const void *data, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
-    device{ device }
+Buffer::Buffer(Device *device, const size_t size, Type type, const void *data) :
+    Super{ type, type == Type::ConstantBuffer ? SLALIGN(size, 256) : size },
+    NonDispatchableHandle{ device },
+    mapFlags{}
 {
-    __Create(data);
-}
-
-Buffer::Buffer(Device *device, const size_t size, Type type) :
-    Super{ type, type == Type::Uniform ? SLALIGN(size, 256) : size },
-	device{ device }
-{
-    __Create(nullptr);
-}
-
-Buffer::Buffer(Device *device, const size_t size, uint32_t binding) :
-    Super{ Buffer::Type::Uniform, SLALIGN(size, 256) },
-    device{ device }
-{
-    __Create(nullptr);
+	ConstructHandle(data);
 }
 
 Buffer::~Buffer()
 {
-
+	handle.Reset();
 }
 
-void Buffer::__Create(const void *data)
+void Buffer::ConstructHandle(const void *data)
 {
+	auto type = GetType();
+	uint32_t usage = D3D11_USAGE_DEFAULT;
+	uint32_t accessFlags = GetAccessFlags(type, & usage, &mapFlags);
     D3D11_BUFFER_DESC desc = {
-		.ByteWidth           = U32(size),
-	    .Usage               = D3D11_USAGE_DEFAULT,
+		.ByteWidth           = U32(GetSize()),
+	    .Usage               = D3D11_USAGE(usage),
 		.BindFlags           = CAST(type),
-		.CPUAccessFlags      = 0,
+		.CPUAccessFlags      = accessFlags,
 		.MiscFlags           = 0,
 		.StructureByteStride = 0,
     };
@@ -95,18 +104,21 @@ void Buffer::__Create(const void *data)
     Check(device->CreateBuffer(&desc, data ? &subresource : nullptr, &handle));
 }
 
-void Buffer::Update(uint64_t updateSize, const void *data, uint64_t offset)
+Anonymous Buffer::GetBackendHandle() const
 {
-    THROWIF(updateSize > size, SError::OutOfBound);
-
-    auto context = device->GetContext();
-
-	context->UpdateSubresource(*this, 0, nullptr, data, 0, 0);
+	return (void *)handle.Get();
 }
 
-Buffer *Buffer::Bind(const BindInfo &bindInfo) const
+void Buffer::Map(void **ppData, size_t size, uint64_t offset)
 {
-    return new Buffer{ *this, bindInfo };
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource{};
+	device->Map(handle.Get(), 0, (D3D11_MAP)mapFlags, 0, &mappedSubresource);
+	*ppData = (uint8_t *)mappedSubresource.pData + offset;
+}
+
+void Buffer::Unmap()
+{
+	device->Unmap(handle.Get(), 0);
 }
 
 }

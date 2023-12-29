@@ -3,6 +3,8 @@
 #include "Core.h"
 #include "Common.h"
 #include "Interface/IObject.h"
+#include "Render/Instance.h"
+#include "Render/Device.h"
 
 namespace Immortal
 {
@@ -13,11 +15,10 @@ namespace Vulkan
 
 class PhysicalDevice;
 class Surface;
-class Instance
+class IMMORTAL_API Instance : public SuperInstance, public Handle<VkInstance>
 {
 public:
-    using Primitive = VkInstance;
-    VKCPP_OPERATOR_HANDLE()
+	VKCPP_SWAPPABLE(Instance)
 
     using Extension = const char *;
 
@@ -115,15 +116,7 @@ public:
 
     ~Instance();
 
-    Instance(Instance &&other);
-
-    Instance &operator =(Instance &&other);
-
-    void Swap(Instance &other);
-
-    Instance(const Instance &other) = delete;
-
-    Instance &operator = (const Instance &other) = delete;
+    virtual SuperDevice *CreateDevice(int deviceId) override;
 
     PhysicalDevice *GetSuitablePhysicalDevice(int deviceId = AUTO_DEVICE_ID);
 
@@ -144,6 +137,18 @@ public:
     T GetProcAddr(char const *pName)
     {
         return (T)vkGetInstanceProcAddr(handle, pName);
+    }
+
+    void Swap(Instance &other)
+    {
+		Handle::Swap(other);
+		std::swap(enabledExtensions,    other.enabledExtensions   );
+		std::swap(physicalDevices,      other.physicalDevices     );
+
+#if defined(_DEBUG) || defined(VKB_VALIDATION_LAYERS)
+		std::swap(debugUtilsMessengers, other.debugUtilsMessengers);
+		std::swap(debugReportCallback,  other.debugReportCallback );
+#endif
     }
 
 protected:

@@ -3,8 +3,10 @@
 #include "Render/RenderTarget.h"
 
 #include "Common.h"
+#include "Handle.h"
 #include "Resource.h"
 #include "Descriptor.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -12,7 +14,7 @@ namespace D3D12
 {
 
 class Device;
-class RenderContext;
+class Texture;
 class PixelBuffer : public Resource
 {
 public:
@@ -143,175 +145,70 @@ public:
         }
     }
 
-    void Create(const Device *device, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
-
-    virtual CPUDescriptor GetDescriptor() const = 0;
-
 public:
     DXGI_FORMAT Format{ DXGI_FORMAT_UNKNOWN };
 };
 
-class ColorBuffer : public PixelBuffer
-{
-public:
-    using Super = PixelBuffer;
-
-public:
-    ColorBuffer()
-    {
-        renderTargetViewDescriptor.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        for (int i = 0; i < SL_ARRAY_LENGTH(unorderedAccessViewDescriptor); i++)
-        {
-            unorderedAccessViewDescriptor[i].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        }
-    }
-
-    void Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
-
-    template <Descriptor::Type T>
-    CPUDescriptor Get() const
-    {
-        if constexpr (T == Descriptor::Type::ShaderResourceView)
-        {
-            return shaderResourceViewDescriptor.cpu;
-        }
-        if constexpr (T == Descriptor::Type::RenderTargetView)
-        {
-            return renderTargetViewDescriptor;
-        }
-    }
-
-    virtual CPUDescriptor GetDescriptor() const override
-    {
-        return shaderResourceViewDescriptor.cpu;
-    }
-
-    operator uint64_t() const
-    {
-        return shaderResourceViewDescriptor.gpu.ptr;
-    }
-
-private:
-    Descriptor shaderResourceViewDescriptor;
-
-    CPUDescriptor renderTargetViewDescriptor;
-
-    CPUDescriptor unorderedAccessViewDescriptor[12];
-};
-
-class DepthBuffer : public PixelBuffer
-{
-public:
-    using Super = PixelBuffer;
-
-public:
-    DepthBuffer()
-    {
-        depthStencilViewDescriptor[0].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        depthStencilViewDescriptor[1].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        depthStencilViewDescriptor[2].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        depthStencilViewDescriptor[3].ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-
-        shaderResourceDescriptor.depth.ptr   = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-        shaderResourceDescriptor.stencil.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-    }
-
-    void Create(RenderContext *context, const D3D12_RESOURCE_DESC &desc, const D3D12_CLEAR_VALUE &clearValue);
-
-    bool IsAvailable() const
-    {
-        return depthStencilViewDescriptor[0].ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN;
-    }
-
-    virtual CPUDescriptor GetDescriptor() const override
-    {
-        return depthStencilViewDescriptor[0];
-    }
-
-private:
-    CPUDescriptor depthStencilViewDescriptor[4];
-    struct {
-        CPUDescriptor depth;
-        CPUDescriptor stencil;
-    } shaderResourceDescriptor;
-};
-
-class RenderTarget : public SuperRenderTarget
+class RenderTarget : public SuperRenderTarget, public NonDispatchableHandle
 {
 public:
     using Super = SuperRenderTarget;
 
 public:
-    RenderTarget();
-
-    RenderTarget(RenderContext *context, const Super::Description &descrition);
+    RenderTarget(Device *device = nullptr);
 
     ~RenderTarget();
 
-    virtual void Map(uint32_t slot) override;
+    virtual void Resize(uint32_t width, uint32_t height) override;
 
-    virtual void Unmap() override;
+	virtual SuperTexture *GetColorAttachment(uint32_t index) override;
 
-    virtual void Resize(UINT32 width, UINT32 height) override;
+	virtual SuperTexture *GetDepthAttachment() override;
+ 
+public:
+    void SetColorAttachment(uint32_t index, Ref<Texture> &texture);
 
-    virtual void ClearAttachment(UINT32 attachmentIndex, int value) override;
+	void SetDepthAttachment(Ref<Texture> &texture);
 
-    D3D12_RESOURCE_DESC SuperToBase(const Description &description, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
-    {
-        D3D12_RESOURCE_DESC desc = {
-            .Dimension        = D3D12_RESOURCE_DIMENSION_TEXTURE2D,
-            .Alignment        = 0,
-            .Width            = U64(description.Width),
-            .Height           = description.Height,
-            .DepthOrArraySize = (UINT16)description.Layers,
-            .MipLevels        = (UINT16)description.MipLevels,
-            .Format           = format,
-            .SampleDesc       = { .Count = description.Samples, .Quality = 0 },
-            .Layout           = D3D12_TEXTURE_LAYOUT_UNKNOWN,
-            .Flags            = flags,
-        };
-
-        return desc;
-    }
-
-    virtual operator uint64_t() const
-    {
-        return attachments.color[0];
-    }
-
-    const CPUDescriptor *GetDescriptor() const
+public:
+    const Descriptor *GetDescriptor() const
     {
         return descriptors;
     }
 
-    operator ID3D12Resource*()
+    const std::vector<Ref<Texture>> &GetColorBuffers() const
     {
-        return attachments.color[0];
+		return colorBuffers;
     }
 
-    const std::vector<ColorBuffer> &GetColorBuffers() const
+    Texture *GetDepthBuffer() const
     {
-        return attachments.color;
+		return depth;
     }
 
-    const DepthBuffer &GetDepthBuffer() const
+    Descriptor GetDepthBufferDescriptor() const
     {
-        return attachments.depth;
+		return depthDescriptor;
     }
 
-    bool IsDepth() const
+    uint32_t GetWidth() const
     {
-        return attachments.depth.IsAvailable();
+		return colorBuffers[0]->GetWidth();
     }
 
-private:
-    CPUDescriptor descriptors[32];
-
-    struct
+    uint32_t GetHeight() const
     {
-        std::vector<ColorBuffer> color;
-        DepthBuffer depth;
-    } attachments;
+		return colorBuffers[0]->GetHeight();
+    }
+
+protected:
+    Descriptor descriptors[32];
+
+    Descriptor depthDescriptor;
+
+    std::vector<Ref<Texture>> colorBuffers;
+
+	Ref<Texture> depth;
 };
 
 }

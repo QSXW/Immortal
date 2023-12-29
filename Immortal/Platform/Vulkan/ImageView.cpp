@@ -7,83 +7,78 @@ namespace Immortal
 namespace Vulkan
 {
 
-inline VkImageViewType GetViewType(VkImageType type, uint32_t arrayLayers)
+inline VkImageViewType GetViewType(VkImageType type, VkImageCreateFlags flags, uint32_t arrayLayers)
 {
-    VkImageViewType ret = VK_IMAGE_VIEW_TYPE_2D;
+    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
 
-    if (type == VK_IMAGE_TYPE_2D)
+    if (flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
     {
-        ret = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+		return arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+    }
+    else if (type == VK_IMAGE_TYPE_2D)
+    {
+		viewType = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
     }
     else if (type == VK_IMAGE_TYPE_1D)
     {
-        ret = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+		viewType = arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
     }
     else if (type == VK_IMAGE_TYPE_3D)
     {
-        ret = VK_IMAGE_VIEW_TYPE_3D;
+		viewType = VK_IMAGE_VIEW_TYPE_3D;
     }
 
-    return ret;
+    return viewType;
 }
 
 ImageView::ImageView() :
+    Handle{},
     device{},
-    handle{},
-    format{}
+    image{}
 {
 
 }
 
-ImageView::ImageView(Image *image, VkImageViewType type, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevels, uint32_t arrayLayers) :
-    device{ image->GetAddress<Device>() },
-    format{ image->GetFormat() }
-{
-    auto &props = image->GetProperties();
-    Instantiate(*image, type, baseMipLevel, baseArrayLayer,!mipLevels ? props.mipLevels : mipLevels, !arrayLayers ? props.arrayLayers : arrayLayers);
-}
-
-ImageView::ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevels, uint32_t arrayLayers) :
-    ImageView{ image, GetViewType(image->GetType(), arrayLayers ? arrayLayers : image->GetArrayLayer()), baseMipLevel, baseArrayLayer , mipLevels, arrayLayers }
-{ 
-
-}
-
-ImageView::ImageView(Device *device, VkImage image, VkImageViewType viewType, VkFormat format, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers) :
+ImageView::ImageView(Device *device, Image *image) :
+    Handle{},
     device{ device },
-    format{ format }
+    image{ image }
 {
-    Instantiate(image, viewType, baseMipLevel, baseArrayLevel, mipLevels, arrayLayers);
+	Instantiate(GetViewType(image->GetType(), image->GetFlags(), image->GetArrayLayers()), 0, 0, image->GetMipLevels(), image->GetArrayLayers());
 }
 
-ImageView::ImageView(ImageView &&other) :
-    ImageView{}
+ImageView::ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLayer):
+    Handle{},
+    device{ image->Get<Device>() },
+    image{ image }
 {
-    other.Swap(*this);
-}
-
-ImageView &ImageView::operator =(ImageView &&other)
-{
-    ImageView(std::move(other)).Swap(*this);
-    return *this;
-}
-
-void ImageView::Swap(ImageView &other)
-{
-    std::swap(device, other.device);
-    std::swap(handle, other.handle);
+	Instantiate(GetViewType(image->GetType(), image->GetFlags(), image->GetArrayLayers()), baseMipLevel, baseArrayLayer, image->GetMipLevels(), image->GetArrayLayers());
 }
 
 ImageView::~ImageView()
 {
-    if (device)
+    Release();
+}
+
+void ImageView::Release()
+{
+    if (!device && image)
+    {
+		device = image->Get<Device>();
+    }
+
+	if (device)
     {
         device->DestroyAsync(handle);
+		handle = VK_NULL_HANDLE;
+		image = nullptr;
     }
 }
 
-void ImageView::Instantiate(VkImage image, VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers)
+void ImageView::Instantiate( VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers)
 {
+    VkFormat format = image->GetFormat();
+
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.baseMipLevel   = baseMipLevel;
     subresourceRange.baseArrayLayer = baseArrayLevel;
@@ -96,7 +91,7 @@ void ImageView::Instantiate(VkImage image, VkImageViewType viewType, uint32_t ba
     viewInfo.viewType         = viewType;
     viewInfo.format           = format;
     viewInfo.subresourceRange = subresourceRange;
-    viewInfo.image            = image;
+    viewInfo.image            = *image;
     viewInfo.components       = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
 
     Check(device->Create(&viewInfo, &handle));

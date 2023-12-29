@@ -6,9 +6,11 @@
 #include "Device.h"
 #include "Attachment.h"
 #include "DescriptorSet.h"
+#include "RenderPass.h"
 #include "Framebuffer.h"
 #include "Submitter.h"
 #include "Algorithm/LightArray.h"
+#include "Texture.h"
 
 namespace Immortal
 {
@@ -23,50 +25,42 @@ struct CompareExtent2D
     }
 };
 
-class RenderTarget : public SuperRenderTarget
+class IMMORTAL_API RenderTarget : public SuperRenderTarget
 {
 public:
     using Super = SuperRenderTarget;
+    VKCPP_SWAPPABLE(RenderTarget)
 
 public:
     RenderTarget();
 
-    RenderTarget(Device *device, const Description &description);
-
-    RenderTarget(RenderTarget &&other);
+    RenderTarget(Device *device);
 
     ~RenderTarget();
 
-    RenderTarget &operator=(RenderTarget &&other);
+    virtual void Resize(uint32_t width, uint32_t height) override;
 
-    void Invalidate(Image &&image, Ref<RenderPass> renderPass);
+	virtual SuperTexture *GetColorAttachment(uint32_t index) override;
 
-    void InvalidateFrameBuffer();
+	virtual SuperTexture *GetDepthAttachment() override;
 
-    RenderTarget(const RenderTarget &) = delete;
-    RenderTarget &operator=(const RenderTarget &) = delete;
+public:
+    void Release();
 
+    void SetColorAttachment(uint32_t index, Texture &&texture);
+
+    void Construct(std::vector<Texture> &colorAttachments, Texture &&depthAttachment, bool isPresented = false);
+
+    void Invalidate();
+
+public:
     template <class T>
     requires std::is_same_v<T, RenderPass> || std::is_same_v<T, Framebuffer>
-    T &Get()
+    T *Get()
     {
         if constexpr (IsPrimitiveOf<RenderPass, T>())
         {
-            return *renderPass;
-        }
-        if constexpr (IsPrimitiveOf<Framebuffer, T>())
-        {
-            return framebuffer;
-        }
-    }
-
-    template <class T>
-    requires std::is_same_v<T, RenderPass> || std::is_same_v<T, Framebuffer>
-    T *GetAddress()
-    {
-        if constexpr (IsPrimitiveOf<RenderPass, T>())
-        {
-            return renderPass;
+            return &renderPass;
         }
         if constexpr (IsPrimitiveOf<Framebuffer, T>())
         {
@@ -74,14 +68,24 @@ public:
         }
     }
 
-    VkRenderPass GetRenderPass() const
+    const RenderPass &GetRenderPass() const
     {
-        return *renderPass;
+        return renderPass;
     }
 
-    VkFramebuffer GetFramebuffer()
+    const Framebuffer &GetFramebuffer()
     {
         return framebuffer;
+    }
+
+    const std::vector<Texture> &GetColorAttachments() const
+    {
+		return attachments.colors;
+    }
+
+    const Texture &InternalGetDepthAttachment() const
+    {
+		return attachments.depth;
     }
 
     uint32_t ColorAttachmentCount() const
@@ -89,45 +93,41 @@ public:
         return attachments.colors.size();
     }
 
-    const Image &GetColorImage(uint32_t index = 0) const
+    void SetSwapchainTarget()
     {
-        return attachments.colors[index].image;
+		isSwapchainTarget = true;
     }
 
+    bool IsSwapchainTarget() const
+    {
+		return isSwapchainTarget;
+    }
+
+    void Swap(RenderTarget &other)
+    {
+        std::swap(device,      other.device     );
+        std::swap(renderPass,  other.renderPass );
+        std::swap(framebuffer, other.framebuffer);
+    }
+
+protected:
     void Create();
-
-    void SetupDescriptor();
-
-public:
-    virtual operator uint64_t() const override;
-
-    virtual void Resize(uint32_t x, uint32_t y) override;
-
-    virtual uint64_t PickPixel(uint32_t index, uint32_t x, uint32_t y, Format format) override;
-
-    virtual void Map(uint32_t index, uint8_t **ppData) override;
-                 
-    virtual void Unmap(uint32_t index) override;
 
 private:
     Device *device{ nullptr };
 
-    Ref<RenderPass> renderPass;
+    RenderPass renderPass;
 
     Framebuffer framebuffer;
 
-    DescriptorSet descriptorSet;
-
-    Sampler sampler;
-
     struct
     {
-        Attachment depth;
+        Texture depth;
 
-        LightArray<Attachment, 3> colors;
+        std::vector<Texture> colors;
     } attachments;
 
-    std::vector<std::unique_ptr<Image>> stagingImages;
+    bool isSwapchainTarget = false;
 };
 
 }

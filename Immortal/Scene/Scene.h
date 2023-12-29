@@ -151,7 +151,6 @@ private:
 
     struct {
         Ref<Texture> skybox;
-        Ref<TextureCube> skyboxCube;
     } textures;
 
     struct {

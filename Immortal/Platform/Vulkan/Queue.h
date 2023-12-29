@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Common.h"
-#include "Render/Queue.h"
+#include "Semaphore.h"
+#include "Handle.h"
 
 namespace Immortal
 {
@@ -9,14 +10,10 @@ namespace Vulkan
 {
 
 class Device;
-class Queue : public SuperQueue
+class DeviceQueue : public Handle<VkQueue>
 {
 public:
-    using FamilyIndex = uint32_t;
-    using Super = SuperQueue;
-
-    using Primitive = VkQueue;
-    VKCPP_OPERATOR_HANDLE()
+	VKCPP_SWAPPABLE(DeviceQueue)
 
 public:
     VkResult Submit(uint32_t submitCount, VkSubmitInfo const *pSubmits, VkFence fence)
@@ -75,26 +72,16 @@ public:
     }
 
 public:
-    Queue(Device *device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
+	DeviceQueue(Device *device = nullptr);
 
-    Queue(const Queue &) = default;
+    DeviceQueue(Device *device, uint32_t familyIndex, VkQueueFamilyProperties properties, VkBool32 canPresent, uint32_t index);
 
-    Queue(Queue &&other);
+    virtual ~DeviceQueue();
 
-    virtual ~Queue();
-
+public:
     VkResult Submit(const VkSubmitInfo &submitInfo, VkFence fence)
     {
         return Submit(1, &submitInfo, fence);
-    }
-
-    template <class T>
-    T &Get()
-    {
-        if constexpr (IsPrimitiveOf<FamilyIndex, T>())
-        {
-            return familyIndex;
-        }
     }
 
     VkQueueFamilyProperties &Properties()
@@ -107,30 +94,108 @@ public:
         return presented;
     }
 
-    VkResult Present(const VkPresentInfoKHR &presentInfo)
+    VkResult Present(const VkPresentInfoKHR *pPresentInfo)
     {
         if (!presented)
         {
             return VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
         }
 
-        return PresentKHR(&presentInfo);
+        return PresentKHR(pPresentInfo);
     }
 
-private:
+    uint32_t GetFamilyIndex() const
+    {
+		return familyIndex;
+    }
+
+    Device *GetDevice() const
+    {
+		return device;
+    }
+
+    void Occupy()
+    {
+		used = true;
+    }
+
+    void DeOccupy()
+    {
+		used = false;
+    }
+
+    const std::atomic<bool> &IsOccupied() const
+    {
+		return used;
+    }
+
+    void Swap(DeviceQueue &other)
+    {
+		Handle::Swap(other);
+		std::swap(device,      other.device     );
+		std::swap(familyIndex, other.familyIndex);
+		std::swap(index,       other.index      );
+		std::swap(presented,   other.presented  );
+        std::swap(properties,  other.properties );
+    }
+
+protected:
     Device *device;
 
-    uint32_t familyIndex{ 0 };
+    uint32_t familyIndex;
 
-    uint32_t index{ 0 };
+    uint32_t index;
 
-    VkBool32 presented{ VK_FALSE };
+    VkBool32 presented;
 
     VkQueueFamilyProperties properties{};
 
-private:
-    Queue &operator=(const Queue &) = delete;
-    Queue &operator=(Queue &&) = delete;
+    std::atomic<bool> used;
+};
+
+class IMMORTAL_API Queue : public SuperQueue
+{
+public:
+    using Super = SuperQueue;
+	VKCPP_SWAPPABLE(Queue)
+
+public:
+	Queue(DeviceQueue *queue = nullptr);
+
+    virtual ~Queue() override;
+
+	virtual void WaitIdle(uint32_t timeout) override;
+
+	virtual void Wait(SuperGPUEvent *pEvent) override;
+
+	virtual void Signal(SuperGPUEvent *pEvent) override;
+
+	virtual void Submit(SuperCommandBuffer **ppCommandBuffer, size_t count, SuperGPUEvent **ppSignalEvents, uint32_t eventCount, SuperSwapchain *swapchain) override;
+
+	virtual void Present(SuperSwapchain *swapchain, SuperGPUEvent **ppSignalEvent, uint32_t eventCount) override;
+
+public:
+	uint32_t GetFamilyIndex() const
+	{
+		return queue->GetFamilyIndex();
+	}
+
+	void Swap(Queue &other)
+    {
+		std::swap(queue,                       other.queue                      );
+		std::swap(executionCompleteSemaphores, other.executionCompleteSemaphores);
+		std::swap(waitSemaphores,              other.waitSemaphores             );
+		std::swap(waitPipelineStageFlags,      other.waitPipelineStageFlags     );
+    }
+
+protected:
+	DeviceQueue *queue;
+
+    std::vector<Semaphore> executionCompleteSemaphores;
+
+    LightArray<VkSemaphore> waitSemaphores;
+    
+    LightArray<VkPipelineStageFlags> waitPipelineStageFlags;
 };
 
 }

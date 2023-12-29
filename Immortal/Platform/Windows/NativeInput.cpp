@@ -12,7 +12,7 @@ static inline void GetClientCursorPosition(HWND handle, LPPOINT pos)
 }
 
 NativeInput::NativeInput(Window *window) :
-    handle{ rcast<HWND>(window->Primitive()) }
+    handle{ rcast<HWND>(window->GetBackendHandle()) }
 {
     !!Input::That ? throw Exception(SError::InvalidSingleton) : That = this;
     Clear();
@@ -26,7 +26,7 @@ NativeInput::~NativeInput()
 void NativeInput::Clear()
 {
     CleanUpObject(KeysDown, 0, sizeof(KeysDown));
-    InterpretAs<uint64_t>(&MouseDown) = 0;
+	memset(MouseDown, 0, sizeof(MouseDown));
 }
 
 bool NativeInput::InternalIsKeyPressed(const KeyCode key)

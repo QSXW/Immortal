@@ -14,13 +14,7 @@ public:
     VKCPP_SWAPPABLE(Handle)
 
 public:
-    Handle() :
-        handle{VK_NULL_HANDLE}
-    {
-
-    }
-
-    Handle(T handle) :
+    Handle(T handle = VK_NULL_HANDLE) :
         handle{handle}
     {
     }
@@ -29,6 +23,11 @@ public:
     {
         return handle;
     }
+
+    bool operator!() const
+	{
+		return handle == VK_NULL_HANDLE;
+	}
 
     void Swap(Handle &other)
     {

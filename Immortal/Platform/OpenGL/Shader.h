@@ -10,39 +10,33 @@ namespace Immortal
 namespace OpenGL
 {
 
-class Shader : public SuperShader
+class Shader : public SuperShader, public Handle
 {
 public:
     using Super = SuperShader;
-	GLCPP_OPERATOR_HANDLE()
 
 public:
-    Shader(const std::string &filepath, Type type);
+	Shader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
-    ~Shader();
+    virtual ~Shader() override;
 
     void Activate() const;
 
     void Deactivate() const;
 
-    virtual const char *Name() const override
-    {
-        return name.c_str();
-    }
-
     GLuint Get(const std::string &name) const;
 
-private:
+protected:
     void Link(const std::vector<GLuint> &shaders);
 
     uint32_t CompileShader(GLenum type, const std::string &source);
 
-    std::string __InjectPreamble(const std::string &source);
+    std::string InjectPreamble(const std::string &source);
 
-private:
+protected:
     std::string name;
 
-    Shader::Type type = Shader::Type::Graphics;
+    GLenum stage;
 };
 
 }

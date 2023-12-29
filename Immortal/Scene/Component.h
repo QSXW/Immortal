@@ -10,7 +10,7 @@
 
 #include "Core.h"
 #include "Framework/Async.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 #include "Render/Mesh.h"
 #include "Render/Texture.h"
 #include "SceneCamera.h"
@@ -157,8 +157,8 @@ struct MaterialComponent : public Component
             Metallic{ 1.0f },
             Roughness{ 1.0f }
         {
-            Textures.Albedo = Render::Preset()->Textures.White;
-            Textures.Normal = Render::Preset()->Textures.Normal;
+            Textures.Albedo = Graphics::Preset()->Textures.White;
+			Textures.Normal = Graphics::Preset()->Textures.Normal;
             Textures.Metallic = Textures.Albedo;
             Textures.Roughness = Textures.Albedo;
             Textures.AO = Textures.Albedo;
@@ -197,23 +197,9 @@ struct SpriteRendererComponent : public Component
 {
     DEFINE_COMPONENT_TYPE(SpriteRenderer)
 
-    static inline Texture::Description Desc = {
-        Format::RGBA8,
-        Wrap::Repeat,
-        Filter::Linear
-    };
+    SpriteRendererComponent();
 
-    struct Extension : public IObject
-    {
-        Ref<Image> input[3];
-
-        Format chromaFormat;
-    };
-
-    SpriteRendererComponent()
-    {
-
-    }
+    ~SpriteRendererComponent();
 
     void UpdateSprite(const Vision::Picture &picture);
 
@@ -223,11 +209,18 @@ struct SpriteRendererComponent : public Component
 
     Ref<Texture> Result = Sprite;
 
-    Ref<Extension> pNext;
+	Vector4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-    Vector4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+	float TilingFactor = 1.0f;
 
-    float TilingFactor = 1.0f;
+protected:
+    Ref<DescriptorSet> descriptorSet;
+
+    Ref<Pipeline> pipeline;
+
+    Ref<Texture> input[3];
+
+    Ref<Buffer> buffer;
 };
 
 struct CameraComponent : public Component

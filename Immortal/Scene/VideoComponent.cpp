@@ -98,9 +98,9 @@ VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, 
         while (true)
         {
             std::unique_lock lock{ mutex.demux };
-            condition.wait(lock, [this] {
-                return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
-            });
+			condition.wait(lock, [this] {
+				return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
+			});
 
             if (state.exited)
             {
@@ -198,6 +198,7 @@ Picture VideoPlayerContext::GetAudioFrame()
 void VideoPlayerContext::PopPicture()
 {
     std::unique_lock lock{ mutex.video };
+	Picture picture = std::move(pictures.front());
     pictures.pop();
     condition.notify_one();
 }

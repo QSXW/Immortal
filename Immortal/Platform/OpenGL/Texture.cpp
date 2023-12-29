@@ -2,21 +2,17 @@
 
 #include "Render/Frame.h"
 #include "Shader.h"
-#include "RenderContext.h"
 
 namespace Immortal
 {
 namespace OpenGL
 {
 
-Texture::DataType NativeTypeToOpenGl(const Texture::Description &desc)
+Texture::DataType NativeTypeToOpenGl(Format format)
 {
 	Texture::DataType data{};
 
-	data.Wrap = desc.wrap == Wrap::Clamp ? GL_SAMPLER_CLAMP_TO_EDGE : GL_SAMPLER_REPEAT;
-	data.Filter = desc.filter == Filter::Nearest ? GL_FILTER_NEAREST : GL_FILTER_LINEAR;
-
-	data.SizedFormat = desc.format;
+	data.SizedFormat = format;
 	switch (data.SizedFormat)
 	{
 		case GL_FORMAT_R8:
@@ -165,80 +161,39 @@ static uint32_t CreateTexture(GLenum target, uint32_t width, uint32_t height, co
     return texture;
 }
 
-Texture::Texture(const std::string &path, const Description &description) :
-    handle{}
+Texture::Texture() :
+    Handle{}
 {
-	mipLevels = 1;
 
-    Frame frame = Frame(path);
-    
-    Vision::Picture picture = frame.GetPicture();
-    if (!frame.Available())
-    {
-		return;
-    }
-
-    width  = picture.desc.width;
-    height = picture.desc.height;
-
-	Description desc = description;
-	desc.format = picture.desc.format;
-	type = NativeTypeToOpenGl(desc);
-
-    handle = CreateTexture(GL_TEXTURE_2D, width, height, type, mipLevels);
-    Update(picture.Data(), width);
-
-    Blit();
 }
 
-Texture::Texture(const uint32_t width, const uint32_t height, const void *data, const Texture::Description &description) :
-    Super{ width, height, description.mipLevels }
+Texture::Texture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) :
+    Handle{}
 {
-	mipLevels = 1;
-    type   = NativeTypeToOpenGl(description);
-	handle = CreateTexture(GL_TEXTURE_2D, width, height, type, mipLevels);
+	SetMeta(width, height, mipLevels, arrayLayers);
+	GLenum target = GL_TEXTURE_2D;
+	if (arrayLayers == 6)
+	{
+		target = GL_TEXTURE_CUBE_MAP;
+	}
+	else if (arrayLayers > 1)
+	{
+		target = GL_TEXTURE_2D_ARRAY;
+	}
 
-    if (data)
-    {
-		Update(data, width);
-    }
+	dataType = NativeTypeToOpenGl(format);
 
-    Blit();
+	glCreateTextures(target, 1, &handle);
+	glTextureStorage2D(handle, mipLevels, dataType.SizedFormat, width, height);
 }
 
 Texture::~Texture()
 {
-    glDeleteTextures(1, &handle);
-}
-
-void Texture::Update(const void *data, uint32_t pitchX)
-{
-	glTextureSubImage2D(handle, 0, 0, 0, pitchX, height, type.BaseFormat, type.BinaryType, data);
-}
-
-void Texture::Blit()
-{
-    if (mipLevels > 1)
-    {
-		Submit([this] { glGenerateTextureMipmap(handle); });
-    }
-}
-
-Texture::operator uint64_t() const
-{
-	return ncast<uint64_t>(handle);
-}
-
-bool Texture::operator == (const Super &super) const
-{
-	auto other = dcast<const Texture *>(&super);
-	return handle == other->handle;
-}
-
-void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
-{
-    auto descriptor = descriptorBuffer->DeRef<uint32_t>(index);
-	descriptor[0] = handle;
+	if (handle)
+	{
+		glDeleteTextures(1, &handle);
+		handle = 0;
+	}
 }
 
 }

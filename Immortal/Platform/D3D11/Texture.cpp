@@ -9,120 +9,114 @@ namespace Immortal
 namespace D3D11
 {
 
-Texture::Texture(Device *device, const std::string &filepath, const Description &description) :
-    device{ device }
+static inline uint32_t GetUsage(TextureType type)
 {
-    Frame frame{ filepath };
+	uint32_t usage = D3D11_BIND_SHADER_RESOURCE;
+	if (type & TextureType::DepthStencilAttachment)
+	{
+		usage |= D3D11_BIND_DEPTH_STENCIL;
+	}
+	if (type & TextureType::ColorAttachment)
+	{
+		usage |= D3D11_BIND_RENDER_TARGET;
+	}
+	if (type & TextureType::Storage)
+	{
+		usage |= D3D11_BIND_UNORDERED_ACCESS;
+	}
 
-    Vision::Picture picture = frame.GetPicture();
-    if (!picture.Available())
-    {
-        return;
-    }
-
-	SetProperties(picture.desc.width, picture.desc.height, description.mipLevels);
-
-    format = picture.desc.format;
-	__Create(picture.Data());
+	return usage;
 }
 
-Texture::Texture(Device *device, uint32_t width, uint32_t height, const void *data, const Description &description) :
-    device{ device },
-    Super{ width, height, description.mipLevels }
+Texture::Texture(Device *device) :
+    NonDispatchableHandle{ device }
 {
-    format = description.format;
-	__Create(data);
+
 }
 
-Texture::Texture(Device *device, const ComPtr<ID3D11Texture2D> &texture) :
-	device{ device }
+Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) :
+    NonDispatchableHandle{ device }
 {
-	D3D11_TEXTURE2D_DESC desc{};
-	texture->GetDesc(&desc);
+	SetMeta(width, height, mipLevels, arrayLayers);
+	D3D11_TEXTURE2D_DESC desc = {
+		.Width          = width,
+		.Height         = height,
+		.MipLevels      = mipLevels,
+		.ArraySize      = arrayLayers,
+		.Format         = format,
+		.SampleDesc     = { .Count = 1, .Quality = 0, },
+		.Usage          = D3D11_USAGE_DEFAULT,
+		.BindFlags      = GetUsage(type),
+		.CPUAccessFlags = 0,
+		.MiscFlags      = mipLevels > 1 ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0U,
+    };
 
-	width  = desc.Width;
-	height = desc.Height;
-	format = Format::RGBA8; // desc.Format;
-	__Create(nullptr);
+	if (mipLevels > 1)
+	{
+		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+	}
 
-	device->CopyResource(*this, texture.Get());
+    Check(device->CreateTexture2D(&desc, nullptr, &handle));
+
+	ConstructResourceView();
+}
+
+Texture::Texture(Device *device, ComPtr<ID3D11Texture2D> pTexture) :
+    NonDispatchableHandle{ device },
+    handle{ pTexture }
+{
+	ConstructResourceView();
 }
 
 Texture::~Texture()
 {
-
+	handle.Reset();
 }
 
-void Texture::__Create(const void *data)
+void Texture::ConstructResourceView()
 {
-	UINT flags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-	if (mipLevels > 1)
+	D3D11_TEXTURE2D_DESC desc{};
+	handle->GetDesc(&desc);
+
+	if (desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
 	{
-		flags |= D3D11_BIND_RENDER_TARGET;
-	}
-	Image::Create(device, flags, width, height, nullptr, mipLevels);
+		D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {
+			.Format        = desc.Format,
+			.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+			.Texture2D     = { .MostDetailedMip = 0, .MipLevels = desc.MipLevels, }
+		};
 
-	if (data)
+		Check(device->CreateShaderResourceView(handle.Get(), &viewDesc, descriptor.AddressOf()));
+	}
+	if (desc.BindFlags & D3D11_BIND_RENDER_TARGET)
 	{
-		Update(data, width);
+		D3D11_RENDER_TARGET_VIEW_DESC viewDesc = {
+			.Format        = desc.Format,
+			.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D,
+			.Texture2D     = { .MipSlice = 0 }
+		};
+
+		Check(device->CreateRenderTargetView(handle.Get(), &viewDesc, rtv.AddressOf()));
 	}
+	if (desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
+	{
+		D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc = {
+		    .Format        = desc.Format,
+		    .ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D,
+		    .Texture2D     = { .MipSlice = 0 }
+		};
 
-	CreateView(flags);
-}
-
-void Texture::CreateView(UINT flags)
-{
-	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {
-		.Format        = format,
-	    .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
-		.Texture2D     = { .MostDetailedMip = 0, .MipLevels = mipLevels, }
-    };
-
-	Check(device->CreateShaderResourceView(*this, &viewDesc, &descriptor));
-
-	if (flags & D3D11_BIND_UNORDERED_ACCESS)
+		Check(device->CreateDepthStencilView(handle.Get(), &viewDesc, dsv.AddressOf()));
+	}
+	if (desc.BindFlags & D3D11_BIND_UNORDERED_ACCESS)
 	{
 		D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
-			.Format = format,
+			.Format        = desc.Format,
 			.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D,
-			.Texture2D = {
-				.MipSlice = 0,
-			},
+			.Texture2D = { .MipSlice = 0 },
 		};
-		Check(device->CreateUnorderedAccessView(*this, &uavDesc, &uav));
-	}
-}
 
-void Texture::As(DescriptorBuffer *descriptorBuffer, size_t index)
-{
-	auto pDescriptor = descriptorBuffer->DeRef<uint64_t>(index);
-	pDescriptor[0] = descriptor;
-}
-
-Texture::operator uint64_t() const
-{
-	return (uint64_t)descriptor;
-}
-
-bool Texture::operator==(const Super &_other) const
-{
-	const Texture &other = dynamic_cast<const Texture&>(_other);
-	return handle == other.handle;
-}
-
-void Texture::Update(const void *data, uint32_t pitchX)
-{
-	auto context = device->GetContext();
-
-	context->UpdateSubresource(*this, 0, nullptr, data, pitchX * format.Size(), 0);
-}
-
-void Texture::Blit()
-{
-	if (mipLevels > 1)
-	{
-		auto context = device->GetContext();
-		context->GenerateMips(descriptor);
+		Check(device->CreateUnorderedAccessView(handle.Get(), &uavDesc, uav.AddressOf()));
 	}
 }
 

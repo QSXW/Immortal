@@ -13,6 +13,7 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 #include "Interface/IObject.h"
+#include "Render/LightGraphics.h"
 
 namespace Immortal
 {
@@ -28,7 +29,7 @@ class ScriptEngine;
 class IMMORTAL_API Application
 {
 public:
-    Application(const Window::Description &desc = { "Immortal Engine", 1920, 1080 });
+    Application(BackendAPI graphicsBackendAPI, const std::string &title, uint32_t width, uint32_t height);
 
     virtual ~Application();
 
@@ -39,8 +40,6 @@ public:
     void OnEvent(Event &e);
 
     void OnRender();
-
-    void UpdateMeta(const Window::Description &desc);
 
     virtual Layer *PushLayer(Layer *layer);
 
@@ -58,38 +57,33 @@ public:
 
     RenderContext *Context()
     {
-        return context;
+        return nullptr;
     }
 
 public:
-    static Application *App()
+    static uint32_t GetWidth()
     {
-        return That;
-    }
-
-    static uint32_t Width()
-    {
-        return That->desc.Width;
+		return This->window->GetWidth();
     }
 
     static uint32_t Height()
     {
-        return That->desc.Height;
+		return This->window->GetHeight();
     }
 
     static const char *Name()
     {
-        return That->name.c_str();
+		return This->name.c_str();
     }
 
     static float DeltaTime()
     {
-        return That->deltaTime;
+		return This->deltaTime;
     }
 
     static void SetTitle(const std::string &title)
     {
-        That->desc.Title = title;
+		return This->window->SetTitle(title);
     }
 
 private:
@@ -102,7 +96,23 @@ private:
 private:
 	URef<Window> window;
 
-    URef<RenderContext> context;
+    URef<Instance> instance;
+
+    URef<Device> device;
+
+    URef<Queue> queue;
+    
+    URef<Swapchain> swapchain;
+
+    URef<GPUEvent> gpuEvent;
+
+    std::vector<URef<CommandBuffer>> commandBuffers;
+
+    uint32_t bufferCount = 3;
+
+	uint32_t syncPoint = 0;
+
+	uint32_t syncValues[3] = {};
 
     Ref<ScriptEngine> scriptEngine;
 
@@ -116,8 +126,6 @@ private:
 
     URef<GuiLayer> gui;
 
-    Window::Description desc;
-
     std::string name;
 
     Timer timer;
@@ -126,7 +134,7 @@ private:
 
     EventSink<Application> eventSink;
 
-    static Application *That;
+    static Application *This;
 
 public:
     Configuration configuration{};

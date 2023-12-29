@@ -3,14 +3,23 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "ImGuizmo.h"
+#include "imgui_impl_immortal.h"
 
 #include "Framework/Application.h"
-#include "Render/Render.h"
+#include "Render/Graphics.h"
 
 #include "String/LanguageSettings.h"
 #include "FileSystem/Stream.h"
 #include "Framework/Async.h"
 #include "Widget/Widget.h"
+
+#ifdef _WIN32
+#include <backends/imgui_impl_win32.h>
+#endif
+#include <backends/imgui_impl_glfw.h>
+
+struct GLFWwindow;
+extern "C" void glfwMakeContextCurrent(GLFWwindow *handle);
 
 namespace Immortal
 {
@@ -22,16 +31,20 @@ namespace Immortal
 FontContext GuiLayer::NotoSans;
 FontContext GuiLayer::SimSun;
 
-GuiLayer *GuiLayer::__instance = nullptr;
+GuiLayer *GuiLayer::This = nullptr;
 
 static uint64_t TotalFrame     = 0;
 static double TotalFrameRate = 0;
 
-GuiLayer::GuiLayer() :
+GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swapchain) :
     Layer{ "Immortal Graphics User Interface Layer" },
-    dockspace{ new WDockerSpace{} }
+    dockspace{ new WDockerSpace{} },
+    device{ device },
+    queue{ queue },
+    swapchain{ swapchain },
+    window{ window }
 {
-	__instance = this;
+	This = this;
 
     themeEditor = new WWindow;
 	themeEditor
@@ -43,7 +56,7 @@ GuiLayer::GuiLayer() :
 GuiLayer::~GuiLayer()
 {
     ImGui::DestroyContext();
-	__instance = nullptr;
+	This = nullptr;
 
     LOG::INFO("Rendered {} frame(s), Avarage Frame Rate: {}", TotalFrame, TotalFrameRate / TotalFrame);
 }
@@ -69,9 +82,12 @@ void GuiLayer::OnAttach()
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGuiStyle &style = ImGui::GetStyle();
-    style.WindowMinSize.x = MinWindowSizeX;
-    style.WindowMinSize.y = MinWindowSizeY;
-    style.WindowBorderSize = 0.0f;
+    style.WindowMinSize.x      = MinWindowSizeX;
+    style.WindowMinSize.y      = MinWindowSizeY;
+    style.WindowBorderSize     = 0.0f;
+	style.ScrollbarRounding    = 0.0f;
+    style.ScrollbarSize        = 12.0f;
+	style.DockingSeparatorSize = 1.0f;
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -79,13 +95,16 @@ void GuiLayer::OnAttach()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+    io.DisplaySize.x = window->GetWidth();
+	io.DisplaySize.y = window->GetHeight();
+
     Profiler p{ "Loading DemiLight File" };
-    NotoSans.Demilight = io.Fonts->AddFontFromFileTTF(
-        "Assets/Fonts/NotoSansCJKsc-Light.otf",
-        20,
-        nullptr,
-        io.Fonts->GetGlyphRangesChineseFull()
-        );
+	NotoSans.Light = io.Fonts->AddFontFromFileTTF(
+       "Assets/Fonts/NotoSansCJKsc-Regular.otf",
+       20,
+       nullptr,
+       io.Fonts->GetGlyphRangesChineseFull()
+       );
 
     NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
         "Assets/Fonts/NotoSansCJKsc-Bold.otf",
@@ -95,20 +114,53 @@ void GuiLayer::OnAttach()
         );
 
 #ifdef _WIN32
-    SimSun.Regular = io.Fonts->AddFontFromFileTTF(
+   SimSun.Regular = io.Fonts->AddFontFromFileTTF(
 	    std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
 	    16,
-        nullptr,
+       nullptr,
 	    io.Fonts->GetGlyphRangesChineseFull()
-        );
+       );
 #else
-    SimSun.Regular = NotoSans.Demilight;
+   SimSun.Regular = NotoSans.Demilight;
 #endif
+
+    ImGui_ImplImmortal_Init(device, queue, swapchain, 3);
+#ifdef _WIN32
+   if (window->GetType() == WindowType::Win32)
+   {
+		platformSpecificNewFrame = ImGui_ImplWin32_NewFrame;
+		ImGui_ImplWin32_Init(window->GetBackendHandle());
+   }
+   else
+#endif
+   {
+		if (device->GetBackendAPI() == BackendAPI::OpenGL)
+		{
+			ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)window->GetBackendHandle(), true);
+		}
+		else if (device->GetBackendAPI() == BackendAPI::Vulkan)
+		{
+			ImGui_ImplGlfw_InitForVulkan((GLFWwindow *)window->GetBackendHandle(), true);
+		}
+		platformSpecificNewFrame = ImGui_ImplGlfw_NewFrame;
+   }
 }
 
 void GuiLayer::OnDetach()
 {
 	ImGui::DestroyContext();
+}
+
+void GuiLayer::Begin()
+{
+	ImGui_ImplImmortal_NewFrame();
+	platformSpecificNewFrame();
+	ImGui::NewFrame();
+}
+
+void GuiLayer::End()
+{
+	ImGui::Render();
 }
 
 void GuiLayer::SetTheme()
@@ -267,29 +319,64 @@ void GuiLayer::Render()
 
     const auto &io = ImGui::GetIO();
 
-#ifdef __APPLE__
+    auto backendAPI = device->GetBackendAPI();
+	const char *apiName = "Unknown";
+	switch (backendAPI)
+	{
+		 case BackendAPI::D3D11:
+			apiName = "D3D11";
+			break;
+		 case BackendAPI::D3D12:
+			apiName = "D3D12";
+			break;
+		 case BackendAPI::Vulkan:
+			apiName = "Vulkan";
+			break;
+		 case BackendAPI::Metal:
+			apiName = "Metal";
+			break;
+		 case BackendAPI::OpenGL:
+			apiName = "OpenGL";
+			break;
+		 default:
+			apiName = "Unknown";
+			break;
+	}
+
     sprintf(
         title,
-        "%s (Graphics API: %s, Physical Device: %s)",
+        "%s (Graphics API: %s) %.3f ms/frame (%.1f FPS)",
         Application::Name(),
-        Render::Api(),
-        Render::GraphicsRenderer()
-    );
-#else
-    sprintf(
-        title,
-        "%s (Graphics API: %s, Physical Device: %s) %.3f ms/frame (%.1f FPS)",
-        Application::Name(),
-        Render::Api(),
-        Render::GraphicsRenderer(),
+	    apiName,
         1000.0f / io.Framerate,
         io.Framerate
     );
-#endif
 
     TotalFrame++;
 	TotalFrameRate += io.Framerate;
     Application::SetTitle(title);
+}
+
+void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
+{
+	auto &io = ImGui::GetIO();
+
+	auto width  = window->GetWidth();
+	auto height = window->GetHeight();
+	io.DisplaySize = { (float)width, (float)height };
+
+	ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+	// Update and Render additional Platform Windows
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		 ImGui::UpdatePlatformWindows();
+		 ImGui::RenderPlatformWindowsDefault();
+		 if (window->GetType() == WindowType::GLFW)
+		 {
+			 glfwMakeContextCurrent((GLFWwindow *)window->GetBackendHandle());
+		 }
+	}
 }
 
 void GuiLayer::AddChild(Widget *widget)

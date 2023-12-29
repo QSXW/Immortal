@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shader.h"
+#include "vulkan/vulkan.h"
 
 namespace Immortal
 {
@@ -8,15 +9,21 @@ namespace Immortal
 class GLSLCompiler
 {
 public:
-    static bool Src2Spirv(Shader::API                 api,
-                          Shader::Stage               stage,
-                          uint32_t                    size,
-                          const char                 *data,
-                          const char                 *entryPoint,
-                          std::vector<uint32_t>      &spriv,
-                          std::string                &error);
+	static bool Compile(const std::string &name,
+	                    ShaderSourceType sourceType,
+	                    ShaderBinaryType binaryType,
+	                    ShaderStage stage,
+	                    uint32_t size,
+	                    const char *data,
+	                    const std::string &entryPoint,
+	                    std::vector<uint32_t> &spriv,
+	                    std::string &error);
+};
 
-    static bool Reflect(const std::vector<uint32_t> &spirv, std::vector<Shader::Resource> &resouces);
+class SPRIVReflector
+{
+public:
+	static bool Reflect(const std::vector<uint8_t> &spirv, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges);
 };
 
 };

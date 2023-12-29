@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Common.h"
+#include "Render/Queue.h"
+#include "Render/CommandBuffer.h"
+#include "Render/Swapchain.h"
+#include "Render/GPUEvent.h"
 
 namespace Immortal
 {
@@ -10,7 +14,8 @@ namespace D3D12
 class Device;
 class Fence;
 class CommandList;
-class Queue
+class GPUEvent;
+class Queue : public SuperQueue
 {
 public:
     enum class Flag
@@ -25,7 +30,19 @@ public:
 public:
 	Queue(Device *device, const D3D12_COMMAND_QUEUE_DESC &desc);
 
-    ~Queue();
+    virtual ~Queue() override;
+
+    virtual Anonymous GetBackendHandle() const;
+
+    virtual void WaitIdle(uint32_t timeout) override;
+
+    virtual void Wait(SuperGPUEvent *pEvent) override;
+
+	virtual void Signal(SuperGPUEvent *pEvent) override;
+
+	virtual void Submit(SuperCommandBuffer **ppCommandBuffer, size_t count, SuperGPUEvent **ppSignalEvents, uint32_t eventCount, SuperSwapchain *swapchain) override;
+
+	virtual void Present(SuperSwapchain *swapchain, SuperGPUEvent **ppSignalEvent, uint32_t eventCount) override;
 
     void ExecuteCommandLists(CommandList *pCommandList);
 
@@ -40,11 +57,9 @@ public:
     {
         return handle->Signal(fence, value);
     }
-};
 
-class TimelineQueue
-{
-
+protected:
+	URef<GPUEvent> gpuEvent;
 };
 
 }

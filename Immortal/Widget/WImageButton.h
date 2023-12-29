@@ -43,7 +43,7 @@ public:
 
             auto resource = imageResources[status];
             if (ImGui::ImageButton(
-                (ImTextureID)(uint64_t)*resource.image,
+                WIMAGE(resource.image),
                 { renderWidth, renderHeight },
                 resource.uv._0,
                 resource.uv._1,

@@ -4,6 +4,7 @@
 #include "Resource.h"
 #include "Descriptor.h"
 #include "DescriptorHeap.h"
+#include "Render/Swapchain.h"
 
 namespace Immortal
 {
@@ -12,10 +13,13 @@ class Window;
 namespace D3D12
 {
 
+class GPUEvent;
 class Queue;
 class RenderContext;
+class Device;
 class DescriptorHeap;
-class Swapchain
+class RenderTarget;
+class IMMORTAL_API Swapchain : public SuperSwapchain, public NonDispatchableHandle
 {
 public:
     enum class BitDepth
@@ -30,17 +34,32 @@ public:
 
     using Primitive = IDXGISwapChain4;
     D3D_OPERATOR_HANDLE()
+    D3D_SWAPPABLE(Swapchain)
 
 public:
-    Swapchain(RenderContext *context, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc);
+    Swapchain();
 
-	Swapchain(RenderContext *context, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc);
+    Swapchain(Device *device, Queue *queue, Window *window, const DXGI_SWAP_CHAIN_DESC1 &desc, SwapchainMode mode = SwapchainMode::None);
 
-    ~Swapchain();
+    Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1 &desc, SwapchainMode mode);
+
+    virtual ~Swapchain() override;
+
+    virtual void PrepareNextFrame() override;
+
+    virtual void Resize(uint32_t width, uint32_t height) override;
+
+    virtual SuperRenderTarget *GetCurrentRenderTarget() override;
 
     void CreateRenderTarget();
 
     void ClearRenderTarget();
+
+public:
+    void Present()
+    {
+        Present((UINT)mode, 0);
+    }
 
     void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
     {
@@ -109,27 +128,16 @@ public:
         handle->GetDesc1(desc);
     }
 
-    CPUDescriptor GetDescriptor()
+    void Swap(Swapchain &other)
     {
-        return rtvDescriptorHeap->StartOfCPU().Offset(bufferIndex, rtvDescriptorHeap->GetIncrement());
+        NonDispatchableHandle::Swap(other);
+        std::swap(mode,          other.mode         );
+        std::swap(renderTargets, other.renderTargets);
+        std::swap(bufferIndex,   other.bufferIndex  );
     }
 
-    ID3D12Resource *GetRenderTarget() const
-    {
-        return renderTargets[bufferIndex];
-    }
-
-    const std::vector<ID3D12Resource *> GetRenderTargets() const
-    {
-		return renderTargets;
-    }
-
-private:
-    RenderContext *context;
-
-    URef<DescriptorHeap> rtvDescriptorHeap;
-
-    std::vector<ID3D12Resource *> renderTargets;
+protected:
+    std::vector<URef<RenderTarget>> renderTargets;
 
     uint32_t bufferIndex = 0;
 };

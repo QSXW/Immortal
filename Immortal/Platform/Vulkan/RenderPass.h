@@ -9,33 +9,31 @@ namespace Vulkan
 {
 
 class Device;
-class RenderPass : public IObject
+class Texture;
+class RenderPass : public Handle<VkRenderPass>
 {
 public:
-    using Primitive = VkRenderPass;
-    VKCPP_OPERATOR_HANDLE()
+    VKCPP_SWAPPABLE(RenderPass)
 
 public:
     RenderPass();
 
-    RenderPass(Device *device, VkFormat colorFormat, VkFormat depthFormat, bool isPresent = true);
+    RenderPass(Device *device, const std::vector<Texture> &colorAttachments, const Texture &depthAttachment, bool isPresented);
 
-    RenderPass(Device *device, VkRenderPassCreateInfo *pCreateInfo);
-
-    RenderPass(RenderPass &&other);
-
-    RenderPass &operator =(RenderPass &&other);
+    RenderPass(Device *device, const VkRenderPassCreateInfo *pCreateInfo);
 
     ~RenderPass();
 
-    void Swap(RenderPass &other);
-
     void Invalidate(VkRenderPass other);
 
-    void Destroy();
+    void Release();
 
-    RenderPass(const RenderPass &other) = delete;
-    RenderPass &operator = (const RenderPass &other) = delete;
+public:
+    void Swap(RenderPass &other)
+    {
+        Handle::Swap(other);
+        std::swap(device, other.device);
+    }
 
 protected:
     Device *device{ nullptr };

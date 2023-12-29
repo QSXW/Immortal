@@ -1,163 +1,119 @@
 #include "Pipeline.h"
-#include "RenderContext.h"
+#include "Shader.h"
+#include "Buffer.h"
 
 namespace Immortal
 {
 namespace OpenGL
 {
 
-Pipeline::Pipeline(Ref<Shader::Super> superShader) :
-    Super{superShader},
-    handle{},
-    shader{superShader.InterpretAs<Shader>()},
-    pushConstants{new UniformBuffer{128, 0}}
+Pipeline::Pipeline() :
+    Super{},
+    Handle{},
+    pushConstantIndex{}
 {
-	GLsizei length;
-	GLint size;
-	GLenum type;
-	GLchar name[256] = {};
-
-    GLint numUniform;
-	glGetProgramiv(*shader, GL_ACTIVE_UNIFORMS, &numUniform);
-
-    for (int i = 0; i < numUniform; i++)
-	{
-		glGetActiveUniform(*shader, i, sizeof(name), &length, &size, &type, name);
-
-		if (type == (GLenum)DescriptorType::Sampler || type == (GLenum)DescriptorType::Image2D)
-		{
-			for (int j = 0; j < size; j++)
-			{
-				imageDescriptorTable.emplace_back(Descriptor{ .handle = 0, .Type = (DescriptorType)type, .Binding = U32(i + j), });
-			}
-		}
-    }
 }
 
 Pipeline::~Pipeline()
 {
-
 }
 
-void Pipeline::Set(const InputElementDescription &description)
+void Pipeline::Construct(SuperShader **_ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription)
 {
-    if (!desc.vertexBuffers.empty())
+    Shader **ppShader = (Shader **) _ppShader;
+    LikeProgram(ppShader, shaderCount);
+    Reflect();
+
+    vertexArray = VertexArray{ description };
+}
+
+
+void Pipeline::SetState()
+{
+    glEnable(GL_SCISSOR_TEST);
+    if (flags & State::Blend)
     {
-        handle.Set(dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get()), description);
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    if (flags & State::Depth)
+    {
+        glEnable(GL_DEPTH_TEST);
     }
     else
     {
-        inputElementDesription = description;
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_STENCIL_TEST);
     }
 }
 
-void Pipeline::Bind(const std::string &name, const SuperBuffer *superUniform)
+void Pipeline::LikeProgram(Shader **ppShader, size_t shaderCount)
 {
+    handle = glCreateProgram();
 
-}
-
-void Pipeline::Bind(SuperBuffer *super, uint32_t binding)
-{
-	auto buffer = dynamic_cast<Buffer *>(super);
-	bufferDescriptorTable.emplace_back(Descriptor{ .handle = *buffer, .Type = DescriptorType::Buffer, .Binding = binding, });
-}
-
-void Pipeline::Bind(SuperTexture *super, uint32_t binding)
-{
-	Texture *texture = dynamic_cast<Texture *>(super);
-	imageDescriptorTable[binding].handle = *texture;
-}
-
-void Pipeline::Set(Ref<SuperBuffer> buffer)
-{
-    if (buffer->GetType() == Buffer::Type::Vertex)
+    for (size_t i = 0; i < shaderCount; i++)
     {
-        desc.vertexBuffers.emplace_back(buffer);
-        if (!inputElementDesription.Empty())
+        glAttachShader(handle, *ppShader[i]);
+    }
+    glLinkProgram(handle);
+
+    GLint status = GL_TRUE;
+    glGetProgramiv(handle, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &maxLength);
+
+        std::vector<GLchar> error;
+        error.resize(maxLength);
+        glGetProgramInfoLog(handle, maxLength, &maxLength, error.data());
+
+        LOG::ERR("Program link failure!");
+        LOG::ERR("{}", error.data());
+    }
+
+    for (size_t i = 0; i < shaderCount; i++)
+    {
+        glDetachShader(handle, *ppShader[i]);
+    }
+}
+
+void Pipeline::Reflect()
+{
+    GLsizei length;
+    GLint size;
+    GLenum type;
+    GLchar name[256] = {};
+
+    GLint numUniform;
+    glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &numUniform);
+
+    uint32_t bufferIndex = 0;
+
+    for (int i = 0; i < numUniform; i++)
+    {
+        glGetActiveUniform(handle, i, sizeof(name), &length, &size, &type, name);
+        if (std::string{name}.find("push_constant") != std::string::npos ||
+            std::string{name}.find("PushConstant") != std::string::npos)
         {
-            handle.Set(dynamic_cast<Buffer *>(desc.vertexBuffers[0].Get()), inputElementDesription);
+            pushConstantIndex = i;
+            continue;
         }
-    }
-    if (buffer->GetType() == Buffer::Type::Index)
-    {
-        desc.indexBuffer = buffer;
-    }
-    handle.Bind(dynamic_cast<Buffer *>(buffer.Get()));
-}
 
-void Pipeline::Bind(const DescriptorBuffer *descriptorBuffer, uint32_t binding)
-{
-    for (int i = 0; i < descriptorBuffer->size(); i++)
-    {
-		imageDescriptorTable[i].handle = *descriptorBuffer->DeRef<uint32_t>(i);
-    }
-}
-
-void Pipeline::Draw()
-{
-	Submit([this] {
-		glUseProgram(*shader);
-		handle.Bind();
-
-		auto vertexBuffer = Get<Buffer::Type::Vertex>();
-		auto indexBuffer = Get<Buffer::Type::Index>();
-
-		vertexBuffer->Bind();
-		indexBuffer->Bind();
-
-		__BindDescriptorTable();
-		glDrawElements(GL_TRIANGLES, ElementCount, GL_UNSIGNED_INT, 0);
-
-		handle.Unbind();
-		glUseProgram(0);
-	});
-}
-
-Anonymous Pipeline::AllocateDescriptorSet(uint64_t uuid)
-{
-	(void) uuid;
-	bufferDescriptorTable.clear();
-
-	Submit([this] {
-		glUseProgram(*shader);
-	});
-
-	return nullptr;
-}
-
-void Pipeline::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
-{
-	Submit([=, this] {
-		glBindBufferBase(GL_UNIFORM_BUFFER, PUSH_CONSTANT_LOCATION, *pushConstants);
-		__BindDescriptorTable();
-		glDispatchCompute(nGroupX, nGroupY, nGroupZ);
-		shader->Deactivate();
-	});
-}
-
-void Pipeline::PushConstant(uint32_t size, const void *data, uint32_t offset)
-{
-	pushConstants->Update(size, data, offset);
-}
-
-void Pipeline::__BindDescriptorTable() const
-{
-	for (auto &descriptor : bufferDescriptorTable)
-	{
-		glBindBufferBase(GL_UNIFORM_BUFFER, descriptor.Binding, descriptor.handle);
-	}
-
-	for (auto &descriptor : imageDescriptorTable)
-	{
-		if (descriptor.Type == DescriptorType::Image2D)
-		{
-			glBindImageTexture(descriptor.Binding, descriptor.handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
-		}
-        else
+        DescriptorType descriptorType = DescriptorType::UniformBuffer;
+        if (type == GL_SAMPLER_2D || type == GL_IMAGE_2D)
         {
-			glBindTextureUnit(descriptor.Binding, descriptor.handle);
+            descriptorType = type == GL_IMAGE_2D ? DescriptorType::Image2D : DescriptorType::SamplerImage2D;
+            descriptors.emplace_back(Descriptor{
+                .handle  = 0,
+                .binding = (uint32_t)i,
+                .type    = descriptorType
+            });
         }
-	}
+
+    }
 }
 
 }

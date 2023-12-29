@@ -56,7 +56,7 @@ namespace Vulkan
 {
 
 Surface::Surface() :
-    handle{}
+    Handle{}
 {
 
 }
@@ -75,7 +75,7 @@ VkResult Surface::Create(Instance *instance, Window *window, const VkAllocationC
     }
 
     Window::Type type = window->GetType();
-    return CreateObject(*instance, type, window->Primitive(), &handle, nullptr);
+	return CreateObject(*instance, type, window->GetBackendHandle(), &handle, nullptr);
 }
 
 void Surface::Release(Instance *instance)

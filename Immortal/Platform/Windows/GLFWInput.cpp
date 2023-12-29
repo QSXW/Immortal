@@ -5,7 +5,7 @@ namespace Immortal
 {
     
 GLFWInput::GLFWInput(Window *window) :
-    windowHandle{ (GLFWwindow *)(window->Primitive()) }
+    windowHandle{ (GLFWwindow *)(window->GetBackendHandle()) }
 {
     !!Input::That ? throw Exception(SError::InvalidSingleton) : That = this;
 }

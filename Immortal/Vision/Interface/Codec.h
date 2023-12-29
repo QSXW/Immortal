@@ -169,13 +169,16 @@ struct Picture
 
     void ReleaseSharedData()
     {
-		if (shared && shared->memoryResource)
+		if (shared)
         {
 			if (shared->UnRef() == 0)
 			{
 				MemoryResource *memoryResource = shared->memoryResource;
 				shared->~SharedPictureData();
-				memoryResource->Release(shared);
+                if (memoryResource)
+                {
+					memoryResource->Release(shared);
+                }
 			}
 			shared._obj = nullptr;
         }
@@ -238,10 +241,35 @@ struct Picture
         return shared->data[0];
     }
 
+    uint8_t *GetData() const
+    {
+		return shared->data[0];
+    }
+
+    int GetLineSize(size_t index) const
+    {
+		return shared->linesize[index];
+    }
+
     void Reset(const void *ptr) const
     {
         shared->data[0] = (uint8_t *)ptr;
     }
+
+    const Format &GetFormat() const
+    {
+		return desc.format;
+    }
+
+    const uint32_t &GetWidth() const
+    {
+		return desc.width;
+    }
+
+    const uint32_t &GetHeight() const
+	{
+		return desc.height;
+	}
 
     Description desc;
 
