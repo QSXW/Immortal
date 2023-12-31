@@ -23,7 +23,7 @@ public:
 class SPRIVReflector
 {
 public:
-	static bool Reflect(const std::vector<uint8_t> &spirv, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges);
+	static bool Reflect(const void *spriv, size_t size, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges);
 };
 
 };
