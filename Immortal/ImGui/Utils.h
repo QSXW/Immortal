@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include "Math/Vector.h"
 
 namespace Immortal::UI
 {

@@ -14,10 +14,10 @@
 #include "FileSystem/FileSystem.h"
 
 #include "Framework/Application.h"
-#include "Framework/Async.h"
-#include "Framework/Layer.h"
-#include "Framework/Log.h"
-#include "Framework/Input.h"
+
+#include "Shared/Async.h"
+#include "Shared/Log.h"
+#include "Graphics/LightGraphics.h"
 
 #include "Helper/Arguments.h"
 
@@ -37,10 +37,6 @@
 #include "Helper/Platform.h"
 #include "Helper/json.h"
 
-#include "Render/DataSet.h"
-#include "Render/Shader.h"
-#include "Render/Texture.h"
-#include "Render/RenderTarget.h"
 #include "Render/Graphics.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"

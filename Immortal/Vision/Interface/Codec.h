@@ -5,7 +5,6 @@
 #include "Vision/Types.h"
 #include "Vision/Common/Error.h"
 #include "Vision/Common/Animator.h"
-#include "Framework/Async.h"
 #include "Memory/MemoryResource.h"
 
 namespace Immortal

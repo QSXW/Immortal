@@ -44,8 +44,6 @@
 
 #define AUTO_DEVICE_ID -1
 
-#include "Framework/Log.h"
-
 namespace Immortal
 {
 

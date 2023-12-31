@@ -38,7 +38,7 @@ public:
     Quaternion Orientation() const;
 
     float Pitch() const
-    { 
+    {
         return pitch;
     }
 

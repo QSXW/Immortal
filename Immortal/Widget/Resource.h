@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Render/Texture.h"
+#include "Graphics/Texture.h"
 #include "ImGui/GuiLayer.h"
 
 namespace Immortal

@@ -4,9 +4,9 @@
 #define HEVC_VULKAN_H__
 
 #include "Vision/Video/HEVC.h"
-#include "Platform/Vulkan/Common.h"
-#include "Platform/Vulkan/Device.h"
-#include "Platform/Vulkan/VideoSession.h"
+#include "Vulkan/Common.h"
+#include "Vulkan/Device.h"
+#include "Vulkan/VideoSession.h"
 #include <vk_video/vulkan_video_codec_h265std_decode.h>
 
 namespace Immortal

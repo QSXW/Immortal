@@ -7,6 +7,13 @@ namespace Immortal
 
 struct SamplingFactor
 {
+	SamplingFactor(uint32_t x = 0, uint32_t y = 0) :
+        x{ x },
+        y{ y }
+    {
+
+    }
+
     SamplingFactor(Format::ValueType format)
     {
         switch (format)

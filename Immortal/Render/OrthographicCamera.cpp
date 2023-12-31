@@ -1,6 +1,6 @@
 #include "OrthographicCamera.h"
 
-#include "Framework/Input.h"
+#include "Graphics/Input.h"
 #include "Framework/Timer.h"
 
 namespace Immortal

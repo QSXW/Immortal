@@ -4,7 +4,7 @@
 #include "Async.h"
 #include "Render/Graphics.h"
 #include "Script/ScriptEngine.h"
-#include "Render/AsyncCompute.h"
+#include "Graphics/AsyncCompute.h"
 
 namespace Immortal
 {

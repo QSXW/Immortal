@@ -4,7 +4,7 @@
 #include "Core.h"
 #include "Vision/Common/Animator.h"
 #include "Vision/Interface/Codec.h"
-#include "Platform/D3D12/VideoCommon.h"
+#include "D3D12/VideoCommon.h"
 #include "Vision/Video/HEVC.h"
 
 namespace Immortal

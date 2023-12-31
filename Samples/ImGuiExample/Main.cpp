@@ -1,13 +1,13 @@
 // Dear ImGui: standalone example application for Immortal Graphics API
 
-#include "imgui.h"
-#include "backends/imgui_impl_win32.h"
-#include "backends/imgui_impl_glfw.h"
+#include <imgui.h>
+#include <backends/imgui_impl_win32.h>
+#include <backends/imgui_impl_glfw.h>
 #include <GLFW/glfw3.h>
 
 #define IMGUI_UNLIMITED_FRAME_RATE
 
-#include "Render/LightGraphics.h"
+#include "Graphics/LightGraphics.h"
 #include "ImGui/imgui_impl_immortal.h"
 using namespace Immortal;
 
@@ -38,7 +38,7 @@ int main(int, char **)
 {
     LOG::Init();
 
-    BackendAPI backendAPI = BackendAPI::OpenGL;
+    BackendAPI backendAPI = BackendAPI::Vulkan;
 
     // Create a window
 	URef<Window> window = Window::CreateInstance("Immortal Graphics ImGui Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
@@ -222,8 +222,8 @@ int main(int, char **)
 
     queue->WaitIdle();
 
+    ShutDownWindow();
     ImGui_ImplImmortal_Shutdown();
-	ShutDownWindow();
     ImGui::DestroyContext();
 
     for (auto &commandBuffer : commandBuffers)

@@ -1,7 +1,7 @@
 #include "ObserverCamera.h"
 
 #include "Math/Math.h"
-#include "Framework/Input.h"
+#include "Graphics/Input.h"
 
 namespace Immortal
 {
@@ -54,7 +54,7 @@ void ObserverCamera::OnUpdate(float deltaTime)
         mouseButtons.Middle = true;
     }
 
-    Vector2 currentPos = Input::GetMousePosition();
+    Vector2 currentPos = (const Vector2 &)Input::GetMousePosition();
     int dx = (int)(mousePos.x - currentPos.x);
     int dy = -(int)(mousePos.y - currentPos.y);
 

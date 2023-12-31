@@ -1,6 +1,6 @@
 #include "EditorCamera.h"
 #include "Framework/Timer.h"
-#include "Framework/Input.h"
+#include "Input.h"
 #include "Math/Math.h"
 
 namespace Immortal
@@ -31,7 +31,7 @@ void EditorCamera::OnUpdate()
 {
     if (Input::IsKeyPressed(KeyCode::LeftAlt))
     {
-        const Vector2 &mouse = Input::GetMousePosition();
+        const Vector2 &mouse = (const Vector2 &)Input::GetMousePosition();
         Vector2 delta = (mouse - initialPosition) * 0.003f;
         initialPosition = mouse;
 

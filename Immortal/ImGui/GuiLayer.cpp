@@ -10,7 +10,7 @@
 
 #include "String/LanguageSettings.h"
 #include "FileSystem/Stream.h"
-#include "Framework/Async.h"
+#include "Shared/Async.h"
 #include "Widget/Widget.h"
 
 #ifdef _WIN32

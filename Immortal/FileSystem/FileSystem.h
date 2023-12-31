@@ -123,13 +123,13 @@ template <FileFormat T>
 inline constexpr bool IsFormat(const std::string &path)
 {
     auto id = MakeIdentifier(path);
-    return id == U64(T);
+	return id == uint64_t(T);
 }
 
 template <FileFormat T>
 inline constexpr bool IsFormat(uint64_t id)
 {
-    return id == U64(T);
+    return id == uint64_t(T);
 }
 
 static inline bool Is3DModel(const std::string &path)

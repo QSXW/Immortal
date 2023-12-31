@@ -49,8 +49,8 @@ struct AudioClip
         frames{},
         picture{picture}
     {
-        frames = picture.desc.width;
-        bytes  = picture.desc.width << 3;
+        frames = picture.GetWidth();
+		bytes  = frames << 3;
     }
 
     int Cosume(void *dst, uint32_t frameRequested)

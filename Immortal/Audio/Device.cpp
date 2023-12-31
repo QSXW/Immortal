@@ -15,6 +15,12 @@ static inline float Seconds2Nanoseconds(float seconds)
     return seconds * 1000000000;
 }
 
+struct StereoVector2
+{
+	float x;
+	float y;
+};
+
 AudioDevice::AudioDevice() :
     context{ AudioRenderContext::CreateInstance() },
     pts{ 0 },
@@ -28,8 +34,8 @@ AudioDevice::AudioDevice() :
     thread = new Thread{ [=, this] {
         uint64_t duration = 0;
         context->Begin();
-        Vector2 buffer[2048] = {};
-        Vector2 *ptr = buffer;
+		StereoVector2 buffer[2048] = {};
+		StereoVector2 *ptr = buffer;
 
         static int lastSamples = 1024;
         while (!stopping)
@@ -52,9 +58,9 @@ AudioDevice::AudioDevice() :
                 lastSamples = picture.desc.samples;
                 if (picture.desc.samples < 1024)
                 {
-                    size_t bytes = picture.desc.width << 3;
+                    size_t bytes = picture.GetWidth() << 3;
                     memcpy(ptr, picture.shared->data[0], bytes);
-                    ptr += picture.desc.width;
+					ptr += picture.GetWidth();
                     size_t frames = ptr - buffer;
                     if (frames > 1024)
                     {
