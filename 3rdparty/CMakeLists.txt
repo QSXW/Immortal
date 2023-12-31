@@ -153,7 +153,8 @@ set(IMGUI_FILES
     imstb_textedit.h
     imstb_truetype.h
     backends/imgui_impl_opengl3.cpp
-    backends/imgui_impl_glfw.cpp)
+    backends/imgui_impl_glfw.cpp
+    $<$<PLATFORM_ID:Windows>:backends/imgui_impl_win32.cpp>)
 
 list(TRANSFORM IMGUI_FILES PREPEND "${IMGUI_DIR}/")
 
@@ -349,11 +350,16 @@ add_library("external" INTERFACE)
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     Vulkan-Headers imgui spdlog_header_only
-    SPIRV spirv-cross-glsl libraw::libraw DirectXShaderCompilerHeaders
+    SPIRV spirv-cross-glsl
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
+    $<$<BOOL:${MONO_FOUND}>:mono>
+)
+
+add_library("ExternalVision" INTERFACE)
+target_link_libraries("ExternalVision" INTERFACE
+    libraw::libraw
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
-    $<$<BOOL:${MONO_FOUND}>:mono>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>)
 

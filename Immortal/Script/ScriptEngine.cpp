@@ -1,6 +1,6 @@
 #include "ScriptEngine.h"
 
-#include "Framework/Input.h"
+#include "Graphics/Input.h"
 #include "Framework/Utils.h"
 #include "Scene/Object.h"
 #include "Scene/Scene.h"

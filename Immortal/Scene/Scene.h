@@ -8,12 +8,9 @@
 #include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
 #include "Interface/IObject.h"
-#include "Render/Texture.h"
-#include "Render/Mesh.h"
-#include "Render/RenderTarget.h"
-#include "Render/Pipeline.h"
+#include "Graphics/LightGraphics.h"
 #include "Component.h"
-#include "Event/KeyEvent.h"
+#include "Graphics/Event/KeyEvent.h"
 #include <map>
 
 namespace Immortal
@@ -73,7 +70,7 @@ public:
     Object CreateObject(const std::string &name = "");
 
     void DestroyObject(Object &object);
-    
+
     Object Query(const std::string &name);
 
     void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
@@ -100,12 +97,12 @@ public:
     }
 
     const char *GetName() const
-    { 
+    {
         return name.c_str();
     }
 
     const ObserverCamera &GetObserver() const
-    { 
+    {
         return observerCamera;
     }
 
@@ -133,7 +130,7 @@ private:
 
     entt::registry registry;
 
-    std::multimap<std::string, int> objects; 
+    std::multimap<std::string, int> objects;
 
     struct Settings
     {

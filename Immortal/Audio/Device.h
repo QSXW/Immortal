@@ -6,12 +6,11 @@
 
 #pragma once
 
-#include "Audio/AudioSource.h"
 #include "Core.h"
-#include "Framework/Async.h"
+#include "Shared/Async.h"
 #include "Interface/IObject.h"
+#include "Audio/AudioSource.h"
 #include "AudioRenderContext.h"
-#include "Sync/Semaphore.h"
 
 namespace Immortal
 {

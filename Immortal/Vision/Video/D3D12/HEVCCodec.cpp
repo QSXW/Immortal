@@ -1,14 +1,13 @@
 #include "HEVCCodec.h"
 #include "Render/Graphics.h"
-#include "Platform/D3D12/Device.h"
 
 #if HAVE_FFMPEG
 extern "C"
 {
-#	include <libavcodec/avcodec.h>
-#	include <libavdevice/avdevice.h>
-#	include <libavformat/avformat.h>
-#	include <libavutil/avutil.h>
+#include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
 }
 #endif
 

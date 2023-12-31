@@ -9,10 +9,10 @@
 #include <queue>
 
 #include "Core.h"
-#include "Framework/Async.h"
+#include "Shared/Async.h"
+#include "Graphics/LightGraphics.h"
 #include "Render/Graphics.h"
 #include "Render/Mesh.h"
-#include "Render/Texture.h"
 #include "SceneCamera.h"
 #include "Vision/Interface/Codec.h"
 #include "Vision/Interface/Demuxer.h"

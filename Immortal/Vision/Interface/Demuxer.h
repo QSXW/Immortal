@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Format.h"
+#include "Graphics/Format.h"
 #include "Interface/IObject.h"
 #include "Vision/Types.h"
 #include "Vision/Common/Error.h"
 #include "Vision/Common/Animator.h"
+#include "String/IString.h"
 
 #include <string>
 

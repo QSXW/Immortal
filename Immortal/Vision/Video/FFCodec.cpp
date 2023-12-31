@@ -19,7 +19,7 @@ extern "C" {
 #endif
 }
 
-#include "Framework/Async.h"
+#include "Shared/Async.h"
 
 namespace Immortal
 {
@@ -215,25 +215,24 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         picture[2] = (uint8_t *)ref->data[2];
 
 #ifdef _WIN32
-if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
-{
-    auto &[texture, syncCtx] = *(AVD3D12VAFrame *)frame->data[0];
-    picture.shared->type = PictureType::Device;
-    picture[0] = (uint8_t *)texture;
-    picture[1] = (uint8_t *)syncCtx.fence;
-    picture[2] = (uint8_t *)syncCtx.fence_value;
-}
+        if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
+        {
+            auto &[texture, syncCtx] = *(AVD3D12VAFrame *)frame->data[0];
+            picture.shared->type = PictureType::Device;
+            picture[0] = (uint8_t *)texture;
+            picture[1] = (uint8_t *)syncCtx.fence;
+            picture[2] = (uint8_t *)syncCtx.fence_value;
+        }
 #endif
 
-memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
-
-picture.Connect([ref] {
-    Async::Execute([ref] {
-        av_frame_unref(ref);
-        av_frame_free((AVFrame **)&ref);
-        });
-    });
-picture.SetProperty(ColorSpaceConverter(handle->colorspace));
+        memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
+        picture.Connect([ref] {
+            Async::Execute([ref] {
+                av_frame_unref(ref);
+                av_frame_free((AVFrame **)&ref);
+                });
+            });
+        picture.SetProperty(ColorSpaceConverter(handle->colorspace));
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
@@ -343,9 +342,9 @@ static std::list<const char *> QueryDecoderPriorities(const AVCodecID id)
 
     case AV_CODEC_ID_AV1:
         return {
+			"av1_qsv",
             "libdav1d",
             "av1_nvdec",
-            "av1_qsv",
         };
 
     case AV_CODEC_ID_MJPEG:
@@ -401,7 +400,7 @@ static AVHWDeviceType QueryDecoderHWAccelType()
     AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
 
     static std::list<const char *> priorities = {
-	    "d3d12va",
+	    //"d3d12va",
 	    //"dxva2",
      //   "d3d11va",
     };
@@ -420,7 +419,7 @@ static AVHWDeviceType QueryDecoderHWAccelType()
 
 CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 {
-    auto params = Deanonymize<FFDemuxer::Params *>(anonymous);
+    auto params = (FFDemuxer::Params *)(anonymous);
     const AVStream *stream = params->stream;
     startTimestamp = stream->start_time;
 
@@ -477,7 +476,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
             const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
             if (externalCodec)
             {
-				auto type = GetDeviceType(p);
+				auto type = av_hwdevice_find_type_by_name(p);
                 if (type != AV_HWDEVICE_TYPE_NONE)
                 {
 					if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)

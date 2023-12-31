@@ -6,10 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SRC_FILES
-    slcpuid.h
     slapi.h
-    slcast.h
-    slcore.h
+    slcpuid.h
     slintrinsic.h)
 
 set(PROJECT_FILES

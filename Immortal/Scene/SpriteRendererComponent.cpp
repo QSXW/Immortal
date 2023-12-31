@@ -20,58 +20,128 @@ SpriteRendererComponent::~SpriteRendererComponent()
 
 }
 
+void GetSamplingFactor(Format::ValueType format, SamplingFactor *factors)
+{
+	switch (format)
+	{
+		case Format::YUV444P:
+		case Format::YUV444P10:
+		case Format::YUV444P12:
+		case Format::YUV444P16:
+			factors[0] = {};
+			factors[1] = {};
+			factors[2] = {};
+			break;
+
+		case Format::YUV422P:
+		case Format::YUV422P10:
+		case Format::YUV422P12:
+		case Format::YUV422P16:
+			factors[0] = {};
+			factors[1] = { 1, 0 };
+			factors[2] = { 1, 0 };
+			break;
+
+		case Format::YUV420P:
+		case Format::YUV420P10:
+		case Format::YUV420P12:
+		case Format::YUV420P16:
+		case Format::NV12:
+		case Format::P010LE:
+			factors[0] = {};
+			factors[1] = { 1, 1 };
+			factors[2] = { 1, 1 };
+			break;
+		case Format::Y210:
+		case Format::Y216:
+			factors[0] = { 1, 0 };
+			break;
+
+		default:
+			break;
+	}
+}
+
 void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 {
     Format targetFormat = Format::RGBA8;
     Format lumaFormat   = Format::R8;
 	Format chromaFormat = Format::RG8;
    
-    if (picture.desc.format.IsType(Format::_10Bits))
+	auto &format = picture.GetFormat();
+	if (format.IsType(Format::_10Bits))
 	{
 		lumaFormat   = Format::R16;
 		chromaFormat = Format::RG16;
 		targetFormat = Format::RGBA16;
 	}
+	if (format == Format::Y210)
+	{
+		lumaFormat = Format::RGBA16;
+	}
+
+	struct
+	{
+		uint32_t width;
+		uint32_t height;
+		uint32_t rowPitch;
+		size_t   size;
+		Format   format;
+	} data[3];
+
+	SamplingFactor factors[3] = {};
+	GetSamplingFactor(format, factors);
+
+	size_t totalSize = 0;
+
+	for (size_t i = 0; picture[i]; i++)
+	{
+		data[i].format   = lumaFormat;
+		if (i > 0 && format.IsType(Format::NV))
+		{
+			data[i].format = chromaFormat;
+		}
+		data[i].width    = picture.GetWidth()  >> factors[i].x;
+		data[i].height   = picture.GetHeight() >> factors[i].y;
+		data[i].rowPitch = SLALIGN(picture.GetLineSize(i), TextureAlignment);
+		data[i].size     = data[i].rowPitch * data[i].height;
+		totalSize += data[i].size;
+	}
 
 	uint32_t width  = picture.GetWidth();
 	uint32_t height = picture.GetHeight();
-	SamplingFactor samplingFactor{picture.GetFormat()};
-	uint32_t chromaWidth     = width  >> samplingFactor.x;
-	uint32_t chromaHeight    = height >> samplingFactor.y;
-	uint32_t lumaRowPitch    = SLALIGN(picture.GetLineSize(0), TextureAlignment);
-	uint32_t chromatRowPitch = SLALIGN(picture.GetLineSize(1), TextureAlignment);
-	size_t totalSize = 0;
-	size_t componentSize[3] = {};
-	auto lumaSize = lumaRowPitch * picture.GetHeight();
-	auto chromaSize = chromatRowPitch * picture.GetHeight();
-	totalSize = lumaSize + chromaSize * 2;
-
 	if (!Sprite || width != Sprite->GetWidth() || height != Sprite->GetHeight())
     {
 		Graphics::DiscardTexture(Sprite);
 		auto device = Graphics::GetDevice();
 		Sprite   = device->CreateTexture(targetFormat, width, height, Texture::CalculateMipmapLevels(picture.GetWidth(), picture.GetHeight()), 1, TextureType::Storage);
-		input[0] = device->CreateTexture(lumaFormat, width, height, 1, 1, TextureType::TransferDestination);
-		if (picture.GetFormat().IsType(Format::NV))
+		if (format.IsType(Format::NV))
 		{
 			pipeline      = Graphics::GetPipeline("color_space_nv122rgba");
 			descriptorSet = device->CreateDescriptorSet(pipeline);
-			input[1]      = device->CreateTexture(chromaFormat, chromaWidth, chromaHeight, 1, 1, TextureType::TransferDestination);
-			descriptorSet->Set(0, input[0]);
-			descriptorSet->Set(1, input[1]);
-			descriptorSet->Set(2, Sprite  );
+		}
+		else if (picture.GetFormat() == Format::Y210)
+		{
+			pipeline = Graphics::GetPipeline("color_space_y2102rgba");
+			descriptorSet = device->CreateDescriptorSet(pipeline);
 		}
 		else
 		{
 			pipeline      = Graphics::GetPipeline("color_space_yuvp2rgba");
 			descriptorSet = device->CreateDescriptorSet(pipeline);
-			input[1]      = device->CreateTexture(lumaFormat, chromaWidth, chromaHeight, 1, 1, TextureType::TransferDestination);
-			input[2]      = device->CreateTexture(lumaFormat, chromaWidth, chromaHeight, 1, 1, TextureType::TransferDestination);
-			descriptorSet->Set(0, input[0]);
-			descriptorSet->Set(1, input[1]);
-			descriptorSet->Set(2, input[2]);
-			descriptorSet->Set(3, Sprite  );
 		}
+
+		for (size_t i = 0; picture[i]; i++)
+		{
+			input[i] = device->CreateTexture(data[i].format, data[i].width, data[i].height, 1, 1, TextureType::TransferDestination);
+		}
+
+		uint32_t slot = 0;
+		for (; picture[slot]; slot++)
+		{
+			descriptorSet->Set(slot, input[slot]);
+		}
+		descriptorSet->Set(slot, Sprite);
 
 		if (picture.shared->type == Vision::PictureType::System)
 		{
@@ -79,9 +149,9 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		}
 	}
 
+#ifdef _WIN32
 	if (picture.shared->type == Vision::PictureType::Device)
 	{
-#ifdef _WIN32
 		ID3D12Fence *fence  = (ID3D12Fence *)picture[1];
 		uint64_t fenceValue = (uint64_t)picture[2];
 		Graphics::Execute<QueueTask>([=, this](Queue *_queue)
@@ -92,17 +162,8 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 				LOG::ERR("Failed to wait fence `{}` and value `{}`", (void *) fence, fenceValue);
 			}
 		});
+	}
 #endif
-	}
-	else
-	{
-		uint8_t *data = nullptr;
-		buffer->Map((void **) &data, totalSize, 0);
-		Graphics::MemoryCopyImage(data,                         lumaRowPitch,    picture[0], picture.GetLineSize(0), lumaFormat, width, height);
-		Graphics::MemoryCopyImage(data + lumaSize,              chromatRowPitch, picture[1], picture.GetLineSize(1), lumaFormat, chromaWidth, chromaHeight); 
-		Graphics::MemoryCopyImage(data + lumaSize + chromaSize, chromatRowPitch, picture[2], picture.GetLineSize(2), lumaFormat, chromaWidth, chromaHeight); 
-		buffer->Unmap();
-	}
 
 	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
 		if (picture.shared->type == Vision::PictureType::Device)
@@ -112,15 +173,26 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		}
 		else
 		{
-			commandBuffer->CopyBufferToImage(input[0], 0, buffer, lumaRowPitch, 0                    );
-			commandBuffer->CopyBufferToImage(input[1], 0, buffer, chromatRowPitch, lumaSize);
-			commandBuffer->CopyBufferToImage(input[2], 0, buffer, chromatRowPitch, lumaSize + chromaSize);
+			uint8_t *mapped = nullptr;
+			buffer->Map((void **) &mapped, totalSize, 0);
+			size_t offset = 0;
+			for (size_t i = 0; picture[i]; i++)
+			{
+				Graphics::MemoryCopyImage(mapped + offset, data[i].rowPitch, picture[i], picture.GetLineSize(i), data[i].format, data[i].width, data[i].height);
+				commandBuffer->CopyBufferToImage(input[i], 0, buffer, data[i].rowPitch, offset);
+				offset += data[i].size;
+			}
+			buffer->Unmap();
 		}
 	});
 	
 	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
 		commandBuffer->SetPipeline(pipeline);
-		if (picture.shared->type == Vision::PictureType::System)
+
+		uint32_t nThreadX = SLALIGN(data[0].width  / 32, 32);
+		uint32_t nThreadY = SLALIGN(data[0].height / 32, 32);
+
+		if (picture.shared->type == Vision::PictureType::System && !format.IsType(Format::NV) && format != Format::Y210 && format != Format::Y216)
 		{
 			struct PushConstant
 			{
@@ -133,13 +205,13 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 			    0.5f,
 			};
 			PushConstant pushConstant = {
-			    .samplingFactor = {sampling[samplingFactor.x], sampling[samplingFactor.y]},
+			    .samplingFactor = {sampling[factors[1].x], sampling[factors[1].y]},
 			    .nomalizedFactor = picture.GetFormat().IsType(Format::_10Bits) ? 65535.0f / 1023.0f : 1.0f,
 			};
 			commandBuffer->PushConstants(ShaderStage::Compute, &pushConstant, sizeof(pushConstant), 0);
 		}
 		commandBuffer->SetDescriptorSet(descriptorSet);
-		commandBuffer->Dispatch(SLALIGN(picture.GetLineSize(0) / lumaFormat.ComponentCount() / 32, 32), SLALIGN(picture.GetHeight() / 32, 32), 1);
+		commandBuffer->Dispatch(nThreadX, nThreadY, 1);
 		commandBuffer->GenerateMipMaps(Sprite, Filter::Linear);
 	});
 

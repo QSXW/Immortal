@@ -10,15 +10,16 @@
 #define WASAPI_CONTEXT_H_
 
 #include "AudioRenderContext.h"
-#include "Platform/D3D/Interface.h"
 
 #include <mutex>
 #include <audioclient.h>
 #include <mmdeviceapi.h>
+#include <wrl/client.h>
 
 namespace Immortal
 {
 
+using Microsoft::WRL::ComPtr;
 class WASAPIContext : public AudioRenderContext
 {
 public:

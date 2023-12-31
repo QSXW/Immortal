@@ -118,7 +118,7 @@ public:
         auto stream = handle->streams[GetIndex(type)];
 
 		FFDemuxer::Params params = { .stream = stream };
-		ffCodec->SetCodecContext(Anonymize(params));
+		ffCodec->SetCodecContext((void *)&params);
 
         auto animator = ffCodec->GetAddress<Animator>();
 

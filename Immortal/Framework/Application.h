@@ -13,7 +13,7 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 #include "Interface/IObject.h"
-#include "Render/LightGraphics.h"
+#include "Graphics/LightGraphics.h"
 
 namespace Immortal
 {
@@ -101,7 +101,7 @@ private:
     URef<Device> device;
 
     URef<Queue> queue;
-    
+
     URef<Swapchain> swapchain;
 
     URef<GPUEvent> gpuEvent;
@@ -134,9 +134,9 @@ private:
 
     EventSink<Application> eventSink;
 
-    static Application *This;
-
 public:
+	static Application *This;
+
     Configuration configuration{};
 };
 

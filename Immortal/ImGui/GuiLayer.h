@@ -9,7 +9,7 @@
 #include "Interface/IObject.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
-#include "Render/LightGraphics.h"
+#include "Graphics/LightGraphics.h"
 
 #define DEFINE_CPP_STRING_API(FN_NAME, ...) \
     template <class...  Args> \

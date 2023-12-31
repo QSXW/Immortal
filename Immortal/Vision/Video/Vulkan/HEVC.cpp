@@ -1,4 +1,5 @@
 #include "HEVC.h"
+#include "Render/Graphics.h"
 
 namespace Immortal
 {
@@ -48,7 +49,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
 {
     Super::Decode(rbsp);
 
-    auto device = Deanonymize<Immortal::Vulkan::Device *>(Graphics::GetDevice());
+    auto device = (Immortal::Vulkan::Device *)(Graphics::GetDevice());
     auto &desc = picture.desc;
     if (!session)
     {
@@ -66,7 +67,7 @@ CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
         session = new VideoSession{
             device,
             desc.format,
-            VkExtent2D{ U32(desc.width), U32(desc.height) },
+            VkExtent2D{ uint32_t(desc.width), uint32_t(desc.height) },
             &profile,
             };
     }

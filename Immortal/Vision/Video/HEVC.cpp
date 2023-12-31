@@ -27,7 +27,7 @@ static inline int32_t FilterByteStream(std::vector<uint8_t> &dst, const uint8_t 
     constexpr int32_t emulation_prevention_three_byte = 0x3;
     auto ptr = src;
 
-    uint32_t start_code_prefix_one_4bytes = *rcast<const uint32_t *>(ptr);
+    uint32_t start_code_prefix_one_4bytes = *(const uint32_t *)(ptr);
     if (start_code_prefix_one_4bytes == 0x01000000)
     {
         ptr += 4;

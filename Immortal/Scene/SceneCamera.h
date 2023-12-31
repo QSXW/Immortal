@@ -25,7 +25,7 @@ public:
     }
 
     void SetPerspectiveVerticalFOV(float verticalFov)
-    { 
+    {
         perspectiveFOV = Vector::Radians(verticalFov);
     }
 
@@ -60,17 +60,17 @@ public:
     }
 
     float OrthographicSize() const
-    { 
+    {
         return orthographicSize;
     }
 
     float &OrthographicSize()
-    { 
+    {
         return orthographicSize;
     }
 
     void SetOrthographicNearClip(float nearClip)
-    { 
+    {
         orthographicNear = nearClip;
     }
 
@@ -95,7 +95,7 @@ public:
     }
 
     ProjectionType GetType() const
-    { 
+    {
         return projectionType;
     }
 
@@ -108,7 +108,7 @@ protected:
     float perspectiveFOV{ Vector::Radians(90.0f) };
     float perspectiveNear{ 0.1f };
     float perspectiveFar{ 1000.0f };
-              
+
     float orthographicSize{ 10.0f };
     float orthographicNear{ -1.0f };
     float orthographicFar{ 1.0f };

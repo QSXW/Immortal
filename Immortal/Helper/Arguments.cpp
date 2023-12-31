@@ -1,5 +1,5 @@
 #include "Arguments.h"
-#include "Framework/Log.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

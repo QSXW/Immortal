@@ -1,14 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Camera.h"
-#include "Texture.h"
-#include "Shader.h"
-#include "Descriptor.h"
-#include "WindowCapture.h"
-#include "Math/Vector.h"
-#include "Device.h"
-#include "AsyncCompute.h"
+#include "Graphics/LightGraphics.h"
 
 namespace Immortal
 {
