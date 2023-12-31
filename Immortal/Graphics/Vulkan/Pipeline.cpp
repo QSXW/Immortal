@@ -107,20 +107,22 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
 
     std::vector<VkPushConstantRange> pushConstantRanges;
 	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
+	VkPipelineShaderStageModuleIdentifierCreateInfoEXT pipelineShaderStageModuleIdentifierCreateInfos[2] = {};
 
+    bool isShaderModuleIdentifierEnabled = false;
     Shader **ppShader = (Shader **)(_ppShader);
     for (size_t i = 0; i < shaderCount; i++)
     {
         Shader *shader = ppShader[i];
-        stageCreateInfo.emplace_back(VkPipelineShaderStageCreateInfo{
-            .sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext               = nullptr,
-            .flags               = 0,
-            .stage               = shader->GetStage(),
-            .module              = *shader,
-            .pName               = shader->GetEntryPoint(),
-            .pSpecializationInfo = nullptr,
-        });
+        VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+
+		shader->GetPipelineShaderStageCreateInfo(&pipelineShaderStageCreateInfo, &pipelineShaderStageModuleIdentifierCreateInfos[i]);
+		stageCreateInfo.emplace_back(pipelineShaderStageCreateInfo);
+
+        if (pipelineShaderStageModuleIdentifierCreateInfos[i].identifierSize > 0)
+        {
+		    isShaderModuleIdentifierEnabled = true;
+        }
 
         pushConstantRanges.insert(pushConstantRanges.end(), shader->GetPushConstantRanges().begin(), shader->GetPushConstantRanges().end());
 		descriptorSetLayoutBindings.insert(descriptorSetLayoutBindings.end(), shader->GetDescriptorSetLayoutBinding().begin(), shader->GetDescriptorSetLayoutBinding().end());
@@ -319,6 +321,11 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .basePipelineHandle  = VK_NULL_HANDLE,
         .basePipelineIndex   = 0,
     };
+
+    if (isShaderModuleIdentifierEnabled)
+    {
+		createInfo.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    }
 
     Check(device->CreatePipelines(pipelineCache, 1, &createInfo, &handle));
 }

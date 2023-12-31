@@ -28,11 +28,9 @@ public:
 
     virtual ~Shader() override;
 
-    VkShaderModule Load(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
+    void Load(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
-    VkShaderModule Load(const std::string &filename, Stage stage);
-
-    VkPipelineShaderStageCreateInfo CreateStage(VkShaderModule module, VkShaderStageFlagBits stage);
+    void GetPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo *pPipelineShaderStageCreateInfo, VkPipelineShaderStageModuleIdentifierCreateInfoEXT *pIdentifierCreateInfo);
 
 public:
     const std::vector<VkDescriptorSetLayoutBinding> &GetDescriptorSetLayoutBinding() const
@@ -65,7 +63,7 @@ public:
     }
 
 protected:
-	VkShaderModule CreateModuleBySpriv(const std::vector<uint8_t> &spirv, VkShaderStageFlagBits stage);
+	void Construct(const VkShaderModuleCreateInfo &createInfo);
 
 protected:
     Device *device;
@@ -77,6 +75,10 @@ protected:
     std::string entryPoint;
 
     VkShaderStageFlagBits stage;
+
+    uint32_t identifierSize;
+
+	uint8_t identifier[VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT];
 };
 
 }

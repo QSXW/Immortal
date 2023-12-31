@@ -86,6 +86,11 @@ public:
         chunks.emplace_back(sizeof(T), constant);
     }
 
+    void Append(const void *data, size_t size)
+    {
+		chunks.emplace_back(size, data);
+    }
+
     void Write()
     {
         for (auto &c : chunks)

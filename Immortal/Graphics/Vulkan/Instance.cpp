@@ -292,28 +292,30 @@ SuperDevice *Instance::CreateDevice(int deviceId)
 	physicalDevice->Activate(Vulkan::PhysicalDevice::Feature::IndependentBlend);
 
 	const std::unordered_map<const char *, bool> deviceExtensions{
-	    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,                false },
-	    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,       false },
-#ifdef __APPLE__                                          
-	    {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,        false },
+	    { VK_KHR_SWAPCHAIN_EXTENSION_NAME,                       false },
+	    { VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,              false },
+#ifdef __APPLE__                                                 
+	    {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,               false },
 #endif                                                    
-	    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,   true  },
-	    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,     true  },
-	    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,    true  },
-	    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, true  },
-	    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,      true  },
-	    { VK_KHR_SPIRV_1_4_EXTENSION_NAME,                true  },
-	    { VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,    true  },
-	    { VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,        true  },
-	    { VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,              true  },
-	    { VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,       true  },
-	    { VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,       true  },
-	    { VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, true  },
-	    { VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,        false },
-	    { VK_KHR_MAINTENANCE1_EXTENSION_NAME,             false },
+	    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,          true  },
+	    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,            true  },
+	    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,           true  },
+	    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,        true  },
+	    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,             true  },
+	    { VK_KHR_SPIRV_1_4_EXTENSION_NAME,                       true  },
+	    { VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,           true  },
+	    { VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,               true  },
+	    { VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,                     true  },
+	    { VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,              true  },
+	    { VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,              true  },
+	    { VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,        true  },
+	    { VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,               false },
+	    { VK_KHR_MAINTENANCE1_EXTENSION_NAME,                    false },
+        { VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, true  },
+        { VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,        true  }
 	};
 
-	return new Device{ physicalDevice, deviceExtensions };
+    return new Device{ physicalDevice, deviceExtensions };
 }
 
 void Instance::EnumeratePhysicalDevice()

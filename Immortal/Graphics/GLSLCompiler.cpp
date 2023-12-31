@@ -121,9 +121,9 @@ inline VkDescriptorSetLayoutBinding GetDescriptorSetLayout(spirv_cross::Compiler
     return binding;
 }
 
-bool SPRIVReflector::Reflect(const std::vector<uint8_t> &spirv, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges)
+bool SPRIVReflector::Reflect(const void *spriv, size_t size, std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, std::vector<VkPushConstantRange> &pushConstantRanges)
 {
-	URef<spirv_cross::CompilerGLSL> glsl{new spirv_cross::CompilerGLSL{(const uint32_t *) spirv.data(), spirv.size() / sizeof(uint32_t)}};
+	URef<spirv_cross::CompilerGLSL> glsl{new spirv_cross::CompilerGLSL{ (const uint32_t *) spriv, size / sizeof(uint32_t) }};
     if (!glsl)
     {
         return false;

@@ -131,6 +131,11 @@ Device::Device(PhysicalDevice *physicalDevice, std::unordered_map<const char*, b
     {
 		physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR);
 	}
+    if (IsEnabled(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME))
+    {
+		physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT);
+		physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePipelineCreationCacheControlFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES);
+    }
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
