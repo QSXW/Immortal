@@ -35,6 +35,7 @@ add_subdirectory(Samples/MediaTest)
 add_subdirectory(Samples/ScriptBenchmark)
 add_subdirectory(Samples/RawExtractor)
 add_subdirectory(Samples/ImGuiExample)
+add_subdirectory(Samples/HelloTriangle)
 
 set(IMMORTAL_ASSET_DIR ${IMMORTAL_ASSET_DIR} PARENT_SCOPE)
 set(IMMORTAL_RUNTIME ${IMMORTAL_RUNTIME} PARENT_SCOPE)
