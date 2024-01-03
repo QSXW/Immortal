@@ -20,7 +20,7 @@ public:
     VKCPP_SWAPPABLE(CommandPool)
 
 public:
-    CommandPool(Device *device = nullptr, uint32_t queueFamilyIndex = 0, VkCommandPoolResetFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);   
+    CommandPool(Device *device = nullptr, uint32_t threadId = 0, uint32_t queueFamilyIndex = 0, VkCommandPoolResetFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);   
 
     ~CommandPool();
 
@@ -52,6 +52,8 @@ private:
     Device *device;
 
     VkCommandPoolResetFlags flags;
+
+    uint32_t threadId;
 
     uint32_t queueFamilyIndex;
 };

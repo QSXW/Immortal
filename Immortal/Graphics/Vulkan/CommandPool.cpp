@@ -7,9 +7,10 @@ namespace Immortal
 namespace Vulkan
 {
 
-CommandPool::CommandPool(Device *device, uint32_t queueFamilyIndex, VkCommandPoolResetFlags flags) :
+CommandPool::CommandPool(Device *device, uint32_t threadId, uint32_t queueFamilyIndex, VkCommandPoolResetFlags flags) :
     Handle{},
     device{ device },
+    threadId{ threadId },
     flags{ flags }
 {
     VkCommandPoolCreateInfo createInfo = {

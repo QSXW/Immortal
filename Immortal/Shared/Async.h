@@ -26,12 +26,12 @@ public:
 
     using Semaphore = State;
 
-    static long Id()
+    static uint32_t Id()
     {
 #ifndef __GNUC__
         return GetCurrentThreadId();
 #else
-        return (long)pthread_self();
+		return (uint32_t)pthread_self();
 #endif
     }
 
