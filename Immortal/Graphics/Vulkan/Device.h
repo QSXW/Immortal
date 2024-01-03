@@ -16,6 +16,7 @@
 
 #include <queue>
 #include <future>
+#include <mutex>
 
 namespace Immortal
 {
@@ -24,7 +25,7 @@ namespace Vulkan
 
 class DescriptorPool;
 class Swapchain;
-class Device : public SuperDevice
+class IMMORTAL_API Device : public SuperDevice
 {
 public:
     static inline Device *That = nullptr;
@@ -1361,10 +1362,6 @@ public:
         {
             return queues;
         }
-        if constexpr (IsPrimitiveOf<CommandPool, T>())
-        {
-            return *commandPool;
-        }
     }
 
     VkResult AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets);
@@ -1502,7 +1499,8 @@ protected:
 
     URef<DescriptorPool> descriptorPool;
 
-    URef<CommandPool> commandPool;
+    std::mutex mutex;
+    std::unordered_map<uint32_t, URef<CommandPool>> commandPools;
 
     bool isSubmitted = false;
 

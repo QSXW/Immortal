@@ -14,6 +14,8 @@
 #include "Pipeline.h"
 #include "Texture.h"
 
+#include "Shared/Async.h"
+
 namespace Immortal
 {
 namespace Vulkan
@@ -52,7 +54,7 @@ Device::Device(PhysicalDevice *physicalDevice, std::unordered_map<const char*, b
         queueCreateInfos[index].pQueuePriorities = queueProps[index].data();
     }
     std::vector<VkExtensionProperties> availableExtensions;
-    Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions)); 
+    Check(physicalDevice->EnumerateDeviceExtensionProperties(availableExtensions));
 
     for (auto &extension : availableExtensions)
     {
@@ -218,7 +220,7 @@ Device::~Device()
 {
     Wait();
 
-    commandPool.Reset();
+    commandPools.clear();
     descriptorPool->Destroy();
     semaphorePool.Reset();
 
@@ -285,9 +287,21 @@ SuperQueue *Device::CreateQueue(QueueType type, QueuePriority priority)
 
 SuperCommandBuffer *Device::CreateCommandBuffer(QueueType type)
 {
-    if (!commandPool)
+	CommandPool *commandPool = nullptr;
+
     {
-        commandPool = new CommandPool{ this };
+		auto threadId = Thread::Id();
+		std::unique_lock lock{mutex};
+		auto it = commandPools.find(threadId);
+		if (it == commandPools.end())
+		{
+			commandPool = new CommandPool{ this, threadId };
+			commandPools[threadId] = commandPool;
+		}
+        else
+        {
+			commandPool = it->second;
+        }
     }
 
     return new CommandBuffer{ commandPool };
