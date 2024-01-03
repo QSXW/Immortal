@@ -23,12 +23,12 @@ VkPrimitiveTopology CAST(GraphicsPipeline::PrimitiveType type)
     }
 }
 
-Pipeline::Pipeline(Device *device) :
+Pipeline::Pipeline(Device *device, VkPipelineBindPoint bindPoint) :
     device{ device },
     pipelineCache{ VK_NULL_HANDLE },
     pipelineLayout{},
     descriptorSetLayout{ VK_NULL_HANDLE },
-    bindPoint{}
+    bindPoint{ bindPoint }
 {
 
 }
@@ -330,22 +330,16 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
     Check(device->CreatePipelines(pipelineCache, 1, &createInfo, &handle));
 }
 
-ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
-    Pipeline{ device }
+ComputePipeline::ComputePipeline(Device *device, Shader *shader) :
+    Pipeline{ device, VK_PIPELINE_BIND_POINT_COMPUTE }
 {
-    Shader *shader = InterpretAs<Shader>(superShader);
+    THROWIF(shader->GetStage() != VK_SHADER_STAGE_COMPUTE_BIT, "Init compute pipeline with incorrect shader source type");
 
-    THROWIF(shader->GetStage() == VK_SHADER_STAGE_COMPUTE_BIT, "Init compute pipeline with incorrect shader source type");
+    ConstructPipelineLayout(shader->GetDescriptorSetLayoutBinding(), shader->GetPushConstantRanges());
 
-    VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {
-        .sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .pNext               = nullptr,
-        .flags               = 0,
-        .stage               = shader->GetStage(),
-        .module              = *shader,
-        .pName               = shader->GetEntryPoint(),
-        .pSpecializationInfo = nullptr,
-    };
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+	VkPipelineShaderStageModuleIdentifierCreateInfoEXT shaderStageModuleIdentifierCreateInfo{};
+	shader->GetPipelineShaderStageCreateInfo(&shaderStageCreateInfo, &shaderStageModuleIdentifierCreateInfo);
 
     VkComputePipelineCreateInfo createInfo{
         .sType              = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
@@ -357,7 +351,18 @@ ComputePipeline::ComputePipeline(Device *device, Shader::Super *superShader) :
         .basePipelineIndex  = 0,
     };
 
-    device->CreatePipelines(pipelineCache, 1, &createInfo, &handle);
+    if (shaderStageModuleIdentifierCreateInfo.identifierSize)
+    {
+		createInfo.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    }
+
+    Check(device->CreatePipelines(pipelineCache, 1, &createInfo, &handle));
+}
+
+ComputePipeline::ComputePipeline(Device *device, SuperShader *shader) :
+    ComputePipeline{ device, InterpretAs<Shader>(shader) }
+{
+
 }
 
 ComputePipeline::~ComputePipeline()
