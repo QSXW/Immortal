@@ -1174,6 +1174,8 @@ public:
 
 	virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
+    virtual SuperComputePipeline *CreateComputePipeline(SuperShader *shader) override;
+
 	virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
 
 	virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;

@@ -40,7 +40,7 @@ public:
     VKCPP_SWAPPABLE(Pipeline)
 
 public:
-	Pipeline(Device *device = nullptr);
+	Pipeline(Device *device = nullptr, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     virtual ~Pipeline() override;
 
@@ -160,6 +160,8 @@ public:
     static constexpr VkPipelineBindPoint BindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 
 public:
+	ComputePipeline(Device *device, Shader *shader);
+
 	ComputePipeline(Device *device, SuperShader *shader);
 
     virtual ~ComputePipeline() override;

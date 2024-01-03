@@ -342,6 +342,11 @@ SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
     return new GraphicsPipeline{ this };
 }
 
+SuperComputePipeline *Device::CreateComputePipeline(SuperShader *shader)
+{
+	return new ComputePipeline{ this, InterpretAs<Shader>(shader) };
+}
+
 SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type)
 {
     return new Texture{ this, format, width, height, mipLevels, arrayLayers, type };
