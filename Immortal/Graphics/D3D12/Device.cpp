@@ -65,19 +65,6 @@ Device::~Device()
 	}
 
     handle.Reset();
-
-#ifdef _DEBUG
-    HMODULE dxgidebug = LoadLibraryA("dxgidebug.dll");
-	if (dxgidebug)
-    {
-        ComPtr<IDXGIDebug> dxgiDebug;
-		auto __DXGIGetDebugInterface = (decltype(&DXGIGetDebugInterface))::GetProcAddress(dxgidebug, "DXGIGetDebugInterface");
-        Check(__DXGIGetDebugInterface(IID_PPV_ARGS(&dxgiDebug)));
-        Check(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
-
-		FreeLibrary(dxgidebug);
-    }
-#endif
 }
 
 Anonymous Device::GetBackendHandle() const
