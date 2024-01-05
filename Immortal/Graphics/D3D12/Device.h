@@ -82,8 +82,6 @@ public:
 
     void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount);
 
-    void Destory(ID3D12Resource *pResource);
-
 public:
 #define DEFINE_CRETE_FUNC(U, T, O) \
     HRESULT Create(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \
@@ -261,8 +259,7 @@ protected:
     std::shared_mutex pipelineMutex;
     std::unordered_map<std::string, URef<Pipeline>> pipelines;
 
-    std::mutex resourceMutex;
-	std::vector<ID3D12Resource *> resources;
+    ComPtr<ID3D12InfoQueue1> infoQueue;
 };
 
 }
