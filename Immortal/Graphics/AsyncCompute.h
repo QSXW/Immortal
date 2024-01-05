@@ -156,6 +156,10 @@ public:
 
     bool IsExecutionCompleted(uint64_t value);
 
+    void WaitIdle();
+
+    void Join();
+
 public:
     template <class T, class ... Args>
 	void Execute(Args &&...args)
