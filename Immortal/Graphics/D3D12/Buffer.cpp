@@ -90,7 +90,8 @@ void Buffer::Construct()
         device->CreateConstantBufferView(&desc, descriptor);
     }
 #ifdef _DEBUG
-    resource->SetName(L"Buffer");
+	std::wstring name = L"Buffer_" + std::to_wstring(GetSize());
+	resource->SetName(name.c_str());
 #endif
 }
 
