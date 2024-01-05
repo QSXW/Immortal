@@ -40,6 +40,26 @@ static D3D12_COMMAND_LIST_TYPE CAST(QueueType type)
 	}
 }
 
+void MessageCallbackFunc(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID ID, LPCSTR pDescription, void *pContext)
+{
+	switch (severity)
+	{
+		case D3D12_MESSAGE_SEVERITY_WARNING:
+			LOG::WARN("{}", pDescription);
+			break;
+
+		case D3D12_MESSAGE_SEVERITY_INFO:
+		case D3D12_MESSAGE_SEVERITY_MESSAGE:
+			LOG::INFO("{}", pDescription);
+			break;
+
+		case D3D12_MESSAGE_SEVERITY_CORRUPTION:
+		case D3D12_MESSAGE_SEVERITY_ERROR:
+	    default:
+			LOG::ERR("{}", pDescription);
+	}
+}
+
 Device::Device(PhysicalDevice *phsicalDevice) :
     physicalDevice{ phsicalDevice }
 {
@@ -50,6 +70,24 @@ Device::Device(PhysicalDevice *phsicalDevice) :
 		D3D_FEATURE_LEVEL_11_0,
 		IID_PPV_ARGS(&handle))
 	);
+
+#ifdef _DEBUG
+	ComPtr<ID3D12InfoQueue> infoQueueInterface;
+	HRESULT hr = handle->QueryInterface<ID3D12InfoQueue>(&infoQueueInterface);
+	if (SUCCEEDED(hr) && infoQueueInterface)
+	{
+		hr = infoQueueInterface->QueryInterface<ID3D12InfoQueue1>(&infoQueue);
+		if (SUCCEEDED(hr) && infoQueue)
+		{
+			DWORD callbackCookie = 0;
+			hr = infoQueue->RegisterMessageCallback(&MessageCallbackFunc, D3D12_MESSAGE_CALLBACK_FLAG_NONE, (void *) this, &callbackCookie);
+			if (FAILED(hr) || !callbackCookie)
+			{
+				LOG::ERR("Failed to register message callback!");
+			}
+		}
+	}
+#endif
 }
 
 Device::~Device()
@@ -64,6 +102,7 @@ Device::~Device()
 		shaderVisibleDescriptorPools[i].Reset();
 	}
 
+	infoQueue.Reset();
     handle.Reset();
 }
 
@@ -257,7 +296,7 @@ Descriptor Device::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t 
 	auto &allocator = descriptorPools[type];
 	if (!allocator)
 	{
-		allocator = new DescriptorPool{ 
+		allocator = new DescriptorPool{
 			this,
 			type
 		};
@@ -277,13 +316,6 @@ void Device::AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, De
 		};
 	}
 	allocator->Allocate(ppHeap, pBaseDescriptor, descriptorCount);
-}
-
-void Device::Destory(ID3D12Resource *pResource)
-{
-	pResource->AddRef();
-	std::lock_guard lock{ resourceMutex };
-	resources.emplace_back(pResource);
 }
 
 }
