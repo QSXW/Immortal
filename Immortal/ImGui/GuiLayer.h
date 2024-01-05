@@ -182,7 +182,13 @@ protected:
 
 	Window *window;
 
-    std::function<void()> platformSpecificNewFrame;
+    std::function<void()> platformSpecificWindow;
+
+    struct
+    {
+		std::function<void()> NewFrame;
+		std::function<void()> ShutDown;
+    } platformSpecficWindow;
 
     Ref<WDockerSpace> dockspace;
 
