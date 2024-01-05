@@ -10,6 +10,9 @@
 
 using namespace Immortal;
 
+#define DEFAULT_VERTEX_SIZE 5000
+#define DEFAULT_INDEX_SIZE  10000
+
 struct ImGui_ImplImmortal_Data
 {
     Device                 *device;
@@ -371,12 +374,12 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
 
     if (!fr->vertexBuffer || fr->vertexBuffer->GetSize() < totalVertexSize)
     {
-        fr->vertexBuffer = bd->device->CreateBuffer(totalVertexSize, BufferType::Vertex);
+        fr->vertexBuffer = bd->device->CreateBuffer(totalVertexSize + DEFAULT_VERTEX_SIZE, BufferType::Vertex);
     }
 
     if (!fr->indexBuffer || fr->indexBuffer->GetSize() < totalIndexSize)
     {
-        fr->indexBuffer = bd->device->CreateBuffer(totalIndexSize, BufferType::Index);
+        fr->indexBuffer = bd->device->CreateBuffer(totalIndexSize + DEFAULT_INDEX_SIZE, BufferType::Index);
     }
 
     if (bd->device->GetBackendAPI() == BackendAPI::OpenGL || bd->device->GetBackendAPI() == BackendAPI::D3D11)
@@ -646,7 +649,7 @@ static void ImGui_ImplImmortal_RenderWindow(ImGuiViewport *viewport, void *rende
         GPUEvent *gpuEvents[] = { vd->gpuEvent };
 		bd->queue->Submit(&commandBuffer, 1, gpuEvents, 1, vd->swapchain);
 	}
-} 
+}
 
 static void ImGui_ImplImmortal_SwapBuffers(ImGuiViewport *viewport, void *render_arg)
 {

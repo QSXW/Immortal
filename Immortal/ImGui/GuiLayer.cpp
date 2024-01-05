@@ -42,21 +42,23 @@ GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swap
     device{ device },
     queue{ queue },
     swapchain{ swapchain },
-    window{ window }
+    window{ window },
+    platformSpecficWindow{}
 {
-	This = this;
+    This = this;
 
     themeEditor = new WWindow;
-	themeEditor
-	    ->Connect([this] {
-		    UpdateTheme();
-	    });
+    themeEditor
+        ->Connect([this] {
+            UpdateTheme();
+        });
 }
 
 GuiLayer::~GuiLayer()
 {
+	SLASSERT(!platformSpecficWindow.NewFrame && "OnDetach isn't called!");
     ImGui::DestroyContext();
-	This = nullptr;
+    This = nullptr;
 
     LOG::INFO("Rendered {} frame(s), Avarage Frame Rate: {}", TotalFrame, TotalFrameRate / TotalFrame);
 }
@@ -85,9 +87,9 @@ void GuiLayer::OnAttach()
     style.WindowMinSize.x      = MinWindowSizeX;
     style.WindowMinSize.y      = MinWindowSizeY;
     style.WindowBorderSize     = 0.0f;
-	style.ScrollbarRounding    = 0.0f;
+    style.ScrollbarRounding    = 0.0f;
     style.ScrollbarSize        = 12.0f;
-	style.DockingSeparatorSize = 1.0f;
+    style.DockingSeparatorSize = 1.0f;
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -96,10 +98,10 @@ void GuiLayer::OnAttach()
     }
 
     io.DisplaySize.x = window->GetWidth();
-	io.DisplaySize.y = window->GetHeight();
+    io.DisplaySize.y = window->GetHeight();
 
     Profiler p{ "Loading DemiLight File" };
-	NotoSans.Light = io.Fonts->AddFontFromFileTTF(
+    NotoSans.Light = io.Fonts->AddFontFromFileTTF(
        "Assets/Fonts/NotoSansCJKsc-Regular.otf",
        20,
        nullptr,
@@ -108,59 +110,68 @@ void GuiLayer::OnAttach()
 
     NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
         "Assets/Fonts/NotoSansCJKsc-Bold.otf",
-	    20,
+        20,
         nullptr,
-	    io.Fonts->GetGlyphRangesChineseFull()
+        io.Fonts->GetGlyphRangesChineseFull()
         );
 
 #ifdef _WIN32
    SimSun.Regular = io.Fonts->AddFontFromFileTTF(
-	    std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
-	    16,
+        std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
+        16,
        nullptr,
-	    io.Fonts->GetGlyphRangesChineseFull()
+        io.Fonts->GetGlyphRangesChineseFull()
        );
 #else
    SimSun.Regular = NotoSans.Demilight;
 #endif
 
     ImGui_ImplImmortal_Init(device, queue, swapchain, 3);
+   decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
+   decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
+
 #ifdef _WIN32
    if (window->GetType() == WindowType::Win32)
    {
-		platformSpecificNewFrame = ImGui_ImplWin32_NewFrame;
-		ImGui_ImplWin32_Init(window->GetBackendHandle());
+        ImGui_ImplWin32_Init(window->GetBackendHandle());
+        platformSpecficWindow.NewFrame = ImGui_ImplWin32_NewFrame;
+        platformSpecficWindow.ShutDown = ImGui_ImplWin32_Shutdown;
    }
    else
 #endif
    {
-		if (device->GetBackendAPI() == BackendAPI::OpenGL)
-		{
-			ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)window->GetBackendHandle(), true);
-		}
-		else if (device->GetBackendAPI() == BackendAPI::Vulkan)
-		{
-			ImGui_ImplGlfw_InitForVulkan((GLFWwindow *)window->GetBackendHandle(), true);
-		}
-		platformSpecificNewFrame = ImGui_ImplGlfw_NewFrame;
+        GLFWwindow *glfwWindow = (GLFWwindow *)window->GetBackendHandle();
+        if (device->GetBackendAPI() == BackendAPI::OpenGL)
+        {
+            ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
+        }
+        else if (device->GetBackendAPI() == BackendAPI::Vulkan)
+        {
+            ImGui_ImplGlfw_InitForVulkan(glfwWindow, true);
+        }
+        platformSpecficWindow.NewFrame = ImGui_ImplGlfw_NewFrame;
+        platformSpecficWindow.ShutDown = ImGui_ImplGlfw_Shutdown;
    }
 }
 
 void GuiLayer::OnDetach()
 {
-	ImGui::DestroyContext();
+    platformSpecficWindow.ShutDown();
+    ImGui_ImplImmortal_Shutdown();
+
+    platformSpecficWindow = {};
 }
 
 void GuiLayer::Begin()
 {
-	ImGui_ImplImmortal_NewFrame();
-	platformSpecificNewFrame();
-	ImGui::NewFrame();
+    ImGui_ImplImmortal_NewFrame();
+	platformSpecficWindow.NewFrame();
+    ImGui::NewFrame();
 }
 
 void GuiLayer::End()
 {
-	ImGui::Render();
+    ImGui::Render();
 }
 
 void GuiLayer::SetTheme()
@@ -311,77 +322,77 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::Render()
 {
-	ImGui::PushFont(NotoSans.Light);
+    ImGui::PushFont(NotoSans.Light);
     dockspace->Render();
-	ImGui::PopFont();
+    ImGui::PopFont();
 
     static char title[128] = { 0 };
 
     const auto &io = ImGui::GetIO();
 
     auto backendAPI = device->GetBackendAPI();
-	const char *apiName = "Unknown";
-	switch (backendAPI)
-	{
-		 case BackendAPI::D3D11:
-			apiName = "D3D11";
-			break;
-		 case BackendAPI::D3D12:
-			apiName = "D3D12";
-			break;
-		 case BackendAPI::Vulkan:
-			apiName = "Vulkan";
-			break;
-		 case BackendAPI::Metal:
-			apiName = "Metal";
-			break;
-		 case BackendAPI::OpenGL:
-			apiName = "OpenGL";
-			break;
-		 default:
-			apiName = "Unknown";
-			break;
-	}
+    const char *apiName = "Unknown";
+    switch (backendAPI)
+    {
+         case BackendAPI::D3D11:
+            apiName = "D3D11";
+            break;
+         case BackendAPI::D3D12:
+            apiName = "D3D12";
+            break;
+         case BackendAPI::Vulkan:
+            apiName = "Vulkan";
+            break;
+         case BackendAPI::Metal:
+            apiName = "Metal";
+            break;
+         case BackendAPI::OpenGL:
+            apiName = "OpenGL";
+            break;
+         default:
+            apiName = "Unknown";
+            break;
+    }
 
     sprintf(
         title,
         "%s (Graphics API: %s) %.3f ms/frame (%.1f FPS)",
         Application::Name(),
-	    apiName,
+        apiName,
         1000.0f / io.Framerate,
         io.Framerate
     );
 
     TotalFrame++;
-	TotalFrameRate += io.Framerate;
+    TotalFrameRate += io.Framerate;
     Application::SetTitle(title);
 }
 
 void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
 {
-	auto &io = ImGui::GetIO();
+    auto &io = ImGui::GetIO();
 
-	auto width  = window->GetWidth();
-	auto height = window->GetHeight();
-	io.DisplaySize = { (float)width, (float)height };
+    auto width  = window->GetWidth();
+    auto height = window->GetHeight();
+    io.DisplaySize = { (float)width, (float)height };
 
-	ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
-	// Update and Render additional Platform Windows
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		 ImGui::UpdatePlatformWindows();
-		 ImGui::RenderPlatformWindowsDefault();
-		 if (window->GetType() == WindowType::GLFW)
-		 {
-			 glfwMakeContextCurrent((GLFWwindow *)window->GetBackendHandle());
-		 }
-	}
+    // Update and Render additional Platform Windows
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+         ImGui::UpdatePlatformWindows();
+         ImGui::RenderPlatformWindowsDefault();
+         if (window->GetType() == WindowType::GLFW)
+         {
+             glfwMakeContextCurrent((GLFWwindow *)window->GetBackendHandle());
+         }
+    }
 }
 
 void GuiLayer::AddChild(Widget *widget)
 {
-	dockspace->AddChild(widget);
+    dockspace->AddChild(widget);
 }
 
 static inline std::string ThemePath = { "Assets/json/theme.json" };
