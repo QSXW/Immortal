@@ -28,11 +28,13 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
 
     instance = Instance::CreateInstance(graphicsBackendAPI, window->GetType());
     device = instance->CreateDevice(0);
-
-    Graphics::SetDevice(device);
-
     queue = device->CreateQueue(QueueType::Graphics);
+
+	Graphics::SetDevice(device);
 	Graphics::Execute<SetQueueTask>(queue);
+	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+    Graphics::ConstructGlobalVariables();
+
     swapchain = device->CreateSwapchain(queue, window, Format::BGRA8, bufferCount, SwapchainMode::VerticalSync);
 
     commandBuffers.resize(bufferCount);
@@ -45,15 +47,20 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
 
     gui = new GuiLayer{ device, queue, window, swapchain };
 	gui->OnAttach();
-
-    window->Show();
 }
 
 Application::~Application()
 {
 	timer.Stop();
 
+    for (auto &layer : layerStack)
+    {
+		layer->OnDetach();
+    }
+
 	layerStack.clear();
+
+    gui->OnDetach();
 	gui.Reset();
 
     Graphics::Release();
@@ -96,7 +103,7 @@ void Application::OnRender()
         gui->End();
 
         swapchain->PrepareNextFrame();
-        gpuEvent->Wait(syncValues[syncPoint], 0xffffff);
+        gpuEvent->Wait(syncValues[syncPoint], 0xffffffffff);
 	    Graphics::SetRenderIndex(syncValues[syncPoint]);
 
         CommandBuffer *commandBuffer = commandBuffers[syncPoint];
@@ -123,6 +130,11 @@ void Application::OnRender()
 
 void Application::Run()
 {
+	Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
+	Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
+	Graphics::WaitIdle();
+
+	window->Show();
     while (runtime.running)
     {
         OnRender();

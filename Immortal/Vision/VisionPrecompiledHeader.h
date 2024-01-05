@@ -17,6 +17,7 @@
 #include <queue>
 #include <list>
 
+#include "Image.h"
 #include "Types.h"
 
 #include "Audio/WAV.h"
@@ -35,7 +36,7 @@
 
 #include "Image/BMP.h"
 #include "Image/Helper.h"
-#include "Image/Image.h"
+#include "Image/ImageCodec.h"
 #include "Image/JPEG.h"
 #include "Image/MFXJpegCodec.h"
 #include "Image/OpenCVCodec.h"

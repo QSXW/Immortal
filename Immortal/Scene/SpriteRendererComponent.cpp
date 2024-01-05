@@ -184,9 +184,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 			}
 			buffer->Unmap();
 		}
-	});
-	
-	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+
 		commandBuffer->SetPipeline(pipeline);
 
 		uint32_t nThreadX = SLALIGN(data[0].width  / 32, 32);

@@ -110,8 +110,6 @@ set(RENDER_FILES
     Camera.cpp
     Camera.h
     DataSet.h
-    Frame.cpp
-    Frame.h
     Graphics.cpp
     Graphics.h
     Mesh.cpp
