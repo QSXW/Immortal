@@ -80,7 +80,8 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
     ConstructShaderResourceView();
 
 #ifdef _DEBUG
-	resource->SetName(L"Texture");
+	std::wstring name = L"Texture_" + std::to_wstring(width) + L"x" + std::to_wstring(height);
+	resource->SetName(name.c_str());
 #endif
 }
 
