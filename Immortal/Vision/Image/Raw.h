@@ -19,20 +19,22 @@ public:
     using Super = Interface::Codec;
 
 public:
-    RawCodec()
-    {
-        
-    }
+	RawCodec();
+
+    virtual ~RawCodec() override;
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    void SetBits(RawBitDepth v)
+public:
+    void SetBits(RawBitDepth value)
     {
-        bitDepth = v;
+        bitDepth = value;
     }
 
-private:
-    RawBitDepth bitDepth = RawBitDepth::_16;
+protected:
+    Format format;
+
+    RawBitDepth bitDepth;
 };
 
 }
