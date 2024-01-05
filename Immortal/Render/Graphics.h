@@ -49,6 +49,8 @@ public:
 public:
 	static void SetDevice(Device *device);
 
+    static void ConstructGlobalVariables();
+
     static Device *GetDevice();
 
     static void Release();
@@ -73,6 +75,11 @@ public:
 		This->thread.Execute<T>(std::forward<Args>(args)...);
     }
 
+    static void WaitIdle()
+    {
+		This->thread.WaitIdle();
+    }
+
 public:
 	Device *device;
 
@@ -83,8 +90,10 @@ public:
     URef<CommandBuffer> commandBuffer;
 
     Data data;
+    
+    std::mutex mutex;
 
-    URef<Buffer> stagingBuffer;
+    std::queue<Ref<Buffer>> stagingBuffers;
 
     uint32_t index = 0;
 

@@ -1,6 +1,6 @@
 #include "Graphics.h"
 #include "Render2D.h"
-#include "Frame.h"
+#include "Vision/Image.h"
 #include "Framework/Timer.h"
 #include "FileSystem/Stream.h"
 
@@ -15,18 +15,6 @@ Graphics::Graphics(Device *device) :
 {
 	This = this;
 	commandBuffer = device->CreateCommandBuffer(QueueType::Compute);
-
-    {
-        constexpr uint32_t white        = 0xffffffff;
-        constexpr uint32_t black        = 0x000000ff;
-        constexpr uint32_t transparency = 0x00000000;
-        constexpr uint32_t normal       = 0xffff7f7f;
-
-        data.Textures.White       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &white       );
-        data.Textures.Black       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &black       );
-        data.Textures.Transparent = Graphics::CreateTexture(Format::RGBA8, 1, 1, &transparency);
-        data.Textures.Normal      = Graphics::CreateTexture(Format::RGBA8, 1, 1, &normal      );
-    }
 }
 
 void Graphics::SetDevice(Device *device)
@@ -42,6 +30,19 @@ Device *Graphics::GetDevice()
 	return This->device;
 }
 
+void Graphics::ConstructGlobalVariables()
+{
+    constexpr uint32_t white        = 0xffffffff;
+    constexpr uint32_t black        = 0x000000ff;
+    constexpr uint32_t transparency = 0x00000000;
+    constexpr uint32_t normal       = 0xffff7f7f;
+
+    This->data.Textures.White       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &white       );
+    This->data.Textures.Black       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &black       );
+    This->data.Textures.Transparent = Graphics::CreateTexture(Format::RGBA8, 1, 1, &transparency);
+    This->data.Textures.Normal      = Graphics::CreateTexture(Format::RGBA8, 1, 1, &normal      );
+}
+
 void Graphics::Release()
 {
 	This.Reset();
@@ -53,11 +54,11 @@ Graphics::~Graphics()
     data.Textures.Black.Reset();
     data.Textures.Transparent.Reset();
     data.Textures.Normal.Reset();
-    
-    thread.Execute<AsyncTask>(AsyncTaskType::Terminate);
 
+    thread.Execute<AsyncTask>(AsyncTaskType::Terminate);
+	thread.Join();
     discardedTextures.clear();
-    stagingBuffer.Reset();
+	stagingBuffers = {};
     device = nullptr;
 }
 
@@ -79,13 +80,12 @@ Buffer *Graphics::CreateBuffer(size_t size, BufferType type, const void *data)
 
 Texture *Graphics::CreateTexture(const std::string &filepath)
 {
-	Frame frame = { filepath };
-    if (!frame.Available())
+	Picture picture = Vision::Read(filepath);
+    if (!picture)
     {
 		return nullptr;
     }
 
-    Picture picture = frame.GetPicture();
 	uint32_t width  = picture.GetWidth();
 	uint32_t height = picture.GetHeight();
 
@@ -102,31 +102,41 @@ Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height,
 		return texture;
     }
 
-    uint32_t uploadPitch = SLALIGN(width * format.GetComponent(), TextureAlignment);
+    uint32_t uploadPitch = SLALIGN(width * format.GetTexelSize(), TextureAlignment);
 	uint32_t uploadSize = height * uploadPitch;
 
-    auto &buffer = This->stagingBuffer;
+    Ref<Buffer> buffer = {};
+    {
+		std::lock_guard lock{ This->mutex };
+		if (!This->stagingBuffers.empty())
+		{
+			buffer = This->stagingBuffers.front();
+			This->stagingBuffers.pop();
+		}
+    }
+
 	if (!buffer || buffer->GetSize() < uploadSize)
     {
 		buffer = This->device->CreateBuffer(uploadSize, BufferType::TransferSource);
     }
 
-	void *mapped = nullptr;
+    void *mapped = nullptr;
 	buffer->Map(&mapped, uploadSize, 0);
-	for (int y = 0; y < height; y++)
-	{
-		memcpy((void *)((uintptr_t) mapped + y * uploadPitch), ((uint8_t *)data) + y * width * 4, width * 4);
-	}
+	MemoryCopyImage((uint8_t *)mapped, uploadPitch, (uint8_t *)data, width * format.GetTexelSize(), format, width, height);
 	buffer->Unmap();
 
-    This->commandBuffer->Begin();
-	This->commandBuffer->CopyBufferToImage(texture, 0, buffer, uploadPitch);
-	This->commandBuffer->GenerateMipMaps(texture, Filter::Linear);
-	This->commandBuffer->End();
+    Execute<RecordingTask>([=] (uint64_t sync, CommandBuffer *commandBuffer) {
+	    commandBuffer->CopyBufferToImage(texture, 0, buffer, uploadPitch);
+        if (mipLevels > 1)
+        {
+			commandBuffer->GenerateMipMaps(texture, Filter::Linear);
+        }
+	});
 
-    URef<Queue> queue = This->device->CreateQueue(QueueType::Compute);
-	queue->Submit(This->commandBuffer);
-	queue->WaitIdle(std::numeric_limits<uint32_t>::max());
+    Execute<ExecutionCompletedTask>([=]() {
+		std::lock_guard lock{ This->mutex };
+		This->stagingBuffers.push(buffer);
+	});
 
     return texture;
 }

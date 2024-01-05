@@ -31,7 +31,7 @@
 
 #include "Memory/Memory.h"
 
-#include "Vision/Image/Image.h"
+#include "Vision/Image.h"
 #include "Vision/Video/Video.h"
 
 #include "Helper/Platform.h"
@@ -40,7 +40,6 @@
 #include "Render/Graphics.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"
-#include "Render/Frame.h"
 #include "Render/Mesh.h"
 
 #include "Sync/Semaphore.h"

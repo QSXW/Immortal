@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(VISION_CORE_FILES
+    Image.cpp
+    Image.h
     Types.h
     VisionPrecompiledHeader.h)
 list(TRANSFORM VISION_CORE_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
@@ -48,10 +50,10 @@ set(LOOKUP_TABLE_FILE
 list(TRANSFORM LOOKUP_TABLE_FILE PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/LookupTable/")
 
 set(IMAGE_CODEC_FILES
-    Helper.h
     BMP.cpp
     BMP.h
-    Image.h
+    Helper.h
+    ImageCodec.h
     JPEG.cpp
     JPEG.h
     STBCodec.cpp
@@ -62,6 +64,8 @@ set(IMAGE_CODEC_FILES
     PPM.h
     Raw.cpp
     Raw.h
+    RawSpeed.cpp
+    RawSpeed.h
     OpenCVCodec.cpp
     OpenCVCodec.h)
 list(TRANSFORM IMAGE_CODEC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Image/")

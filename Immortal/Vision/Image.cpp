@@ -1,13 +1,13 @@
-#include "Frame.h"
-
-#include "Texture.h"
-#include "Vision/Image/Image.h"
+#include "Image.h"
+#include "Image/ImageCodec.h"
 #include "FileSystem/FileSystem.h"
 
 namespace Immortal
 {
+namespace Vision
+{
 
-static Vision::Interface::Codec *SelectSuitableCodec(const std::string &path)
+static Interface::Codec *SelectSuitableCodec(const std::string &path)
 {
     switch (FileSystem::DumpFileId(path))
     {
@@ -35,23 +35,16 @@ static Vision::Interface::Codec *SelectSuitableCodec(const std::string &path)
     }
 }
 
-Frame::Frame(const std::string &path)
+Picture Read(const std::string &path)
 {
     Vision::CodedFrame codedFrame{};
     codedFrame.Assign(FileSystem::ReadBinary(path));
 
-    decoder.Reset(SelectSuitableCodec(path));
-    decoder->Decode(codedFrame);
+    URef<Interface::Codec> codec = SelectSuitableCodec(path);
+    codec->Decode(codedFrame);
+
+    return codec->GetPicture();
 }
 
-Frame::Frame(uint32_t width, uint32_t height, int depth, const void *data)
-{
-
 }
-
-Frame::~Frame()
-{
-
-}
-
 }
