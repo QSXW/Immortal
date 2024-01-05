@@ -10,7 +10,7 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
     gpuEvent = device->CreateGPUEvent();
     thread = std::move(Thread{[=, this] {
         uint64_t recording = 0;
-        uint64_t nextSyncValue = 0;
+        uint64_t nextSyncValue = 1;
         Queue *queue = nullptr;
         CommandBuffer *commandBuffer = nullptr;
 
@@ -148,6 +148,20 @@ bool AsyncComputeThread::IsExecutionCompleted(uint64_t value)
 {
     uint64_t completion = gpuEvent->GetCompletionValue();
     return completion >= value;
+}
+
+void AsyncComputeThread::WaitIdle()
+{
+	uint64_t completion = gpuEvent->GetCompletionValue();
+    if (completion < gpuEvent->GetSyncPoint())
+    {
+		gpuEvent->Wait(0xffffffff);
+    }
+}
+
+void AsyncComputeThread::Join()
+{
+	thread.Join();
 }
 
 }
