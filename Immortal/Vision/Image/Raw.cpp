@@ -4,7 +4,7 @@
 #include <concepts>
 
 namespace Immortal
-{ 
+{
 namespace Vision
 {
 
@@ -27,33 +27,59 @@ void ReadPixelsToPicture(T *dst, T *pixels, uint32_t width, uint32_t height, int
     }
 }
 
+RawCodec::RawCodec() :
+    format{ Format::BayerLayerRGBG },
+    bitDepth{ RawBitDepth::_16 }
+{
+
+}
+
+RawCodec::~RawCodec()
+{
+
+}
+
 CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 {
     const auto &buffer = codedFrame.buffer;
 
     URef<LibRaw> processor = new LibRaw;
     processor->open_buffer(buffer.data(), buffer.size());
-
     processor->unpack();
-    processor->dcraw_process();
-    processor->imgdata.params.output_bps = (int)bitDepth;
 
-    int err = 0;;
-    libraw_processed_image_t *image = processor->dcraw_make_mem_image(&err);
-    if (err)
+    if (format == Format::BayerLayerRGBG)
     {
-        return CodecError::OutOfMemory;
-    }
- 
-    if (bitDepth == RawBitDepth::_16)
-    {
-        picture = Picture{ image->width, image->height, Format::RGBA16 };
-        ReadPixelsToPicture<uint16_t>((uint16_t *)picture.Data(), (uint16_t*)image->data, image->height, image->width, image->colors);
+		auto &rawParams = processor->imgdata.rawdata.iparams;
+		assert(rawParams.cdesc[0] == 'R' && rawParams.cdesc[1] == 'G' && rawParams.cdesc[2] == 'B' && rawParams.cdesc[3] == 'G');
+
+		auto width  = processor->imgdata.rawdata.sizes.raw_width;
+		auto height = processor->imgdata.rawdata.sizes.raw_height;
+		picture = Picture{width, height, Format::BayerLayerRGBG, nullptr, true};
+
+		memcpy(picture.Data(), processor->imgdata.rawdata.raw_image, processor->imgdata.rawdata.sizes.raw_pitch * processor->imgdata.rawdata.sizes.raw_height);
     }
     else
     {
-        picture = Picture{ image->width, image->height, Format::RGBA8 };
-        ReadPixelsToPicture<uint8_t>(picture.Data(), image->data, image->height, image->width, image->colors);
+		processor->dcraw_process();
+		processor->imgdata.params.output_bps = (int)bitDepth;
+
+		int err = 0;
+		libraw_processed_image_t *image = processor->dcraw_make_mem_image(&err);
+        if (err)
+        {
+		    return CodecError::ExternalFailed;
+        }
+
+		if (bitDepth == RawBitDepth::_16)
+		{
+		    picture = Picture{ image->width, image->height, Format::RGBA16, nullptr, true };
+			ReadPixelsToPicture<uint16_t>((uint16_t *)picture.Data(), (uint16_t *)image->data, image->width, image->height, image->colors);
+		}
+		else
+		{
+			picture = Picture{image->width, image->height, Format::RGBA8, nullptr, true};
+			ReadPixelsToPicture<uint8_t>(picture.Data(), image->data, image->width, image->height, image->colors);
+		}
     }
 
     processor->recycle();
