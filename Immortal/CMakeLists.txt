@@ -46,11 +46,6 @@ set(GUI_FILES
     ImGui/imgui_impl_immortal.h
     ImGui/Utils.h)
 
-set(INTERFACE_FILES
-   Interface/Delegate.cpp
-   Interface/Delegate.h
-   Interface/IObject.h)
-
 set(MATH_FILES
    Math/Math.h
    Math/Vector.cpp
@@ -186,7 +181,6 @@ source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
 source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Image\\"             FILES ${IMAGE_FILES}     )
 source_group("ImGui\\"             FILES ${GUI_FILES}       )
-source_group("Interface\\"         FILES ${INTERFACE_FILES} )
 source_group("Math\\"              FILES ${MATH_FILES}      )
 source_group("Memory\\"            FILES ${MEMORY_FILES}    )
 source_group("FileSystem\\"        FILES ${FS_FILES}        )

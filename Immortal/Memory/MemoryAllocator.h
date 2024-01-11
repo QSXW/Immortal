@@ -11,7 +11,7 @@
 
 #include "Core.h"
 #include "Allocator.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 #include <ctime>
 

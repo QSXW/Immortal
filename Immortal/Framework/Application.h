@@ -12,7 +12,7 @@
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Graphics/LightGraphics.h"
 
 namespace Immortal

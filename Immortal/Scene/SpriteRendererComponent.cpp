@@ -103,7 +103,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		}
 		data[i].width    = picture.GetWidth()  >> factors[i].x;
 		data[i].height   = picture.GetHeight() >> factors[i].y;
-		data[i].rowPitch = SLALIGN(picture.GetLineSize(i), TextureAlignment);
+		data[i].rowPitch = SLALIGN(picture.GetStride(i), TextureAlignment);
 		data[i].size     = data[i].rowPitch * data[i].height;
 		totalSize += data[i].size;
 	}
@@ -143,14 +143,14 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		}
 		descriptorSet->Set(slot, Sprite);
 
-		if (picture.shared->type == Vision::PictureType::System)
+		if (picture.GetMemoryType() == Vision::PictureMemoryType::System)
 		{
 			buffer = device->CreateBuffer(totalSize, BufferType::TransferSource);
 		}
 	}
 
 #ifdef _WIN32
-	if (picture.shared->type == Vision::PictureType::Device)
+	if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
 	{
 		ID3D12Fence *fence  = (ID3D12Fence *)picture[1];
 		uint64_t fenceValue = (uint64_t)picture[2];
@@ -166,7 +166,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 #endif
 
 	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
-		if (picture.shared->type == Vision::PictureType::Device)
+		if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
 		{
 			commandBuffer->CopyPlatformSpecificSubresource(input[0], 0, (ID3D12Resource *) picture[0], 0);
 			commandBuffer->CopyPlatformSpecificSubresource(input[1], 0, (ID3D12Resource *) picture[0], 1);
@@ -178,7 +178,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 			size_t offset = 0;
 			for (size_t i = 0; picture[i]; i++)
 			{
-				Graphics::MemoryCopyImage(mapped + offset, data[i].rowPitch, picture[i], picture.GetLineSize(i), data[i].format, data[i].width, data[i].height);
+				Graphics::MemoryCopyImage(mapped + offset, data[i].rowPitch, picture[i], picture.GetStride(i), data[i].format, data[i].width, data[i].height);
 				commandBuffer->CopyBufferToImage(input[i], 0, buffer, data[i].rowPitch, offset);
 				offset += data[i].size;
 			}
@@ -190,7 +190,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		uint32_t nThreadX = SLALIGN(data[0].width  / 32, 32);
 		uint32_t nThreadY = SLALIGN(data[0].height / 32, 32);
 
-		if (picture.shared->type == Vision::PictureType::System && !format.IsType(Format::NV) && format != Format::Y210 && format != Format::Y216)
+		if (picture.GetMemoryType() == Vision::PictureMemoryType::System && !format.IsType(Format::NV) && format != Format::Y210 && format != Format::Y216)
 		{
 			struct PushConstant
 			{

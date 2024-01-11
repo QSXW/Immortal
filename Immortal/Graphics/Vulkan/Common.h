@@ -8,7 +8,8 @@
 #include "Core.h"
 #include "volk.h"
 #include "vk_mem_alloc.h"
-#include "Interface/IObject.h"
+#include "Shared/Log.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {

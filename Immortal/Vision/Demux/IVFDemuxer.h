@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vision/Interface/Codec.h"
-#include "Vision/Interface/Demuxer.h"
+#include "Codec.h"
+#include "Demuxer.h"
 #include "FileSystem/Stream.h"
 
 namespace Immortal
@@ -9,7 +9,7 @@ namespace Immortal
 namespace Vision
 {
 
-class IMMORTAL_API IVFDemuxer : public Interface::Demuxer
+class IMMORTAL_API IVFDemuxer : public Demuxer
 {
 public:
     struct Header

@@ -46,20 +46,20 @@ AudioDevice::AudioDevice() :
                 callBack(picture);
             }
 
-            if (picture.Available())
+            if (picture)
             {
                 if (reset)
                 {
-                    startpts = picture.pts;
-                    samples  = picture.desc.samples;
+                    startpts = picture.GetTimestamp();
+                    samples  = picture.GetWidth();
                     reset = false;
                 }
                 int frameLeft = 0;
-                lastSamples = picture.desc.samples;
-                if (picture.desc.samples < 1024)
+				lastSamples = picture.GetWidth();
+				if (picture.GetWidth() < 1024)
                 {
                     size_t bytes = picture.GetWidth() << 3;
-                    memcpy(ptr, picture.shared->data[0], bytes);
+					memcpy(ptr, picture.GetData(), bytes);
 					ptr += picture.GetWidth();
                     size_t frames = ptr - buffer;
                     if (frames > 1024)
@@ -70,9 +70,9 @@ AudioDevice::AudioDevice() :
                 }
                 else
                 {
-                    pts = picture.pts;
-                    samples = picture.desc.samples;
-                    frameLeft = context->PlaySamples(picture.desc.samples, picture.shared->data[0]);
+					pts       = picture.GetTimestamp();
+                    samples   = picture.GetWidth();
+					frameLeft = context->PlaySamples(samples, picture.GetData());
                 }
                 duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
             }

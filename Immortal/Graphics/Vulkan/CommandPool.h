@@ -3,7 +3,7 @@
 #include "Common.h"
 #include "Handle.h"
 #include "Algorithm/LightArray.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 #include <map>
 #include <queue>
@@ -20,7 +20,7 @@ public:
     VKCPP_SWAPPABLE(CommandPool)
 
 public:
-    CommandPool(Device *device = nullptr, uint32_t threadId = 0, uint32_t queueFamilyIndex = 0, VkCommandPoolResetFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);   
+    CommandPool(Device *device = nullptr, uint32_t threadId = 0, uint32_t queueFamilyIndex = 0, VkCommandPoolResetFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     ~CommandPool();
 

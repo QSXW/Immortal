@@ -72,8 +72,10 @@ static inline Format SelectFormat(int32_t bitDepth, int32_t chromaFormatIDC)
     }
 }
 
-CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
+CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 {
+	const auto &rbsp = codedFrame.GetBuffer();
+
     std::vector<uint8_t> buffer;
     int32_t bytesConsumed = 0;
     int32_t bytes;
@@ -597,7 +599,6 @@ CodecError HEVCCodec::Parse(const uint8_t *data, size_t size)
 
     case NAL::Type::SPS:
         sps = new SequenceParameterSet{ bitTracker };
-        picture.desc.format = SelectFormat(sps->bit_depth_luma, sps->chroma_format_idc);
         break;
 
     case NAL::Type::PPS:

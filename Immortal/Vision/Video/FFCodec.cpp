@@ -100,12 +100,9 @@ static inline Format CAST(AVPixelFormat v)
 FFCodec::FFCodec() :
     handle{},
     device{},
-    type{ PictureType::System },
+    type{ PictureMemoryType::System },
     startTimestamp{}
 {
-    //handle = avcodec_alloc_context3(nullptr);
-    //ThrowIf(!handle, "FFCodec::Failed to allocated memory!")
-
     frame = av_frame_alloc();
 	ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
 
@@ -136,7 +133,7 @@ FFCodec::~FFCodec()
 CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 {
     int ret = 0;
-    auto packet = codedFrame.DeRef<AVPacket>();
+    auto packet = codedFrame.InterpretAs<AVPacket>();
 
     auto timeBase = packet->time_base;
     ret = avcodec_send_packet(handle, packet);
@@ -161,7 +158,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     }
 
     AVFrame *ref = NULL;
-	if (device && type == PictureType::System)
+	if (device && type == PictureMemoryType::System)
     {
         ref = av_frame_alloc();
         if (!ref)
@@ -185,7 +182,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     if (format == Format::None)
     {
 		enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
-		if (type == PictureType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
+		if (type == PictureMemoryType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
 		{
 			switch (pixelFormat)
 			{
@@ -208,31 +205,35 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
         picture = Picture{ref->width, ref->height, format };
-		picture.shared->type = PictureType::System;
-
-        picture[0] = (uint8_t *)ref->data[0];
-        picture[1] = (uint8_t *)ref->data[1];
-        picture[2] = (uint8_t *)ref->data[2];
+		picture.SetStride(0, ref->linesize[0]);
+		picture.SetStride(1, ref->linesize[1]);
+		picture.SetStride(2, ref->linesize[2]);
 
 #ifdef _WIN32
         if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
         {
             auto &[texture, syncCtx] = *(AVD3D12VAFrame *)frame->data[0];
-            picture.shared->type = PictureType::Device;
+			picture.SetMemoryType(PictureMemoryType::Device);
             picture[0] = (uint8_t *)texture;
             picture[1] = (uint8_t *)syncCtx.fence;
             picture[2] = (uint8_t *)syncCtx.fence_value;
         }
 #endif
+        else
+        {
+			picture.SetMemoryType(PictureMemoryType::System);
 
-        memcpy(picture.shared->linesize, ref->linesize, sizeof(ref->linesize));
-        picture.Connect([ref] {
+			picture[0] = (uint8_t *) ref->data[0];
+			picture[1] = (uint8_t *) ref->data[1];
+			picture[2] = (uint8_t *) ref->data[2];
+        }
+
+        picture.SetRelease([ref] (void *) {
             Async::Execute([ref] {
                 av_frame_unref(ref);
                 av_frame_free((AVFrame **)&ref);
                 });
             });
-        picture.SetProperty(ColorSpaceConverter(handle->colorspace));
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
@@ -264,16 +265,16 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         );
 
         Format format = Format::VECTOR2;
-        picture = Picture{ samples, 1,  format, nullptr, true };
-        picture.pts = frame->pts / frame->nb_samples;
+        picture = Picture{ uint32_t(samples), 1,  format, true };
+		picture.SetTimestamp(frame->pts / frame->nb_samples);
 
-        int outSamples = swr_convert(swrContext, &picture.shared->data[0], samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
+        int outSamples = swr_convert(swrContext, &picture.GetData(), samples, (const uint8_t **) &frame->data[0], frame->nb_samples);
         if (outSamples < 0)
         {
             LOG::ERR("Failed to rescale audio frame format!");
         }
 
-        uint8_t *ptr = picture.shared->data[0] + outSamples * 2 * sizeof(float);
+        uint8_t *ptr = picture.GetData() + outSamples * 2 * sizeof(float);
         if (swr_get_out_samples(swrContext, 0) > 0)
         {
             outSamples = swr_convert(swrContext, &ptr, samples - outSamples, nullptr, 0);
@@ -282,22 +283,15 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         swr_free(&swrContext);
     }
 
+    picture.SetTimestamp(NAN);
     if (frame->pts != AV_NOPTS_VALUE)
     {
-        picture.pts = (frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond;
+        picture.SetTimestamp((frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond);
     }
-    else
-    {
-        picture.pts = NAN;
-    }
+
     av_frame_unref(frame);
 
     return CodecError::Succeed;
-}
-
-uint8_t *FFCodec::Data() const
-{
-    return nullptr;
 }
 
 Picture FFCodec::GetPicture() const
@@ -400,9 +394,7 @@ static AVHWDeviceType QueryDecoderHWAccelType()
     AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
 
     static std::list<const char *> priorities = {
-	    //"d3d12va",
-	    //"dxva2",
-     //   "d3d11va",
+	    "d3d12va",
     };
 
     for (auto &p : priorities)
@@ -429,6 +421,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         return CodecError::NotImplement;
     }
 
+ #ifdef _WIN32
     auto hwaccelType = QueryDecoderHWAccelType();
     for (int i = 0; ; i++)
     {
@@ -439,7 +432,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hwaccelType)
         {
-#ifdef _WIN32
+
 			if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
             {
 			    device = av_hwdevice_ctx_alloc(hwaccelType);
@@ -455,11 +448,9 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 			    d3d12vaContext->device->AddRef();
                 av_hwdevice_ctx_init(device);
 
-			    type = PictureType::Device;
+			    type = PictureMemoryType::Device;
             }
-            else
-#endif
-            if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
+            else if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
             {
                 LOG::ERR("Failed to create specified HW device.");
                 return CodecError::NotImplement;
@@ -467,6 +458,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
             break;
         }
     }
+#endif
 
     if (!device)
     {
@@ -476,7 +468,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
             const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
             if (externalCodec)
             {
-				auto type = av_hwdevice_find_type_by_name(p);
+				auto type = GetDeviceType(p);
                 if (type != AV_HWDEVICE_TYPE_NONE)
                 {
 					if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)

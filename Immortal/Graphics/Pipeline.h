@@ -7,7 +7,7 @@
 #include "Shader.h"
 #include "RenderTarget.h"
 #include "InputElement.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {

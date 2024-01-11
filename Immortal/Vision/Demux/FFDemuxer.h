@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Config.h"
-#include "Vision/Interface/Codec.h"
-#include "Vision/Interface/Demuxer.h"
+#include "Vision/Codec.h"
+#include "Vision/Demuxer.h"
 #include "FileSystem/Stream.h"
 #include "String/IString.h"
 
@@ -15,7 +15,7 @@ namespace Vision
 {
 
 class FormatContext;
-class IMMORTAL_API FFDemuxer : public Interface::Demuxer
+class IMMORTAL_API FFDemuxer : public Demuxer
 {
 #if HAVE_FFMPEG
 public:

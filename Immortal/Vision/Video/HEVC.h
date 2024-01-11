@@ -4,9 +4,9 @@
 #define HEVC_H__
 
 #include "Core.h"
+#include "Codec.h"
 #include "Vision/Common/BitTracker.h"
 #include "Vision/Common/NetworkAbstractionLayer.h"
-#include "Vision/Interface/Codec.h"
 #include "Math/Math.h"
 
 #ifdef _MSC_VER
@@ -349,9 +349,9 @@ public:
     };
 
 public:
-    virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
+	virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    virtual CodecError Parse(const std::vector<uint8_t> &buffer) override;
+    CodecError Parse(const std::vector<uint8_t> &buffer);
 
     CodecError Parse(const uint8_t *data, size_t size);
 

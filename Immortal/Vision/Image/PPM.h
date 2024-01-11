@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 
 namespace Immortal
 {

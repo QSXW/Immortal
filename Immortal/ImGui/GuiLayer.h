@@ -6,7 +6,7 @@
 
 #include "Core.h"
 #include "Framework/Layer.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 #include "Graphics/LightGraphics.h"

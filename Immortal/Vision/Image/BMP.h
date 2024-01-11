@@ -7,7 +7,7 @@
 #include <string>
 #include <memory>
 
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 
 namespace Immortal
 {
@@ -21,7 +21,7 @@ public:
 
 public:
     BMPCodec() :
-        Super{ Format::BGRA8 }
+        Super{}
     {
         memset(&identifer, 0, HeaderSize());
     }

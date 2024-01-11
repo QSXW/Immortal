@@ -288,11 +288,6 @@ CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Succeed;
 }
 
-uint8_t *JpegCodec::Data() const
-{
-    return data.x;
-}
-
 inline void JpegCodec::ParseAPP(const uint8_t *data)
 {
 #ifndef JPEG_CODEC_MINIMAL
@@ -382,10 +377,11 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         return;
     }
 
-    auto &desc = picture.desc;
     bitDepth    = data[0];
-    desc.height = Word{ &data[1] };
-    desc.width  = Word{ &data[3] };
+	uint32_t height = Word{ &data[1] };
+    uint32_t width  = Word{ &data[3] };
+    picture.SetHeight(height);
+	picture.SetWidth(width);
 
     components.resize(data[5]);
     auto ptr = &data[6];
@@ -404,13 +400,13 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         maxSampingFactor.horizontal = std::max(maxSampingFactor.horizontal, components[index].sampingFactor.horizontal);
     }
 
-    desc.format = SelectFormat(components[0].sampingFactor);
+    picture.SetFormat(SelectFormat(components[0].sampingFactor));
 
     for (size_t i = 0; i < components.size(); i++)
     {
         auto &component = components[i];
-        component.width  = std::ceil(desc.width * ((float)component.sampingFactor.horizontal / (float)maxSampingFactor.horizontal));
-        component.height = std::ceil(desc.height * ((float)component.sampingFactor.vertical / (float)maxSampingFactor.vertical));
+        component.width  = std::ceil(width * ((float)component.sampingFactor.horizontal / (float)maxSampingFactor.horizontal));
+        component.height = std::ceil(height * ((float)component.sampingFactor.vertical / (float)maxSampingFactor.vertical));
 
         component.x = AlignToMCU(component.width, component.sampingFactor.horizontal);
         component.y = AlignToMCU(component.height, component.sampingFactor.vertical);
@@ -448,7 +444,7 @@ void JpegCodec::InitDecodedPlaneBuffer()
 {
     size_t size = 0;
 
-    auto planes = picture.desc.format.ComponentCount();
+    auto planes = picture.GetFormat().GetComponent();
     std::array<uint32_t, 4> offsets{ 0 };
     for (size_t i = 0; i < planes; i++)
     {
@@ -564,10 +560,11 @@ int32_t JpegCodec::HuffDecode(HuffTable &huffTable)
 
 void JpegCodec::ConvertColorSpace()
 {
-    auto &desc = picture.desc;
-    auto spatial = desc.Spatial();
+	auto &width  = picture.GetWidth();
+	auto &height = picture.GetHeight();
+	auto &format = picture.GetFormat();
     CVector<uint8_t> yuv;
-    data.x = allocator.allocate(spatial * Format{ Format::RGBA8 }.ComponentCount());
+    data.x = allocator.allocate(width * Format{ Format::RGBA8 }.ComponentCount());
 
     for (size_t i = 0, offset = 0; i < components.size(); i++)
     {
@@ -575,18 +572,18 @@ void JpegCodec::ConvertColorSpace()
         offset += SLALIGN(components[i].x * components[i].y, BLOCK_SIZE);
     }
 
-    if (desc.format == Format::YUV444P)
+    if (format == Format::YUV444P)
     {
-        yuv.linesize[0] = SLALIGN(desc.width, 8);
-        YUV444PToRGBA8(data, yuv, desc.width, desc.height);
+        yuv.linesize[0] = SLALIGN(width, 8);
+        YUV444PToRGBA8(data, yuv, width, height);
     }
-    else if (desc.format == Format::YUV420P)
+    else if (format == Format::YUV420P)
     {
-        yuv.linesize[0] = SLALIGN(desc.width, 8);
+        yuv.linesize[0] = SLALIGN(width, 8);
         yuv.linesize[1] = yuv.linesize[0] / 2;
-        YUV420PToRGBA8(data, yuv, desc.width, desc.height);
+        YUV420PToRGBA8(data, yuv, width, height);
     }
-    desc.format = Format::RGBA8;
+	picture.SetFormat(Format::RGBA8);
 }
 
 static void GenerateHuffSize(const uint8_t *BITS, int32_t *HUFFSIZE, int32_t *lastk)

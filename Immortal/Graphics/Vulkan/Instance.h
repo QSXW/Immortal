@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "Common.h"
 #include "Handle.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Graphics/Instance.h"
 #include "Graphics/Device.h"
 

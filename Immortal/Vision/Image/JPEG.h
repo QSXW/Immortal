@@ -4,7 +4,7 @@
 
 #include "Core.h"
 #include "Memory/Allocator.h"
-#include "Vision/Interface/Codec.h"
+#include "Codec.h"
 #include "Vision/Common/BitTracker.h"
 #include "Vision/Processing/ColorSpace.h"
 
@@ -196,8 +196,6 @@ public:
     void ParseHeader(const std::vector<uint8_t> &buffer);
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
-
-    virtual uint8_t *Data() const override;
 
 private:
     template <class T>

@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Object.h"
-#include "Interface/Delegate.h"
 
 namespace Immortal
 {
@@ -55,28 +54,32 @@ struct NativeScriptComponent : public Component
     DEFINE_COMPONENT_TYPE(NativeScript)
 
     NativeScriptComponent() :
-        Status{ Status::NotLoaded }
+        Status{ Status::NotLoaded },
+	    proxy{}
     {
-        delegate = std::make_shared<Delegate<void()>>();
+
     }
 
     NativeScriptComponent(const std::string &module) :
         Module{ module },
-        Status{ Status::NotLoaded }
+        Status{ Status::NotLoaded },
+	    proxy{}
     {
-        delegate = std::make_shared<Delegate<void()>>();
+
     }
 
     void Map(Object o, GameObject *script)
     {
         *script = o;
         script->OnStart();
-        delegate->Map<GameObject, &GameObject::OnUpdate>(script);
+		proxy = [=] {
+			script->OnUpdate();
+		};
     }
 
     void OnRuntime()
     {
-        delegate->Invoke();
+		proxy();
     }
 
     ~NativeScriptComponent()
@@ -92,7 +95,7 @@ struct NativeScriptComponent : public Component
 
     std::string Module;
 
-    std::shared_ptr<Delegate<void()>> delegate;
+    std::function<void()> proxy;
 
     NativeScriptComponent::Status Status;
 };

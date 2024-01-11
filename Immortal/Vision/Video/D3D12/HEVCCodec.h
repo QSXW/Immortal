@@ -3,7 +3,7 @@
 #include "Config.h"
 #include "Core.h"
 #include "Vision/Common/Animator.h"
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 #include "D3D12/VideoCommon.h"
 #include "Vision/Video/HEVC.h"
 

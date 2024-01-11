@@ -1,8 +1,8 @@
 #pragma once
 
-#include <wrl/client.h>
-using Microsoft::WRL::ComPtr;
+#include "Shared/Log.h"
 
+#include <wrl/client.h>
 #include <initguid.h>
 #include <dxgi.h>
 #include <dxgi1_4.h>
@@ -15,6 +15,7 @@ namespace Immortal
 namespace D3D
 {
 
+using Microsoft::WRL::ComPtr;
 #define D3D_SWAPPABLE(T) T(T &&other) : T{} { other.Swap(*this); } T &operator=(T &&other) { T(std::move(other)).Swap(*this); return *this; }  T(const T &) = delete; T &operator=(const T &) = delete;
 
 #define D3D_OPERATOR_PRIMITIVE(handle) \

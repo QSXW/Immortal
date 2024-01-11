@@ -14,8 +14,8 @@
 #include "Render/Graphics.h"
 #include "Render/Mesh.h"
 #include "SceneCamera.h"
-#include "Vision/Interface/Codec.h"
-#include "Vision/Interface/Demuxer.h"
+#include "Codec.h"
+#include "Demuxer.h"
 
 namespace Immortal
 {
@@ -356,7 +356,7 @@ struct VideoPlayerComponent : public Component
 
 	VideoPlayerComponent();
 
-    VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
+    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
 
     ~VideoPlayerComponent();
 

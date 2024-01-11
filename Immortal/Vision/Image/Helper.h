@@ -12,11 +12,11 @@ template <class T>
 requires std::is_same_v<T, uint16_t> || std::is_same_v<T, uint8_t>
 void CopyPictureMono2RGBA8(const Picture &srcPicture, Picture &dstPicture)
 {
-	T *src = (T *)srcPicture.Data();
-	uint8_t  *dst = (uint8_t *)dstPicture.Data();
-	for (int i = 0; i < dstPicture.desc.height; i++)
+	T *src = (T *)srcPicture.GetData();
+	uint8_t  *dst = (uint8_t *)dstPicture.GetData();
+	for (int i = 0; i < dstPicture.GetHeight(); i++)
 	{
-		for (int j = 0; j < dstPicture.desc.width; j++, dst += 4, src += 1)
+		for (int j = 0; j < dstPicture.GetWidth(); j++, dst += 4, src += 1)
 		{
 			if constexpr (std::is_same_v<T, uint16_t>)
 			{
@@ -36,8 +36,10 @@ void CopyPictureMono2RGBA8(const Picture &srcPicture, Picture &dstPicture)
 
 static inline void SimpleWritePicture(const std::string &path, const Picture &picture)
 {
-	Vision::Picture dstPicture{(int)picture.desc.width, (int)picture.desc.height, Format::RGBA8};
-	if ((picture.desc.format & Format::_10Bits) != Format::None)
+	auto width  = picture.GetWidth();
+	auto height = picture.GetHeight();
+	Picture dstPicture{ width, height, Format::RGBA8};
+	if ((picture.GetFormat() & Format::_10Bits) != Format::None)
 	{
 		CopyPictureMono2RGBA8<uint16_t>(picture, dstPicture);
 	}
@@ -47,7 +49,7 @@ static inline void SimpleWritePicture(const std::string &path, const Picture &pi
 	}
 
 	Vision::BMPCodec bmp;
-	bmp.Write(path, dstPicture.desc.width, dstPicture.desc.height, 4, dstPicture.Data());
+	bmp.Write(path, width, height, 4, dstPicture.GetData());
 }
 
 }

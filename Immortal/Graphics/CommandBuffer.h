@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {
@@ -20,7 +20,7 @@ public:
 	virtual ~CommandBuffer() = default;
 
 	virtual bool IsActive() = 0;
-	
+
 	/**
 	 * @brief Reset the command buffer. All of the commands recorded will be discarded.
 	 */
@@ -47,9 +47,9 @@ public:
 	 * @brief For profile
 	 */
 	virtual void EndEvent() = 0;
-	
+
 	/**
-	 * @brief Set pipeline 
+	 * @brief Set pipeline
 	 */
 	virtual void SetPipeline(Pipeline *pipeline) = 0;
 

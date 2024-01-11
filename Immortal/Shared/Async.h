@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Core.h"
-#include "Log.h"
-#include "Interface/IObject.h"
 
 #include <thread>
 #include <queue>
@@ -152,7 +150,6 @@ class Async
 public:
     static void Setup()
     {
-        LOG::INFO("Initializing Asynchronous Library");
         threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
     }
 
