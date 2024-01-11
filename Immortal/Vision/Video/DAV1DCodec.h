@@ -2,7 +2,7 @@
 
 #include "Core.h"
 #include "Config.h"
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 #include "Vision/Common/Animator.h"
 
 struct Dav1dContext;

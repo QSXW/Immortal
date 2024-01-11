@@ -5,7 +5,7 @@
 #include "Buffer.h"
 #include "Shader.h"
 #include "Barrier.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Graphics/LightGraphics.h"
 #include "Algorithm/LightArray.h"
 

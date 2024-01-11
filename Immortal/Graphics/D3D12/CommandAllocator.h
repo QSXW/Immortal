@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 #include <mutex>
 #include <queue>
@@ -19,8 +19,8 @@ public:
     using Primitive = ID3D12CommandAllocator;
 	D3D12_OPERATOR_HANDLE()
 
-    CommandAllocator(CommandAllocator &&)                = delete;                                                     
-	CommandAllocator(const CommandAllocator &)           = delete;                                              
+    CommandAllocator(CommandAllocator &&)                = delete;
+	CommandAllocator(const CommandAllocator &)           = delete;
 	CommandAllocator &operator=(CommandAllocator &&)     = delete;
 	CommandAllocator operator=(const CommandAllocator &) = delete;
 

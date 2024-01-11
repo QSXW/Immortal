@@ -45,29 +45,29 @@ static inline VkVideoChromaSubsamplingFlagBitsKHR SelectChromaSampling(Format fo
     }
 }
 
-CodecError HEVCCodec::Decode(const std::vector<uint8_t> &rbsp)
+CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 {
-    Super::Decode(rbsp);
+	Super::Decode(codedFrame);
 
     auto device = (Immortal::Vulkan::Device *)(Graphics::GetDevice());
-    auto &desc = picture.desc;
     if (!session)
     {
-        desc.width  = sps->pic_width_in_luma_samples;
-        desc.height = sps->pic_height_in_luma_samples;
+        auto format = picture.GetFormat();
+        auto width  = sps->pic_width_in_luma_samples;
+        auto height = sps->pic_height_in_luma_samples;
 
         VkVideoProfileInfoKHR profile{};
         profile.pNext               = nullptr;
         profile.sType               = VK_STRUCTURE_TYPE_VIDEO_PROFILE_INFO_KHR;
         profile.lumaBitDepth        = SelectBitDepth(sps->bit_depth_luma);
         profile.chromaBitDepth      = SelectBitDepth(sps->bit_depth_chroma);
-        profile.chromaSubsampling   = SelectChromaSampling(desc.format);
+        profile.chromaSubsampling   = SelectChromaSampling(format);
         profile.videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT;
 
         session = new VideoSession{
             device,
-            desc.format,
-            VkExtent2D{ uint32_t(desc.width), uint32_t(desc.height) },
+		    format,
+            VkExtent2D{ uint32_t(width), uint32_t(height) },
             &profile,
             };
     }

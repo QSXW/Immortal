@@ -33,7 +33,7 @@ public:
     };
 
 public:
-    virtual CodecError Decode(const std::vector<uint8_t> &rbsp) override;
+    virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
 private:
     void UpdateSequenceParameterSet();

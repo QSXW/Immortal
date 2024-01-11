@@ -1,4 +1,5 @@
 #include "Image.h"
+#include "Codec.h"
 #include "Image/ImageCodec.h"
 #include "FileSystem/FileSystem.h"
 
@@ -7,7 +8,7 @@ namespace Immortal
 namespace Vision
 {
 
-static Interface::Codec *SelectSuitableCodec(const std::string &path)
+static Codec *SelectSuitableCodec(const std::string &path)
 {
     switch (FileSystem::DumpFileId(path))
     {

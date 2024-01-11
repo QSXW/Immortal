@@ -9,7 +9,7 @@
 #include "Queue.h"
 #include "FencePool.h"
 #include "SemaphorePool.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "TimelineCommandBuffer.h"
 #include "TimelineCommandPool.h"
 #include "Submitter.h"

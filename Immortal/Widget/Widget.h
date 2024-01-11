@@ -14,7 +14,7 @@
 #include "ImGui/GuiLayer.h"
 #include "Math/Math.h"
 #include "Math/Vector.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Framework/Timer.h"
 #include "String/IString.h"
 #include "String/LanguageSettings.h"

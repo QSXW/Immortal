@@ -2,7 +2,7 @@
 
 #include "Core.h"
 #include "Format.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Types.h"
 
 namespace Immortal

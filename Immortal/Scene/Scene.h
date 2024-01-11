@@ -7,7 +7,7 @@
 
 #include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Graphics/LightGraphics.h"
 #include "Component.h"
 #include "Graphics/Event/KeyEvent.h"

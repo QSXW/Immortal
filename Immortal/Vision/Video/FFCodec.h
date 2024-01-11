@@ -2,7 +2,7 @@
 
 #include "Core.h"
 #include "Config.h"
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 #include "Vision/Common/Animator.h"
 #include "Memory/MemoryResource.h"
 #include "Graphics/LightGraphics.h"
@@ -27,8 +27,6 @@ public:
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    virtual uint8_t *Data() const override;
-
     virtual Picture GetPicture() const override;
 
     virtual void Flush() override;
@@ -47,7 +45,7 @@ protected:
 
     AVFrame *frame;
 
-    PictureType type;
+    PictureMemoryType type;
 
     URef<MemoryResource> memoryResource;
 #endif // HAVE_FFMPEG

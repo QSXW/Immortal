@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "Config.h"
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 
 namespace Immortal
 {

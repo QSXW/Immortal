@@ -21,8 +21,8 @@ CodecError WAVCodec::Decode(const CodedFrame &codedFrame)
     picture = Picture{ (int)(buffer.size() - headerSize) >> 2, 1, Format::VECTOR2 };
 
     int16_t *src  = (int16_t *)(buffer.data() + headerSize);
-    float *dst = (float *)picture.Data();
-    for (int i = 0; i < picture.desc.width * 2; i++)
+    float *dst = (float *)picture.GetData();
+    for (int i = 0; i < picture.GetWidth() * 2; i++)
     {
         dst[i] = src[i] / 32768.0;
     }

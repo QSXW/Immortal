@@ -407,7 +407,7 @@ void Scene::OnRender(const Camera &camera)
 
             animator->Accumulator = fmodf(animator->Accumulator, animator->SecondsPerFrame);
             auto picture = videoPlayer.GetPicture();
-            if (picture.Available())
+            if (picture)
             {
                 videoPlayer.PopPicture();
                 sprite.UpdateSprite(picture);

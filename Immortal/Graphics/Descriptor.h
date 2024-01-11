@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Algorithm/LightVector.h"
 
 namespace Immortal

@@ -11,11 +11,10 @@
 #include <immintrin.h>
 
 #include "Allocator.h"
-#include "Interface/IObject.h"
 
 namespace Immortal
 {
-   
+
 class MarkBuffer
 {
 public:
@@ -66,7 +65,7 @@ public:
     {
         if (ptr >= data && ptr < data + size * count)
         {
-            Mark((ptr - data) / size); 
+            Mark((ptr - data) / size);
             return true;
         }
 
@@ -108,7 +107,7 @@ public:
                 return ptr;
             }
         }
-        
+
         uint8_t *data = allocator.allocate(size * count);
         auto &buffer = buffers.emplace_back(MarkBuffer{ data, count});
         return buffer.Allocate(size);

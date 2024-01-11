@@ -54,9 +54,9 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 
 		auto width  = processor->imgdata.rawdata.sizes.raw_width;
 		auto height = processor->imgdata.rawdata.sizes.raw_height;
-		picture = Picture{width, height, Format::BayerLayerRGBG, nullptr, true};
+		picture = Picture{ width, height, Format::BayerLayerRGBG, true };
 
-		memcpy(picture.Data(), processor->imgdata.rawdata.raw_image, processor->imgdata.rawdata.sizes.raw_pitch * processor->imgdata.rawdata.sizes.raw_height);
+		memcpy(picture.GetData(), processor->imgdata.rawdata.raw_image, processor->imgdata.rawdata.sizes.raw_pitch * processor->imgdata.rawdata.sizes.raw_height);
     }
     else
     {
@@ -72,13 +72,13 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 
 		if (bitDepth == RawBitDepth::_16)
 		{
-		    picture = Picture{ image->width, image->height, Format::RGBA16, nullptr, true };
-			ReadPixelsToPicture<uint16_t>((uint16_t *)picture.Data(), (uint16_t *)image->data, image->width, image->height, image->colors);
+		    picture = Picture{ image->width, image->height, Format::RGBA16, true };
+			ReadPixelsToPicture<uint16_t>((uint16_t *)picture.GetData(), (uint16_t *)image->data, image->width, image->height, image->colors);
 		}
 		else
 		{
-			picture = Picture{image->width, image->height, Format::RGBA8, nullptr, true};
-			ReadPixelsToPicture<uint8_t>(picture.Data(), image->data, image->width, image->height, image->colors);
+			picture = Picture{ image->width, image->height, Format::RGBA8, true };
+			ReadPixelsToPicture<uint8_t>(picture.GetData(), image->data, image->width, image->height, image->colors);
 		}
     }
 

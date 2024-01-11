@@ -3,7 +3,7 @@
 #include "Core.h"
 #include "Types.h"
 #include "Format.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {
@@ -31,7 +31,7 @@ public:
 
     /**
      * @brief Get the backend handle
-     * 
+     *
      * Vulkan: VkDevice
      * OpenGL: A pointer to GLFWwindow
      * D3D11:  A pointer to ID3D11Device
@@ -66,7 +66,7 @@ public:
      * @param             queue The queue that used to submit the commmand buffer that renders something into the render target the this swapchain
      * @param window      The pointer to the Window for surface creation
      * @param format      The render target format of the swapchain
-     * @param bufferCount The number of the back buffer 
+     * @param bufferCount The number of the back buffer
      * @param mode         VerticalSync or None
      */
     virtual Swapchain *CreateSwapchain(Queue *queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode) = 0;
@@ -75,7 +75,7 @@ public:
      * @brief Create a sampler
      */
     virtual Sampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = 0.0f, float maxLod = 1.0f) = 0;
-    
+
     /**
      * @brief Create a shader
      * @param name       The name of the specific shader source, which is useful for error logging
@@ -84,7 +84,7 @@ public:
      * @param entryPoint The entry point of the shader program
      */
     virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) = 0;
-    
+
     /**
      * @brief Create a graphics pipeline
      */

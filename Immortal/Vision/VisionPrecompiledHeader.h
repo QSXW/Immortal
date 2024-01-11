@@ -17,7 +17,10 @@
 #include <queue>
 #include <list>
 
+#include "Codec.h"
+#include "Demuxer.h"
 #include "Image.h"
+#include "Picture.h"
 #include "Types.h"
 
 #include "Audio/WAV.h"
@@ -44,8 +47,6 @@
 #include "Image/Raw.h"
 #include "Image/STBCodec.h"
 
-#include "Interface/Codec.h"
-#include "Interface/Demuxer.h"
 #include "Interface/MFXCodec.h"
 
 #include "LookupTable/LookupTable.h"

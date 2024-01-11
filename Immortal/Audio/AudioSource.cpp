@@ -25,9 +25,9 @@ AudioSource::AudioSource(Ref<Vision::Interface::Codec> &codec) :
 HRESULT AudioSource::LoadData(int numFramesAvaiable, void *pData, DWORD *flags)
 {
     auto picture = codec->GetPicture();
-    float* wave = (float*)&picture.Data()[pts];
+    float *wave = (float*)&picture.GetData()[pts];
 
-    auto samples = std::min(picture.desc.width * sizeof(float) - pts, numFramesAvaiable * 2 * sizeof(float));
+    auto samples = std::min(picture.GetWidth() * sizeof(float) - pts, numFramesAvaiable * 2 * sizeof(float));
 
     if (!samples)
     {
@@ -44,7 +44,7 @@ HRESULT AudioSource::LoadData(int numFramesAvaiable, void *pData, DWORD *flags)
 bool AudioSource::InProgress() const
 {
     auto picture = codec->GetPicture();
-    return pts < picture.desc.width * sizeof(float);
+	return pts < picture.GetWidth() * sizeof(float);
 }
 
 AudioClip AudioSource::GetAudioClip(int frames)
@@ -53,11 +53,11 @@ AudioClip AudioSource::GetAudioClip(int frames)
 
     if (!frames)
     {
-        frames = picture.desc.width;
+		frames = picture.GetWidth();
     }
 
     AudioClip clip{ picture };
-    clip.pData  = (const uint8_t *)&picture.Data()[pts];
+    clip.pData  = (const uint8_t *)&picture.GetData()[pts];
     clip.bytes  = frames /* sample rate per frame */ * 2 /* channels */ * sizeof(float) /* format */;
     clip.frames = frames;
 

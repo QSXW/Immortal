@@ -45,7 +45,7 @@ struct AudioClip
 
     AudioClip(Picture picture) :
         bytes{},
-        pData{ picture.shared->data[0] },
+	    pData{ picture.GetData() },
         frames{},
         picture{picture}
     {

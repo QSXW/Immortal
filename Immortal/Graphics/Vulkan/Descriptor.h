@@ -5,6 +5,7 @@
 
 #include "Common.h"
 #include "Graphics/Descriptor.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

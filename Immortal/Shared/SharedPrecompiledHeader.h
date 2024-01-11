@@ -13,4 +13,5 @@
 
 #include "Async.h"
 #include "DLLLoader.h"
+#include "IObject.h"
 #include "Log.h"

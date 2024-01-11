@@ -22,7 +22,6 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 {
     cv::Mat mat;
 
-    auto &desc = picture.desc;
     const auto &buf = codedFrame.buffer;
     cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
@@ -41,20 +40,21 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
         }
     }
 
-    desc.width  = mat.cols;
-    desc.height = mat.rows;
-    desc.format = Format::RGBA8;
+    picture = Picture{ mat.cols, mat.rows, Format::RGBA8 };
 
     if (mat.depth() == CV_16U)
     {
-        desc.format = Format::RGBA16;
+		picture.SetFormat(Format::RGBA16);
     }
     if (mat.depth() == CV_32FC4)
     {
-        desc.format = Format::RGBA32F;
+        picture.SetFormat(Format::RGBA32F);
     }
 
-    picture.Reset(mat.data);
+    picture.SetData(mat.data);
+	picture.SetRelease([] (void *data) {
+		delete data;
+	});
     mat.data = nullptr;
 
     return CodecError::Succeed;
@@ -62,7 +62,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-    cv::Mat input{ cv::Size{ (int)picture.desc.width, (int)picture.desc.height }, CV_8UC4, picture.Data()};
+    cv::Mat input{ cv::Size{ (int)picture.GetWidth(), (int)picture.GetHeight() }, CV_8UC4, picture.GetData()};
     try
     {
         if (!cv::imencode(".jpg", input, codedFrame.buffer))
@@ -80,13 +80,13 @@ CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 
 void OpenCVCodec::Swap(void *ptr)
 {
-    size_t size = picture.desc.Size();
+	size_t size = picture.GetWidth() * picture.GetHeight() * picture.GetFormat().GetTexelSize();
     ptr = new uint8_t[size];
     if (!ptr)
     {
         return;
     }
-    memcpy(ptr, picture.Data(), size);
+    memcpy(ptr, picture.GetData(), size);
 }
 #endif
 

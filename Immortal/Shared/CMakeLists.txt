@@ -10,6 +10,7 @@ set(SRC_FILES
     Async.h
     DLLLoader.cpp
     DLLLoader.h
+    IObject.h
     Log.cpp
     Log.h)
 

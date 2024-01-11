@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vision/Common/Error.h"
-#include "Vision/Interface/Codec.h"
+#include "Vision/Codec.h"
 
 #include "Helper.h"
 #include "BMP.h"

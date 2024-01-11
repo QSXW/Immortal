@@ -8,7 +8,7 @@
 
 #include "Core.h"
 #include "TCP.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {

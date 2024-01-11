@@ -5,6 +5,12 @@ namespace Immortal
 namespace Vision
 {
 
+STBCodec::STBCodec() :
+    Super{}
+{
+
+}
+
 STBCodec::~STBCodec()
 {
 
@@ -41,8 +47,8 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         );
     }
 
-    picture = Picture{ width, height, format };
-    picture.Reset(data);
+    picture = Picture{ uint32_t(width), uint32_t(height), format };
+    picture.SetData(data);
     if (!data)
     {
         return CodecError::CorruptedBitstream;
@@ -53,13 +59,6 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError STBCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-
-    return CodecError::NotImplement;
-}
-
-CodecError STBCodec::Encode(const std::string &filepath, const Picture &picture)
-{
-
     return CodecError::NotImplement;
 }
 

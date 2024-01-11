@@ -9,8 +9,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(VISION_CORE_FILES
+    Codec.h
+    Demuxer.h
     Image.cpp
     Image.h
+    Picture.cpp
+    Picture.h
     Types.h
     VisionPrecompiledHeader.h)
 list(TRANSFORM VISION_CORE_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
@@ -38,8 +42,6 @@ set(DEMUX_FILES
 list(TRANSFORM DEMUX_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Demux/")
 
 set(VISION_INTERFACE_FILES
-    Codec.h
-    Demuxer.h
     MFXCodec.cpp
     MFXCodec.h)
 list(TRANSFORM VISION_INTERFACE_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Interface/")

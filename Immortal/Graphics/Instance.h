@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Types.h"
 #include "Window.h"
 

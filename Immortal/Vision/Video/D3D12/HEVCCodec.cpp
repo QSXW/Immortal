@@ -55,7 +55,7 @@ CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 {
 	SideData sizeData;
 
-	auto packet = codedFrame.DeRef<AVPacket>();
+	auto packet = codedFrame.InterpretAs<AVPacket>();
 
 	if (!packet->size)
 	{

@@ -13,7 +13,7 @@ namespace Immortal
 struct VideoPlayerContext
 {
 public:
-    VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder = nullptr);
+    VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
 
     ~VideoPlayerContext();
 
@@ -54,17 +54,15 @@ public:
 
     std::condition_variable condition;
 
-    Ref<Vision::VideoCodec> decoder;
+    Ref<VideoCodec> decoder;
 
-    Ref<Vision::VideoCodec> audioDecoder;
+    Ref<VideoCodec> audioDecoder;
 
-    Ref<Vision::Interface::Demuxer> demuxer;
+    Ref<Demuxer> demuxer;
 
     std::queue<Picture> pictures;
 
     std::queue<Picture> audioFrames;
-
-    Picture lastPicture;
 
     struct State
     {
@@ -84,23 +82,22 @@ Vision::Picture AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interf
     return Vision::Picture{};
 }
 
-VideoPlayerContext::VideoPlayerContext(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
+VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
     demuxerThread{},
     videoThreadPool{ new ThreadPool{1} },
     audioThreadPool{ new ThreadPool{1} },
     decoder{decoder},
     audioDecoder{ audioDecoder },
     demuxer{demuxer},
-    lastPicture{},
     state{}
 {
     demuxerThread = new Thread{[=, this]() {
         while (true)
         {
             std::unique_lock lock{ mutex.demux };
-			condition.wait(lock, [this] {
-				return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
-			});
+            condition.wait(lock, [this] {
+                return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
+            });
 
             if (state.exited)
             {
@@ -198,7 +195,7 @@ Picture VideoPlayerContext::GetAudioFrame()
 void VideoPlayerContext::PopPicture()
 {
     std::unique_lock lock{ mutex.video };
-	Picture picture = std::move(pictures.front());
+    Picture picture = std::move(pictures.front());
     pictures.pop();
     condition.notify_one();
 }
@@ -218,8 +215,8 @@ VideoPlayerComponent::VideoPlayerComponent() :
     
 }
 
-VideoPlayerComponent::VideoPlayerComponent(Ref<Vision::Interface::Demuxer> demuxer, Ref<Vision::VideoCodec> decoder, Ref<Vision::VideoCodec> audioDecoder) :
-    player{new VideoPlayerContext{demuxer, decoder, audioDecoder}}
+VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
+    player{new VideoPlayerContext{ demuxer, decoder, audioDecoder }}
 {
 
 }

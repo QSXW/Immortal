@@ -50,8 +50,7 @@
 #include "ImGui/GuiLayer.h"
 #include "ImGui/Utils.h"
 
-#include "Interface/Delegate.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 
 #include "Math/Math.h"
 #include "Math/Vector.h"

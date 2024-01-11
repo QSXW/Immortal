@@ -8,7 +8,7 @@
 
 #include "Core.h"
 #include "Shared/Async.h"
-#include "Interface/IObject.h"
+#include "Shared/IObject.h"
 #include "Audio/AudioSource.h"
 #include "AudioRenderContext.h"
 

@@ -20,16 +20,16 @@ CodecError BMPCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::UnsupportFormat;
     }
     
-    picture = Picture{ width, height, Format::BGRA8 };
+    picture = Picture{ uint32_t(width), uint32_t(height), Format::BGRA8 };
 
     auto src = buffer.data() + offset;
 
     auto padding  = width & 3;
-    auto linesize = width * picture.desc.format.ComponentCount();
+    auto linesize = width * picture.GetFormat().GetTexelSize();
     
-    auto size = picture.desc.Size();
+    auto size = picture.GetFormat().GetTexelSize();
 
-    uint8_t *ptr = picture.Data() + size - linesize;
+    uint8_t *ptr = picture.GetData() + size - linesize;
 
     for (int y = 0; y < height; y++)
     {

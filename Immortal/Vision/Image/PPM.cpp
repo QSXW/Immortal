@@ -32,7 +32,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
     picture = Picture{ width, height, Format::RGBA8 };
     for (int i = 0; i < height; i++)
     {
-        auto dst = picture.Data() + i * width * picture.desc.format.ComponentCount();
+        auto dst = picture.GetData() + i * width * picture.GetFormat().GetTexelSize();
         for (int j = 0; j < width; j++, dst += 4)
         {
             size_t size = n;
@@ -49,8 +49,8 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError PPMCodec::Encode(const Picture &picture, CodedFrame & codedFrame)
 {
-    auto width  = picture.desc.width;
-    auto height = picture.desc.height;
+    auto width  = picture.GetWidth();
+    auto height = picture.GetHeight();
 
     char header[1024] = {};
     auto n = sprintf(header, PPM_HEADER, width, height);
@@ -60,10 +60,10 @@ CodecError PPMCodec::Encode(const Picture &picture, CodedFrame & codedFrame)
     codedFrame.buffer.resize(n);
     std::copy(header, header + n, codedFrame.buffer.data());
 
-    for (int i = 0; i < picture.desc.height; i++)
+    for (int i = 0; i < height; i++)
     {
-        auto src = picture.Data() + i * picture.desc.width * picture.desc.format.ComponentCount();
-        for (int j = 0; j < picture.desc.width; j++, src += 4)
+        auto src = picture.GetData() + i * width * picture.GetFormat().GetTexelSize();
+        for (int j = 0; j < width; j++, src += 4)
         {
             size_t size = codedFrame.buffer.size();
             n = sprintf(header, "%d %d %d\n", src[0], src[1], src[2]);
