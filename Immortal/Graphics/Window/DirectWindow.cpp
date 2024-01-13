@@ -5,13 +5,9 @@
 #include <codecvt>
 #include <shellapi.h>
 
-#include <backends/imgui_impl_win32.cpp>
-
 #include "Event/ApplicationEvent.h"
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
-
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace Immortal
 {
@@ -23,9 +19,6 @@ Window::EventCallbackFunc DirectWindow::EventDispatcher = nullptr;
 // Win32 message handler
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
-
     switch (msg)
     {
         case WM_SIZE:
@@ -35,7 +28,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (UINT)HIWORD(lParam)
             };
             DirectWindow::EventDispatcher(resizeEvent);
-            return 0;
+			break;
         }
 
         case WM_MOVE:
@@ -45,7 +38,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (int)HIWORD(lParam)
             };
             DirectWindow::EventDispatcher(moveEvent);
-            return 0;
+			break;
         }
         case WM_KEYDOWN:
         case WM_KEYUP:
@@ -82,7 +75,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 };
                 DirectWindow::EventDispatcher(e);
             }
-            return 0;
+			break;
         }
 
         case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
@@ -114,7 +107,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             };
             DirectWindow::EventDispatcher(e);
 
-            return 0;
+            break;
         }
 
         case WM_LBUTTONUP:
@@ -145,7 +138,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             };
             DirectWindow::EventDispatcher(e);
 
-            return 0;
+            break;
         }
 
         case WM_MOUSEWHEEL:
@@ -155,7 +148,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA
             };
             DirectWindow::EventDispatcher(e);
-            return 0;
+			break;
         }
 
         case WM_MOUSEHWHEEL:
@@ -165,55 +158,62 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 0.0f
             };
             DirectWindow::EventDispatcher(e);
-            return 0;
+			break;
         }
 
         case WM_SETFOCUS:
         case WM_KILLFOCUS:
-            DirectWindow::Input->Focus = (msg == WM_SETFOCUS);
-            if (!DirectWindow::Input->Focus)
-            {
-                DirectWindow::Input->Clear();
-            }
-            return 0;
+        {
+			DirectWindow::Input->Focus = (msg == WM_SETFOCUS);
+			if (!DirectWindow::Input->Focus)
+			{
+				DirectWindow::Input->Clear();
+			}
+			break;
+        }
 
         case WM_SYSCOMMAND:
+        {
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
-                return 0;
-            goto end;
+			{
+				return 0;
+			}
+			return ::DefWindowProc(hWnd, msg, wParam, lParam);
+        }
 
         case WM_DESTROY:
         {
             ::PostQuitMessage(0);
             WindowCloseEvent closeEvent;
             DirectWindow::EventDispatcher(closeEvent);
-            return 0;
+			break;
         }
 
         case WM_DROPFILES:
         {
-            char path[MAX_PATH] = {};
+            char path[1024] = {};
             HDROP hDrop = (HDROP)wParam;
 
-            auto pathLength = DragQueryFileA(hDrop, 0, path, SL_ARRAY_LENGTH(path));
+            WindowDragDropEvent dragDropEvent;
+            for (uint32_t i = 0; ; i++)
+            {
+				uint32_t length = DragQueryFileA(hDrop, i, path, SL_ARRAY_LENGTH(path));
+                if (!length)
+                {
+					break;
+                }
+				dragDropEvent.AddFilePath(path);
+            }
             DragFinish(hDrop);
-            
-            //static FileSystem::DirectoryEntry dir;
-            //dir = {
-            //    .path = path,
-            //    .type = FileType::RegularFile
-            //};
-
-            //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
-            //{
-            //    FileSystem::DirectoryEntry *entry = { &dir };
-            //    ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
-            //}
+			DirectWindow::EventDispatcher(dragDropEvent);
+			break;
         }
+
+        default:
+			return ::DefWindowProc(hWnd, msg, wParam, lParam); 
     }
 
-end:
-    return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+    return 0;
 }
 
 DirectWindow::DirectWindow(Anonymous handle) :
@@ -241,7 +241,6 @@ DirectWindow::~DirectWindow()
 		Shutdown();
     }
 }
-
 
 Anonymous DirectWindow::GetBackendHandle() const
 {

@@ -12,7 +12,7 @@
 #include "imgui.h"      // IMGUI_IMPL_API
 
 // Called by user code
-IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Immortal::Queue *queue, Immortal::Swapchain *swapchain, uint32_t swapchainBufferCount);
+IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Immortal::Window *window, Immortal::Queue *queue, Immortal::Swapchain *swapchain, uint32_t swapchainBufferCount);
 IMGUI_IMPL_API void         ImGui_ImplImmortal_Shutdown();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_NewFrame();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Immortal::CommandBuffer *commandBuffer);

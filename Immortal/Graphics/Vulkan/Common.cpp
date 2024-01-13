@@ -6,7 +6,6 @@
 #ifdef VK_NO_PROTOTYPES
 #undef VK_NO_PROTOTYPES
 #endif
-#include <backends/imgui_impl_vulkan.cpp>
 
 namespace Immortal
 {

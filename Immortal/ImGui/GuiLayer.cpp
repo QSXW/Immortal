@@ -12,6 +12,7 @@
 #include "FileSystem/Stream.h"
 #include "Shared/Async.h"
 #include "Widget/Widget.h"
+#include "FileSystem/FileSystem.h"
 
 #ifdef _WIN32
 #include <backends/imgui_impl_win32.h>
@@ -126,20 +127,20 @@ void GuiLayer::OnAttach()
    SimSun.Regular = NotoSans.Demilight;
 #endif
 
-    ImGui_ImplImmortal_Init(device, queue, swapchain, 3);
-   decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
-   decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
+    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
+    decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
+    decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
 
 #ifdef _WIN32
-   if (window->GetType() == WindowType::Win32)
-   {
-        ImGui_ImplWin32_Init(window->GetBackendHandle());
-        platformSpecficWindow.NewFrame = ImGui_ImplWin32_NewFrame;
-        platformSpecficWindow.ShutDown = ImGui_ImplWin32_Shutdown;
-   }
-   else
+    if (window->GetType() == WindowType::Win32)
+    {
+         ImGui_ImplWin32_Init(window->GetBackendHandle());
+         platformSpecficWindow.NewFrame = ImGui_ImplWin32_NewFrame;
+         platformSpecficWindow.ShutDown = ImGui_ImplWin32_Shutdown;
+    }
+    else
 #endif
-   {
+    {
         GLFWwindow *glfwWindow = (GLFWwindow *)window->GetBackendHandle();
         if (device->GetBackendAPI() == BackendAPI::OpenGL)
         {
@@ -151,7 +152,7 @@ void GuiLayer::OnAttach()
         }
         platformSpecficWindow.NewFrame = ImGui_ImplGlfw_NewFrame;
         platformSpecficWindow.ShutDown = ImGui_ImplGlfw_Shutdown;
-   }
+    }
 }
 
 void GuiLayer::OnDetach()
@@ -242,6 +243,24 @@ void GuiLayer::OnEvent(Event &e)
         ImGuiIO &io = ImGui::GetIO();
         e.Handled |= e.IsInCategory(Event::Category::Mouse) & io.WantCaptureMouse;
         e.Handled |= e.IsInCategory(Event::Category::Keyboard) & io.WantCaptureKeyboard;
+    }
+
+    if (e.GetType() == Event::Type::WindowDragDrop)
+    {
+		WindowDragDropEvent &dragDrapEvent = (WindowDragDropEvent &)e;
+        if (dragDrapEvent.GetSize() == 1)
+        {
+			static FileSystem::DirectoryEntry dir;
+			dir = {
+				.path = dragDrapEvent.QueryFile(0),
+				.type = FileType::RegularFile
+			};
+		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
+		    {
+			    FileSystem::DirectoryEntry *entry = {&dir};
+			    ImGui::SetDragDropPayload("LOAD_FILE", (void *) &entry, sizeof(&entry));
+		    }
+        }
     }
 }
 

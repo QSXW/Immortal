@@ -42,6 +42,7 @@ public:
         WindowFocus,
         WindowLostFocus,
         WindowMoved,
+        WindowDragDrop,
         AppTick,
         AppUpdate,
         AppRender,
