@@ -10,8 +10,23 @@
 
 using namespace Immortal;
 
-#define DEFAULT_VERTEX_SIZE 5000
-#define DEFAULT_INDEX_SIZE  10000
+#define DEFAULT_VERTEX_SIZE  5000
+#define DEFAULT_INDEX_SIZE   10000
+#define MAX_FRAMES_IN_FLIGHT 6
+
+#ifdef _WIN32
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+WNDPROC BackupWndProc;
+
+static LRESULT CALLBACK ImGui_ImplImmortal_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+    {
+		return true;
+    }
+	return ::CallWindowProcW(BackupWndProc, hWnd, msg, wParam, lParam);
+}
+#endif
 
 struct ImGui_ImplImmortal_Data
 {
@@ -25,14 +40,28 @@ struct ImGui_ImplImmortal_Data
     uint32_t                swapchainBufferCount;
 };
 
-struct ImGui_ImplImmortal_FrameContext
+class ImGui_ImplImmortal_FrameContext
 {
+public:
     ImGui_ImplImmortal_FrameContext() :
         indexBuffer{},
         vertexBuffer{},
         descriptorSets{}
     {
 
+    }
+
+    ~ImGui_ImplImmortal_FrameContext()
+    {
+        for (auto &descriptorSet : freeDescriptorSets)
+        {
+			delete descriptorSet;
+        }
+		for (auto &[texture, descriptorSet] : descriptorSets)
+		{
+			delete descriptorSet;
+		}
+		descriptorSets.clear();
     }
 
     URef<Buffer> indexBuffer;
@@ -43,8 +72,8 @@ struct ImGui_ImplImmortal_FrameContext
         uint32_t rest = freeDescriptorSets.size() - allocated;
         if (rest > 0)
         {
-			memmove(freeDescriptorSets.data(), freeDescriptorSets.data() + allocated, rest * sizeof(freeDescriptorSets[0]));
-			freeDescriptorSets.resize(rest);
+            memmove(freeDescriptorSets.data(), freeDescriptorSets.data() + allocated, rest * sizeof(freeDescriptorSets[0]));
+            freeDescriptorSets.resize(rest);
         }
         for (auto &[texture, descriptorSet] : descriptorSets)
         {
@@ -76,31 +105,31 @@ struct ImGui_ImplImmortal_ViewportData
     ImGui_ImplImmortal_ViewportData(uint32_t bufferCount) :
         window{},
         swapchain{},
-	    gpuEvent{},
+        gpuEvent{},
         commandBuffers{},
         syncValues{},
         syncPoint{},
         NumFramesInFlight{ bufferCount },
         FrameIndex{},
-        FrameRenderContext{}
+	    frameCtx{}
     {
-		FrameRenderContext.resize(NumFramesInFlight);
+		frameCtx = new ImGui_ImplImmortal_FrameContext[NumFramesInFlight];
     }
 
     ~ImGui_ImplImmortal_ViewportData()
     {
-
+		delete []frameCtx;
     }
-
-    URef<Window>                                 window;
-	URef<Swapchain>                              swapchain;
-    URef<GPUEvent>                               gpuEvent;
-    URef<CommandBuffer>                          commandBuffers[3];
-    uint64_t                                     syncValues[3];
-    uint32_t                                     syncPoint;
-    uint32_t                                     NumFramesInFlight;
-    uint32_t                                     FrameIndex;
-    std::vector<ImGui_ImplImmortal_FrameContext> FrameRenderContext;
+                                                          
+    URef<Window>                                          window;
+    URef<Swapchain>                                       swapchain;
+    URef<GPUEvent>                                        gpuEvent;
+    URef<CommandBuffer>                                   commandBuffers[3];
+    uint64_t                                              syncValues[3];
+    uint32_t                                              syncPoint;
+    uint32_t                                              NumFramesInFlight;
+    uint32_t                                              FrameIndex;
+	ImGui_ImplImmortal_FrameContext                      *frameCtx;
 };
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
@@ -286,7 +315,7 @@ const GLchar *GLSL450CoreVertexShaderSource = R"(
         }
 }
 
-IMGUI_IMPL_API bool ImGui_ImplImmortal_Init(Device *device, Queue *queue, Swapchain *swapchain, uint32_t swapchainBufferCount)
+IMGUI_IMPL_API bool ImGui_ImplImmortal_Init(Device *device, Window *window, Queue *queue, Swapchain *swapchain, uint32_t swapchainBufferCount)
 {
     ImGuiIO &io = ImGui::GetIO();
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
@@ -300,8 +329,17 @@ IMGUI_IMPL_API bool ImGui_ImplImmortal_Init(Device *device, Queue *queue, Swapch
 
     bd->device    = device;
     bd->queue     = queue;
-	bd->swapchain = swapchain;
+    bd->swapchain = swapchain;
     bd->swapchainBufferCount = swapchainBufferCount;
+
+#ifdef _WIN32
+    if (window->GetType() == WindowType::Win32)
+    {
+        HWND handle = (HWND)window->GetBackendHandle();
+		BackupWndProc = (WNDPROC)::GetWindowLongPtrW(handle, GWLP_WNDPROC);
+		::SetWindowLongPtrW(handle, GWLP_WNDPROC, (LONG_PTR)&ImGui_ImplImmortal_WndProc);
+    }
+#endif
 
     ImGui_ImplImmortal_CreateDeviceObjects();
 
@@ -325,16 +363,16 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_Shutdown()
     bd->pipeline.Reset();
 
         // Manually delete main viewport render data in-case we haven't initialized for viewports
-	ImGuiViewport *main_viewport = ImGui::GetMainViewport();
-	if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)main_viewport->RendererUserData)
-		IM_DELETE(vd);
-	main_viewport->RendererUserData = nullptr;
+    ImGuiViewport *main_viewport = ImGui::GetMainViewport();
+    if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)main_viewport->RendererUserData)
+        IM_DELETE(vd);
+    main_viewport->RendererUserData = nullptr;
 
     auto &io = ImGui::GetIO();
-	io.BackendRendererName = nullptr;
-	io.BackendRendererUserData = nullptr;
-	io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasViewports);
-	IM_DELETE(bd);
+    io.BackendRendererName = nullptr;
+    io.BackendRendererUserData = nullptr;
+    io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasViewports);
+    IM_DELETE(bd);
 }
 
 IMGUI_IMPL_API void ImGui_ImplImmortal_NewFrame()
@@ -360,7 +398,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
     ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
     ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)drawData->OwnerViewport->RendererUserData;
     vd->FrameIndex++;
-    ImGui_ImplImmortal_FrameContext *fr = &vd->FrameRenderContext[vd->FrameIndex % bd->swapchainBufferCount];
+    ImGui_ImplImmortal_FrameContext *fr = &vd->frameCtx[vd->FrameIndex % bd->swapchainBufferCount];
 
     if (drawData->TotalIdxCount <= 0)
     {
@@ -502,12 +540,11 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
                     }
                     else
                     {
-                        if (!fr->descriptorSets[texture])
+                        if (fr->descriptorSets.find(texture) == fr->descriptorSets.end())
                         {
                             descriptorSet = fr->AllocateDescriptorSet(bd->device, bd->pipeline, texture);
                             descriptorSet->Set(0, texture);
                             descriptorSet->Set(1, bd->fontSampler);
-                            fr->descriptorSets[texture] = descriptorSet;
                         }
                         else
                         {
@@ -579,101 +616,101 @@ IMGUI_IMPL_API bool ImGui_ImplImmortal_CreateFontsTexture()
 
 static void ImGui_ImplImmortal_CreateWindow(ImGuiViewport *viewport)
 {
-	ImGui_ImplImmortal_Data         *bd = ImGui_ImplImmortal_GetBackendData();
-	ImGui_ImplImmortal_ViewportData *vd = IM_NEW(ImGui_ImplImmortal_ViewportData)(3);
-	viewport->RendererUserData          = vd;
+    ImGui_ImplImmortal_Data         *bd = ImGui_ImplImmortal_GetBackendData();
+    ImGui_ImplImmortal_ViewportData *vd = IM_NEW(ImGui_ImplImmortal_ViewportData)(3);
+    viewport->RendererUserData          = vd;
 
     WindowType type = WindowType::GLFW;
 #ifdef _WIN32
     if (bd->device->GetBackendAPI() != BackendAPI::OpenGL)
     {
-		type = WindowType::Win32;
+        type = WindowType::Win32;
     }
 #endif
 
     vd->window    = Window::CreateInstance(viewport->PlatformHandle, type);
-	vd->swapchain = bd->device->CreateSwapchain(bd->queue, vd->window, Format::BGRA8, bd->swapchainBufferCount, SwapchainMode::VerticalSync);
-	vd->gpuEvent  = bd->device->CreateGPUEvent();
+    vd->swapchain = bd->device->CreateSwapchain(bd->queue, vd->window, Format::BGRA8, bd->swapchainBufferCount, SwapchainMode::VerticalSync);
+    vd->gpuEvent  = bd->device->CreateGPUEvent();
     for (uint32_t i = 0; i < bd->swapchainBufferCount; i++)
     {
-		vd->commandBuffers[i] = bd->device->CreateCommandBuffer();
+        vd->commandBuffers[i] = bd->device->CreateCommandBuffer();
     }
 }
 
 static void ImGui_ImplImmortal_DestroyWindow(ImGuiViewport *viewport)
 {
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
-	if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
-	{
-		bd->queue->WaitIdle();
-		vd->window.Reset();
-		vd->swapchain.Reset();
+    ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+    if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
+    {
+        bd->queue->WaitIdle();
+        vd->window.Reset();
+        vd->swapchain.Reset();
         for (size_t i = 0; i < vd->NumFramesInFlight; i++)
         {
-			vd->commandBuffers[i].Reset();
+            vd->commandBuffers[i].Reset();
         }
-		IM_DELETE(vd);
-	}
-	viewport->RendererUserData = nullptr;
+        IM_DELETE(vd);
+    }
+    viewport->RendererUserData = nullptr;
 }
 
 static void ImGui_ImplImmortal_SetWindowSize(ImGuiViewport *viewport, ImVec2 size)
 {
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+    ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
     if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)viewport->RendererUserData)
-	{
-		bd->queue->WaitIdle();
-		vd->swapchain->Resize(size.x, size.y);
+    {
+        bd->queue->WaitIdle();
+        vd->swapchain->Resize(size.x, size.y);
     }
 }
 
 static void ImGui_ImplImmortal_RenderWindow(ImGuiViewport *viewport, void *render_arg)
 {
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
-	if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
-	{
-		vd->swapchain->PrepareNextFrame();
+    ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+    if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
+    {
+        vd->swapchain->PrepareNextFrame();
 
         vd->gpuEvent->Wait(vd->syncValues[vd->syncPoint], 0xffffff);
-		CommandBuffer *commandBuffer = vd->commandBuffers[vd->syncPoint];
+        CommandBuffer *commandBuffer = vd->commandBuffers[vd->syncPoint];
 
         const float clearColor[4] = {};
         RenderTarget *renderTarget = vd->swapchain->GetCurrentRenderTarget();
 
         commandBuffer->Begin();
-		commandBuffer->BeginRenderTarget(renderTarget, clearColor);
+        commandBuffer->BeginRenderTarget(renderTarget, clearColor);
         ImGui_ImplImmortal_RenderDrawData(viewport->DrawData, commandBuffer);
-		commandBuffer->EndRenderTarget();
-		commandBuffer->End();
+        commandBuffer->EndRenderTarget();
+        commandBuffer->End();
 
         GPUEvent *gpuEvents[] = { vd->gpuEvent };
-		bd->queue->Submit(&commandBuffer, 1, gpuEvents, 1, vd->swapchain);
-	}
+        bd->queue->Submit(&commandBuffer, 1, gpuEvents, 1, vd->swapchain);
+    }
 }
 
 static void ImGui_ImplImmortal_SwapBuffers(ImGuiViewport *viewport, void *render_arg)
 {
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
-	if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
-	{
-		vd->syncValues[vd->syncPoint] = vd->gpuEvent->GetSyncPoint();
-		SLROTATE(vd->syncPoint, vd->NumFramesInFlight);
+    ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+    if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *) viewport->RendererUserData)
+    {
+        vd->syncValues[vd->syncPoint] = vd->gpuEvent->GetSyncPoint();
+        SLROTATE(vd->syncPoint, vd->NumFramesInFlight);
 
-		bd->queue->Present(vd->swapchain);
-	}
+        bd->queue->Present(vd->swapchain);
+    }
 }
 
 IMGUI_IMPL_API void ImGui_ImplImmortal_InitPlatformInterface()
 {
-	ImGuiPlatformIO &platform_io = ImGui::GetPlatformIO();
-	platform_io.Renderer_CreateWindow  = ImGui_ImplImmortal_CreateWindow;
-	platform_io.Renderer_DestroyWindow = ImGui_ImplImmortal_DestroyWindow;
-	platform_io.Renderer_SetWindowSize = ImGui_ImplImmortal_SetWindowSize;
-	platform_io.Renderer_RenderWindow  = ImGui_ImplImmortal_RenderWindow;
-	platform_io.Renderer_SwapBuffers   = ImGui_ImplImmortal_SwapBuffers;
+    ImGuiPlatformIO &platform_io = ImGui::GetPlatformIO();
+    platform_io.Renderer_CreateWindow  = ImGui_ImplImmortal_CreateWindow;
+    platform_io.Renderer_DestroyWindow = ImGui_ImplImmortal_DestroyWindow;
+    platform_io.Renderer_SetWindowSize = ImGui_ImplImmortal_SetWindowSize;
+    platform_io.Renderer_RenderWindow  = ImGui_ImplImmortal_RenderWindow;
+    platform_io.Renderer_SwapBuffers   = ImGui_ImplImmortal_SwapBuffers;
 }
 
 IMGUI_IMPL_API void ImGui_ImplImmortal_ShutdownPlatformInterface()
 {
-	ImGui::DestroyPlatformWindows();
+    ImGui::DestroyPlatformWindows();
 }

@@ -91,7 +91,7 @@ int main(int, char **)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplImmortal_Init(device, queue, swapchain, 3);
+    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
 
     decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
 	decltype(&ImGui_ImplGlfw_Shutdown)  ShutDownWindow;

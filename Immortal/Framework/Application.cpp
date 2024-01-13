@@ -12,7 +12,8 @@ namespace Immortal
 Application *Application::This = nullptr;
 
 Application::Application(BackendAPI graphicsBackendAPI, const std::string &title, uint32_t width, uint32_t height) :
-    eventSink{ this }
+    eventSink{ this },
+    name{ title }
 {
 	!!This ? throw Exception(SError::InvalidSingleton) : This = this;
 
@@ -149,6 +150,11 @@ void Application::Close()
 void Application::OnEvent(Event &e)
 {
     eventSink.Dispatch(e);
+    if (gui)
+    {
+		gui->OnEvent(e);
+    }
+
     for (auto it = layerStack.end(); it != layerStack.begin(); )
     {
         (*--it)->OnEvent(e);

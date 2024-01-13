@@ -82,6 +82,33 @@ public:
     DEFINE_EVENT_CATEGORY(Category::Application);
 };
 
+class IMMORTAL_API WindowDragDropEvent : public Event
+{
+public:
+    WindowDragDropEvent() = default;
+
+    void AddFilePath(const char *path)
+    {
+		files.emplace_back(path);
+    }
+
+    size_t GetSize() const
+    {
+		return files.size();
+    }
+
+    const std::string &QueryFile(size_t index) const
+    {
+		return files[index];
+    }
+
+    DEFINE_EVENT_TYPE(WindowDragDrop)
+    DEFINE_EVENT_CATEGORY(Category::Application)
+
+protected:
+    std::vector<std::string> files;
+};
+
 class AppTickEvent : public Event
 {
 public:

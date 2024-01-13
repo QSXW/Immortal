@@ -239,6 +239,6 @@ add_subdirectory(slapi)
 target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
     external
+    imgui
     ImmortalGraphics
     ImmortalVision)
-

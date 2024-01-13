@@ -302,10 +302,13 @@ add_library(${PROJECT_NAME} STATIC
     ${OPENGL_FILES}
     ${WINDOW_FILES})
 
+if (NOT DISABLE_VULKAN_BACKEND)
+    set(VULKAN_DEPENDENCIES glslang glslang-default-resource-limits
+        SPIRV spirv-cross-glsl)
+endif()
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    glfw glslang glslang-default-resource-limits
-    imgui
-    SPIRV spirv-cross-glsl
+    glfw ${VULKAN_DEPENDENCIES}
     PUBLIC
     slapi
     glad
