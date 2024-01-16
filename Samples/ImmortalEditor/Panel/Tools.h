@@ -28,18 +28,12 @@ public:
     static inline float xOffset = 0.0;
     static inline float yOffset = 0.0f;
 
-    static inline Texture::Description textureDesc = {
-        Format::None,
-        Wrap::Wrap,
-        Filter::Nearest
-    };
-
 public:
 	WTools() :
-        texture{ Render::Create<Texture>("Assets/Icon/Tools300x60.png", textureDesc)}
+        texture{ Graphics::CreateTexture("Assets/Icon/Tools300x60.png") }
     {
-        xOffset = 30.0f / texture->Width();
-        yOffset = 20.0f / texture->Height();
+        xOffset = 30.0f / texture->GetWidth();
+        yOffset = 20.0f / texture->GetHeight();
 
         Connect([&] {
 			ImGui::Begin(WordsMap::Get("Tools Bar"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
@@ -59,7 +53,7 @@ public:
 					ImVec2 uv1 = {uv0.x + xOffset, uv0.y + yOffset};
 
 					ImGui::PushID(i);
-					if (ImGui::ImageButton((ImTextureID) (uint64_t) *texture, size, uv0, uv1, framePadding, backgroundColor, tintColor))
+					if (ImGui::ImageButton(WIMAGE(texture), size, uv0, uv1, framePadding, backgroundColor, tintColor))
 					{
 						Activate(i);
 					}
@@ -100,7 +94,7 @@ public:
 					ImVec2 uv1 = {uv0.x + xOffset, uv0.y + yOffset};
 
 					ImGui::PushID(i + SL_ARRAY_LENGTH(vOffset.tool));
-					if (ImGui::ImageButton((ImTextureID) (uint64_t) *texture, size, uv0, uv1, framePadding, backgroundColor, tintColor))
+					if (ImGui::ImageButton(WIMAGE(texture), size, uv0, uv1, framePadding, backgroundColor, tintColor))
 					{
 						vOffset.control[i] = vOffset.control[i] == Activated ? None : Activated;
 					}

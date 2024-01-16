@@ -11,7 +11,7 @@ using namespace Immortal;
 class ImmortalEditor : public Application
 {
 public:
-    ImmortalEditor() : Application({ "Immortal Editor", 1920, 1080 })
+    ImmortalEditor(BackendAPI api) : Application(api, "Immortal Editor", 1920, 1080)
     {
         auto renderLayer = new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render");
         PushLayer(renderLayer);
@@ -29,25 +29,25 @@ int main(int argc, char **argv)
 
     try
     {
-        Render::Type type = Render::Type::Vulkan;
+		BackendAPI type = BackendAPI::Vulkan;
 
         Arguments args{ argc, argv };
         auto &api = args["api"];
         if (api == "vk")
         {
-            type = Render::Type::Vulkan;
+			type = BackendAPI::Vulkan;
         }
         else if (api == "ogl")
         {
-            type = Render::Type::OpenGL;
+			type = BackendAPI::OpenGL;
         }
         else if (api == "d3d11")
         {
-            type = Render::Type::D3D11;
+			type = BackendAPI::D3D11;
         }
         else if (api == "d3d12")
         {
-            type = Render::Type::D3D12;
+			type = BackendAPI::D3D12;
         }
 
         int deviceId = AUTO_DEVICE_ID;
@@ -57,8 +57,7 @@ int main(int argc, char **argv)
             deviceId = std::atoi(device.c_str());
         }
 
-        Render::Set(type, deviceId);
-        URef<Application> app{ new ImmortalEditor() };
+        URef<Application> app{ new ImmortalEditor{ type } };
         app->Run();
     }
     catch (const std::exception &e)

@@ -15,7 +15,7 @@ public:
     {
 		Connect([=, this] {
 			UI::BeginDraw();
-			Ref<Texture> sprite = Render::Preset()->Textures.White;
+			Ref<Texture> sprite = Graphics::Preset()->Textures.White;
 			if (object && object.HasComponent<SpriteRendererComponent>())
 			{
 				auto &spriteRendererComponent = object.GetComponent<SpriteRendererComponent>();
@@ -45,12 +45,12 @@ public:
 
 				ImVec2 size{};
 				size.x = x - 8;
-				size.y = size.x * sprite->Height() / sprite->Width();
+				size.y = size.x * sprite->GetHeight() / sprite->GetWidth();
 
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.4509f, 0.7882f, 0.8980f, 1.0f});
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{20.0f, 20.0f});
-				if (ImGui::ImageButton((ImTextureID) (uint64_t) *sprite, size))
+				if (ImGui::ImageButton(WIMAGE(sprite), size))
 				{
 					if (object)
 					{
@@ -67,8 +67,8 @@ public:
 
 				if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
 				{
-					const auto width = sprite->Width();
-					const auto height = sprite->Height();
+					const auto width = sprite->GetWidth();
+					const auto height = sprite->GetHeight();
 					UI::DrawColumn(WordsMap::Get("Width"), [&]() -> bool { ImGui::Text("%d", width);  return false ; });
 					UI::DrawColumn(WordsMap::Get("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
 				}

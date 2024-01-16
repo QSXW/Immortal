@@ -221,17 +221,12 @@ public:
                                     ImGui::SetColumnWidth(0, 64);
                                     ImGui::NextColumn();
                                     ImGui::PushItemWidth(-1);
-                                    if (ImGui::ImageButton((ImTextureID) (uint64_t) *texture, size))
+                                    if (ImGui::ImageButton((ImTextureID)(uint64_t)texture.Get(), size))
                                     {
                                         auto res = FileDialogs::OpenFile(FileFilter::Image);
                                         if (res.has_value())
                                         {
-                                            texture = Render::Create<Texture>(
-                                                res.value(),
-                                                Texture::Description{
-                                                    Format::None,
-                                                    Wrap::Mirror,
-                                                    Filter::Linear});
+                                            texture = Graphics::CreateTexture(res.value());
                                         }
                                     }
                                     ImGui::Columns(1);

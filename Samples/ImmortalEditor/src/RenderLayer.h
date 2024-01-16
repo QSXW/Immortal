@@ -51,7 +51,7 @@ public:
             ->Item({ "Open",       "Ctrl + O", [this] { LoadObject(); }})
             ->Item({ "Save Scene", "Ctrl + S", [this] { SaveScene();  }})
             ->Item({ "Load Scene", "Ctrl + L", [this] { LoadScene();  }})
-            ->Item({ "Close",      "Ctrl + W", [this] { Application::App()->Close(); }})
+            ->Item({ "Close",      "Ctrl + W", [this] { Application::This->Close(); }})
             ->Text("Menu");
         menuBar->Color({0., 0., 0., 1.0f})->AddChild(menus[0]);
 
@@ -243,12 +243,12 @@ public:
             guizmoType = ImGuizmo::OPERATION::INVALID;
         }
 
-        Application::App()->GetGuiLayer()->BlockEvent(false);
+        Application::This->GetGuiLayer()->BlockEvent(false);
     }
 
     void UpdateEditableArea()
     {
-        editableArea->Descriptor(*scene->Target());
+        //editableArea->Descriptor(*scene->Target());
     }
 
     void UpdateRightClickMenu()
@@ -272,9 +272,9 @@ public:
         auto res = FileDialogs::OpenFile(FileFilter::Image);
         if (res.has_value())
         {
-            Ref<Texture> newTexture{ Render::Create<Texture>(res.value()) };
+            Ref<Texture> newTexture{ Graphics::CreateTexture(res.value()) };
             auto &transform = selectedObject.GetComponent<TransformComponent>();
-            transform.Scale = transform.Scale.z * Vector3{ newTexture->Ratio(), 1.0f, 1.0f };
+            transform.Scale = transform.Scale.z * Vector3{ newTexture->GetRatio(), 1.0f, 1.0f };
 
             if (!selectedObject.Has<SpriteRendererComponent>())
             {
@@ -282,7 +282,7 @@ public:
             }
             auto &sprite = selectedObject.GetComponent<SpriteRendererComponent>();
             sprite.Sprite = newTexture;
-            sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, Texture::Description{ Format::RGBA8, Wrap::Clamp, Filter::Bilinear, false });
+            sprite.Result = Graphics::CreateTexture(Format::RGBA8, sprite.Sprite->GetWidth(), sprite.Sprite->GetHeight());
 
             auto &colorMixing = selectedObject.GetComponent<ColorMixingComponent>();
             colorMixing.Initialized = false;
@@ -294,7 +294,7 @@ public:
         x -= editableArea->MinBound().x;
         y -= editableArea->MinBound().y;
 
-        uint64_t pixel = scene->Target()->PickPixel(1, x, y, Format::R32);
+        uint64_t pixel = pixel; //scene->Target()->PickPixel(1, x, y, Format::R32);
 
         Object o = Object{ *(int *)&pixel, scene };
         panels.hierarchyGraphics->Select(pixel == -1 || o == selectedObject ? Object{} : o);
@@ -302,12 +302,6 @@ public:
 
     bool LoadObject()
     {
-        Texture::Description desc = {
-            Format::RGBA8,
-            Wrap::Clamp,
-            Filter::Bilinear,
-            false
-        };
         auto res = FileDialogs::OpenFile(FileFilter::None);
         if (res.has_value())
         {
@@ -326,16 +320,9 @@ public:
             }
             else if (FileSystem::IsVideo(filepath))
             {
-                Ref<Vision::Interface::Demuxer> demuxer = new Vision::FFDemuxer;
-                Ref<Vision::VideoCodec> decoder = new Vision::FFCodec;
-
-                Vision::CodedFrame codecFrame;
+                Ref<Demuxer> demuxer    = new Vision::FFDemuxer;
+                Ref<VideoCodec> decoder = new Vision::FFCodec;
 				demuxer->Open(res.value(), decoder);
-				demuxer->Read(&codecFrame);
-				decoder->Decode(codecFrame);
-
-                demuxer->Open(filepath, decoder);
-                Vision::CodedFrame codedFrame;
 
                 auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(demuxer, decoder);
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
@@ -344,12 +331,12 @@ public:
             else if (FileSystem::IsImage(filepath))
             {
                 auto &sprite = object.Add<SpriteRendererComponent>();
-                sprite.Sprite = Render::Create<Texture>(filepath);
-                sprite.Result = Render::Create<Texture>(sprite.Sprite->Width(), sprite.Sprite->Height(), nullptr, desc);
+                sprite.Sprite = Graphics::CreateTexture(filepath);
+                sprite.Result = Graphics::CreateTexture(Format::RGBA8, sprite.Sprite->GetWidth(), sprite.Sprite->GetHeight());
 
                 object.Add<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
-                transform.Scale = Vector3{ sprite.Sprite->Ratio(), 1.0f, 1.0f };
+                transform.Scale = Vector3{ sprite.Sprite->GetRatio(), 1.0f, 1.0f };
             }
 
             return true;
@@ -410,8 +397,8 @@ public:
         {
         case KeyCode::C:
             camera.primary = (camera.primary == &camera.editor) ?
-                 dcast<Camera*>(&camera.orthographic) :
-                 dcast<Camera*>(&camera.editor);
+                 (Camera *)(&camera.orthographic) :
+                 (Camera *)(&camera.editor);
             break;
 
         case KeyCode::L:
@@ -431,20 +418,20 @@ public:
         case KeyCode::S:
             if (control)
             {
-                scene->Target()->PickPixel(0, 0, 0, Format::RGBA8);
-                Async::Execute([&]() -> void {
-                    auto size = editableArea->Size();
-                    uint32_t width = U32(size.x);
-                    uint32_t height = U32(size.y);
+                //scene->Target()->PickPixel(0, 0, 0, Format::RGBA8);
+                //Async::Execute([&]() -> void {
+                //    auto size = editableArea->Size();
+                //    uint32_t width = U32(size.x);
+                //    uint32_t height = U32(size.y);
 
-                    uint8_t *dataMapped = nullptr;
-                    scene->Target()->Map(0, &dataMapped);
+                //    uint8_t *dataMapped = nullptr;
+                //    scene->Target()->Map(0, &dataMapped);
 
-                    Vision::BMPCodec bmp{};
-                    bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
+                //    Vision::BMPCodec bmp{};
+                //    bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
 
-                    scene->Target()->Unmap(0);
-                });
+                //    scene->Target()->Unmap(0);
+                //});
             }
             break;
 
@@ -465,7 +452,7 @@ public:
             panels.tools->Activate(WTools::Move);
             if (control || shift)
             {
-                Application::App()->Close();
+                Application::This->Close();
             }
             break;
 
