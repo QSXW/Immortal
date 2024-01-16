@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-project("CMakeTest" LANGUAGES CXX)
+project("UnitTest" LANGUAGES CXX)
 
 set(SRC_FILES
-    CMakeTest.cpp)
+    UnitTest.cpp)
 
 add_executable(${PROJECT_NAME}
     ${SRC_FILES}

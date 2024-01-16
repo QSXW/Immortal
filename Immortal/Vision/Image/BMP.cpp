@@ -12,7 +12,7 @@ namespace Vision
 
 CodecError BMPCodec::Decode(const CodedFrame &codedFrame)
 {
-    const auto &buffer = codedFrame.buffer;
+    const auto &buffer = codedFrame.GetBuffer();
     memcpy(&identifer, buffer.data(), HeaderSize());
 
     if (bitsPerPixel != 24)

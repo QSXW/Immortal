@@ -41,7 +41,7 @@ RawCodec::~RawCodec()
 
 CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 {
-    const auto &buffer = codedFrame.buffer;
+    const auto &buffer = codedFrame.GetBuffer();
 
     URef<LibRaw> processor = new LibRaw;
     processor->open_buffer(buffer.data(), buffer.size());

@@ -204,7 +204,7 @@ CodecError FFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec
     return CodecError::Succeed;
 }
 
-CodecError FFDemuxer::Read(CodedFrame *codedFrame)
+CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
 {
 	AVPacket *packet = av_packet_alloc();
     if (!packet)
@@ -212,7 +212,7 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
 		return CodecError::OutOfMemory;
     }
 
-    codedFrame->RefTo(packet);
+    CodedFrame codedFrame = { packet };
     int ret = formatContext->ReadFrame(packet);
     if (ret < 0)
     {
@@ -232,8 +232,17 @@ CodecError FFDemuxer::Read(CodedFrame *codedFrame)
     }
 
     auto stream = formatContext->GetStream(packet->stream_index);
-    codedFrame->Type = (MediaType)stream->codecpar->codec_type;
+    codedFrame.SetType((MediaType)stream->codecpar->codec_type);
     packet->time_base = stream->time_base;
+
+    codedFrame.SetRelease([] (void *data) {
+        Async::Execute([=] {
+			AVPacket *packet = (AVPacket *)(data);
+			av_packet_unref(packet);
+			av_packet_free(&packet);
+            });
+        });
+    *pCodedFrame = codedFrame;
 
     return CodecError::Succeed;
 }

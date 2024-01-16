@@ -38,8 +38,7 @@ static Codec *SelectSuitableCodec(const std::string &path)
 
 Picture Read(const std::string &path)
 {
-    Vision::CodedFrame codedFrame{};
-    codedFrame.Assign(FileSystem::ReadBinary(path));
+    Vision::CodedFrame codedFrame{ FileSystem::ReadBinary(path) };
 
     URef<Interface::Codec> codec = SelectSuitableCodec(path);
     codec->Decode(codedFrame);

@@ -25,7 +25,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
 {
     int width, height;
     size_t n = sizeof(PPM_HEADER);
-    auto ptr = (const char *)codedFrame.buffer.data();
+	auto ptr = (const char *)codedFrame.GetBuffer().data();
     sscanf(ptr, PPM_HEADER, &width, &height);
 
     uint8_t header[1024] = {};
@@ -47,7 +47,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Succeed;
 }
 
-CodecError PPMCodec::Encode(const Picture &picture, CodedFrame & codedFrame)
+CodecError PPMCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
     auto width  = picture.GetWidth();
     auto height = picture.GetHeight();
@@ -56,21 +56,23 @@ CodecError PPMCodec::Encode(const Picture &picture, CodedFrame & codedFrame)
     auto n = sprintf(header, PPM_HEADER, width, height);
 
     /* if picture format is not rgba, color conversion is needed here. */
-
-    codedFrame.buffer.resize(n);
-    std::copy(header, header + n, codedFrame.buffer.data());
+	std::vector<uint8_t> buffer;
+    buffer.resize(n);
+    std::copy(header, header + n, buffer.data());
 
     for (int i = 0; i < height; i++)
     {
         auto src = picture.GetData() + i * width * picture.GetFormat().GetTexelSize();
         for (int j = 0; j < width; j++, src += 4)
         {
-            size_t size = codedFrame.buffer.size();
+            size_t size = buffer.size();
             n = sprintf(header, "%d %d %d\n", src[0], src[1], src[2]);
-            codedFrame.buffer.resize(size + n);
-            std::copy(header, header + n, codedFrame.buffer.data() + size);
+            buffer.resize(size + n);
+            std::copy(header, header + n, buffer.data() + size);
         }
     }
+
+    codedFrame = { std::move(buffer) };
 
     return CodecError::Succeed;
 }

@@ -105,15 +105,19 @@ CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCode
     return CodecError::Succeed;
 }
 
-CodecError IVFDemuxer::Read(CodedFrame *codedFrame)
+CodecError IVFDemuxer::Read(CodedFrame *pCodedFrame)
 {
     auto header = ReadHeader();
-    codedFrame->buffer.resize(header.size);
 
-    if (stream.Read(codedFrame->buffer.data(), codedFrame->buffer.size()) != 1)
+    std::vector<uint8_t> buffer;
+    buffer.resize(header.size);
+
+    if (stream.Read(buffer.data(), buffer.size()) != 1)
     {
         return CodecError::EndOfFile;
     }
+
+    *pCodedFrame = { std::move(buffer) };
 
     return CodecError::Succeed;
 }

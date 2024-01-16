@@ -808,7 +808,7 @@ public:
 
     void __PreClaculateImageSize()
     {
-        if (descriptor)
+		if (descriptor || !resource.image)
         {
             return;
         }

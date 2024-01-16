@@ -278,7 +278,7 @@ void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 
 CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
 {
-    ParseHeader(codedFrame.buffer);
+    ParseHeader(codedFrame.GetBuffer());
     InitDecodedPlaneBuffer();
     if (!isProgressive)
     {

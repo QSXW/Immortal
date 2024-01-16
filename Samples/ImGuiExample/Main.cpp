@@ -38,7 +38,7 @@ int main(int, char **)
 {
     LOG::Init();
 
-    BackendAPI backendAPI = BackendAPI::Vulkan;
+    BackendAPI backendAPI = BackendAPI::D3D12;
 
     // Create a window
 	URef<Window> window = Window::CreateInstance("Immortal Graphics ImGui Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);

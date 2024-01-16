@@ -1,54 +1,16 @@
 #pragma once
 
 #include "Shared/IObject.h"
-#include "Vision/Types.h"
-#include "Vision/Picture.h"
-#include "Vision/Common/Error.h"
-#include "Vision/Common/Animator.h"
-
-#include <cstdint>
-#include <vector>
+#include "Types.h"
+#include "Picture.h"
+#include "CodedFrame.h"
+#include "Common/Error.h"
+#include "Common/Animator.h"
 
 namespace Immortal
 {
 namespace Vision
 {
-
-struct CodedFrame
-{
-    void Assign(std::vector<uint8_t> &&other)
-    {
-        buffer = std::move(other);
-    }
-
-    template <class T>
-    void RefTo(const T *ptr)
-    {
-        buffer.resize(sizeof(T *));
-        memcpy(buffer.data(), &ptr, sizeof(T *));
-    }
-
-    template <class T>
-	T *InterpretAs() const
-	{
-		return *(T **)buffer.data();
-	}
-
-    operator bool() const
-    {
-        return !buffer.empty();
-    }
-
-    const std::vector<uint8_t> &GetBuffer() const
-    {
-		return buffer;
-    }
-
-public:
-    std::vector<uint8_t> buffer;
-
-    MediaType Type;
-};
 
 namespace Interface
 {

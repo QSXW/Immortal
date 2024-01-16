@@ -29,8 +29,8 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
         else
         {
             data[0] = new uint8_t[width * height * format.GetTexelSize()];
-			SetRelease([](void *data) {
-				delete[] data;
+			SetRelease([](void *ptr) {
+				delete[] ptr;
             });
         }
     }

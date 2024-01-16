@@ -131,13 +131,13 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 			descriptorSet = device->CreateDescriptorSet(pipeline);
 		}
 
-		for (size_t i = 0; picture[i]; i++)
+		for (size_t i = 0; picture.GetStride(i); i++)
 		{
 			input[i] = device->CreateTexture(data[i].format, data[i].width, data[i].height, 1, 1, TextureType::TransferDestination);
 		}
 
 		uint32_t slot = 0;
-		for (; picture[slot]; slot++)
+		for (; picture.GetStride(slot); slot++)
 		{
 			descriptorSet->Set(slot, input[slot]);
 		}

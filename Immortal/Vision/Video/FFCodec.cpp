@@ -129,7 +129,6 @@ FFCodec::~FFCodec()
 	memoryResource.Reset();
 }
 
-#define RELEASE_PACKET av_packet_unref(packet); av_packet_free(&packet);
 CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 {
     int ret = 0;
@@ -141,11 +140,9 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     {
         if (ret != AVERROR(EOF))
         {
-            RELEASE_PACKET
             return CodecError::ExternalFailed;
         }
     }
-    RELEASE_PACKET
 
     ret = avcodec_receive_frame(handle, frame);
     if (ret < 0)
@@ -157,53 +154,53 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::ExternalFailed;
     }
 
-    AVFrame *ref = NULL;
-	if (device && type == PictureMemoryType::System)
-    {
-        ref = av_frame_alloc();
-        if (!ref)
-        {
-            return CodecError::OutOfMemory;
-        }
-        if (av_hwframe_transfer_data(ref, frame, 0) < 0)
-        {
-            LOG::ERR("Failed to download frame to system memory!");
-            av_frame_free(&ref);
-            av_frame_unref(frame);
-
-            return CodecError::ExternalFailed;
-        }
-    }
-    else
-    {
-        ref = av_frame_clone(frame);
-    }
-
-    if (format == Format::None)
-    {
-		enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
-		if (type == PictureMemoryType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
-		{
-			switch (pixelFormat)
-			{
-				case AV_PIX_FMT_YUV444P10:
-				case AV_PIX_FMT_YUV422P10:
-				case AV_PIX_FMT_YUV420P10:
-					pixelFormat = AV_PIX_FMT_P010;
-					break;
-
-                case AV_PIX_FMT_YUV444P:
-                case AV_PIX_FMT_YUV422P:
-				case AV_PIX_FMT_YUV420P:
-				default:
-					pixelFormat = AV_PIX_FMT_NV12;
-			}
-		}
-		format = CAST(pixelFormat);
-    }
-
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
+        AVFrame *ref = NULL;
+	    if (device && type == PictureMemoryType::System)
+        {
+            ref = av_frame_alloc();
+            if (!ref)
+            {
+                return CodecError::OutOfMemory;
+            }
+            if (av_hwframe_transfer_data(ref, frame, 0) < 0)
+            {
+                LOG::ERR("Failed to download frame to system memory!");
+                av_frame_free(&ref);
+                av_frame_unref(frame);
+
+                return CodecError::ExternalFailed;
+            }
+        }
+        else
+        {
+            ref = av_frame_clone(frame);
+        }
+
+        if (format == Format::None)
+        {
+		    enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
+		    if (type == PictureMemoryType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
+		    {
+			    switch (pixelFormat)
+			    {
+				    case AV_PIX_FMT_YUV444P10:
+				    case AV_PIX_FMT_YUV422P10:
+				    case AV_PIX_FMT_YUV420P10:
+					    pixelFormat = AV_PIX_FMT_P010;
+					    break;
+
+                    case AV_PIX_FMT_YUV444P:
+                    case AV_PIX_FMT_YUV422P:
+				    case AV_PIX_FMT_YUV420P:
+				    default:
+					    pixelFormat = AV_PIX_FMT_NV12;
+			    }
+		    }
+		    format = CAST(pixelFormat);
+        }
+
         picture = Picture{ref->width, ref->height, format };
 		picture.SetStride(0, ref->linesize[0]);
 		picture.SetStride(1, ref->linesize[1]);
@@ -268,7 +265,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         picture = Picture{ uint32_t(samples), 1,  format, true };
 		picture.SetTimestamp(frame->pts / frame->nb_samples);
 
-        int outSamples = swr_convert(swrContext, &picture.GetData(), samples, (const uint8_t **) &frame->data[0], frame->nb_samples);
+        int outSamples = swr_convert(swrContext, &picture.GetData(), samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
         if (outSamples < 0)
         {
             LOG::ERR("Failed to rescale audio frame format!");

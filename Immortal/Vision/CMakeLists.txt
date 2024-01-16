@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(VISION_CORE_FILES
     Codec.h
+    CodedFrame.cpp
+    CodedFrame.h
     Demuxer.h
     Image.cpp
     Image.h
@@ -66,7 +68,6 @@ set(IMAGE_CODEC_FILES
     PPM.h
     Raw.cpp
     Raw.h
-    RawSpeed.cpp
     RawSpeed.h
     OpenCVCodec.cpp
     OpenCVCodec.h)
@@ -132,10 +133,9 @@ set(VISION_FILES
 add_library(${PROJECT_NAME} STATIC ${VISION_FILES})
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        ExternalVision
     PUBLIC
         slapi
+        ExternalVision
         ImmortalShared
         ImmortalGraphics)
 

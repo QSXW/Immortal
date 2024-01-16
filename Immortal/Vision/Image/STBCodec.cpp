@@ -19,16 +19,16 @@ STBCodec::~STBCodec()
 CodecError STBCodec::Decode(const CodedFrame &codedFrame)
 {
     int width, height, depth;
-    const auto &buf = codedFrame.buffer;
+    const auto &buffer = codedFrame.GetBuffer();
 
     Format format = Format::RGBA8;
     uint8_t *data = nullptr;
-    if (stbi_is_hdr_from_memory(buf.data(), codedFrame.buffer.size()))
+	if (stbi_is_hdr_from_memory(buffer.data(), buffer.size()))
     {
         format = Format::RGBA32F;
         data = (uint8_t *)stbi_loadf_from_memory(
-            buf.data(),
-            static_cast<int>(buf.size()),
+		    buffer.data(),
+		    static_cast<int>(buffer.size()),
             &width,
             &height,
             &depth,
@@ -38,8 +38,8 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
     else
     {
         data = stbi_load_from_memory(
-            buf.data(),
-            static_cast<int>(buf.size()),
+		    buffer.data(),
+		    static_cast<int>(buffer.size()),
             &width,
             &height,
             &depth,

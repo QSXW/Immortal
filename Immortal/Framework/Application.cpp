@@ -21,7 +21,7 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
     eventSink.Listen(&Application::OnWindowMove,   Event::Type::WindowMove);
 
-    Async::Setup();
+    Async::Init();
 
 	window = Window::CreateInstance(title, width, height, graphicsBackendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
     window->SetIcon("Assets/Icon/Terminal.png");
@@ -66,6 +66,13 @@ Application::~Application()
 
     Graphics::Release();
 
+    commandBuffers.clear();
+	swapchain.Reset();
+	gpuEvent.Reset();
+    queue.Reset();
+	window.Reset();
+	device.Reset();
+	instance.Reset();
 	Async::Release();
 }
 

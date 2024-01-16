@@ -18,6 +18,7 @@
 #include <list>
 
 #include "Codec.h"
+#include "CodedFrame.h"
 #include "Demuxer.h"
 #include "Image.h"
 #include "Picture.h"

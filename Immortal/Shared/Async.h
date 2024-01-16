@@ -145,10 +145,10 @@ protected:
     bool stopping{ false };
 };
 
-class Async
+class IMMORTAL_API Async
 {
 public:
-    static void Setup()
+    static void Init()
     {
         threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
     }

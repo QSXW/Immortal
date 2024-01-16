@@ -110,12 +110,12 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                 continue;
             }
 
-            if (codedFrame.Type == MediaType::Subtitle)
+            if (codedFrame.GetType() == MediaType::Subtitle)
             {
                 continue;
             }
 
-            if (audioDecoder && codedFrame.Type == MediaType::Audio)
+            if (audioDecoder && codedFrame.GetType() == MediaType::Audio)
             {
                 audioThreadPool->Enqueue([=, this] () -> void {
                     Vision::Picture picture = AsyncDecode(codedFrame, audioDecoder);
@@ -127,7 +127,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                 });
             }
 
-            if (codedFrame.Type == MediaType::Video)
+            if (codedFrame.GetType() == MediaType::Video)
             {
                 videoThreadPool->Enqueue([=, this] () -> void {
                     Vision::Picture picture = AsyncDecode(codedFrame, decoder);
@@ -212,7 +212,7 @@ void VideoPlayerContext::PopAudioFrame()
 VideoPlayerComponent::VideoPlayerComponent() :
     player{}
 {
-    
+
 }
 
 VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
@@ -225,7 +225,7 @@ VideoPlayerComponent::~VideoPlayerComponent()
 {
     player.Reset();
 }
- 
+
 Picture VideoPlayerComponent::GetPicture()
 {
     return player->GetPicture();

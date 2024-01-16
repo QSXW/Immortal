@@ -22,7 +22,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 {
     cv::Mat mat;
 
-    const auto &buf = codedFrame.buffer;
+    const auto &buf = codedFrame.GetBuffer();
     cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
     {
@@ -65,10 +65,13 @@ CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
     cv::Mat input{ cv::Size{ (int)picture.GetWidth(), (int)picture.GetHeight() }, CV_8UC4, picture.GetData()};
     try
     {
-        if (!cv::imencode(".jpg", input, codedFrame.buffer))
+		std::vector<uint8_t> buffer;
+		if (!cv::imencode(".jpg", input, buffer))
         {
             return CodecError::FailedToCallDecoder;
         }
+
+        codedFrame = { std::move(buffer) };
     }
     catch (const std::exception &e)
     {

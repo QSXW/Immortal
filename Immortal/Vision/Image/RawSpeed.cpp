@@ -13,7 +13,7 @@ RawSpeedCodec::RawSpeedCodec()
 
 CodecError RawSpeedCodec::Decode(const CodedFrame &codedFrame)
 {
-    const auto &buffer = codedFrame.buffer;
+    const auto &buffer = codedFrame.GetBuffer();
 
     auto parser = rawspeed_parser_allocate(buffer.data(), buffer.size());
 

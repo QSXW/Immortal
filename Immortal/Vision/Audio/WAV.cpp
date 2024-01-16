@@ -8,7 +8,7 @@ namespace Vision
 
 CodecError WAVCodec::Decode(const CodedFrame &codedFrame)
 {
-    auto &buffer = codedFrame.buffer;
+    auto &buffer = codedFrame.GetBuffer();
 
     memcpy(&header, buffer.data(), sizeof(header));
 
