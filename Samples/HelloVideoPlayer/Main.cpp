@@ -68,9 +68,9 @@ int main(int, char **)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;    
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;  
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -82,8 +82,10 @@ int main(int, char **)
 
     ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
 
-    decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
+    decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
 	decltype(&ImGui_ImplGlfw_Shutdown)  ShutDownWindow;
+
+#ifdef _WIN32
     if (window->GetType() == WindowType::Win32)
 	{
 		ImGui_ImplWin32_Init(window->GetBackendHandle());
@@ -91,6 +93,7 @@ int main(int, char **)
 		ShutDownWindow = ImGui_ImplWin32_Shutdown;
 	}
     else
+#endif
     {
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)window->GetBackendHandle(), true);
 		NewWindowFrame = ImGui_ImplGlfw_NewFrame;
@@ -189,13 +192,13 @@ int main(int, char **)
 
 		Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
 		Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
-    
+
 
         auto windowSize = ImGui::GetWindowSize();
         if (texture)
         {
 			ImGui::SameLine();
-			ImGui::Text(filepath.c_str());
+			ImGui::Text("%s", filepath.c_str());
             ImVec2 size = {};
 			constexpr float xfactor = 1280.0;
 			constexpr float yfactor = 720.0;

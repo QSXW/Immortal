@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Queue.h"
 
 namespace Immortal

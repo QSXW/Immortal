@@ -22,15 +22,16 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
         if (memoryResource)
         {
             data[0] = (uint8_t *)memoryResource->Allocate();
-            SetRelease([=] (void *data) {
-				this->memoryResource->Release(data);
+            SetRelease([=, this] (void *ptr) {
+				this->memoryResource->Release(ptr);
             });
         }
         else
         {
             data[0] = new uint8_t[width * height * format.GetTexelSize()];
-			SetRelease([](void *ptr) {
-				delete[] ptr;
+			SetRelease([](void *_ptr) {
+				uint8_t *ptr = (uint8_t *)_ptr;
+				delete ptr;
             });
         }
     }
@@ -72,7 +73,7 @@ Picture::Picture() :
 Picture::Picture(uint32_t width, uint32_t height, Format format, bool allocated) :
     shared{ new SharedPictureData{ format, width, height, width, allocated }}
 {
-    
+
 }
 
 }

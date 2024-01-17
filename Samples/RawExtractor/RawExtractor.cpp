@@ -32,13 +32,12 @@ int main(int argc, char **argv)
     std::vector<std::string> allFiles;
     ReadAllFiles(argv[1], allFiles);
 
-    Vision::CodedFrame codedFrame;
-
     std::vector<uint8_t> buffer;
     Stream stream{ Stream::Mode::Read };
     stream.Open(allFiles[1]);
-    stream.Read(codedFrame.buffer);
+    stream.Read(buffer);
 
+    Vision::CodedFrame codedFrame = { std::move(buffer) };
     Vision::RawCodec rawCodec;
     rawCodec.SetBits(Vision::RawBitDepth::_8);
     rawCodec.Decode(codedFrame);

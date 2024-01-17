@@ -27,8 +27,6 @@ static inline EShLanguage SelectLanguage(Shader::Stage stage)
     return EShLangVertex;
 }
 
-using PFN_DxcCreateInstance = HRESULT(*)(REFCLSID rclsid, REFIID riid, LPVOID *ppv);
-
 bool GLSLCompiler::Compile(const std::string &name, ShaderSourceType sourceType, ShaderBinaryType binaryType, ShaderStage stage, uint32_t size, const char *data, const std::string &entryPoint, std::vector<uint32_t> &spriv, std::string &error)
 {
     using namespace glslang;

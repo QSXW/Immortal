@@ -38,7 +38,7 @@ int main(int, char **)
 {
     LOG::Init();
 
-    BackendAPI backendAPI = BackendAPI::D3D12;
+    BackendAPI backendAPI = BackendAPI::Vulkan;
 
     // Create a window
 	URef<Window> window = Window::CreateInstance("Immortal Graphics ImGui Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
@@ -93,8 +93,10 @@ int main(int, char **)
     // Setup Platform/Renderer backends
     ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
 
-    decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
+    decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
 	decltype(&ImGui_ImplGlfw_Shutdown)  ShutDownWindow;
+
+#ifdef _WIN32
     if (window->GetType() == WindowType::Win32)
 	{
 		ImGui_ImplWin32_Init(window->GetBackendHandle());
@@ -102,6 +104,7 @@ int main(int, char **)
 		ShutDownWindow = ImGui_ImplWin32_Shutdown;
 	}
     else
+#endif
     {
 		ImGui_ImplGlfw_InitForOpenGL((GLFWwindow *)window->GetBackendHandle(), true);
 		NewWindowFrame = ImGui_ImplGlfw_NewFrame;

@@ -67,7 +67,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
     Format targetFormat = Format::RGBA8;
     Format lumaFormat   = Format::R8;
 	Format chromaFormat = Format::RG8;
-   
+
 	auto &format = picture.GetFormat();
 	if (format.IsType(Format::_10Bits))
 	{
@@ -166,12 +166,14 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 #endif
 
 	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+#ifdef _WIN32
 		if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
 		{
-			commandBuffer->CopyPlatformSpecificSubresource(input[0], 0, (ID3D12Resource *) picture[0], 0);
-			commandBuffer->CopyPlatformSpecificSubresource(input[1], 0, (ID3D12Resource *) picture[0], 1);
+			commandBuffer->CopyPlatformSpecificSubresource(input[0], 0, (ID3D12Resource *)picture[0], 0);
+			commandBuffer->CopyPlatformSpecificSubresource(input[1], 0, (ID3D12Resource *)picture[0], 1);
 		}
 		else
+#endif
 		{
 			uint8_t *mapped = nullptr;
 			buffer->Map((void **) &mapped, totalSize, 0);

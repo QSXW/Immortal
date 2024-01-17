@@ -25,7 +25,7 @@ endif()
 
 add_subdirectory(3rdparty)
 set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets")
-set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED})
+set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED} ${DXC_SHARED})
 
 add_subdirectory(Immortal)
 add_subdirectory(Assets)

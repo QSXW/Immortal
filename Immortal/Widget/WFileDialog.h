@@ -175,7 +175,7 @@ public:
             }
             if (ImGui::IsItemHovered())
             {
-                ImGui::SetTooltip(dir.path.c_str());
+                ImGui::SetTooltip("%s", dir.path.c_str());
             }
             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
             {
@@ -267,7 +267,7 @@ public:
                 }
                 else if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
                 {
-                    ImGui::SetTooltip(dir.path.c_str());
+                    ImGui::SetTooltip("%s", dir.path.c_str());
                 }
                 if (ImGui::BeginDragDropSource())
                 {
@@ -345,7 +345,7 @@ public:
         return this;
     }
 
-    const std::string &Source() const
+    std::string Source() const
     {
         return path.string();
     }

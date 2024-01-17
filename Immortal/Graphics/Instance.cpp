@@ -5,12 +5,15 @@
 #define IMMORTAL_ENABLE_VULKAN
 #define IMMORTAL_ENABLE_OPENGL
 
+#ifdef _WIN32
 #ifdef IMMORTAL_ENABLE_D3D12
 #include "D3D12/Instance.h"
 #endif
 #ifdef IMMORTAL_ENABLE_D3D11
 #include "D3D11/Instance.h"
 #endif
+#endif
+
 #ifdef IMMORTAL_ENABLE_VULKAN
 #include "Vulkan/Instance.h"
 #endif
@@ -25,6 +28,7 @@ Instance *Instance::CreateInstance(BackendAPI apiType, Window::Type windowType)
 {
 	switch (apiType)
     {
+#ifdef _WIN32
 #ifdef IMMORTAL_ENABLE_D3D11
 		case BackendAPI::D3D11:
 			return new D3D11::Instance;
@@ -32,6 +36,7 @@ Instance *Instance::CreateInstance(BackendAPI apiType, Window::Type windowType)
 #ifdef IMMORTAL_ENABLE_D3D12
 		case BackendAPI::D3D12:
 			return new D3D12::Instance;
+#endif
 #endif
 #ifdef IMMORTAL_ENABLE_VULKAN
 		case BackendAPI::Vulkan:

@@ -7,7 +7,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32
+#endif
 #include <GLFW/glfw3native.h>
 
 namespace Immortal
@@ -252,7 +254,11 @@ Anonymous GLFWWindow::GetBackendHandle() const
 
 Anonymous GLFWWindow::GetPlatformSpecificHandle() const
 {
-    return Anonymous((void *) glfwGetWin32Window(window));
+#ifdef _WIN32
+    return Anonymous((void *)glfwGetWin32Window(window));
+#else
+    return nullptr;
+#endif
 }
 
 void GLFWWindow::Show()

@@ -255,14 +255,14 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
 			    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			});
         };
-    
+
         PipelineImageBarrier(
 		    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		    dynamicRenderingBarriers.data(),
 		    uint32_t(dynamicRenderingBarriers.size())
         );
-        
+
         for (auto &barrier : dynamicRenderingBarriers)
         {
 			barrier.Swap();
@@ -368,7 +368,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter _filter)
 	    .baseArrayLayer = 0,
         .layerCount     = texture->GetArrayLayers()
     };
-    
+
     ImageBarrier barrier{
         *texture,
 		imageSubresourceRange,
@@ -395,7 +395,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter _filter)
 			    .layerCount     = texture->GetArrayLayers(),
             },
             .srcOffsets = {{},
-                { 
+                {
                     .x = int32_t(width  >> srcMipLevel),
                     .y = int32_t(height >> srcMipLevel),
                     .z = 1
@@ -467,7 +467,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter _filter)
 	        .baseArrayLayer = 0,
             .layerCount     = texture->GetArrayLayers()
         };
-    
+
         ImageBarrier barrier{
             *texture,
 		    imageSubresourceRange,
@@ -565,7 +565,7 @@ void CommandBuffer::SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuff
 {
 	CommandBuffer *commandBuffer = InterpretAs<CommandBuffer>(secondaryCommandBuffer);
 
-    VkCommandBuffer commandBuffers[] = { *commandBuffer }; 
+    VkCommandBuffer commandBuffers[] = { *commandBuffer };
 	ExecuteCommands(1, commandBuffers);
 }
 
@@ -574,7 +574,7 @@ void CommandBuffer::DrawInstanced(uint32_t vertexCountPerInstance, uint32_t inst
 	Draw(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
-void CommandBuffer::DrawIndexedInstance(uint32_t indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation)
+void CommandBuffer::DrawIndexedInstance(uint32_t indexCountPerInstance, uint32_t instanceCount, uint32_t startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation)
 {
 	DrawIndexed(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }

@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <string>
-#include <format>
 
 #include "Core.h"
 
@@ -73,8 +72,8 @@ public:
 
     }
 
-    template <class T>
-    BasicString(const T &str, Type type = Type::Ascii) :
+    template <class U>
+    BasicString(const U &str, Type type = Type::Ascii) :
 	    BasicString{}
     {
         switch (type)
@@ -131,7 +130,7 @@ protected:
 
     Type type;
 };
- 
+
 using String  = BasicString<std::string>;
 
 using WString = BasicString<std::wstring>;
@@ -144,6 +143,8 @@ static inline std::ostream &operator<<(std::ostream &os, const Immortal::BasicSt
 	return os << str.c_str();
 }
 
+#ifdef _MSC_VER
+#include <format>
 template <class T, class CharT>
 struct std::formatter<Immortal::BasicString<T>, CharT> : public std::formatter<const char *, CharT>
 {
@@ -153,3 +154,4 @@ struct std::formatter<Immortal::BasicString<T>, CharT> : public std::formatter<c
 		return std::formatter<const char *, CharT>::format(s.c_str(), fc);
 	}
 };
+#endif

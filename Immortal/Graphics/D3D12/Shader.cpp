@@ -70,7 +70,7 @@ Shader::Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t 
 
 	DirectXShaderCompiler directXShaderCompiler;
 	ComPtr<ID3D12ShaderReflection> shaderReflection;
-	if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, IID_PPV_ARGS(&shaderReflection)))
+	if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, &shaderReflection))
 	{
 		SetupDescriptorRanges(shaderReflection);
 		return;
@@ -108,7 +108,7 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
         }
 
         ComPtr<ID3D12ShaderReflection> shaderReflection;
-		if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, IID_PPV_ARGS(&shaderReflection)))
+		if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, &shaderReflection))
         {
 			SetupDescriptorRanges(shaderReflection);
 			return;

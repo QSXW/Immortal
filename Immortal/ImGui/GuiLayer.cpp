@@ -128,7 +128,7 @@ void GuiLayer::OnAttach()
 #endif
 
     ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
-    decltype(&ImGui_ImplWin32_NewFrame) NewWindowFrame;
+    decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
     decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
 
 #ifdef _WIN32

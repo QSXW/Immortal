@@ -54,7 +54,7 @@ void CommandBuffer::End()
 
 void CommandBuffer::Close()
 {
-	
+
 }
 
 void CommandBuffer::BeginEvent(const char *pData, size_t size)
@@ -70,7 +70,7 @@ void CommandBuffer::EndEvent()
 void CommandBuffer::SetPipeline(SuperPipeline *_pipeline)
 {
 	pipeline = InterpretAs<Pipeline>(_pipeline);
-	Submit([=] {
+	Submit([=, this] {
 		glUseProgram(*pipeline);
 		pipeline->SetState();
 	});
@@ -92,7 +92,7 @@ void CommandBuffer::SetVertexBuffers(uint32_t firstSlot, uint32_t bufferCount, S
 	}
 	Buffer **ppBuffer = (Buffer **)_ppBuffer;
 	Buffer *buffer = ppBuffer[0];
-	Submit([=] {
+	Submit([=, this] {
 		auto vertexArray = pipeline->GetVextexArray();
 		vertexArray->Activate(buffer);
 		vertexArray->Bind();
@@ -103,7 +103,7 @@ void CommandBuffer::SetVertexBuffers(uint32_t firstSlot, uint32_t bufferCount, S
 void CommandBuffer::SetIndexBuffer(SuperBuffer *_buffer, Format format)
 {
 	Buffer *buffer = InterpretAs<Buffer>(_buffer);
-	Submit([=] {
+	Submit([=, this] {
 		indexFormat = format;
 		indexSize   = format.Size();
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *buffer);
@@ -111,12 +111,12 @@ void CommandBuffer::SetIndexBuffer(SuperBuffer *_buffer, Format format)
 }
 
 void CommandBuffer::SetScissors(uint32_t count, const Rect *pScissor)
-{		
+{
 	auto width  =  (int)pScissor[0].right - pScissor[0].left;
 	auto height =  (int)pScissor[0].bottom - pScissor[0].top;
 	auto x      =  (int)pScissor[0].left;
 	auto y      =  (int)pScissor[0].bottom;
-	Submit([=] {
+	Submit([=, this] {
 		glScissor(x, viewport.height - y, width, height);
 	});
 }
@@ -133,7 +133,7 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 		pushConstant = new Buffer{ size, BufferType::ConstantBuffer };
 	}
 	pushConstant->Update(size, pData, offset);
-	Submit([=] {
+	Submit([=, this] {
 		glBindBufferBase(GL_UNIFORM_BUFFER, PUSH_CONSTANT_LOCATION, *pushConstant);
 	});
 }

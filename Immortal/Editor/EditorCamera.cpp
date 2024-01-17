@@ -31,7 +31,8 @@ void EditorCamera::OnUpdate()
 {
     if (Input::IsKeyPressed(KeyCode::LeftAlt))
     {
-        const Vector2 &mouse = (const Vector2 &)Input::GetMousePosition();
+        auto pos = Input::GetMousePosition();
+        Vector2 mouse = { pos.x, pos.y };
         Vector2 delta = (mouse - initialPosition) * 0.003f;
         initialPosition = mouse;
 
@@ -158,4 +159,3 @@ void EditorCamera::SetViewportSize(Vector2 size)
     SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
 }
 }
-                                                                

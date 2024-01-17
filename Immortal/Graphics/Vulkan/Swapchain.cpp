@@ -11,6 +11,10 @@ static inline constexpr bool SwapchainOutput = false;
 
 inline uint32_t SelectImageCount(uint32_t request, uint32_t min, uint32_t max)
 {
+    if (max == 0)
+    {
+        max = min;
+    }
     return std::clamp(request, min, max);
 }
 
@@ -185,7 +189,7 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
 Swapchain::Swapchain(Device *device, Surface &&surface, Format format, const VkExtent2D &extent, const uint32_t imageCount, SwapchainMode mode) :
     Swapchain{ std::move(Swapchain{}), device, std::move(surface), format, extent, imageCount, (mode == SwapchainMode::VerticalSync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_MAILBOX_KHR) }
 {
-  
+
 }
 
 Swapchain::Swapchain(Device *device, Surface &&surface, VkFormat format, const VkExtent2D &extent, const uint32_t imageCount, const VkPresentModeKHR presentMode, VkImageUsageFlags imageUsageFlags, const VkSurfaceTransformFlagBitsKHR transform) :
@@ -358,8 +362,8 @@ void Swapchain::Invalidate(VkExtent2D extent)
     VkExtent3D imageExtent = { properties.imageExtent.width, properties.imageExtent.height, 1 };
     for (size_t i = 0; i < count; i++)
     {
-        Texture texture = {device, 
-            std::move(Image{ 
+        Texture texture = {device,
+            std::move(Image{
                 device,
                 images[i],
                 imageExtent,
@@ -367,7 +371,7 @@ void Swapchain::Invalidate(VkExtent2D extent)
                 properties.imageUsage,
                 1,
                 properties.imageArrayLayers,
-                VK_SAMPLE_COUNT_1_BIT 
+                VK_SAMPLE_COUNT_1_BIT
             }),
             std::move(ImageView{})
         };

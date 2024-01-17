@@ -63,7 +63,7 @@ public:
 
 	virtual void DrawInstanced(uint32_t vertexCountPerInstance, uint32_t instanceCount, uint32_t startVertexLocation, uint32_t startInstanceLocation) override;
 
-	virtual void DrawIndexedInstance(uint32_t indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation) override;
+	virtual void DrawIndexedInstance(uint32_t indexCountPerInstance, uint32_t instanceCount, uint32_t startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation) override;
 
 	virtual void Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 

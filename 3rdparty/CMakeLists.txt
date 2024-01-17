@@ -344,6 +344,12 @@ set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 add_subdirectory(LightWSI)
 
 add_subdirectory(DirectXShaderCompilerHeaders)
+if (UNIX)
+    set(DXC_SHARED
+        "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc/lib/libdxcompiler.so"
+        "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc/lib/libdxil.so"
+        PARENT_SCOPE)
+endif()
 
 add_library("external" INTERFACE)
 

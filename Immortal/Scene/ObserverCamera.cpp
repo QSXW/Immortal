@@ -54,7 +54,9 @@ void ObserverCamera::OnUpdate(float deltaTime)
         mouseButtons.Middle = true;
     }
 
-    Vector2 currentPos = (const Vector2 &)Input::GetMousePosition();
+    auto vec2 = Input::GetMousePosition();
+    Vector2 currentPos = { vec2.x, vec2.y };
+
     int dx = (int)(mousePos.x - currentPos.x);
     int dy = -(int)(mousePos.y - currentPos.y);
 
@@ -119,7 +121,7 @@ void ObserverCamera::Update(float deltaTime)
             }
         }
     }
-        
+
     UpdateViewMatrix();
 }
 

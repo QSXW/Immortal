@@ -140,6 +140,8 @@ public:
 
     virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
 
+    virtual double GetPostion() override;
+
     void Release();
 
     const char *GetAudioDevice();

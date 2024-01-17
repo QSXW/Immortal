@@ -64,7 +64,7 @@ Socket::Socket() :
 Socket::Socket(Anonymous _socket) :
     handle{}
 {
-    Socket_ socket = Deanonymize<int>(_socket);
+    Socket_ socket = (int)(uint64_t)(_socket);
 }
 
 Socket::~Socket()
@@ -79,7 +79,7 @@ Socket::~Socket()
 Socket::operator Anonymous() const
 {
     Socket_
-    return Anonymize(socket);
+    return (void *)(uint64_t)socket;
 }
 
 Socket::operator bool() const
@@ -191,7 +191,7 @@ Socket *Socket::Accept()
     }
 
     int acceptSocket = accept(socket, (struct sockaddr *)&address, &length);
-    return acceptSocket != INVALID_SOCKET ? new Socket(Anonymize(acceptSocket)) : nullptr;
+    return acceptSocket != INVALID_SOCKET ? new Socket((void *)(uint64_t)(acceptSocket)) : nullptr;
 }
 
 int Socket::Send(const char *buffer, int size)

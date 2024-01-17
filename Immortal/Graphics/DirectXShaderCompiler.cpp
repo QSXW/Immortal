@@ -4,11 +4,16 @@
 #include "Shared/DLLLoader.h"
 
 #include <dxcapi.h>
-#include <wrl/client.h>
-using Microsoft::WRL::ComPtr;
 
 namespace Immortal
 {
+
+#ifdef _WIN32
+template <class T>
+using CComPtr = Microsoft::WRL::ComPtr<T>;
+#else
+using ::CComPtr;
+#endif
 
 static inline const wchar_t *GetShaderTarget(ShaderStage stage)
 {
@@ -30,7 +35,16 @@ DirectXShaderCompiler::DirectXShaderCompiler() :
     utils{},
     compiler{}
 {
-    dxc = { "dxcompiler.dll" };
+#ifdef _WIN32
+    static const std::string dxcLib ="dxcompiler.dll";
+#else
+    static const std::string dxcLib = "./libdxcompiler.so";
+#endif
+    dxc = dxcLib;
+    if (!dxc)
+    {
+		LOG::ERR("Failed to load {}, please check if there is DirectXShaderCompiler installed!", dxcLib);
+    }
     auto pDxcCreateInstance = dxc.GetFunc<decltype(&DxcCreateInstance)>("DxcCreateInstance");
     if (!pDxcCreateInstance)
     {
@@ -84,7 +98,7 @@ bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType so
 	    buffer.Encoding = DXC_CP_ACP
     };
 
-    ComPtr<IDxcResult> result{nullptr};
+    CComPtr<IDxcResult> result{nullptr};
     auto hres = compiler->Compile(
         &buffer,
         arguments.data(),
@@ -100,7 +114,7 @@ bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType so
 
     if (FAILED(hres) && (result))
     {
-        ComPtr<IDxcBlobEncoding> errorBlob;
+        CComPtr<IDxcBlobEncoding> errorBlob;
         hres = result->GetErrorBuffer(&errorBlob);
         if (SUCCEEDED(hres) && errorBlob)
         {
@@ -109,7 +123,7 @@ bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType so
         }
     }
 
-    ComPtr<IDxcBlob> code;
+    CComPtr<IDxcBlob> code;
     result->GetResult(&code);
 
     binary.resize(code->GetBufferSize());
@@ -118,7 +132,7 @@ bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType so
     return true;
 }
 
-bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, REFIID iid, void **ppvReflection)
+bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12ShaderReflection **ppvReflection)
 {
     DxcBuffer buffer = {
          .Ptr     = binary.data(),
@@ -126,7 +140,7 @@ bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vect
         .Encoding = 0,
     };
 
-    if (FAILED(utils->CreateReflection(&buffer, iid, ppvReflection)))
+    if (FAILED(utils->CreateReflection(&buffer, IID_PPV_ARGS(ppvReflection))))
     {
 		LOG::ERR("Failed to create shader reflection!");
 		return false;

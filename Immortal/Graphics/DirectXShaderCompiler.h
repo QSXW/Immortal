@@ -17,17 +17,17 @@ public:
 
 	~DirectXShaderCompiler();
 
-	bool Compile(const std::string     &name, 
-					    ShaderSourceType       sourceType,
-	                    ShaderBinaryType       binaryType,
-	                    ShaderStage            stage,
-	                    uint32_t               size,
-	                    const char            *data,
-	                    const std::string     &entryPoint,
-	                    std::vector<uint8_t>  &binary,
-	                    std::string           &error);
+	bool Compile(const std::string           &name,
+					   ShaderSourceType       sourceType,
+	                   ShaderBinaryType       binaryType,
+	                   ShaderStage            stage,
+	                   uint32_t               size,
+	                   const char            *data,
+	                   const std::string     &entryPoint,
+	                   std::vector<uint8_t>  &binary,
+	                   std::string           &error);
 
-	bool Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, REFIID iid, void **ppvReflection);
+	bool Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12ShaderReflection **ppvReflection);
 
 protected:
 	DLLLoader dxc;

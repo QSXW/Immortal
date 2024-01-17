@@ -5,7 +5,7 @@
  */
 
 #include "ALSA.h"
-#include "Framework/DLLLoader.h"
+#include "Shared/DLLLoader.h"
 
 #include <array>
 #include <cstdlib>
@@ -17,7 +17,7 @@ static DLLLoader ALSAModule;
 
 static void InitALSALibrary()
 {
-    static const Entry entries[] = {
+    static const std::pair<void **, const char *> entries[] = {
         { (void **)&ALSA::Open,                            "snd_pcm_open"                           },
         { (void **)&ALSA::Start,                           "snd_pcm_start"                          },
         { (void **)&ALSA::Drop,                            "snd_pcm_drop"                           },
@@ -67,8 +67,8 @@ static void InitALSALibrary()
 
     for (size_t i = 0; i < SL_ARRAY_LENGTH(entries); i++)
     {
-        auto entry = entries[i];
-        *entry.pAddress = ALSAModule.GetFunc(entry.name);
+         auto &[pFunc, name] = entries[i];
+        *pFunc = ALSAModule.GetFunc(name);
     }
 }
 
@@ -293,6 +293,12 @@ int ALSAContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
     }
 
     return consumed;
+}
+
+
+double ALSAContext::GetPostion()
+{
+    return 0.0;
 }
 
 void ALSAContext::Release()

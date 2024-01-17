@@ -2,8 +2,9 @@
 
 #include "Immortal.h"
 #include "FileSystem/Stream.h"
-#include "Vision/Image/Image.h"
+#include "Vision/Image.h"
 #include "Vision/Video/Video.h"
+#include "Vision/CodedFrame.h"
 
 using namespace Immortal;
 
@@ -22,7 +23,9 @@ int main()
         stream.Read(buffer);
 
         Vision::HEVCCodec decoder;
-        decoder.Decode(buffer);
+
+        Vision::CodedFrame codedFrame = { std::move(buffer) };
+        decoder.Decode(codedFrame);
     }
 
     return 0;
