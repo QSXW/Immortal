@@ -248,7 +248,11 @@ public:
 
     void UpdateEditableArea()
     {
-        //editableArea->Descriptor(*scene->Target());
+		auto renderTarget = scene->GetRenderTarget();
+        if (renderTarget)
+        {
+			editableArea->Source(renderTarget->GetColorAttachment(0));
+        }
     }
 
     void UpdateRightClickMenu()

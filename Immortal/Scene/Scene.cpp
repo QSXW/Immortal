@@ -202,7 +202,8 @@ Scene::Scene(const std::string &name) :
 }
 
 Scene::Scene(const std::string &name, bool isEditorScene) :
-    name{ name }
+    name{ name },
+    viewportSize{}
 {
     Init();
 
@@ -612,7 +613,17 @@ Object Scene::Query(const std::string &name)
 void Scene::SetViewportSize(const Vector2 &size)
 {
     viewportSize = size;
-    renderTarget->Resize(size.x, size.y);
+
+    if (!renderTarget)
+    {
+		auto device = Graphics::GetDevice();
+		Format colorFormats[] = {Format::RGBA8, Format::R32};
+		renderTarget = device->CreateRenderTarget(size.x, size.y, colorFormats, SL_ARRAY_LENGTH(colorFormats), Format::Depth24Stencil8);
+    }
+    else
+    {
+		renderTarget->Resize(size.x, size.y);
+    }
 }
 
 Object Scene::PrimaryCameraObject()

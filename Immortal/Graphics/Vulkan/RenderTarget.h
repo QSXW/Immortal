@@ -36,6 +36,8 @@ public:
 
     RenderTarget(Device *device);
 
+    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat);
+
     ~RenderTarget();
 
     virtual void Resize(uint32_t width, uint32_t height) override;
@@ -48,6 +50,8 @@ public:
     void Release();
 
     void SetColorAttachment(uint32_t index, Texture &&texture);
+
+    void Construct(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat);
 
     void Construct(std::vector<Texture> &colorAttachments, Texture &&depthAttachment, bool isPresented = false);
 

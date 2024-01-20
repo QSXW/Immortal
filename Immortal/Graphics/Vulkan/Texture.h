@@ -70,8 +70,12 @@ public:
     void Swap(Texture &other)
 	{
 		Image::Swap(other);
-		std::swap(view, other.view);
-		std::swap(layout, other.layout);
+		std::swap(_width,       other._width      );
+		std::swap(_height,      other._height     );
+		std::swap(_mipLevels,   other._mipLevels  );
+		std::swap(_arrayLayers, other._arrayLayers);
+		std::swap( view,        other.view        );
+		std::swap( layout,      other.layout      );
 	}
 
 protected:
