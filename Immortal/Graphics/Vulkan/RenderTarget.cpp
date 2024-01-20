@@ -3,6 +3,7 @@
 #include "Image.h"
 #include "Barrier.h"
 #include "DescriptorSet.h"
+#include "Graphics/Types.h"
 
 namespace Immortal
 {
@@ -24,6 +25,15 @@ RenderTarget::RenderTarget() :
 
 }
 
+RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat) :
+    Super{},
+    device{device},
+    renderPass{},
+    framebuffer{}
+{
+	Construct(width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat);
+}
+
 RenderTarget::~RenderTarget()
 {
 
@@ -31,7 +41,15 @@ RenderTarget::~RenderTarget()
 
 void RenderTarget::Resize(uint32_t width, uint32_t height)
 {
+    if (attachments.colors.empty())
+    {
+		return;
+    }
 
+    if (width == attachments.colors[0].GetWidth() && height == attachments.colors[0].GetHeight())
+    {
+		return;
+    }
 }
 
 SuperTexture *RenderTarget::GetColorAttachment(uint32_t index)
@@ -58,6 +76,22 @@ void RenderTarget::SetColorAttachment(uint32_t index, Texture &&texture)
     }
 
     attachments.colors[index] = std::move(texture);
+}
+
+void RenderTarget::Construct(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
+{
+	 VkExtent3D extent = { width, height, 1 };
+
+     for (uint32_t i = 0; i < colorAttachmentCount; i++)
+     {
+         Texture texture = { device, pColorAttachmentFormats[i], width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment };
+		 attachments.colors.emplace_back(std::move(texture));
+     }
+
+     if (depthAttachmentFormat != Format::None)
+     {
+		 attachments.depth = { device, depthAttachmentFormat, width, height, 1, 1, TextureType::DepthStencilAttachment };
+     }
 }
 
 void RenderTarget::Construct(std::vector<Texture> &colorAttachments, Texture &&depthAttachment, bool isPresented)

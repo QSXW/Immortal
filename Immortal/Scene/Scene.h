@@ -111,7 +111,7 @@ public:
         return primaryCamera;
     }
 
-    Ref<RenderTarget> Target() const
+    Ref<RenderTarget> GetRenderTarget() const
     {
         return renderTarget;
     }
