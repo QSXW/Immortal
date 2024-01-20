@@ -30,6 +30,8 @@ public:
 
     void Load(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint);
 
+    void ConstructShaderModule();
+
     void GetPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo *pPipelineShaderStageCreateInfo, VkPipelineShaderStageModuleIdentifierCreateInfoEXT *pIdentifierCreateInfo);
 
 public:
@@ -63,10 +65,12 @@ public:
     }
 
 protected:
-	void Construct(const VkShaderModuleCreateInfo &createInfo);
+	void Construct();
 
 protected:
     Device *device;
+    
+    std::vector<uint8_t> spirv;
 
     std::vector<VkPushConstantRange> pushConstantRanges;
 

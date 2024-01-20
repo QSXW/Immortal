@@ -327,7 +327,19 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
 		createInfo.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     }
 
-    Check(device->CreatePipelines(pipelineCache, 1, &createInfo, &handle));
+    VkResult result = device->CreatePipelines(pipelineCache, 1, &createInfo, &handle);
+    if (result == VK_PIPELINE_COMPILE_REQUIRED_EXT)
+    {
+		for (size_t i = 0; i < shaderCount; i++)
+		{
+			Shader *shader = ppShader[i];
+			shader->ConstructShaderModule();
+			shader->GetPipelineShaderStageCreateInfo(&stageCreateInfo[i], nullptr);
+		}
+		createInfo.flags = {};
+		result = device->CreatePipelines(pipelineCache, 1, &createInfo, &handle);
+    }
+	Check(result);
 }
 
 ComputePipeline::ComputePipeline(Device *device, Shader *shader) :
@@ -356,7 +368,15 @@ ComputePipeline::ComputePipeline(Device *device, Shader *shader) :
 		createInfo.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     }
 
-    Check(device->CreatePipelines(pipelineCache, 1, &createInfo, &handle));
+    VkResult result = device->CreatePipelines(pipelineCache, 1, &createInfo, &handle);
+	if (result == VK_PIPELINE_COMPILE_REQUIRED_EXT)
+    {
+		createInfo.flags = {};
+		shader->ConstructShaderModule();
+		shader->GetPipelineShaderStageCreateInfo(&createInfo.stage, nullptr);
+		result = device->CreatePipelines(pipelineCache, 1, &createInfo, &handle);
+    }
+	Check(result);
 }
 
 ComputePipeline::ComputePipeline(Device *device, SuperShader *shader) :

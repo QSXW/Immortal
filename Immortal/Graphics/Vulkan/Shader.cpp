@@ -105,6 +105,7 @@ static inline VkShaderStageFlagBits CAST(ShaderStage stage)
 Shader::Shader(Device *device, const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) :
     Super{},
     device{ device },
+    spirv{},
     pushConstantRanges{},
     descriptorSetLayoutBindings{},
     entryPoint{ entryPoint },
@@ -125,6 +126,18 @@ Shader::~Shader()
     }
 }
 
+void Shader::ConstructShaderModule()
+{
+	VkShaderModuleCreateInfo createInfo{
+    	.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+	    .pNext    = nullptr,
+	    .flags    = {},
+	    .codeSize = spirv.size(),
+	    .pCode    = (uint32_t *)spirv.data(),
+    };
+	Check(device->Create(&createInfo, &handle));
+}
+
 void Shader::GetPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo *pPipelineShaderStageCreateInfo, VkPipelineShaderStageModuleIdentifierCreateInfoEXT *pIdentifierCreateInfo)
 {
     VkPipelineShaderStageCreateInfo createInfo{
@@ -137,9 +150,8 @@ void Shader::GetPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo *p
 	    .pSpecializationInfo = nullptr,
     };
 
-    if (identifierSize)
+    if (handle == VK_NULL_HANDLE)
     {
-		createInfo.module = VK_NULL_HANDLE;
 		VkPipelineShaderStageModuleIdentifierCreateInfoEXT pipelineShaderStageModuleIdentifierCreateInfo = {
             .sType          = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT,
             .pNext          = nullptr,
@@ -158,9 +170,7 @@ void Shader::Load(const std::string &name, ShaderStage stage, const std::string 
 {
     constexpr const char *tmpPath = "SpirvCache/";
 
-    std::vector<uint8_t> spirv;
     std::string error;
-
 	VkShaderModuleCreateInfo createInfo = {
 	    .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
 	    .pNext    = nullptr,
@@ -190,19 +200,17 @@ void Shader::Load(const std::string &name, ShaderStage stage, const std::string 
 
         CacheSpirv(tmpPath, name, source, spirv, shaderModuleIdentifier.identifierSize, shaderModuleIdentifier.identifier);
     }
-	createInfo.codeSize = spirv.size();
-	createInfo.pCode    = (const uint32_t *)spirv.data();
 
-    return Construct(createInfo);
+    Construct();
 }
 
-void Shader::Construct(const VkShaderModuleCreateInfo &createInfo)
+void Shader::Construct()
 {
-	SPRIVReflector::Reflect(createInfo.pCode, createInfo.codeSize, descriptorSetLayoutBindings, pushConstantRanges);
+	SPRIVReflector::Reflect(spirv.data(), spirv.size(), descriptorSetLayoutBindings, pushConstantRanges);
 
     if (!identifierSize)
     {
-		Check(device->Create(&createInfo, &handle));
+		ConstructShaderModule();
     }
 
     for (auto &descriptorSetLayoutBinding : descriptorSetLayoutBindings)
