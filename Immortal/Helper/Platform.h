@@ -3,8 +3,6 @@
 #include <string>
 #include <optional>
 
-#include "Core.h"
-
 namespace Immortal
 {
 

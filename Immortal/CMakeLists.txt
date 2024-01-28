@@ -9,7 +9,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CORE_FILES
     Immortal.h
     Core.h
-    impch.cpp
     impch.h)
 
 set(ALGORITHM_FILES
@@ -154,7 +153,10 @@ if (WIN32)
 
     list(APPEND SYNC_FILES
         Win32Semaphore.cpp)
-else()
+elseif(APPLE)
+    list(APPEND HELPER_FILES
+        MacOSPlatform.cpp)
+elseif(UNIX)
     list(APPEND NET_FILES
         UnixSocket.cpp)
 
@@ -234,11 +236,18 @@ target_sources(${PROJECT_NAME} PUBLIC ${PROJECT_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
+
 add_subdirectory(slapi)
+
+if (APPLE)
+add_subdirectory(Helper)
+endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
     external
     imgui
     ImmortalGraphics
-    ImmortalVision)
+    ImmortalVision
+    $<$<PLATFORM_ID:APPLE>:AppleInterface-Helper>)

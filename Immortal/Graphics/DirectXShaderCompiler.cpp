@@ -36,7 +36,9 @@ DirectXShaderCompiler::DirectXShaderCompiler() :
     compiler{}
 {
 #ifdef _WIN32
-    static const std::string dxcLib ="dxcompiler.dll";
+    static const std::string dxcLib = "dxcompiler.dll";
+#elif defined(__APPLE__)
+    static const std::string dxcLib = "libdxcompiler.dylib";
 #else
     static const std::string dxcLib = "./libdxcompiler.so";
 #endif

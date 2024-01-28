@@ -81,12 +81,16 @@ void GLFWWindow::SetTitle(const std::string &title)
 
 void GLFWWindow::SetIcon(const std::string &filepath)
 {
-    GLFWimage image{};
-    //image.height = ncast<int>(pic.desc.height);
-    //image.width  = ncast<int>(pic.desc.width);
-    //image.pixels = rcast<unsigned char *>(frame.Data());
+    // Picture picture = Vision::Read(filepath);
+    // if (picture)
+    // {
+    //     GLFWimage image{};
+    //     image.width  = (int)picture.GetWidth();
+    //     image.height = (int)picture.GetHeight();
+    //     image.pixels = (unsigned char *)picture.GetData();
 
-    glfwSetWindowIcon(window, 1, &image);
+    //     glfwSetWindowIcon(window, 1, &image);
+    // }
 }
 
 void GLFWWindow::SelectPlatformType()
@@ -133,7 +137,7 @@ void GLFWWindow::Construct(const std::string &title, uint32_t width, uint32_t he
     }
 
     SelectPlatformType();
-    if (false/*Render::API == Render::Type::Vulkan || Render::API == Render::Type::D3D12*/)
+    if (GetType() == Type::Cocoa)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     }

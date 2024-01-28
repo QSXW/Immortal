@@ -31,6 +31,11 @@ AudioDevice::AudioDevice() :
     status{false}
 {
     instance = this;
+    if (!context)
+    {
+        return;
+    }
+
     thread = new Thread{ [=, this] {
         uint64_t duration = 0;
         context->Begin();
@@ -103,8 +108,11 @@ AudioDevice::~AudioDevice()
 	status.notify_one();
 
 	stopping = true;
-	thread->Join();
-    thread.Reset();
+    if (thread)
+    {
+        thread->Join();
+        thread.Reset();
+    }
 }
 
 void AudioDevice::PlayAudioStream(AudioSource *pAudioSource)

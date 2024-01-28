@@ -19,7 +19,11 @@
 #define GLFW_EXPOSE_NATIVE_WAYLAND
 #endif
 
-#if defined(GLFW_EXPOSE_NATIVE_WAYLAND) || defined(GLFW_EXPOSE_NATIVE_X11)
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+#define GLFW_EXPOSE_NATIVE_COCOA
+#endif
+
+#if defined(GLFW_EXPOSE_NATIVE_WAYLAND) || defined(GLFW_EXPOSE_NATIVE_X11) || defined(GLFW_EXPOSE_NATIVE_COCOA)
 #include <GLFW/glfw3native.h>
 #endif
 
@@ -184,6 +188,12 @@ VkResult Surface::CreateObject(VkInstance instance, Window::Type type, Anonymous
                 .surface = glfwGetWaylandWindow((GLFWwindow *)window),
             };
             return vkCreateWaylandSurfaceKHR(instance, &createInfo, pAllocator, pSurface);
+        }
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+        case Window::Type::Cocoa:
+        {
+            return glfwCreateWindowSurface(instance, (GLFWwindow *)window, pAllocator, pSurface);
         }
 #endif
         default:

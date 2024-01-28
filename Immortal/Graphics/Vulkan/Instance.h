@@ -97,15 +97,18 @@ public:
 #endif
 
 #ifdef __APPLE__
+#ifdef VK_USE_PLATFORM_IOS_MVK
     VkResult CreateIOSSurfaceMVK(VkIOSSurfaceCreateInfoMVK const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
     {
         return vkCreateIOSSurfaceMVK(handle, pCreateInfo, pAllocator, pSurface);
     }
-
+#endif
+#ifdef VK_USE_PLATFORM_MACOS_MVK
     VkResult CreateMacOSSurfaceMVK(VkMacOSSurfaceCreateInfoMVK const *pCreateInfo, VkSurfaceKHR *pSurface, VkAllocationCallbacks const *pAllocator = nullptr)
     {
         return vkCreateMacOSSurfaceMVK(handle, pCreateInfo, pAllocator, pSurface);
     }
+#endif
 #endif
 
 public:

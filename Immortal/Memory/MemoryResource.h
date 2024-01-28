@@ -6,14 +6,25 @@
 
 #pragma once
 
+#include "Core.h"
 #include <memory_resource>
 #include <list>
+
+#ifdef SL_ARCH_X86
 #include <immintrin.h>
+#endif
 
 #include "Allocator.h"
 
 namespace Immortal
 {
+
+#if !defined(SL_ARCH_X86) && defined(__GNUC__)
+static inline uint64_t CountTrailingZeros64(uint64_t value)
+{
+    return (uint64_t)__builtin_ctzll(value);
+}
+#endif
 
 class MarkBuffer
 {
@@ -55,8 +66,11 @@ public:
         {
             return nullptr;
         }
-
+#ifdef SL_ARCH_X86
         auto index = _tzcnt_u64(mark);
+#else
+        auto index = CountTrailingZeros64(mark);
+#endif
         Unmark(index);
         return &data[index * size];
     }

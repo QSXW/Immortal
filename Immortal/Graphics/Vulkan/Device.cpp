@@ -316,7 +316,7 @@ SuperSwapchain *Device::CreateSwapchain(SuperQueue *_queue, Window *window, Form
 
     Surface surface{};
     Instance *instance = physicalDevice->Get<Instance>();
-    instance->CreateSurface(window, &surface, nullptr);
+    Check(instance->CreateSurface(window, &surface, nullptr));
 
     Queue *queue = InterpretAs<Queue>(_queue);
     if (!physicalDevice->IsPresentSupported(surface, queue->GetFamilyIndex()))

@@ -147,10 +147,9 @@ int main(int, char **)
 
 	while (!applicationExit)
     {
-        swapchain->PrepareNextFrame();
-
         // Wait for the previsous frame
         gpuEvent->Wait(syncValues[syncPoint], 0xffffff);
+        swapchain->PrepareNextFrame();
 
         auto &commandBuffer = commandBuffers[syncPoint];
 

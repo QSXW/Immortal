@@ -8,6 +8,13 @@
 #include <functional>
 #include <atomic>
 
+#ifdef __APPLE__
+namespace std
+{
+using jthread = thread;
+}
+#endif
+
 namespace Immortal
 {
 
@@ -29,7 +36,7 @@ public:
 #ifndef __GNUC__
         return GetCurrentThreadId();
 #else
-		return (uint32_t)pthread_self();
+		return (uint32_t)(size_t)pthread_self();
 #endif
     }
 

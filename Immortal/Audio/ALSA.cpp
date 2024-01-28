@@ -5,6 +5,7 @@
  */
 
 #include "ALSA.h"
+#include "Shared/Log.h"
 #include "Shared/DLLLoader.h"
 
 #include <array>

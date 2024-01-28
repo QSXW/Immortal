@@ -25,6 +25,13 @@
 #   define SL_ASSEMBLY __asm__
 #endif
 
+#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
+#define SL_ARCH_X86
+#if defined(__x86_64__) || defined(_M_X64)
+#define SL_ARCH_X86_64
+#endif
+#endif
+
 namespace sl
 {
 
