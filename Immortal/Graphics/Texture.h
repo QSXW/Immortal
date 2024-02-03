@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core.h"
+#include "Types.h"
 #include "Format.h"
-#include "Descriptor.h"
 #include "Shared/IObject.h"
 
 namespace Immortal
@@ -42,6 +42,14 @@ public:
 
 protected:
 	void SetMeta(uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers);
+
+    void Swap(Texture &other)
+    {
+        std::swap(_width,       other._width      );
+        std::swap(_height,      other._height     );
+        std::swap(_mipLevels,   other._mipLevels  );
+        std::swap(_arrayLayers, other._arrayLayers);
+    }
 
 protected:
 	uint32_t _width;

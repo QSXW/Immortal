@@ -1,4 +1,5 @@
 #include "TimelineCommandBuffer.h"
+#include "Device.h"
 
 namespace Immortal
 {

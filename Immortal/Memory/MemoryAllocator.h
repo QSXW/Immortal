@@ -12,7 +12,7 @@
 #include "Core.h"
 #include "Allocator.h"
 #include "Shared/IObject.h"
-
+#include <map>
 #include <ctime>
 
 namespace Immortal

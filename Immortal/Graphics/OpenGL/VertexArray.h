@@ -29,7 +29,7 @@ public:
 			case GL_FORMAT_RGB32I:
 			case GL_FORMAT_RGBA32I:
 				return GL_FORMAT_INT;
-        
+
             case GL_FORMAT_RGBA8:
 				return GL_FORMAT_UNSIGNED_BYTE;
 
@@ -38,7 +38,7 @@ public:
         }
     }
 
-    
+
     GLCPP_SWAPPABLE(VertexArray)
 
 public:
@@ -96,7 +96,7 @@ public:
             else
             {
 				bool nomalize = GL_FALSE;
-                if (inputElement.format == Format::RGBA8)
+                if (inputElement.format == Format::R8G8B8A8_UNORM)
                 {
 					nomalize = GL_TRUE;
                 }

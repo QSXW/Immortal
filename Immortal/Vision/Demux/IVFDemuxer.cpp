@@ -1,6 +1,7 @@
 #include "IVFDemuxer.h"
 #include "FileSystem/Stream.h"
 #include "Math/Math.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

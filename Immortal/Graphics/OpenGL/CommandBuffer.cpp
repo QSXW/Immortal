@@ -4,6 +4,7 @@
 #include "Texture.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {
@@ -110,7 +111,7 @@ void CommandBuffer::SetIndexBuffer(SuperBuffer *_buffer, Format format)
 	});
 }
 
-void CommandBuffer::SetScissors(uint32_t count, const Rect *pScissor)
+void CommandBuffer::SetScissors(uint32_t count, const Rect2D *pScissor)
 {
 	auto width  =  (int)pScissor[0].right - pScissor[0].left;
 	auto height =  (int)pScissor[0].bottom - pScissor[0].top;

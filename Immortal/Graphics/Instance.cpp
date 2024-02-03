@@ -4,6 +4,9 @@
 #define IMMORTAL_ENABLE_D3D12
 #define IMMORTAL_ENABLE_VULKAN
 #define IMMORTAL_ENABLE_OPENGL
+#ifdef __APPLE__
+#define IMMORTAL_ENABLE_METAL
+#endif
 
 #ifdef _WIN32
 #ifdef IMMORTAL_ENABLE_D3D12
@@ -19,6 +22,10 @@
 #endif
 #ifdef IMMORTAL_ENABLE_OPENGL
 #include "OpenGL/Instance.h"
+#endif
+
+#ifdef IMMORTAL_ENABLE_METAL
+#include "Metal/Instance.h"
 #endif
 
 namespace Immortal
@@ -89,6 +96,10 @@ Instance *Instance::CreateInstance(BackendAPI apiType, Window::Type windowType)
 #ifdef IMMORTAL_ENABLE_OPENGL
 		case BackendAPI::OpenGL:
 			return new OpenGL::Instance;
+#endif
+#ifdef IMMORTAL_ENABLE_METAL
+        case BackendAPI::Metal:
+            return new Metal::Instance;
 #endif
         default:
             throw std::runtime_error{ "Not support api" };

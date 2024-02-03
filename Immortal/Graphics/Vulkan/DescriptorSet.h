@@ -1,9 +1,13 @@
 #pragma once
 
 #include "Common.h"
-#include "Descriptor.h"
+#include "Core.h"
 #include "Handle.h"
+#include "Algorithm/LightArray.h"
 #include "Graphics/DescriptorSet.h"
+#include "Graphics/Buffer.h"
+#include "Graphics/Texture.h"
+#include "Graphics/Sampler.h"
 
 namespace Immortal
 {
@@ -15,7 +19,7 @@ class Buffer;
 class Pipeline;
 class Texture;
 class Sampler;
-class DescriptorSet : public SuperDescriptorSet, public Handle<VkDescriptorSet>
+class IMMORTAL_API DescriptorSet : public SuperDescriptorSet, public Handle<VkDescriptorSet>
 {
 public:
     using Super = SuperDescriptorSet;

@@ -37,7 +37,7 @@ VideoSession::VideoSession(Device *device, Format format, VkExtent2D extend, con
     createInfo.sType                           = VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR;
     createInfo.pVideoProfile                   = pVideoProfile;
     createInfo.queueFamilyIndex                = device->GetQueueFailyIndex(SelectQueueType(pVideoProfile->videoCodecOperation));
-    createInfo.pictureFormat                   = Format{ Format::RGBA8 };
+    createInfo.pictureFormat                   = Format{ Format::R8G8B8A8_UNORM };
     createInfo.referencePictureFormat          = createInfo.pictureFormat;
     createInfo.maxCodedExtent                  = extend;
     createInfo.maxDpbSlots                     = maxReferencePicturesSlotsCount;

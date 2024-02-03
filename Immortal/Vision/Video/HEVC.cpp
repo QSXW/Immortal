@@ -1,4 +1,5 @@
 #include "HEVC.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {
@@ -187,7 +188,7 @@ void VideoParameterSet::Parse(BitTracker &bitTracker)
 
     vps_video_parameter_set_id    = bitTracker.GetBits(4);
     vps_base_layer_internal_flag  = bitTracker.GetBits(1);
-    vps_base_layer_available_flag = bitTracker.GetBits(1); 
+    vps_base_layer_available_flag = bitTracker.GetBits(1);
     vps_max_layers_minus1         = bitTracker.GetBits(6);
     vps_max_sub_layers_minus1     = bitTracker.GetBits(3);
     vps_temporal_id_nesting_flag  = bitTracker.GetBits(1);
@@ -383,7 +384,7 @@ void SequenceParameterSet::Parse(BitTracker & bitTracker)
     }
     pic_width_in_luma_samples  = bitTracker.UnsignedExpGolomb();
     pic_height_in_luma_samples = bitTracker.UnsignedExpGolomb();
-    
+
     if (/* conformance_window_flag = */ bitTracker.GetBit())
     {
         conf_win_left_offset   = bitTracker.UnsignedExpGolomb();
@@ -397,7 +398,7 @@ void SequenceParameterSet::Parse(BitTracker & bitTracker)
     log2_max_pic_order_cnt_lsb_minus4 = bitTracker.UnsignedExpGolomb();
     sps_sub_layer_ordering_info_present_flag = bitTracker.GetBit();
 
-    for (int i = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1); 
+    for (int i = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1);
             i <= sps_max_sub_layers_minus1; i++)
     {
         subLayers[i].sps_max_dec_pic_buffering_minus1 = bitTracker.UnsignedExpGolomb();

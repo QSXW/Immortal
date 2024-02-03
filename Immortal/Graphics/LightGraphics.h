@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Graphics/Types.h"
 #include "Graphics/AsyncCompute.h"
 #include "Graphics/AccelerationStructure.h"
 #include "Graphics/Buffer.h"
@@ -19,4 +20,10 @@
 #include "Graphics/Swapchain.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Types.h"
+#include "Graphics/Window.h"
 #include "Graphics/WindowCapture.h"
+#include "Graphics/Event/KeyCodes.h"
+#include "Graphics/Event/Event.h"
+#include "Graphics/Event/ApplicationEvent.h"
+#include "Graphics/Event/KeyEvent.h"
+#include "Graphics/Event/MouseEvent.h"

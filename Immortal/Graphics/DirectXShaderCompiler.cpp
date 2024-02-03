@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Shared/DLLLoader.h"
+#include "Shared/Log.h"
 
 #include <dxcapi.h>
 

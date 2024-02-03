@@ -52,9 +52,9 @@ Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height,
 	Construct(device, format, width, height, mipLevels, arrayLayers, CAST(type));
 }
 
-Texture::Texture(Device *device, Image &&image, ImageView && /*view*/) :
+Texture::Texture(Device *device, Image &&image, ImageView &&/*view*/) :
     Image{ std::move(image) },
-    view{ std::move(view) }
+    view{}
 {
 	view = ImageView{ device, GetImage() };
 }

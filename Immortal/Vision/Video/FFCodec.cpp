@@ -3,6 +3,8 @@
 #include "Vision/Processing/ColorSpace.h"
 #include "Render/Graphics.h"
 #include "Audio/Device.h"
+#include "Shared/Log.h"
+
 #include <list>
 
 #if HAVE_FFMPEG
@@ -215,8 +217,8 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
             picture[1] = (uint8_t *)syncCtx.fence;
             picture[2] = (uint8_t *)syncCtx.fence_value;
         }
-#endif
         else
+#endif
         {
 			picture.SetMemoryType(PictureMemoryType::System);
 

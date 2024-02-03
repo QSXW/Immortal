@@ -7,12 +7,12 @@
 #include "Device.h"
 #include "Surface.h"
 #include "Semaphore.h"
+#include "RenderTarget.h"
 
 namespace Immortal
 {
 
 class Window;
-
 namespace Vulkan
 {
 

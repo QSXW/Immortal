@@ -2,6 +2,8 @@
 
 #include "Core.h"
 #include "Shared/IObject.h"
+#include "Types.h"
+#include "Format.h"
 
 namespace Immortal
 {
@@ -59,7 +61,7 @@ public:
 
 	virtual void SetIndexBuffer(Buffer *buffer, Format format) = 0;
 
-	virtual void SetScissors(uint32_t count, const Rect *pScissor) = 0;
+	virtual void SetScissors(uint32_t count, const Rect2D *pScissor) = 0;
 
 	virtual void SetBlendFactor(const float factor[4]) = 0;
 

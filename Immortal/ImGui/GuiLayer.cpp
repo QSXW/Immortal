@@ -1,4 +1,4 @@
-﻿#include "GuiLayer.h"
+#include "GuiLayer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -149,6 +149,10 @@ void GuiLayer::OnAttach()
         else if (device->GetBackendAPI() == BackendAPI::Vulkan)
         {
             ImGui_ImplGlfw_InitForVulkan(glfwWindow, true);
+        }
+        else if (device->GetBackendAPI() == BackendAPI::Metal)
+        {
+            ImGui_ImplGlfw_InitForOther(glfwWindow, true);
         }
         platformSpecficWindow.NewFrame = ImGui_ImplGlfw_NewFrame;
         platformSpecficWindow.ShutDown = ImGui_ImplGlfw_Shutdown;

@@ -120,7 +120,7 @@ struct ImGui_ImplImmortal_ViewportData
     {
 		delete []frameCtx;
     }
-                                                          
+
     URef<Window>                                          window;
     URef<Swapchain>                                       swapchain;
     URef<GPUEvent>                                        gpuEvent;
@@ -521,7 +521,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
                     continue;
                 }
 
-                Rect rect = {
+                Rect2D rect = {
                     .left   = uint32_t(minClip.x),
                     .top    = uint32_t(minClip.y),
                     .right  = uint32_t(maxClip.x),
@@ -561,7 +561,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
         globalIndexOffset += cmdList->IdxBuffer.Size;
     }
 
-    Rect scissor = { 0, 0, (uint32_t)width, (uint32_t)height };
+    Rect2D scissor = {0, 0, (uint32_t) width, (uint32_t) height};
     commandBuffer->SetScissors(1, &scissor);
 }
 

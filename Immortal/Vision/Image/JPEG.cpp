@@ -1,5 +1,6 @@
 #include "JPEG.h"
 #include "Vision/LookupTable/LookupTable.h"
+#include "Shared/Log.h"
 
 #ifdef SL_HAVE_INTRISIC
 #include "slintrinsic.h"

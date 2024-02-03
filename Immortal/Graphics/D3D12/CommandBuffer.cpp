@@ -98,7 +98,7 @@ void CommandBuffer::EndEvent()
 void CommandBuffer::SetPipeline(SuperPipeline *_pipeline)
 {
 	pipeline = InterpretAs<Pipeline>(_pipeline);
-	
+
 	if (pipeline->GetType() == Pipeline::Type::Graphics)
 	{
 		SetRootDescriptorTable = SetGraphicsRootDescriptorTable;
@@ -161,7 +161,7 @@ void CommandBuffer::SetIndexBuffer(SuperBuffer *_0, Format format)
 	commandList.SetIndexBuffer(&view);
 }
 
-void CommandBuffer::SetScissors(uint32_t count, const Rect *pScissor)
+void CommandBuffer::SetScissors(uint32_t count, const Rect2D *pScissor)
 {
 	D3D12_RECT *pRect = (D3D12_RECT *)pScissor;
 	commandList.RSSetScissorRects(pRect, count);
@@ -256,7 +256,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 
 	Sampler *sampler = device->GetSampler(filter);
 	Pipeline *pipeline = device->GetPipeline("GenerateMipMaps");
-	
+
 	descriptorSets.reserve(descriptorSets.size() + mipLevels);
 	Barrier<BarrierType::Transition> barrier{ *texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS };
 	commandList.ResourceBarrier(&barrier);
@@ -393,7 +393,7 @@ void CommandBuffer::DrawInstanced(uint32_t vertexCountPerInstance, uint32_t inst
 	commandList.Handle()->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
-void CommandBuffer::DrawIndexedInstance(uint32_t indexCountPerInstance, UINT instanceCount, UINT startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation)
+void CommandBuffer::DrawIndexedInstance(uint32_t indexCountPerInstance, uint32_t instanceCount, uint32_t startIndexLocation, int32_t baseVertexLocation, uint32_t startInstanceLocation)
 {
 	commandList.DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }

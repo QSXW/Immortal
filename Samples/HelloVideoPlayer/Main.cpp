@@ -1,14 +1,14 @@
 // Dear ImGui: standalone example application for Immortal Graphics API
 
+#include <Immortal.h>
+#include "ImGui/imgui_impl_immortal.h"
+using namespace Immortal;
+
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_glfw.h>
 #include <GLFW/glfw3.h>
 #define IMGUI_UNLIMITED_FRAME_RATE
-
-#include <Immortal.h>
-#include "ImGui/imgui_impl_immortal.h"
-using namespace Immortal;
 
 URef<Queue> queue;
 URef<Swapchain> swapchain;
@@ -16,7 +16,7 @@ URef<GPUEvent> pEvent;
 
 uint32_t bufferCount = 3;
 uint32_t syncPoint = 0;
-uint32_t syncValues[3] = {};
+uint64_t syncValues[3] = {};
 bool applicationExit = false;
 
 void OnEvent(Event &e)
@@ -39,7 +39,7 @@ int main(int, char **)
 	Async::Init();
 
     // For more details about the rendering, please check HelloTriangleExample and HelloImGuiExample
-    BackendAPI backendAPI = BackendAPI::D3D12;
+    BackendAPI backendAPI = BackendAPI::Vulkan;
 
 
 	URef<Window> window = Window::CreateInstance("Hello Video Player(d3d12va) - Immortal Graphics Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
@@ -116,6 +116,7 @@ int main(int, char **)
 	while (!applicationExit)
     {
 		auto deltaTime = timer.tick<Timer::Seconds>();
+        pEvent->Wait(syncValues[syncPoint], 0xffffff);
         swapchain->PrepareNextFrame();
 
 		ImGui_ImplImmortal_NewFrame();
@@ -193,7 +194,6 @@ int main(int, char **)
 		Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
 		Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
 
-
         auto windowSize = ImGui::GetWindowSize();
         if (texture)
         {
@@ -251,7 +251,6 @@ int main(int, char **)
         ImGui::Render();
 		const float clearValue[4] = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
 
-        pEvent->Wait(syncValues[syncPoint], 0xffffff);
         auto &commandBuffer = commandBuffers[syncPoint];
         commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();

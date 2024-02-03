@@ -617,7 +617,7 @@ void Scene::SetViewportSize(const Vector2 &size)
     if (!renderTarget)
     {
 		auto device = Graphics::GetDevice();
-		Format colorFormats[] = {Format::RGBA8, Format::R32};
+		Format colorFormats[] = { Format::RGBA8, Format::R32_UINT };
 		renderTarget = device->CreateRenderTarget(size.x, size.y, colorFormats, SL_ARRAY_LENGTH(colorFormats), Format::Depth24Stencil8);
     }
     else

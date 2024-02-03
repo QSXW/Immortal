@@ -5,6 +5,7 @@
 
 #include "FileSystem/FileSystem.h"
 #include "Graphics/DirectXShaderCompiler.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

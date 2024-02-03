@@ -1,4 +1,5 @@
 #include "Graphics/LightGraphics.h"
+#include "Shared/Log.h"
 
 using namespace Immortal;
 
@@ -75,7 +76,7 @@ int main(int, char **)
 	uint32_t width  = 1280;
 	uint32_t height = 720;
 	URef<Window> window = Window::CreateInstance("Immortal Graphics HelloTriangle Example", width, height);
-    
+
     // Bind OnEvent function into the window
 	window->SetEventCallback(OnEvent);
 
@@ -90,7 +91,7 @@ int main(int, char **)
 
     // Create a GPU event for CPU-GPU or GPU synchronization
 	Ref<GPUEvent> gpuEvent = device->CreateGPUEvent();
-    
+
     // Use the logic device to create a swapchain
 	constexpr uint32_t swapchainBufferCount = 3;
 	swapchain = device->CreateSwapchain(queue, window, Format::BGRA8, swapchainBufferCount, SwapchainMode::None);

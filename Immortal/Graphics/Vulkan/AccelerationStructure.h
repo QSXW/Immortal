@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Graphics/AccelerationStructure.h"
 #include "Buffer.h"
+#include "Graphics/AccelerationStructure.h"
+#include "Graphics/InputElement.h"
 
 namespace Immortal
 {
 namespace Vulkan
 {
 
+class Device;
 class AccelerationStructureLevel
 {
 public:

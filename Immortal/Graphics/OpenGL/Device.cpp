@@ -12,6 +12,7 @@
 #include "Texture.h"
 #include "GPUEvent.h"
 #include "DescriptorSet.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

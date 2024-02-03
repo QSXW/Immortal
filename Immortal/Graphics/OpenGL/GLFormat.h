@@ -7,7 +7,7 @@ namespace Immortal
 
 enum GL_FORMAT : GLenum
 {
-	GL_FORMAT_INVALID_ENUM      = GL_INVALID_ENUM,
+	GL_FORMAT_INVALID           = GL_INVALID_ENUM,
 	GL_FORMAT_FLOAT             = GL_FLOAT,
 	GL_FORMAT_INT               = GL_INT,
 	GL_FORMAT_UNSIGNED_INT      = GL_UNSIGNED_INT,

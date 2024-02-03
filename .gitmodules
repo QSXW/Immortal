@@ -28,4 +28,7 @@
 	url = https://github.com/QSXW/LightWSI.git
 [submodule "3rdparty/DirectXShaderCompilerHeaders"]
 	path = 3rdparty/DirectXShaderCompilerHeaders
-	url = https://github.com/QSXW/DirectXShaderCompilerHeaders.git
+	url = https://gitlab.com/qsxw/directxshadercompilerheaders.git
+[submodule "3rdparty/metal-cpp"]
+	path = 3rdparty/metal-cpp
+	url = https://github.com/QSXW/metal-cpp.git

@@ -25,7 +25,7 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
     uint8_t *data = nullptr;
 	if (stbi_is_hdr_from_memory(buffer.data(), buffer.size()))
     {
-        format = Format::RGBA32F;
+        format = Format::R32G32B32A32_SFLOAT;
         data = (uint8_t *)stbi_loadf_from_memory(
 		    buffer.data(),
 		    static_cast<int>(buffer.size()),

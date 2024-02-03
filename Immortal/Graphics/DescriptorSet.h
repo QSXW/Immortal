@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Shared/IObject.h"
 
 namespace Immortal
 {

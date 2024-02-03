@@ -344,11 +344,25 @@ set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 add_subdirectory(LightWSI)
 
 add_subdirectory(DirectXShaderCompilerHeaders)
-if (UNIX)
+set(DXC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc")
+if (WIN32)  
+    set(DXC_SHARED_DIR "${DXC_DIR}/bin/Windows/x64")
     set(DXC_SHARED
-        "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc/lib/libdxcompiler.so"
-        "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc/lib/libdxil.so"
+        "${DXC_SHARED_DIR}/dxcompiler.dll"
+        "${DXC_SHARED_DIR}/dxil.dll"
         PARENT_SCOPE)
+elseif(APPLE)
+
+elseif(UNIX)
+set(DXC_SHARED_DIR "${DXC_DIR}/lib/Linux")
+    set(DXC_SHARED
+        "${DXC_SHARED_DIR}/libdxcompiler.so"
+        "${DXC_SHARED_DIR}/libdxil.so"
+        PARENT_SCOPE)
+endif()
+
+if (APPLE)
+    add_subdirectory(metal-cpp)
 endif()
 
 add_library("external" INTERFACE)

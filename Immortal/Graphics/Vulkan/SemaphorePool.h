@@ -2,7 +2,7 @@
 
 #include "Common.h"
 #include "Semaphore.h"
-#include <list>
+#include <queue>
 
 namespace Immortal
 {

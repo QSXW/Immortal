@@ -2,6 +2,8 @@
 #include "Device.h"
 #include "CommandBuffer.h"
 #include "GPUEvent.h"
+#include "RenderTarget.h"
+#include "Swapchain.h"
 
 namespace Immortal
 {
@@ -138,7 +140,7 @@ void Queue::Submit(SuperCommandBuffer **_ppCommandBuffer, size_t count, SuperGPU
 void Queue::Present(SuperSwapchain *_swapchain, SuperGPUEvent **_ppSignalEvents, uint32_t eventCount)
 {
 	Swapchain *swapchain = InterpretAs<Swapchain>(_swapchain);
-    
+
     uint32_t bufferIndex = swapchain->GetCurrentBufferIndex();
   //  if (executionCompleteSemaphores.size() <= bufferIndex)
   //  {

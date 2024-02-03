@@ -141,7 +141,7 @@ void CommandBuffer::SetIndexBuffer(SuperBuffer *_buffer, Format format)
 	BindIndexBuffer(*buffer, buffer->GetOffset(), indexType);
 }
 
-void CommandBuffer::SetScissors(uint32_t count, const Rect *pScissor)
+void CommandBuffer::SetScissors(uint32_t count, const Rect2D *pScissor)
 {
 	LightArray<VkRect2D> rect{};
 	rect.resize(count);

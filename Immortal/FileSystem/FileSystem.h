@@ -5,6 +5,7 @@
 #include "Core.h"
 #include "Stream.h"
 #include "String/IString.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

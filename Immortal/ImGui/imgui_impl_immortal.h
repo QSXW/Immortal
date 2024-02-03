@@ -10,6 +10,7 @@
 #pragma once
 #ifndef IMGUI_DISABLE
 #include "imgui.h"      // IMGUI_IMPL_API
+#include "Graphics/LightGraphics.h"
 
 // Called by user code
 IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Immortal::Window *window, Immortal::Queue *queue, Immortal::Swapchain *swapchain, uint32_t swapchainBufferCount);

@@ -4,6 +4,7 @@
 #include "Framework/Utils.h"
 #include "Scene/Object.h"
 #include "Scene/Scene.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {
@@ -172,7 +173,7 @@ ScriptEngine::~ScriptEngine()
     if (domain)
     {
         mono_jit_cleanup(domain);
-    } 
+    }
 }
 
 MonoObject *ScriptEngine::Invoke(MonoMethod *method, void *obj, void **params, MonoObject **exc)
@@ -210,7 +211,7 @@ Anonymous ScriptEngine::GetVirtualFunction(Anonymous object, const std::string &
 void ScriptEngine::Register(const std::string &className, const std::initializer_list<std::string> &virtualFuntions)
 {
     vtables.insert({ className, new VTable{} });
-    
+
     VTable *vtable = vtables.find(className)->second;
     for (auto &v : virtualFuntions)
     {
@@ -268,7 +269,7 @@ void ScriptEngine::Init()
     Register(NS(GameObject::__AddComponent), SceneObjectFunc::AddComponent);
 
     Register(
-        "GameObject", { 
+        "GameObject", {
             "SetId_",
             "Update",
             "OnKeyDown",

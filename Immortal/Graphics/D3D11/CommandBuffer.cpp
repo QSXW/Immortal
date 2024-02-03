@@ -125,7 +125,7 @@ void CommandBuffer::SetIndexBuffer(SuperBuffer *_buffer, Format format)
 	});
 }
 
-void CommandBuffer::SetScissors(uint32_t count, const Rect *pScissor)
+void CommandBuffer::SetScissors(uint32_t count, const Rect2D *pScissor)
 {
 	D3D11_RECT rect = *(D3D11_RECT *)pScissor;
 	Submit([=, this] {

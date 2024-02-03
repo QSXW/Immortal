@@ -1,6 +1,7 @@
 #include "Pipeline.h"
 #include "Shader.h"
 #include "Buffer.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

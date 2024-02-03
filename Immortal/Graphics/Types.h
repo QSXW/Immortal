@@ -97,7 +97,7 @@ enum class PipelineType
     None     = BIT(31),
     Graphics = BIT(0),
     Compute  = BIT(1),
-    Meshlet
+    Meshlet  = BIT(2)
 };
 SL_ENABLE_BITWISE_OPERATOR(PipelineType)
 
@@ -172,12 +172,19 @@ enum class CompareOperation
     Always         = 7,
 };
 
-struct Rect
+struct Rect2D
 {
     uint32_t left;
     uint32_t top;
     uint32_t right;
     uint32_t bottom;
+};
+
+struct Size3D
+{
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
 };
 
 struct DeviceAddressRegion

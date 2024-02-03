@@ -1193,7 +1193,7 @@ public:
 
 	virtual void SetIndexBuffer(SuperBuffer *buffer, Format format) override;
 
-	virtual void SetScissors(uint32_t count, const Rect *pScissor) override;
+	virtual void SetScissors(uint32_t count, const Rect2D *pScissor) override;
 
 	virtual void SetBlendFactor(const float factor[4]) override;
 

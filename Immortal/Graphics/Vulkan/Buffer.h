@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Core.h"
 #include "Graphics/Buffer.h"
 #include "Descriptor.h"
 #include "Handle.h"
@@ -11,7 +12,7 @@ namespace Vulkan
 {
 
 class Device;
-class Buffer : public SuperBuffer, public Handle<VkBuffer>
+class IMMORTAL_API Buffer : public SuperBuffer, public Handle<VkBuffer>
 {
 public:
     using Super  = SuperBuffer;

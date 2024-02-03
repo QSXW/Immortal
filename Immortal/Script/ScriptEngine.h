@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Shared/IObject.h"
+#include "Shared/Log.h"
 #include "Config.h"
 
 #include <string>

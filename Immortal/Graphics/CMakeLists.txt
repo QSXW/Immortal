@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set (CMAKE_VERBOSE_MAKEFILE ON)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-project("ImmortalGraphics")
+project("ImmortalGraphics" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -220,6 +220,42 @@ set(VULKAN_FILES
 
 list(TRANSFORM VULKAN_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan/")
 
+set(METAL_FILES
+    AccelerationStructure.cpp
+    AccelerationStructure.h
+    Buffer.cpp
+    Buffer.h
+    CommandBuffer.cpp
+    CommandBuffer.h
+    Common.h
+    DescriptorSet.cpp
+    DescriptorSet.h
+    Device.cpp
+    Device.h
+    GPUEvent.cpp
+    GPUEvent.h
+    Handle.h
+    Instance.cpp
+    Instance.h
+    PhysicalDevice.cpp
+    PhysicalDevice.h
+    Pipeline.cpp
+    Pipeline.h
+    Queue.cpp
+    Queue.h
+    RenderTarget.cpp
+    RenderTarget.h
+    Sampler.cpp
+    Sampler.h
+    Shader.cpp
+    Shader.h
+    Swapchain.mm
+    Swapchain.h
+    Texture.cpp
+    Texture.h)
+
+list(TRANSFORM METAL_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Metal/")
+
 set(WINDOW_FILES
     GLFWWindow.cpp
     GLFWWindow.h
@@ -239,6 +275,7 @@ set(GRAPHICS_FILES
     DirectXShaderCompiler.cpp
     DirectXShaderCompiler.h
     GPUEvent.h
+    Format.cpp
     Format.h
     GLSLCompiler.cpp
     GLSLCompiler.h
@@ -289,8 +326,9 @@ source_group("\\D3D\\"     FILES ${D3D_FILES}     )
 source_group("\\D3D11\\"   FILES ${D3D11_FILES}   )
 source_group("\\D3D12\\"   FILES ${D3D12_FILES}   )
 source_group("\\Vulkan\\"  FILES ${VULKAN_FILES}  )
+source_group("\\Metal\\"   FILES ${METAL_FILES}   )
 source_group("\\OpenGL\\"  FILES ${OPENGL_FILES}  )
-source_group("\\Windows\\" FILES ${WINDOW_FILES} )
+source_group("\\Windows\\" FILES ${WINDOW_FILES}  )
 
 add_library(${PROJECT_NAME} STATIC
     ${GRAPHICS_FILES}
@@ -298,6 +336,7 @@ add_library(${PROJECT_NAME} STATIC
     $<$<PLATFORM_ID:Windows>:${D3D_FILES}>
     $<$<PLATFORM_ID:Windows>:${D3D11_FILES}>
     $<$<PLATFORM_ID:Windows>:${D3D12_FILES}>
+    $<$<PLATFORM_ID:Darwin>:${METAL_FILES}>
     ${VULKAN_FILES}
     ${OPENGL_FILES}
     ${WINDOW_FILES})
@@ -308,11 +347,12 @@ if (NOT DISABLE_VULKAN_BACKEND)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    glfw ${VULKAN_DEPENDENCIES}
+    glfw ${VULKAN_DEPENDENCIES} $<$<PLATFORM_ID:Darwin>:spirv-cross-msl>
     PUBLIC
     slapi
     glad
     Vulkan-Headers
+    $<$<PLATFORM_ID:Darwin>:metal-cpp>
     DirectXShaderCompilerHeaders
     ImmortalShared
 )
@@ -324,4 +364,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC "VK_ENABLE_BETA_EXTENSIONS")
 
-target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/GraphicsPrecompiledHeader.h>)
+if (NOT APPLE)
+    target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/GraphicsPrecompiledHeader.h>)
+endif()

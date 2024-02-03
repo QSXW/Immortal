@@ -7,9 +7,7 @@
 #include "Device.h"
 #include "FileSystem/RF.h"
 #include "Shared/DLLLoader.h"
-#ifdef _WIN32
 #include "Graphics/DirectXShaderCompiler.h"
-#endif
 
 namespace Immortal
 {
@@ -158,11 +156,11 @@ void Shader::GetPipelineShaderStageCreateInfo(VkPipelineShaderStageCreateInfo *p
             .identifierSize = identifierSize,
             .pIdentifier    = identifier
 		};
- 
+
 		*pIdentifierCreateInfo = pipelineShaderStageModuleIdentifierCreateInfo;
 		createInfo.pNext = (void *)pIdentifierCreateInfo;
     }
-    
+
     *pPipelineShaderStageCreateInfo = createInfo;
 }
 
@@ -189,7 +187,7 @@ void Shader::Load(const std::string &name, ShaderStage stage, const std::string 
             throw RuntimeException(error.c_str());
             return;
         }
-        
+
         createInfo.codeSize = spirv.size();
 		createInfo.pCode = (const uint32_t *) spirv.data();
         VkShaderModuleIdentifierEXT shaderModuleIdentifier{VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT};

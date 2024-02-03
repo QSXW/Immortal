@@ -5,6 +5,7 @@
  */
 
 #include "Immortal.h"
+#include "Vision/Image/Raw.h"
 #include "RawExtractor.h"
 #include "FileSystem/FileSystem.h"
 

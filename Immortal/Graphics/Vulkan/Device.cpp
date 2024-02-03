@@ -13,6 +13,9 @@
 #include "GPUEvent.h"
 #include "Pipeline.h"
 #include "Texture.h"
+#include "Surface.h"
+#include "Swapchain.h"
+#include "Sampler.h"
 
 #include "Shared/Async.h"
 

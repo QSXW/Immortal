@@ -4,6 +4,10 @@
 #include "Semaphore.h"
 #include "Handle.h"
 #include "Algorithm/LightArray.h"
+#include "Graphics/CommandBuffer.h"
+#include "Graphics/Queue.h"
+#include "Graphics/GPUEvent.h"
+#include "Graphics/Swapchain.h"
 
 namespace Immortal
 {
@@ -195,7 +199,7 @@ protected:
     std::vector<Semaphore> executionCompleteSemaphores;
 
     LightArray<VkSemaphore> waitSemaphores;
-    
+
     LightArray<VkPipelineStageFlags> waitPipelineStageFlags;
 };
 

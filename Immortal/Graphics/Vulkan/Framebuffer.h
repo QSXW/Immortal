@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Handle.h"
 #include "Algorithm/LightArray.h"
 
 namespace Immortal
@@ -8,6 +9,7 @@ namespace Immortal
 namespace Vulkan
 {
 
+class Device;
 class Framebuffer : public Handle<VkFramebuffer>
 {
 public:

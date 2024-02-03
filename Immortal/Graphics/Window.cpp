@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #include "Window/GLFWWindow.h"
+#include "Shared/Log.h"
 
 #ifdef _WIN32
 #include "Window/DirectWindow.h"

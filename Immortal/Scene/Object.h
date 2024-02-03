@@ -6,6 +6,7 @@
 #include "entt.hpp"
 #include "Scene.h"
 #include "Component.h"
+#include "Shared/Log.h"
 
 namespace Immortal
 {

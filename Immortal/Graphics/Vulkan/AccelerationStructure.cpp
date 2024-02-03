@@ -1,4 +1,5 @@
 #include "AccelerationStructure.h"
+#include "Device.h"
 
 namespace Immortal
 {

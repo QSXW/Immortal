@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.h"
+#include "Handle.h"
+#include "Graphics/Window.h"
 
 namespace Immortal
 {

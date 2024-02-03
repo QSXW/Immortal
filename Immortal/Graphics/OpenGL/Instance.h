@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/Instance.h"
+#include "Graphics/Device.h"
 
 namespace Immortal
 {

@@ -1,15 +1,16 @@
 // Dear ImGui: standalone example application for Immortal Graphics API
 
+#include "Graphics/LightGraphics.h"
+#include "Shared/Log.h"
+#include "ImGui/imgui_impl_immortal.h"
+using namespace Immortal;
+
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_glfw.h>
 #include <GLFW/glfw3.h>
 
 #define IMGUI_UNLIMITED_FRAME_RATE
-
-#include "Graphics/LightGraphics.h"
-#include "ImGui/imgui_impl_immortal.h"
-using namespace Immortal;
 
 URef<Queue> queue;
 URef<Swapchain> swapchain;
