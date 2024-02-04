@@ -237,7 +237,7 @@ target_sources(${PROJECT_NAME} PUBLIC ${PROJECT_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (NOT APPLE)
-    target_precompile_headers(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
+    target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/impch.h>)
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
         "-framework Cocoa"

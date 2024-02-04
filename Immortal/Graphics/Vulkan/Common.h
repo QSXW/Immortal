@@ -6,10 +6,11 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "Core.h"
-#include "volk.h"
-#include "vk_mem_alloc.h"
 #include "Shared/Log.h"
 #include "Shared/IObject.h"
+
+#include "volk.h"
+#include "VmaUsage.h"
 
 namespace Immortal
 {

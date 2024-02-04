@@ -1,4 +1,6 @@
 #include "Platform.h"
+
+#include <Windows.h>
 #include <commdlg.h>
 
 namespace Immortal

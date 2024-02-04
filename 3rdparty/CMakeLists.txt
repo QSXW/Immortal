@@ -11,6 +11,8 @@ set(HAVE_DAV1D  ${LIB_NOT_FOUND})
 set(HAVE_MFX    ${LIB_NOT_FOUND})
 set(HAVE_MONO   ${LIB_NOT_FOUND})
 
+set(3RDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
+
 include(CheckIncludeFileCXX)
 
 set(HAVE_MSVC false)
@@ -364,6 +366,8 @@ endif()
 if (APPLE)
     add_subdirectory(metal-cpp)
 endif()
+
+add_subdirectory(VulkanMemoryAllocator)
 
 add_library("external" INTERFACE)
 

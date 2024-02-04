@@ -1,8 +1,5 @@
 #include "Device.h"
 
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
-
 #include "Common.h"
 #include "PhysicalDevice.h"
 #include "DescriptorPool.h"

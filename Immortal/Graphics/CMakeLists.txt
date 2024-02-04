@@ -152,8 +152,6 @@ set(OPENGL_FILES
 list(TRANSFORM OPENGL_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/OpenGL/")
 
 set(VULKAN_FILES
-   vk_mem_alloc.h
-   volk.h
    AccelerationStructure.cpp
    AccelerationStructure.h
    Attachment.h
@@ -216,7 +214,10 @@ set(VULKAN_FILES
    VideoSession.cpp
    VideoSession.h
    RenderPass.cpp
-   RenderPass.h)
+   RenderPass.h
+   VmaUsage.cpp
+   VmaUsage.h
+   volk.h)
 
 list(TRANSFORM VULKAN_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan/")
 
@@ -351,7 +352,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     PUBLIC
     slapi
     glad
-    Vulkan-Headers
+    Vulkan-Headers GPUOpen::VulkanMemoryAllocator
     $<$<PLATFORM_ID:Darwin>:metal-cpp>
     DirectXShaderCompilerHeaders
     ImmortalShared

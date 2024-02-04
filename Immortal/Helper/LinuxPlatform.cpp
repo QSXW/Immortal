@@ -1,4 +1,6 @@
 #include "Platform.h"
+#include <cstdio>
+#include <cstring>
 
 namespace Immortal
 {

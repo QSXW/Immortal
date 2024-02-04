@@ -132,7 +132,7 @@ set(VISION_FILES
 
 add_library(${PROJECT_NAME} STATIC ${VISION_FILES})
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE
     PUBLIC
         slapi
         ExternalVision

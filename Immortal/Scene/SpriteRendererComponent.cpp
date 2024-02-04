@@ -4,8 +4,12 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
+#include "Shared/Log.h"
 #include "Component.h"
 #include "Vision/Common/SamplingFactor.h"
+#ifdef _WIN32
+#include <d3d12.h>
+#endif
 
 namespace Immortal
 {

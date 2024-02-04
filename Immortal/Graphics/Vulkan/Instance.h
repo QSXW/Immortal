@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Core.h"
-#include "Common.h"
 #include "Handle.h"
 #include "Shared/IObject.h"
 #include "Graphics/Instance.h"
 #include "Graphics/Device.h"
+
+#include <vulkan/vulkan.h>
 
 namespace Immortal
 {
@@ -19,7 +20,7 @@ class Surface;
 class IMMORTAL_API Instance : public SuperInstance, public Handle<VkInstance>
 {
 public:
-	VKCPP_SWAPPABLE(Instance)
+    VKCPP_SWAPPABLE(Instance)
 
     using Extension = const char *;
 
@@ -145,13 +146,13 @@ public:
 
     void Swap(Instance &other)
     {
-		Handle::Swap(other);
-		std::swap(enabledExtensions,    other.enabledExtensions   );
-		std::swap(physicalDevices,      other.physicalDevices     );
+        Handle::Swap(other);
+        std::swap(enabledExtensions,    other.enabledExtensions   );
+        std::swap(physicalDevices,      other.physicalDevices     );
 
 #if defined(_DEBUG) || defined(VKB_VALIDATION_LAYERS)
-		std::swap(debugUtilsMessengers, other.debugUtilsMessengers);
-		std::swap(debugReportCallback,  other.debugReportCallback );
+        std::swap(debugUtilsMessengers, other.debugUtilsMessengers);
+        std::swap(debugReportCallback,  other.debugReportCallback );
 #endif
     }
 

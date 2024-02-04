@@ -3,9 +3,11 @@
 #include "Core.h"
 
 #include "Camera.h"
-#include "Texture.h"
 #include "Scene/Component.h"
 #include "Math/Vector.h"
+#include "Graphics/LightGraphics.h"
+
+#include <array>
 
 namespace Immortal
 {

@@ -5,6 +5,8 @@
 #include "Shared/IObject.h"
 #include "Memory/MemoryResource.h"
 
+#include <functional>
+
 namespace Immortal
 {
 namespace Vision

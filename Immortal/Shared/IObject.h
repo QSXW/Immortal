@@ -53,7 +53,6 @@ public:
     Ref(Ref &&other) :
         _obj{ nullptr }
     {
-        THROWIF(&other == this, SError::SelfAssignment);
         Swap(other);
     }
 
@@ -90,13 +89,11 @@ public:
 
     void Swap(Ref &&other)
     {
-        THROWIF(&other == this, SError::SelfAssignment);
         std::swap(_obj, other._obj);
     }
 
     void Swap(Ref &other)
     {
-        THROWIF(&other == this, SError::SelfAssignment);
         std::swap(_obj, other._obj);
     }
 

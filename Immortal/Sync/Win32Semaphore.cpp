@@ -5,6 +5,7 @@
  */
 
 #include "Sync/Semaphore.h"
+#include "Shared/Log.h"
 
 #include <synchapi.h>
 #include <handleapi.h>

@@ -14,13 +14,12 @@ set(SRC_FILES
     Log.cpp
     Log.h)
 
-set(PROJECT_FILES
-    ${SRC_FILES})
+set(PROJECT_FILES ${SRC_FILES})
 
 source_group("\\" FILE ${SRC_FILES})
 
 add_library(${PROJECT_NAME} STATIC
-    ${SRC_FILES})
+    ${PROJECT_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29,3 +28,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
     spdlog_header_only)
+
+if (NOT APPLE)
+    target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/SharedPrecompiledHeader.h>)
+endif()

@@ -14,6 +14,7 @@
 #include "Shared/IObject.h"
 #include <map>
 #include <ctime>
+#include <mutex>
 
 namespace Immortal
 {

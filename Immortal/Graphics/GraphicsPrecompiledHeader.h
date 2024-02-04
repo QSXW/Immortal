@@ -6,7 +6,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
-
+#include <limits>
 #include <string>
 #include <vector>
 #include <array>
@@ -176,7 +176,7 @@
 #include "Vulkan/TimelineCommandBuffer.h"
 #include "Vulkan/TimelineCommandPool.h"
 #include "Vulkan/VideoSession.h"
-#include "Vulkan/vk_mem_alloc.h"
+#include "Vulkan/VmaUsage.h"
 #include "Vulkan/volk.h"
 
 #ifdef _WIN32

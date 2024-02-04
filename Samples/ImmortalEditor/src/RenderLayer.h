@@ -298,9 +298,9 @@ public:
         x -= editableArea->MinBound().x;
         y -= editableArea->MinBound().y;
 
-        uint64_t pixel = pixel; //scene->Target()->PickPixel(1, x, y, Format::R32);
+        uint64_t pixel = 0; // scene->Target()->PickPixel(1, x, y, Format::R32);
 
-        Object o = Object{ *(int *)&pixel, scene };
+        Object o = Object{ (int)pixel, scene };
         panels.hierarchyGraphics->Select(pixel == -1 || o == selectedObject ? Object{} : o);
     }
 
