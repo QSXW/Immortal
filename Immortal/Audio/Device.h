@@ -9,26 +9,18 @@
 #include "Core.h"
 #include "Shared/Async.h"
 #include "Shared/IObject.h"
-#include "Audio/AudioSource.h"
-#include "AudioRenderContext.h"
+#include "IAudioDevice.h"
+#include "Vision/Picture.h"
 
 namespace Immortal
 {
 
-class AudioClip;
-class AudioSource;
-class AudioDevice : public IObject
+class IMMORTAL_API AudioDevice : public IObject
 {
 public:
     AudioDevice();
 
     ~AudioDevice();
-
-    void PlayAudioStream(AudioSource *pAudioSource);
-
-    void PlayClip(AudioClip pAudioClip);
-
-    void PlayFrame(Picture picture);
 
     void Reset();
 
@@ -37,10 +29,10 @@ public:
     void OnPauseRelease();
 
     double GetPosition() const;
+    
+    int GetSampleRate() const;
 
-    double Sync(uint64_t videoTimestamp, double framesPerSecond, double delta);
-
-    uint64_t Sync(double framesPerSecond);
+    int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
 
 public:
 	template <class T>
@@ -54,16 +46,13 @@ public:
 		callBack = {};
     }
 
-public:
-    static int GetSampleRate();
-
 protected:
     static AudioDevice *instance;
 
 protected:
     URef<Thread> thread;
 
-    URef<AudioRenderContext> context;
+    URef<IAudioDevice> handle;
 
     std::mutex mutex;
 
