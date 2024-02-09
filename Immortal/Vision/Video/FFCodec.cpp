@@ -159,16 +159,25 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
         AVFrame *ref = NULL;
-	    if (device && type == PictureMemoryType::System)
+		if (device && Graphics::GetDevice()->GetBackendAPI() != BackendAPI::D3D12)
         {
             ref = av_frame_alloc();
             if (!ref)
             {
                 return CodecError::OutOfMemory;
             }
-            if (av_hwframe_transfer_data(ref, frame, 0) < 0)
+
+            if (type == PictureMemoryType::System)
             {
-                LOG::ERR("Failed to download frame to system memory!");
+                ret = av_hwframe_transfer_data(ref, frame, 0);
+            }
+            else if (type == PictureMemoryType::Device && hwaccelType == AV_HWDEVICE_TYPE_VIDEOTOOLBOX)
+            {
+                ret = av_hwframe_map(ref, frame, AV_HWFRAME_MAP_READ);
+            }
+            if (ret < 0)
+            {
+                LOG::ERR("Failed to map frame or download frame to system memory!");
                 av_frame_free(&ref);
                 av_frame_unref(frame);
 
@@ -183,7 +192,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         if (format == Format::None)
         {
 		    enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
-		    if (type == PictureMemoryType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
+		    if (device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
 		    {
 			    switch (pixelFormat)
 			    {
@@ -393,6 +402,9 @@ static AVHWDeviceType QueryDecoderHWAccelType()
     AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
 
     static std::list<const char *> priorities = {
+#ifdef __APPLE__
+        "videotoolbox",
+#endif
 	    "d3d12va",
     };
 
@@ -420,8 +432,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         return CodecError::NotImplement;
     }
 
- #ifdef _WIN32
-    auto hwaccelType = QueryDecoderHWAccelType();
+    hwaccelType = QueryDecoderHWAccelType();
     for (int i = 0; ; i++)
     {
         const AVCodecHWConfig *config = avcodec_get_hw_config(codec, i);
@@ -431,10 +442,10 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hwaccelType)
         {
-
+#ifdef _WIN32
 			if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
             {
-			    device = av_hwdevice_ctx_alloc(hwaccelType);
+				device = av_hwdevice_ctx_alloc((AVHWDeviceType)hwaccelType);
                 if (!device)
                 {
 				    return CodecError::OutOfMemory;
@@ -449,15 +460,22 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 
 			    type = PictureMemoryType::Device;
             }
-            else if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
+            else
+#endif
+            if (av_hwdevice_ctx_create(&device, (AVHWDeviceType)hwaccelType, NULL, NULL, 0) < 0)
             {
                 LOG::ERR("Failed to create specified HW device.");
                 return CodecError::NotImplement;
             }
+#ifdef __APPLE__
+            if (hwaccelType == AV_HWDEVICE_TYPE_VIDEOTOOLBOX && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::Metal)
+            {
+                type = PictureMemoryType::Device;
+            }
+#endif
             break;
         }
     }
-#endif
 
     if (!device)
     {
