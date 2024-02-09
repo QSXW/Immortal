@@ -24,15 +24,6 @@
 #include "Algorithm/LightVector.h"
 #include "Algorithm/Rotate.h"
 
-#include "Audio/AudioRenderContext.h"
-#include "Audio/AudioSource.h"
-#include "Audio/Device.h"
-#if defined(_WIN32)
-#include "Audio/WASAPI.h"
-#elif defined(__linux__)
-#include "Audio/ALSA.h"
-#endif
-
 #include "FileSystem/FileSystem.h"
 #include "FileSystem/RF.h"
 #include "FileSystem/Stream.h"

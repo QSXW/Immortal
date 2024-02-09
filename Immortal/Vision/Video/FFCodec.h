@@ -19,7 +19,12 @@ namespace Vision
 
 class IMMORTAL_API FFCodec : public VideoCodec
 {
-#if HAVE_FFMPEG
+#if !HAVE_FFMPEG
+    FFCodec(int sampleRate = 0)
+    {
+
+    }
+#else
 public:
     FFCodec();
 
@@ -48,7 +53,9 @@ protected:
     PictureMemoryType type;
 
     URef<MemoryResource> memoryResource;
-#endif // HAVE_FFMPEG
+
+    int sampleRate;
+#endif
 };
 
 }

@@ -55,6 +55,7 @@ static void InitALSALibrary()
         { (void **)&ALSA::GetStartThreshold,               "snd_pcm_sw_params_get_start_threshold"  },
         { (void **)&ALSA::Read,                            "snd_pcm_readi"                          },
         { (void **)&ALSA::Write,                           "snd_pcm_writei"                         },
+        { (void **)&ALSA::Avaiable,                        "snd_pcm_avail"                          },
     };
 
     if (!ALSAModule)
@@ -132,7 +133,12 @@ ALSASoftwareParameters::~ALSASoftwareParameters()
 
 ALSAContext::ALSAContext() :
     Super{},
-    handle{}
+    handle{},
+    format{
+        .channels   = 2,
+        .sampleRate = 48000
+    },
+    bufferSize{}
 {
     OpenDevice();
 }
@@ -180,14 +186,14 @@ void ALSAContext::OpenDevice()
         return;
     }
 
-    if ((ret = SetChannels(hwparams, format.Channels) < 0 &&
-        (ret = hwparams.GetChannels(&format.Channels)) < 0))
+    if ((ret = SetChannels(hwparams, format.channels) < 0 &&
+        (ret = hwparams.GetChannels(&format.channels)) < 0))
     {
         LOG::ERR("ALSA: Failed to set channels for {}", ALSA::GetErrorMessage(ret));
         return;
     }
 
-    ret = SetRateNear(hwparams, &format.SampleRate);
+    ret = SetRateNear(hwparams, &format.sampleRate);
     if (ret < 0)
     {
         LOG::ERR("ALSA: Failed to set sample rate for {}", ALSA::GetErrorMessage(ret));
@@ -209,7 +215,7 @@ void ALSAContext::OpenDevice()
         return;
     }
 
-    ret = SetAvailableMin(swparams, bufferFrameCount);
+    ret = SetAvailableMin(swparams, bufferSize);
     if (ret < 0)
     {
         LOG::ERR("ALSA: Failed to set buffer frame count for {}", ALSA::GetErrorMessage(ret));
@@ -273,33 +279,35 @@ void ALSAContext::Pause(bool enable)
     }
 }
 
-int ALSAContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
-{
-    int consumed;
-    while (numberSamples > 0)
-    {
-        uint32_t frameRequested = std::min(numberSamples, bufferFrameCount);
-        uint32_t bytes = frameRequested << 3;
-
-        consumed = Write(pSamples, frameRequested);
-        if (consumed < 0)
-        {
-            continue;
-        }
-        else
-        {
-            pSamples += bytes;
-            numberSamples -= consumed;
-        }
-    }
-
-    return consumed;
-}
-
-
 double ALSAContext::GetPostion()
 {
     return 0.0;
+}
+
+void ALSAContext::BeginRender(uint32_t frames)
+{
+
+}
+
+void ALSAContext::WriteBuffer(const uint8_t *buffer, size_t size)
+{
+    Write(buffer, (uint32_t)size);
+}
+
+void ALSAContext::EndRender(uint32_t frames)
+{
+
+}
+
+uint32_t ALSAContext::GetAvailableFrameCount()
+{
+    uint32_t available = Avaiable();
+    return available / 8;
+}
+
+AudioFormat ALSAContext::GetFormat()
+{
+    return format;
 }
 
 void ALSAContext::Release()
@@ -349,7 +357,7 @@ int ALSAContext::SetBufferSize(const ALSAHardwareParameters &params)
     }
 
     ret = SetHardwareParameters(hwparams);
-    bufferFrameCount = periodSize;
+    bufferSize = periodSize;
 
     return 0;
 }

@@ -9,7 +9,7 @@
 #ifndef ALSA_CONTEXT_H_
 #define ALSA_CONTEXT_H_
 
-#include "AudioRenderContext.h"
+#include "IAudioDevice.h"
 #include <alsa/asoundlib.h>
 
 #define ALIAS(x, y) static inline decltype(&(x)) y;
@@ -55,6 +55,7 @@ struct ALSA
     ALIAS(snd_pcm_sw_params_get_start_threshold,       GetStartThreshold        )
     ALIAS(snd_pcm_readi,                               Read                     )
     ALIAS(snd_pcm_writei,                              Write                    )
+    ALIAS(snd_pcm_avail,                               Avaiable                 )
 };
 
 class ALSAHardwareParameters
@@ -117,10 +118,10 @@ public:
     }
 };
 
-class ALSAContext : public AudioRenderContext
+class ALSAContext : public IAudioDevice
 {
 public:
-    using Super = AudioRenderContext;
+    using Super = IAudioDevice;
     SL_OPERATOR_HANDLE(snd_pcm_t *)
 
 public:
@@ -138,9 +139,17 @@ public:
 
     virtual void Pause(bool enable) override;
 
-    virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
-
     virtual double GetPostion() override;
+
+    virtual void BeginRender(uint32_t frames) override;
+    
+    virtual void WriteBuffer(const uint8_t *buffer, size_t size) override;
+
+    virtual void EndRender(uint32_t frames) override;
+
+    virtual uint32_t GetAvailableFrameCount() override;
+    
+    virtual AudioFormat GetFormat() override;
 
     void Release();
 
@@ -240,6 +249,11 @@ public:
         return ALSA::Read(handle, buffer ,size);
     }
 
+    uint32_t Avaiable()
+    {
+        return ALSA::Avaiable(handle);
+    }
+
     int Prepare()
     {
         return ALSA::Prepare(handle);
@@ -264,6 +278,11 @@ public:
     {
         return ALSA::GetStatus(handle, pStatus);
     }
+
+protected:
+    AudioFormat format;
+
+    uint32_t bufferSize;
 };
 
 }

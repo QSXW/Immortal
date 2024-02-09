@@ -16,14 +16,6 @@ set(ALGORITHM_FILES
     Algorithm/LightVector.h
     Algorithm/Rotate.h)
 
-set(AUDIO_FILES
-    AudioRenderContext.cpp
-    AudioRenderContext.h
-    AudioSource.cpp
-    AudioSource.h
-    Device.cpp
-    Device.h)
-
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
@@ -144,10 +136,6 @@ if (WIN32)
     list(APPEND NET_FILES
         Win32Socket.cpp)
 
-    list(APPEND AUDIO_FILES
-        WASAPI.cpp
-        WASAPI.h)
-
     list(APPEND HELPER_FILES
         Win32Platform.cpp)
 
@@ -160,10 +148,6 @@ elseif(UNIX)
     list(APPEND NET_FILES
         UnixSocket.cpp)
 
-    list(APPEND AUDIO_FILES
-        ALSA.cpp
-        ALSA.h)
-
     list(APPEND HELPER_FILES
         LinuxPlatform.cpp)
 
@@ -171,14 +155,12 @@ elseif(UNIX)
         UnixSemaphore.cpp)
 endif()
 
-list(TRANSFORM AUDIO_FILES   PREPEND "Audio/"           )
 list(TRANSFORM HELPER_FILES  PREPEND "Helper/"          )
 list(TRANSFORM NET_FILES     PREPEND "Net/"             )
 list(TRANSFORM SYNC_FILES    PREPEND "Sync/"            )
 
 source_group("\\"                  FILES ${CORE_FILES}      )
 source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )
-source_group("Audio\\"             FILES ${AUDIO_FILES}     )
 source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
 source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Image\\"             FILES ${IMAGE_FILES}     )
@@ -200,7 +182,6 @@ source_group("Net\\"               FILES ${NET_FILES}       )
 set(PROJECT_FILES
     ${CORE_FILES}
     ${ALGORITHM_FILES}
-    ${AUDIO_FILES}
     ${FRAMEWORK_FILES}
     ${EDITOR_FILES}
     ${FS_FILES}
@@ -227,6 +208,7 @@ source_group("\\" FILES ${PROJECT_FILES})
 list(TRANSFORM PROJECT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 
 add_subdirectory(Shared)
+add_subdirectory(Audio)
 add_subdirectory(Graphics)
 add_subdirectory(Vision)
 
@@ -242,7 +224,9 @@ else()
     target_link_libraries(${PROJECT_NAME} PRIVATE
         "-framework Cocoa"
         "-framework IOKit"
-        "-framework CoreFoundation")
+        "-framework CoreFoundation"
+        "-framework CoreAudio"
+        "-framework AudioToolBox")
 endif()
 
 add_subdirectory(slapi)
@@ -251,5 +235,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
     external
     imgui
+    ImmortalAudio
     ImmortalGraphics
     ImmortalVision)

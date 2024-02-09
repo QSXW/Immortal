@@ -41,6 +41,10 @@ DLLLoader::DLLLoader(const std::string &path) :
     handle{ nullptr }
 {
     handle = dlopen(path.c_str(), RTLD_LAZY);
+    if (!handle)
+    {
+        LOG::ERR("dlopen: {}", dlerror());
+    }
 }
 
 DLLLoader::~DLLLoader()
