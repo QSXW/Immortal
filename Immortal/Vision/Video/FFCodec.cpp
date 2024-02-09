@@ -183,7 +183,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
         if (format == Format::None)
         {
 		    enum AVPixelFormat pixelFormat = handle->sw_pix_fmt;
-		    if (type == PictureMemoryType::Device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
+		    if (device && handle->pix_fmt != AV_PIX_FMT_YUV422P10)
 		    {
 			    switch (pixelFormat)
 			    {
@@ -393,6 +393,9 @@ static AVHWDeviceType QueryDecoderHWAccelType()
     AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
 
     static std::list<const char *> priorities = {
+#ifdef __APPLE__
+        "videotoolbox",
+#endif
 	    "d3d12va",
     };
 
@@ -420,7 +423,6 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         return CodecError::NotImplement;
     }
 
- #ifdef _WIN32
     auto hwaccelType = QueryDecoderHWAccelType();
     for (int i = 0; ; i++)
     {
@@ -431,7 +433,7 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
         }
         if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hwaccelType)
         {
-
+#ifdef _WIN32
 			if (hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
             {
 			    device = av_hwdevice_ctx_alloc(hwaccelType);
@@ -449,7 +451,9 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
 
 			    type = PictureMemoryType::Device;
             }
-            else if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
+            else
+#endif
+            if (av_hwdevice_ctx_create(&device, hwaccelType, NULL, NULL, 0) < 0)
             {
                 LOG::ERR("Failed to create specified HW device.");
                 return CodecError::NotImplement;
@@ -457,7 +461,6 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
             break;
         }
     }
-#endif
 
     if (!device)
     {
