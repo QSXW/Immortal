@@ -48,6 +48,8 @@ protected:
     PictureMemoryType type;
 
     URef<MemoryResource> memoryResource;
+    
+    int hwaccelType;
 #endif // HAVE_FFMPEG
 };
 
