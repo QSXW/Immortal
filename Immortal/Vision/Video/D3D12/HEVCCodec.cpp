@@ -59,19 +59,19 @@ CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 
 	if (!packet->size)
 	{
-		return CodecError::Succeed;
+		return CodecError::Success;
 	}
 
 	sizeData.data = av_packet_get_side_data(packet, AV_PKT_DATA_NEW_EXTRADATA, &sizeData.size);
 	if (sizeData.data && sizeData.size > 0)
 	{
-		return CodecError::Succeed;
+		return CodecError::Success;
 	}
 
 	sizeData.data = av_packet_get_side_data(packet, AV_PKT_DATA_DOVI_CONF, &sizeData.size);
 	if (sizeData.data && sizeData.size > 0)
 	{
-		return CodecError::Succeed;
+		return CodecError::Success;
 	}
 	int i;
 	int eos_at_start = 1;

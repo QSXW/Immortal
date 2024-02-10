@@ -85,7 +85,7 @@ CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 
     VkVideoDecodeInfoKHR decodeInfo{};
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 void HEVCCodec::UpdateSequenceParameterSet()
