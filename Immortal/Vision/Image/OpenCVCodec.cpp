@@ -57,7 +57,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 	});
     mat.data = nullptr;
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
@@ -78,7 +78,7 @@ CodecError OpenCVCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
         LOG::ERR("{}", e.what());
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 void OpenCVCodec::Swap(void *ptr)

@@ -83,7 +83,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
     }
 
     processor->recycle();
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 }

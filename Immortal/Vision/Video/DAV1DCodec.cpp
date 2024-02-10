@@ -108,7 +108,7 @@ CodecError DAV1DCodec::Decode(const CodedFrame &codedFrame)
     } while (dav1dData.sz > 0);
 
     dav1d_data_unref(&dav1dData);
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 uint8_t * DAV1DCodec::Data() const

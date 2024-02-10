@@ -44,7 +44,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
         }
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError PPMCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
@@ -74,7 +74,7 @@ CodecError PPMCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 
     codedFrame = { std::move(buffer) };
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 }

@@ -186,11 +186,11 @@ void FFDemuxer::Destory()
 	formatContext.Reset();
 }
 
-CodecError FFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec)
+CodecError FFDemuxer::Open(const String &_filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
 	formatContext.Reset();
 
-    this->filepath = filepath;
+    filepath = _filepath;
 
     AVInputFormat format{};
     formatContext = new FormatContext{ filepath };
@@ -201,7 +201,7 @@ CodecError FFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec
         formatContext->OpenStream(audioCodec, MediaType::Audio);
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
@@ -244,7 +244,7 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
         });
     *pCodedFrame = codedFrame;
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t max)
@@ -258,7 +258,7 @@ CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t 
         return CodecError::ExternalFailed;
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 #endif
 

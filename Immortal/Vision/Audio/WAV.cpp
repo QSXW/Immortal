@@ -27,7 +27,7 @@ CodecError WAVCodec::Decode(const CodedFrame &codedFrame)
         dst[i] = src[i] / 32768.0;
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 }
