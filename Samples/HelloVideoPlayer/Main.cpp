@@ -39,7 +39,7 @@ int main(int, char **)
 	Async::Init();
 
     // For more details about the rendering, please check HelloTriangleExample and HelloImGuiExample
-    BackendAPI backendAPI = BackendAPI::Vulkan;
+    BackendAPI backendAPI = BackendAPI::D3D12;
 
 	URef<Window> window = Window::CreateInstance("Hello Video Player(d3d12va) - Immortal Graphics Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
 	window->SetEventCallback(OnEvent);
@@ -145,7 +145,7 @@ int main(int, char **)
 				texture = {};
 
 				Ref<Vision::FFCodec> codec      = new Vision::FFCodec;
-				Ref<Vision::FFCodec> audioCodec = new Vision::FFCodec;
+				Ref<Vision::FFCodec> audioCodec = new Vision::FFCodec{ audioDevice->GetSampleRate() };
 				Ref<Demuxer>    demuxer = new Vision::FFDemuxer;
 				demuxer->Open(filepath, codec, audioCodec);
 				videoPlayerComponent = new VideoPlayerComponent{ demuxer, codec, audioCodec };
@@ -296,6 +296,7 @@ int main(int, char **)
     }
 
     // Cleanup
+	texture.Reset();
 	queue.Reset();
 	swapchain.Reset();
 	pEvent.Reset();

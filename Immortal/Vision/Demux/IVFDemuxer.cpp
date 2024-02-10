@@ -103,7 +103,7 @@ CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCode
     animator->SecondsPerFrame  = (double)fps.denominator / fps.numerator;
 
     stream.Locate(32);
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError IVFDemuxer::Read(CodedFrame *pCodedFrame)
@@ -120,7 +120,7 @@ CodecError IVFDemuxer::Read(CodedFrame *pCodedFrame)
 
     *pCodedFrame = { std::move(buffer) };
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 IVFDemuxer::Header IVFDemuxer::ReadHeader()

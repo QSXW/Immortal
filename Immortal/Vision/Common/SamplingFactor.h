@@ -36,6 +36,7 @@ struct SamplingFactor
         case Format::P010LE:
             x = 1;
             y = 1;
+			break;
 
         default:
             break;

@@ -86,7 +86,7 @@ CodecError MFXJpegCodec::Decode(const CodedFrame &codedFrame)
 
     NV12ToRGBA8(dst, src, picture.desc.width, picture.desc.height);
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 }

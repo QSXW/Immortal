@@ -45,7 +45,7 @@ CodecError BMPCodec::Decode(const CodedFrame &codedFrame)
         src += padding;
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 bool BMPCodec::Write(const std::string &filepath, int w, int h, int depth, uint8_t *data, int align)

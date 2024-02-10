@@ -29,7 +29,7 @@ static Codec *SelectSuitableCodec(const std::string &path)
     case FileFormat::NEF:
     case FileFormat::CR2:
         return new Vision::RawCodec;
-
+    
     default:
         return new Vision::OpenCVCodec;
         break;
