@@ -8,6 +8,7 @@ namespace D3D
 Instance::Instance() :
     handle{},
     dxgiLibrary{},
+    dxgiDebugLibrary{},
     CreateDXGIFactory2{}
 {
 	dxgiLibrary = LoadLibraryA("dxgi.dll");
@@ -19,7 +20,11 @@ Instance::Instance() :
 	uint32_t dxgiFactoryFlags = 0;
 
 #if _DEBUG
-	dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+	dxgiDebugLibrary = LoadLibraryA("dxgidebug.dll");
+	if (dxgiDebugLibrary)
+	{
+		dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+	}
 #endif
 
 	CreateDXGIFactory2 = (PFN_CreateDXGIFactory2)GetProcAddress(dxgiLibrary, "CreateDXGIFactory2");
@@ -37,15 +42,15 @@ Instance::~Instance()
 	}
 
 #ifdef _DEBUG
-	HMODULE dxgidebug = LoadLibraryA("dxgidebug.dll");
-	if (dxgidebug)
+	if (dxgiDebugLibrary)
 	{
 		ComPtr<IDXGIDebug> dxgiDebug;
-		auto __DXGIGetDebugInterface = (decltype(&DXGIGetDebugInterface)) ::GetProcAddress(dxgidebug, "DXGIGetDebugInterface");
+		auto __DXGIGetDebugInterface = (decltype(&DXGIGetDebugInterface)) ::GetProcAddress(dxgiDebugLibrary, "DXGIGetDebugInterface");
 		Check(__DXGIGetDebugInterface(IID_PPV_ARGS(&dxgiDebug)));
 		Check(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
 
-		FreeLibrary(dxgidebug);
+		FreeLibrary(dxgiDebugLibrary);
+		dxgiDebugLibrary = nullptr;
 	}
 #endif
 }
