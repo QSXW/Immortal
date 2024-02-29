@@ -177,7 +177,7 @@ protected:
 };
 
 using SuperBitTracker = BitTracker;
-
+using BitStream = BitTracker;
 }
 
 #endif

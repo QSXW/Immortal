@@ -80,7 +80,11 @@ set(VIDEO_CODEC_FILES
     FFCodec.h
     HEVC.cpp
     HEVC.h
-    Video.h)
+    Video.h
+    VVC.cpp
+    VVC.h
+    VVCParser.cpp
+    VVCParser.h)
 list(TRANSFORM VIDEO_CODEC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Video/")
 
 set(D3D12_VIDEO_FILES

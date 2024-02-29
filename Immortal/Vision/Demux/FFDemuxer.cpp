@@ -56,7 +56,7 @@ public:
         streamIndex[AVMEDIA_TYPE_AUDIO]    = FindBestStream(MediaType::Audio, streamIndex[AVMEDIA_TYPE_AUDIO], streamIndex[AVMEDIA_TYPE_VIDEO]);
         streamIndex[AVMEDIA_TYPE_SUBTITLE] = FindBestStream(MediaType::Subtitle, streamIndex[AVMEDIA_TYPE_SUBTITLE], streamIndex[AVMEDIA_TYPE_AUDIO]);
 
-        avformat_seek_file(handle, streamIndex[AVMEDIA_TYPE_VIDEO], 0, 0, 0, 0);
+        // avformat_seek_file(handle, streamIndex[AVMEDIA_TYPE_VIDEO], 0, 0, 0, 0);
     }
 
     ~FormatContext()

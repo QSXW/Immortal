@@ -5,6 +5,7 @@
 #include "Vision/Image.h"
 #include "Vision/Video/Video.h"
 #include "Vision/CodedFrame.h"
+#include "Vision/Video/VVC.h"
 
 using namespace Immortal;
 
@@ -13,19 +14,21 @@ int main()
     LOG::Setup();
 
     {
-        std::string path = "1920x800_25fps.265";
-        Stream stream{ path, Stream::Mode::Read };
-        THROWIF(!stream.Readable(), "Unable to open file");
+        std::string path = "C:\\SDK\\C\\tests\\conformance\\passed\\v1/8b420_B_Bytedance_2.bit";
 
-        std::vector<uint8_t> buffer;
-        buffer.reserve(SLALIGN(stream.Size(), 64));
-        buffer.resize(stream.Size());
-        stream.Read(buffer);
+		Vision::VVCCodec decoder;
 
-        Vision::HEVCCodec decoder;
+        Vision::FFDemuxer demuxer;
+		demuxer.Open(path, &decoder);
 
-        Vision::CodedFrame codedFrame = { std::move(buffer) };
-        decoder.Decode(codedFrame);
+        while (true)
+        {
+			Vision::CodedFrame codedFrame;
+            if (demuxer.Read(&codedFrame) == CodecError::Succeed)
+            {
+				decoder.Decode(codedFrame);
+            }
+        }
     }
 
     return 0;
