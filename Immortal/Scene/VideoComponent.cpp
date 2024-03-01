@@ -74,7 +74,7 @@ public:
 
 Vision::Picture AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interface::Codec *decoder)
 {
-    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Succeed)
+    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Success)
     {
         return decoder->GetPicture();
     }
@@ -105,7 +105,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
             }
 
             Vision::CodedFrame codedFrame;
-            if (demuxer->Read(&codedFrame) != CodecError::Succeed)
+            if (demuxer->Read(&codedFrame) != CodecError::Success)
             {
                 continue;
             }
