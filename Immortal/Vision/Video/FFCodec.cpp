@@ -267,17 +267,27 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
             frame->pts = av_rescale_q(frame->pts - startTimestamp, timeBase, tb);
         }
 
-        SwrContext *swrContext = swr_alloc_set_opts(
-            nullptr,
-            AV_CH_LAYOUT_STEREO,
-            AV_SAMPLE_FMT_FLT,
-            sampleRate,
-            !handle->channel_layout ? AV_CH_LAYOUT_STEREO : handle->channel_layout,
+        SwrContext *swrContext = {};
+		AVChannelLayout outChannelLayout = {
+		    .nb_channels = 2
+        };
+		ret = swr_alloc_set_opts2(
+		    &swrContext,
+		    &outChannelLayout,
+		    AV_SAMPLE_FMT_FLT,
+		    sampleRate,
+		    &handle->ch_layout,
             handle->sample_fmt,
             handle->sample_rate,
             0,
             nullptr
         );
+
+        if (ret < 0)
+        {
+			LOG::ERR("Failed to allocate SwrContext");
+			return CodecError::ExternalFailed;
+        }
 
         swr_init(swrContext);
 
@@ -549,7 +559,7 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
     }
 
     AVDictionary **opts = (AVDictionary **) av_calloc(1, sizeof(*opts));
-    // av_dict_set(opts, "threads", "16", 0);
+    av_dict_set(opts, "threads", "16", 0);
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");

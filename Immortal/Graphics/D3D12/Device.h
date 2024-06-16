@@ -24,6 +24,8 @@ struct AdapterProperty
 	DXGI_ADAPTER_DESC desc;
 };
 
+D3D12_COMMAND_LIST_TYPE CAST(QueueType type);
+
 class DescriptorPool;
 class DescriptorHeap;
 class Sampler;
@@ -78,9 +80,13 @@ public:
 
     Sampler *GetSampler(Filter filter);
 
-    Descriptor AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount = 1);
+    Descriptor AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, uint32_t descriptorCount = 1);
 
-    void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount);
+    void FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *ppHeap, Descriptor descriptor, uint32_t descriptorCount = 1);
+
+    void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount = 1);
+
+	void FreeShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *ppHeap, Descriptor descriptor, uint32_t descriptorCount = 1);
 
 public:
 #define DEFINE_CRETE_FUNC(U, T, O) \
@@ -246,9 +252,11 @@ public:
 protected:
 	PhysicalDevice *physicalDevice;
 
-	URef<DescriptorPool> descriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+    std::mutex descritorHeapMutex;
+	URef<DescriptorPool> descriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES][36];
 
-    URef<DescriptorPool> shaderVisibleDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+    std::mutex shaderVisibleDescriptorMutex;
+	URef<DescriptorPool> shaderVisibleDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1][36];
 
     struct
     {

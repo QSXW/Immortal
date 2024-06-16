@@ -48,7 +48,7 @@ Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height,
     Image{},
     view{}
 {
-	SetMeta(width, height, mipLevels, arrayLayers);
+	SetMeta(format, width, height, mipLevels, arrayLayers);
 	Construct(device, format, width, height, mipLevels, arrayLayers, CAST(type));
 }
 

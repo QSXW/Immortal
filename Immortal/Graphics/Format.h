@@ -120,7 +120,7 @@ public:
         R32G32B32A32_SFLOAT,
         Depth32F,
         Depth24Stencil8,
-        BayerLayerRGBG,
+        BayerLayerRGGB,
 
         R8        = R8_UNORM,
         RG8       = R8G8_UNORM,
@@ -140,7 +140,7 @@ public:
         VECTOR3   = R32G32B32_SFLOAT,
         VECTOR4   = R32G32B32A32_SFLOAT,
 
-        YUV420P   = BITS(YUV,              BayerLayerRGBG + 1),
+        YUV420P   = BITS(YUV,              BayerLayerRGGB + 1),
         YUV422P   = BITS(YUV,              YUV420P + 1 ),
         YUV444P   = BITS(YUV,              YUV420P + 2 ),
         YUV420P10 = BITS(YUV,     _10Bits, YUV420P + 3 ),

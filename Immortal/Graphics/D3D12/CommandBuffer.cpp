@@ -25,7 +25,8 @@ CommandBuffer::CommandBuffer(Device *device, D3D12_COMMAND_LIST_TYPE type) :
     NonDispatchableHandle{device},
     allocatorPool{ device, type },
     allocator{},
-    activeBarrier{}
+    activeBarrier{},
+    renderTarget{}
 {
 	allocator = allocatorPool.RequestAllocator(0);
 	commandList = { device, CommandList::Type(type), allocator };
@@ -117,8 +118,12 @@ void CommandBuffer::SetDescriptorSet(SuperDescriptorSet *_descriptorSet)
 	DescriptorHeap *shaderResourceDescriptorHeap = descriptorSet->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DescriptorHeap *samplerDescriptorHeap = descriptorSet->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-	ID3D12DescriptorHeap *ppDescriptorHeap[] = { *shaderResourceDescriptorHeap, *samplerDescriptorHeap };
-	commandList.SetDescriptorHeaps(ppDescriptorHeap, SL_ARRAY_LENGTH(ppDescriptorHeap));
+	ID3D12DescriptorHeap *ppDescriptorHeap[2] = { *shaderResourceDescriptorHeap };
+	if (samplerDescriptorHeap)
+	{
+		ppDescriptorHeap[1] = *samplerDescriptorHeap;
+	}
+	commandList.SetDescriptorHeaps(ppDescriptorHeap, samplerDescriptorHeap ? SL_ARRAY_LENGTH(ppDescriptorHeap) : 1);
 
 	auto &descriptorTables = pipeline->GetDescriptorTables();
 	for (uint32_t i = 0; i < descriptorTables.size(); i++)
@@ -186,9 +191,9 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 	}
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_0, const float *pClearColor)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
 {
-	RenderTarget *renderTarget = InterpretAs<RenderTarget>(_0);
+	renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 
 	auto width  = renderTarget->GetWidth();
 	auto height = renderTarget->GetHeight();
@@ -243,6 +248,17 @@ void CommandBuffer::EndRenderTarget()
 	}
 	commandList.ResourceBarrier(barriers.data(), activeBarrier);
 	activeBarrier = 0;
+
+	auto &textures = renderTarget->GetColorBuffers();
+	for (auto &texture : textures)
+	{
+		if (texture->GetMipLevels() > 1)
+		{
+			GenerateMipMaps(texture, Filter::Linear);
+		}
+	}
+
+	renderTarget = nullptr;
 }
 
 void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
@@ -334,6 +350,51 @@ void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresour
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 }
 
+void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_texture, uint32_t subresource, size_t bufferRowLength)
+{
+	Texture *texture = InterpretAs<Texture>(_texture);
+	Buffer *buffer   = InterpretAs<Buffer>(_buffer);
+
+	D3D12_TEXTURE_COPY_LOCATION dstLocation = {
+		.pResource = *buffer,
+		.Type      = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
+		.PlacedFootprint = {
+	        .Offset = 0,
+			.Footprint = {
+	            .Format   = texture->GetFormat(),
+	            .Width    = texture->GetWidth(),
+	            .Height   = texture->GetHeight(),
+	            .Depth    = 1,
+	            .RowPitch = (UINT)bufferRowLength
+			}
+		}
+	};
+
+	D3D12_TEXTURE_COPY_LOCATION srcLocation = {
+		.pResource        = *texture,
+		.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+	    .SubresourceIndex = subresource
+	};
+
+	auto state = texture->GetState();
+	Barrier<BarrierType::Transition> barrier{
+        *texture,
+        D3D12_RESOURCE_STATE_COMMON,
+	    D3D12_RESOURCE_STATE_COPY_SOURCE,
+        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+    };
+
+	if (!(state & D3D12_RESOURCE_STATE_COPY_SOURCE))
+	{
+		commandList.ResourceBarrier(&barrier, 1);
+	}
+
+	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+	barrier.Swap();
+	commandList.ResourceBarrier(&barrier, 1);
+	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
+}
+
 void CommandBuffer::CopyPlatformSpecificSubresource(SuperTexture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource)
 {
 	Texture *texture = InterpretAs<Texture>(dst);
@@ -380,6 +441,14 @@ void CommandBuffer::MemoryCopy(SuperBuffer *_buffer, uint32_t size, const void *
 void CommandBuffer::MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch)
 {
 	SLASSERT(false && "Don't call this function for Vulkan backend!");
+}
+
+void CommandBuffer::MemoryCopy(SuperBuffer *_dst, uint32_t dstOffset, SuperBuffer *_src, uint32_t srcOffset, size_t size)
+{
+	Buffer *dst = InterpretAs<Buffer>(_dst);
+	Buffer *src = InterpretAs<Buffer>(_src);
+
+	commandList.Handle()->CopyBufferRegion(*dst, dstOffset, *src, srcOffset, size);
 }
 
 void CommandBuffer::SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer)

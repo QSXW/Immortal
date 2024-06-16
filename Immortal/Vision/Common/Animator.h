@@ -36,7 +36,7 @@ public:
     {
         return SecondsPerFrame;
     }
- 
+
     int64_t TotalSeconds() const
     {
         return Duration;

@@ -12,6 +12,7 @@ set(HAVE_MFX       ${LIB_NOT_FOUND})
 set(HAVE_MONO      ${LIB_NOT_FOUND})
 set(HAVE_FREETYPE  ${LIB_NOT_FOUND})
 set(HAVE_TURBOJPEG ${LIB_NOT_FOUND})
+set(HAVE_NVJPEG    ${LIB_NOT_FOUND})
 set(3RDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 
 include(CheckIncludeFileCXX)
@@ -166,6 +167,25 @@ if (LIBJPEGTURBO_FOUND)
     target_include_directories(turbojpeg INTERFACE ${LIBJPEGTURBO_INCLUDE_DIR})
     target_link_libraries(turbojpeg INTERFACE "${LIBJPEGTURBO_DIR}/lib/turbojpeg-static.lib")
     set_property(TARGET turbojpeg PROPERTY FOLDER "3rdparty")
+endif()
+
+set(CUDA_SDK_PATH $ENV{CUDA_PATH})
+if (CUDA_SDK_PATH)
+    message(STATUS "Found CUDA - ${CUDA_SDK_PATH}")
+    set(CUDA_SDK_INCLUDE_DIR "${CUDA_SDK_PATH}/include")
+    message(STATUS "Looking for nvjpeg directory...")
+    find_path(NVJPEG_FOUND "nvjpeg.h" PATHS "${CUDA_SDK_INCLUDE_DIR}" NO_DEFAULT_PATH)
+    if (NVJPEG_FOUND)
+        message(STATUS "Looking for nvJpeg directory - found ${CUDA_SDK_INCLUDE_DIR}")
+        set(HAVE_NVJPEG ${LIB_FOUND})
+        add_library(nvJPEG INTERFACE)
+        target_include_directories(nvJPEG INTERFACE ${CUDA_SDK_INCLUDE_DIR})
+        set(CUDA_SDK_LIB_DIR "${CUDA_SDK_PATH}/lib/x64")
+        target_link_libraries(nvJPEG INTERFACE
+            "${CUDA_SDK_LIB_DIR}/nvjpeg.lib"
+            "${CUDA_SDK_LIB_DIR}/cudart.lib")
+        set_property(TARGET nvJPEG PROPERTY FOLDER "3rdparty")
+    endif()
 endif()
 
 # imgui
@@ -405,6 +425,8 @@ endif()
 
 add_subdirectory(VulkanMemoryAllocator)
 
+add_subdirectory(concurrentqueue)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
@@ -422,7 +444,8 @@ target_link_libraries("ExternalVision" INTERFACE
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>
-    $<$<BOOL:${LIBJPEGTURBO_FOUND}>:turbojpeg>)
+    $<$<BOOL:${LIBJPEGTURBO_FOUND}>:turbojpeg>
+    $<$<BOOL:${NVJPEG_FOUND}>:nvJPEG>)
 
 message(STATUS "----------------------------------------------------------------------------------")
 message(STATUS "Immortal 3rdparty configuration")
@@ -466,6 +489,11 @@ if (LIBJPEGTURBO_FOUND)
     message(STATUS "Immortal will be compiled with libjpeg-turbo ------ Yes")
 else()
     message(STATUS "Immortal will be compiled with libjpeg-turbo ------ No")
+endif()
+if (NVJPEG_FOUND)
+    message(STATUS "Immortal will be compiled with nvJPEG        ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with nvJPEG        ------ No")
 endif()
 message(STATUS "----------------------------------------------------------------------------------")
 

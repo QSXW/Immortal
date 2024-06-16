@@ -569,6 +569,39 @@ void Scene::OnRender(const Camera &camera)
     //Render::End();
 }
 
+void Scene::OnRender2D(const Camera &camera, RenderTarget *renderTarget)
+{
+    if (!render2d)
+    {
+		render2d = new Render2D;
+    }
+
+    Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+		float clearValues[4] = {};
+		commandBuffer->BeginRenderTarget(renderTarget, clearValues);
+	});
+
+    render2d->BeginScene(camera);
+    auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+    {
+        for (auto object : group)
+        {
+            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(object);
+
+            if (!sprite.Sprite)
+            {
+                continue;
+            }
+			render2d->DrawSprite(transform, sprite, (int)object);
+        }
+    }
+	render2d->EndScene();
+
+	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+		commandBuffer->EndRenderTarget();
+	});
+}
+
 Object Scene::CreateObject(const std::string &name)
 {
     auto object = Object{ registry.create(), this };

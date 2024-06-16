@@ -75,11 +75,15 @@ public:
 
 	virtual void CopyBufferToImage(Texture *texture, uint32_t subresource, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) = 0;
 
+	virtual void CopyImageToBuffer(Buffer *buffer, Texture *texture, uint32_t subresource, size_t bufferRowLength) {}
+
 	virtual void CopyPlatformSpecificSubresource(Texture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) {}
 
 	virtual void MemoryCopy(Buffer *buffer, uint32_t size, const void *data, uint32_t offset) = 0;
 
 	virtual void MemoryCopy(Texture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) = 0;
+
+	virtual void MemoryCopy(Buffer *dst, uint32_t dstOffset, Buffer *src, uint32_t srcOffset, size_t size) {}
 
 	/**
 	 * @brief Submit a secondary command buffer. Only support Vulkan and D3D12 backend

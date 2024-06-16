@@ -100,8 +100,10 @@ void Device::BeginRender(uint32_t frames)
 
 void Device::WriteBuffer(const uint8_t *buffer, size_t size)
 {
-	SLASSERT(data != nullptr && "BeginRender is not called yet!");
-	memcpy(data, buffer, size);
+    if (data)
+    {
+		memcpy(data, buffer, size);
+    }
 }
 
 void Device::EndRender(uint32_t frames)

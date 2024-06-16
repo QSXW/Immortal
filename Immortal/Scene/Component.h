@@ -13,6 +13,7 @@
 #include "Graphics/LightGraphics.h"
 #include "Render/Graphics.h"
 #include "Render/Mesh.h"
+#include "Vision/Picture.h"
 #include "SceneCamera.h"
 #include "Codec.h"
 #include "Demuxer.h"
@@ -202,7 +203,7 @@ struct SpriteRendererComponent : public Component
 
     ~SpriteRendererComponent();
 
-    void UpdateSprite(const Vision::Picture &picture);
+    void UpdateSprite(const Vision::Picture &picture, AsyncComputeThread *asyncComputThread = Graphics::GetAsyncComputeThread());
 
     SpriteRendererComponent(const SpriteRendererComponent &other) = default;
 
@@ -381,24 +382,95 @@ public:
 	URef<VideoPlayerContext> player;
 };
 
-struct FilterComponent : public Component
+class FilterNode
+{
+public:
+    FilterNode(int nextIndex) :
+        nextIndex{ nextIndex }
+    {
+
+    }
+
+    virtual ~FilterNode()
+    {
+
+    }
+
+    virtual void Preprocess()
+    {
+
+    }
+
+    virtual void Run(const std::vector<Ref<Texture>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread())
+    {
+
+    }
+
+    virtual void PostProcess()
+    {
+
+    }
+
+public:
+	int GetNextIndex() const
+	{
+		return nextIndex;
+	}
+
+protected:
+    int nextIndex;
+};
+
+class TransferNode: public FilterNode
+{
+public:
+    enum class Type
+    {
+        Upload,
+        Download
+    };
+
+public:
+	TransferNode(int nextIndex, Type type);
+
+	virtual void Run(const std::vector<Ref<Texture>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+public:
+	Type type;
+};
+
+struct FilterGraphComponent : public Component
 {
 public:
     DEFINE_COMPONENT_TYPE(Filter)
 
-    FilterComponent() :
-        filters{}
+    FilterGraphComponent() :
+	    nodeGroups{},
+	    maxNodeLength{}
     {
 
     }
 
-    void PushFilter(const std::string &name, const Ref<Pipeline> &filter)
+    ~FilterGraphComponent();
+
+    template <class T, class ... Args>
+	void Insert(int group, int index, int nextIndex, Args &&...args)
     {
-        filters[name] = filter;
+		nodeGroups.resize(group + 1);
+
+		FilterNode *node = new T{ nextIndex, std::forward<Args>(args)... };
+		nodeGroups[group].resize(index + 1);
+		nodeGroups[group][index] = std::move(node);
+
+        maxNodeLength = std::max(maxNodeLength, nodeGroups[group].size());
     }
+
+    void Run(const std::vector<std::vector<Ref<Texture>>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
 public:
-    std::map<std::string, Ref<Pipeline>> filters;
+	std::vector<std::vector<FilterNode *>> nodeGroups;
+
+    size_t maxNodeLength;
 };
 
 }

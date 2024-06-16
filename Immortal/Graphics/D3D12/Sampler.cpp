@@ -32,7 +32,8 @@ static inline D3D12_COMPARISON_FUNC CAST(CompareOperation compareOperation)
 }
 
 Sampler::Sampler(Device *device, Filter filter, AddressMode _addressMode, CompareOperation compareOperation, float minLod, float maxLod) :
-    NonDispatchableHandle{ device }
+    NonDispatchableHandle{ device },
+    handle{}
 {
 	D3D12_TEXTURE_ADDRESS_MODE addressMode = CAST(_addressMode);
 	D3D12_SAMPLER_DESC desc{
@@ -48,12 +49,17 @@ Sampler::Sampler(Device *device, Filter filter, AddressMode _addressMode, Compar
 		.MaxLOD         = maxLod,
 	};
 
+	handle = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, &descriptorHeap);
 	device->CreateSampler(&desc, &handle);
 }
 
 Sampler::~Sampler()
 {
-
+	if (handle)
+	{
+		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, descriptorHeap, handle);
+		handle = {};
+	}
 }
 
 }

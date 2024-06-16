@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Graphics/Format.h"
+#include "Graphics/Texture.h"
 #include "Shared/IObject.h"
 #include "Memory/MemoryResource.h"
 
@@ -9,6 +10,7 @@
 
 namespace Immortal
 {
+
 namespace Vision
 {
 
@@ -23,11 +25,13 @@ class Picture;
 class IMMORTAL_API SharedPictureData : public IObject
 {
 public:
-	  friend class Picture;
-	  SL_SWAPPABLE(SharedPictureData)
+	friend class Picture;
+    SL_SWAPPABLE(SharedPictureData)
 
 public:
-	  SharedPictureData(Format format = Format::None, uint32_t width = 0, uint32_t height = 0, uint32_t stride = 0, bool allocate = false, MemoryResource *memoryResource = nullptr);
+    SharedPictureData(Format format = Format::None, uint32_t width = 0, uint32_t height = 0, uint32_t stride = 0, bool allocate = false, MemoryResource *memoryResource = nullptr);
+
+    SharedPictureData(Texture *texture);
 
     ~SharedPictureData();
 
@@ -45,6 +49,7 @@ protected:
     PictureMemoryType            memoryType;
     std::function<void(void *)>  release;
     MemoryResource              *memoryResource;
+	AAllocator<uint8_t>          allocator;
 };
 
 class IMMORTAL_API Picture
@@ -53,6 +58,8 @@ public:
 	Picture();
 
 	Picture(uint32_t width, uint32_t height, Format format, bool allocated = false);
+
+    Picture(Texture *texture);
 
     template <class T>
     Picture(T width, T height, Format format, bool allocated = false) :

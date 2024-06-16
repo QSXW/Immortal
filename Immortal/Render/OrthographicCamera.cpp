@@ -61,15 +61,42 @@ void OrthographicCamera::OnUpdate()
         SetRotation(rotation);
     }
 
+    float delta = zoomLevel - zoomLevelTarget;
+	float translate = 2.0f * Time::DeltaTime;
+    if (zoomLevelTarget < 0.09f)
+    {
+		translate = 0.5f * Time::DeltaTime;
+    }
+	if (delta < -translate)
+    {
+		zoomLevel += translate;
+		SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
+    }
+	else if (delta > translate)
+    {
+		zoomLevel -= translate;
+		SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
+    }
+    else
+    {
+		zoomLevel = zoomLevelTarget;
+		SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
+    }
+
     SetPosition(position);
     translateSpeed = zoomLevel;
 }
 
 bool OrthographicCamera::OnMouseScrolled(MouseScrolledEvent & e)
 {
-    zoomLevel -= e.GetOffsetY() * 20.0f * Time::DeltaTime;
-    zoomLevel = std::max(zoomLevel, 0.01f);
-    SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
+	float speed = 10.0f;
+    if (zoomLevelTarget < 0.09f)
+    {
+		speed = 2.0f;
+    }
+	zoomLevelTarget -= e.GetOffsetY() * speed * Time::DeltaTime;
+	zoomLevelTarget = std::max(zoomLevelTarget, 0.001f);
+    // SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
     return false;
 }
 

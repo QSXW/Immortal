@@ -66,7 +66,7 @@ void GetSamplingFactor(Format::ValueType format, SamplingFactor *factors)
 	}
 }
 
-void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
+void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture, AsyncComputeThread *asyncComputThread)
 {
     Format targetFormat = Format::RGBA8;
     Format lumaFormat   = Format::R8;
@@ -108,7 +108,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 		data[i].width    = picture.GetWidth()  >> factors[i].x;
 		data[i].height   = picture.GetHeight() >> factors[i].y;
 		data[i].rowPitch = SLALIGN(picture.GetStride(i), TextureAlignment);
-		data[i].size     = data[i].rowPitch * data[i].height;
+		data[i].size     = SLALIGN(data[i].rowPitch * data[i].height, 512);
 		totalSize += data[i].size;
 	}
 
@@ -158,7 +158,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 	{
 		ID3D12Fence *fence  = (ID3D12Fence *)picture[1];
 		uint64_t fenceValue = (uint64_t)picture[2];
-		Graphics::Execute<QueueTask>([=, this](Queue *_queue)
+		asyncComputThread->Execute<QueueTask>([=, this](Queue *_queue)
 		{
 			auto queue = (ID3D12CommandQueue *)_queue->GetBackendHandle();
 			if (FAILED(queue->Wait(fence, fenceValue)))
@@ -169,7 +169,7 @@ void SpriteRendererComponent::UpdateSprite(const Vision::Picture &picture)
 	}
 #endif
 
-	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+	asyncComputThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
 #ifdef _WIN32
 		if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
 		{

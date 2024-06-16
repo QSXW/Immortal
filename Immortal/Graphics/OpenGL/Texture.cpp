@@ -167,7 +167,7 @@ Texture::Texture() :
 Texture::Texture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) :
     Handle{}
 {
-	SetMeta(width, height, mipLevels, arrayLayers);
+	SetMeta(format, width, height, mipLevels, arrayLayers);
 	GLenum target = GL_TEXTURE_2D;
 	if (arrayLayers == 6)
 	{

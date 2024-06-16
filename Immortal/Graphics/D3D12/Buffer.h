@@ -12,6 +12,7 @@ namespace D3D12
 {
 
 class Device;
+class DescriptorHeap;
 class Buffer : public SuperBuffer, public Resource, public NonDispatchableHandle
 {
 public:
@@ -95,6 +96,8 @@ protected:
 
 protected:
     Descriptor descriptor;
+
+    DescriptorHeap *descriptorHeap;
 };
 
 }

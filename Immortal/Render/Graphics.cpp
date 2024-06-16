@@ -10,8 +10,8 @@ namespace Immortal
 URef<Graphics> Graphics::This;
 
 Graphics::Graphics(Device *device) :
-    device{ device },
-    thread{ device }
+    device{device},
+    thread{device}
 {
 	This = this;
 	commandBuffer = device->CreateCommandBuffer(QueueType::Compute);
@@ -19,10 +19,10 @@ Graphics::Graphics(Device *device) :
 
 void Graphics::SetDevice(Device *device)
 {
-    if (!This)
-    {
-        new Graphics{ device };
-    }
+	if (!This)
+	{
+		new Graphics{device};
+	}
 }
 
 Device *Graphics::GetDevice()
@@ -32,15 +32,15 @@ Device *Graphics::GetDevice()
 
 void Graphics::ConstructGlobalVariables()
 {
-    constexpr uint32_t white        = 0xffffffff;
-    constexpr uint32_t black        = 0x000000ff;
-    constexpr uint32_t transparency = 0x00000000;
-    constexpr uint32_t normal       = 0xffff7f7f;
+	constexpr uint32_t white = 0xffffffff;
+	constexpr uint32_t black = 0x000000ff;
+	constexpr uint32_t transparency = 0x00000000;
+	constexpr uint32_t normal = 0xffff7f7f;
 
-    This->data.Textures.White       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &white       );
-    This->data.Textures.Black       = Graphics::CreateTexture(Format::RGBA8, 1, 1, &black       );
-    This->data.Textures.Transparent = Graphics::CreateTexture(Format::RGBA8, 1, 1, &transparency);
-    This->data.Textures.Normal      = Graphics::CreateTexture(Format::RGBA8, 1, 1, &normal      );
+	This->data.Textures.White = Graphics::CreateTexture(Format::RGBA8, 1, 1, 1, &white);
+	This->data.Textures.Black = Graphics::CreateTexture(Format::RGBA8, 1, 1, 1, &black);
+	This->data.Textures.Transparent = Graphics::CreateTexture(Format::RGBA8, 1, 1, 1, &transparency);
+	This->data.Textures.Normal = Graphics::CreateTexture(Format::RGBA8, 1, 1, 1, &normal);
 }
 
 void Graphics::Release()
@@ -50,16 +50,16 @@ void Graphics::Release()
 
 Graphics::~Graphics()
 {
-    data.Textures.White.Reset();
-    data.Textures.Black.Reset();
-    data.Textures.Transparent.Reset();
-    data.Textures.Normal.Reset();
+	data.Textures.White.Reset();
+	data.Textures.Black.Reset();
+	data.Textures.Transparent.Reset();
+	data.Textures.Normal.Reset();
 
-    thread.Execute<AsyncTask>(AsyncTaskType::Terminate);
+	thread.Execute<AsyncTask>(AsyncTaskType::Terminate);
 	thread.Join();
-    discardedTextures.clear();
+	discardedTextures.clear();
 	stagingBuffers = {};
-    device = nullptr;
+	device = nullptr;
 }
 
 Buffer *Graphics::CreateBuffer(size_t size, BufferType type, const void *data)
@@ -67,32 +67,34 @@ Buffer *Graphics::CreateBuffer(size_t size, BufferType type, const void *data)
 	auto device = This->device;
 	Buffer *buffer = device->CreateBuffer(size, type);
 
-    if (data)
-    {
+	if (data)
+	{
 		void *mapped = nullptr;
 		buffer->Map(&mapped, size, 0);
 		memcpy(mapped, data, size);
 		buffer->Unmap();
-    }
+	}
 
-    return buffer;
+	return buffer;
 }
 
-Texture *Graphics::CreateTexture(const std::string &filepath)
+Texture *Graphics::CreateTexture(const std::string &filepath, AsyncComputeThread *asyncComputeThread)
 {
 	Picture picture = Vision::Read(filepath);
-    if (!picture)
-    {
+	if (!picture)
+	{
 		return nullptr;
-    }
+	}
 
-	uint32_t width  = picture.GetWidth();
-	uint32_t height = picture.GetHeight();
-
-    return CreateTexture(picture.GetFormat(), width, height, picture.GetData());
+	return CreateTexture(picture, asyncComputeThread);
 }
 
-Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height, const void *data)
+Texture *Graphics::CreateTexture(const Picture &picture, AsyncComputeThread *asyncComputeThread)
+{
+	return CreateTexture(picture.GetFormat(), picture.GetWidth(), picture.GetHeight(), picture.GetStride(0), picture.GetData(), asyncComputeThread);
+}
+
+Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height, uint32_t stride, const void *data, AsyncComputeThread *asyncComputeThread)
 {
 	uint32_t mipLevels = Texture::CalculateMipmapLevels(width, height);
 	Texture *texture = This->device->CreateTexture(format, width, height, mipLevels, 1, TextureType::TransferDestination);
@@ -102,10 +104,11 @@ Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height,
 		return texture;
     }
 
-    uint32_t uploadPitch = SLALIGN(width * format.GetTexelSize(), TextureAlignment);
+    uint32_t uploadPitch = SLALIGN(stride, TextureAlignment);
 	uint32_t uploadSize = height * uploadPitch;
 
     Ref<Buffer> buffer = {};
+	if (uploadSize <= 1024 * 1024)
     {
 		std::lock_guard lock{ This->mutex };
 		if (!This->stagingBuffers.empty())
@@ -122,42 +125,60 @@ Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height,
 
     void *mapped = nullptr;
 	buffer->Map(&mapped, uploadSize, 0);
-	MemoryCopyImage((uint8_t *)mapped, uploadPitch, (uint8_t *)data, width * format.GetTexelSize(), format, width, height);
+	MemoryCopyImage((uint8_t *)mapped, uploadPitch, (uint8_t *)data, stride, format, width, height);
 	buffer->Unmap();
 
-    Execute<RecordingTask>([=] (uint64_t sync, CommandBuffer *commandBuffer) {
-	    commandBuffer->CopyBufferToImage(texture, 0, buffer, uploadPitch);
-        if (mipLevels > 1)
-        {
+	asyncComputeThread->Execute<RecordingTask>([=](uint64_t sync, CommandBuffer *commandBuffer) {
+		commandBuffer->CopyBufferToImage(texture, 0, buffer, uploadPitch);
+		if (mipLevels > 1)
+		{
 			commandBuffer->GenerateMipMaps(texture, Filter::Linear);
-        }
+		}
 	});
 
-    Execute<ExecutionCompletedTask>([=]() {
-		std::lock_guard lock{ This->mutex };
-		This->stagingBuffers.push(buffer);
+	asyncComputeThread->Execute<ExecutionCompletedTask>([=]() {
+		if (uploadSize <= 1024 * 1024)
+		{
+			std::lock_guard lock{This->mutex};
+			This->stagingBuffers.push(buffer);
+		}
 	});
 
     return texture;
+}
+
+Shader *Graphics::CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint)
+{
+	Stream stream = { path, Stream::Mode::Read };
+	if (stream.Readable())
+	{
+		std::string source;
+		stream.Read(source);
+		return This->device->CreateShader(name, stage, source, entryPoint);
+	}
+
+	return {};
 }
 
 void Graphics::DiscardTexture(const Ref<Texture> &texture)
 {
     if (texture)
     {
+		std::lock_guard lock{ This->discardedMutex };
 		This->discardedTextures[This->index].emplace_back(texture);
     }
 }
 
 void Graphics::SetRenderIndex(uint64_t index)
 {
+	std::lock_guard lock{This->discardedMutex};
     if (!This->discardedTextures.empty())
     {
         for (auto it = This->discardedTextures.begin(); it != This->discardedTextures.end();)
         {
 			auto &[renderIndex, textures] = *it;
 
-			if (index - renderIndex >= 3)
+			if (index - renderIndex >= 30)
 			{
 				it = This->discardedTextures.erase(it);
 				break;

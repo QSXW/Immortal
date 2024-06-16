@@ -47,6 +47,10 @@ protected:
     Descriptor descriptor;
 
     Descriptor uav;
+
+    DescriptorHeap *descriptorHeap;
+
+    DescriptorHeap *uavDescriptorHeap;
 };
 
 }

@@ -51,7 +51,7 @@ GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swap
     themeEditor = new WWindow;
     themeEditor
         ->Connect([this] {
-            UpdateTheme();
+            //UpdateTheme();
         });
 }
 
@@ -101,31 +101,50 @@ void GuiLayer::OnAttach()
     io.DisplaySize.x = window->GetWidth();
     io.DisplaySize.y = window->GetHeight();
 
+	ImFontGlyphRangesBuilder builder;
+    const auto &words = WordsMap::GetWords();
+	for (auto &[key, value] : words)
+    {
+		builder.AddText(key.c_str());
+		builder.AddText(value.c_str());
+    }
+	builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
+	builder.BuildRanges(&fontRanges);  
+
     Profiler p{ "Loading DemiLight File" };
     NotoSans.Light = io.Fonts->AddFontFromFileTTF(
-       "Assets/Fonts/NotoSansCJKsc-Regular.otf",
-       20,
-       nullptr,
-       io.Fonts->GetGlyphRangesChineseFull()
-       );
-
-    NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
-        "Assets/Fonts/NotoSansCJKsc-Bold.otf",
+        "Assets/Fonts/NotoSansCJKsc-Regular.otf",
         20,
         nullptr,
-        io.Fonts->GetGlyphRangesChineseFull()
-        );
+	    fontRanges.Data);
+
+    ImFontConfig fontConfig = {};
+	//fontConfig.GlyphExtraSpacing.x = 0.5f;
+    NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
+        "Assets/Fonts/NotoSansCJKsc-Bold.otf",
+        17,
+	    &fontConfig,
+	    fontRanges.Data);
+
+    //NotoSans.Bold->FontSize -= 1.0f;
+
+	static const ImWchar icons_ranges[] = {0xe005, 0xf8ff, 0};
+	ImFontConfig icons_config;
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.GlyphMinAdvanceX = 17;
+	io.Fonts->AddFontFromFileTTF("C:/Users/qsxw/Downloads/fa-solid-900.ttf", 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
 
 #ifdef _WIN32
-   SimSun.Regular = io.Fonts->AddFontFromFileTTF(
+    SimSun.Regular = io.Fonts->AddFontFromFileTTF(
         std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
-        16,
-       nullptr,
-        io.Fonts->GetGlyphRangesChineseFull()
-       );
+        13,
+        nullptr,
+        fontRanges.Data);
 #else
    SimSun.Regular = NotoSans.Demilight;
 #endif
+    io.Fonts->Build();
 
     ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
     decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
@@ -256,8 +275,8 @@ void GuiLayer::OnEvent(Event &e)
         {
 			static FileSystem::DirectoryEntry dir;
 			dir = {
-				.path = dragDrapEvent.QueryFile(0),
-				.type = FileType::RegularFile
+				dragDrapEvent.QueryFile(0),
+				FileType::RegularFile
 			};
 		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
 		    {

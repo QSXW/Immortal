@@ -19,7 +19,7 @@ public:
         for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
         {
             const auto &item = it->items();
-            words[it.key()] = { it.value().get<std::string>(), String::Type::Unicode8 };
+            words[it.key()] = { it.value().get<std::string>(), StringEncoding::UTF8 };
         }
     }
 
@@ -27,6 +27,11 @@ public:
     {
         const auto &it = That.words.find(key);
         return it == That.words.end() ? key : it->second;
+    }
+
+    static const std::map<String, String> GetWords()
+    {
+		return That.words;
     }
 
 private:

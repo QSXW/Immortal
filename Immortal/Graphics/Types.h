@@ -59,6 +59,12 @@ enum class CommandBufferType
 };
 SL_ENABLE_BITWISE_OPERATOR(CommandBufferType)
 
+enum class MemoryType
+{
+    Host,
+    Device,
+};
+
 enum class BufferType
 {
     None                          = 0,

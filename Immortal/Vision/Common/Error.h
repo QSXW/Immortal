@@ -10,16 +10,18 @@ namespace Immortal
 
 enum class CodecError
 {
-    CorruptedBitstream = NEG(1114),
-    OutOfMemory,
-    UnsupportFormat,
-    ExternalFailed,
-    FailedToOpenFile,
-    FailedToCallDecoder,
-    EndOfFile,
-    Repeat,
-    Again,
-    NotImplement,
+	CorruptedBitstream = NEG(1114),
+	OutOfMemory,
+	UnsupportFormat,
+	ExternalFailed,
+	FailedToOpenFile,
+	FailedToCallDecoder,
+	EndOfFile,
+	Repeat,
+	Again,
+	NotImplement,
+	InvalidArguments,
+    CorruptStream,
 	Success = 0,
     Preparing
 };

@@ -4,12 +4,18 @@ namespace Immortal
 {
 
 Texture::Texture() :
+    _format{ Format::None },
     _width{},
     _height{},
     _mipLevels{},
     _arrayLayers{}
 {
 
+}
+
+const Format &Texture::GetFormat() const
+{
+	return _format;
 }
 
 const uint32_t &Texture::GetWidth() const
@@ -37,8 +43,9 @@ uint32_t Texture::GetRatio() const
 	return (float)(GetWidth()) / (float)(GetHeight());
 }
 
-void Texture::SetMeta(uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers)
+void Texture::SetMeta(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers)
 {
+	_format      = format;
 	_width       = width;
 	_height      = height;
 	_mipLevels   = mipLevels;

@@ -18,6 +18,9 @@ static Codec *SelectSuitableCodec(const std::string &path)
     case FileFormat::JPG:
     case FileFormat::JPEG:
     case FileFormat::JFIF:
+#if HAVE_TURBOJPEG
+		return new Vision::TurboJpegCodec;
+#endif
     case FileFormat::HDR:
     case FileFormat::PNG:
         return new Vision::STBCodec;
@@ -28,8 +31,11 @@ static Codec *SelectSuitableCodec(const std::string &path)
     case FileFormat::ARW:
     case FileFormat::NEF:
     case FileFormat::CR2:
-        return new Vision::RawCodec;
-    
+	case FileFormat::FFF:
+	case FileFormat::RAF:
+	case FileFormat::RW2:
+        return new Vision::RawCodec{ Format::RGBA8 };
+
     default:
         return new Vision::OpenCVCodec;
         break;
@@ -39,9 +45,16 @@ static Codec *SelectSuitableCodec(const std::string &path)
 Picture Read(const std::string &path)
 {
     Vision::CodedFrame codedFrame{ FileSystem::ReadBinary(path) };
+    if (codedFrame.GetBuffer().empty())
+    {
+		return {};
+    }
 
     URef<Interface::Codec> codec = SelectSuitableCodec(path);
-    codec->Decode(codedFrame);
+    if (codec->Decode(codedFrame) != CodecError::Success)
+    {
+		return {};
+    }
 
     return codec->GetPicture();
 }

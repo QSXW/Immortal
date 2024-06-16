@@ -201,6 +201,8 @@ protected:
     static GuiLayer *This;
 
     URef<WWindow> themeEditor;
+
+    ImVector<ImWchar> fontRanges;
 };
 
 using SuperGuiLayer = GuiLayer;

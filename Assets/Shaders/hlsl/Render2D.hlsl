@@ -24,20 +24,21 @@ struct PSOutput
     int objectID : COLOR;
 };
 
-cbuffer ubo : register(b0)
+struct PushConstant
 {
 	float4x4 viewProjection;
 };
+[[vk::push_constant]] PushConstant pushConstant;
 
-Texture2D g_textures[32] : register(t0);
 SamplerState g_sampler : register(s0);
+Texture2D g_textures[32] : register(t1);
 
 PSInput VSMain(VSInput input)
 {
     PSInput result;
 
     input.position.y    = -input.position.y;
-    result.position     = mul(viewProjection, input.position);
+    result.position     = mul(pushConstant.viewProjection, input.position);
     result.color        = input.color;
     result.uv           = input.uv;
     result.index        = input.index;

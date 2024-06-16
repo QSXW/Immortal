@@ -11,3 +11,5 @@
 #include "MFXJpegCodec.h"
 #include "PPM.h"
 #include "Raw.h"
+#include "TurboJpegCodec.h"
+#include "NVJpegCodec.h"

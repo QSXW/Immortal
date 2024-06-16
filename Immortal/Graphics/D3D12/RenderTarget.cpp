@@ -8,14 +8,48 @@ namespace D3D12
 {
 
 RenderTarget::RenderTarget(Device *device) :
-    NonDispatchableHandle{ device }
+    NonDispatchableHandle{ device },
+    descriptors{},
+    depthDescriptor{},
+    renderTargetViewDescriptorHeap{},
+    depthViewDescriptorHeap{},
+    colorBuffers{},
+    depth{}
 {
 
 }
 
+RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat) :
+    RenderTarget{ device }
+{
+    for (int i = 0; i < colorAttachmentCount; i++)
+    {
+	    Format format = pColorAttachmentFormats[i];
+		Ref<Texture> texture = new Texture{ device, format, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment };
+		SetColorAttachment(i, texture);
+    }
+
+    if (depthAttachmentFormat != Format::None)
+    {
+		Ref<Texture> texture = new Texture{device, depthAttachmentFormat, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::DepthStencilAttachment};
+		SetDepthAttachment(texture);
+    }
+}
+
 RenderTarget::~RenderTarget()
 {
+    if (descriptors)
+    {
+        for (int i = 0; i < colorBuffers.size(); i++)
+        {
+			device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, renderTargetViewDescriptorHeap, descriptors[i]);
+        }
+    }
 
+    if (depthDescriptor)
+    {
+		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, depthViewDescriptorHeap, depthDescriptor);
+    }
 }
 
 void RenderTarget::Resize(UINT32 width, UINT32 height)
@@ -41,7 +75,7 @@ void RenderTarget::SetColorAttachment(uint32_t index, Ref<Texture> &texture)
     }
 
 	colorBuffers.emplace_back(texture);
-    descriptors[index] = texture->GetDevice()->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	descriptors[index] = texture->GetDevice()->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, &renderTargetViewDescriptorHeap);
 
     D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {
 		.Format        = texture->GetFormat(),
@@ -88,7 +122,7 @@ void RenderTarget::SetDepthAttachment(Ref<Texture> &texture)
         };
     }
 
-    depthDescriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    depthDescriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, &depthViewDescriptorHeap);
 	device->CreateDepthStencilView(*texture, &desc, depthDescriptor);
 }
 

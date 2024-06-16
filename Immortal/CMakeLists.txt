@@ -68,6 +68,7 @@ set(SCENE_FILES
     Scene/Component.h
     Scene/Object.h
     Scene/entt.hpp
+    Scene/FilterGraphComponent.cpp
     Scene/GameObject.h
     Scene/ObserverCamera.cpp
     Scene/ObserverCamera.h
@@ -119,6 +120,7 @@ set(HELPER_FILES
 set(WIDGET_FILES
     MenuBar.h
     Resource.h
+    WFileDialog.cpp
     WFileDialog.h
     Widget.cpp
     Widget.h

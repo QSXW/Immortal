@@ -11,6 +11,29 @@
 namespace Immortal
 {
 
+static inline ImVec2 CalculateFixedImageSize(float width, float height, float imageWidth, float imageHeight, float &xhalf, float &yhalf)
+{
+	float x = width;
+	float y = height;
+
+	xhalf = 0;
+	yhalf = 0;
+	if (imageWidth > imageHeight)
+	{
+		float scale = imageHeight / imageWidth;
+		y = x * scale;
+		yhalf = (height - y) * 0.5f;
+	}
+	else
+	{
+		float scale = imageWidth / imageHeight;
+		x = y * scale;
+		xhalf = (width - x) * 0.5f;
+	}
+
+    return { x, y };
+}
+
 class IMMORTAL_API WImageButton : public Widget
 {
 public:

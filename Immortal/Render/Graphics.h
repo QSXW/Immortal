@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "Graphics/LightGraphics.h"
+#include "Vision/Picture.h"
 
 namespace Immortal
 {
@@ -24,17 +25,10 @@ public:
         { "None"   },
         { "Vulkan" },
         { "OpenGL" },
-	    { "D3D11"  },
+        { "D3D11"  },
         { "D3D12"  },
         { "Metal"  }
     };
-
-    static inline const char AssetsPathes[][24] = {
-        "Assets/Shaders/glsl/",
-        "Assets/Shaders/hlsl/"
-    };
-
-    static Ref<Shader> GetShader(const std::string &name);
 
     static auto *Preset()
     {
@@ -42,12 +36,12 @@ public:
     }
 
 public:
-	Graphics(Device *device);
+    Graphics(Device *device);
    
     ~Graphics();
 
 public:
-	static void SetDevice(Device *device);
+    static void SetDevice(Device *device);
 
     static void ConstructGlobalVariables();
 
@@ -57,9 +51,13 @@ public:
 
     static Buffer *CreateBuffer(size_t size, BufferType type, const void *data = nullptr);
 
-    static Texture *CreateTexture(const std::string &filepath);
+    static Texture *CreateTexture(const std::string &filepath, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
-    static Texture *CreateTexture(Format format, uint32_t width, uint32_t height, const void *data = nullptr);
+    static Texture *CreateTexture(const Picture &picture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+    static Texture *CreateTexture(Format format, uint32_t width, uint32_t height, uint32_t stride = 0, const void *data = nullptr, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+    static Shader *CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint);
 
     static void DiscardTexture(const Ref<Texture> &texture);
 
@@ -70,18 +68,23 @@ public:
     static void MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
 
     template <class T, class ...Args>
-	static void Execute(Args && ...args)
+    static void Execute(Args && ...args)
     {
-		This->thread.Execute<T>(std::forward<Args>(args)...);
+        This->thread.Execute<T>(std::forward<Args>(args)...);
     }
 
     static void WaitIdle()
     {
-		This->thread.WaitIdle();
+        This->thread.WaitIdle();
+    }
+
+    static AsyncComputeThread *GetAsyncComputeThread()
+    {
+        return &This->thread;
     }
 
 public:
-	Device *device;
+    Device *device;
 
     AsyncComputeThread thread;
 
@@ -96,6 +99,8 @@ public:
     std::queue<Ref<Buffer>> stagingBuffers;
 
     uint32_t index = 0;
+
+    std::mutex discardedMutex;
 
     std::unordered_map<uint64_t, std::vector<Ref<Texture>>> discardedTextures;
 

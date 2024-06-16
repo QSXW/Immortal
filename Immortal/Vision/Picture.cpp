@@ -1,12 +1,13 @@
 #include "Picture.h"
 #include "Memory/MemoryResource.h"
+#include "Graphics/Texture.h"
 
 namespace Immortal
 {
 namespace Vision
 {
 
-SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t height, uint32_t stride, bool allocate, MemoryResource *memoryResource) :
+SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t height, uint32_t _stride, bool allocate, MemoryResource *memoryResource) :
     data{},
     stride{},
     format{ format },
@@ -15,10 +16,13 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
     timestamp{},
     memoryType{},
     release{},
-    memoryResource{ memoryResource }
+    memoryResource{ memoryResource },
+    allocator{}
 {
+	stride[0] = _stride;
     if (allocate)
-    {
+	{
+		stride[0] = SLALIGN(stride[0], TextureAlignment);
         if (memoryResource)
         {
             data[0] = (uint8_t *)memoryResource->Allocate();
@@ -28,13 +32,45 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
         }
         else
         {
-            data[0] = new uint8_t[width * height * format.GetTexelSize()];
-			SetRelease([](void *_ptr) {
-				uint8_t *ptr = (uint8_t *)_ptr;
-				delete ptr;
+			size_t size = 0;
+
+            if (format.IsType(Format::YUV))
+            {
+				SamplingFactor sampling = { format };
+				stride[0] = SLALIGN(width, 8);
+				stride[1] = SLALIGN(width >> sampling.x, 8);
+				stride[2] = stride[1];
+                           
+                size_t offsets[3] = {};
+                for (int i = 0; i < SL_ARRAY_LENGTH(offsets); i++)
+                {
+					offsets[i] = size;
+					size += stride[i] * (SLALIGN(height, 2) >>  (i ? sampling.y : 0));
+                }
+				data[0] = allocator.allocate(size);
+
+                for (int i = 1; i < SL_ARRAY_LENGTH(offsets); i++)
+                {
+					data[i] = data[0] + offsets[i];
+                }
+            }
+            else
+            {
+				size = stride[0] * height;
+				data[0] = allocator.allocate(size);
+            }
+      
+			SetRelease([=, this](void *_ptr) {
+				allocator.deallocate((uint8_t *)_ptr);
             });
         }
     }
+}
+
+SharedPictureData::SharedPictureData(Texture *texture) :
+    SharedPictureData{texture->GetFormat(), texture->GetWidth(), texture->GetHeight()}
+{
+	data[0] = (uint8_t *)texture;
 }
 
 SharedPictureData::~SharedPictureData()
@@ -52,8 +88,8 @@ void SharedPictureData::SetRelease(std::function<void(void *)> &&func)
 
 void SharedPictureData::Swap(SharedPictureData &other)
 {
-	std::swap_ranges(data,   data   + sizeof(data),   other.data  );
-	std::swap_ranges(stride, stride + sizeof(stride), other.stride);
+	std::swap_ranges(data,   data   + SL_ARRAY_LENGTH(data),   other.data  );
+	std::swap_ranges(stride, stride + SL_ARRAY_LENGTH(stride), other.stride);
 	std::swap(format,         other.format        );
 	std::swap(width,          other.width         );
 	std::swap(height,         other.height        );
@@ -68,10 +104,14 @@ Picture::Picture() :
 
 }
 
-
-
 Picture::Picture(uint32_t width, uint32_t height, Format format, bool allocated) :
-    shared{ new SharedPictureData{ format, width, height, width, allocated }}
+    shared{ new SharedPictureData{ format, width, height, (uint32_t)(width * format.GetTexelSize()), allocated }}
+{
+
+}
+
+Picture::Picture(Texture *texture) :
+    shared{ new SharedPictureData{ texture }}
 {
 
 }

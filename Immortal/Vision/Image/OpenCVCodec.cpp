@@ -48,7 +48,7 @@ CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
     }
     if (mat.depth() == CV_32FC4)
     {
-        picture.SetFormat(Format::RGBA32F);
+        picture.SetFormat(Format::R32G32B32A32_SFLOAT);
     }
 
     picture.SetData(mat.data);

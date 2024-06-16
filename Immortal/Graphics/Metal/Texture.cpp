@@ -17,7 +17,7 @@ Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height,
     Super{},
     Handle<MTL::Texture>{}
 {
-	SetMeta(width, height, mipLevels, arrayLayers);
+	SetMeta(format, width, height, mipLevels, arrayLayers);
 
     MTL::TextureDescriptor *descriptor = MTL::TextureDescriptor::alloc()->init();
     descriptor->setPixelFormat(format);
@@ -30,7 +30,7 @@ Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height,
     descriptor->setAllowGPUOptimizedContents(true);
 
     MTL::ResourceOptions resourceOptions = MTL::ResourceStorageModePrivate;
-    
+
     MTL::TextureUsage usage = MTL::TextureUsageShaderRead;
     if (type & TextureType::Storage)
     {

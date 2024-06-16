@@ -101,15 +101,19 @@ void Application::OnRender()
     {
         layer->OnUpdate();
     }
-	Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
+
+    if (!runtime.minimized)
+	{
+		gui->Begin();
+		gui->Render();
+		gui->End();
+	}
+
+    Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
 	Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
 
     if (!runtime.minimized)
-    {
-        gui->Begin();
-        gui->Render();
-        gui->End();
-
+	{
         swapchain->PrepareNextFrame();
         gpuEvent->Wait(syncValues[syncPoint], 0xffffffffff);
 	    Graphics::SetRenderIndex(syncValues[syncPoint]);
@@ -131,6 +135,10 @@ void Application::OnRender()
 	    syncValues[syncPoint] = gpuEvent->GetSyncPoint();
 
 	    SLROTATE(syncPoint, bufferCount);
+    }
+    else
+    {
+		std::this_thread::sleep_for(std::chrono::duration(std::chrono::microseconds(16669)));
     }
 
     window->ProcessEvents();

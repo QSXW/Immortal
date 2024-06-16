@@ -18,6 +18,7 @@ class CommandList;
 class Pipeline;
 class GraphicsPipeline;
 class ComputePipeline;
+class RenderTarget;
 class IMMORTAL_API CommandBuffer : public SuperCommandBuffer, public NonDispatchableHandle
 {
 public:
@@ -61,11 +62,15 @@ public:
 
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
 
+	virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength) override;
+
 	virtual void CopyPlatformSpecificSubresource(SuperTexture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) override;
 
 	virtual void MemoryCopy(SuperBuffer *_buffer, uint32_t size, const void *data, uint32_t offset) override;
 
 	virtual void MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) override;
+
+	virtual void MemoryCopy(SuperBuffer *dst, uint32_t dstOffset, SuperBuffer *src, uint32_t srcOffset, size_t size) override;
 
 	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
 
@@ -107,6 +112,8 @@ protected:
 
 	using PFN_SetRootDescriptorTable = void (*)(CommandList *, uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE);
 	PFN_SetRootDescriptorTable SetRootDescriptorTable;
+
+	RenderTarget *renderTarget;
 };
 
 }

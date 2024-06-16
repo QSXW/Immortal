@@ -19,6 +19,12 @@ public:
         
     }
 
+    OrthographicCamera(const Vector2 &size) :
+	    OrthographicCamera{}
+    {
+		SetViewportSize(size);
+    }
+
     OrthographicCamera(float left, float right, float bottom, float top) :
         Camera{ Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f) }
     {
@@ -72,6 +78,12 @@ public:
         return viewProjection;
     }
 
+    float GetZoomLevel() const
+    {
+		return zoomLevel;
+    }
+
+public:
     virtual void SetViewportSize(Vector2 size) override;
 
     virtual void OnUpdate() override;
@@ -91,6 +103,8 @@ private:
     float rotation       = 0.0f;
     float rotateSpeed    = 180.0f;
     bool  rotated        = false;
+
+    float zoomLevelTarget = 0.5f;
 };
 
 }

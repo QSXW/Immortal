@@ -20,29 +20,34 @@ static __forceinline void SetDescriptorSlot(DescriptorSet *descriptorSet, Descri
 DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
 	NonDispatchableHandle{ device },
     descriptorHeaps{},
-    descriptors{}
+    descriptors{},
+    descriptorCount{}
 {
-	auto shaderResourceType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	device->AllocateShaderVisibleDescriptor(
-	    shaderResourceType,
-	    &descriptorHeaps[shaderResourceType],
-	    &descriptors[shaderResourceType],
-	    pipeline->GetDescriptorCount(shaderResourceType));
-	indexMap[shaderResourceType] = pipeline->GetDescriptorIndexMap(shaderResourceType);
-
-	auto samplerType = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-	device->AllocateShaderVisibleDescriptor(
-	    samplerType,
-	    &descriptorHeaps[samplerType],
-	    &descriptors[samplerType],
-	    pipeline->GetDescriptorCount(samplerType));
-
-	indexMap[samplerType] = pipeline->GetDescriptorIndexMap(samplerType);
+	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorHeaps); i++)
+	{
+		D3D12_DESCRIPTOR_HEAP_TYPE type = (D3D12_DESCRIPTOR_HEAP_TYPE)i;
+		descriptorCount[type] = pipeline->GetDescriptorCount(type);
+		if (descriptorCount[type] > 0)
+		{
+			device->AllocateShaderVisibleDescriptor(
+				type,
+				&descriptorHeaps[type],
+				&descriptors[type],
+				descriptorCount[type]);
+			indexMap[type] = pipeline->GetDescriptorIndexMap(type);
+		}
+	}
 }
 
 DescriptorSet::~DescriptorSet()
 {
-
+	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorHeaps); i++)
+	{
+		if (descriptorHeaps[i])
+		{
+			device->FreeShaderVisibleDescriptor((D3D12_DESCRIPTOR_HEAP_TYPE)i, descriptorHeaps[i], descriptors[i].descriptor, descriptorCount[i]);
+		}
+	}
 }
 
 void DescriptorSet::Set(uint32_t slot, SuperBuffer *buffer)

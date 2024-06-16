@@ -159,4 +159,6 @@ private:
     size_t fileSize{ 0 };
 };
 
+using StreamMode = Stream::Mode;
+
 }
