@@ -319,7 +319,7 @@ static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint3
         return buffer;
     }
 
-    buffer.resize(stream.Size());
+    buffer.resize(stream.GetSize());
 
     stream.Read(buffer.data(), buffer.size());
 
@@ -336,7 +336,7 @@ static inline std::string ReadString(const std::string &filename)
         return buffer;
     }
 
-    buffer.resize(stream.Size());
+    buffer.resize(stream.GetSize());
 
     stream.Read(buffer.data(), buffer.size());
 

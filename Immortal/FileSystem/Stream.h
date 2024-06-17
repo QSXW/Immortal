@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "Core.h"
+#include "String/IString.h"
 
 namespace Immortal
 {
@@ -25,73 +26,43 @@ public:
     };
 
 public:
-    Stream(Mode mode) :
-        mode{ mode }
-    {
+    Stream(Mode mode);
 
-    }
+    Stream(const String &filepath, Mode mode);
 
-    Stream(const std::string &filepath, Mode mode) :
-        filepath{ filepath },
-        mode{ mode }
-    {
-        Open(filepath);
-    }
+    ~Stream();
 
-    ~Stream()
-    {
-        if (!fp)
-        {
-            return;
-        }
-        fclose(fp);
-    }
+    bool Open(const String &path);
 
-    bool Open(const std::string &path)
-    {
-        filepath = path;
-        fp = fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
-        if (!fp)
-        {
-            return false;
-        }
-        fileSize = GetFileSize(fp);
-        return true;
-    }
+    int Close();
 
-    void ReOpen(const std::string &filepath, Mode mode)
-    {
-        if (fp)
-        {
-            fclose(fp);
-            fp = nullptr;
-        }
-    }
+    size_t GetSize();
 
+    size_t Read(void *dst, size_t size, size_t count = 1);
+
+    size_t Write(const void *src, size_t size, size_t count = 1);
+
+    size_t Tell() const;
+
+    int Locate(size_t pos);
+
+    int Skip(size_t offset);
+
+public:
     bool Readable()
     {
-        return !!fp && mode == Mode::Read;
+        return !!handle && mode == Mode::Read;
     }
 
     bool Writable()
     {
-        return !!fp && mode == Mode::Write;
-    }
-
-    size_t Size()
-    {
-        return fileSize;
-    }
-
-    size_t Read(void *dst, size_t size, size_t count = 1)
-    {
-        return fread(dst, size, count, fp);
+        return !!handle && mode == Mode::Write;
     }
 
     template <class T>
     size_t Read(T &contatiner)
     {
-		size_t size = Size();
+		size_t size = GetSize();
 		contatiner.resize(size / sizeof(contatiner[0]));
 		return Read(contatiner.data(), size);
     }
@@ -99,12 +70,7 @@ public:
     template <size_t size, size_t count = 1>
     size_t Write(const void *src)
     {
-        return fwrite(src, size, count, fp);
-    }
-
-    size_t Write(const void *src, size_t size, size_t count = 1)
-    {
-        return fwrite(src, size, count, fp);
+        return Write(src, size, count);
     }
 
     template <class T>
@@ -113,52 +79,166 @@ public:
         return Write(src.data(), src.size());
     }
 
-    size_t Pos()
-    {
-        return ftell(fp);
-    }
-
-    int Locate(size_t pos)
-    {
-        return fseek(fp, pos, SEEK_SET);
-    }
-
-    int Skip(size_t offset)
-    {
-        return fseek(fp, offset, SEEK_CUR);
-    }
-
-    int Close()
-    {
-        auto ptr = fp;
-        fp = nullptr;
-        return fclose(ptr);
-    }
-
-    const std::string &GetFilePath() const
+    const String &GetFilePath() const
     {
         return filepath;
     }
 
-public:
-    static inline size_t GetFileSize(FILE *fp)
-    {
-        fseek(fp, 0, SEEK_END);
-        auto size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-        return size;
-    }
+protected:
+    void *handle;
 
-private:
-    std::string filepath;
+    String filepath;
 
-    Mode mode{ 0 };
-
-    FILE *fp{ nullptr };
-
-    size_t fileSize{ 0 };
+    Mode mode;
 };
 
 using StreamMode = Stream::Mode;
+
+inline Stream::Stream(Mode mode) :
+    handle{},
+    filepath{},
+    mode{mode}
+{
+}
+
+inline Stream::Stream(const String &filepath, Mode mode) :
+    handle{},
+    filepath{filepath},
+    mode{mode}
+{
+	Open(filepath);
+}
+
+inline Stream::~Stream()
+{
+	Close();
+	handle = nullptr;
+}
+
+#ifdef _WIN32
+inline bool Stream::Open(const String &path)
+{
+	filepath = path;
+
+    if (mode == Mode::Read)
+    {
+		handle = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    }
+	else if (mode == Mode::Write)
+	{
+		handle = CreateFileA(path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+	}
+
+	return !!handle;
+}
+
+inline int Stream::Close()
+{
+	if (handle)
+	{
+		CloseHandle(handle);
+		handle = nullptr;
+	}
+
+	return 0;
+}
+
+inline size_t Stream::GetSize()
+{
+	LARGE_INTEGER fileSize = {};
+	return GetFileSizeEx(handle, &fileSize) ? fileSize.QuadPart : 0;
+}
+
+inline size_t Stream::Read(void *dst, size_t size, size_t count)
+{
+	DWORD read = 0;
+	return ReadFile(handle, dst, size, &read, nullptr) ? read : 0;
+}
+
+inline size_t Stream::Write(const void *src, size_t size, size_t count)
+{
+	DWORD written = 0;
+	return WriteFile(handle, src, size, &written, nullptr) ? written : 0;
+}
+
+inline size_t Stream::Tell() const
+{
+	LARGE_INTEGER pos = {};
+	return SetFilePointerEx(handle, {}, &pos, FILE_CURRENT) ? pos.QuadPart : 0;
+}
+
+inline int Stream::Locate(size_t position)
+{
+	LARGE_INTEGER pos = {};
+	return SetFilePointerEx(handle, {.QuadPart = (LONGLONG)position}, &pos, FILE_END) ? pos.QuadPart : 0;
+}
+
+inline int Stream::Skip(size_t offset)
+{
+	LARGE_INTEGER pos = {};
+	return SetFilePointerEx(handle, {.QuadPart = (LONGLONG) offset}, &pos, FILE_CURRENT) ? pos.QuadPart : 0;
+}
+
+
+#else
+
+inline bool Stream::Open(const String &path)
+{
+    filepath = path;
+    handle = (void *)fopen(filepath.c_str(), reinterpret_cast<const char *>(&mode));
+    if (!handle)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+inline int Stream::Close()
+{
+    if (handle)
+    {
+        return fclose((FILE *)handle);
+    }
+
+    return 0;
+}
+
+inline size_t Stream::GetSize()
+{
+    FILE *fp = (FILE *)handle;
+    fseek(fp, 0, SEEK_END);
+    auto size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    return size;
+}
+
+inline size_t Stream::Read(void *dst, size_t size, size_t count)
+{
+    return fread(dst, size, count, (FILE *)handle);
+}
+
+inline size_t Stream::Write(const void *src, size_t size, size_t count)
+{
+    return fwrite(src, size, count, (FILE *)handle);
+}
+
+inline size_t Stream::Tell() const
+{
+    return ftell((FILE *)handle);
+}
+
+inline int Stream::Locate(size_t pos)
+{
+    return fseek((FILE *)handle, pos, SEEK_SET);
+}
+
+inline int Stream::Skip(size_t offset)
+{
+    return fseek((FILE *)handle, offset, SEEK_CUR);
+}
+
+#endif
+
 
 }
