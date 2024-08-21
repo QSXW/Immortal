@@ -448,7 +448,13 @@ void CommandBuffer::MemoryCopy(SuperBuffer *_dst, uint32_t dstOffset, SuperBuffe
 	Buffer *dst = InterpretAs<Buffer>(_dst);
 	Buffer *src = InterpretAs<Buffer>(_src);
 
+	Barrier<Transition> barrier(*dst, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+
+	commandList.ResourceBarrier(&barrier, 1);
 	commandList.Handle()->CopyBufferRegion(*dst, dstOffset, *src, srcOffset, size);
+
+	barrier.Swap();
+	commandList.ResourceBarrier(&barrier, 1);
 }
 
 void CommandBuffer::SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer)
