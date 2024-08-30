@@ -18,6 +18,13 @@ namespace Immortal
 namespace Vision
 {
 
+enum class DecodingPreference
+{
+    Auto,
+	Software,
+    Hardware,
+};
+
 class IMMORTAL_API FFCodec : public VideoCodec
 {
 #if HAVE_FFMPEG
@@ -32,11 +39,20 @@ public:
 
     virtual void Flush() override;
 
+    virtual void *GetProperty(PropertyType type) const override;
+
     virtual CodecError SetCodecContext(Anonymous anonymous) override;
+
+    CodecError CreateHardwareAccelerateDevice(const AVCodec *codec);
 
     CodecError InitializeDecoder(int codecId, const AVStream *stream = nullptr);
 
 public:
+    void SetPreference(DecodingPreference value)
+    {
+		preference = value;
+    }
+
     AVCodecContext *GetHandle() const
     {
         return handle;
@@ -60,6 +76,10 @@ protected:
     int hwaccelType;
 
     int sampleRate;
+
+    DisplayOrientation displayOrientation;
+
+    DecodingPreference preference;
 #endif // HAVE_FFMPEG
 };
 

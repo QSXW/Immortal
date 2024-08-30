@@ -102,7 +102,7 @@ void GuiLayer::OnAttach()
     io.DisplaySize.y = window->GetHeight();
 
 	ImFontGlyphRangesBuilder builder;
-    const auto &words = WordsMap::GetWords();
+    const auto &words = Translator::GetWords();
 	for (auto &[key, value] : words)
     {
 		builder.AddText(key.c_str());
@@ -133,7 +133,7 @@ void GuiLayer::OnAttach()
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
 	icons_config.GlyphMinAdvanceX = 17;
-	io.Fonts->AddFontFromFileTTF("C:/Users/qsxw/Downloads/fa-solid-900.ttf", 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
+	io.Fonts->AddFontFromFileTTF("Assets/Fonts/fa-solid-900.ttf", 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
 
 #ifdef _WIN32
     SimSun.Regular = io.Fonts->AddFontFromFileTTF(
@@ -351,7 +351,7 @@ void GuiLayer::UpdateTheme()
      XX(ModalWindowDimBg);
  #undef XX
 
-     if (ImGui::Button(WordsMap::Get("Save Theme").c_str(), ImVec2{128.0f, 72.0f}))
+     if (ImGui::Button(Translator::Translate("Save Theme").c_str(), ImVec2{128.0f, 72.0f}))
      {
          GuiLayer *that = this;
          Async::Execute([&]() -> void {

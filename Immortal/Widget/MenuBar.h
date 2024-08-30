@@ -83,7 +83,7 @@ public:
     {
 		if (!GuiLayer::IsLanguage(Language::English))
 		{
-			item.name = WordsMap::Get(item.name);
+			item.name = Translator::Translate(item.name);
 		}
 		item.type = MenuItemType::Item;
 		items.emplace_back(std::move(item));
@@ -94,7 +94,7 @@ public:
 	{
 		if (!GuiLayer::IsLanguage(Language::English))
 		{
-			item.name = WordsMap::Get(item.name);
+			item.name = Translator::Translate(item.name);
 		}
 		item.type = MenuItemType::Menu;
 		items.emplace_back(std::move(item));
@@ -199,7 +199,7 @@ public:
 	{
 		if (!GuiLayer::IsLanguage(Language::English))
 		{
-			item.name = WordsMap::Get(item.name);
+			item.name = Translator::Translate(item.name);
 		}
 		items.emplace_back(std::move(item));
 		return this;

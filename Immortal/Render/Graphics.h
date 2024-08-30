@@ -3,9 +3,21 @@
 #include "Core.h"
 #include "Graphics/LightGraphics.h"
 #include "Vision/Picture.h"
+#include "FileSystem/FileSystem.h"
+
+#include <set>
+#include <unordered_map>
 
 namespace Immortal
 {
+
+struct BufferCompare
+{
+	bool operator()(const Ref<Buffer> &left, const Ref<Buffer> &right) const
+	{
+		return left->GetSize() > right->GetSize();
+	}
+};
 
 class Graphics
 {
@@ -47,11 +59,13 @@ public:
 
     static Device *GetDevice();
 
+    static const FileSystem::Path &GetShaderAssetPath();
+
     static void Release();
 
     static Buffer *CreateBuffer(size_t size, BufferType type, const void *data = nullptr);
 
-    static Texture *CreateTexture(const std::string &filepath, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+    static Texture *CreateTexture(const String &filepath, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
     static Texture *CreateTexture(const Picture &picture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
@@ -66,6 +80,8 @@ public:
     static Ref<Pipeline> GetPipeline(const std::string &name);
 
     static void MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
+
+    static std::string ReadShaderSource(const String &filepath);
 
     template <class T, class ...Args>
     static void Execute(Args && ...args)
@@ -96,7 +112,7 @@ public:
     
     std::mutex mutex;
 
-    std::queue<Ref<Buffer>> stagingBuffers;
+    std::set<Ref<Buffer>, BufferCompare> stagingBuffers;
 
     uint32_t index = 0;
 

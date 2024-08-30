@@ -13,6 +13,7 @@ Graphics::Graphics(Device *device) :
     device{device},
     thread{device}
 {
+	thread.SetDescription("Graphics::AsyncComputeThread");
 	This = this;
 	commandBuffer = device->CreateCommandBuffer(QueueType::Compute);
 }
@@ -28,6 +29,12 @@ void Graphics::SetDevice(Device *device)
 Device *Graphics::GetDevice()
 {
 	return This->device;
+}
+
+const FileSystem::Path &Graphics::GetShaderAssetPath()
+{
+	static const FileSystem::Path &kShaderAssetPath = "Assets/Shaders/hlsl";
+	return kShaderAssetPath;
 }
 
 void Graphics::ConstructGlobalVariables()
@@ -78,7 +85,7 @@ Buffer *Graphics::CreateBuffer(size_t size, BufferType type, const void *data)
 	return buffer;
 }
 
-Texture *Graphics::CreateTexture(const std::string &filepath, AsyncComputeThread *asyncComputeThread)
+Texture *Graphics::CreateTexture(const String &filepath, AsyncComputeThread *asyncComputeThread)
 {
 	Picture picture = Vision::Read(filepath);
 	if (!picture)
@@ -113,8 +120,9 @@ Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height,
 		std::lock_guard lock{ This->mutex };
 		if (!This->stagingBuffers.empty())
 		{
-			buffer = This->stagingBuffers.front();
-			This->stagingBuffers.pop();
+			auto it = This->stagingBuffers.begin();
+			buffer = *it;
+			This->stagingBuffers.erase(it);
 		}
     }
 
@@ -140,7 +148,7 @@ Texture *Graphics::CreateTexture(Format format, uint32_t width, uint32_t height,
 		if (uploadSize <= 1024 * 1024)
 		{
 			std::lock_guard lock{This->mutex};
-			This->stagingBuffers.push(buffer);
+			This->stagingBuffers.insert(buffer);
 		}
 	});
 
@@ -247,6 +255,22 @@ void Graphics::MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *
 			memcpy(dst + i * dstStride, src + i * srcStride, width * texelSize);
         }
     }
+}
+
+
+std::string Graphics::ReadShaderSource(const String &filepath)
+{
+	Stream stream{ filepath, StreamMode::Read };
+	if (!stream.Readable())
+	{
+		LOG::ERR("Failed to open shader source - `{}`", stream.GetFilePath());
+		return {};
+	}
+
+	std::string source;
+	stream.Read(source);
+	
+	return source;
 }
 
 }

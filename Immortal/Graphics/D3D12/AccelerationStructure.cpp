@@ -98,6 +98,7 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
 	    device,
 	    Buffer::Type::TransferSource,
         sizeof(instanceDesc),
+        Format::None,
         &instanceDesc);
 
 #ifdef _DEBUG

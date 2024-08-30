@@ -14,6 +14,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavutil/avutil.h>
+#include <libavutil/display.h>
 #include <libswresample/swresample.h>
 #ifdef _WIN32
 #include <libavutil/hwcontext_d3d12va.h>
@@ -77,6 +78,7 @@ static inline Format CAST(AVPixelFormat v)
 {
     switch (v)
     {
+		case AV_PIX_FMT_YUVJ420P:
 	    case AV_PIX_FMT_YUV420P:
 		    return Format::YUV420P;
 
@@ -104,9 +106,29 @@ static inline Format CAST(AVPixelFormat v)
         case AV_PIX_FMT_Y210:
             return Format::Y210;
 
+        case AV_PIX_FMT_BGRA:
+			return Format::BGRA8;
+
         default:
             return Format::None;
     }
+}
+
+double GetDisplayRotation(const int32_t *displaymatrix)
+{
+	double theta = 0;
+    if (displaymatrix)
+    {
+		theta = -round(av_display_rotation_get(displaymatrix));
+    }
+
+	theta -= 360 * floor(theta / 360 + 0.9 / 360);
+	if (fabs(theta - 90 * round(theta / 90)) > 2)
+	{
+		LOG::ERR("Odd rotation angle.");
+	}
+
+	return theta;
 }
 
 FFCodec::FFCodec(int sampleRate) :
@@ -114,7 +136,9 @@ FFCodec::FFCodec(int sampleRate) :
     device{},
     type{ PictureMemoryType::System },
     startTimestamp{},
-    sampleRate{ sampleRate }
+    sampleRate{ sampleRate },
+    displayOrientation{},
+    preference{}
 {
     frame = av_frame_alloc();
     ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
@@ -124,6 +148,10 @@ FFCodec::FFCodec(int sampleRate) :
 
 FFCodec::~FFCodec()
 {
+	if (device)
+	{
+		av_buffer_unref(&device);
+	}
     if (handle)
     {
         if (handle->extradata)
@@ -132,10 +160,6 @@ FFCodec::~FFCodec()
         }
         av_frame_free(&frame);
         avcodec_free_context(&handle);
-    }
-    if (device)
-    {
-        av_buffer_unref(&device);
     }
 
     Flush();
@@ -175,7 +199,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
         AVFrame *ref = NULL;
-		if (device && Graphics::GetDevice()->GetBackendAPI() != BackendAPI::D3D12)
+		if (device && !(hwaccelType == AV_HWDEVICE_TYPE_D3D12VA && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12))
         {
             ref = av_frame_alloc();
             if (!ref)
@@ -221,8 +245,12 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
                     case AV_PIX_FMT_YUV444P:
                     case AV_PIX_FMT_YUV422P:
                     case AV_PIX_FMT_YUV420P:
+					case AV_PIX_FMT_YUVJ420P:
+						pixelFormat = AV_PIX_FMT_NV12;
+						break;
+                
                     default:
-                        pixelFormat = AV_PIX_FMT_NV12;
+						break;
                 }
             }
             format = CAST(pixelFormat);
@@ -271,6 +299,7 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 		AVChannelLayout outChannelLayout = {
 		    .nb_channels = 2
         };
+
 		ret = swr_alloc_set_opts2(
 		    &swrContext,
 		    &outChannelLayout,
@@ -336,6 +365,17 @@ Picture FFCodec::GetPicture() const
 void FFCodec::Flush()
 {
     picture = Picture{};
+}
+
+void *FFCodec::GetProperty(PropertyType type) const
+{
+	switch (type)
+	{
+		case PropertyType::DisplayOrientation:
+			return (void *)&displayOrientation;
+		default:
+			return nullptr;
+	}
 }
 
 AVHWDeviceType GetDeviceType(const std::string &name)
@@ -446,15 +486,8 @@ static AVHWDeviceType QueryDecoderHWAccelType()
     return type;
 }
 
-CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
+CodecError FFCodec::CreateHardwareAccelerateDevice(const AVCodec *codec)
 {
-    AVCodecID codecId = (AVCodecID)_codecId;
-    const AVCodec *codec = avcodec_find_decoder(codecId);
-    if (!codec)
-    {
-        return CodecError::NotImplement;
-    }
-
     hwaccelType = QueryDecoderHWAccelType();
     for (int i = 0; ; i++)
     {
@@ -499,26 +532,52 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
             break;
         }
     }
+    
+    return CodecError::Success;
+}
 
-    if (!device)
+CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
+{
+    AVCodecID codecId = (AVCodecID)_codecId;
+    const AVCodec *codec = avcodec_find_decoder(codecId);
+    if (!codec)
     {
-        auto priorities = QueryDecoderPriorities(codecId);
-        for (auto p : priorities)
+        return CodecError::NotImplement;
+    }
+
+    CodecError error = {};  
+    if (preference != DecodingPreference::Software)
+	{
+        if (stream->codecpar->profile != AV_PROFILE_HEVC_REXT &&
+            stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
         {
-            const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
-            if (externalCodec)
+		    error = CreateHardwareAccelerateDevice(codec);
+            if (error != CodecError::Success)
             {
-                auto type = GetDeviceType(p);
-                if (type != AV_HWDEVICE_TYPE_NONE)
+			    return error;
+            }
+        }
+
+        if (!device && stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
+        {
+            auto priorities = QueryDecoderPriorities(codecId);
+            for (auto p : priorities)
+            {
+                const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
+                if (externalCodec)
                 {
-                    if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
+                    auto type = GetDeviceType(p);
+                    if (type != AV_HWDEVICE_TYPE_NONE)
                     {
-                        LOG::ERR("Cannot open the hardware device\n");
-                        continue;
+                        if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
+                        {
+                            LOG::ERR("Cannot open the hardware device\n");
+                            continue;
+                        }
                     }
+                    codec = externalCodec;
+                    break;
                 }
-                codec = externalCodec;
-                break;
             }
         }
     }
@@ -549,6 +608,31 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
             handle->extradata_size = stream->codecpar->extradata_size;
         }
 
+        const AVPacketSideData *packageSideData = av_packet_side_data_get(
+            stream->codecpar->coded_side_data,
+		    stream->codecpar->nb_coded_side_data,
+		    AV_PKT_DATA_DISPLAYMATRIX);
+        if (packageSideData)
+        {
+			double theta = GetDisplayRotation((const int32_t *)packageSideData->data);
+			if (fabs(theta - 90) < 1.0)
+			{
+				displayOrientation.anticlockwiseRotation = -270.0f;
+			}
+			else if (fabs(theta - 180) < 1.0)
+			{
+				displayOrientation.anticlockwiseRotation = -180.0f;
+			}
+			else if (fabs(theta - 270) < 1.0)
+			{
+				displayOrientation.anticlockwiseRotation = -90.0f;
+			}
+			else if (fabs(theta) > 1.0)
+			{
+				LOG::WARN("Unsupported rotation theta - `{}`", theta);
+			}
+        }
+
         int ret = avcodec_parameters_to_context(handle, stream->codecpar);
         if (ret < 0)
         {
@@ -558,8 +642,10 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
         handle->pkt_timebase = stream->time_base;
     }
 
-    AVDictionary **opts = (AVDictionary **) av_calloc(1, sizeof(*opts));
-    av_dict_set(opts, "threads", "16", 0);
+    handle->pkt_timebase = stream->time_base;
+
+    AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
+	av_dict_set(opts, "threads", device ? "1" : "16", 0);
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");

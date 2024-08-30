@@ -42,7 +42,7 @@ static Codec *SelectSuitableCodec(const std::string &path)
     }
 }
 
-Picture Read(const std::string &path)
+Picture Read(const String &path)
 {
     Vision::CodedFrame codedFrame{ FileSystem::ReadBinary(path) };
     if (codedFrame.GetBuffer().empty())

@@ -35,6 +35,10 @@ void *MemoryAllocator::Allocate(size_t size)
     info.size  = size;
     info.name  = (const char *)address;
 
+#ifdef IMMORTRAL_ENABLE_MEMORY_PROFILE
+	info.stacktrace = std::move(StackTrace::current());
+#endif
+
     {
         std::lock_guard lock{ mutex };
         allocation->insert({ (uint64_t)address, info });
@@ -69,11 +73,22 @@ void MemoryAllocator::Release()
     printf("Total Size Allocated: %zd (Bytes), %g (Mb)\n", allocatedSize, allocatedSize / 1048576.0);
     size_t leakSize = 0;
 
+    size_t counter = 0;
     for (auto &alloc : *allocation)
     {
         auto &address = std::get<0>(alloc);
         auto &AllocationInfo = std::get<1>(alloc);
         leakSize += AllocationInfo.size;
+
+#ifdef IMMORTRAL_ENABLE_MEMORY_PROFILE
+		printf("[%d] Memory Leak at >>>\n", counter);
+        for (auto &entry : AllocationInfo.stacktrace)
+        {
+			printf("    %s(%d): %s\n", entry.source_file().c_str(), entry.source_line(), entry.description().c_str());
+        }
+		printf("<<<\n");
+#endif
+		counter++;
     }
     printf("Total Size Leaked: %d\n", (int)leakSize);
 

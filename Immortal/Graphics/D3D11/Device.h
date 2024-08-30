@@ -35,7 +35,7 @@ public:
 
     virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = .0f, float maxLod = 1.0f) override;
 
-    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
     virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 

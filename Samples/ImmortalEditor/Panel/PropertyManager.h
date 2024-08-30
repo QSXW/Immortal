@@ -68,23 +68,23 @@ public:
         Connect([&, this] {
             UI::BeginDraw();
             ImGui::PushFont(GuiLayer::NotoSans.Bold);
-            ImGui::Begin(WordsMap::Get("Properties"));
+            ImGui::Begin(Translator::Translate("Properties"));
             {
                 if (object)
                 {
                     if (object.HasComponent<TransformComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("Transform"),
+                            Translator::Translate("Transform"),
                             [&]() -> void {
                                 // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing() - 8.0f);
 
                                 auto &transform = object.GetComponent<TransformComponent>();
                                 Vector3 rotation = transform.Rotation.Degrees();
 
-                                UI::DrawVec3Control(WordsMap::Get("Position"), transform.Position, 0.01f);
-                                UI::DrawVec3Control(WordsMap::Get("Rotation"), rotation, 1.0f);
-                                UI::DrawVec3Control(WordsMap::Get("Scale"), transform.Scale, 0.01f);
+                                UI::DrawVec3Control(Translator::Translate("Position"), transform.Position, 0.01f);
+                                UI::DrawVec3Control(Translator::Translate("Rotation"), rotation, 1.0f);
+                                UI::DrawVec3Control(Translator::Translate("Scale"), transform.Scale, 0.01f);
 
                                 transform.Rotation = rotation.Radians();
                             });
@@ -93,10 +93,10 @@ public:
                     if (object.HasComponent<ScriptComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("Script"),
+                            Translator::Translate("Script"),
                             [&]() -> void {
                                 auto &script = object.GetComponent<ScriptComponent>();
-                                UI::DrawColumn(WordsMap::Get("Source"), [&]() -> bool {
+                                UI::DrawColumn(Translator::Translate("Source"), [&]() -> bool {
                                     bool modified = false;
                                     if ((modified = ImGui::Button(script.className.c_str(), ImVec2{script.className.empty() ? 64.0f : 0, 0})))
                                     {
@@ -115,7 +115,7 @@ public:
                     if (object.HasComponent<VideoPlayerComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("VideoPlayer"),
+                            Translator::Translate("VideoPlayer"),
                             [&]() -> void {
                                 auto &v = object.GetComponent<VideoPlayerComponent>();
                                 auto animator = v.GetAnimator();
@@ -137,35 +137,35 @@ public:
                                 minutes %= 60;
                                 ImGui::Text("Start Time: 00:%02d:%02d:%02d", startHours, startMinutes, startSeconds);
                                 ImGui::Text("End Time:   00:%02d:%02d:%02d", hours, minutes, seconds);
-                                UI::DrawColumn(WordsMap::Get("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
+                                UI::DrawColumn(Translator::Translate("Progress"), [&]() { ImGui::ProgressBar(progress, ImVec2{ 0, 0 }); return false; });
                             });
                     }
 
                     if (object.HasComponent<CameraComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("Camera"),
+                            Translator::Translate("Camera"),
                             [&]() -> void {
                                 auto &camera = object.GetComponent<CameraComponent>();
-                                UI::DrawColumn(WordsMap::Get("Is Primary"), [&]() -> bool { return ImGui::Checkbox("##C", &camera.Primary); });
+                                UI::DrawColumn(Translator::Translate("Is Primary"), [&]() -> bool { return ImGui::Checkbox("##C", &camera.Primary); });
                             });
                     }
 
                     if (object.HasComponent<LightComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("Light"),
+                            Translator::Translate("Light"),
                             [&]() -> void {
                                 auto &light = object.GetComponent<LightComponent>();
-                                UI::DrawColumn(WordsMap::Get("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
-                                UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *) &light.Radiance); });
+                                UI::DrawColumn(Translator::Translate("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
+                                UI::DrawColumn(Translator::Translate("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *) &light.Radiance); });
                             });
                     }
 
                     if (object.HasComponent<MaterialComponent>() && object.HasComponent<MeshComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("Material"),
+                            Translator::Translate("Material"),
                             [&]() -> void {
                                 auto &material = object.GetComponent<MaterialComponent>();
                                 auto &mesh = object.GetComponent<MeshComponent>();
@@ -203,11 +203,11 @@ public:
                                 auto &node = nodeList[materialIndex];
                                 auto &ref = material.References[node.MaterialIndex];
 
-                                UI::DrawColumn(WordsMap::Get("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *) &ref.AlbedoColor); });
+                                UI::DrawColumn(Translator::Translate("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *) &ref.AlbedoColor); });
 
                                 float smoothness = 1.0f - ref.Roughness;
-                                DrawFloat(WordsMap::Get("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
-                                DrawFloat(WordsMap::Get("Smoothness"), &smoothness, 0.001, 0, 1.0f);
+                                DrawFloat(Translator::Translate("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
+                                DrawFloat(Translator::Translate("Smoothness"), &smoothness, 0.001, 0, 1.0f);
                                 ref.Roughness = 1.0f - smoothness;
 
                                 ImGui::Columns(1);
@@ -236,10 +236,10 @@ public:
                                 ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
                                 ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
 
-                                drawTexture(textures.Albedo, WordsMap::Get("Albedo"));
-                                drawTexture(textures.Normal, WordsMap::Get("Normal"));
-                                drawTexture(textures.Metallic, WordsMap::Get("Metallic"));
-                                drawTexture(textures.Roughness, WordsMap::Get("Roughness"));
+                                drawTexture(textures.Albedo, Translator::Translate("Albedo"));
+                                drawTexture(textures.Normal, Translator::Translate("Normal"));
+                                drawTexture(textures.Metallic, Translator::Translate("Metallic"));
+                                drawTexture(textures.Roughness, Translator::Translate("Roughness"));
 
                                 ImGui::PopStyleColor(3);
 
@@ -281,9 +281,9 @@ public:
                                         mesh.Mesh->SwitchToAnimation(index);
 
                                         UI::DrawColumn(
-                                            WordsMap::Get("Ticks Per Second"), [&]() -> bool { ImGui::Text("%f", animations[index].TicksPerSeconds);  return false; }, 128);
+                                            Translator::Translate("Ticks Per Second"), [&]() -> bool { ImGui::Text("%f", animations[index].TicksPerSeconds);  return false; }, 128);
                                         UI::DrawColumn(
-                                            WordsMap::Get("Duration"), [&]() -> bool { ImGui::Text("%f", animations[index].Duration); return false; }, 128);
+                                            Translator::Translate("Duration"), [&]() -> bool { ImGui::Text("%f", animations[index].Duration); return false; }, 128);
                                     }};
                             });
                     }
@@ -291,17 +291,17 @@ public:
                     if (object.HasComponent<ColorMixingComponent>())
                     {
                         DrawComponent(
-                            WordsMap::Get("ColorMixing"),
+                            Translator::Translate("ColorMixing"),
                             [&]() -> void {
                                 auto &c = object.GetComponent<ColorMixingComponent>();
                                 c.Modified = false;
 
-                                c.Modified |= DrawFloat(WordsMap::Get("Red").c_str(), &c.RGBA.r);
-                                c.Modified |= DrawFloat(WordsMap::Get("Green").c_str(), &c.RGBA.g);
-                                c.Modified |= DrawFloat(WordsMap::Get("Blue").c_str(), &c.RGBA.b);
-                                c.Modified |= DrawFloat(WordsMap::Get("Alpha").c_str(), &c.RGBA.a);
+                                c.Modified |= DrawFloat(Translator::Translate("Red").c_str(), &c.RGBA.r);
+                                c.Modified |= DrawFloat(Translator::Translate("Green").c_str(), &c.RGBA.g);
+                                c.Modified |= DrawFloat(Translator::Translate("Blue").c_str(), &c.RGBA.b);
+                                c.Modified |= DrawFloat(Translator::Translate("Alpha").c_str(), &c.RGBA.a);
 
-                                auto channels = WordsMap::Get("Channels").c_str();
+                                auto channels = Translator::Translate("Channels").c_str();
                                 ImGui::PushID(channels);
                                 ImGui::Columns(2);
                                 ImGui::Text("%s", channels);
@@ -312,11 +312,11 @@ public:
                                 ImGui::NextColumn();
                                 ImGui::PopID();
 
-                                c.Modified |= DrawFloat(WordsMap::Get("Hue").c_str(), &c.HSL.x);
-                                c.Modified |= DrawFloat(WordsMap::Get("Saturation").c_str(), &c.HSL.y);
-                                c.Modified |= DrawFloat(WordsMap::Get("Luminance").c_str(), &c.HSL.z);
+                                c.Modified |= DrawFloat(Translator::Translate("Hue").c_str(), &c.HSL.x);
+                                c.Modified |= DrawFloat(Translator::Translate("Saturation").c_str(), &c.HSL.y);
+                                c.Modified |= DrawFloat(Translator::Translate("Luminance").c_str(), &c.HSL.z);
 
-                                auto hsl = WordsMap::Get("HSL").c_str();
+                                auto hsl = Translator::Translate("HSL").c_str();
                                 ImGui::PushID(hsl);
                                 ImGui::Columns(2);
                                 ImGui::Text("%s", hsl);
@@ -331,13 +331,13 @@ public:
                                 ImGui::Columns(1);
                                 ImGui::PopID();
 
-                                c.Modified |= DrawFloat(WordsMap::Get("White Gradation").c_str(), &c.Gradation.White);
-                                c.Modified |= DrawFloat(WordsMap::Get("Black Gradation").c_str(), &c.Gradation.Black);
-                                c.Modified |= DrawFloat(WordsMap::Get("Exposure").c_str(), &c.Exposure);
-                                c.Modified |= DrawFloat(WordsMap::Get("Contrast").c_str(), &c.Contrast);
-                                c.Modified |= DrawFloat(WordsMap::Get("Hightlights").c_str(), &c.Hightlights);
-                                c.Modified |= DrawFloat(WordsMap::Get("Shadow").c_str(), &c.Shadow);
-                                c.Modified |= DrawFloat(WordsMap::Get("Vividness").c_str(), &c.Vividness);
+                                c.Modified |= DrawFloat(Translator::Translate("White Gradation").c_str(), &c.Gradation.White);
+                                c.Modified |= DrawFloat(Translator::Translate("Black Gradation").c_str(), &c.Gradation.Black);
+                                c.Modified |= DrawFloat(Translator::Translate("Exposure").c_str(), &c.Exposure);
+                                c.Modified |= DrawFloat(Translator::Translate("Contrast").c_str(), &c.Contrast);
+                                c.Modified |= DrawFloat(Translator::Translate("Hightlights").c_str(), &c.Hightlights);
+                                c.Modified |= DrawFloat(Translator::Translate("Shadow").c_str(), &c.Shadow);
+                                c.Modified |= DrawFloat(Translator::Translate("Vividness").c_str(), &c.Vividness);
                             });
                     }
                 }
@@ -371,7 +371,7 @@ public:
 
         if (ImGui::BeginPopup("Conf"))
         {
-            if (ImGui::MenuItem(WordsMap::Get("Remove")))
+            if (ImGui::MenuItem(Translator::Translate("Remove")))
             {
 
             }

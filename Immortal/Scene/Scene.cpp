@@ -298,17 +298,17 @@ void Scene::OnUpdate()
 
 void Scene::OnGuiRender()
 {
-    ImGui::Begin(WordsMap::Get("Scene Editor").c_str());
+    ImGui::Begin(Translator::Translate("Scene Editor").c_str());
 
-    ImGui::DragFloat(WordsMap::Get("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
-    ImGui::DragFloat(WordsMap::Get("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);
-    settings.changed |= ImGui::SliderFloat(WordsMap::Get("Sigma").c_str(), &settings.sigma, 0.1f, 1024.0f);
-    settings.changed |= ImGui::SliderInt(WordsMap::Get("KernalSize").c_str(), &settings.kernalSize, 3, Limit::MaxGaussianKernalSize);
+    ImGui::DragFloat(Translator::Translate("Exposure").c_str(), &settings.exposure, 0.01f, 0, 50.0f);
+    ImGui::DragFloat(Translator::Translate("Gamma").c_str(), &settings.gamma, 0.01f, 0, 50.0f);
+    settings.changed |= ImGui::SliderFloat(Translator::Translate("Sigma").c_str(), &settings.sigma, 0.1f, 1024.0f);
+    settings.changed |= ImGui::SliderInt(Translator::Translate("KernalSize").c_str(), &settings.kernalSize, 3, Limit::MaxGaussianKernalSize);
 
     static int item = 5;
     uint32_t resolutions[] = { 64, 128, 256, 512, 1024, 2048, 4096 };
 
-    if (ImGui::Combo(WordsMap::Get("Resolution").c_str(), &item, "64\000128\000256\000512\0001024\0002048\0004096\000"))
+    if (ImGui::Combo(Translator::Translate("Resolution").c_str(), &item, "64\000128\000256\000512\0001024\0002048\0004096\000"))
     {
         settings.environmentResolution = resolutions[item];
         ReloadSkyBoxCube();
@@ -411,7 +411,6 @@ void Scene::OnRender(const Camera &camera)
             if (picture)
             {
                 videoPlayer.PopPicture();
-                sprite.UpdateSprite(picture);
                 color.Modified = true;
                 transform.Scale = Vector3{ sprite.Sprite->GetRatio(), 1.0f, 1.0f };
             }

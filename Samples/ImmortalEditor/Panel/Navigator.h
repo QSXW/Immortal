@@ -26,7 +26,7 @@ public:
 			}
 
 			ImGui::PushFont(GuiLayer::NotoSans.Bold);
-			ImGui::Begin(WordsMap::Get("Navigator"));
+			ImGui::Begin(Translator::Translate("Navigator"));
 
 			{
 				if (object)
@@ -34,7 +34,7 @@ public:
 					std::string &tag = object.GetComponent<TagComponent>().Tag;
 					char buf[4096] = {0};
 					strcat(buf, tag.c_str());
-					if (ImGui::InputText(WordsMap::Get("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
+					if (ImGui::InputText(Translator::Translate("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
 					{
 						tag = std::string{buf};
 					}
@@ -65,31 +65,31 @@ public:
 				ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
 				ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
 
-				if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
+				if (ImGui::CollapsingHeader(Translator::Translate("Meta")))
 				{
 					const auto width = sprite->GetWidth();
 					const auto height = sprite->GetHeight();
-					UI::DrawColumn(WordsMap::Get("Width"), [&]() -> bool { ImGui::Text("%d", width);  return false ; });
-					UI::DrawColumn(WordsMap::Get("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
+					UI::DrawColumn(Translator::Translate("Width"), [&]() -> bool { ImGui::Text("%d", width);  return false ; });
+					UI::DrawColumn(Translator::Translate("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(WordsMap::Get("Preset")))
+				if (ImGui::CollapsingHeader(Translator::Translate("Preset")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(WordsMap::Get("Snapshot")))
+				if (ImGui::CollapsingHeader(Translator::Translate("Snapshot")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(WordsMap::Get("History")))
+				if (ImGui::CollapsingHeader(Translator::Translate("History")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(WordsMap::Get("Favorite")))
+				if (ImGui::CollapsingHeader(Translator::Translate("Favorite")))
 				{
 				}
 				ImGui::Separator();

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ * Copyright (C) 2022-2024, by Wu Jianhua (toqsxw@outlook.com)
  *
  * This library is distributed under the Apache-2.0 license.
  */
@@ -203,10 +203,6 @@ struct SpriteRendererComponent : public Component
 
     ~SpriteRendererComponent();
 
-    void UpdateSprite(const Vision::Picture &picture, AsyncComputeThread *asyncComputThread = Graphics::GetAsyncComputeThread());
-
-    SpriteRendererComponent(const SpriteRendererComponent &other) = default;
-
     Ref<Texture> Sprite;
 
     Ref<Texture> Result = Sprite;
@@ -214,15 +210,6 @@ struct SpriteRendererComponent : public Component
 	Vector4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	float TilingFactor = 1.0f;
-
-protected:
-    Ref<DescriptorSet> descriptorSet;
-
-    Ref<Pipeline> pipeline;
-
-    Ref<Texture> input[3];
-
-    Ref<Buffer> buffer;
 };
 
 struct CameraComponent : public Component
@@ -340,137 +327,5 @@ struct ColorMixingComponent : public Component
 };
 
 inline size_t ColorMixingComponent::Length = sizeof(ColorMixingComponent) - offsetof(ColorMixingComponent, RGBA);
-
-enum class FilterType
-{
-    None,
-    GaussianBlur,
-    AverageBlur,
-    DCT
-};
-
-class VideoPlayerContext;
-struct VideoPlayerComponent : public Component
-{
-	SL_SWAPPABLE(VideoPlayerComponent)
-
-	DEFINE_COMPONENT_TYPE(VideoPlayer)
-
-	VideoPlayerComponent();
-
-    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
-
-    ~VideoPlayerComponent();
-
-    Picture GetPicture();
-
-    Picture GetAudioFrame();
-
-    void PopPicture();
-
-    void PopAudioFrame();
-
-    void Seek(double seconds, int64_t min, int64_t max);
-
-    void Swap(VideoPlayerComponent &other);
-
-    Animator *GetAnimator() const;
-
-    const String &GetSource() const;
-
-public:
-	URef<VideoPlayerContext> player;
-};
-
-class FilterNode
-{
-public:
-    FilterNode(int nextIndex) :
-        nextIndex{ nextIndex }
-    {
-
-    }
-
-    virtual ~FilterNode()
-    {
-
-    }
-
-    virtual void Preprocess()
-    {
-
-    }
-
-    virtual void Run(const std::vector<Ref<Texture>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread())
-    {
-
-    }
-
-    virtual void PostProcess()
-    {
-
-    }
-
-public:
-	int GetNextIndex() const
-	{
-		return nextIndex;
-	}
-
-protected:
-    int nextIndex;
-};
-
-class TransferNode: public FilterNode
-{
-public:
-    enum class Type
-    {
-        Upload,
-        Download
-    };
-
-public:
-	TransferNode(int nextIndex, Type type);
-
-	virtual void Run(const std::vector<Ref<Texture>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
-
-public:
-	Type type;
-};
-
-struct FilterGraphComponent : public Component
-{
-public:
-    DEFINE_COMPONENT_TYPE(Filter)
-
-    FilterGraphComponent() :
-	    nodeGroups{},
-	    maxNodeLength{}
-    {
-
-    }
-
-    ~FilterGraphComponent();
-
-    template <class T, class ... Args>
-	void Insert(int group, int index, int nextIndex, Args &&...args)
-    {
-		nodeGroups.resize(group + 1);
-
-		FilterNode *node = new T{ nextIndex, std::forward<Args>(args)... };
-		nodeGroups[group].resize(index + 1);
-		nodeGroups[group][index] = std::move(node);
-
-        maxNodeLength = std::max(maxNodeLength, nodeGroups[group].size());
-    }
-
-    void Run(const std::vector<std::vector<Ref<Texture>>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
-
-public:
-	std::vector<std::vector<FilterNode *>> nodeGroups;
-
-    size_t maxNodeLength;
-};
 
 }

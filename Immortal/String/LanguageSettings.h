@@ -3,41 +3,72 @@
 #include "Core.h"
 #include "Helper/json.h"
 #include "IString.h"
+#include <map>
 
 namespace Immortal
 {
 
-class WordsMap
+class Translator
 {
 public:
-    WordsMap(const String &path)
+	Translator(const String &path) :
+	    words{}
     {
-        auto json = JSON::Parse(path);
+		AddLanguageSettingsImpl(path);
+    }
 
-        auto &map = json["settings"]["map"];
-
-        for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
+    const String &TranslateImpl(const String &key)
+    {
+		const auto &it = words.find(key);
+        if (it == words.end())
         {
-            const auto &item = it->items();
-            words[it.key()] = { it.value().get<std::string>(), StringEncoding::UTF8 };
+			words[key] = key;
+			return words[key];
+        }     
+
+        return it->second;
+    }
+
+protected:
+    void AddLanguageSettingsImpl(const String &path)
+    {
+        try
+        {
+			auto json = JSON::Parse(path);
+			auto &map = json["settings"]["map"];
+
+			for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)
+			{
+				const auto &item = it->items();
+				words[it.key()] = {it.value().get<std::string>(), StringEncoding::UTF8};
+			}
+        }
+        catch (const std::exception &e)
+        {
+			LOG::ERR("Failed to load language settings - `{}`", path.c_str());
         }
     }
 
-    static const String &Get(const String &key)
+public:
+    static const String &Translate(const String &key)
     {
-        const auto &it = That.words.find(key);
-        return it == That.words.end() ? key : it->second;
+		return This.TranslateImpl(key);
+    }
+
+    static void AddLanguageSettings(const String &path)
+    {
+		This.AddLanguageSettingsImpl(path);
     }
 
     static const std::map<String, String> GetWords()
     {
-		return That.words;
+		return This.words;
     }
 
-private:
+protected:
     std::map<String, String> words;
 
-    static WordsMap That;
+    static Translator This;
 };
 
 }

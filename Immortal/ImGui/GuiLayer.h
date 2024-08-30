@@ -47,6 +47,11 @@ static inline ImVec4 RGBA32(uint32_t rgba)
 	return ConvertColor<uint8_t>(_rgba[3], _rgba[2], _rgba[1], _rgba[0]);
 }
 
+static inline void Text(const Immortal::String &text)
+{
+    ImGui::Text(text.c_str());
+}
+
 static inline bool MenuItem(const std::string &label, const char *shortcut = NULL, bool selected = false, bool enabled = true)
 {
     return MenuItem(label.c_str(), shortcut, selected, enabled);
@@ -92,6 +97,75 @@ enum class Language
 {
 	Chinese,
     English,
+};
+
+template <class T>
+struct StyleColorStack
+{
+public:
+    StyleColorStack(std::initializer_list<std::pair<int, T>> &&styles) :
+        size{ int(styles.size()) }
+    {
+        for (auto &[style, value] : styles)
+        {
+            ImGui::PushStyleColor(style, value);
+        }
+    }
+
+    ~StyleColorStack()
+    {
+        ImGui::PopStyleColor(size);
+    }
+
+    int size;
+};
+
+template <class T>
+struct StyleVarStack
+{
+public:
+    StyleVarStack(std::initializer_list<std::pair<int, T>> &&styles) :
+        size{ int(styles.size()) }
+    {
+        for (auto &[style, value] : styles)
+        {
+            ImGui::PushStyleVar(style, value);
+        }
+    }
+
+    ~StyleVarStack()
+    {
+        ImGui::PopStyleVar(size);
+    }
+
+    int size;
+};
+
+struct FontStack
+{
+public:
+    FontStack(ImFont *font, float scale = 1.0f) :
+        scale{ scale },
+	    lastScale{ ImGui::GetCurrentWindow()->FontWindowScale }
+    {
+        ImGui::PushFont(font);
+		if (scale != lastScale)
+        {
+            ImGui::SetWindowFontScale(scale);
+        }
+    }
+
+    ~FontStack()
+    {
+        if (scale != lastScale)
+        {
+			ImGui::SetWindowFontScale(lastScale);
+        }
+        ImGui::PopFont();
+    }
+
+    float scale;
+	float lastScale;
 };
 
 class WWindow;

@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Shared/DLLLoader.h"
 #include "Shared/Log.h"
+#include "String/IString.h"
 
 #include <dxcapi.h>
 
@@ -81,14 +82,40 @@ DirectXShaderCompiler::~DirectXShaderCompiler()
     }
 }
 
-bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType sourceType, ShaderBinaryType binaryType, ShaderStage stage, uint32_t size, const char *data, const std::string &entryPoint, std::vector<uint8_t> &binary, std::string &error)
+bool DirectXShaderCompiler::Compile(const std::string     &name,
+				                    ShaderSourceType       sourceType,
+	                                ShaderBinaryType       binaryType,
+	                                ShaderStage            stage,
+	                                uint32_t               size,
+	                                const char            *data,
+	                                const std::string     &entryPoint,
+	                                std::vector<uint8_t>  &binary,
+	                                std::string           &error,
+				                    const ShaderMacro     *pMacro,
+		                            uint32_t               numMacro)
 {
 	std::wstring lEntryPoint = {entryPoint.begin(), entryPoint.end()};
     std::vector<LPCWSTR> arguments = {
         L"name",
 	    L"-E", lEntryPoint.c_str(),
-        L"-T", GetShaderTarget(stage)
+        L"-T", GetShaderTarget(stage),
     };
+	arguments.reserve(arguments.size() + numMacro * 2);
+
+    std::vector<std::wstring> macros;
+	macros.reserve(numMacro * 2);
+    for (uint32_t i = 0; i < numMacro; i++)
+    {
+		std::wstring definition = String2WString(pMacro[i].name);
+        if (pMacro[i].definition)
+        {
+			definition += L"=" + String2WString(pMacro[i].definition);
+        }
+		macros.emplace_back(std::move(definition));
+
+		arguments.emplace_back(L"-D");
+		arguments.emplace_back(macros.back().c_str());
+    }
 
     if (binaryType == ShaderBinaryType::SPIRV)
     {

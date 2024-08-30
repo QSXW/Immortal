@@ -11,11 +11,40 @@ namespace Vision
 {
 
 #if HAVE_TURBOJPEG
+
+static inline TJSAMP GetSampling(const Format &format)
+{
+	switch (Format::ValueType(format))
+	{
+		case Format::YUV420P:
+		case Format::YUV420P10:
+		case Format::YUV420P12:
+		case Format::YUV420P16:
+			return TJSAMP_420;
+
+		case Format::YUV422P:
+		case Format::YUV422P10:
+		case Format::YUV422P12:
+		case Format::YUV422P16:
+			return TJSAMP_422;
+
+		case Format::YUV444P:
+		case Format::YUV444P10:
+		case Format::YUV444P12:
+		case Format::YUV444P16:
+			return TJSAMP_444;
+
+		default:
+			return TJSAMP_UNKNOWN;
+	}
+}
+
 TurboJpegCodec::TurboJpegCodec(bool isOutputYUV) :
     Super{},
     numerator{ 1 },
 	denominator{ 1 },
-    isOutputYUV{ isOutputYUV }
+    isOutputYUV{ isOutputYUV },
+    quality{ 90 }
 {
 
 }
@@ -34,7 +63,60 @@ CodecError TurboJpegCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError TurboJpegCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-    return CodecError::NotImplement;
+	auto sampling = GetSampling(picture.GetFormat());
+	if (sampling == TJSAMP_UNKNOWN)
+	{
+		LOG::ERR("Unsupported format");
+		return CodecError::InvalidArguments;
+	}
+
+	tjhandle handle = tjInitCompress();
+	if (!handle)
+	{
+		LOG::ERR("Failed to initialize turbo jpeg compress handle!");
+		return CodecError::ExternalFailed;
+	}
+
+	struct CompressedRef
+	{
+		CompressedRef() :
+			data{},
+			size{}
+		{
+
+		}
+
+		~CompressedRef()
+		{
+			if (data)
+			{
+				tjFree(data);
+				data = nullptr;
+			}
+		}
+
+		uint8_t *data;
+		unsigned long size;
+	};
+
+	CompressedRef compressedRef{};
+
+	if (picture.GetFormat().IsType(Format::YUV))
+	{	
+		int strides[4] = {};
+		uint8_t *planes[4] = {};
+		for (size_t i = 0; picture.GetData(i); i++)
+		{
+			strides[i] = picture.GetStride(i);
+			planes[i]  = picture.GetData(i);
+		}
+
+		tjCompressFromYUVPlanes(handle, (const unsigned char **)planes, picture.GetWidth(), strides, picture.GetHeight(), sampling, &compressedRef.data, &compressedRef.size, quality, 0);
+		codedFrame = CodedFrame{ compressedRef.data, compressedRef.size };
+	}
+
+	tjDestroy(handle);
+    return CodecError::Success;
 }
 #endif
 
@@ -130,6 +212,11 @@ void TurboJpegCodec::SetScale(int _numerator, int _denominator)
 	numerator   = _numerator;
 	denominator = _denominator;
 #endif
+}
+
+void TurboJpegCodec::SetQuality(int value)
+{
+	quality = value;
 }
 
 }

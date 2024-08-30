@@ -87,7 +87,7 @@ SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, Comp
 	return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
 }
 
-SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
+SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
 {
 	return new Shader{ this, name, ShaderSourceType::HLSL, stage, source, entryPoint };
 }

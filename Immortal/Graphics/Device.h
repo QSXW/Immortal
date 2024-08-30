@@ -83,7 +83,7 @@ public:
      * @param source     The shader source code
      * @param entryPoint The entry point of the shader program
      */
-    virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) = 0;
+	virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) = 0;
 
     /**
      * @brief Create a graphics pipeline
@@ -102,6 +102,17 @@ public:
      * @param type The type of the buffer
      */
     virtual Buffer *CreateBuffer(size_t size, BufferType type) = 0;
+
+    /**
+	 * @brief Create a buffer with format
+	 * @param size The size of the buffer
+	 * @param type The type of the buffer
+     * @param format of the buffer data
+	 */
+	virtual Buffer *CreateBuffer(size_t size, BufferType type, Format format)
+    {
+		return nullptr;
+    }
 
     /**
 	 * @brief Create a texture

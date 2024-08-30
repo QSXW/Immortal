@@ -14,12 +14,12 @@ Buffer::Buffer() :
 
 }
 
-Buffer::Buffer(Device *device, Type type, size_t size, const void *data) :
+Buffer::Buffer(Device *device, Type type, size_t size, Format format, const void *data) :
     Super{ type, type == Type::ConstantBuffer ? SLALIGN(size, 256) : size },
     NonDispatchableHandle{ device },
     descriptorHeap{}
 {
-    Construct();
+    Construct(format);
     if (data)
     {
 		void *mapped = nullptr;
@@ -37,7 +37,7 @@ Buffer::~Buffer()
     }
 }
 
-void Buffer::Construct()
+void Buffer::Construct(Format format)
 {
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_GENERIC_READ;
 
@@ -106,13 +106,13 @@ void Buffer::Construct()
     if (type & Type::ConstantBuffer)
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
-            .Format                  = DXGI_FORMAT_UNKNOWN,
+            .Format                  = format,
 		    .ViewDimension           = D3D12_SRV_DIMENSION_BUFFER,
 		    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
             .Buffer                  = {
                 .FirstElement        = 0,
-                .NumElements         = (UINT)GetSize() / 4,
-                .StructureByteStride = 4,
+                .NumElements         = UINT(GetSize() / format.GetTexelSize()),
+		        .StructureByteStride = 0, //UINT(format.GetTexelSize()),
                 .Flags               = D3D12_BUFFER_SRV_FLAG_NONE,
             }
         };

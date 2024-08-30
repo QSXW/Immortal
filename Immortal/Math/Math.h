@@ -79,12 +79,12 @@ static inline float Integrate(float sigma, float a, float b, T &&func)
  *  @sigma needed for gaussian function
  * 
  */
-static inline void GenerateGaussianKernal(std::vector<float> &kernal, float sigma)
+static inline void GenerateGaussianKernal(float *kernal, size_t kernalSize, float sigma)
 {
     auto gaussian = [=](float x) { return Gaussian(sigma, x);  };
 
     float sum = 0;
-    for (int i = 0; i < kernal.size(); i++)
+	for (int i = 0; i < kernalSize; i++)
     {
         kernal[i] = Integrate(sigma, i - 0.5f, i + 0.5f, gaussian);
         if (i)
@@ -103,9 +103,9 @@ static inline void GenerateGaussianKernal(std::vector<float> &kernal, float sigm
      *  reach 1.0f.
      */
     sum = 1.0f / sum;
-    for (auto &p : kernal)
+	for (int i = 0; i < kernalSize; i++)
     {
-        p *= sum;
+		kernal[i] *= sum;
     }
 }
 

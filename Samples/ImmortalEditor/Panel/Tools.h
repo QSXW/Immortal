@@ -36,7 +36,7 @@ public:
         yOffset = 20.0f / texture->GetHeight();
 
         Connect([&] {
-			ImGui::Begin(WordsMap::Get("Tools Bar"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+			ImGui::Begin(Translator::Translate("Tools Bar"), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 			ImGuiStyle *style = &ImGui::GetStyle();
 
 			{
@@ -76,11 +76,11 @@ public:
 				ImGui::PushFont(GuiLayer::NotoSans.Bold);
 				{
 					ImGui::SameLine(0.0f, 24.0f);
-					if (ImGui::Button(WordsMap::Get("###").c_str(), ImVec2{size.x * 2.4f, size.y}))
+					if (ImGui::Button(Translator::Translate("###").c_str(), ImVec2{size.x * 2.4f, size.y}))
 					{
 					}
 					ImGui::SameLine(0.0f, 1.0);
-					if (ImGui::Button(WordsMap::Get("###").c_str(), ImVec2{size.x * 2.4f, size.y}))
+					if (ImGui::Button(Translator::Translate("###").c_str(), ImVec2{size.x * 2.4f, size.y}))
 					{
 					}
 				}

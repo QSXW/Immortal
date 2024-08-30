@@ -115,7 +115,11 @@ enum class FileFormat : uint64_t
 	MOV   = MakeIdentifier('M', 'O', 'V'     ),
     M2TS  = MakeIdentifier('M', '2', 'T', 'S'),
 	WEBM  = MakeIdentifier('W', 'E', 'B', 'M'),
-    FLV   = MakeIdentifier('F', 'L', 'V'    ),
+    FLV   = MakeIdentifier('F', 'L', 'V'     ),
+    BIT   = MakeIdentifier('B', 'I', 'T'     ),
+
+    /** 3D Lookup Table */
+	CUBE  = MakeIdentifier('C', 'U', 'B', 'E'),
 
     /** Immortal Scene */
     IML   = MakeIdentifier('I', 'M', 'L'     ),
@@ -237,8 +241,12 @@ static inline bool IsVideo(uint64_t id)
 	       IsFormat<FileFormat::MKV>(id)  ||
 	       IsFormat<FileFormat::M2TS>(id) ||
 	       IsFormat<FileFormat::TS>(id)   ||
+	       IsFormat<FileFormat::MOV>(id)  ||
+	       IsFormat<FileFormat::M2TS>(id) ||
 	       IsFormat<FileFormat::WEBM>(id) ||
-	       IsFormat<FileFormat::AVIF>(id);
+	       IsFormat<FileFormat::AVIF>(id) ||
+           IsFormat<FileFormat::BIT>(id)  ||
+	       IsFormat<FileFormat::GIF>(id);
 }
 
 static inline bool IsVideo(const std::string &path)
@@ -307,9 +315,10 @@ static FileType GetFileType(const std::string &path)
     default:
         return FileType::RegularFile;
     }
+#undef CASE
 }
 
-static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint32_t align = sizeof(void*))
+static inline std::vector<uint8_t> ReadBinary(const String &filename, uint32_t align = sizeof(void*))
 {
     std::vector<uint8_t> buffer{};
     Stream stream{ filename, Stream::Mode::Read };
@@ -326,7 +335,7 @@ static inline std::vector<uint8_t> ReadBinary(const std::string &filename, uint3
     return buffer;
 }
 
-static inline std::string ReadString(const std::string &filename)
+static inline std::string ReadString(const String &filename)
 {
     std::string buffer{};
     Stream stream{ filename, Stream::Mode::Read };
@@ -351,11 +360,6 @@ static std::string ExtractFileName(const std::string &path)
     lastSlash = lastSlash == std::string::npos ? 0 : lastSlash + 1;
 
     return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
-}
-
-static inline bool CreateDirectory(const std::string &path)
-{
-    return std::filesystem::create_directory(path);
 }
 
 class Path : public std::filesystem::path
@@ -428,6 +432,11 @@ public:
         return std::move(std::filesystem::current_path());
     }
 
+    operator String() const
+    {
+		return u8string();
+    }
+
     Path Parent() const
     {
         return parent_path();
@@ -449,6 +458,16 @@ public:
     }
 };
 
+static inline bool CreateDirectory(const FileSystem::Path &path)
+{
+	return std::filesystem::create_directory(path);
+}
+
+static inline bool Exists(const FileSystem::Path &path)
+{
+	return std::filesystem::exists(path);
+}
+
 std::string_view ParseFileName(const String &path);
 
 struct DirectoryEntry
@@ -459,10 +478,13 @@ struct DirectoryEntry
 
 	std::string_view fileName;
     
+    bool isEmpty;
+
     DirectoryEntry(const String &_path, FileType type) :
         path{ _path },
         type{ type },
-	    fileName{ ParseFileName(path) }
+	    fileName{ ParseFileName(path) },
+	    isEmpty{ true }
 	{
 
     }
@@ -470,7 +492,8 @@ struct DirectoryEntry
     DirectoryEntry() :
         path{},
         type{},
-        fileName{}
+        fileName{},
+	    isEmpty{}
     {
 
     }
@@ -478,7 +501,8 @@ struct DirectoryEntry
     DirectoryEntry(const DirectoryEntry &other) :
 	    path{ other.path },
 	    type{ other.type },
-	    fileName{ path.c_str() + path.size() - other.fileName.size() }
+	    fileName{ path.c_str() + path.size() - other.fileName.size() },
+	    isEmpty{ other.isEmpty }
 	{
 
 	}
@@ -508,7 +532,7 @@ struct DirectoryEntry
 
     const char *GetFileName() const
     {
-		return fileName.data();
+		return fileName.empty() ? "" : fileName.data();
     }
 
     bool IsDirectory() const
@@ -519,6 +543,16 @@ struct DirectoryEntry
     bool IsRegularFile() const
     {
         return type == FileType::RegularFile;
+    }
+
+    bool IsEmpty() const
+    {
+		return isEmpty;
+    }
+
+    void SetIsEmpty(bool value)
+    {
+	    isEmpty = value;
     }
 
     void Swap(DirectoryEntry &other)
@@ -532,6 +566,7 @@ struct DirectoryEntry
 		path.Swap(other.path);
 		std::swap(type,     other.type    );
 		std::swap(fileName, other.fileName);
+		std::swap(isEmpty,  other.isEmpty );
 
         if (rSize)
         {

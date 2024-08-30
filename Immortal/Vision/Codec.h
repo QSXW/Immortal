@@ -12,6 +12,18 @@ namespace Immortal
 namespace Vision
 {
 
+enum class PropertyType
+{
+	DisplayOrientation,
+};
+
+struct DisplayOrientation
+{
+	static constexpr PropertyType Type = PropertyType::DisplayOrientation;
+	int hflip;
+	int anticlockwiseRotation;
+};
+
 namespace Interface
 {
 
@@ -50,6 +62,17 @@ public:
     virtual void Flush()
     {
         picture = Picture{};
+    }
+
+    virtual void *GetProperty(PropertyType property) const
+    {
+		return nullptr;
+    }
+
+    template <class T>
+    const T *GetProperty() const
+    {
+		return (const T *)GetProperty(T::Type);
     }
 
 protected:

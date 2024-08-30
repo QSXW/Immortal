@@ -171,9 +171,9 @@ SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, Comp
 	return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
 }
 
-SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
+SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
 {
-	return new Shader{ name, stage, source, entryPoint };
+	return new Shader{ name, stage, source, entryPoint, pMacro, numMacro };
 }
 
 SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
@@ -194,6 +194,11 @@ SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t heig
 SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
 {
 	return new Buffer{ this, type, size };
+}
+
+SuperBuffer *Device::CreateBuffer(size_t size, BufferType type, Format format)
+{
+	return new Buffer{ this, type, size, format };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
@@ -294,7 +299,7 @@ Sampler *Device::GetSampler(Filter filter)
 	{
 		if (!samplers.linear)
 		{
-			samplers.linear = new Sampler{this, Filter::Linear, AddressMode::Wrap};
+			samplers.linear = new Sampler{this, Filter::Linear, AddressMode::Wrap };
 		}
 		return samplers.linear;
 	}

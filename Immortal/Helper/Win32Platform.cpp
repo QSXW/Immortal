@@ -66,4 +66,71 @@ std::optional<std::string> FileDialogs::SaveFile(const char *filter)
     return std::nullopt;
 }
 
+static uint32_t GetFormat(Clipboard::DataType type)
+{
+    switch (type)
+    {
+		case Clipboard::DataType::UnicodeText:
+			return CF_UNICODETEXT;
+
+		case Clipboard::DataType::Text:
+		default:
+			return CF_TEXT;
+    }
+}
+
+struct ClipboardScope
+{
+    ClipboardScope() :
+	    opened{}
+    {
+		opened = OpenClipboard(GetActiveWindow()) && EmptyClipboard();
+    }
+
+    ~ClipboardScope()
+    {
+		(void)CloseClipboard();
+    }
+
+    BOOL opened;
+};
+
+void Clipboard::SetData(DataType type, const void *data, size_t size)
+{
+	auto format = GetFormat(type);
+    if (!IsClipboardFormatAvailable(format))
+    {
+		return;
+    }
+
+    ClipboardScope clipboard{};
+    if (!clipboard.opened)
+    {
+		LOG::ERR("Failed to open clipboard!");
+		return;
+    }
+
+    auto hglbCopy = GlobalAlloc(GMEM_MOVEABLE, size); 
+    auto lptstrCopy = GlobalLock(hglbCopy);
+	memcpy(lptstrCopy, data, size);
+	GlobalUnlock(hglbCopy); 
+
+    SetClipboardData(format, hglbCopy);
+
+}
+
+FileSystem::Path System::GetTemperoryPath()
+{
+	constexpr size_t kMaxPathLength = 1024;
+
+	wchar_t data[kMaxPathLength];
+	DWORD length = GetTempPathW(kMaxPathLength, data);
+    if (!length)
+    {
+		return {};
+    }
+
+    return data;
+}
+
 }

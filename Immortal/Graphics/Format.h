@@ -159,6 +159,8 @@ public:
 		Y216      = BITS(YUV,     _16Bits, YUV420P + 16)
     };
 
+    static constexpr ValueType HightBitDepth = ValueType(Format::_10Bits | Format::_12Bits | Format::_16Bits);
+
     Format() :
         v{ None }
     {

@@ -33,22 +33,24 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
         else
         {
 			size_t size = 0;
-
             if (format.IsType(Format::YUV))
             {
-				SamplingFactor sampling = { format };
-				stride[0] = SLALIGN(width, 8);
-				stride[1] = SLALIGN(width >> sampling.x, 8);
-				stride[2] = stride[1];
-                           
+				SamplingFactor factors[SamplingFactor::kMaxSublayer];
+				GetSamplingFactor(format, factors);
+
+                size_t pixelShift = format.IsType(Format::HightBitDepth) ? 1 : 0;
                 size_t offsets[3] = {};
                 for (int i = 0; i < SL_ARRAY_LENGTH(offsets); i++)
                 {
 					offsets[i] = size;
-					size += stride[i] * (SLALIGN(height, 2) >>  (i ? sampling.y : 0));
-                }
-				data[0] = allocator.allocate(size);
+					size_t x = width  << pixelShift;
+					size_t y = SLALIGN(height, i > 0 ? 2 : 1) >> factors[i].y;
 
+					stride[i] = SLALIGN(x >> factors[i].x, 8);
+					size += stride[i] * y;
+                }
+
+				data[0] = allocator.allocate(size);
                 for (int i = 1; i < SL_ARRAY_LENGTH(offsets); i++)
                 {
 					data[i] = data[0] + offsets[i];

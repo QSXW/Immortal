@@ -37,14 +37,14 @@ public:
 
         memset(streamIndex, -1, sizeof(streamIndex));
 
-		int ret = avformat_open_input(&handle, path.c_str(), NULL, NULL);
+		int ret = avformat_open_input(&handle, path.c_str(), nullptr, nullptr);
         if (ret < 0)
         {
             LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", path, ret);
             return;
         }
-        auto options = GenerateStreamInfo();
 
+        auto options = GenerateStreamInfo();
         ret = avformat_find_stream_info(handle, options);
         if (ret < 0)
         {
@@ -52,9 +52,10 @@ public:
         }
         av_dump_format(handle, 0, path.c_str(), 0);
 
-        streamIndex[AVMEDIA_TYPE_VIDEO]    = FindBestStream(MediaType::Video, streamIndex[AVMEDIA_TYPE_VIDEO]);
-        streamIndex[AVMEDIA_TYPE_AUDIO]    = FindBestStream(MediaType::Audio, streamIndex[AVMEDIA_TYPE_AUDIO], streamIndex[AVMEDIA_TYPE_VIDEO]);
-        streamIndex[AVMEDIA_TYPE_SUBTITLE] = FindBestStream(MediaType::Subtitle, streamIndex[AVMEDIA_TYPE_SUBTITLE], streamIndex[AVMEDIA_TYPE_AUDIO]);
+        streamIndex[AVMEDIA_TYPE_VIDEO]    = FindBestStream(MediaType::Video,    streamIndex[AVMEDIA_TYPE_VIDEO]);
+        streamIndex[AVMEDIA_TYPE_AUDIO]    = FindBestStream(MediaType::Audio,    streamIndex[AVMEDIA_TYPE_AUDIO],    streamIndex[AVMEDIA_TYPE_VIDEO]);
+		streamIndex[AVMEDIA_TYPE_DATA]     = FindBestStream(MediaType::Data,     streamIndex[AVMEDIA_TYPE_DATA],     streamIndex[AVMEDIA_TYPE_VIDEO]);
+		streamIndex[AVMEDIA_TYPE_SUBTITLE] = FindBestStream(MediaType::Subtitle, streamIndex[AVMEDIA_TYPE_SUBTITLE], streamIndex[AVMEDIA_TYPE_AUDIO] >= 0 ? streamIndex[AVMEDIA_TYPE_AUDIO] : streamIndex[AVMEDIA_TYPE_VIDEO]);
     }
 
     ~FormatContext()
@@ -161,6 +162,11 @@ public:
         return handle->duration;
     }
 
+    operator bool() const
+    {
+		return !!handle;
+    }
+
 private:
     AVFormatContext *handle;
 
@@ -192,6 +198,11 @@ CodecError FFDemuxer::Open(const String &_filepath, VideoCodec *codec, VideoCode
 
     AVInputFormat format{};
     formatContext = new FormatContext{ filepath };
+    if (!*formatContext)
+    {
+		return CodecError::ExternalFailed;
+    }
+
     formatContext->OpenStream(codec, MediaType::Video);
 
     if (audioCodec)
@@ -210,10 +221,10 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
 		return CodecError::OutOfMemory;
     }
 
-    CodedFrame codedFrame = { packet };
     int ret = formatContext->ReadFrame(packet);
     if (ret < 0)
     {
+		av_packet_unref(packet);
         av_packet_free(&packet);
         if (ret == AVERROR_EOF)
         {
@@ -224,11 +235,15 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
     }
 
     if (packet->stream_index != formatContext->GetStreamIndex(MediaType::Video) &&
-        packet->stream_index != formatContext->GetStreamIndex(MediaType::Audio))
+        packet->stream_index != formatContext->GetStreamIndex(MediaType::Audio) &&
+	    packet->stream_index != formatContext->GetStreamIndex(MediaType::Subtitle))
     {
+		av_packet_unref(packet);
+		av_packet_free(&packet);
         return CodecError::ExternalFailed;
     }
-
+    
+    CodedFrame codedFrame = { packet };
     auto stream = formatContext->GetStream(packet->stream_index);
     codedFrame.SetType((MediaType)stream->codecpar->codec_type);
     packet->time_base = stream->time_base;

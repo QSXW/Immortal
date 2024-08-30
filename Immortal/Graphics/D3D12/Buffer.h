@@ -59,7 +59,7 @@ public:
 public:
 	Buffer();
 
-    Buffer(Device *device, Type type, const size_t size, const void *data = nullptr);
+    Buffer(Device *device, Type type, const size_t size, Format format = Format::None, const void *data = nullptr);
 
     virtual ~Buffer() override;
 
@@ -92,7 +92,7 @@ public:
     }
 
 protected:
-    void Construct();
+    void Construct(Format format);
 
 protected:
     Descriptor descriptor;

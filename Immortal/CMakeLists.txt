@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Immortal LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -59,26 +59,45 @@ set(FS_FILES
     FileSystem/RF.h
     FileSystem/Stream.h)
 
+set(FILTER_FILES
+    DisplayOrientationFilter.cpp
+    DisplayOrientationFilter.h
+    Filter.h
+    GaussianBlurFilter.cpp
+    GaussianBlurFilter.h
+    LogCurveFilter.cpp
+    LogCurveFilter.h
+    Lut3DFilter.cpp
+    Lut3DFilter.h
+    ScaleFilter.cpp
+    ScaleFilter.h
+    Transfer.cpp
+    Transfer.h)
+list(TRANSFORM FILTER_FILES PREPEND "Filter/")
+
 set(PHYSICS_FILES
     Physics/Physics.cpp
     Physics/Physics.h)
 
 set(SCENE_FILES
-    Scene/Component.cpp
-    Scene/Component.h
-    Scene/Object.h
-    Scene/entt.hpp
-    Scene/FilterGraphComponent.cpp
-    Scene/GameObject.h
-    Scene/ObserverCamera.cpp
-    Scene/ObserverCamera.h
-    Scene/Scene.cpp
-    Scene/Scene.h
-    Scene/SceneCamera.cpp
-    Scene/SceneCamera.h
-    Scene/ScriptComponent.cpp
-    Scene/SpriteRendererComponent.cpp
-    Scene/VideoComponent.cpp)
+    Component.cpp
+    Component.h
+    Object.h
+    entt.hpp
+    FilterGraphComponent.cpp
+    FilterGraphComponent.h
+    GameObject.h
+    ObserverCamera.cpp
+    ObserverCamera.h
+    Scene.cpp
+    Scene.h
+    SceneCamera.cpp
+    SceneCamera.h
+    ScriptComponent.cpp
+    SpriteRendererComponent.cpp
+    VideoPlayerComponent.cpp
+    VideoPlayerComponent.h)
+list(TRANSFORM SCENE_FILES PREPEND "Scene/")
 
 set(SCRIPT_FILES
     Script/ScriptEngine.cpp
@@ -170,6 +189,7 @@ source_group("ImGui\\"             FILES ${GUI_FILES}       )
 source_group("Math\\"              FILES ${MATH_FILES}      )
 source_group("Memory\\"            FILES ${MEMORY_FILES}    )
 source_group("FileSystem\\"        FILES ${FS_FILES}        )
+source_group("Filter\\"            FILES ${FILTER_FILES}    )
 source_group("Physics\\"           FILES ${PHYSICS_FILES}   )
 source_group("Render\\"            FILES ${RENDER_FILES}    )
 source_group("Scene\\"             FILES ${SCENE_FILES}     )
@@ -187,6 +207,7 @@ set(PROJECT_FILES
     ${FRAMEWORK_FILES}
     ${EDITOR_FILES}
     ${FS_FILES}
+    ${FILTER_FILES}
     ${IMAGE_FILES}
     ${GUI_FILES}
     ${INTERFACE_FILES}

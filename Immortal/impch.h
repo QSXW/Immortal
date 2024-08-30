@@ -28,6 +28,14 @@
 #include "FileSystem/RF.h"
 #include "FileSystem/Stream.h"
 
+#include "Filter/DisplayOrientationFilter.h"
+#include "Filter/Filter.h"
+#include "Filter/GaussianBlurFilter.h"
+#include "Filter/LogCurveFilter.h"
+#include "Filter/Lut3DFilter.h"
+#include "Filter/ScaleFilter.h"
+#include "Filter/Transfer.h"
+
 #include "Helper/Arguments.h"
 #include "Helper/json.h"
 #include "Helper/nlohmann_json.h"
@@ -57,11 +65,14 @@
 
 #include "Scene/Component.h"
 #include "Scene/entt.hpp"
+#include "Scene/FilterGraphComponent.h"
 #include "Scene/GameObject.h"
 #include "Scene/Object.h"
 #include "Scene/ObserverCamera.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneCamera.h"
+#include "Scene/VideoPlayerComponent.h"
+
 #include "Script/ScriptEngine.h"
 #include "Serializer/SceneSerializer.h"
 #include "String/LanguageSettings.h"

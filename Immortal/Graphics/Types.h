@@ -207,4 +207,10 @@ struct BufferBindInfo
 	uint32_t offset;
 };
 
+struct ShaderMacro
+{
+	const char *name;
+	const char *definition;
+};
+
 }

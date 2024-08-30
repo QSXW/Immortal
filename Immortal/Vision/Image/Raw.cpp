@@ -305,7 +305,7 @@ void RawCodec::GetCurve(float *curve)
 	}
 	for (i = 0; i < 0x10000; i++)
 	{
-		curve[i] = 0xffff;
+		color.curve[i] = 0xffff;
 		if ((r = (double)i / imax) < 1)
 			color.curve[i] =
 				0x10000 *
@@ -323,9 +323,16 @@ void RawCodec::GetCurve(float *curve)
 	}
 }
 
-int RawCodec::GetFlipType()
+void RawCodec::GetDisplayOrientation(int &hflip, int &vflip, int &anticlockwiseRotation)
 {
-	return processor->imgdata.sizes.flip;
+	hflip = 0;
+	vflip = 0;
+	anticlockwiseRotation = 0;
+	if (processor->imgdata.sizes.flip > 0 && processor->imgdata.sizes.flip < 8)
+	{
+		int rotations[9] = {0, 0, 0, 0, 0, -90, -180, 0, 0};
+		anticlockwiseRotation = rotations[processor->imgdata.sizes.flip];
+	}
 }
 
 }

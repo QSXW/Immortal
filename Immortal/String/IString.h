@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <filesystem>
 
 #include "Core.h"
 
@@ -48,17 +49,25 @@ static inline std::string Unicode82Ascii(const std::string &str)
 #endif
 }
 
+static inline std::wstring String2WString(const std::string &str)
+{
+	return std::filesystem::path(str).wstring();
+}
+
 static inline std::string WString2String(const std::wstring &wstr, StringEncoding _encoding)
 {
-#ifdef _WIN32
-	uint32_t encoding = _encoding == StringEncoding::UTF8 ? CP_UTF8 : CP_ACP;
-	std::string str; 
-	str.resize(WideCharToMultiByte(encoding, 0, wstr.c_str(), wstr.size(), NULL, 0, NULL, NULL));
-	WideCharToMultiByte(encoding, 0, wstr.c_str(), wstr.size(), str.data(), str.size(), NULL, NULL);
-	return str;
-#else
-	return str;
-#endif
+	return std::filesystem::path(wstr).string();
+}
+
+static inline std::u8string WString2U8String(const std::wstring &wstr)
+{
+	return std::filesystem::path(wstr).u8string();
+}
+
+template <class T>
+static inline std::u8string String2U8String(const T &str)
+{
+	return std::filesystem::path(str).u8string();
 }
 
 class String
@@ -74,6 +83,11 @@ public:
 
     }
 
+    ~String()
+    {
+
+    }
+
     template <class T>
     requires std::is_same_v<T, std::string> || std::is_same_v<T, std::u8string>
 	String(const T &str, StringEncoding encoding = StringEncoding::ASCII) :
@@ -85,22 +99,25 @@ public:
         }
 		switch (encoding)
         {
-        case StringEncoding::ASCII:
-            if constexpr (std::is_same_v<T, std::string>)
-            {
-				data = Ascii2Unicode8(str);
-            }
-            break;
-
-        case StringEncoding::UTF8:
-        default:
+	    case StringEncoding::UTF8:
 			data.resize(str.size());
 			memcpy(data.data(), str.data(), str.size());
             break;
+
+        default:
+			data = String2U8String(str);
+			break;
         }
     }
 
     String(const std::string_view &view) :
+        data{ String2U8String(view) },
+	    encoding{ StringEncoding::UTF8 }
+    {
+
+    }
+
+    String(const std::u8string_view &view) :
         data{ view },
 	    encoding{ StringEncoding::UTF8 }
     {
@@ -113,8 +130,22 @@ public:
 
     }
 
-    String(const std::wstring &str, StringEncoding encoding = StringEncoding::UTF8) :
-	    data{ WString2String(str, encoding)}
+    String(const std::wstring &str) :
+	    data{ WString2U8String(str) },
+        encoding{ StringEncoding::UTF8 }
+    {
+
+    }
+
+    String(const wchar_t *str) :
+        String{ std::wstring{ str } }
+    {
+
+    }
+
+    String(const std::filesystem::path &str) :
+	    data{ str.u8string() },
+	    encoding{ StringEncoding::UTF8 }
     {
 
     }
@@ -161,7 +192,7 @@ public:
 
     const char *c_str() const
     {
-        return data.c_str();
+        return (const char *)data.c_str();
     }
 
     bool empty() const
@@ -171,12 +202,12 @@ public:
 
     operator std::string &()
     {
-        return data;
+        return (std::string &)data;
     }
 
     operator const std::string &() const
     {
-        return data;
+        return (const std::string &)data;
     }
 
     bool operator<(const String &other) const
@@ -189,10 +220,19 @@ public:
 		return encoding;
     }
 
-    std::string GetAscii() const
+    std::string GetString() const
     {
-		assert(GetStringEncoding() == StringEncoding::UTF8);
-		return Unicode82Ascii(data);
+		return std::filesystem::path(data).string();
+    }
+
+    std::wstring GetWString() const
+    {
+		return std::filesystem::path(data).wstring();
+    }
+
+    std::u16string GetU16String() const
+    {
+		return std::filesystem::path(data).u16string();
     }
 
     String &operator+=(const String &other)
@@ -210,7 +250,7 @@ public:
     {
 		return data.find_last_of(c, offset);
     }
-    
+
     void Swap(String &other)
     {
 		data.swap(other.data);
@@ -222,11 +262,20 @@ public:
 		return data == other.data;
     }
 
+    friend String operator+(const String &left, const String &right);
+
 protected:
-    std::string data;
+    std::u8string data;
 
     StringEncoding encoding;
 };
+
+static inline String operator+(const String &left, const String &right)
+{
+	String ret;
+	ret.data = left.data + right.data;
+	return ret;
+}
 
 }
 

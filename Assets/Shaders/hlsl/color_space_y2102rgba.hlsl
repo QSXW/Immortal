@@ -19,7 +19,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uv0.x *= 2;
 
     float2 uv1 = uv0;
-    uv1.x + 1;
+    uv1.x += 1;
 
     float c0 = dot(UV, float2(-1.51500715e-04,  1.57476528e+00)) + -7.87306888e-01;
     float c1 = dot(UV, float2(-1.87280216e-01, -4.68124625e-01)) +  3.27702421e-01;

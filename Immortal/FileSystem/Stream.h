@@ -103,7 +103,7 @@ inline Stream::Stream(Mode mode) :
 
 inline Stream::Stream(const String &filepath, Mode mode) :
     handle{},
-    filepath{filepath},
+    filepath{},
     mode{mode}
 {
 	Open(filepath);
@@ -120,14 +120,20 @@ inline bool Stream::Open(const String &path)
 {
 	filepath = path;
 
+    std::wstring wpath = path.GetWString();
     if (mode == Mode::Read)
     {
-		handle = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+		handle = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     }
 	else if (mode == Mode::Write)
 	{
-		handle = CreateFileA(path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+		handle = CreateFileW(wpath.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	}
+
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+		handle = {};
+    }
 
 	return !!handle;
 }
