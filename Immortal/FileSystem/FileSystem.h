@@ -36,8 +36,9 @@ constexpr uint64_t MakeIdentifier(
 
 enum class FileType
 {
-    Directory,
-    RegularFile,
+	Directory   = BIT(0),
+	RegularFile = BIT(1),
+    Volumn,
     Picture,
     Video,
     Audio,
@@ -69,6 +70,13 @@ enum class FileType
 	ZIP,
     Num
 };
+SL_ENABLE_BITWISE_OPERATOR(FileType)
+
+enum class FileFlagBits
+{
+	Empty = BIT(0),
+};
+SL_ENABLE_BITWISE_OPERATOR(FileFlagBits)
 
 enum class FileFormat : uint64_t
 {
@@ -478,13 +486,16 @@ struct DirectoryEntry
 
 	std::string_view fileName;
     
+    FileFlagBits flags;
+
     bool isEmpty;
 
     DirectoryEntry(const String &_path, FileType type) :
         path{ _path },
         type{ type },
 	    fileName{ ParseFileName(path) },
-	    isEmpty{ true }
+	    isEmpty{ true },
+	    flags{}
 	{
 
     }
@@ -493,7 +504,8 @@ struct DirectoryEntry
         path{},
         type{},
         fileName{},
-	    isEmpty{}
+	    isEmpty{},
+	    flags{}
     {
 
     }
@@ -502,7 +514,8 @@ struct DirectoryEntry
 	    path{ other.path },
 	    type{ other.type },
 	    fileName{ path.c_str() + path.size() - other.fileName.size() },
-	    isEmpty{ other.isEmpty }
+	    isEmpty{ other.isEmpty },
+	    flags{}
 	{
 
 	}
@@ -579,7 +592,9 @@ struct DirectoryEntry
     }
 };
 
-void ListDirectory(const Path &path, std::vector<DirectoryEntry> &directories);
+bool HasSubdirectory(const Path &path);
+
+void ListDirectory(const Path &path, std::vector<DirectoryEntry> &directories, FileType filter = FileType::Directory | FileType::RegularFile);
 
 static inline bool Exists(const std::string &path)
 {

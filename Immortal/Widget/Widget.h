@@ -30,6 +30,14 @@
 namespace Immortal
 {
 
+namespace Icon
+{
+	static const char *Arrows[] = {
+	    "\xef\x84\x85",
+	    "\xef\x84\x87"
+    };
+};
+
 enum ColorStyle
 {
     Text                  = ImGuiCol_Text,
@@ -187,11 +195,17 @@ public:                              \
 		return L;                    \
 	}
 
-#define WIDGET_SET_PROPERTY(U, L, T)          \
+#define WIDGET_SET_PROPERTY(U, L, T, ...)     \
 public:                                       \
     WIDGET_SET_PROPERTY_FUNC(U, L, const T &) \
 protected:                                    \
-    T L{}; \
+    T L{__VA_ARGS__}; \
+
+#define WIDGET_SET_PROPERTY_CSTR(U, L, ...)      \
+public:                                          \
+	WIDGET_SET_PROPERTY_FUNC(U, L, const char *) \
+protected:                                       \
+	const char *L{__VA_ARGS__};                  \
 
 #define PUSH_PADDING ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {padding.right, padding.bottom}); ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom});
 #define POP_PADDING ImGui::PopStyleVar(2);
@@ -370,7 +384,6 @@ public:
 
     static std::unordered_map<std::string, Widget *> Identify2WidgetTracker;
 	static std::unordered_map<Widget *, std::string> Widget2IdentifyTracker;
-
 
 public:
     Widget(Widget *parent = nullptr) :
@@ -1154,10 +1167,11 @@ public:
                 ImGui::SetNextWindowPos(viewport->WorkPos);
                 ImGui::SetNextWindowSize(viewport->WorkSize);
                 ImGui::SetNextWindowViewport(viewport->ID);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 4.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,     0.0f        );
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,   0.0f        );
+				//ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      { 0.0f, 0.0f });
+				ImGui::PushStyleVar(ImGuiStyleVar_TabRounding,        4.0f        );
+				ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize,   0.0f        );
                 window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
                 window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
             }

@@ -13,6 +13,7 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
     format{ format },
     width{ width },
     height{ height },
+    flags{},
     timestamp{},
     memoryType{},
     release{},

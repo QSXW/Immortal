@@ -180,6 +180,13 @@ public:
         return &_obj;
     }
 
+    template <class U>
+    void Attach(const U *obj)
+    {
+		Ref(nullptr).Swap(*this);
+		_obj = (T *)obj;
+    }
+
 protected:
     void AddRef() const
     {

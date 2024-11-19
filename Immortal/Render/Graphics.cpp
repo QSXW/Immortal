@@ -9,7 +9,8 @@ namespace Immortal
 
 URef<Graphics> Graphics::This;
 
-Graphics::Graphics(Device *device) :
+Graphics::Graphics(Instance *instance, Device *device) :
+    instance{instance},
     device{device},
     thread{device}
 {
@@ -18,12 +19,17 @@ Graphics::Graphics(Device *device) :
 	commandBuffer = device->CreateCommandBuffer(QueueType::Compute);
 }
 
-void Graphics::SetDevice(Device *device)
+void Graphics::SetDevice(Instance *instance, Device *device)
 {
 	if (!This)
 	{
-		new Graphics{device};
+		new Graphics{instance, device};
 	}
+}
+
+Instance *Graphics::GetInstance()
+{
+	return This->instance;
 }
 
 Device *Graphics::GetDevice()

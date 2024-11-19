@@ -1,11 +1,70 @@
 #include "FileSystem.h"
+#include <filesystem>
 
 namespace Immortal
 {
 namespace FileSystem
 {
 
-void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories)
+namespace fs = std::filesystem;
+bool HasSubdirectory(const Path &path)
+{
+	try
+	{
+		if (!fs::exists(path) || !fs::is_directory(path))
+		{
+			return false;
+		}
+
+		for (const auto &entry : fs::directory_iterator(path))
+		{
+			if (fs::is_directory(entry.path()))
+			{
+				return true;
+			}
+		}
+	}
+	catch (const std::exception &e)
+	{
+
+	}
+
+	return false;
+}
+
+#ifdef _WIN32
+
+void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter)
+{
+	WIN32_FIND_DATAW fileData;
+	HANDLE hFind = FindFirstFileW((_path.wstring() + L"\\*").c_str(), &fileData);
+
+	if (hFind == INVALID_HANDLE_VALUE)
+	{
+		LOG::ERR("Failed to find first file for directory - {} - {}", _path.string(), (int32_t) GetLastError());
+		return;
+	}
+
+	do
+	{
+		FileType type = (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? FileType::Directory : FileType::RegularFile;
+		if (!(type & filter))
+		{
+			continue;
+		}
+
+		if (fileData.cFileName[0] != '.')
+		{
+			DirectoryEntry entry = { (_path / fileData.cFileName).u8string(), type};
+			directories.emplace_back(std::move(entry));
+		}
+	} while (FindNextFileW(hFind, &fileData) != 0);
+
+	FindClose(hFind);
+}
+
+#else
+void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter)
 {
 	try
 	{
@@ -44,7 +103,10 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories)
 				}
 			}
 
-			directories.emplace_back(std::move(entry));
+			if (type & filter)
+			{
+				directories.emplace_back(std::move(entry));
+			}
 		}
 	}
 	catch (const std::exception &e)
@@ -52,6 +114,7 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories)
 		LOG::ERR("Failed to list directory `{}` - {}", _path.string().c_str(), e.what());
 	}
 }
+#endif
 
 std::string_view ParseFileName(const String &path)
 {

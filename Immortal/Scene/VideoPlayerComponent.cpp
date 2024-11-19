@@ -7,13 +7,15 @@
 #include "VideoPlayerComponent.h"
 #include <shared_mutex>
 
+#define IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC 1
+
 namespace Immortal
 {
 
 struct VideoPlayerContext
 {
 public:
-	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, int cacheSize = 3);
+	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr, int cacheSize = 3, const VideoDecodeCallbacks &callbacks = {});
 
     ~VideoPlayerContext();
 
@@ -31,6 +33,8 @@ public:
 
     void PopAudioFrame();
 
+    void StartPlay();
+
 public:
     const Vision::DisplayOrientation *GetDisplayOrientation() const
     {
@@ -42,12 +46,25 @@ public:
         return demuxer->GetSource();
     }
 
+    bool IsEof() const
+    {
+		return eof;
+    }
+
 public:
     URef<Thread> demuxerThread;
+
+    std::atomic_bool decoding = false;
+
+    ConcurrentQueue<CodedFrame> codedFrames;
+
+    ConcurrentQueue<void *> memory;
 
     std::unique_ptr<ThreadPool> videoThreadPool;
 
     std::unique_ptr<ThreadPool> audioThreadPool;
+
+    std::unique_ptr<ThreadPool> subtitleThreadPool;
 
     struct
     {
@@ -63,12 +80,20 @@ public:
     Ref<VideoCodec> decoder;
 
     Ref<VideoCodec> audioDecoder;
+    
+    Ref<VideoCodec> subtitleDecoder;
 
     Ref<Demuxer> demuxer;
 
-    std::queue<Picture> pictures;
+    ConcurrentQueue<Picture> pictures;
 
-    std::queue<Picture> audioFrames;
+    ConcurrentQueue<Picture> audioFrames;
+
+    ConcurrentQueue<Picture> subtitles;
+
+    Picture picture;
+
+    Picture audioFrame;
 
     const int kCacheSize;
 
@@ -78,80 +103,261 @@ public:
         bool exited = false;
         bool flush = false;
     } state;
+
+    double time = 0.0f;
+
+    int frames = 0;
+
+    int audioSize = 0;
+
+    int subtitleSize = 0;
+
+    int eof = false;
+
+    std::atomic_int pictureSize = 0;
+
+    VideoDecodeCallbacks callbacks{};
+
+#if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+	Timer timer;
+#endif
 };
 
-Vision::Picture AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interface::Codec *decoder)
+CodecError AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interface::Codec *decoder)
 {
-    if (codedFrame && decoder->Decode(codedFrame) == CodecError::Success)
-    {
-        return decoder->GetPicture();
-    }
-
-    return Vision::Picture{};
+    return decoder->Decode(codedFrame);
 }
 
-VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, int cacheSize) :
+void EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Picture &&)> &callback, int &frames)
+{
+	decoder->Flush();
+	Picture picture{};
+    while (decoder->GetPicture(picture) == CodecError::Success)
+    {
+		callback(std::move(picture));
+#if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+		frames++;
+#endif
+    }
+
+    picture = Picture{ 0, 0, Format::None };
+	picture.SetFlags(Vision::PictureFlags::Eof);					
+    callback(std::move(picture));
+}
+
+void VideoPlayerContext::StartPlay()
+{
+	demuxerThread->Start();
+	timer.Start();
+	demuxerThread->SetDescription("VideoDemux");
+}
+
+VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder, int cacheSize, const VideoDecodeCallbacks &callbacks) :
     demuxerThread{},
     videoThreadPool{ new ThreadPool{1} },
-    audioThreadPool{ new ThreadPool{1} },
+    audioThreadPool{ audioDecoder ? new ThreadPool{1} : nullptr },
+    subtitleThreadPool{ subtitleDecoder ?new ThreadPool{1} : nullptr },
     decoder{decoder},
     audioDecoder{ audioDecoder },
+    subtitleDecoder{ subtitleDecoder },
     demuxer{demuxer},
     state{},
-    kCacheSize{cacheSize}
+    kCacheSize{cacheSize},
+    callbacks{ callbacks },
+    timer{}
 {
-    demuxerThread = new Thread{[=, this]() {
+	if (!callbacks.VideoDecodeFinishSlot)
+	{
+        demuxerThread = new Thread{[=, this]() {
         while (true)
         {
             std::unique_lock lock{ mutex.demux };
             condition.wait(lock, [this] {
-				return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < kCacheSize);
+				return state.exited || ((pictureSize + videoThreadPool->TaskSize()) <= kCacheSize);
             });
 
             if (state.exited)
             {
+				double time = timer.Duration();
+				LOG::INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
                 break;
             }
 
-            Vision::CodedFrame codedFrame;
-            if (demuxer->Read(&codedFrame) != CodecError::Success)
-            {
-                continue;
-            }
+			Vision::CodedFrame codedFrame;
+			auto ret = demuxer->Read(&codedFrame);
+			if (ret != CodecError::Success)
+			{
+                if (ret == CodecError::EndOfFile)
+                {
+					eof = true;
+                }
+				continue;
+			}
 
-            if (codedFrame.GetType() == MediaType::Subtitle)
+            switch (codedFrame.GetType())
             {
-                continue;
-            }
-
-            if (audioDecoder && codedFrame.GetType() == MediaType::Audio)
+			case MediaType::Video:
             {
-                audioThreadPool->Enqueue([=, this] () -> void {
-                    Vision::Picture picture = AsyncDecode(codedFrame, audioDecoder);
-                    if (picture)
+				videoThreadPool->Enqueue([=, this]() -> void {
+					AsyncDecode(codedFrame, decoder);
+                    Picture picture{};
+                    while (decoder->GetPicture(picture) == CodecError::Success)
                     {
-                        std::unique_lock lock{ mutex.audio };
-                        audioFrames.push(picture);
-                    }
-                });
+#if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+						frames++;
+#endif
+                        if (pictures.enqueue(picture))
+                        {
+							pictureSize++;
+                        }
+                        else
+                        {
+							LOG::ERR("Failed to enqueue picture into pending queue for out of memory");
+                        }
+					}
+				});
+				break;
+            }
+			case MediaType::Audio:
+            {
+                if (audioDecoder)
+                {
+					audioThreadPool->Enqueue([=, this]() -> void {
+						AsyncDecode(codedFrame, audioDecoder);
+						Picture picture{};
+						while (audioDecoder->GetPicture(picture) == CodecError::Success)
+						{
+                            if (audioFrames.enqueue(picture))
+                            {
+#if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+								audioSize++;
+#endif
+                            }
+							else
+							{
+								LOG::ERR("Failed to enqueue picture into pending queue for out of memory");
+							}
+						}
+					});
+                }
+			    break;
             }
 
-            if (codedFrame.GetType() == MediaType::Video)
+            case MediaType::Subtitle:
             {
-                videoThreadPool->Enqueue([=, this] () -> void {
-                    Vision::Picture picture = AsyncDecode(codedFrame, decoder);
-                    if (picture)
-                    {
-                        std::unique_lock lock{ mutex.video };
-                        pictures.push(picture);
-                    }
-                });
+                if (subtitleDecoder)
+                {
+//					subtitleThreadPool->Enqueue([=, this] {
+// 						AsyncDecode(codedFrame, subtitleDecoder);
+//						Picture picture{};
+//						while (subtitleDecoder->GetPicture(picture) == CodecError::Success)
+//						{
+//							if (subtitles.enqueue(picture))
+//							{
+//#if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+//								subtitleSize++;
+//#endif
+//							}
+//						}
+//					});
+                }
+				break;
+            }
+
+            default:
+				break;
             }
         }
-    }};
+        }};
+		StartPlay();
+    }
+	else
+    {
+		videoThreadPool->OnNotify([=, this] {
+			condition.notify_one();
+		});
 
-    demuxerThread->Start();
-    demuxerThread->SetDescription("VideoDemux");
+        demuxerThread = new Thread{[=, this]() {
+            while (true)
+            {
+                std::unique_lock lock{ mutex.demux };
+                condition.wait(lock, [=, this] {
+					bool hasTask  = videoThreadPool->TaskSize() <= kCacheSize;
+					return state.exited || eof || hasTask;
+                });
+
+                if (state.exited)
+                {
+				    double time = timer.Duration();
+				    LOG::INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
+                    break;
+                }
+
+			    Vision::CodedFrame codedFrame;
+			    auto ret = demuxer->Read(&codedFrame);
+			    if (ret != CodecError::Success)
+			    {
+                    if (ret == CodecError::EndOfFile)
+                    {
+                        if (!eof)
+                        {
+							videoThreadPool->Enqueue([=, this] {
+								EndOfFile(decoder, callbacks.VideoDecodeFinishSlot, frames);
+							});
+							audioThreadPool->Enqueue([=, this]() -> void {
+								EndOfFile(audioDecoder, callbacks.AudioDecodeFinishSlot, audioSize);
+							});
+                        }
+						eof = true;
+                    }
+				    continue;
+			    }
+
+                switch (codedFrame.GetType())
+                {
+			    case MediaType::Video:
+                {
+				    videoThreadPool->Enqueue([=, this]() -> void {
+					    AsyncDecode(codedFrame, decoder);
+						Vision::Picture picture;
+						while (decoder->GetPicture(picture) == CodecError::Success)
+					    {
+							callbacks.VideoDecodeFinishSlot(std::move(picture));
+    #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+						    frames++;
+    #endif
+					    }
+				    });
+				    break;
+                }
+			    case MediaType::Audio:
+                {
+                    if (audioDecoder)
+                    {
+					    audioThreadPool->Enqueue([=, this]() -> void {
+						    AsyncDecode(codedFrame, audioDecoder);
+							Vision::Picture picture;
+							while (audioDecoder->GetPicture(picture) == CodecError::Success)
+						    {
+							    callbacks.AudioDecodeFinishSlot(std::move(picture));
+    #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
+								audioSize++;
+    #endif
+						    }
+					    });
+                    }
+			        break;
+                }
+
+                case MediaType::Subtitle:
+				    break;
+
+                default:
+				    break;
+                }
+            }
+        }};
+    }
 }
 
 void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
@@ -163,15 +369,21 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
     audioThreadPool->Join();
 
     {
-        std::unique_lock lock{ mutex.video };
-        pictures = std::queue<Vision::Picture>{};
+		ConcurrentQueue<Picture> _empty;
+		pictures.swap(_empty);
+		picture = {};
+		pictureSize = 0;
     }
 
     {
-        std::unique_lock lock{ mutex.audio };
-        audioFrames = std::queue<Vision::Picture>{};
+
+        ConcurrentQueue<Picture> _audioFrames;
+		audioFrames.swap(_audioFrames);
+		audioFrame = {};
+		audioSize = 0;
     }
 
+    eof = false;
     demuxer->Seek(MediaType::Video, seconds, min, max);
     condition.notify_all();
 }
@@ -191,14 +403,11 @@ VideoPlayerContext::~VideoPlayerContext()
 
 Picture VideoPlayerContext::GetPicture()
 {
-	Picture picture{}; 
+    if (picture)
     {
-		std::shared_lock lock{mutex.video};
-		if (!pictures.empty())
-        {
-			picture = pictures.front();
-        }
-	}
+		return picture;
+    }
+	pictures.try_dequeue(picture);
     if (!picture)
     {
 		condition.notify_one();
@@ -209,26 +418,25 @@ Picture VideoPlayerContext::GetPicture()
 
 Picture VideoPlayerContext::GetAudioFrame()
 {
-    std::shared_lock lock{ mutex.audio };
-    return audioFrames.empty() ? Vision::Picture{} : audioFrames.front();
+    if (audioFrame)
+    {
+		return audioFrame;
+    }
+
+    audioFrames.try_dequeue(audioFrame);
+	return audioFrame;
 }
 
 void VideoPlayerContext::PopPicture()
 {
-    {
-		std::unique_lock lock{mutex.video};
-		pictures.pop();
-    }
+	pictureSize--;
+	picture = {};
     condition.notify_one();
 }
 
 void VideoPlayerContext::PopAudioFrame()
 {
-    std::unique_lock lock{ mutex.audio };
-    if (!audioFrames.empty())
-    {
-        audioFrames.pop();
-    }
+	audioFrame = {};
 }
 
 VideoPlayerComponent::VideoPlayerComponent() :
@@ -237,20 +445,24 @@ VideoPlayerComponent::VideoPlayerComponent() :
 
 }
 
-VideoPlayerComponent::VideoPlayerComponent(const String &path) :
+VideoPlayerComponent::VideoPlayerComponent(const String &path, int cacheSize, const Vision::DecodingPreference &preference, const VideoDecodeCallbacks &callbacks) :
     player{}
 {
-	Ref<Demuxer>    demuxer       = new Vision::FFDemuxer;
-	Ref<VideoCodec> decoder       = new Vision::FFCodec;
-	Ref<VideoCodec> audiodDecoder = new Vision::FFCodec;
-	if (demuxer->Open(path, decoder, audiodDecoder) != CodecError::Success)
+	Ref<Demuxer>    demuxer         = new Vision::FFDemuxer;
+	Ref<VideoCodec> decoder         = new Vision::FFCodec;
+	Ref<VideoCodec> audioDecoder    = new Vision::FFCodec;
+	Ref<VideoCodec> subtitleDecoder = new Vision::FFCodec;
+	decoder.InterpretAs<Vision::FFCodec>()->SetPreference(preference);
+	if (demuxer->Open(path, decoder, audioDecoder, subtitleDecoder) != CodecError::Success)
     {
 		return;
     }
+
+    player = { new VideoPlayerContext{demuxer, decoder, audioDecoder, subtitleDecoder, cacheSize, callbacks} };
 }
 
-VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
-    player{new VideoPlayerContext{ demuxer, decoder, audioDecoder }}
+VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder) :
+    player{new VideoPlayerContext{demuxer, decoder, audioDecoder, subtitleDecoder}}
 {
 
 }
@@ -258,6 +470,11 @@ VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec>
 VideoPlayerComponent::~VideoPlayerComponent()
 {
     player.Reset();
+}
+
+void VideoPlayerComponent::StartPlay()
+{
+	player->StartPlay();
 }
 
 Picture VideoPlayerComponent::GetPicture()
@@ -283,6 +500,11 @@ void VideoPlayerComponent::PopAudioFrame()
 void VideoPlayerComponent::Seek(double seconds, int64_t min, int64_t max)
 {
     player->Seek(seconds, min, max);
+}
+
+bool VideoPlayerComponent::IsEof() const
+{
+	return player->IsEof();
 }
 
 void VideoPlayerComponent::Swap(VideoPlayerComponent &other)

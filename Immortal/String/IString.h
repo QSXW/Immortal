@@ -54,7 +54,7 @@ static inline std::wstring String2WString(const std::string &str)
 	return std::filesystem::path(str).wstring();
 }
 
-static inline std::string WString2String(const std::wstring &wstr, StringEncoding _encoding)
+static inline std::string WString2String(const std::wstring &wstr)
 {
 	return std::filesystem::path(wstr).string();
 }

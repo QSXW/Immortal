@@ -7,9 +7,16 @@
 #pragma once
 
 #include "Component.h"
+#include "Vision/Codec.h"
 
 namespace Immortal
 {
+
+struct VideoDecodeCallbacks
+{
+	std::function<void(Picture &&)> VideoDecodeFinishSlot;
+    std::function<void(Picture &&)> AudioDecodeFinishSlot;
+};
 
 class VideoPlayerContext;
 struct VideoPlayerComponent : public Component
@@ -20,11 +27,13 @@ struct VideoPlayerComponent : public Component
 
     VideoPlayerComponent();
 
-    VideoPlayerComponent(const String &path);
+    VideoPlayerComponent(const String &path, int cacheSize = 3, const Vision::DecodingPreference &preference = Vision::DecodingPreference::Auto, const VideoDecodeCallbacks &callbacks = {});
 
-    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
+    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr);
 
     ~VideoPlayerComponent();
+
+    void StartPlay();
 
     Picture GetPicture();
 
@@ -35,6 +44,8 @@ struct VideoPlayerComponent : public Component
     void PopAudioFrame();
 
     void Seek(double seconds, int64_t min, int64_t max);
+
+    bool IsEof() const;
 
     void Swap(VideoPlayerComponent &other);
 

@@ -121,7 +121,17 @@ public:
         Depth32F,
         Depth24Stencil8,
         BayerLayerRGGB,
-
+        FLOAT8P,
+        R8_UINTP,
+        R16_SINTP,
+        R32_SINTP,
+        FLOAT16P,
+		FLOATP,
+        DOUBLE,
+        DOUBLEP,
+        R64_SINT,
+        R64_SINTP,
+        
         R8        = R8_UNORM,
         RG8       = R8G8_UNORM,
         RGBA8     = R8G8B8A8_UNORM,
@@ -139,7 +149,7 @@ public:
         VECTOR2   = R32G32_SFLOAT,
         VECTOR3   = R32G32B32_SFLOAT,
         VECTOR4   = R32G32B32A32_SFLOAT,
-
+ 
         YUV420P   = BITS(YUV,              BayerLayerRGGB + 1),
         YUV422P   = BITS(YUV,              YUV420P + 1 ),
         YUV444P   = BITS(YUV,              YUV420P + 2 ),
@@ -154,9 +164,10 @@ public:
 		YUV444P16 = BITS(YUV,     _16Bits, YUV420P + 11),
         NV12      = BITS(YUV, NV,          YUV420P + 12),
         P010LE    = BITS(YUV, NV, _10Bits, YUV420P + 13),
-        P016LE    = BITS(YUV,     _16Bits, YUV420P + 14),
-        Y210      = BITS(YUV,     _10Bits, YUV420P + 15),
-		Y216      = BITS(YUV,     _16Bits, YUV420P + 16)
+		P012LE    = BITS(YUV, NV, _12Bits, YUV420P + 14),
+        P016LE    = BITS(YUV,     _16Bits, YUV420P + 15),
+        Y210      = BITS(YUV,     _10Bits, YUV420P + 16),
+		Y216      = BITS(YUV,     _16Bits, YUV420P + 17)
     };
 
     static constexpr ValueType HightBitDepth = ValueType(Format::_10Bits | Format::_12Bits | Format::_16Bits);

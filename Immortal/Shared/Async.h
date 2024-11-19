@@ -7,6 +7,8 @@
 #include <future>
 #include <functional>
 #include <atomic>
+#include <concurrentqueue.h>
+#include <lightweightsemaphore.h>
 
 #ifdef __APPLE__
 namespace std
@@ -17,6 +19,12 @@ using jthread = thread;
 
 namespace Immortal
 {
+
+template <class T>
+class ConcurrentQueue : public moodycamel::ConcurrentQueue<T>
+{
+
+};
 
 class Thread
 {
@@ -105,6 +113,93 @@ protected:
 
 using Task = std::function<void()>;
 
+class TaskThread
+{
+public:
+	TaskThread() :
+	    size{},
+	    thread{},
+	    exited{}
+    {
+		thread = std::move(std::thread{[=, this]() {
+            while (true)
+            {
+				size.wait(0);
+				if (exited)
+				{
+					break;
+				}
+     //           if (size == 0xffffffff)
+     //           {
+					//break;
+     //           }
+				Task task{};
+                if (tasks.try_dequeue(task))
+                {
+					task();
+                }
+                else
+                {
+					size = 0;
+                }
+            }
+		}});
+    }
+
+    ~TaskThread()
+    {
+		exited = true;
+		size = 0xffffffff;
+		size.notify_one();
+		Join();
+    }
+
+	template <class T>
+	auto Enqueue(T task) -> std::future<decltype(task())>
+	{
+		auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
+		{
+            if (tasks.try_enqueue([=]() -> void {
+                (*wrapper)();
+                }))
+            {
+				size++;
+				size.notify_one();
+            }
+		}
+		return wrapper->get_future();
+	}
+
+    const std::atomic<uint32_t> &TaskSize() const
+    {
+		return size;
+    }
+   
+    void RemoveTasks()
+    {
+		size = 0;
+		ConcurrentQueue<Task> empty;
+		tasks.swap(empty);
+    }
+
+    void Join()
+    {
+        if (thread.joinable())
+        {
+			thread.join();
+        }
+    }
+
+protected:
+	std::atomic_uint32_t size;
+
+	ConcurrentQueue<Task> tasks;
+
+	std::thread thread;
+
+    bool exited;
+};
+
 class ThreadPool
 {
 public:
@@ -136,12 +231,19 @@ public:
         return wrapper->get_future();
     }
 
+    void OnNotify(const std::function<void()> &value)
+    {
+		notify = value;
+    }
+
 protected:
     std::vector<std::thread> threads;
     
     std::atomic<uint32_t> taskRef;
 
     std::atomic<bool> tasked;
+
+    std::function<void()> notify;
 
     std::condition_variable condition;
 
