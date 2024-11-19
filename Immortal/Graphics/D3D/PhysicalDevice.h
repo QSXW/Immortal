@@ -22,6 +22,8 @@ public:
 
     virtual ~PhysicalDevice() override;
 
+    virtual PhysicalDeviceDescription GetDescription() override;
+
 public:
 	DXGI_ADAPTER_DESC GetAdapterDesc();
 

@@ -31,7 +31,6 @@ Instance::Instance() :
 
 Instance::~Instance()
 {
-	physicalDevices.clear();
 	if (d3d12Library)
 	{
 		FreeLibrary(d3d12Library);
@@ -41,11 +40,8 @@ Instance::~Instance()
 
 SuperDevice *Instance::CreateDevice(int deviceId)
 {
-	if (deviceId >= physicalDevices.size())
-	{
-		physicalDevices.resize(deviceId + 1);
-	}
-	physicalDevices[deviceId] = new PhysicalDevice{this, deviceId};
+	uint32_t numPhysicalDevice;
+	EnumeratePhysicalDevice(&numPhysicalDevice, nullptr);
 	return new Device{ physicalDevices[deviceId] };
 }
 

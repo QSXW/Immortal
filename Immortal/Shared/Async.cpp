@@ -36,6 +36,10 @@ ThreadPool::ThreadPool(uint32_t numThreads) :
 					tasked.store(true);
 					tasked.notify_all();
 				}
+				if (notify)
+				{
+					notify();
+				}
             }
             });
     }

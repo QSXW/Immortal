@@ -25,14 +25,6 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                 {
 					continue;
                 }
-
-     //           std::unique_lock lock{mutex};
-     //           condition.wait(lock, [=, this] {
-					//return !tasks();
-     //           });
-
-     //           task = std::move(tasks.front());
-     //           tasks.pop();
             }
 
             switch (task->GetType())
@@ -141,6 +133,13 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     if (commandBuffer)
                     {
                         delete commandBuffer;
+						commandBuffer = nullptr;
+                    }
+
+                    if (gpuEvent)
+                    {
+						delete gpuEvent;
+						gpuEvent = nullptr;
                     }
 
                     while (!commandBuffers.empty())

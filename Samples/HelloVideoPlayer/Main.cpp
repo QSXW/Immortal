@@ -47,7 +47,7 @@ int main(int, char **)
 	URef<Instance> instance = Instance::CreateInstance(backendAPI, window->GetType());
 
 	URef<Device> device = instance->CreateDevice(0);
-	Graphics::SetDevice(device);
+	Graphics::SetDevice(instance, device);
 
     queue = device->CreateQueue(Queue::Type::Graphics);
 	Graphics::Execute<SetQueueTask>(queue);
@@ -191,7 +191,7 @@ int main(int, char **)
 
 					texture = filterGraphComponent->QueryOutput(0);
 
-					auto current = picture.GetTimestamp();
+					auto current = picture.GetTimestamp() * picture.GetTimebase().Normalize() * animator->FPS();
 					progress = (float) current / animator->TotalFrames();
 				}
 			}

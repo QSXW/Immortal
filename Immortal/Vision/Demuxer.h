@@ -21,9 +21,14 @@ public:
     /**
      * @brief Open a file
      */
-    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr)
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr, VideoCodec *subtitleCodec = nullptr)
     {
         return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::initializer_list<MediaType> &&streams)
+    {
+		return CodecError::FailedToCallDecoder;
     }
 
     /**
@@ -41,6 +46,11 @@ public:
     virtual CodecError Read(CodedFrame *codedFrame)
     {
         return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError Write(const CodedFrame &codedFrame, int stream = 0)
+    {
+		return CodecError::FailedToCallDecoder;
     }
 
     virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max)

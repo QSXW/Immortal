@@ -276,7 +276,7 @@ void WFileDialog::DrawListDirectories()
 			wchar_t volumePathName[MAX_PATH] = {};
 			if (GetVolumePathNamesForVolumeNameW(volumeName, volumePathName, SL_ARRAY_LENGTH(volumePathName), &length) && volumePathName[0])
             {
-				FileSystem::DirectoryEntry entry = {WString2String(volumePathName, StringEncoding::UTF8), FileType::Directory};
+				FileSystem::DirectoryEntry entry = {WString2U8String(volumePathName), FileType::Directory};
 				volumes.emplace_back(std::vector<FileSystem::DirectoryEntry>{entry});
             }
 		} while (FindNextVolumeW(handle, volumeName, SL_ARRAY_LENGTH(volumeName)));

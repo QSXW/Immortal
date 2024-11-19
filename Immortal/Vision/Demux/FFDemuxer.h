@@ -9,6 +9,9 @@
 struct AVCodec;
 struct AVStream;
 struct AVPacket;
+struct AVFormatContext;
+struct AVIOContext;
+struct AVCodecContext;
 namespace Immortal
 {
 namespace Vision
@@ -29,16 +32,30 @@ public:
 
     ~FFDemuxer();
 
-    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr) override;
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr, VideoCodec *subtitleCodec = nullptr) override;
+
+    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::initializer_list<MediaType> &&streams) override;
+
+    virtual void Close() override;
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 
+    virtual CodecError Write(const CodedFrame &codedFrame, int stream = 0) override;
+
     virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max) override;
 
-    void Destory();
+    void Destroy();
 
 private:
     Ref<FormatContext> formatContext;
+
+    AVFormatContext *handle;
+
+    AVIOContext *pb;
+
+    AVCodecContext *codecs[4];
+
+    std::vector<AVStream *> streams;
 #endif
 
 public:

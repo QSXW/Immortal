@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 #include <commdlg.h>
+#include <shobjidl.h>
+#include <wrl/client.h>
 
 namespace Immortal
 {
@@ -25,7 +27,7 @@ std::optional<std::string> FileDialogs::OpenFile(const char *filter)
 
     ofn.lpstrFilter = filter;
     ofn.nFilterIndex = 1;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
     if (GetOpenFileNameA(&ofn) == TRUE)
     {
@@ -64,6 +66,46 @@ std::optional<std::string> FileDialogs::SaveFile(const char *filter)
     }
 
     return std::nullopt;
+}
+
+using Microsoft::WRL::ComPtr;
+String FileDialogs::BrowserFolder()
+{
+	CoInitialize(NULL);
+
+	ComPtr<IFileDialog> pfd;
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		DWORD dwOptions;
+		hr = pfd->GetOptions(&dwOptions);
+		if (SUCCEEDED(hr))
+		{
+			pfd->SetOptions(dwOptions | FOS_PICKFOLDERS);
+		}
+
+        hr = pfd->Show(nullptr);
+		if (SUCCEEDED(hr))
+		{
+			ComPtr<IShellItem> pResult;
+			hr = pfd->GetResult(&pResult);
+			if (SUCCEEDED(hr))
+			{
+				wchar_t *pszFilePath = NULL;
+				hr = pResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+				if (SUCCEEDED(hr))
+				{
+					String folderPath(pszFilePath);
+					CoTaskMemFree(pszFilePath);
+					CoUninitialize();
+					return folderPath;
+				}
+			}
+		}
+	}
+
+	CoUninitialize();
+	return {};
 }
 
 static uint32_t GetFormat(Clipboard::DataType type)

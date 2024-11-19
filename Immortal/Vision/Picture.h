@@ -5,7 +5,8 @@
 #include "Graphics/Texture.h"
 #include "Shared/IObject.h"
 #include "Memory/MemoryResource.h"
-
+#include "Math/Math.h"
+#include "Types.h"
 #include <functional>
 
 namespace Immortal
@@ -21,11 +22,10 @@ enum class PictureMemoryType
 };
 
 class Picture;
-
 class IMMORTAL_API SharedPictureData : public IObject
 {
 public:
-	friend class Picture;
+    friend class Picture;
     SL_SWAPPABLE(SharedPictureData)
 
 public:
@@ -40,37 +40,40 @@ public:
     void Swap(SharedPictureData &other);
 
 protected:
-    uint8_t                     *data[4];
-    uint32_t                     stride[4];
+    uint8_t                     *data[8];
+    uint32_t                     stride[8];
     Format                       format;
     uint32_t                     width;
     uint32_t                     height;
-    float                        timestamp;
+    uint32_t                     sampleRate;
+	PictureFlags                 flags;
+    int64_t                      timestamp;
+	Rational                     timebase;
     PictureMemoryType            memoryType;
     std::function<void(void *)>  release;
     MemoryResource              *memoryResource;
-	AAllocator<uint8_t>          allocator;
+    AAllocator<uint8_t>          allocator;
 };
 
 class IMMORTAL_API Picture
 {
 public:
-	Picture();
+    Picture();
 
-	Picture(uint32_t width, uint32_t height, Format format, bool allocated = false);
+    Picture(uint32_t width, uint32_t height, Format format, bool allocated = false);
 
     Picture(Texture *texture);
 
     template <class T>
     Picture(T width, T height, Format format, bool allocated = false) :
-	    Picture{ (uint32_t)width, (uint32_t)height, format, allocated }
+        Picture{ (uint32_t)width, (uint32_t)height, format, allocated }
     {
 
     }
 
     operator bool() const
     {
-		return !!shared;
+        return !!shared;
     }
 
     void SetRelease(std::function<void(void*)> &&func)
@@ -85,34 +88,34 @@ public:
 
     auto &operator[](size_t index) const
     {
-		return shared->data[index];
+        return shared->data[index];
     }
 
     template <class T>
     void SetDataAt(size_t index, const T *data)
     {
-		shared->data[index] = (uint8_t *)data;
+        shared->data[index] = (uint8_t *)data;
     }
 
     template <class T>
     void SetData(const T *data)
     {
-		SetDataAt(0, data);
+        SetDataAt(0, data);
     }
 
     PictureMemoryType GetMemoryType() const
     {
-		return shared->memoryType;
+        return shared->memoryType;
     }
 
     void SetMemoryType(PictureMemoryType type) const
     {
-		shared->memoryType = type;
+        shared->memoryType = type;
     }
 
     void SetStride(size_t index, uint32_t stride) const
     {
-		shared->stride[index] = stride;
+        shared->stride[index] = stride;
     }
 
     uint32_t GetStride(size_t index) const
@@ -127,7 +130,7 @@ public:
 
     void SetFormat(const Format &format)
     {
-		shared->format = format;
+        shared->format = format;
     }
 
     const uint32_t &GetWidth() const
@@ -137,7 +140,7 @@ public:
 
     void SetWidth(uint32_t width)
     {
-		shared->width = width;
+        shared->width = width;
     }
 
     const uint32_t &GetHeight() const
@@ -147,17 +150,52 @@ public:
 
     void SetHeight(uint32_t height)
     {
-		shared->height = height;
+        shared->height = height;
     }
 
     const float &GetTimestamp() const
     {
-		return shared->timestamp;
+        return shared->timestamp;
     }
 
-    void SetTimestamp(float timestamp) const
+    void SetTimestamp(int64_t timestamp) const
     {
-		shared->timestamp = timestamp;
+        shared->timestamp = timestamp;
+    }
+
+    uint32_t GetSampleRate() const
+    {
+        return shared->sampleRate;
+    }
+
+    void SetSampleRate(uint32_t value)
+    {
+        shared->sampleRate = value;
+    }
+
+    const Rational &GetTimebase() const
+    {
+        return shared->timebase;
+    }
+
+    void SetTimebase(Rational value)
+    {
+        shared->timebase = value;
+    }
+
+    IObject *GetIObject() const
+    {
+        return shared.Get();
+    }
+    
+    void SetFlags(PictureFlags flags)
+    {
+		shared->flags |= flags;
+    }
+
+    PictureFlags GetFlags() const
+    {
+		return shared->flags;
     }
 
 protected:

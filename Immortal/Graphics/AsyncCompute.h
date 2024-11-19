@@ -3,17 +3,9 @@
 #include "Shared/Async.h"
 #include "Queue.h"
 #include "LightGraphics.h"
-#include "concurrentqueue.h"
-#include "lightweightsemaphore.h"
 
 namespace Immortal
 {
-
-template <class T>
-class ConcurrentQueue : public moodycamel::ConcurrentQueue<T>
-{
-
-};
 
 enum class AsyncTaskType
 {
@@ -175,10 +167,7 @@ public:
 	void Execute(Args &&...args)
     {
 		URef<AsyncTask> task = new T{std::forward<Args>(args)...};
-        //std::unique_lock lock{ mutex };
-        //tasks.push(std::move(task));
 		tasks.enqueue(std::move(task));
-        //condition.notify_one();
 		semaphore.signal();
     }
 
@@ -191,10 +180,6 @@ protected:
     Thread thread;
 
     moodycamel::details::Semaphore semaphore;
-
-    std::condition_variable condition;
-
-    std::mutex mutex;
 
     ConcurrentQueue<URef<AsyncTask>> tasks;
 
