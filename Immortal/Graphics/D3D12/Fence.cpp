@@ -8,12 +8,12 @@ namespace D3D12
 
 Fence::Fence(Device *device, uint64_t initValue, Type type)
 {
-    device->CreateFence(&handle, initValue, D3D12_FENCE_FLAGS(type));
+    DX_CHECK(device->CreateFence(&handle, initValue, D3D12_FENCE_FLAGS(type)));
 
     event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     if (!event)
     {
-        Check(HRESULT_FROM_WIN32(GetLastError()));
+        DX_CHECK(HRESULT_FROM_WIN32(GetLastError()));
     }
 }
 

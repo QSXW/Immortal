@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstdint>
-
 #include "Vision/Codec.h"
-#include "Vision/External/stb_image.h"
 
 namespace Immortal
 {

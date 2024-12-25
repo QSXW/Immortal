@@ -15,6 +15,7 @@ struct AVBufferRef;
 struct AVCodecContext;
 struct AVCodecParameters;
 struct SwrContext;
+struct SwsContext;
 struct AVAudioFifo;
 struct AVSubtitle;
 namespace Immortal
@@ -101,6 +102,11 @@ public:
     {
 		return sampleRate;
     }
+
+    void SetSampleRate(int value)
+    {
+		sampleRate = value;
+    }
     
 protected:
     CodecError RescaleAudioSamples(int numOutSamples, uint8_t *const *out, int outSampleRate, int numInSamples, const uint8_t *const *in, int inSampleRate, int dataSize);
@@ -113,6 +119,8 @@ protected:
     AVBufferRef *device;
 
     SwrContext *swrContext;
+
+    SwsContext *swsContext;
 
     int64_t startTimestamp;
 

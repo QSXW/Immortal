@@ -26,7 +26,7 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::initializer_list<MediaType> &&streams)
+    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::vector<MediaType> &streams)
     {
 		return CodecError::FailedToCallDecoder;
     }

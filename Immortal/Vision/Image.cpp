@@ -13,20 +13,25 @@ static Codec *SelectSuitableCodec(const std::string &path)
     switch (FileSystem::DumpFileId(path))
     {
     case FileFormat::BMP:
-        return new Vision::BMPCodec;
+        return new BMPCodec;
 
     case FileFormat::JPG:
     case FileFormat::JPEG:
     case FileFormat::JFIF:
 #if HAVE_TURBOJPEG
-		return new Vision::TurboJpegCodec;
+		return new TurboJpegCodec;
 #endif
     case FileFormat::HDR:
     case FileFormat::PNG:
-        return new Vision::STBCodec;
+        return new STBCodec;
+
+#if HAVE_JXL:
+	case FileFormat::JXL:
+		return new JxlCodec;
+#endif
 
     case FileFormat::PPM:
-        return new Vision::PPMCodec;
+        return new PPMCodec;
 
     case FileFormat::ARW:
     case FileFormat::NEF:
@@ -34,10 +39,14 @@ static Codec *SelectSuitableCodec(const std::string &path)
 	case FileFormat::FFF:
 	case FileFormat::RAF:
 	case FileFormat::RW2:
-        return new Vision::RawCodec{ Format::RGBA8 };
+        return new RawCodec{ Format::RGBA8 };
 
+#if HAVE_WEBP
+	case FileFormat::WEBP:
+		return new WebpCodec{};
+#endif
     default:
-        return new Vision::OpenCVCodec;
+        return new OpenCVCodec;
         break;
     }
 }
@@ -57,6 +66,30 @@ Picture Read(const String &path)
     }
 
     return codec->GetPicture();
+}
+
+CodedFrame Write(const Picture &picture, const String &path)
+{
+	URef<Interface::Codec> codec = SelectSuitableCodec(path);
+
+	CodedFrame codedFrame;
+	if (codec->Encode(picture, codedFrame) != CodecError::Success)
+	{
+		return {};
+	}
+    
+    if (!path.empty())
+    {
+		Stream stream{path, StreamMode::Write};
+        if (!stream.Writable())
+        {
+			LOG::ERR("Failed to open file {} to write the encoded image data!", path.c_str());
+			return {};
+        }
+		stream.Write(codedFrame.GetBuffer());
+    }
+
+	return codedFrame;
 }
 
 }

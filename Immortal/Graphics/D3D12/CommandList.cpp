@@ -23,25 +23,11 @@ CommandList::CommandList(Device *device, Type type, CommandAllocator *pAllocator
     state{ State::Pending },
     handle{}
 {
-    Check(device->CreateCommandList(
+    DX_CHECK(device->CreateCommandList(
         D3D12_COMMAND_LIST_TYPE(type),
         *pAllocator,
         pInitialState,
 	    handle.GetAddressOf()
-    ));
-}
-
-CommandList::CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState) :
-    type { type },
-    state{ State::Pending },
-    handle{}
-{
-    Check(device->CreateCommandList(
-        0,
-	    D3D12_COMMAND_LIST_TYPE(type),
-        pAllocator,
-        pInitialState,
-        IID_PPV_ARGS(&handle)
     ));
 }
 

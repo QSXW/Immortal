@@ -34,6 +34,10 @@ static inline TJSAMP GetSampling(const Format &format)
 		case Format::YUV444P16:
 			return TJSAMP_444;
 
+		case Format::R8_UNORM:
+		case Format::RGBA8:
+			return TJSAMP_420;
+
 		default:
 			return TJSAMP_UNKNOWN;
 	}
@@ -101,7 +105,11 @@ CodecError TurboJpegCodec::Encode(const Picture &picture, CodedFrame &codedFrame
 
 	CompressedRef compressedRef{};
 
-	if (picture.GetFormat().IsType(Format::YUV))
+	uint32_t width  = picture.GetWidth();
+	uint32_t height = picture.GetHeight();
+
+	Format format = picture.GetFormat();
+	if (format.IsType(Format::YUV))
 	{	
 		int strides[4] = {};
 		uint8_t *planes[4] = {};
@@ -111,9 +119,19 @@ CodecError TurboJpegCodec::Encode(const Picture &picture, CodedFrame &codedFrame
 			planes[i]  = picture.GetData(i);
 		}
 
-		tjCompressFromYUVPlanes(handle, (const unsigned char **)planes, picture.GetWidth(), strides, picture.GetHeight(), sampling, &compressedRef.data, &compressedRef.size, quality, 0);
-		codedFrame = CodedFrame{ compressedRef.data, compressedRef.size };
+		tjCompressFromYUVPlanes(handle, (const unsigned char **)planes, width, strides, height, sampling, &compressedRef.data, &compressedRef.size, quality, 0);
 	}
+	else
+	{
+		int pixelFormat = TJPF_RGBX;
+		if (format == Format::R8_UNORM || format == Format::R16_UNORM)
+		{
+			pixelFormat = TJPF_GRAY;
+		}
+		tjCompress2(handle, picture.GetData(0), width, picture.GetStride(0), height, pixelFormat, &compressedRef.data, &compressedRef.size, sampling, quality, 0);
+	}
+
+	codedFrame = CodedFrame{compressedRef.data, compressedRef.size};
 
 	tjDestroy(handle);
     return CodecError::Success;
@@ -195,7 +213,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
 	else
 	{
 		auto pitch = picture.GetStride(0);
-		tjDecompress2(handle, data, size, picture.GetData(), width, pitch, height, TJPF_RGBA, 0);
+		tjDecompress2(handle, data, size, picture.GetData(), width, pitch, height, TJPF_RGBX, 0);
 	}
 
 	tjDestroy(handle);

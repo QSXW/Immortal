@@ -62,6 +62,8 @@ set(IMAGE_CODEC_FILES
     ImageCodec.h
     JPEG.cpp
     JPEG.h
+    Jxl.cpp
+    Jxl.h
     STBCodec.cpp
     STBCodec.h
     MFXJpegCodec.cpp
@@ -76,7 +78,9 @@ set(IMAGE_CODEC_FILES
     OpenCVCodec.cpp
     OpenCVCodec.h
     TurboJpegCodec.cpp
-    TurboJpegCodec.h)
+    TurboJpegCodec.h
+    Webp.cpp
+    Webp.h)
 list(TRANSFORM IMAGE_CODEC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Image/")
 
 set(VIDEO_CODEC_FILES
@@ -143,9 +147,10 @@ add_library(${PROJECT_NAME} STATIC ${VISION_FILES})
 target_link_libraries(${PROJECT_NAME} PRIVATE
     PUBLIC
         slapi
-        ExternalVision
         ImmortalShared
-        ImmortalGraphics)
+        ImmortalGraphics
+    PRIVATE
+        ExternalVision)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

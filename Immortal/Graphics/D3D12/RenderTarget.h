@@ -170,12 +170,14 @@ public:
 public:
     void SetColorAttachment(uint32_t index, Ref<Texture> &texture);
 
+    void BuildRenderTargetView();
+
 	void SetDepthAttachment(Ref<Texture> &texture);
 
 public:
-    const Descriptor *GetDescriptor() const
+    Descriptor &GetDescriptor()
     {
-        return descriptors;
+		return descriptors;
     }
 
     const std::vector<Ref<Texture>> &GetColorBuffers() const
@@ -204,7 +206,7 @@ public:
     }
 
 protected:
-    Descriptor descriptors[32];
+    Descriptor descriptors;
 
     Descriptor depthDescriptor;
 

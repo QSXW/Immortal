@@ -36,8 +36,8 @@ constexpr uint64_t MakeIdentifier(
 
 enum class FileType
 {
-	Directory   = BIT(0),
-	RegularFile = BIT(1),
+    Directory   = BIT(0),
+    RegularFile = BIT(1),
     Volumn,
     Picture,
     Video,
@@ -47,7 +47,7 @@ enum class FileType
     EXE,
     MP4,
     MOV,
-	JSON,
+    JSON,
     PDF,
     HTML,
     AVI,
@@ -57,9 +57,9 @@ enum class FileType
     DAT,
     DOC,
     GIF,
-	JPG,
-	JS,
-	PNG,
+    JPG,
+    JS,
+    PNG,
     PPT,
     PSD,
     RAW,
@@ -67,14 +67,16 @@ enum class FileType
     TIF,
     TXT,
     XML,
-	ZIP,
+    ZIP,
+    WEBP,
+    JXL,
     Num
 };
 SL_ENABLE_BITWISE_OPERATOR(FileType)
 
 enum class FileFlagBits
 {
-	Empty = BIT(0),
+    Empty = BIT(0),
 };
 SL_ENABLE_BITWISE_OPERATOR(FileFlagBits)
 
@@ -98,6 +100,7 @@ enum class FileFormat : uint64_t
     JFIF  = MakeIdentifier('J', 'F', 'I', 'F'),
     JPG   = MakeIdentifier('J', 'P', 'G'     ),
     JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
+    JXL   = MakeIdentifier('J', 'X', 'L'     ),
     HDR   = MakeIdentifier('H', 'D', 'R'     ),
     ARW   = MakeIdentifier('A', 'R', 'W'     ),
     NEF   = MakeIdentifier('N', 'E', 'F'     ),
@@ -108,6 +111,7 @@ enum class FileFormat : uint64_t
     RAF   = MakeIdentifier('R', 'A', 'F'     ),
     EXR   = MakeIdentifier('E', 'X', 'R'     ),
     RW2   = MakeIdentifier('R', 'W', '2'     ),
+    WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
 
     /** Video file format extensions */
     AVI   = MakeIdentifier('A', 'V', 'I'    ),
@@ -120,14 +124,14 @@ enum class FileFormat : uint64_t
     _266  = MakeIdentifier('2', '6', '6'     ),
     MKV   = MakeIdentifier('M', 'K', 'V'     ),
     TS    = MakeIdentifier('T', 'S'          ),
-	MOV   = MakeIdentifier('M', 'O', 'V'     ),
+    MOV   = MakeIdentifier('M', 'O', 'V'     ),
     M2TS  = MakeIdentifier('M', '2', 'T', 'S'),
-	WEBM  = MakeIdentifier('W', 'E', 'B', 'M'),
+    WEBM  = MakeIdentifier('W', 'E', 'B', 'M'),
     FLV   = MakeIdentifier('F', 'L', 'V'     ),
     BIT   = MakeIdentifier('B', 'I', 'T'     ),
 
     /** 3D Lookup Table */
-	CUBE  = MakeIdentifier('C', 'U', 'B', 'E'),
+    CUBE  = MakeIdentifier('C', 'U', 'B', 'E'),
 
     /** Immortal Scene */
     IML   = MakeIdentifier('I', 'M', 'L'     ),
@@ -135,21 +139,21 @@ enum class FileFormat : uint64_t
     CPP   = MakeIdentifier('C', 'P', 'P'     ),
     EXE   = MakeIdentifier('E', 'X', 'E'     ),
     JSON  = MakeIdentifier('J', 'S', 'O', 'N'),
-	PDF   = MakeIdentifier('P', 'D', 'F'     ),
+    PDF   = MakeIdentifier('P', 'D', 'F'     ),
     HTML  = MakeIdentifier('H', 'T', 'M', 'L'),
-	BIN   = MakeIdentifier('B', 'I', 'N'     ),
-	DLL   = MakeIdentifier('D', 'L', 'L'     ),
-	DAT   = MakeIdentifier('D', 'A', 'T'     ),
-	DOC   = MakeIdentifier('D', 'O', 'C'     ),
-	GIF   = MakeIdentifier('G', 'I', 'F'     ),
-	JS    = MakeIdentifier('J', 'S'          ),
+    BIN   = MakeIdentifier('B', 'I', 'N'     ),
+    DLL   = MakeIdentifier('D', 'L', 'L'     ),
+    DAT   = MakeIdentifier('D', 'A', 'T'     ),
+    DOC   = MakeIdentifier('D', 'O', 'C'     ),
+    GIF   = MakeIdentifier('G', 'I', 'F'     ),
+    JS    = MakeIdentifier('J', 'S'          ),
     PPT   = MakeIdentifier('P', 'P', 'T'     ),
-	PSD   = MakeIdentifier('P', 'S', 'D'     ),
-	SQL   = MakeIdentifier('S', 'Q', 'L'     ),
-	TIF   = MakeIdentifier('T', 'I', 'F'     ),
-	TXT   = MakeIdentifier('T', 'X', 'T'     ),
-	XML   = MakeIdentifier('X', 'M', 'L'     ),
-	ZIP   = MakeIdentifier('Z', 'I', 'P'     ),
+    PSD   = MakeIdentifier('P', 'S', 'D'     ),
+    SQL   = MakeIdentifier('S', 'Q', 'L'     ),
+    TIF   = MakeIdentifier('T', 'I', 'F'     ),
+    TXT   = MakeIdentifier('T', 'X', 'T'     ),
+    XML   = MakeIdentifier('X', 'M', 'L'     ),
+    ZIP   = MakeIdentifier('Z', 'I', 'P'     ),
 };
 
 namespace FileSystem
@@ -179,7 +183,7 @@ template <FileFormat T>
 inline constexpr bool IsFormat(const std::string &path)
 {
     auto id = MakeIdentifier(path);
-	return id == uint64_t(T);
+    return id == uint64_t(T);
 }
 
 template <FileFormat T>
@@ -191,7 +195,7 @@ inline constexpr bool IsFormat(uint64_t id)
 template <FileFormat T>
 inline constexpr bool IsFormat(FileFormat id)
 {
-	return id == T;
+    return id == T;
 }
 
 static inline bool Is3DModel(const std::string &path)
@@ -206,29 +210,31 @@ static inline bool Is3DModel(const std::string &path)
 
 static inline bool IsRawImage(FileFormat id)
 {
-	return IsFormat<FileFormat::CR2>(id) ||
-	       IsFormat<FileFormat::ARW>(id) ||
-	       IsFormat<FileFormat::NEF>(id) ||
-	       IsFormat<FileFormat::FFF>(id) ||
-	       IsFormat<FileFormat::RAF>(id) ||
+    return IsFormat<FileFormat::CR2>(id) ||
+           IsFormat<FileFormat::ARW>(id) ||
+           IsFormat<FileFormat::NEF>(id) ||
+           IsFormat<FileFormat::FFF>(id) ||
+           IsFormat<FileFormat::RAF>(id) ||
            IsFormat<FileFormat::RW2>(id);
 }
 
 static inline bool IsImage(FileFormat id)
 {
-	return IsFormat<FileFormat::BMP>(id)  ||
-	       IsFormat<FileFormat::JPEG>(id) ||
-	       IsFormat<FileFormat::JPG>(id)  ||
-	       IsFormat<FileFormat::PNG>(id)  ||
-	       IsFormat<FileFormat::PPM>(id)  ||
-	       IsFormat<FileFormat::HDR>(id)  ||
-	       IsFormat<FileFormat::JFIF>(id) ||
-	       IsRawImage(id);
+    return IsFormat<FileFormat::BMP>(id)  ||
+           IsFormat<FileFormat::JPEG>(id) ||
+           IsFormat<FileFormat::JPG>(id)  ||
+	       IsFormat<FileFormat::JXL>(id) ||
+           IsFormat<FileFormat::PNG>(id)  ||
+           IsFormat<FileFormat::PPM>(id)  ||
+           IsFormat<FileFormat::HDR>(id)  ||
+           IsFormat<FileFormat::JFIF>(id) ||
+	       IsFormat<FileFormat::WEBP>(id) ||
+           IsRawImage(id);
 }
 
 static inline bool IsImage(uint64_t format)
 {
-	return IsImage((FileFormat)format);
+    return IsImage((FileFormat)format);
 }
 
 static inline bool IsImage(const std::string &path)
@@ -240,21 +246,21 @@ static inline bool IsImage(const std::string &path)
 static inline bool IsVideo(uint64_t id)
 {
     return IsFormat<FileFormat::IVF>(id)  ||
-	       IsFormat<FileFormat::MP4>(id)  ||
+           IsFormat<FileFormat::MP4>(id)  ||
            IsFormat<FileFormat::VVC>(id)  ||
-	       IsFormat<FileFormat::H264>(id) ||
-	       IsFormat<FileFormat::H265>(id) ||
+           IsFormat<FileFormat::H264>(id) ||
+           IsFormat<FileFormat::H265>(id) ||
            IsFormat<FileFormat::H266>(id) ||
            IsFormat<FileFormat::_266>(id) ||
-	       IsFormat<FileFormat::MKV>(id)  ||
-	       IsFormat<FileFormat::M2TS>(id) ||
-	       IsFormat<FileFormat::TS>(id)   ||
-	       IsFormat<FileFormat::MOV>(id)  ||
-	       IsFormat<FileFormat::M2TS>(id) ||
-	       IsFormat<FileFormat::WEBM>(id) ||
-	       IsFormat<FileFormat::AVIF>(id) ||
+           IsFormat<FileFormat::MKV>(id)  ||
+           IsFormat<FileFormat::M2TS>(id) ||
+           IsFormat<FileFormat::TS>(id)   ||
+           IsFormat<FileFormat::MOV>(id)  ||
+           IsFormat<FileFormat::M2TS>(id) ||
+           IsFormat<FileFormat::WEBM>(id) ||
+           IsFormat<FileFormat::AVIF>(id) ||
            IsFormat<FileFormat::BIT>(id)  ||
-	       IsFormat<FileFormat::GIF>(id);
+           IsFormat<FileFormat::GIF>(id);
 }
 
 static inline bool IsVideo(const std::string &path)
@@ -269,7 +275,7 @@ static FileType GetFileType(const std::string &path)
 
     if (IsRawImage(id))
     {
-		return FileType::RAW;
+        return FileType::RAW;
     }
 
 #define CASE(X) case FileFormat::##X: return FileType::##X;
@@ -296,30 +302,31 @@ static FileType GetFileType(const std::string &path)
         return FileType::Video;
 
     CASE(CPP )     
-	CASE(EXE )      
-	CASE(BIN )
-	CASE(MP4 )
-	CASE(MOV )
-	CASE(JSON)
-	CASE(PDF )
-	CASE(HTML)
-	CASE(AVI )
-	CASE(BMP )
-	CASE(DLL )
-	CASE(DAT )
-	CASE(DOC )
-	CASE(GIF )
-	CASE(JPG )
-	CASE(JS  )
-	CASE(PNG )
-	CASE(PPT )
-	CASE(PSD )
-	CASE(SQL )
-	CASE(TIF )
-	CASE(TXT )
-	CASE(XML )
-	CASE(ZIP )
-
+    CASE(EXE )      
+    CASE(BIN )
+    CASE(MP4 )
+    CASE(MOV )
+    CASE(JSON)
+    CASE(PDF )
+    CASE(HTML)
+    CASE(AVI )
+    CASE(BMP )
+    CASE(DLL )
+    CASE(DAT )
+    CASE(DOC )
+    CASE(GIF )
+    CASE(JPG )
+    CASE(JS  )
+    CASE(PNG )
+    CASE(PPT )
+    CASE(PSD )
+    CASE(SQL )
+    CASE(TIF )
+    CASE(TXT )
+    CASE(XML )
+    CASE(ZIP )
+	CASE(WEBP)
+	CASE(JXL )
     default:
         return FileType::RegularFile;
     }
@@ -425,7 +432,7 @@ public:
     }
 
     Path(const std::u8string_view &view) :
-	    Super{ view }
+        Super{ view }
     {
 
     }
@@ -442,7 +449,7 @@ public:
 
     operator String() const
     {
-		return u8string();
+        return u8string();
     }
 
     Path Parent() const
@@ -457,23 +464,23 @@ public:
 
     bool Exists() const
     {
-		return std::filesystem::exists(*this);
+        return std::filesystem::exists(*this);
     }
 
     bool IsDirectory() const
     {
-		return std::filesystem::is_directory(*this);
+        return std::filesystem::is_directory(*this);
     }
 };
 
 static inline bool CreateDirectory(const FileSystem::Path &path)
 {
-	return std::filesystem::create_directory(path);
+    return std::filesystem::create_directory(path);
 }
 
-static inline bool Exists(const FileSystem::Path &path)
+static inline bool CreateDirectories(const FileSystem::Path &path)
 {
-	return std::filesystem::exists(path);
+	return std::filesystem::create_directories(path);
 }
 
 std::string_view ParseFileName(const String &path);
@@ -484,7 +491,7 @@ struct DirectoryEntry
 
     FileType type;
 
-	std::string_view fileName;
+    std::string_view fileName;
     
     FileFlagBits flags;
 
@@ -493,10 +500,10 @@ struct DirectoryEntry
     DirectoryEntry(const String &_path, FileType type) :
         path{ _path },
         type{ type },
-	    fileName{ ParseFileName(path) },
-	    isEmpty{ true },
-	    flags{}
-	{
+        fileName{ ParseFileName(path) },
+        isEmpty{ true },
+        flags{}
+    {
 
     }
 
@@ -504,27 +511,27 @@ struct DirectoryEntry
         path{},
         type{},
         fileName{},
-	    isEmpty{},
-	    flags{}
+        isEmpty{},
+        flags{}
     {
 
     }
 
     DirectoryEntry(const DirectoryEntry &other) :
-	    path{ other.path },
-	    type{ other.type },
-	    fileName{ path.c_str() + path.size() - other.fileName.size() },
-	    isEmpty{ other.isEmpty },
-	    flags{}
-	{
+        path{ other.path },
+        type{ other.type },
+        fileName{ path.c_str() + path.size() - other.fileName.size() },
+        isEmpty{ other.isEmpty },
+        flags{}
+    {
 
-	}
+    }
 
     DirectoryEntry(DirectoryEntry &&other) :
-	    DirectoryEntry{}
-	{
-		other.Swap(*this);
-	}
+        DirectoryEntry{}
+    {
+        other.Swap(*this);
+    }
 
     ~DirectoryEntry()
     {
@@ -532,20 +539,20 @@ struct DirectoryEntry
     }
 
     DirectoryEntry &operator=(const DirectoryEntry &other)
-	{
-		DirectoryEntry(other).Swap(*this);
-		return *this;
-	}
+    {
+        DirectoryEntry(other).Swap(*this);
+        return *this;
+    }
 
-	DirectoryEntry &operator=(DirectoryEntry &&other)
-	{
-		DirectoryEntry(std::move(other)).Swap(*this);
-		return *this;
-	}
+    DirectoryEntry &operator=(DirectoryEntry &&other)
+    {
+        DirectoryEntry(std::move(other)).Swap(*this);
+        return *this;
+    }
 
     const char *GetFileName() const
     {
-		return fileName.empty() ? "" : fileName.data();
+        return fileName.empty() ? "" : fileName.data();
     }
 
     bool IsDirectory() const
@@ -560,34 +567,34 @@ struct DirectoryEntry
 
     bool IsEmpty() const
     {
-		return isEmpty;
+        return isEmpty;
     }
 
     void SetIsEmpty(bool value)
     {
-	    isEmpty = value;
+        isEmpty = value;
     }
 
     void Swap(DirectoryEntry &other)
     {
-		size_t lPos  = fileName.data() - path.c_str();
-		size_t lSize = path.size() - lPos;
+        int lPos  = fileName.data() - path.c_str();
+        int lSize = path.size() - lPos;
 
-		size_t rPos = other.fileName.data() - other.path.c_str();
-		size_t rSize = other.path.size() - rPos;
+        int rPos  = other.fileName.data() - other.path.c_str();
+        int rSize = other.path.size() - rPos;
 
-		path.Swap(other.path);
-		std::swap(type,     other.type    );
-		std::swap(fileName, other.fileName);
-		std::swap(isEmpty,  other.isEmpty );
+        path.Swap(other.path);
+        std::swap(type,     other.type    );
+        std::swap(fileName, other.fileName);
+        std::swap(isEmpty,  other.isEmpty );
 
-        if (rSize)
+        if (rSize > 0)
         {
-			fileName = {path.c_str() + rPos, rSize};
+            fileName = {path.c_str() + rPos, size_t(rSize)};
         }
-        if (lSize)
+        if (lSize > 0)
         {
-			other.fileName = {other.path.c_str() + lPos, lSize};
+            other.fileName = {other.path.c_str() + lPos, size_t(lSize)};
         }
     }
 };
@@ -596,9 +603,9 @@ bool HasSubdirectory(const Path &path);
 
 void ListDirectory(const Path &path, std::vector<DirectoryEntry> &directories, FileType filter = FileType::Directory | FileType::RegularFile);
 
-static inline bool Exists(const std::string &path)
+static inline bool Exists(const String &path)
 {
-    return std::filesystem::exists(path);
+    return std::filesystem::exists(path.GetU8String());
 }
 
 static inline std::string Join(const std::string &lpath, const std::string &rpath)

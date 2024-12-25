@@ -121,6 +121,7 @@ public:
         Depth32F,
         Depth24Stencil8,
         BayerLayerRGGB,
+        Matric4,
         FLOAT8P,
         R8_UINTP,
         R16_SINTP,
@@ -163,9 +164,9 @@ public:
 		YUV422P16 = BITS(YUV,     _16Bits, YUV420P + 10),
 		YUV444P16 = BITS(YUV,     _16Bits, YUV420P + 11),
         NV12      = BITS(YUV, NV,          YUV420P + 12),
-        P010LE    = BITS(YUV, NV, _10Bits, YUV420P + 13),
-		P012LE    = BITS(YUV, NV, _12Bits, YUV420P + 14),
-        P016LE    = BITS(YUV,     _16Bits, YUV420P + 15),
+        P010      = BITS(YUV, NV, _10Bits, YUV420P + 13),
+		P012      = BITS(YUV, NV, _12Bits, YUV420P + 14),
+        P016      = BITS(YUV,     _16Bits, YUV420P + 15),
         Y210      = BITS(YUV,     _10Bits, YUV420P + 16),
 		Y216      = BITS(YUV,     _16Bits, YUV420P + 17)
     };

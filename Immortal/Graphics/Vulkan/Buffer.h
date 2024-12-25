@@ -31,6 +31,8 @@ public:
 
     virtual void Unmap() override;
 
+    virtual void SetName(const char *name) override;
+
 public:
     VkDeviceAddress GetDeviceAddress() const;
 

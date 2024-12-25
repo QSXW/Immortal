@@ -187,20 +187,19 @@ public:
 
 	void Swap(Queue &other)
     {
-		std::swap(queue,                       other.queue                      );
-		std::swap(executionCompleteSemaphores, other.executionCompleteSemaphores);
-		std::swap(waitSemaphores,              other.waitSemaphores             );
-		std::swap(waitPipelineStageFlags,      other.waitPipelineStageFlags     );
+		std::swap(queue,                  other.queue                 );
+		std::swap(waitSemaphores,         other.waitSemaphores        );
+		std::swap(waitPipelineStageFlags, other.waitPipelineStageFlags);
     }
 
 protected:
 	DeviceQueue *queue;
 
-    std::vector<Semaphore> executionCompleteSemaphores;
-
     LightArray<VkSemaphore> waitSemaphores;
 
     LightArray<VkPipelineStageFlags> waitPipelineStageFlags;
+
+    std::mutex mutex;
 };
 
 }

@@ -11,7 +11,7 @@ namespace Immortal
 
 Application *Application::This = nullptr;
 
-Application::Application(BackendAPI graphicsBackendAPI, const std::string &title, uint32_t width, uint32_t height) :
+Application::Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height) :
     eventSink{ this },
     name{ title }
 {
@@ -28,7 +28,7 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
     instance = Instance::CreateInstance(graphicsBackendAPI, window->GetType());
-    device = instance->CreateDevice(0);
+	device = instance->CreateDevice(deviceId == AUTO_DEVICE_ID ? 0 :deviceId);
     queue = device->CreateQueue(QueueType::Graphics);
 
 	Graphics::SetDevice(instance, device);
@@ -92,9 +92,25 @@ Layer *Application::PushOverlay(Layer *overlay)
     return overlay;
 }
 
+CommandBuffer *Application::GetCurrentCommandBuffer() const
+{
+	return commandBuffers[syncPoint];
+}
+
 void Application::OnRender()
 {
     Time::DeltaTime = timer.tick<Timer::Seconds>();
+	uint64_t syncValue = gpuEvent->GetSyncPoint() + 1;
+
+    if (!runtime.minimized)
+	{
+		gpuEvent->Wait(syncValues[syncPoint], kMaxTimeOut);
+		swapchain->PrepareNextFrame();
+		Graphics::SetRenderIndex(gpuEvent, syncValue);
+
+		CommandBuffer *commandBuffer = GetCurrentCommandBuffer();
+		commandBuffer->Begin();
+    }
 
 	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
     for (Layer *layer : layerStack)
@@ -114,26 +130,20 @@ void Application::OnRender()
 
     if (!runtime.minimized)
 	{
-        swapchain->PrepareNextFrame();
-        gpuEvent->Wait(syncValues[syncPoint], 0xffffffffff);
-	    Graphics::SetRenderIndex(syncValues[syncPoint]);
-
-        CommandBuffer *commandBuffer = commandBuffers[syncPoint];
+		CommandBuffer *commandBuffer = GetCurrentCommandBuffer();
 
         const float clearColor[4] = { 0, 0, 0, 0 };
-	    commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
 	    commandBuffer->BeginRenderTarget(renderTarget, clearColor);
-        gui->SubmitRenderDrawCommands(commandBuffer);
+
+		gui->SubmitRenderDrawCommands(commandBuffer, gpuEvent, syncValue);
 	    commandBuffer->EndRenderTarget();
 	    commandBuffer->End();
 
-        GPUEvent *submitGPUEvent[] = { gpuEvent };
-	    queue->Submit(&commandBuffer, 1, submitGPUEvent, 1, swapchain);
+		queue->Submit(commandBuffer, gpuEvent, swapchain);
 		queue->Present(swapchain, nullptr, 0);
 
-	    syncValues[syncPoint] = gpuEvent->GetSyncPoint();
-
+	    syncValues[syncPoint] = syncValue;
 	    SLROTATE(syncPoint, bufferCount);
     }
     else

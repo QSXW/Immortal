@@ -31,11 +31,14 @@ set(EDITOR_FILES
     Editor/EditorCamera.h)
 
 set(GUI_FILES
-    ImGui/GuiLayer.cpp
-    ImGui/GuiLayer.h
-    ImGui/imgui_impl_immortal.cpp
-    ImGui/imgui_impl_immortal.h
-    ImGui/Utils.h)
+    GuiLayer.cpp
+    GuiLayer.h
+    imgui_impl_immortal.cpp
+    imgui_impl_immortal.h
+    IconsFontAwesome6.h
+    ImGuiNotify.hpp
+    Utils.h)
+list(TRANSFORM GUI_FILES PREPEND "ImGui/")
 
 set(MATH_FILES
    Math/Math.h
@@ -118,6 +121,8 @@ set(RENDER_FILES
     Camera.cpp
     Camera.h
     DataSet.h
+    FrameGraph.cpp
+    FrameGraph.h
     Graphics.cpp
     Graphics.h
     Mesh.cpp
@@ -125,7 +130,11 @@ set(RENDER_FILES
     OrthographicCamera.cpp
     OrthographicCamera.h
     Render2D.cpp
-    Render2D.h)
+    Render2D.h
+    RenderTask.cpp
+    RenderTask.h
+    SkyboxTask.cpp
+    SkyboxTask.h)
 list(TRANSFORM RENDER_FILES PREPEND "Render/")
 
 set(SYNC_FILES
@@ -139,6 +148,7 @@ set(HELPER_FILES
     Platform.h)
 
 set(WIDGET_FILES
+    MenuBar.cpp
     MenuBar.h
     Resource.h
     WFileDialog.cpp

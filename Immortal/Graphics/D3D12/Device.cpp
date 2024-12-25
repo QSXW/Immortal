@@ -69,24 +69,19 @@ Device::Device(PhysicalDevice *phsicalDevice) :
 
     Check(instance->D3D12CreateDevice(
 		*physicalDevice,
-		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_12_1,
 		IID_PPV_ARGS(&handle))
 	);
 
 #ifdef _DEBUG
-	ComPtr<ID3D12InfoQueue> infoQueueInterface;
-	HRESULT hr = handle->QueryInterface<ID3D12InfoQueue>(&infoQueueInterface);
-	if (SUCCEEDED(hr) && infoQueueInterface)
+	HRESULT hr = handle->QueryInterface<ID3D12InfoQueue1>(&infoQueue);
+	if (SUCCEEDED(hr) && infoQueue)
 	{
-		hr = infoQueueInterface->QueryInterface<ID3D12InfoQueue1>(&infoQueue);
-		if (SUCCEEDED(hr) && infoQueue)
+		DWORD callbackCookie = 0;
+		hr = infoQueue->RegisterMessageCallback(&MessageCallbackFunc, D3D12_MESSAGE_CALLBACK_FLAG_NONE, (void *) this, &callbackCookie);
+		if (FAILED(hr) || !callbackCookie)
 		{
-			DWORD callbackCookie = 0;
-			hr = infoQueue->RegisterMessageCallback(&MessageCallbackFunc, D3D12_MESSAGE_CALLBACK_FLAG_NONE, (void *) this, &callbackCookie);
-			if (FAILED(hr) || !callbackCookie)
-			{
-				LOG::ERR("Failed to register message callback!");
-			}
+			LOG::ERR("Failed to register message callback!");
 		}
 	}
 #endif
@@ -196,9 +191,9 @@ SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
 	return new Buffer{ this, type, size };
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type, Format format)
+SuperBuffer *Device::CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format)
 {
-	return new Buffer{ this, type, size, format };
+	return new Buffer{ this, type, size, memoryType, format };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
@@ -243,7 +238,8 @@ Pipeline *Device::GetPipeline(const std::string &name)
 	};
 
 	static const std::unordered_map<std::string, PipelineCreateInfo> pipelineCreateInfos = {
-		{ "GenerateMipMaps", { "Assets/Shaders/hlsl/generatemipmaps.hlsl", ShaderStage::Compute, "GenerateMipMaps"} }
+		{ "GenerateMipMaps",     { "Assets/Shaders/hlsl/generatemipmaps.hlsl",     ShaderStage::Compute, "GenerateMipMaps"    } },
+		{ "GenerateMipMapsCube", {"Assets/Shaders/hlsl/generatemipmaps_cube.hlsl", ShaderStage::Compute, "GenerateMipMapsCube"} }
 	};
 
 	{
@@ -291,15 +287,15 @@ Sampler *Device::GetSampler(Filter filter)
 	{
 		if (!samplers.nearest)
 		{
-			samplers.nearest = new Sampler{ this, Filter::Nearest, AddressMode::Wrap };
+			samplers.nearest = new Sampler{ this, Filter::Nearest, AddressMode::Clamp };
 		}
 		return samplers.nearest;
 	}
-	if (filter == Filter::Linear)
+	if (filter == Filter::Linear || filter == Filter::Bilinear)
 	{
 		if (!samplers.linear)
 		{
-			samplers.linear = new Sampler{this, Filter::Linear, AddressMode::Wrap };
+			samplers.linear = new Sampler{this, Filter::Linear, AddressMode::Clamp };
 		}
 		return samplers.linear;
 	}

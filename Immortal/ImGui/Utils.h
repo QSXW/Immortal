@@ -71,7 +71,7 @@ static bool DrawVec3Control(const std::string &label, Vector3 &values, float spe
     bool modified = false;
 
     const ImGuiIO &io = ImGui::GetIO();
-    auto boldFont = io.Fonts->Fonts[1];
+    auto boldFont = io.Fonts->Fonts[0];
 
     ImGui::PushID(label.c_str());
 

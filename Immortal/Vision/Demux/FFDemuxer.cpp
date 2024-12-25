@@ -22,6 +22,9 @@ namespace Vision
 {
 
 #if HAVE_FFMPEG
+
+#define AVERR_STR(ret) av_make_error_string(err, 64, ret)
+
 class FormatContext : public IObject
 {
 public:
@@ -31,16 +34,21 @@ public:
 
     FormatContext(const String &path) :
         handle{ avformat_alloc_context() },
-        streamIndex{}
+	    streamIndex{-1,-1,-1,-1}
     {
+		char err[64];
         ThrowIf(!handle, "Failed to allocated memory for FFCodec::FormatContext");
 
-        memset(streamIndex, -1, sizeof(streamIndex));
-
-		int ret = avformat_open_input(&handle, path.c_str(), nullptr, nullptr);
+        const AVInputFormat *inputFormat = nullptr;
+        if (path.size() > 6 && !memcmp(path.c_str(), "video=", 6))
+        {
+			avdevice_register_all();
+			inputFormat = av_find_input_format("dshow");
+        }
+		int ret = avformat_open_input(&handle, path.c_str(), inputFormat, nullptr);
         if (ret < 0)
         {
-            LOG::ERR("FFDemuxer::FormatContext::OpenInput::{}::{}", path, ret);
+			LOG::ERR("AVFormatContext: failed to open {} - {}", path, AVERR_STR(ret));
             return;
         }
 
@@ -48,7 +56,7 @@ public:
         ret = avformat_find_stream_info(handle, options);
         if (ret < 0)
         {
-            LOG::ERR("FFDemuxer::FormatContext::FindStreamInfo::{}::{}", path, ret);
+			LOG::ERR("AVFormatContext: failed to find stream info {} - {}", path, AVERR_STR(ret));
         }
         av_dump_format(handle, 0, path.c_str(), 0);
 
@@ -167,7 +175,24 @@ public:
 		return !!handle;
     }
 
-private:
+    void EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks)
+    {
+		tracks.resize(0);
+        for (int i = 0; i < handle->nb_streams; i++)
+        {
+			auto &stream = handle->streams[i];
+            if (stream->codecpar->codec_type == (AVMediaType)mediaType)
+			{
+				AVDictionaryEntry *tag = av_dict_get(stream->metadata, "title", nullptr, 0);
+				tracks.emplace_back(TrackInfo{
+				    .name        = tag ? tag->value : std::string("Track#") + std::to_string(i) + std::string(": ") + avcodec_get_name(stream->codecpar->codec_id),
+					.streamIndex = i
+                    });
+            }
+        }
+    }
+
+public:
     AVFormatContext *handle;
 
     int streamIndex[4] = { 0 };
@@ -249,8 +274,7 @@ static AVCodecID CAST(const CodecId id)
     }
 }
 
-#define AVERR_STR(ret) av_make_error_string(err, 64, ret)
-CodecError FFDemuxer::Open(const String &_filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::initializer_list<MediaType> &&mediaTypes)
+CodecError FFDemuxer::Open(const String &_filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::vector<MediaType> &mediaTypes)
 {
 	int ret = 0;
 	char err[64] = {};
@@ -306,6 +330,13 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec *videoCodec, Codec *au
     ret = avformat_write_header(handle, NULL);
     if (ret < 0)
 	{
+		if (handle->pb)
+		{
+			avio_closep(&handle->pb);
+		}
+		avformat_free_context(handle);
+		handle = nullptr;
+
 		LOG::ERR("Error occurred when opening output file for writing header: {}", AVERR_STR(ret));
 		return CodecError::ExternalFailed;
 	}
@@ -340,6 +371,7 @@ void FFDemuxer::Close()
 
 CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
 {
+	char err[64];
 	AVPacket *packet = av_packet_alloc();
     if (!packet)
     {
@@ -354,7 +386,7 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
         {
 			return CodecError::EndOfFile;
         }
-        LOG::DEBUG("Failed to read frame: {}", ret);
+		LOG::DEBUG("Failed to read frame: {}", AVERR_STR(ret));
         return CodecError::EndOfFile;
     }
 
@@ -423,6 +455,24 @@ CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t 
 
     return CodecError::Success;
 }
+
+void FFDemuxer::EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks)
+{
+	formatContext->EnumerateTracks(mediaType, tracks);
+}
+
+CodecError FFDemuxer::SwitchTrack(MediaType mediaType, int index)
+{
+    if (mediaType > MediaType::Subtitle)
+    {
+		return CodecError::InvalidArguments;
+    }
+
+	formatContext->streamIndex[int(mediaType)] = index;
+
+    return CodecError::Success;
+}
+
 #endif
 
 const String &FFDemuxer::GetSource() const

@@ -99,6 +99,11 @@ public:
 	virtual void DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) = 0;
 
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) = 0;
+
+	virtual void SetImageLayout(Texture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange = &kAllSubresources)
+	{
+
+	}
 };
 
 using SuperCommandBuffer = CommandBuffer;

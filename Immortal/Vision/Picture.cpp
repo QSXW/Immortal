@@ -51,8 +51,14 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
 					size += stride[i] * y;
                 }
 
+                if (format == Format::NV12 || format == Format::P010 || format == Format::P012 || format == Format::P016)
+                {
+					stride[1] += stride[2];
+					stride[2]  = 0;
+                }
+
 				data[0] = allocator.allocate(size);
-                for (int i = 1; i < SL_ARRAY_LENGTH(offsets); i++)
+                for (int i = 1; stride[i]; i++)
                 {
 					data[i] = data[0] + offsets[i];
                 }

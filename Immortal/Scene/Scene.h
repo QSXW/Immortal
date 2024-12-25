@@ -8,10 +8,12 @@
 #include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
 #include "Shared/IObject.h"
+#include "String/IString.h"
 #include "Graphics/LightGraphics.h"
 #include "Component.h"
 #include "Graphics/Event/KeyEvent.h"
 #include "Render/Render2D.h"
+#include "Render/FrameGraph.h"
 #include <map>
 
 namespace Immortal
@@ -50,9 +52,7 @@ public:
     };
 
 public:
-    Scene(const std::string &name = "Untitle");
-
-    Scene(const std::string &name, bool isEditorScene = false);
+    Scene(const String &name = "Untitled", bool isEditorScene = false);
 
     ~Scene();
 
@@ -67,6 +67,8 @@ public:
     void OnRenderEditor(const Camera &editorCamera);
 
     void OnRender(const Camera &camera);
+
+    void Render2DComponent(const Camera &camera, CommandBuffer *commandBuffer);
 
     void OnRender2D(const Camera &camera, RenderTarget *renderTarget);
 
@@ -84,6 +86,8 @@ public:
 
     void SetViewportSize(const Vector2 &size);
 
+    const Vector2 &GetViewportSize() const;
+
     void Select(Object *object);
 
     Object PrimaryCameraObject();
@@ -93,6 +97,8 @@ public:
     bool Deserialize(const std::string &path);
 
     void OnKeyPressed(KeyPressedEvent &e);
+
+    void SetFrameGraph(const Ref<FrameGraph> &frameGraph);
 
     auto &Registry()
     {
@@ -129,7 +135,7 @@ private:
     void Equirect2Cube();
 
 private:
-    std::string name;
+    String name;
 
     entt::registry registry;
 
@@ -180,6 +186,8 @@ private:
     Object *selectedObject{ nullptr };
 
     URef<Render2D> render2d;
+
+    Ref<FrameGraph> frameGraph;
 
 private:
     SceneCamera *primaryCamera = nullptr;

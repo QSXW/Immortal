@@ -11,6 +11,73 @@ namespace Immortal
 namespace D3D12
 {
 
+static D3D12_RESOURCE_STATES CAST(ImageLayout layout)
+{
+	switch (layout)
+	{
+		case ImageLayout::Undefined:
+		case ImageLayout::General:
+			return D3D12_RESOURCE_STATE_COMMON;
+
+		case ImageLayout::Present:
+			return D3D12_RESOURCE_STATE_PRESENT;
+
+		case ImageLayout::GenericRead:
+			return D3D12_RESOURCE_STATE_GENERIC_READ;
+
+		case ImageLayout::RenderTarget:
+			return D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+		case ImageLayout::UnorderedAccess:
+			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+		case ImageLayout::DepthStencilWrite:
+			return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+
+		case ImageLayout::DepthStencilRead:
+			return D3D12_RESOURCE_STATE_DEPTH_READ;
+
+		case ImageLayout::ShaderResource:
+			return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+
+		case ImageLayout::TransferSource:
+			return D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+		case ImageLayout::TransferDestination:
+			return D3D12_RESOURCE_STATE_COPY_DEST;
+
+		case ImageLayout::ResolveSource:
+			return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+
+		case ImageLayout::ResolveDestination:
+			return D3D12_RESOURCE_STATE_RESOLVE_DEST;
+
+		case ImageLayout::ShadingRateSource:
+			return D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE;
+
+		case ImageLayout::VideoDecodeRead:
+			return D3D12_RESOURCE_STATE_VIDEO_DECODE_READ;
+
+		case ImageLayout::VideoDecodeWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE;
+
+		case ImageLayout::VideoProcessRead:
+			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ;
+
+		case ImageLayout::VideoProcessWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE;
+
+		case ImageLayout::VideoEncodeRead:
+			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ;
+
+		case ImageLayout::VideoEncodeWrite:
+			return D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE;
+
+		default:
+			return D3D12_RESOURCE_STATE_COMMON;
+	}
+}
+
 void SetGraphicsRootDescriptorTable(CommandList *commandList, uint32_t index, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor)
 {
 	commandList->SetGraphicsRootDescriptorTable(index, baseDescriptor);
@@ -88,12 +155,13 @@ void CommandBuffer::Close()
 
 void CommandBuffer::BeginEvent(const char *pData, size_t size)
 {
-
+	std::wstring label = std::filesystem::path(pData).wstring();
+	commandList.Handle()->BeginEvent(0, label.c_str(), (label.size() + 1) * sizeof(wchar_t));
 }
 
 void CommandBuffer::EndEvent()
 {
-
+	commandList.Handle()->EndEvent();
 }
 
 void CommandBuffer::SetPipeline(SuperPipeline *_pipeline)
@@ -179,15 +247,20 @@ void CommandBuffer::SetBlendFactor(const float factor[4])
 
 void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset)
 {
-	switch (stage)
+	if (stage & ShaderStage::Compute)
 	{
-		case ShaderStage::Compute:
-			commandList.PushComputeConstant(size, pData, offset);
-			break;
-
-		default:
-			commandList.PushGraphicsConstant(size, pData, offset);
-			break;
+		commandList.PushComputeConstant(size, pData, offset);
+	}
+	else
+	{
+		if (stage & ShaderStage::Vertex)
+		{				
+			commandList.PushGraphicsConstant(size, pData, offset, pipeline->GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY_VERTEX));
+		}
+		if (stage & ShaderStage::Pixel)
+		{
+			commandList.PushGraphicsConstant(size, pData, offset, pipeline->GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY_PIXEL));
+		}
 	}
 }
 
@@ -225,19 +298,24 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
 
 	commandList.ResourceBarrier(barriers.data(), activeBarrier);
 
-	const auto &rtvDescriptor = renderTarget->GetDescriptor();
+	auto &rtvDescriptor = renderTarget->GetDescriptor();
 	const auto &dsvDescriptor = renderTarget->GetDepthBufferDescriptor();
-	commandList.ClearRenderTargetView(rtvDescriptor[0], pClearColor);
 
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptorHandle[32];
+	const D3D12_CPU_DESCRIPTOR_HANDLE *dstDescriptorHandle = nullptr;
+	for (size_t i = 0; i < colorBuffers.size(); i++)
+	{
+		rtvDescriptorHandle[i] = rtvDescriptor[i];
+	}
+
+	commandList.ClearRenderTargetView(rtvDescriptorHandle[0], pClearColor);
 	if (dsvDescriptor.ptr)
 	{
-		commandList.ClearDepthStencilView(dsvDescriptor, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
-		commandList.SetRenderTargets(rtvDescriptor, uint32_t(colorBuffers.size()), false, &dsvDescriptor);
+		dstDescriptorHandle = &dsvDescriptor;
+		commandList.ClearDepthStencilView(*dstDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
+
 	}
-	else
-	{
-		commandList.SetRenderTargets(rtvDescriptor, uint32_t(colorBuffers.size()), false, nullptr);
-	}
+	commandList.SetRenderTargets(rtvDescriptorHandle, uint32_t(colorBuffers.size()), false, dstDescriptorHandle);
 }
 
 void CommandBuffer::EndRenderTarget()
@@ -265,13 +343,15 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
 	uint32_t mipLevels = texture->GetMipLevels();
+	uint32_t arrayLayer = texture->GetArrayLayers();
+
 	if (mipLevels <= 1)
 	{
 		return;
 	}
 
 	Sampler *sampler = device->GetSampler(filter);
-	Pipeline *pipeline = device->GetPipeline("GenerateMipMaps");
+	Pipeline *pipeline = device->GetPipeline(arrayLayer > 1 ? "GenerateMipMapsCube" : "GenerateMipMaps");
 
 	descriptorSets.reserve(descriptorSets.size() + mipLevels);
 	Barrier<BarrierType::Transition> barrier{ *texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS };
@@ -295,7 +375,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 		};
 
 		PushConstants(ShaderStage::Compute, ratio, sizeof(ratio), 0);
-		Dispatch(std::max(SLALIGN(width / 8, 8), 1u), std::max(SLALIGN(height / 8, 8), 1u), 1);
+		Dispatch(std::max(SLALIGN(width / 8, 8), 1u), std::max(SLALIGN(height / 8, 8), 1u), arrayLayer);
 
 		Barrier<BarrierType::UAV> barrier{ *texture };
 		commandList.ResourceBarrier(&barrier);
@@ -510,6 +590,28 @@ void CommandBuffer::DispatchRays(const DeviceAddressRegion *pRayGenerationShader
 		.Depth  = depth
 	};
 	commandList.DispatchRays(&desc);
+}
+
+void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange)
+{
+	Texture *texture = InterpretAs<Texture>(_texture);
+	D3D12_RESOURCE_STATES oldState = texture->GetState();
+	D3D12_RESOURCE_STATES newState = CAST(layout);
+
+	if (newState == oldState)
+	{
+		return;
+	}
+
+	Barrier<BarrierType::Transition> barrier{
+	    *texture,
+	    oldState,
+	    newState,
+	    D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+	};
+
+	commandList.ResourceBarrier(&barrier, 1);
+	texture->SetState(newState);
 }
 
 }

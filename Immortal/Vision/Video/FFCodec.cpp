@@ -171,9 +171,9 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 	CASE(Format::YUV422P16, AV_PIX_FMT_YUV422P16) \
 	CASE(Format::YUV444P16, AV_PIX_FMT_YUV444P16) \
     CASE(Format::NV12,      AV_PIX_FMT_NV12     ) \
-	CASE(Format::P010LE,    AV_PIX_FMT_P010LE   ) \
-	CASE(Format::P012LE,    AV_PIX_FMT_P012LE   ) \
-	CASE(Format::P016LE,    AV_PIX_FMT_P016LE   ) \
+	CASE(Format::P010,      AV_PIX_FMT_P010     ) \
+	CASE(Format::P012,      AV_PIX_FMT_P012     ) \
+	CASE(Format::P016,      AV_PIX_FMT_P016     ) \
 	CASE(Format::Y210,      AV_PIX_FMT_Y210     ) \
 	CASE(Format::RGBA8,     AV_PIX_FMT_RGBA     ) \
 	CASE(Format::BGRA8,     AV_PIX_FMT_BGRA     )
@@ -291,6 +291,12 @@ static const char *QueryEncodecById(const CodecId id)
     case CodecId::HEVC_QSV:
 		return "hevc_qsv";
 
+    case CodecId::VVC:
+		return "libvvenc";
+        
+    case CodecId::VVC_QSV:
+		return "vvc_qsv";
+
     case CodecId::AV1:
 		return "libaom-av1";
 
@@ -315,6 +321,7 @@ FFCodec::FFCodec(int sampleRate) :
     handle{},
     device{},
     swrContext{},
+    swsContext{},
     type{PictureMemoryType::System},
     startTimestamp{},
     sampleRate{ sampleRate },
@@ -405,15 +412,37 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
         
         case AVMEDIA_TYPE_VIDEO:
         {
+            if (!codec->pix_fmts)
+			{
+				LOG::ERR("No pixel formats available for this codec.");
+				return;
+			}
+
+            AVPixelFormat pixelFormat = AV_PIX_FMT_NONE;
+            for (const AVPixelFormat *p = codec->pix_fmts; *p != AV_PIX_FMT_NONE; p++)
+			{
+				if (*p == CAST(encodeInfo.format))
+                {
+					pixelFormat = *p;
+					break;
+                }
+			}
+
+            if (pixelFormat == AV_PIX_FMT_NONE)
+            {
+				pixelFormat = codec->pix_fmts[0];
+            }
+
 			mediaType = MediaType::Video;
             handle->width        = encodeInfo.width;
             handle->height       = encodeInfo.height;
-            handle->pix_fmt      = CAST(encodeInfo.format);
+			handle->pix_fmt      = pixelFormat; 
             handle->bit_rate     = encodeInfo.bitRate;
             handle->gop_size     = encodeInfo.gopSize;
             handle->time_base    = AVRational{ (int)encodeInfo.timeBase.numerator, (int)encodeInfo.timeBase.denominator };
             handle->framerate    = AVRational{ encodeInfo.framerate.numerator, encodeInfo.framerate.denominator };
 	        handle->max_b_frames = 1;
+			handle->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
         }
 		break;
 
@@ -448,6 +477,11 @@ FFCodec::~FFCodec()
 	{
 		swr_free(&swrContext);
 	}
+    if (!swsContext)
+    {
+		sws_freeContext(swsContext);
+		swsContext = nullptr;
+    }
 
     memoryResource.Reset();
 }
@@ -561,6 +595,10 @@ CodecError FFCodec::GetPicture(Picture &picture)
 						break;
                 }
             }
+            else
+            {
+				pixelFormat = handle->pix_fmt;
+            }
             format = CAST(pixelFormat);
         }
 
@@ -615,10 +653,8 @@ CodecError FFCodec::GetPicture(Picture &picture)
         {
 			if (!swrContext)
 			{
-                AVChannelLayout outChannelLayout = {
-		            .nb_channels = 2
-                };
-
+				AVChannelLayout outChannelLayout = AV_CHANNEL_LAYOUT_STEREO;
+ 
 		        ret = swr_alloc_set_opts2(
 		            &swrContext,
 		            &outChannelLayout,
@@ -849,6 +885,42 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
+		Picture ref = picture;
+		auto format = CAST(picture.GetFormat());
+        if (format != handle->pix_fmt)
+        {
+            if (!swsContext)
+            {
+				swsContext = sws_getContext(
+				    picture.GetWidth(),
+				    picture.GetHeight(),
+				    format,
+                    handle->width,
+                    handle->height,
+                    handle->pix_fmt,
+                    SWS_BILINEAR,
+                    nullptr,
+                    nullptr,
+                    nullptr
+                );
+
+                this->picture = Picture{ handle->width, handle->height, CAST(handle->pix_fmt), true };
+            }
+
+			sws_scale(swsContext, &picture.GetData(), (const int *) &picture.GetStride(), 0, handle->height, &this->picture.GetData(), (const int *)&this->picture.GetStride());
+			ref = this->picture;
+        }
+        else if (picture.GetWidth() != handle->width || picture.GetHeight() != handle->height)
+        {
+			if (!this->picture)
+			{
+				this->picture = Picture{handle->width, handle->height, CAST(handle->pix_fmt), true};
+			}
+
+            BicubicConvolutionInterpolate(this->picture, picture);
+            ref = this->picture;
+        }
+
 		auto wrapper = AVFrameWrapper();
 		AVFrame *frame = wrapper;
 		if (!frame)
@@ -867,16 +939,16 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 		//}
 		//frame->buf[0] = bufferRef;
 
-		for (int i = 0; picture.GetData(i); i++)
+		for (int i = 0; ref.GetData(i); i++)
 		{
-			frame->data[i]      = picture.GetData(i);
-			frame->linesize[i] = picture.GetStride(i);
+			frame->data[i]     = ref.GetData(i);
+			frame->linesize[i] = ref.GetStride(i);
 		}
 
 		frame->pts    = picture.GetTimestamp();
 		frame->format = handle->pix_fmt;
-		frame->width  = picture.GetWidth();
-		frame->height = picture.GetHeight();
+		frame->width  = ref.GetWidth();
+		frame->height = ref.GetHeight();
 		frame->pts    = av_rescale_q(frame->pts, av_inv_q(handle->framerate), handle->time_base);
 
         return EncodeFrame(frame);
@@ -1053,7 +1125,7 @@ void FFCodec::Flush()
 	{
         if (isEncoder)
         {
-            if (handle->codec->type == AVMEDIA_TYPE_AUDIO)
+			if (handle->codec->type == AVMEDIA_TYPE_AUDIO && swrContext)
             {
 				FlushAudioFifo();
             }
@@ -1257,28 +1329,29 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
             }
         }
 
-        if (!device && stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
-        {
-            auto priorities = QueryDecoderPriorities(codecId);
-            for (auto p : priorities)
-            {
-                const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
-                if (externalCodec)
-                {
-                    auto type = GetDeviceType(p);
-                    if (type != AV_HWDEVICE_TYPE_NONE)
-                    {
-                        if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
-                        {
-                            LOG::ERR("Cannot open the hardware device\n");
-                            continue;
-                        }
-                    }
-                    codec = externalCodec;
-                    break;
-                }
-            }
-        }
+  //      if (!device && stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
+		//{
+		//	hwaccelType = AV_HWDEVICE_TYPE_NONE;
+  //          auto priorities = QueryDecoderPriorities(codecId);
+  //          for (auto p : priorities)
+  //          {
+  //              const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
+  //              if (externalCodec)
+		//		{
+		//			AVHWDeviceType type = GetDeviceType(p);
+		//			if (type != AV_HWDEVICE_TYPE_NONE)
+  //                  {
+		//				if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
+  //                      {
+  //                          LOG::ERR("Cannot open the hardware device");
+  //                          continue;
+  //                      }
+  //                  }
+  //                  codec = externalCodec;
+  //                  break;
+  //              }
+  //          }
+  //      }
     }
 
     handle = avcodec_alloc_context3(codec);

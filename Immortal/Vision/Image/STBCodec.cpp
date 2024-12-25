@@ -1,4 +1,5 @@
 #include "STBCodec.h"
+#include "Vision/External/stb_image.h"
 
 namespace Immortal
 {
@@ -47,12 +48,16 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         );
     }
 
+	if (!data)
+	{
+		return CodecError::CorruptedBitstream;
+	}
+
     picture = Picture{ uint32_t(width), uint32_t(height), format };
     picture.SetData(data);
-    if (!data)
-    {
-        return CodecError::CorruptedBitstream;
-    }
+	picture.SetRelease([](void *data) {
+		stbi_image_free(data);
+	});
 
     return CodecError::Success;
 }

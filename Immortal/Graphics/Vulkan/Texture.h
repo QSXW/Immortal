@@ -23,7 +23,9 @@ public:
 
     Texture(Device *device, Image &&image, ImageView &&view);
 
-    ~Texture();
+    virtual ~Texture() override;
+
+    virtual void SetName(const char *name) override;
 
     void Construct(Device *devcie, VkFormat format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, VkImageUsageFlags usage, VkSampleCountFlags sampleFlags = VK_SAMPLE_COUNT_1_BIT);
 
@@ -66,7 +68,7 @@ public:
     {
 		return layout;
     }
-
+  
     void SetLayout(VkImageLayout value)
     {
 		layout = value;

@@ -66,7 +66,7 @@ public:
 
     }
 
-    virtual void OnUpdate()
+    virtual void OnUpdate(const float &deltaTime = Time::DeltaTime)
     {
 
     }

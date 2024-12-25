@@ -37,6 +37,7 @@ DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
 			indexMap[type] = pipeline->GetDescriptorIndexMap(type);
 		}
 	}
+	rangeType = pipeline->GetDescriptorRangeType();
 }
 
 DescriptorSet::~DescriptorSet()
@@ -60,7 +61,9 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
 	constexpr auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	SetDescriptorSlot(this, descriptorHeaps[type], descriptors[type], indexMap[type][slot], D3D12_CPU_DESCRIPTOR_HANDLE(texture->GetDescriptor()), type);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = rangeType[slot] == D3D12_DESCRIPTOR_RANGE_TYPE_UAV ? texture->GetUAVDescriptor(0) : texture->GetDescriptor();
+	SetDescriptorSlot(this, descriptorHeaps[type], descriptors[type], indexMap[type][slot], descriptorHandle, type);
 }
 
 void DescriptorSet::Set(uint32_t slot, SuperSampler *sampler)

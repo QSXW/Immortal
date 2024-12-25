@@ -185,7 +185,7 @@ public:
     LightVector<uint32_t> Meshes;
 };
 
-class IMMORTAL_API Mesh
+class Mesh : public IObject
 {
 public:
     enum class Primitive
@@ -211,8 +211,24 @@ public:
 
     static std::shared_ptr<Mesh> CreateSphere(float radius);
 
+    static Ref<Mesh> CreateCube(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, float size, bool rhcoords);
+
 public:
-    struct Vertex
+    enum class VertexType
+    {
+        Simple,
+        Common,
+        Skeleton
+    };
+
+    struct SimpleVertex
+    {
+		Vector3 Position;
+		Vector3 Normal;
+		Vector2 Texcoord;
+    };
+
+    struct CommonVertex
     {
         Vector3 Position;
         Vector3 Normal;
@@ -275,7 +291,9 @@ public:
 public:
     Mesh(const std::string &filepath);
 
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies);
+    Mesh(const std::vector<SimpleVertex> &vertices, const std::vector<Index> &indicies);
+
+    Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const void *pVertex, size_t numVertex, const Index *pIndex, size_t numIndex, VertexType type, const std::string &name = "Untitled");
 
     ~Mesh() { }
 
@@ -332,6 +350,8 @@ private:
     void ReadAssimpNode(BoneNode *boneNode, const aiNode *src);
 
 private:
+	VertexType vertexType;
+
     URef<Buffer> buffer;
 
     std::string path;

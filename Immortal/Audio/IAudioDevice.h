@@ -8,6 +8,7 @@
 
 #include "Core.h"
 #include "Graphics/Format.h"
+#include <functional>
 
 #define REFTIMES_PER_SEC       10000000ll
 #define REFTIMES_PER_MILLISEC  10000ll
@@ -35,32 +36,27 @@ struct AudioBuffer
     uint32_t size;
 };
 
+enum AudioDeviceEvent
+{
+	AudioDeviceEvent_OnDefaultDeviceChanged,
+	AudioDeviceEvent_OnDeviceRemoved,
+	AudioDeviceEvent_OnDeviceAdded,
+	AudioDeviceEvent_OnDeviceStateChanged,
+	AudioDeviceEvent_OnPropertyValueChanged,
+	NumAudioDeviceEvent,
+};
+
+class AudioStream;
 class IAudioDevice
 {
 public:
 	virtual ~IAudioDevice() = default;
 
-    virtual void OpenDevice() = 0;
+    virtual bool OpenDevice() = 0;
 
-    virtual void Begin() = 0;
+    virtual AudioStream *CreateStream() = 0;
 
-    virtual void End() = 0;
-
-    virtual void Reset() = 0;
-
-    virtual void Pause(bool enable) = 0;
-
-    virtual double GetPostion() = 0;
-    
-    virtual void BeginRender(uint32_t frames) = 0;
-    
-    virtual void WriteBuffer(const uint8_t *buffer, size_t size) = 0;
-
-    virtual void EndRender(uint32_t frames) = 0;
-
-    virtual uint32_t GetAvailableFrameCount() = 0;
-    
-    virtual AudioFormat GetFormat() = 0;
+    virtual bool RegisterCallback(AudioDeviceEvent type, const std::function<void()> &callback) = 0;
 
 public:
 	static IAudioDevice *CreateInstance();

@@ -40,23 +40,49 @@ public:                                \
 
 #define D3D_OPERATOR_HANDLE() D3D_OPERATOR_PRIMITIVE(handle)
 
-
-static inline void Check(HRESULT result, const char *message = "")
+static std::string GetErrorString(HRESULT hr)
 {
-    if (FAILED(result))
-    {
-        LOG::ERR("Status Code => {}", GetLastError());
-        if (!message || !message[0])
-        {
-            LOG::ERR("{}", "This is a DirectX 3D Execption. Check Output for more details...");
-        }
-        else
-        {
-            LOG::ERR("{}", message);
-        }
+#if _DEBUG
+	wchar_t *errorMsg = nullptr;
 
-        throw RuntimeException(message);
-    }
+	FormatMessageW(
+	    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+	    NULL,
+	    hr,
+	    MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+	    (LPWSTR) &errorMsg,
+	    0,
+	    NULL);
+
+	std::wstring errorString(errorMsg);
+	LocalFree(errorMsg);
+
+	return std::filesystem::path(errorString).string();
+#else
+	return {};
+#endif
+}
+
+//static inline void Check(HRESULT result, const char *message = "")
+#define DX_CHECK(result)                                                                        \
+{                                                                                               \
+    if (FAILED(result))                                                                         \
+    {                                                                                           \
+		LOG::ERR("Error: 0x{} - {}", (void *)(uint64_t)result, GetErrorString(result));         \
+        LOG::ERR("Device Remove Reason: {}", GetErrorString(device->GetRemovedReason()));       \
+        LOG::ERR("{}", "This is a DirectX 3D Exception. Check Output for more details...");     \
+                                                                                                \
+        throw RuntimeException(GetErrorString(result));                                         \
+    }                                                                                           \
+}
+
+static inline void Check(HRESULT result)
+{
+	if (FAILED(result))
+	{
+		LOG::ERR("Error: 0x{} - {}", (void *) (uint64_t) result, GetErrorString(result));
+		throw RuntimeException(GetErrorString(result));
+	}
 }
 
 struct ShaderByteCodes

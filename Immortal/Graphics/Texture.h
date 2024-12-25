@@ -8,6 +8,7 @@
 namespace Immortal
 {
 
+class GPUEvent;
 class IMMORTAL_API Texture : public IObject
 {
 public:
@@ -30,6 +31,11 @@ public:
      */
     virtual ~Texture() = default;
 
+    virtual void SetName(const char *name)
+    {
+
+    }
+
     const Format &GetFormat() const;
 
     const uint32_t &GetWidth() const;
@@ -40,7 +46,13 @@ public:
 
     const uint16_t &GetArrayLayers() const;
 
-    uint32_t GetRatio() const;
+    float GetRatio() const;
+
+    void SetEvent(GPUEvent *event, uint64_t value);
+
+    void WaitLockRelease();
+
+    void SetDebugName(const char *name);
 
 protected:
 	void SetMeta(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers);
@@ -55,6 +67,10 @@ protected:
     }
 
 protected:
+	GPUEvent *_event;
+
+    uint64_t _value;
+
 	Format _format;
 
 	uint32_t _width;

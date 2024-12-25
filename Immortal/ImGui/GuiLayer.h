@@ -10,6 +10,7 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 #include "Graphics/LightGraphics.h"
+#include "String/IString.h"
 
 #define DEFINE_CPP_STRING_API(FN_NAME, ...) \
     template <class...  Args> \
@@ -17,6 +18,40 @@
     { \
         return ImGui::FN_NAME(label.c_str(), std::forward<Args>(args)...); \
     }
+
+
+#define kDragDropProxyDirectoryEntry "@DirectoryEntry"
+
+namespace Iconfont
+{
+
+#define kSkipNext     "\xee\xa4\x81"
+#define kSkipPrevious "\xee\xa4\x82"
+
+#define kPlayArrow            "\xee\xa4\x84"
+#define kPause                "\xee\xa4\x82"
+#define kPreviousFrame        "\xee\xa4\x83"
+#define kNextFrame            "\xee\xa4\x8c"
+#define kLineStartCircle      "\xee\xa4\x8a"
+#define kLineEndCircle        "\xee\xa4\x8b"
+#define kArrowForward         "\xee\xa4\x80"
+#define kArrowBack            "\xee\xa4\x81"
+#define kArrowUpward          "\xee\xa4\x89"
+#define kArrowLeft            "\xee\xa4\x85"
+#define kArrowRight           "\xee\xa4\x87"
+#define kArrowDown            "\xee\xa4\x88"
+#define kArrowUp              "\xee\xa4\x86"
+#define ICON_ARROW_FORWARD    "\xee\xa4\x83"
+#define kMiddlePoint          "\xee\xa4\x84"
+#define kWifi1Bar             "\xee\xa4\x9e"
+#define kLink                 "\xee\xa4\x9d"
+#define kLinkOff              "\xee\xa4\x9c"
+#define kStream               "\xee\xa4\xa0"
+#define kPhotoCamera          "\xee\xa4\xa1"
+#define kRadioButtonUnchecked "\xee\xa4\xa2"
+#define kCamera               "\xee\xa4\xa3"
+#define kHistoryToggleOff     "\xee\xa4\xa4"
+}
 
 namespace ImGui
 {
@@ -45,11 +80,6 @@ static inline ImVec4 RGBA32(uint32_t rgba)
 {
 	uint8_t *_rgba = (uint8_t *)&rgba;
 	return ConvertColor<uint8_t>(_rgba[3], _rgba[2], _rgba[1], _rgba[0]);
-}
-
-static inline void Text(const Immortal::String &text)
-{
-    ImGui::Text(text.c_str());
 }
 
 static inline bool MenuItem(const std::string &label, const char *shortcut = NULL, bool selected = false, bool enabled = true)
@@ -170,27 +200,44 @@ struct FontStack
 {
 public:
     FontStack(ImFont *font, float scale = 1.0f) :
-        scale{ scale },
-	    lastScale{ ImGui::GetCurrentWindow()->FontWindowScale }
+	    font{font},
+	    lastScale{ font->Scale }
     {
-        ImGui::PushFont(font);
-		if (scale != lastScale)
-        {
-            ImGui::SetWindowFontScale(scale);
-        }
+		font->Scale = scale;
+		ImGui::PushFont(font);
     }
 
     ~FontStack()
     {
-        if (scale != lastScale)
-        {
-			ImGui::SetWindowFontScale(lastScale);
-        }
-        ImGui::PopFont();
+		ImGui::PopFont();
+		font->Scale = lastScale;
+		ImGui::SetCurrentFont(font);
     }
 
-    float scale;
+    ImFont *font;
 	float lastScale;
+};
+
+struct FontSizeStack
+{
+public:
+	FontSizeStack(ImFont *font, float fontSize) :
+	    fontStack{ font, fontSize / font->FontSize }
+	{
+	}
+
+    FontSizeStack(float fontSize) :
+	    FontSizeStack{ ImGui::GetFont(), fontSize }
+    {
+
+    }
+
+	~FontSizeStack()
+	{
+
+	}
+    
+	FontStack fontStack;
 };
 
 struct DisabledWhen
@@ -235,7 +282,7 @@ public:
 
     virtual void End();
 
-    void SubmitRenderDrawCommands(CommandBuffer *commandBuffer);
+    void SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue);
 
     void Render();
 
@@ -274,6 +321,8 @@ public:
     {
 		return This->language == lang;
     }
+    
+    static void SaveWindowLayout(const String &path = {});
 
 protected:
 	void __Begin()

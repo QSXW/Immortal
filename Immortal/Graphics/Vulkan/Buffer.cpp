@@ -168,6 +168,11 @@ void Buffer::Unmap()
     }
 }
 
+void Buffer::SetName(const char *name)
+{
+	device->SetName(VK_OBJECT_TYPE_BUFFER, (uint64_t)handle, name);
+}
+
 void Buffer::Flush()
 {
     vmaFlushAllocation(device->MemoryAllocator(), memory, 0, GetSize());

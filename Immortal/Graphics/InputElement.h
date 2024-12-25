@@ -14,16 +14,18 @@ struct InputElement
 
     }
 
-    InputElement(Format foramt, const std::string &name) :
+    InputElement(Format foramt, const std::string &name, uint32_t index = 0) :
         format{ foramt },
-        name{ name }
+        name{ name },
+	    index{ index }
     {
 
     }
 
     InputElement(const InputElement &other) :
         offset{ other.offset },
-        format{ other.format }
+        format{ other.format },
+	    index{ other.index }
     {
         name = other.name;
     }
@@ -31,7 +33,8 @@ struct InputElement
     InputElement(InputElement &&other) :
         offset{ other.offset },
         format{ other.format },
-        name{ std::move(other.name) }
+        name{ std::move(other.name) },
+	    index{ other.index }
     {
 
     }
@@ -41,7 +44,7 @@ struct InputElement
         offset = other.offset;
         format = other.format;
         name   = other.name;
-
+        index  = other.index;
         return *this;
     }
 
@@ -49,6 +52,7 @@ struct InputElement
     {
         offset = other.offset;
         format = other.format;
+        index  = other.index;
         name   = std::move(other.name);
 
         return *this;
@@ -85,6 +89,11 @@ struct InputElement
 		return offset;
     }
 
+    uint32_t GetSemanticIndex() const
+    {
+		return index;
+    }
+
     const Format &GetFormat() const
     {
 		return format;
@@ -97,6 +106,7 @@ struct InputElement
 
     std::string name;
     uint32_t    offset{ 0 };
+    uint32_t    index;
     Format      format{ Format::None };
 };
 

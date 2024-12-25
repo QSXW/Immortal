@@ -77,7 +77,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
     }
 	else if (format == Format::RGBA16 || format == Format::RGBA8)
     {
-		processor->imgdata.params.user_qual     = 0;
+		//processor->imgdata.params.user_qual     = 12;
 		processor->imgdata.params.use_auto_wb   = 0;
 		processor->imgdata.params.use_camera_wb = 1;
 		processor->imgdata.params.no_auto_scale = false;
