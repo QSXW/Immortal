@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include "ImGuizmo.h"
+#include "ImGuiNotify.hpp"
 #include "imgui_impl_immortal.h"
 
 #include "Framework/Application.h"
@@ -64,6 +65,31 @@ GuiLayer::~GuiLayer()
     LOG::INFO("Rendered {} frame(s), Avarage Frame Rate: {}", TotalFrame, TotalFrameRate / TotalFrame);
 }
 
+ImFont *AddFontFromImage(const String &path, float size_pixels, const ImFontConfig *font_cfg_template, const ImWchar *glyph_ranges)
+{ 
+    Picture picture = Vision::Read(path);
+    if (!picture)
+    {
+		LOG::ERR("Failed to read font {}", path);
+		return nullptr;
+    }
+
+	size_t pos = path.ReverseFind('.');
+	String dataPath = path.Substring(0, pos + 1);
+	dataPath += "dat";
+
+	Stream stream{dataPath, Stream::Mode::Read};
+	std::vector<uint8_t> data;
+	if (!stream.Readable())
+	{
+		LOG::ERR("Failed to read font data for {}", path);
+		return nullptr;
+	}
+	stream.Read(data);
+	ImGuiIO &io = ImGui::GetIO();
+	return io.Fonts->AddFontFromImageAndGlyphData(picture.GetData(), picture.GetWidth(), picture.GetHeight(), data.data(), data.size(), size_pixels, font_cfg_template, glyph_ranges);
+}
+
 void GuiLayer::OnAttach()
 {
 #ifdef _DEBUG
@@ -88,7 +114,7 @@ void GuiLayer::OnAttach()
     style.WindowMinSize.x      = MinWindowSizeX;
     style.WindowMinSize.y      = MinWindowSizeY;
     style.WindowBorderSize     = 0.0f;
-    style.ScrollbarRounding    = 0.0f;
+    style.ScrollbarRounding    = 2.0f;
     style.ScrollbarSize        = 12.0f;
     style.DockingSeparatorSize = 1.0f;
 
@@ -98,8 +124,15 @@ void GuiLayer::OnAttach()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+#ifndef IMGUI_DISABLE_SDF
+	style.WindowShadowSize = 0;
+	style.FrameShadowSize  = 0;
+    style.FontShadowSize   = 0;
+#endif
+
     io.DisplaySize.x = window->GetWidth();
     io.DisplaySize.y = window->GetHeight();
+	ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3, ImGuiBackendFlags_DefaultDesktop);
 
 	ImFontGlyphRangesBuilder builder;
     const auto &words = Translator::GetWords();
@@ -108,50 +141,62 @@ void GuiLayer::OnAttach()
 		builder.AddText(key.c_str());
 		builder.AddText(value.c_str());
     }
+	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
 	builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
-	builder.BuildRanges(&fontRanges);  
-
-    Profiler p{ "Loading DemiLight File" };
-    NotoSans.Light = io.Fonts->AddFontFromFileTTF(
-        "Assets/Fonts/NotoSansCJKsc-Regular.otf",
-        20,
-        nullptr,
-	    fontRanges.Data);
-
+	builder.BuildRanges(&fontRanges);
+    
     ImFontConfig fontConfig = {};
-	//fontConfig.GlyphExtraSpacing.x = 0.5f;
-    NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
-        "Assets/Fonts/NotoSansCJKsc-Bold.otf",
-        17,
-	    &fontConfig,
-	    fontRanges.Data);
+	fontConfig.SignedDistanceFont = true;
 
+ //   Profiler p{ "Loading DemiLight File" };
+	//NotoSans.Regular = io.Fonts->AddFontFromFileTTF(
+ //       "Assets/Fonts/NotoSansSC-Regular.ttf",
+	//    32,
+	//    &fontConfig,
+	//    fontRanges.Data);
+
+	//fontConfig.GlyphExtraSpacing.x = 0.5f;
+	NotoSans.Bold = AddFontFromImage("Assets/Fonts/NotoSansSC-SemiBold.ttf.png", 18, &fontConfig, fontRanges.Data);
+        //io.Fonts->AddFontFromFileTTF(
+	   // "Assets/Fonts/NotoSansSC-SemiBold.ttf",    
+       // 18,
+	   // &fontConfig,
+	   // fontRanges.Data);
     //NotoSans.Bold->FontSize -= 1.0f;
 
-	static const ImWchar icons_ranges[] = {0xe005, 0xf8ff, 0};
+	static const ImWchar icons_ranges[] = {
+	    0xe900, 0xe9ff, 0,
+        /*0xe005, 0xf8ff, 0*/
+    };
 	ImFontConfig icons_config;
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
-	icons_config.GlyphMinAdvanceX = 17;
+	icons_config.GlyphMinAdvanceX = 18;
+	icons_config.SignedDistanceFont = true;
 
-    const char *kIconFont = "Assets/Fonts/fa-solid-900.ttf";
+    const char *kIconFont = "Assets/Fonts/Montage.ttf";
 	if (std::filesystem::exists(kIconFont))
 	{
-		io.Fonts->AddFontFromFileTTF(kIconFont, 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
+		io.Fonts->AddFontFromFileTTF(kIconFont, (icons_config.GlyphMinAdvanceX) /* 2.0 / 3.0*/, &icons_config, icons_ranges);
 	}
 
-#ifdef _WIN32
-    SimSun.Regular = io.Fonts->AddFontFromFileTTF(
-        std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
-        13,
-        nullptr,
-        fontRanges.Data);
-#else
-   SimSun.Regular = NotoSans.Demilight;
-#endif
+    const char *KIconsFontAwesome6 = "Assets/Fonts/fa-solid-900.ttf";
+    if (!std::filesystem::exists(KIconsFontAwesome6))
+    {
+		LOG::ERR("{} not found. Some icon will be invalid!");
+    }
+	ImFontGlyphRangesBuilder iconBuilder;
+	ImVector<ImWchar> iconRanges;
+	iconBuilder.AddText(ICON_FA_CIRCLE_CHECK);
+	iconBuilder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
+	iconBuilder.AddText(ICON_FA_CIRCLE_EXCLAMATION);
+	iconBuilder.AddText(ICON_FA_CIRCLE_INFO);
+	iconBuilder.AddText(ICON_FA_XMARK);
+	iconBuilder.BuildRanges(&iconRanges);
+	io.Fonts->AddFontFromFileTTF(KIconsFontAwesome6, icons_config.GlyphMinAdvanceX * 2.0 / 3.0, &icons_config, iconRanges.Data);
+
     io.Fonts->Build();
 
-    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
     decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
     decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
 
@@ -201,6 +246,12 @@ void GuiLayer::Begin()
 void GuiLayer::End()
 {
     ImGui::Render();
+}
+
+void GuiLayer::SaveWindowLayout(const String &path)
+{
+	ImGuiIO &io = ImGui::GetIO();
+	ImGui::SaveIniSettingsToDisk(!path.empty() ? path.c_str() : io.IniFilename);
 }
 
 void GuiLayer::SetTheme()
@@ -286,7 +337,7 @@ void GuiLayer::OnEvent(Event &e)
 		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
 		    {
 			    FileSystem::DirectoryEntry *entry = {&dir};
-			    ImGui::SetDragDropPayload("LOAD_FILE", (void *) &entry, sizeof(&entry));
+				ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
 		    }
         }
     }
@@ -369,9 +420,24 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::Render()
 {
-    ImGui::PushFont(NotoSans.Light);
-    dockspace->Render();
-    ImGui::PopFont();
+    {
+		FontSizeStack fontSize{ NotoSans.Bold, 18.f};
+		dockspace->Render();
+
+        StyleVarStack<float> styleVar{
+		    { ImGuiStyleVar_WindowRounding,   0.f },
+		    { ImGuiStyleVar_WindowBorderSize, 0.f }
+		};
+        
+        StyleColorStack<ImVec4> styleColor{
+			{ ImGuiCol_Button,        ImVec4(0.05f, 0.05f, 0.05f, 0.f)},
+			{ ImGuiCol_ButtonHovered, ImVec4(0.19f, 0.19f, 0.19f, 0.54f)},
+			{ ImGuiCol_ButtonActive,  ImVec4(0.20f, 0.22f, 0.23f, 1.00f)},
+			{ ImGuiCol_WindowBg,      ImVec4(0.10f, 0.10f, 0.10f, 1.00f)}
+        };
+
+		ImGui::RenderNotifications();
+    }
 
     static char title[128] = { 0 };
 
@@ -415,7 +481,7 @@ void GuiLayer::Render()
     Application::SetTitle(title);
 }
 
-void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
+void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue)
 {
     auto &io = ImGui::GetIO();
 
@@ -423,7 +489,7 @@ void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
     auto height = window->GetHeight();
     io.DisplaySize = { (float)width, (float)height };
 
-    ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer, gpuEvent, syncValue);
 
     // Update and Render additional Platform Windows
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

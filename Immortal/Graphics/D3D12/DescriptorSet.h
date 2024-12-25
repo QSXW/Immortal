@@ -49,6 +49,8 @@ protected:
 	const uint32_t *indexMap[MaxDescrpitorHeapType];
 
 	uint32_t descriptorCount[MaxDescrpitorHeapType];
+
+	const D3D12_DESCRIPTOR_RANGE_TYPE *rangeType;
 };
 
 }

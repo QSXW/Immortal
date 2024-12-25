@@ -35,6 +35,8 @@ struct VideoPlayerComponent : public Component
 
     void StartPlay();
 
+    Picture GetLivePicture();
+
     Picture GetPicture();
 
     Picture GetAudioFrame();
@@ -55,8 +57,20 @@ struct VideoPlayerComponent : public Component
 
     const Vision::DisplayOrientation *GetDisplayOrientation() const;
 
+    void EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks);
+
+    void OnPause(bool enabled);
+
+    CodecError SwitchTrack(MediaType mediaType, int index);
+
+    bool operator !();
+
+    bool pause = false;
+
 public:
     URef<VideoPlayerContext> player;
+
+    bool startPlay = false;
 };
 
 }

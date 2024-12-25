@@ -9,5 +9,7 @@ namespace Vision
 
 Picture Read(const String &path);
 
+CodedFrame Write(const Picture &picture, const String &path = {});
+
 }
 }

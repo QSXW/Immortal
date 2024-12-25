@@ -82,12 +82,12 @@ public:
         return framebuffer;
     }
 
-    const std::vector<Texture> &GetColorAttachments() const
+    std::vector<Texture> &GetColorAttachments()
     {
 		return attachments.colors;
     }
 
-    const Texture &InternalGetDepthAttachment() const
+    Texture &InternalGetDepthAttachment()
     {
 		return attachments.depth;
     }

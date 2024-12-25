@@ -22,7 +22,7 @@ DescriptorHeap::DescriptorHeap(Device * device, uint32_t descriptorCount, D3D12_
         .Flags          = flags,
         .NodeMask       = 0,
     };
-    Check(device->Create(&desc, &handle));
+    DX_CHECK(device->Create(&desc, &handle));
 }
 
 DescriptorHeap::~DescriptorHeap()

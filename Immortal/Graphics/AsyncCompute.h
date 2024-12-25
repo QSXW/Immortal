@@ -145,6 +145,11 @@ public:
         callbackWarpper();
     }
 
+    void operator()()
+    {
+		callbackWarpper();
+    }
+
 protected:
 	std::function<void()> callbackWarpper;
 };
@@ -178,6 +183,8 @@ public:
 
 protected:
     Thread thread;
+
+    ThreadPool executionCompletedThread{1};
 
     moodycamel::details::Semaphore semaphore;
 

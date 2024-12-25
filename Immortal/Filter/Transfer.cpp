@@ -99,7 +99,7 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
         auto device = Graphics::GetDevice();
         for (size_t i = 0; picture.GetStride(i); i++)
         {
-            output.emplace_back(device->CreateTexture(data[i].format, data[i].width, data[i].height, 1, 1, TextureType::TransferDestination));
+			output.emplace_back(device->CreateTexture(data[i].format, data[i].width, data[i].height, 1, 1, TextureType::TransferDestination | TextureType::Storage));
         }
 
         if (picture.GetMemoryType() == Vision::PictureMemoryType::System)

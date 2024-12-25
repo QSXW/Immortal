@@ -98,20 +98,21 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                     if (!executionCompletedTasks.empty())
                     {
+						uint64_t syncValue = gpuEvent->GetSyncPoint();
 						auto onCompletedTasks = std::make_shared <std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
-                        Coroutine h = [=, this]() -> Coroutine
-						{
-							Async::Execute([=, this] {
-								gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
+      //                  Coroutine h = [=, this]() -> Coroutine
+						//{
+							executionCompletedThread.Enqueue([=, this] {
+								gpuEvent->Wait(syncValue, kMaxTimeOut);
 								for (auto &[sync, executionCompleted] : *onCompletedTasks)
 								{
-									executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
+								    (*executionCompleted.InterpretAs<ExecutionCompletedTask>())();
 								}
 							});
-							co_return;
-						}();
-						h.resume();
-						h.destroy();
+							//co_return;
+						//}();
+						//h.resume();
+						//h.destroy();
                     }
 
                     commandBuffers.push({ gpuEvent, commandBuffer });

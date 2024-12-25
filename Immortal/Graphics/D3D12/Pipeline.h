@@ -82,12 +82,24 @@ public:
 		return descriptorIndexMap[type].data();
     }
 
+    const D3D12_DESCRIPTOR_RANGE_TYPE *GetDescriptorRangeType() const
+    {
+		return descriptorRangeType.data();
+    }
+
+    uint32_t GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY visibility)
+    {
+		return shaderIndexes[visibility].pushConstant;
+    }
+
 protected:
 	Type type;
 
     std::vector<uint32_t> descriptorIndexMap[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 
     uint32_t descriptorCount[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
+
+    std::vector<D3D12_DESCRIPTOR_RANGE_TYPE> descriptorRangeType;
 
     std::vector<DescriptorTable> descriptorTables;
 

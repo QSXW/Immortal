@@ -58,12 +58,12 @@ public:
 public:
     void Present()
     {
-        Present((UINT)mode, 0);
+		DX_CHECK(Present((UINT) mode, 0));
     }
 
     void ResizeBuffers(UINT width, UINT height, DXGI_FORMAT newFormat, UINT flags, UINT bufferCount = 0)
     {
-        Check(handle->ResizeBuffers(
+        DX_CHECK(handle->ResizeBuffers(
             bufferCount,
             width,
             height,
@@ -85,12 +85,12 @@ public:
 
     void AccessBackBuffer(UINT index, ID3D12Resource **pRenderTarget)
     {
-        Check(handle->GetBuffer(index, IID_PPV_ARGS(pRenderTarget)));
+        DX_CHECK(handle->GetBuffer(index, IID_PPV_ARGS(pRenderTarget)));
     }
 
     void SetMaximumFrameLatency(UINT maxLatency)
     {
-        Check(handle->SetMaximumFrameLatency(maxLatency));
+        DX_CHECK(handle->SetMaximumFrameLatency(maxLatency));
     }
 
     HANDLE FrameLatencyWaitableObject()
@@ -103,9 +103,9 @@ public:
         return handle;
     }
 
-    void Present(UINT syncInterval, UINT flags)
+    HRESULT Present(UINT syncInterval, UINT flags)
     {
-        handle->Present(syncInterval, flags);
+        return handle->Present(syncInterval, flags);
     }
 
     bool CheckColorSpaceSupport(DXGI_COLOR_SPACE_TYPE colorSpace, UINT *pSupport)
@@ -115,12 +115,12 @@ public:
 
     void Set(DXGI_COLOR_SPACE_TYPE colorSpace)
     {
-        Check(handle->SetColorSpace1(colorSpace));
+        DX_CHECK(handle->SetColorSpace1(colorSpace));
     }
 
     void Set(DXGI_HDR_METADATA_TYPE type, UINT size, void *pMetaData)
     {
-        Check(handle->SetHDRMetaData(type, size, pMetaData));
+        DX_CHECK(handle->SetHDRMetaData(type, size, pMetaData));
     }
 
     void GetDesc(DXGI_SWAP_CHAIN_DESC1 *desc)

@@ -45,6 +45,8 @@ public:
 protected:
     Device *device{ nullptr };
 
+    const VkDescriptorType *descriptorTypes;
+
     LightArray<VkWriteDescriptorSet> writeDescriptorSets;
 
     VkDescriptorUpdateTemplate descriptorUpdateTemplate;

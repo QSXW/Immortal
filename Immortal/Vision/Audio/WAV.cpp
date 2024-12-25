@@ -18,7 +18,7 @@ CodecError WAVCodec::Decode(const CodedFrame &codedFrame)
         headerSize += header.Subchunk2Size;
     }
 
-    picture = Picture{ (int)(buffer.size() - headerSize) >> 2, 1, Format::VECTOR2 };
+    picture = Picture{ (int)(buffer.size() - headerSize) >> 2, 1, Format::VECTOR2, true };
 
     int16_t *src  = (int16_t *)(buffer.data() + headerSize);
     float *dst = (float *)picture.GetData();

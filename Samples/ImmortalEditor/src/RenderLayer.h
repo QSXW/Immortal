@@ -26,7 +26,6 @@ public:
         Layer{ label },
         eventSink{ this },
         selectedObject{},
-        viewportSize{ viewportSize },
         window{ new WWindow },
         viewport{ new WFrame{} },
         editableArea{ new WImage{} },
@@ -53,7 +52,7 @@ public:
             ->Item({ "Load Scene", "Ctrl + L", [this] { LoadScene();  }})
             ->Item({ "Close",      "Ctrl + W", [this] { Application::This->Close(); }})
             ->Text("Menu");
-        menuBar->Color({0., 0., 0., 1.0f})->AddChild(menus[0]);
+        menuBar->Color(0xff000000)->AddChild(menus[0]);
 
         camera.primary = &camera.editor;
         camera.editor = { Vector::PerspectiveFOV(Vector::Radians(90.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f) };
@@ -64,28 +63,40 @@ public:
 
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
+        Ref<FrameGraph> frameGraph = new FrameGraph{};
+        Ref<SkyboxTask> skybox = new SkyboxTask;
+
+		skybox->SetFilePath(R"(C:\Users\qsxw\Downloads\winter_river_4k.hdr)");
+		frameGraph->AddTask(skybox);
+		frameGraph->Build();
+		scene->SetFrameGraph(frameGraph);
+
         viewport
             ->Text("Offline Render")
             ->AddChild(
             editableArea
                 ->Resize(viewportSize)
                 ->Anchors(viewport)
+		        ->PaddingTop(0)
+		        ->PaddingBottom(0)
+		        ->PaddingLeft(0)
+		        ->PaddingRight(0)
                 ->Wrap({
                 rightClickMenu
                     ->Padding({ 14.0f, 2.f })
                     ->Width(192.0f)
                     ->Height(260.0f)
                     ->Text("Right Click Menu")
-                    ->Color({.15f, .15f, .15f, 1.0f})
+                    ->Color(0xff262626)
                     ->Wrap({ 
                     objectEditorText
                         ->Text("Object Editor")
 		                ->Height(10)
-                        ->Color({1.0f, 1.0f, 1.0f, .65f}),
+                        ->Color(0xa5ffffff),
                     separator,
                     items.primary
-                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
-                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Color(0xffffffff)
+                        ->HoveredColor(0xcc7373d4)
                         ->Item({ "Select/Deselect", [this] { SelectObject(selectedPosition.x, selectedPosition.y); }})
                         ->Item({ "Import",          [this] { LoadObject(); }})
                         ->Item({ "Load Scene",      [this] { LoadScene();  }})
@@ -93,14 +104,14 @@ public:
                     separator,
                     menus[1]
                         ->Text("Create Object")
-                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
-                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Color(0xffffffff)
+		                                    ->HoveredColor(0xcc7373d4)
                         ->Item({ "Empty" , "", [this] { Object object = scene->CreateObject("Empty" );                                         }})
                         ->Item({ "Camera", "", [this] { Object object = scene->CreateObject("Camera"); object.AddComponent<CameraComponent>(); }})
                         ->Item({ "Light" , "", [this] { Object object = scene->CreateObject("Light" ); object.AddComponent<LightComponent>();  }}),
                     items.secondary
-                        ->Color({ 1.0f, 1.0f, 1.0f, 1.0f })
-                        ->HoveredColor(ImGui::RGBA32(212, 115, 115, 204))
+                        ->Color(0xffffffff)
+                        ->HoveredColor(0xcc7373d4)
                         ->Item({ "Copy",            [this] { CopyObject(); }})
                         ->Item({ "Paste",           [this] {               }})
                         ->Item({ "Duplicate",       [this] { panels.hierarchyGraphics->Select(CopyObject()); }})
@@ -140,7 +151,7 @@ public:
                         ImGuizmo::SetRect(x, y, w, h);
 
                         TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
-                        Matrix4 munipulatedTransform = transform.Transform();
+                        Matrix4 manipulatedTransform = transform.Transform();
 
                         Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
                         Matrix4 cameraViewMatrix = primaryCamera->View();
@@ -157,14 +168,14 @@ public:
                             &cameraProjectionMatrix[0].x,
                             guizmoType,
                             ImGuizmo::LOCAL,
-                            &munipulatedTransform[0].x,
+				            &manipulatedTransform[0].x,
                             nullptr,
                             snap ? snapValues[guizmoType] : nullptr);
 
                         if (ImGuizmo::IsUsing())
                         {
                             Vector3 rotation;
-                            Vector::DecomposeTransform(munipulatedTransform, transform.Position, rotation, transform.Scale);
+					        Vector::DecomposeTransform(manipulatedTransform, transform.Position, rotation, transform.Scale);
 
                             Vector3 deltaRotation = rotation - transform.Rotation;
                             transform.Rotation += deltaRotation;
@@ -183,28 +194,32 @@ public:
 
     virtual void OnUpdate() override
     {
-        Vector2 size = editableArea->Size();
-        if ((size.x != viewportSize.x || size.y != viewportSize.y) &&
-            (size.x != 0 && size.y != 0))
-        {
-            viewportSize = size;
-            camera.editor.SetViewportSize(viewportSize);
-            camera.orthographic.SetViewportSize(viewportSize);
-            scene->SetViewportSize(viewportSize);
-        }
+		Vector2 size = editableArea->Size();
 
-        scene->Select(&selectedObject);
-        if (panels.tools->IsControlActive(WTools::Start))
-        {
-            scene->OnRenderRuntime();
-        }
-        else
-        {
-            if (viewport->IsHovered())
+        if (size.x > 0 && size.y > 0)
+		{
+		    auto &viewportSize = scene->GetViewportSize();
+            if ((size.x != viewportSize.x || size.y != viewportSize.y) &&
+                (size.x != 0 && size.y != 0))
             {
-                camera.primary->OnUpdate();
+				scene->SetViewportSize(size);
+				camera.editor.SetViewportSize(size);
+				camera.orthographic.SetViewportSize(size);
             }
-            scene->OnRenderEditor(*camera.primary);
+
+            scene->Select(&selectedObject);
+            if (panels.tools->IsControlActive(WTools::Start))
+            {
+                scene->OnRenderRuntime();
+            }
+            else
+            {
+                if (viewport->IsHovered())
+                {
+                    camera.primary->OnUpdate();
+                }
+                scene->OnRenderEditor(*camera.primary);
+            }
         }
 
         UpdateEditableArea();    
@@ -243,7 +258,7 @@ public:
             guizmoType = ImGuizmo::OPERATION::INVALID;
         }
 
-        Application::This->GetGuiLayer()->BlockEvent(false);
+        //Application::This->Getgui()->BlockEvent(false);
     }
 
     void UpdateEditableArea()
@@ -334,9 +349,12 @@ public:
             }
             else if (FileSystem::IsImage(filepath))
             {
+				Graphics::GetAsyncComputeThread()->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
                 auto &sprite = object.Add<SpriteRendererComponent>();
                 sprite.Sprite = Graphics::CreateTexture(filepath);
                 sprite.Result = Graphics::CreateTexture(Format::RGBA8, sprite.Sprite->GetWidth(), sprite.Sprite->GetHeight());
+				Graphics::GetAsyncComputeThread()->Execute<AsyncTask>(AsyncTaskType::EndRecording);
+				Graphics::GetAsyncComputeThread()->Execute<AsyncTask>(AsyncTaskType::Submiting);
 
                 object.Add<ColorMixingComponent>();
                 auto &transform = object.Get<TransformComponent>();
@@ -364,7 +382,7 @@ public:
         if (path.has_value())
         {
             scene.Reset(new Scene{ FileSystem::ExtractFileName(path.value()), true });
-            scene->SetViewportSize(viewportSize);
+            scene->SetViewportSize(editableArea->GetSize());
             scene->Deserialize(path.value());
             panels.hierarchyGraphics->OnUpdate(scene);
         }
@@ -513,8 +531,6 @@ private:
     Ref<RenderTarget> renderTarget;
 
     Ref<Shader> shader;
-
-    Vector2 viewportSize;
 
     Object selectedObject;
 

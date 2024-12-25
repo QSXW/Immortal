@@ -22,7 +22,7 @@ public:
 
     }
 
-    Resource(ID3D12Resource *resource, D3D12_RESOURCE_STATES state) :
+    Resource(const ComPtr<ID3D12Resource> &resource, D3D12_RESOURCE_STATES state) :
 	    resource{ resource },
 	    virtualAddress{ D3D12_GPU_VIRTUAL_ADDRESS_NULL },
 	    state{ state }

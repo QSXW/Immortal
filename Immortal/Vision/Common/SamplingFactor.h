@@ -35,7 +35,7 @@ struct SamplingFactor
         case Format::YUV420P:
 		case Format::YUV420P10:
         case Format::NV12:
-        case Format::P010LE:
+        case Format::P010:
             x = 1;
             y = 1;
 			break;
@@ -76,7 +76,9 @@ static inline void GetSamplingFactor(Format::ValueType format, SamplingFactor *f
 		case Format::YUV420P12:
 		case Format::YUV420P16:
 		case Format::NV12:
-		case Format::P010LE:
+		case Format::P010:
+		case Format::P012:
+		case Format::P016:
 			factors[0] = {};
 			factors[1] = { 1, 1 };
 			factors[2] = { 1, 1 };
@@ -87,6 +89,7 @@ static inline void GetSamplingFactor(Format::ValueType format, SamplingFactor *f
 			break;
 
 		default:
+			factors[0] = {0,0};
 			break;
 	}
 }

@@ -24,10 +24,73 @@ FW(Sin, sin)
 FW(Tan, tan)
 FW(Absolute, fabs)
 
+
 template <class T>
-T Lerp(T a, T b, T w)
+T Lerp(T start, T end, T t)
 {
-    return a + (b - a) * w;
+	return start + t * (end - start);
+}
+
+template <class T>
+T CubicLerp(T a, T b, T t)
+{
+	return a + (3 * t * t - 2 * t * t * t) * (b - a);
+}
+
+template <class T>
+T HermiteLerp(T a, T b, T t)
+{
+	T t2 = t * t;
+	T t3 = t2 * t;
+	return (2 * t3 - 3 * t2 + 1) * a + (t3 - 2 * t2 + t) * (b - a) + (-2 * t3 + 3 * t2) * b;
+}
+
+template <class T>
+T Smoothstep(T a, T b, T t)
+{
+	t = t * t * (3 - 2 * t);
+	return a + t * (b - a);
+}
+
+template <class T>
+T CosineLerp(T a, T b, T t)
+{
+	T t2 = (1 - cos(t * PI)) / 2;
+	return a * (1 - t2) + b * t2;
+}
+
+template <class T>
+T ExponentialLerp(T a, T b, T t)
+{
+	if (t == 0.0f)
+	{
+		return a;
+	}
+	if (t == 1.0f)
+	{
+		return b;
+    }
+	return a * std::pow(b / a, t);
+}
+
+template <class T>
+T QuadraticBezierLerp(T a, T b, T t)
+{
+	T u = 1 - t;
+	return (u * u * a) + (2 * u * t * ((a + b) / 2)) + (t * t * b);
+}
+
+template <class T>
+T InverseSmoothstep(T a, T b, T t)
+{
+	t = 0.5f - 0.5f * std::cos(PI * t);
+	return a + (b - a) * t;
+}
+
+template <class T>
+T PolynomialLerp(T a, T b, T t)
+{
+	return a * (1 - t) * (1 - t) * (1 - t) + b * t * t * t;
 }
 
 struct Rational
@@ -58,6 +121,11 @@ struct Rational
 		c.numerator   = numerator   * b.numerator;
 		c.denominator = denominator * b.denominator;
 		return c;
+    }
+
+    bool operator==(const Rational &other) const
+    {
+		return numerator == other.numerator && denominator == other.denominator;
     }
 
     int numerator;

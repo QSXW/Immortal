@@ -34,9 +34,18 @@ public:
 
     virtual void Unmap() = 0;
 
+	virtual void SetName(const char *name)
+	{
+
+	}
+
     const size_t &GetSize() const;
 
 	const Type &GetType() const;
+
+	void Fill(const void *data, size_t size, uint64_t offset);
+
+	void SetDebugName(const char *name);
 
 protected:
 	size_t _size;

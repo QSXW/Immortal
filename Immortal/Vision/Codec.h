@@ -138,6 +138,7 @@ enum class CodecId
     HEVC_D3D12ENCODE,
     HEVC_NVENC,
     HEVC_QSV,
+    VVC_QSV,
 	VP9_QSV,
 	AV1_NVENC,
     AV1_QSV,

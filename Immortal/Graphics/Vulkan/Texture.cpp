@@ -65,6 +65,11 @@ Texture::~Texture()
 	Image::Release();
 }
 
+void Texture::SetName(const char *name)
+{
+	device->SetName(VK_OBJECT_TYPE_IMAGE, (uint64_t)handle, name);
+}
+
 void Texture::Construct(Device *device, VkFormat format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, VkImageUsageFlags usage, VkSampleCountFlags sampleFlags)
 {
     layout = VK_IMAGE_LAYOUT_UNDEFINED;

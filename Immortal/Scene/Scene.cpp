@@ -172,12 +172,12 @@ void Scene::ReloadSkyBoxCube()
 
 void Scene::LoadEnvironment()
 {
-    meshes.skybox.reset(new Mesh{ "Assets/Meshes/Skybox.obj" });
+    //meshes.skybox.reset(new Mesh{ "Assets/Meshes/Skybox.obj" });
 
-    float black[] = {
-        0.0f, 0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 1.0f,
-    };
+    //float black[] = {
+    //    0.0f, 0.0f, 0.0f, 1.0f,
+    //    0.0f, 0.0f, 0.0f, 1.0f,
+    //};
     //textures.skybox = Render::Create<Texture>(2, 1, black, Texture::Description{ Format::RGBA32F, Wrap::Clamp, Filter::Bilinear, false });
 
     ReloadSkyBoxCube();
@@ -195,15 +195,10 @@ void Scene::Equirect2Cube()
     //}
 }
 
-Scene::Scene(const std::string &name) :
-    name{ name }
-{
-    Init();
-}
-
-Scene::Scene(const std::string &name, bool isEditorScene) :
+Scene::Scene(const String &name, bool isEditorScene) :
     name{ name },
-    viewportSize{}
+    viewportSize{},
+    frameGraph{}
 {
     Init();
 
@@ -392,25 +387,35 @@ void Scene::OnRender(const Camera &camera)
 {
     float deltaTime = Time::DeltaTime;
 
+    if (!render2d)
+	{
+		render2d = new Render2D;
+	}
+
+	CommandBuffer *commandBuffer = Application::Reference().GetCurrentCommandBuffer();
+
+    SceneParameters params{};
+	params.skyboxProjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
+	camera.ViewProjection();        //
+	params.exposure         = settings.exposure;
+	params.gamma            = settings.gamma;
+	frameGraph->Execute(commandBuffer, params);
+
+	float clearValues[4] = {};
+	commandBuffer->BeginRenderTarget(renderTarget, clearValues);
+	frameGraph->Composite(commandBuffer, params);
+
     /* Update Video Player Component */
     {
         auto view = registry.view<TransformComponent, SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>();
         for (auto object : view)
         {
             auto [transform, sprite, videoPlayer, color] = view.get<TransformComponent, SpriteRendererComponent, VideoPlayerComponent, ColorMixingComponent>(object);
-
-            auto animator = videoPlayer.GetAnimator();
-            animator->Accumulator += deltaTime;
-            if (animator->Accumulator < animator->SecondsPerFrame)
-            {
-                continue;
-            }
-
-            animator->Accumulator = fmodf(animator->Accumulator, animator->SecondsPerFrame);
             auto picture = videoPlayer.GetPicture();
             if (picture)
             {
-                videoPlayer.PopPicture();
+				Graphics::ReleaseResource(sprite.Sprite);
+			    Graphics::CreateTexture(picture);
                 color.Modified = true;
                 transform.Scale = Vector3{ sprite.Sprite->GetRatio(), 1.0f, 1.0f };
             }
@@ -550,22 +555,29 @@ void Scene::OnRender(const Camera &camera)
     //        RenderObject(pipelines.basic, object, transform, mesh, material);
     //    }
     //}
+        
+    Render2DComponent(camera, commandBuffer);
 
-    //Render2D::BeginScene(camera);
-    //for (auto o : group)
-    //{
-    //    auto [transform, sprite, colorMixing] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(o);
-    //    if (sprite.Sprite)
-    //    {
-    //        Render2D::DrawRect(
-    //            transform,
-    //            sprite.Result,
-    //            sprite.TilingFactor, sprite.Color, (int)o);
-    //    }
-    //}
-    //Render2D::EndScene();
+	commandBuffer->EndRenderTarget();
+}
 
-    //Render::End();
+void Scene::Render2DComponent(const Camera &camera, CommandBuffer *commandBuffer)
+{
+	render2d->BeginScene(commandBuffer, camera);
+	auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+	{
+		for (auto object : group)
+		{
+			auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(object);
+
+			if (!sprite.Sprite)
+			{
+				continue;
+			}
+			render2d->DrawSprite(transform, sprite, (int) object);
+		}
+	}
+	render2d->EndScene();
 }
 
 void Scene::OnRender2D(const Camera &camera, RenderTarget *renderTarget)
@@ -575,30 +587,12 @@ void Scene::OnRender2D(const Camera &camera, RenderTarget *renderTarget)
 		render2d = new Render2D;
     }
 
-    Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
-		float clearValues[4] = {};
-		commandBuffer->BeginRenderTarget(renderTarget, clearValues);
-	});
+    CommandBuffer *commandBuffer = Application::Reference().GetCurrentCommandBuffer();
+	float clearValues[4] = {};
+	commandBuffer->BeginRenderTarget(renderTarget, clearValues);
+	Render2DComponent(camera, commandBuffer);
 
-    render2d->BeginScene(camera);
-    auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-    {
-        for (auto object : group)
-        {
-            auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(object);
-
-            if (!sprite.Sprite)
-            {
-                continue;
-            }
-			render2d->DrawSprite(transform, sprite, (int)object);
-        }
-    }
-	render2d->EndScene();
-
-	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
-		commandBuffer->EndRenderTarget();
-	});
+	commandBuffer->EndRenderTarget();
 }
 
 Object Scene::CreateObject(const std::string &name)
@@ -646,16 +640,19 @@ void Scene::SetViewportSize(const Vector2 &size)
 {
     viewportSize = size;
 
-    if (!renderTarget)
+    if (renderTarget)
     {
-		auto device = Graphics::GetDevice();
-		Format colorFormats[] = { Format::RGBA8, Format::R32_UINT };
-		renderTarget = device->CreateRenderTarget(size.x, size.y, colorFormats, SL_ARRAY_LENGTH(colorFormats), Format::Depth24Stencil8);
+		Graphics::ReleaseResource(renderTarget);
     }
-    else
-    {
-		renderTarget->Resize(size.x, size.y);
-    }
+
+    auto device = Graphics::GetDevice();
+	Format colorFormats[] = {Format::RGBA8, Format::R32_UINT};
+	renderTarget = device->CreateRenderTarget(size.x, size.y, colorFormats, SL_ARRAY_LENGTH(colorFormats), Format::Depth24Stencil8);
+}
+
+const Vector2 &Scene::GetViewportSize() const
+{
+	return viewportSize;
 }
 
 Object Scene::PrimaryCameraObject()
@@ -692,6 +689,12 @@ void Scene::OnKeyPressed(KeyPressedEvent & e)
 void Scene::Select(Object *object)
 {
     selectedObject = object;
+}
+
+
+void Scene::SetFrameGraph(const Ref<FrameGraph> &value)
+{
+	frameGraph = value;
 }
 
 }

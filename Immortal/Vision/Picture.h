@@ -86,6 +86,11 @@ public:
         return shared->data[index];
     }
 
+    auto &GetStride() const
+    {
+		return shared->stride[0];
+    }
+
     auto &operator[](size_t index) const
     {
         return shared->data[index];
@@ -153,7 +158,7 @@ public:
         shared->height = height;
     }
 
-    const float &GetTimestamp() const
+    const int64_t &GetTimestamp() const
     {
         return shared->timestamp;
     }

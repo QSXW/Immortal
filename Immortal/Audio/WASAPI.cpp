@@ -5,6 +5,7 @@
  */
 
 #include "WASAPI.h"
+#include "String/IString.h"
 
 namespace Immortal
 {
@@ -19,110 +20,164 @@ static inline void Check(HRESULT hr)
     }
 }
 
-Device::Device() :
-    Super{},
+DeviceChangeListener::DeviceChangeListener(Device *device) :
+    device{ device }
+{
+
+}
+
+ULONG STDMETHODCALLTYPE DeviceChangeListener::AddRef()
+{
+	return IObject::AddRef();
+}
+
+ULONG STDMETHODCALLTYPE DeviceChangeListener::Release()
+{
+	return IObject::UnRef();
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::QueryInterface(REFIID riid, VOID **ppvInterface)
+{
+	if (riid == IID_IUnknown || riid == __uuidof(IMMNotificationClient))
+	{
+		*ppvInterface = (IMMNotificationClient *) this;
+		return S_OK;
+	}
+	else
+	{
+		*ppvInterface = NULL;
+		return E_NOINTERFACE;
+	}
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
+{
+	LOG::DEBUG("Device state changed");
+	device->OnEvent(AudioDeviceEvent_OnDeviceStateChanged);
+
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceAdded(LPCWSTR pwstrDeviceId)
+{
+	LOG::DEBUG("Device added");
+	device->OnEvent(AudioDeviceEvent_OnDeviceAdded);
+
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
+{
+	wchar_t id[64];
+	LOG::DEBUG("Device removed: {}", WString2String(pwstrDeviceId));
+	if (device->handle->GetId((wchar_t **)&id) == S_OK && lstrcmpW(id, pwstrDeviceId))
+	{
+		device->OnEvent(AudioDeviceEvent_OnDeviceRemoved);
+    }
+
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId)
+{
+	if (pwstrDefaultDeviceId)
+	{
+		LOG::DEBUG("Default device changed: {} {} {}", WString2String(pwstrDefaultDeviceId), (int) flow, (int) role);
+	}
+	if (role == device->role)
+	{
+		device->OnEvent(AudioDeviceEvent_OnDefaultDeviceChanged);
+    }
+
+	return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key)
+{
+	LOG::DEBUG("Property value changed");
+	device->OnEvent(AudioDeviceEvent_OnPropertyValueChanged);
+	return S_OK;
+}
+
+AudioStream::AudioStream(ComPtr<IAudioClient> &&_audioClient) :
+    IAudioStream{},
+    audioClient{std::move(_audioClient)},
+    renderClient{},
+    clock{},
     waveFormat{},
+	data{},
     bufferSize{}
 {
-    OpenDevice();
+	Check(audioClient->GetMixFormat(&waveFormat));
+
+	Check(audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, REFTIMES_PER_SEC, 0, waveFormat, NULL));
+
+	Check(audioClient->GetService(IID_PPV_ARGS(&renderClient)));
+
+	Check(audioClient->GetService(IID_PPV_ARGS(&clock)));
+
+	Check(audioClient->GetBufferSize(&bufferSize));
 }
 
-Device::~Device()
+AudioStream::~AudioStream()
 {
-    Release();
+	IAudioStream::~AudioStream();
+	if (waveFormat)
+	{
+		CoTaskMemFree(waveFormat);
+		waveFormat = nullptr;
+	}
 }
 
-void Device::OpenDevice()
+bool AudioStream::Start()
 {
-    Release();
-
-    Check(CoInitializeEx(NULL, COINIT_MULTITHREADED));
-
-    Check(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, IID_PPV_ARGS(&enumerator)));
-
-    Check(enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &handle));
-
-    Check(handle->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&audioClient));
-
-    Check(audioClient->GetMixFormat(&waveFormat));
-
-    Check(audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, REFTIMES_PER_SEC, 0, waveFormat, NULL));
-
-    Check(audioClient->GetService(IID_PPV_ARGS(&renderClient)));
-
-    Check(audioClient->GetService(IID_PPV_ARGS(&clock)));
-
-    Check(audioClient->GetBufferSize(&bufferSize));
+	return audioClient->Start() == S_OK;
 }
 
-void Device::Begin()
+bool AudioStream::Stop()
 {
-    Check(audioClient->Start());
+	return audioClient->Stop() == S_OK;
 }
 
-void Device::End()
+bool AudioStream::Reset()
 {
-    Check(audioClient->Stop());
+	return audioClient->Reset() == S_OK;
 }
 
-void Device::Reset()
+bool AudioStream::BeginRender(uint32_t frames)
 {
-    Check(audioClient->Reset());
+	return renderClient->GetBuffer(frames, &data) == S_OK;
 }
 
-void Device::Pause(bool enable)
+void AudioStream::WriteBuffer(const uint8_t *buffer, size_t size)
 {
-    if (enable)
-    {
-        Check(audioClient->Stop());
-    }
-    else
-    {
-        Check(audioClient->Start());
-    }
-}
-
-double Device::GetPostion()
-{
-    uint64_t position;
-    Check(clock->GetPosition(&position, nullptr));
-
-    uint64_t frequency;
-    Check(clock->GetFrequency(&frequency));
-
-    return (double)position / (double)frequency;
-}
-
-void Device::BeginRender(uint32_t frames)
-{
-	Check(renderClient->GetBuffer(frames, &data));
-}
-
-void Device::WriteBuffer(const uint8_t *buffer, size_t size)
-{
-    if (data)
-    {
+	if (data)
+	{
 		memcpy(data, buffer, size);
-    }
+	}
 }
 
-void Device::EndRender(uint32_t frames)
+bool AudioStream::EndRender(uint32_t frames)
 {
-	Check(renderClient->ReleaseBuffer(frames, 0));
 	data = nullptr;
+	return renderClient->ReleaseBuffer(frames, 0) == S_OK;
 }
 
-uint32_t Device::GetAvailableFrameCount()
+uint32_t AudioStream::GetAvailableFrameCount()
 {
 	uint32_t padding = 0;
-	Check(audioClient->GetCurrentPadding(&padding));
+	if (FAILED(audioClient->GetCurrentPadding(&padding)))
+	{
+		LOG::ERR("Failed to get current padding!");
+		return padding;
+	}
 
-    return bufferSize - padding;
+	return bufferSize - padding;
 }
 
-AudioFormat Device::GetFormat()
+AudioFormat AudioStream::GetFormat()
 {
-    AudioFormat format = {
+	AudioFormat format = {
         .format     = Format::VECTOR2,
 	    .channels   = (uint8_t)waveFormat->nChannels,
         .silence    = 0,
@@ -132,13 +187,84 @@ AudioFormat Device::GetFormat()
     return format;
 }
 
+Device::Device() :
+    Super{},
+    flow{ eRender },
+    role{ eMultimedia },
+    callbacks{}
+{
+	Check(CoInitializeEx(NULL, COINIT_MULTITHREADED));
+
+	Check(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, IID_PPV_ARGS(&enumerator)));
+
+	deviceChangeListener = new DeviceChangeListener{this};
+
+	enumerator->RegisterEndpointNotificationCallback(deviceChangeListener.Get());
+
+    OpenDevice();
+}
+
+Device::~Device()
+{
+    Release();
+}
+
+bool Device::OpenDevice()
+{
+    Release();
+
+	return OpenDefaultDevice();
+}
+
+bool Device::OpenDefaultDevice()
+{
+	HRESULT ret;
+	ret = enumerator->GetDefaultAudioEndpoint(flow, role, &handle);
+	if (FAILED(ret))
+	{
+		LOG::ERR("Failed to GetDefaultAudioEndpoint!");
+		return false;
+	}
+
+	return true;
+}
+
+IAudioStream *Device::CreateStream()
+{
+	HRESULT ret;
+	ComPtr<IAudioClient> audioClient;
+	ret = handle->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void **) &audioClient);
+	if (FAILED(ret))
+	{
+		LOG::ERR("Failed to activate audio client!");
+		return nullptr;
+	}
+
+	return new AudioStream{ std::move(audioClient) };
+}
+
+bool Device::RegisterCallback(AudioDeviceEvent type, const std::function<void()> &callback)
+{
+	if (type >= NumAudioDeviceEvent)
+    {
+		return false;
+    }
+
+    callbacks[type] = callback;
+	return true;
+}
+
 void Device::Release()
 {
-    if (waveFormat)
-    {
-        CoTaskMemFree(waveFormat);
-        waveFormat = nullptr;
-    }
+
+}
+
+void Device::OnEvent(AudioDeviceEvent type)
+{
+	if (callbacks[type])
+	{
+		callbacks[type]();
+	}
 }
 
 }

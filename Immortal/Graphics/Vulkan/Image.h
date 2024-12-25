@@ -48,6 +48,8 @@ public:
 
     void Unmap();
 
+    VkImageAspectFlags GetAspectMask() const;
+
 public:
     template <class T>
     T *Get()

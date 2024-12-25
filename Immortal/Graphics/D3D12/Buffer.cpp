@@ -14,19 +14,12 @@ Buffer::Buffer() :
 
 }
 
-Buffer::Buffer(Device *device, Type type, size_t size, Format format, const void *data) :
-    Super{ type, type == Type::ConstantBuffer ? SLALIGN(size, 256) : size },
+Buffer::Buffer(Device *device, Type type, size_t size, MemoryType memoryType, Format format) :
+    Super{ type, size },
     NonDispatchableHandle{ device },
     descriptorHeap{}
 {
-    Construct(format);
-    if (data)
-    {
-		void *mapped = nullptr;
-		Map(&mapped);
-		memcpy(mapped, data, size);
-		Unmap();
-    }
+    Construct(memoryType, format);
 }
 
 Buffer::~Buffer()
@@ -37,12 +30,12 @@ Buffer::~Buffer()
     }
 }
 
-void Buffer::Construct(Format format)
+void Buffer::Construct(MemoryType memoryType, Format format)
 {
-    D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_GENERIC_READ;
+	D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
 
     D3D12_HEAP_PROPERTIES heapProperties = {
-        .Type                 = D3D12_HEAP_TYPE_UPLOAD,
+        .Type                 = D3D12_HEAP_TYPE_DEFAULT,
         .CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
         .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
         .CreationNodeMask     = 1,
@@ -62,14 +55,13 @@ void Buffer::Construct(Format format)
         .Flags            = D3D12_RESOURCE_FLAG_NONE,
     };
     
-    const auto &type = GetType();
-
+	const auto &type = GetType();
     if (type & Type::ConstantBuffer)
     {
 		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		state = D3D12_RESOURCE_STATE_COMMON;
     }
-    else if (type & Type::TransferSource)
+	else if (memoryType == MemoryType::Host || (type & Type::TransferSource))
     {
 		heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
 		state = D3D12_RESOURCE_STATE_GENERIC_READ;
@@ -92,7 +84,7 @@ void Buffer::Construct(Format format)
         desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
 
-    Check(device->CreateCommittedResource(
+    DX_CHECK(device->CreateCommittedResource(
         &heapProperties,
         D3D12_HEAP_FLAG_NONE,
         &desc,
@@ -112,7 +104,7 @@ void Buffer::Construct(Format format)
             .Buffer                  = {
                 .FirstElement        = 0,
                 .NumElements         = UINT(GetSize() / format.GetTexelSize()),
-		        .StructureByteStride = 0, //UINT(format.GetTexelSize()),
+		        .StructureByteStride = UINT(format.GetTexelSize()),
                 .Flags               = D3D12_BUFFER_SRV_FLAG_NONE,
             }
         };
@@ -132,20 +124,23 @@ Anonymous Buffer::GetBackendHandle() const
 
 void Buffer::Map(void **ppData, size_t size, uint64_t offset)
 {
+	*ppData = nullptr;
     D3D12_RANGE range = {
         .Begin = offset,
         .End   = offset + size
     };
 
-    if (FAILED(resource->Map(0, &range, ppData)))
-    {
-		*ppData = nullptr;
-    }
+    DX_CHECK(resource->Map(0, &range, ppData));
 }
 
 void Buffer::Unmap()
 {
 	resource->Unmap(0, nullptr);
+}
+
+void Buffer::SetName(const char *name)
+{
+	resource->SetName(std::filesystem::path(name).wstring().c_str());
 }
 
 }

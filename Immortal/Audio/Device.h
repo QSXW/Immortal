@@ -10,7 +10,7 @@
 #include "Shared/Async.h"
 #include "Shared/IObject.h"
 #include "IAudioDevice.h"
-#include "Vision/Picture.h"
+#include "AudioStream.h"
 
 namespace Immortal
 {
@@ -34,17 +34,10 @@ public:
 
     int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
 
-public:
-	template <class T>
-	void SetCallBack(T &&task)
-	{
-		callBack = std::move(task);
-	}
+    IAudioStream *CreateAudioStream(const PFN_AudioStreamPlayCallback &callback);
 
-    void DisableCallBack()
-    {
-		callBack = {};
-    }
+public:
+	static AudioDevice *GetInstance();
 
 protected:
     static AudioDevice *instance;
@@ -58,7 +51,9 @@ protected:
 
     std::atomic_bool status;
 
-    std::function<void(Picture &)> callBack;
+    std::atomic_bool defaultDeviceChanged;
+
+    std::vector<URef<IAudioStream *>> streams;
 
     uint64_t pts;
 

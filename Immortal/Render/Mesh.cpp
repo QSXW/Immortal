@@ -197,14 +197,50 @@ Mesh::Mesh(const std::string &filepath) :
 #endif
 }
 
-Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<Index> &indicies)
+Mesh::Mesh(const std::vector<SimpleVertex> &vertices, const std::vector<Index> &indicies) :
+    vertexType{ VertexType::Simple }
 {
     Node head{ "Undefined" };
 
-    head.Vertex = Graphics::CreateBuffer(vertices.size(), Buffer::Type::Vertex, vertices.data());
-	head.Index  = Graphics::CreateBuffer(indicies.size(), Buffer::Type::Index, indicies.data());
+    head.Vertex = Graphics::CreateBuffer(Buffer::Type::Vertex, sizeof(SimpleVertex) * vertices.size(), vertices.data());
+	head.Index  = Graphics::CreateBuffer(Buffer::Type::Index,   sizeof(Index)       * indicies.size(), indicies.data());
 
     nodes.emplace_back(head);
+}
+
+Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const void *pVertex, size_t numVertex, const Index *pIndex, size_t numIndex, VertexType type, const std::string &name) :
+    vertexType{type}
+{
+	Node head{name};
+
+    static const size_t kVertexSize[] = {
+	    sizeof(SimpleVertex),
+	    sizeof(CommonVertex),
+	    sizeof(SkeletonVertex)
+    };
+
+    auto &size = kVertexSize[(size_t) type];
+
+    uint32_t vertexBufferSize = size * numVertex;
+	uint32_t indexBufferSize  = sizeof(Index) * numIndex;
+
+	head.Vertex = Graphics::CreateBuffer(Buffer::Type::Vertex, vertexBufferSize, MemoryType::Device);
+	head.Index  = Graphics::CreateBuffer(Buffer::Type::Index,   indexBufferSize,  MemoryType::Device);
+
+    Ref<Buffer> stagingVertex = Graphics::GetCachedBuffer(BufferType::TransferSource, vertexBufferSize);
+	Ref<Buffer> stagingIndex  = Graphics::GetCachedBuffer(BufferType::TransferSource, indexBufferSize);
+	stagingVertex->Fill(pVertex, vertexBufferSize, 0);
+	stagingIndex->Fill(pIndex,   indexBufferSize,  0);
+
+	commandBuffer->MemoryCopy(head.Vertex, 0, stagingVertex, 0, vertexBufferSize);
+	commandBuffer->MemoryCopy(head.Index,  0, stagingIndex,   0, indexBufferSize);
+
+    asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
+		Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
+		Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingIndex);
+	});
+
+	nodes.emplace_back(head);
 }
 
 void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, const Matrix4 &parentTransform)
@@ -261,7 +297,7 @@ void Mesh::CalculatedBoneTransform(const Matrix4 &parentTransform)
 #if HAVE_ASSIMP
 void Mesh::LoadModelData(const aiScene *scene)
 {
-    std::vector<SkeletonVertex> vertices;
+	std::vector<CommonVertex> vertices;
     std::vector<Face> faces;
 
     uint32_t numBones = scene->mNumMeshes;
@@ -280,9 +316,9 @@ void Mesh::LoadModelData(const aiScene *scene)
     vertices.reserve(totalVertices);
     faces.reserve(totalFaces);
 
-    faceBindInfo.offset = totalVertices * sizeof(SkeletonVertex);
+    faceBindInfo.offset = totalVertices * sizeof(vertices[0]);
 
-    buffer = Graphics::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
+    //buffer = Graphics::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
 
     nodes.resize(scene->mNumMeshes);
     for (uint32_t i = 0; i < scene->mNumMeshes; i++)
@@ -309,19 +345,19 @@ void Mesh::LoadModelData(const aiScene *scene)
                 vertex.Texcoord = { mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y };
             }
         }
-        vertexBindInfo.size = mesh->mNumVertices * sizeof(SkeletonVertex);
+		vertexBindInfo.size = mesh->mNumVertices * sizeof(vertices[0]);
 
-        uint32_t baseVertex = vertexBindInfo.offset / sizeof(SkeletonVertex);
-        bool hasBone = LoadBoneData(mesh, vertices, baseVertex, numBones);
+        uint32_t baseVertex = vertexBindInfo.offset / sizeof(vertices[0]);
+        //bool hasBone = LoadBoneData(mesh, vertices, baseVertex, numBones);
 
-        if (!hasBone && scene->HasAnimations())
-        {
-            for (size_t j = baseVertex; j < vertices.size(); j++)
-            {
-                vertices[j].BoneIds[0] = i;
-                vertices[j].Weights[0] = 1.0f;
-            }
-        }
+        //if (!hasBone && scene->HasAnimations())
+        //{
+        //    for (size_t j = baseVertex; j < vertices.size(); j++)
+        //    {
+        //        vertices[j].BoneIds[0] = i;
+        //        vertices[j].Weights[0] = 1.0f;
+        //    }
+        //}
 
         for (size_t j = 0; j < mesh->mNumFaces; j++)
         {
@@ -334,7 +370,8 @@ void Mesh::LoadModelData(const aiScene *scene)
 
         //node.Vertex = buffer->Bind(vertexBindInfo);
         //node.Index  = buffer->Bind(faceBindInfo);
-
+		node.Vertex = Graphics::CreateBuffer(BufferType::Vertex, vertexBindInfo.size, vertices.data());
+		node.Index = Graphics::CreateBuffer(BufferType::Index,   faceBindInfo.size,   faces.data()   );
         vertexBindInfo.offset += vertexBindInfo.size;
 		faceBindInfo.offset += faceBindInfo.size;
     }
@@ -342,7 +379,7 @@ void Mesh::LoadModelData(const aiScene *scene)
     LoadAnimationData(scene);
 
     transforms.resize(numBones + scene->mNumMeshes);
-	transformBuffer = Graphics::CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type::ConstantBuffer);
+	transformBuffer = Graphics::GetDevice()->CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type::ConstantBuffer, MemoryType::Device, Format::Matric4);
 
     rootNode = new BoneNode{};
     ReadAssimpNode(rootNode, scene->mRootNode);
@@ -447,7 +484,7 @@ void Mesh::LoadAnimationData(const aiScene *scene)
 
 std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)
 {
-    std::vector<Vertex> vertices;
+    std::vector<SimpleVertex> vertices;
     std::vector<Face> indices;
 
     constexpr float latitudeBands = 30;
@@ -465,7 +502,7 @@ std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)
             float sinPhi = Math::Sin(phi);
             float cosPhi = Math::Cos(phi);
 
-            Vertex vertex;
+            SimpleVertex vertex;
             vertex.Normal = { cosPhi * sinTheta, cosTheta, sinPhi * sinTheta };
             vertex.Position = { radius * vertex.Normal.x, radius * vertex.Normal.y, radius * vertex.Normal.z };
             vertices.push_back(vertex);
@@ -485,6 +522,56 @@ std::shared_ptr<Mesh> Mesh::CreateSphere(float radius)
     }
 
     return std::make_shared<Mesh>(vertices, indices);
+}
+
+Ref<Mesh> Mesh::CreateCube(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, float size, bool rhcoords)
+{
+	constexpr uint32_t kFaceCount = 6;
+
+	static const Vector3 kFaceNormals[kFaceCount] =
+	{
+	    {  0,  0,  1},
+	    {  0,  0, -1},
+	    {  1,  0,  0},
+	    { -1,  0,  0},
+	    {  0,  1,  0},
+	    {  0, -1,  0},
+	};
+
+	static const Vector2 kTextureCoordinates[4] =
+	{
+	    { 1, 0 },
+	    { 1, 1 },
+	    { 0, 1 },
+	    { 0, 0 },
+	};
+
+	std::vector<SimpleVertex> vertices;
+	std::vector<Face> indices;
+
+	size /= 2;
+
+    static const Vector4 kIdentityR2 = {0.0f, 0.0f, 1.0f, 0.0f};
+	static const Vector4 kIdentityR1 = {0.0f, 1.0f, 0.0f, 0.0f};
+	for (int i = 0; i < kFaceCount; i++)
+	{
+		Vector3 normal = kFaceNormals[i];
+		const Vector4 &basis = (i >= 4) ? kIdentityR2 : kIdentityR1;
+
+		Vector3 side1 = Vector::Cross(normal, Vector3(basis));
+		Vector3 side2 = Vector::Cross(normal, side1);
+
+		uint32_t vbase = vertices.size();
+		indices.push_back({vbase + 0, vbase + 1, vbase + 2});
+		indices.push_back({vbase + 0, vbase + 2, vbase + 3});
+
+		vertices.push_back(SimpleVertex((normal - side1 - side2) * size, normal, kTextureCoordinates[0]));
+		vertices.push_back(SimpleVertex((normal - side1 + side2) * size, normal, kTextureCoordinates[1]));
+		vertices.push_back(SimpleVertex((normal + side1 + side2) * size, normal, kTextureCoordinates[2]));
+		vertices.push_back(SimpleVertex((normal + side1 - side2) * size, normal, kTextureCoordinates[3]));
+	}
+
+	return new Mesh(asyncComputeThread, commandBuffer, (void *) vertices.data(), vertices.size(), indices.data(), indices.size(), VertexType::Simple, "Cube");
 }
 
 void Mesh::SwitchToAnimation(uint32_t index)

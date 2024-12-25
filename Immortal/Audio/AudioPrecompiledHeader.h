@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IAudioDevice.h"
+#include "AudioStream.h"
 #include "Device.h"
 
 #ifdef _WIN32

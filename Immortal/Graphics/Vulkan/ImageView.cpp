@@ -13,7 +13,7 @@ inline VkImageViewType GetViewType(VkImageType type, VkImageCreateFlags flags, u
 
     if (flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
     {
-		return arrayLayers > 1 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+		return VK_IMAGE_VIEW_TYPE_CUBE;
     }
     else if (type == VK_IMAGE_TYPE_2D)
     {
@@ -75,7 +75,7 @@ void ImageView::Release()
     }
 }
 
-void ImageView::Instantiate( VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers)
+void ImageView::Instantiate(VkImageViewType viewType, uint32_t baseMipLevel, uint32_t baseArrayLevel, uint32_t mipLevels, uint32_t arrayLayers)
 {
     VkFormat format = image->GetFormat();
 
@@ -84,7 +84,7 @@ void ImageView::Instantiate( VkImageViewType viewType, uint32_t baseMipLevel, ui
     subresourceRange.baseArrayLayer = baseArrayLevel;
     subresourceRange.levelCount     = mipLevels;
     subresourceRange.layerCount     = arrayLayers;
-    subresourceRange.aspectMask     = IsDepthOnlyFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.aspectMask     = image->GetAspectMask();
 
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

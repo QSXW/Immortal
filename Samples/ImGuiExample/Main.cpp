@@ -92,7 +92,7 @@ int main(int, char **)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
+    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3, ImGuiBackendFlags_DefaultDesktop);
 
     decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
 	decltype(&ImGui_ImplGlfw_Shutdown)  ShutDownWindow;
@@ -191,7 +191,7 @@ int main(int, char **)
         commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
         commandBuffer->BeginRenderTarget(renderTarget, clear_color_with_alpha);
-        ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+		ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer, pEvent, pEvent->GetSyncPoint() + 1);
         commandBuffer->EndRenderTarget();
         commandBuffer->End();
 

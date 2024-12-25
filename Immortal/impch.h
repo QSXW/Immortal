@@ -49,6 +49,8 @@
 
 #include "ImGui/GuiLayer.h"
 #include "ImGui/Utils.h"
+#include "ImGui/imgui_impl_immortal.h"
+#include "ImGui/ImGuiNotify.hpp"
 
 #include "Shared/IObject.h"
 
@@ -62,6 +64,16 @@
 #include "Net/LTP.h"
 #include "Net/Socket.h"
 #include "Net/TCP.h"
+
+#include "Render/Camera.h"
+#include "Render/DataSet.h"
+#include "Render/FrameGraph.h"
+#include "Render/Graphics.h"
+#include "Render/Mesh.h"
+#include "Render/OrthographicCamera.h"
+#include "Render/Render2D.h"
+#include "Render/RenderTask.h"
+#include "Render/SkyboxTask.h"
 
 #include "Scene/Component.h"
 #include "Scene/entt.hpp"

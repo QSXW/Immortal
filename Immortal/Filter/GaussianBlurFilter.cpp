@@ -22,7 +22,7 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
     }
 
     CalculateGaussianKernal(device, stagingKernalBuffer[kHorizontal], sigma, kernalSize);
-    kernal[kHorizontal] = device->CreateBuffer(stagingKernalBuffer[kHorizontal]->GetSize(), BufferType::ConstantBuffer, Format::R32_SFLOAT);
+	kernal[kHorizontal] = device->CreateBuffer(stagingKernalBuffer[kHorizontal]->GetSize(), BufferType::ConstantBuffer, MemoryType::Device, Format::R32_SFLOAT);
 
     if (!verticalSigma)
     {
@@ -35,7 +35,7 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
 
     if (verticalSigma != sigma || verticalKernalSize != kernalSize)
     {
-        kernal[kVertical] = device->CreateBuffer(stagingKernalBuffer[kVertical]->GetSize(), BufferType::ConstantBuffer, Format::R32_SFLOAT);
+        kernal[kVertical] = device->CreateBuffer(stagingKernalBuffer[kVertical]->GetSize(), BufferType::ConstantBuffer, MemoryType::Device, Format::R32_SFLOAT);
         CalculateGaussianKernal(device, stagingKernalBuffer[kVertical], verticalKernalSize, verticalKernalSize);
     }
     else

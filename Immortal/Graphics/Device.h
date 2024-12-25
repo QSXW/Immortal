@@ -109,7 +109,7 @@ public:
 	 * @param type The type of the buffer
      * @param format of the buffer data
 	 */
-	virtual Buffer *CreateBuffer(size_t size, BufferType type, Format format)
+	virtual Buffer *CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format)
     {
 		return nullptr;
     }
