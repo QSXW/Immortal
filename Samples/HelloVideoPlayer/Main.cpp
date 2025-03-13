@@ -70,6 +70,7 @@ int main(int, char **)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	io.Fonts->Build();
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -130,70 +131,33 @@ int main(int, char **)
             {
 				filepath = path.value();
 
-                bool isPaused = false;
-                if (audioDevice)
-                {
-					audioDevice->OnPauseDown();
-					audioDevice->Reset();
-					isPaused = true;
-                }
-                else
-                {
-					audioDevice = new AudioDevice;
-                }
-
 				texture = {};
 
-				Ref<Vision::FFCodec> codec      = new Vision::FFCodec;
-				Ref<Vision::FFCodec> audioCodec = new Vision::FFCodec{ audioDevice->GetSampleRate() };
-				Ref<Demuxer>    demuxer = new Vision::FFDemuxer;
-				demuxer->Open(filepath, codec, audioCodec);
-				videoPlayerComponent = new VideoPlayerComponent{ demuxer, codec, audioCodec };
+				videoPlayerComponent = new VideoPlayerComponent{filepath};
 				filterGraphComponent.Reset();
-
-                if (isPaused)
-                {
-					audioDevice->OnPauseRelease();
-                }
-
-				audioDevice->SetCallBack(
-				    [&](Picture &picture) {
-					    if (videoPlayerComponent)
-					    {
-						    Picture audioFrame = videoPlayerComponent->GetAudioFrame();
-						    if (audioFrame)
-						    {
-							    videoPlayerComponent->PopAudioFrame();
-						    }
-						    picture = audioFrame;
-					    }
-				    });
             }
         }
         Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
         if (videoPlayerComponent)
 		{
 			auto animator = videoPlayerComponent->GetAnimator();
-			if (animator->TryMoveToNextFrame(deltaTime))
+			Picture picture = videoPlayerComponent->GetLivePicture();
+			if (picture)
 			{
-				Picture picture = videoPlayerComponent->GetPicture();
-				if (picture)
-				{
-                    if (!filterGraphComponent)
-                    {
-						auto &format = picture.GetFormat();
-						filterGraphComponent = new FilterGraphComponent;
-						filterGraphComponent->Insert<ScaleFilter>(0, picture.GetFormat(), format.IsType(Format::HightBitDepth) ? Format::RGBA16 : Format::RGBA8, picture.GetWidth(), picture.GetHeight());
-                    }
+                if (!filterGraphComponent)
+                {
+					auto &format = picture.GetFormat();
+					filterGraphComponent = new FilterGraphComponent;
+					filterGraphComponent->Insert<ScaleFilter>(0, picture.GetFormat(), format.IsType(Format::HightBitDepth) ? Format::RGBA16 : Format::RGBA8, picture.GetWidth(), picture.GetHeight());
+                }
 
-					videoPlayerComponent->PopPicture();
-					filterGraphComponent->Run({ picture });
+				videoPlayerComponent->PopPicture();
+				filterGraphComponent->Run({ picture });
 
-					texture = filterGraphComponent->QueryOutput(0);
+				texture = filterGraphComponent->QueryOutput(0);
 
-					auto current = picture.GetTimestamp() * picture.GetTimebase().Normalize() * animator->FPS();
-					progress = (float) current / animator->TotalFrames();
-				}
+				auto current = picture.GetTimestamp() * picture.GetTimebase().Normalize() * animator->FPS();
+				progress = (float) current / animator->TotalFrames();
 			}
         }
 
@@ -255,12 +219,12 @@ int main(int, char **)
             ImGui::ShowDemoWindow(&show_demo_window);
 
         ImGui::Render();
-		const float clearValue[4] = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
+		const ClearValue clearValue = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
 
         auto &commandBuffer = commandBuffers[syncPoint];
         commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-		commandBuffer->BeginRenderTarget(renderTarget, clearValue);
+		commandBuffer->BeginRenderTarget(renderTarget, &clearValue);
         ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
         commandBuffer->EndRenderTarget();
         commandBuffer->End();

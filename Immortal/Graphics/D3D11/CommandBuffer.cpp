@@ -16,7 +16,7 @@ CommandBuffer::CommandBuffer(Device *device) :
     handle{ device->GetContext<ID3D11DeviceContext4>() },
     pushConstantBuffer{}
 {
-	pushConstantBuffer = (Buffer *)device->CreateBuffer(MAX_PUSH_CONSTANT_SIZE, BufferType::PushConstant);
+	pushConstantBuffer = (Buffer *)device->CreateBuffer(BufferType::PushConstant, MAX_PUSH_CONSTANT_SIZE);
 }
 
 CommandBuffer::~CommandBuffer()
@@ -175,7 +175,7 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 	});
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const ClearValue *pClearValue)
 {
 	RenderTarget *renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 	Submit([=, this] {
@@ -192,13 +192,15 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
 		}
 
 		handle->OMSetRenderTargets(uint32_t(renderTargetViews.size()), renderTargetViews.data(), depthStencilView);
-		for (auto &renderTargetView : renderTargetViews)
+		for (size_t i = 0; i < renderTargetViews.size(); i++)
 		{
-			handle->ClearRenderTargetView(renderTargetView, pClearColor);
+			auto &renderTargetView = renderTargetViews[i];
+			handle->ClearRenderTargetView(renderTargetView, (FLOAT *)&pClearValue[i]);
 		}
 		if (depthStencilView)
 		{
-			handle->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, 0, 0);
+			auto &clearValue = pClearValue[renderTargetViews.size()];
+			handle->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, clearValue.depthStencil.depth, clearValue.depthStencil.stencil);
 		}
 
 		ID3D11Texture2D *texture = colorAttachments[0];

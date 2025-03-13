@@ -121,7 +121,7 @@ AudioStream::AudioStream(ComPtr<IAudioClient> &&_audioClient) :
 
 AudioStream::~AudioStream()
 {
-	IAudioStream::~AudioStream();
+	Destroy();
 	if (waveFormat)
 	{
 		CoTaskMemFree(waveFormat);

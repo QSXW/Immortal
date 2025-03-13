@@ -643,7 +643,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-        AVRational tb{ 1, frame->sample_rate };
+        AVRational tb{ 1, sampleRate != 0 ? sampleRate : frame->sample_rate };
         if (frame->pts != AV_NOPTS_VALUE)
         {
             frame->pts = av_rescale_q(frame->pts - startTimestamp, timeBase, tb);
@@ -723,6 +723,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 			});
 		}
 
+		picture.SetTimebase({tb.num, tb.den});
         picture.SetTimestamp(frame->pts);
     }
 
@@ -1329,29 +1330,29 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
             }
         }
 
-  //      if (!device && stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
-		//{
-		//	hwaccelType = AV_HWDEVICE_TYPE_NONE;
-  //          auto priorities = QueryDecoderPriorities(codecId);
-  //          for (auto p : priorities)
-  //          {
-  //              const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
-  //              if (externalCodec)
-		//		{
-		//			AVHWDeviceType type = GetDeviceType(p);
-		//			if (type != AV_HWDEVICE_TYPE_NONE)
-  //                  {
-		//				if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
-  //                      {
-  //                          LOG::ERR("Cannot open the hardware device");
-  //                          continue;
-  //                      }
-  //                  }
-  //                  codec = externalCodec;
-  //                  break;
-  //              }
-  //          }
-  //      }
+        if (!device && stream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO && stream->codecpar->profile != AV_PROFILE_H264_HIGH_422)
+		{
+			hwaccelType = AV_HWDEVICE_TYPE_NONE;
+            auto priorities = QueryDecoderPriorities(codecId);
+            for (auto p : priorities)
+            {
+                const AVCodec *externalCodec = avcodec_find_decoder_by_name(p);
+                if (externalCodec)
+				{
+					AVHWDeviceType type = GetDeviceType(p);
+					if (type != AV_HWDEVICE_TYPE_NONE)
+                    {
+						if (av_hwdevice_ctx_create(&device, type, "auto", NULL, 0) < 0)
+                        {
+                            LOG::ERR("Cannot open the hardware device");
+                            continue;
+                        }
+                    }
+                    codec = externalCodec;
+                    break;
+                }
+            }
+        }
     }
 
     handle = avcodec_alloc_context3(codec);

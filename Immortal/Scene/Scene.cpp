@@ -310,27 +310,6 @@ void Scene::OnGuiRender()
         Equirect2Cube();
     }
 
-    auto [x, y] = ImGui::GetContentRegionAvail();
-
-    ImVec2 size{};
-    size.x = x - 8;
-    size.y = size.x * textures.skybox->GetHeight() / textures.skybox->GetWidth();
-
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.4509f, 0.7882f, 0.8980f, 1.0f });
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 20.0f, 20.0f });
-    if (ImGui::ImageButton(WIMAGE(textures.skybox), size))
-    {
-        auto res = FileDialogs::OpenFile(FileFilter::Image);
-        if (res.has_value())
-        {
-            //textures.skybox = Render::Create<Texture>(res.value());
-            Equirect2Cube();
-        }
-    }
-    ImGui::PopStyleVar();
-    ImGui::PopStyleColor(2);
-
     ImGui::End();
 }
 
@@ -395,13 +374,19 @@ void Scene::OnRender(const Camera &camera)
 	CommandBuffer *commandBuffer = Application::Reference().GetCurrentCommandBuffer();
 
     SceneParameters params{};
+	params.view             = camera.View();
+    params.viewProjection   = camera.ViewProjection();
 	params.skyboxProjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
-	camera.ViewProjection();        //
 	params.exposure         = settings.exposure;
 	params.gamma            = settings.gamma;
 	frameGraph->Execute(commandBuffer, params);
 
-	float clearValues[4] = {};
+    ClearValue clearValues[3] = {
+	    { .color = { 0.0f, 0.0, 0.0, 0.0f }},
+		{ .color = { 0 } },
+        {.depthStencil = { .depth = 1.0f, .stencil = 0 } }
+    };
+
 	commandBuffer->BeginRenderTarget(renderTarget, clearValues);
 	frameGraph->Composite(commandBuffer, params);
 
@@ -556,6 +541,7 @@ void Scene::OnRender(const Camera &camera)
     //    }
     //}
         
+    frameGraph->DrawMesh(commandBuffer, params, registry);
     Render2DComponent(camera, commandBuffer);
 
 	commandBuffer->EndRenderTarget();
@@ -588,11 +574,17 @@ void Scene::OnRender2D(const Camera &camera, RenderTarget *renderTarget)
     }
 
     CommandBuffer *commandBuffer = Application::Reference().GetCurrentCommandBuffer();
-	float clearValues[4] = {};
+	ClearValue clearValues[3] = {
+	    {.color = {0.0f, 0.0, 0.0, 0.0f}},
+	    {.color = {0}},
+	    {.depthStencil = {.depth = 1.0f, .stencil = 0}}};
+
+    const std::string label = "Render2D";
+	commandBuffer->BeginEvent(label.data(), label.size() + 1);
 	commandBuffer->BeginRenderTarget(renderTarget, clearValues);
 	Render2DComponent(camera, commandBuffer);
-
 	commandBuffer->EndRenderTarget();
+	commandBuffer->EndEvent();
 }
 
 Object Scene::CreateObject(const std::string &name)

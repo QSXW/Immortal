@@ -489,7 +489,7 @@ void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *
     auto height = window->GetHeight();
     io.DisplaySize = { (float)width, (float)height };
 
-    ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer, gpuEvent, syncValue);
+    ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     // Update and Render additional Platform Windows
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

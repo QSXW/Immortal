@@ -355,6 +355,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan-Headers GPUOpen::VulkanMemoryAllocator
     $<$<PLATFORM_ID:Darwin>:metal-cpp>
     DirectXShaderCompilerHeaders
+    D3D12AgilitySDK
     ImmortalShared
 )
 

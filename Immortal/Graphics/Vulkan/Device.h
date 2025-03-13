@@ -1180,7 +1180,9 @@ public:
 
 	virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
 
-	virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+	virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
+
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride) override;
 
 	virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 

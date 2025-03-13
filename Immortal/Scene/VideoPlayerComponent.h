@@ -19,7 +19,7 @@ struct VideoDecodeCallbacks
 };
 
 class VideoPlayerContext;
-struct VideoPlayerComponent : public Component
+struct VideoPlayerComponent : public IObject, public Component
 {
     SL_SWAPPABLE(VideoPlayerComponent)
 
@@ -63,6 +63,8 @@ struct VideoPlayerComponent : public Component
 
     CodecError SwitchTrack(MediaType mediaType, int index);
 
+    bool HasStream(MediaType type) const;
+
     bool operator !();
 
     bool pause = false;
@@ -71,6 +73,8 @@ public:
     URef<VideoPlayerContext> player;
 
     bool startPlay = false;
+
+    Picture currentPicture;
 };
 
 }

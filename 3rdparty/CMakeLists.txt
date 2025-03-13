@@ -4,17 +4,18 @@ project(3rdparty LANGUAGES CXX)
 
 set(LIB_FOUND     1)
 set(LIB_NOT_FOUND 0)
-set(HAVE_ASSIMP    ${LIB_NOT_FOUND})
-set(HAVE_FFMPEG    ${LIB_NOT_FOUND})
-set(HAVE_OPENCV    ${LIB_NOT_FOUND})
-set(HAVE_DAV1D     ${LIB_NOT_FOUND})
-set(HAVE_MFX       ${LIB_NOT_FOUND})
-set(HAVE_MONO      ${LIB_NOT_FOUND})
-set(HAVE_FREETYPE  ${LIB_NOT_FOUND})
-set(HAVE_TURBOJPEG ${LIB_NOT_FOUND})
-set(HAVE_NVJPEG    ${LIB_NOT_FOUND})
-set(HAVE_WEBP      ${LIB_NOT_FOUND})
-set(HAVE_JXL       ${LIB_NOT_FOUND})
+set(HAVE_ASSIMP       ${LIB_NOT_FOUND})
+set(HAVE_FFMPEG       ${LIB_NOT_FOUND})
+set(HAVE_OPENCV       ${LIB_NOT_FOUND})
+set(HAVE_DAV1D        ${LIB_NOT_FOUND})
+set(HAVE_MFX          ${LIB_NOT_FOUND})
+set(HAVE_MONO         ${LIB_NOT_FOUND})
+set(HAVE_FREETYPE     ${LIB_NOT_FOUND})
+set(HAVE_TURBOJPEG    ${LIB_NOT_FOUND})
+set(HAVE_NVJPEG       ${LIB_NOT_FOUND})
+set(HAVE_WEBP         ${LIB_NOT_FOUND})
+set(HAVE_JXL          ${LIB_NOT_FOUND})
+set(HAVE_AGILITY_SDK  ${LIB_NOT_FOUND})
 set(3RDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 
 if (UNIX)
@@ -454,6 +455,26 @@ add_subdirectory(LightWSI)
 # tweeny
 add_subdirectory(tweeny)
 
+add_library("D3D12AgilitySDK" INTERFACE)
+set(AgilitySDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK" CACHE STRING "Path to FFmpeg directory (default=${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK)")
+set(AgilitySDK_LIBRARY_DIR "${AgilitySDK_DIR}/lib")
+set(AgilitySDK_BINARY_DIR  "${AgilitySDK_DIR}/bin")
+set(AgilitySDK_INCLUDE_DIR "${AgilitySDK_DIR}/include")
+message(STATUS "Looking for D3D12 Agility SDK directory...")
+find_path(AgilitySDK_FOUND "d3d12.h" PATHS "${AgilitySDK_INCLUDE_DIR}" NO_DEFAULT_PATH)
+if (AgilitySDK_FOUND)
+    message(STATUS "Looking for D3D12 Agility SDK directory - found ${AgilitySDK_DIR}")
+    message(STATUS "Looking for D3D12 Agility SDK include - found ${AgilitySDK_INCLUDE_DIR}")
+    set(HAVE_AGILITY_SDK ${LIB_FOUND})
+    target_include_directories("D3D12AgilitySDK" INTERFACE ${AgilitySDK_INCLUDE_DIR})
+
+    if (WIN32)
+        set(AgilitySDK_SHARED "${AgilitySDK_BINARY_DIR}/x64/" PARENT_SCOPE)
+    endif()
+else()
+    message(STATUS "Looking for D3D12 Agility SDK directory - not found")
+endif()
+
 add_subdirectory(DirectXShaderCompilerHeaders)
 set(DXC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc")
 if (WIN32)
@@ -480,13 +501,15 @@ add_subdirectory(VulkanMemoryAllocator)
 
 add_subdirectory(concurrentqueue)
 
+add_subdirectory(meshoptimizer)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     Vulkan-Headers imgui spdlog_header_only
     SPIRV spirv-cross-glsl tweeny
-    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
+    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp meshoptimizer>
     $<$<BOOL:${MONO_FOUND}>:mono>
 )
 
@@ -559,6 +582,11 @@ if (HAVE_JXL)
     message(STATUS "Immortal will be compiled with libjxl        ------ Yes")
 else()
     message(STATUS "Immortal will be compiled with libjxl        ------ No")
+endif()
+if (HAVE_AGILITY_SDK)
+    message(STATUS "Immortal will be compiled with Agility SDK   ------ Yes")
+else()
+    message(STATUS "Immortal will be compiled with Agility SDK   ------ No")
 endif()
 message(STATUS "----------------------------------------------------------------------------------")
 

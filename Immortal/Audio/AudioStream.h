@@ -44,6 +44,11 @@ public:
 
 	int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
 
+	void SetDebugName(const std::string &name);
+
+protected:
+	void Destroy();
+
 protected:
 	std::thread thread;
 
@@ -52,6 +57,8 @@ protected:
 	std::mutex mutex;
 
 	std::atomic_bool exited;
+
+	std::string name;
 };
 
 using IAudioStream = AudioStream;

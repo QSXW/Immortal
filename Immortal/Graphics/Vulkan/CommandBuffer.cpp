@@ -120,6 +120,29 @@ static VkPipelineStageFlagBits CAST(PipelineStage stage)
 	}
 }
 
+VkShaderStageFlags CAST(ShaderStage stage)
+{
+	VkShaderStageFlags flags = 0;
+	if (stage & ShaderStage::Vertex)
+	{
+		flags |= VK_SHADER_STAGE_VERTEX_BIT;
+	}
+	if (stage & ShaderStage::Pixel)
+	{
+		flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+	}
+	if (stage & ShaderStage::Compute)
+	{
+		flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+	}
+	if (stage & ShaderStage::Mesh)
+	{
+		flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
+	}
+	
+	return flags;
+}
+
 CommandBuffer::CommandBuffer(CommandPool *commandPool, VkCommandBufferLevel level) :
     Handle{},
     commandPool{ commandPool },
@@ -284,10 +307,10 @@ void CommandBuffer::SetBlendFactor(const float factor[4])
 
 void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset)
 {
-	PushConstants(pipeline->GetPipelineLayout(), stage, offset, size, pData);
+	PushConstants(pipeline->GetPipelineLayout(), CAST(stage), offset, size, pData);
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const ClearValue *pClearValues)
 {
 	RenderTarget *renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 
@@ -313,7 +336,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
                 .loadOp             = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp            = VK_ATTACHMENT_STORE_OP_STORE,
                 .clearValue         = {
-                    .color = *(const VkClearColorValue *)pClearColor,
+			        .color = *(const VkClearColorValue *)&pClearValues[i],
                 },
             };
 
@@ -338,6 +361,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
         VkRenderingAttachmentInfo depthAttachmentInfo{};
         if (depthAttachment)
         {
+			auto &clearValue = pClearValues[colorAttachments.size()];
 		    depthAttachmentInfo = VkRenderingAttachmentInfo{
                 .sType              = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .pNext              = nullptr,
@@ -350,8 +374,8 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
                 .storeOp            = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue         = {
 					.depthStencil = {
-						.depth = 1.0f,
-						.stencil = 0,
+			            .depth   = clearValue.depthStencil.depth,
+			            .stencil = clearValue.depthStencil.stencil,
 					}
 				},
             };
@@ -440,9 +464,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
     }
     else
     {
-		LightArray<VkClearValue> clearValues;
-		clearValues.resize(colorAttachments.size() + (depthAttachment ? 1 : 0));
-		clearValues[0].color = *(const VkClearColorValue *)pClearColor;
+		uint32_t clearValueSize = colorAttachments.size() + (depthAttachment ? 1 : 0);
 
         VkRenderPassBeginInfo beginInfo = {
              .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -453,8 +475,8 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const fl
                 .offset = { 0, 0 },
                 .extent = { width, height }
                 },
-		     .clearValueCount = uint32_t(clearValues.size()),
-             .pClearValues    = clearValues.data(),
+		     .clearValueCount = clearValueSize,
+             .pClearValues    = (const VkClearValue *)pClearValues,
          };
 
         BeginRenderPass(&beginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -710,6 +732,99 @@ void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresour
         );
 }
 
+void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect)
+{
+	Texture *texture = InterpretAs<Texture>(_texture);
+    Buffer  *buffer  = InterpretAs<Buffer>(_buffer);
+
+    uint32_t arrayLayers = texture->Image::GetArrayLayers();
+	uint32_t mipLevels   = texture->Image::GetMipLevels();
+
+	Format format = texture->GetFormat();
+	auto &[width, height, depth] = texture->GetExtent();
+	VkBufferImageCopy2 copyRegion {
+		.sType             = VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2,
+		.pNext             = nullptr,
+		.bufferOffset      = 0,
+		.bufferRowLength   = uint32_t(bufferRowLength / format.GetTexelSize()),
+		.bufferImageHeight = texture->GetHeight(),
+		.imageSubresource  = {
+		    .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+		    .mipLevel       = subresource,
+		    .baseArrayLayer = 0,
+		    .layerCount     = arrayLayers,
+		},
+		.imageOffset = {
+			.x = 0,
+			.y = 0,
+			.z = 0
+		},
+		.imageExtent = {
+			.width  = width,
+			.height = height,
+			.depth  = depth
+		}
+	};
+
+	if (pRect)
+	{
+		copyRegion.imageOffset = {
+			.x = int(pRect->left),
+			.y = int(pRect->top),
+			.z = 0,
+		};
+
+		copyRegion.imageExtent = {
+			.width  = pRect->right - pRect->left,
+		    .height = pRect->bottom - pRect->top,
+			.depth  = depth,
+		};
+	}
+
+	VkCopyImageToBufferInfo2 copyInfo{
+		.sType          = VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2,
+		.pNext          = nullptr,
+		.srcImage       = *texture,
+	    .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		.dstBuffer      = *buffer,
+		.regionCount    = 1,
+		.pRegions       = &copyRegion,
+	};
+
+    VkImageSubresourceRange subresourceRange{
+        .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel   = subresource,
+        .levelCount     = mipLevels,
+        .baseArrayLayer = 0,
+        .layerCount     = arrayLayers,
+    };
+
+    ImageBarrier barrier{
+        *texture,
+        subresourceRange,
+	    texture->GetLayout(),
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        0,
+        VK_ACCESS_TRANSFER_READ_BIT
+    };
+
+    PipelineImageBarrier(
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        &barrier
+        );
+
+    CopyImageToBuffer2(&copyInfo);
+	texture->SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	barrier.Swap();
+	barrier.To(texture->GetLayout());
+    PipelineImageBarrier(
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        &barrier
+        );
+}
+
 void CommandBuffer::MemoryCopy(SuperBuffer *_buffer, uint32_t size, const void *data, uint32_t offset)
 {
 	SLASSERT(false && "Don't call this function for Vulkan backend!");
@@ -718,6 +833,38 @@ void CommandBuffer::MemoryCopy(SuperBuffer *_buffer, uint32_t size, const void *
 void CommandBuffer::MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch)
 {
 	SLASSERT(false && "Don't call this function for Vulkan backend!");
+}
+
+void CommandBuffer::MemoryCopy(SuperBuffer *_dst, uint32_t dstOffset, SuperBuffer *_src, uint32_t srcOffset, size_t size)
+{
+	Buffer *src = InterpretAs<Buffer>(_src);
+	Buffer *dst = InterpretAs<Buffer>(_dst);
+
+	//VkBufferCopy2 copyRegion = {
+	//	.sType     = VK_STRUCTURE_TYPE_BUFFER_COPY_2,
+	//	.pNext     = nullptr,
+	//	.srcOffset = srcOffset,
+	//	.dstOffset = dstOffset,
+	//    .size      = size,
+	//};
+
+	//VkCopyBufferInfo2 copyInfo{
+	//	.sType       = VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2,
+	//	.pNext       = nullptr,
+	//	.srcBuffer   = *src,
+	//	.dstBuffer   = *dst,
+	//    .regionCount = 1,
+	//	.pRegions    = &copyRegion
+	//};
+	//CopyBuffer2(&copyInfo);
+
+	VkBufferCopy copyRegion{
+	    .srcOffset = srcOffset,
+		.dstOffset = dstOffset,
+		.size      = size,
+	};
+
+	CopyBuffer(*src, *dst, 1, &copyRegion);
 }
 
 void CommandBuffer::SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer)

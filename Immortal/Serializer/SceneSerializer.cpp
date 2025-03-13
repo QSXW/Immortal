@@ -211,7 +211,7 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
         if (!meshObject.is_null())
         {
             auto &meshComponent = object.AddComponent<MeshComponent>();
-            meshComponent.Mesh.reset(new Mesh{ meshObject["Source"] });
+            meshComponent.Mesh = new Mesh{ nullptr, nullptr, meshObject["Source"] };
         }
 
         const auto &materialObject = ns::TryFind(data, "Material");

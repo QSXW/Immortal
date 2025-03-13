@@ -152,14 +152,6 @@ private:
     } settings;
 
     struct {
-        std::shared_ptr<Mesh> skybox;
-    } meshes;
-
-    struct {
-        Ref<Texture> skybox;
-    } textures;
-
-    struct {
        Ref<GraphicsPipeline> tonemap;
        Ref<GraphicsPipeline> pbr;
        Ref<GraphicsPipeline> basic;

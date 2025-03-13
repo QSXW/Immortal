@@ -85,6 +85,8 @@ Device::Device(PhysicalDevice *phsicalDevice) :
 		}
 	}
 #endif
+
+	CheckExtendFeatures();
 }
 
 Device::~Device()
@@ -186,14 +188,14 @@ SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t heig
 	return new Texture{ this, format, width, height, mipLevels, arrayLayers, type };
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
 {
 	return new Buffer{ this, type, size };
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format)
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride)
 {
-	return new Buffer{ this, type, size, memoryType, format };
+	return new Buffer{ this, type, size, memoryType, byteStride };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
@@ -221,6 +223,33 @@ IDXGIFactory4 *Device::GetDXGIFactory() const
 {
 	Instance *instance =  InterpretAs<Instance>(physicalDevice->GetInstance());
 	return *instance;
+}
+
+bool Device::CheckExtendFeatures()
+{
+	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {D3D_SHADER_MODEL_6_5};
+	if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) || (shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_5))
+	{
+		LOG::ERR("Shader Model 6.5 is not supported");
+		return false;
+	}
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS7 features = {};
+	if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &features, sizeof(features))) || (features.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED))
+	{
+		LOG::ERR("Mesh Shaders aren't supported!");
+		return false;
+	}
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS21 options;
+	if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options, sizeof(options))) ||
+		options.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
+	{
+		LOG::ERR("Device does not report support for work graphs.");
+		return false;
+	}
+
+	return true;
 }
 
 void Device::CreateSampler(const D3D12_SAMPLER_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptor)

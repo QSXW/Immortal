@@ -184,13 +184,13 @@ int main(int, char **)
 
         // Rendering
         ImGui::Render();
-        const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
+        const ClearValues clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
 
         pEvent->Wait(syncValues[syncPoint], 0xffffff);
         auto &commandBuffer = commandBuffers[syncPoint];
         commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-        commandBuffer->BeginRenderTarget(renderTarget, clear_color_with_alpha);
+        commandBuffer->BeginRenderTarget(renderTarget, &clear_color_with_alpha);
 		ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer, pEvent, pEvent->GetSyncPoint() + 1);
         commandBuffer->EndRenderTarget();
         commandBuffer->End();

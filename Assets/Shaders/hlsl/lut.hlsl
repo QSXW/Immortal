@@ -4,9 +4,9 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
-RWTexture2D<unorm float4> InputImage0 : register(u0);
+Texture2D<unorm float4> InputImage0 : register(t0);
 RWTexture2D<float4> OutputImage : register(u1);
-RWBuffer<float3> Lut : register(u2);
+StructuredBuffer<float3> Lut : register(t2);
 
 SamplerState Sampler : register(s0);
 

@@ -125,8 +125,13 @@ set(RENDER_FILES
     FrameGraph.h
     Graphics.cpp
     Graphics.h
+    Material.h
     Mesh.cpp
     Mesh.h
+    MeshletGenerator.cpp
+    MeshletGenerator.h
+    MeshletTask.cpp
+    MeshletTask.h
     OrthographicCamera.cpp
     OrthographicCamera.h
     Render2D.cpp

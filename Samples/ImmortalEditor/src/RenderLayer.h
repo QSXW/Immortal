@@ -45,6 +45,9 @@ public:
         panels.hierarchyGraphics = new WHierarchyGraphics([this](Object object) { selectedObject = object; });
         window->Wrap({ menuBar, viewport, panels.tools, panels.navigator, panels.propertyManager, panels.hierarchyGraphics});
 
+        asyncComputeThread = new AsyncComputeThread(Graphics::GetDevice());
+		asyncComputeThread->Execute<SetQueueTask>(Graphics::GetDevice()->CreateQueue(QueueType::Transfer));
+
         menus[0] = new WMenu;
         menus[0]
             ->Item({ "Open",       "Ctrl + O", [this] { LoadObject(); }})
@@ -64,12 +67,18 @@ public:
         camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
 
         Ref<FrameGraph> frameGraph = new FrameGraph{};
-        Ref<SkyboxTask> skybox = new SkyboxTask;
 
-		skybox->SetFilePath(R"(C:\Users\qsxw\Downloads\winter_river_4k.hdr)");
-		frameGraph->AddTask(skybox);
+         Ref<SkyboxTask> skybox = new SkyboxTask;
+		 skybox->SetFilePath("skybox.hdr");
+		 frameGraph->AddTask(skybox);
+
+        Ref<MeshletTask> meshlet = new MeshletTask;
+		frameGraph->AddTask(meshlet);
 		frameGraph->Build();
 		scene->SetFrameGraph(frameGraph);
+
+        uint32_t nullObject = 0;
+		selectedBuffer = Graphics::CreateBuffer(BufferType::TransferDestination, sizeof(uint32_t), &nullObject);
 
         viewport
             ->Text("Offline Render")
@@ -194,7 +203,7 @@ public:
 
     virtual void OnUpdate() override
     {
-		Vector2 size = editableArea->Size();
+		Vector2 size = editableArea->GetSize();
 
         if (size.x > 0 && size.y > 0)
 		{
@@ -313,10 +322,30 @@ public:
         x -= editableArea->MinBound().x;
         y -= editableArea->MinBound().y;
 
-        uint64_t pixel = 0; // scene->Target()->PickPixel(1, x, y, Format::R32);
-
-        Object o = Object{ (int)pixel, scene };
-        panels.hierarchyGraphics->Select(pixel == -1 || o == selectedObject ? Object{} : o);
+        auto asyncComputeThread = Graphics::GetAsyncComputeThread();
+        asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+        asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
+			auto texture = scene->GetRenderTarget()->GetColorAttachment(1);
+            Rect2D rect = {
+                .left   = (uint32_t)x,
+                .top    = (uint32_t)y,
+                .right  = (uint32_t)x + 1,
+                .bottom = (uint32_t)y + 1
+            };
+			commandBuffer->CopyImageToBuffer(selectedBuffer, texture, 0, SLALIGN(texture->GetWidth() * texture->GetFormat().GetTexelSize(), TextureAlignment), &rect);
+		});
+		asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
+			uint32_t *map = nullptr;
+			selectedBuffer->Map((void **)&map, sizeof(uint32_t), 0);
+            if (map)
+            {
+				uint32_t pixel = *map;
+				Object o = Object{(int) pixel, scene};
+				panels.hierarchyGraphics->Select(pixel == 0 || o == selectedObject ? Object{} : o);
+            }
+            });
+		asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
+		asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::Submiting);
     }
 
     bool LoadObject()
@@ -329,13 +358,23 @@ public:
 
             panels.hierarchyGraphics->Select(object);
 
-            if (FileSystem::Is3DModel(filepath))
+            if (FileSystem::Is3DModel(filepath) ||  FileSystem::IsFormat<FileFormat::BIN>(filepath))
             {
-                auto &mesh = object.Add<MeshComponent>();
-                mesh.Mesh = std::shared_ptr<Mesh>{ new Mesh{ res.value() } };
+                auto meshComponent = &object.Add<MeshComponent>();
+				auto material      = &object.Add<MaterialComponent>();
 
-                auto &material = object.Add<MaterialComponent>();
-                material.References.resize(mesh.Mesh->NodeList().size());
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+                asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
+					meshLoading = new Mesh{asyncComputeThread, commandBuffer, res.value()};
+				});
+
+				asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
+					meshComponent->Mesh = meshLoading;
+					material->References.resize(meshComponent->Mesh->NodeList().size());
+				});
+
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::Submiting);
             }
             else if (FileSystem::IsVideo(filepath))
             {
@@ -472,10 +511,10 @@ public:
         case KeyCode::W:
             guizmoType = ImGuizmo::OPERATION::TRANSLATE;
             panels.tools->Activate(WTools::Move);
-            if (control || shift)
-            {
-                Application::This->Close();
-            }
+            //if (control || shift)
+            //{
+            //    Application::This->Close();
+            //}
             break;
 
         case KeyCode::E:
@@ -598,6 +637,12 @@ private:
     ImGuizmo::OPERATION guizmoType = ImGuizmo::OPERATION::INVALID;
 
     Ref<WImGuizmo> imguizmoWidget;
+
+    Ref<Mesh> meshLoading;
+
+    URef<AsyncComputeThread> asyncComputeThread;
+
+    Ref<Buffer> selectedBuffer;
 };
 
 }

@@ -61,9 +61,9 @@ public:
 
     virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format) override;
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1) override;
 
     virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 
@@ -75,6 +75,8 @@ public:
 	IDXGIAdapter1 *GetAdapter() const;
 
 	IDXGIFactory4 *GetDXGIFactory() const;
+
+    bool CheckExtendFeatures();
 
     void CreateSampler(const D3D12_SAMPLER_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptor);
 

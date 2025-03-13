@@ -132,7 +132,24 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         }
 
         pushConstantRanges.insert(pushConstantRanges.end(), shader->GetPushConstantRanges().begin(), shader->GetPushConstantRanges().end());
-		descriptorSetLayoutBindings.insert(descriptorSetLayoutBindings.end(), shader->GetDescriptorSetLayoutBinding().begin(), shader->GetDescriptorSetLayoutBinding().end());
+
+        for (auto &binding : shader->GetDescriptorSetLayoutBinding())
+        {
+			size_t j = 0;
+            for (; j < descriptorSetLayoutBindings.size(); j++)
+            {
+                if (binding.binding == descriptorSetLayoutBindings[j].binding)
+                {
+					descriptorSetLayoutBindings[j].stageFlags |= binding.stageFlags;
+					break;
+                }
+            }
+            if (j == descriptorSetLayoutBindings.size())
+            {
+				descriptorSetLayoutBindings.emplace_back(binding);
+            }
+        }
+		// descriptorSetLayoutBindings.insert(descriptorSetLayoutBindings.end(), shader->GetDescriptorSetLayoutBinding().begin(), shader->GetDescriptorSetLayoutBinding().end());
     }
 
     ConstructPipelineLayout(descriptorSetLayoutBindings, pushConstantRanges);
@@ -320,8 +337,8 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .flags               = 0,
 	    .stageCount          = uint32_t(stageCreateInfo.size()),
         .pStages             = stageCreateInfo.data(),
-        .pVertexInputState   = &vertexInputStateCreateInfo,
-        .pInputAssemblyState = &inputAssemblyStateCreateInfo,
+        .pVertexInputState   = description.Size() == 0 ? nullptr : &vertexInputStateCreateInfo,
+	    .pInputAssemblyState = description.Size() == 0 ? nullptr : &inputAssemblyStateCreateInfo,
         .pTessellationState  = nullptr,
         .pViewportState      = &viewportStateCreateInfo,
         .pRasterizationState = &rasterizationStateCreateInfo,

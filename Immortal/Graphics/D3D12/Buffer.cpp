@@ -14,12 +14,12 @@ Buffer::Buffer() :
 
 }
 
-Buffer::Buffer(Device *device, Type type, size_t size, MemoryType memoryType, Format format) :
+Buffer::Buffer(Device *device, Type type, size_t size, MemoryType memoryType, uint32_t byteStride) :
     Super{ type, size },
     NonDispatchableHandle{ device },
     descriptorHeap{}
 {
-    Construct(memoryType, format);
+	Construct(memoryType, byteStride);
 }
 
 Buffer::~Buffer()
@@ -30,7 +30,7 @@ Buffer::~Buffer()
     }
 }
 
-void Buffer::Construct(MemoryType memoryType, Format format)
+void Buffer::Construct(MemoryType memoryType, uint32_t byteStride)
 {
 	D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
 
@@ -42,10 +42,13 @@ void Buffer::Construct(MemoryType memoryType, Format format)
         .VisibleNodeMask      = 1,
     };
 
+	const auto &type = GetType();
+    bool isConstantBuffer = type & Type::ConstantBuffer;
+
     D3D12_RESOURCE_DESC desc = {
         .Dimension        = D3D12_RESOURCE_DIMENSION_BUFFER,
         .Alignment        = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT, // Zero is effectively 64KB also
-        .Width            = GetSize(),
+        .Width            = isConstantBuffer ? SLALIGN(GetSize(), 256): GetSize(),
         .Height           = 1,
         .DepthOrArraySize = 1,
         .MipLevels        = 1,
@@ -54,24 +57,33 @@ void Buffer::Construct(MemoryType memoryType, Format format)
         .Layout           = D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
         .Flags            = D3D12_RESOURCE_FLAG_NONE,
     };
-    
-	const auto &type = GetType();
-    if (type & Type::ConstantBuffer)
+
+    if (type & Type::Storage)
+    {
+		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    if (isConstantBuffer)
     {
 		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		state = D3D12_RESOURCE_STATE_COMMON;
     }
-	else if (memoryType == MemoryType::Host || (type & Type::TransferSource))
-    {
-		heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-		state = D3D12_RESOURCE_STATE_GENERIC_READ;
-    }
-	else if (type & Type::TransferDestination)
+	
+    if (memoryType == MemoryType::Host)
 	{
-		heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
-		state = D3D12_RESOURCE_STATE_COPY_DEST;
+		if (type & Type::TransferDestination)
+		{
+			heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
+			state = D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+		else
+		{
+			heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+			state = D3D12_RESOURCE_STATE_GENERIC_READ;
+		}
 	}
-	else if (type & Type::Scratch)
+
+	if (type & Type::Scratch)
 	{
 		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
@@ -95,22 +107,50 @@ void Buffer::Construct(MemoryType memoryType, Format format)
 
     virtualAddress = resource->GetGPUVirtualAddress();
 
-    if (type & Type::ConstantBuffer)
+    if (type & (Type::ConstantBuffer | Type::Storage))
     {
-        D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
-            .Format                  = format,
-		    .ViewDimension           = D3D12_SRV_DIMENSION_BUFFER,
-		    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
-            .Buffer                  = {
-                .FirstElement        = 0,
-                .NumElements         = UINT(GetSize() / format.GetTexelSize()),
-		        .StructureByteStride = UINT(format.GetTexelSize()),
-                .Flags               = D3D12_BUFFER_SRV_FLAG_NONE,
-            }
-        };
-		descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &descriptorHeap);
-		device->CreateShaderResourceView(*this, &desc, descriptor);
+		descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &descriptorHeap, D3D12_DESCRIPTOR_RANGE_TYPE_CBV + 1);
+
+        if (isConstantBuffer)
+        {
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {
+			    .BufferLocation = GetGPUVirtualAddress(),
+			    .SizeInBytes    = UINT(desc.Width)
+            };
+			device->CreateConstantBufferView(&cbvDesc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_CBV]);
+        }
+
+        if (type & Type::Storage)
+		{
+             D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {
+                .Format                  = DXGI_FORMAT_UNKNOWN,
+		        .ViewDimension           = D3D12_SRV_DIMENSION_BUFFER,
+		        .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+                .Buffer                  = {
+                    .FirstElement        = 0,
+                    .NumElements         = UINT(GetSize() / byteStride),
+		            .StructureByteStride = UINT(byteStride),
+                    .Flags               = D3D12_BUFFER_SRV_FLAG_NONE,
+                }
+            };
+
+            device->CreateShaderResourceView(*this, &srvDesc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_SRV]);
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc {
+                .Format        = DXGI_FORMAT_UNKNOWN,
+			    .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+                .Buffer = {
+				    .FirstElement         = 0,
+				    .NumElements          = UINT(GetSize() / byteStride),
+					.StructureByteStride  = UINT(byteStride),
+				    .CounterOffsetInBytes = 0,
+				    .Flags                = D3D12_BUFFER_UAV_FLAG_NONE,
+                }
+            };
+			device->CreateUnorderedAccessView(*this, nullptr, &desc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_UAV]);
+		}
     }
+
 #ifdef _DEBUG
 	std::wstring name = L"Buffer_" + std::to_wstring(GetSize());
 	resource->SetName(name.c_str());
@@ -120,6 +160,11 @@ void Buffer::Construct(MemoryType memoryType, Format format)
 Anonymous Buffer::GetBackendHandle() const
 {
 	return (void *) resource.Get();
+}
+
+GpuVirtualAddress Buffer::GetGpuVirtualAddress()
+{
+	return GetGPUVirtualAddress();
 }
 
 void Buffer::Map(void **ppData, size_t size, uint64_t offset)

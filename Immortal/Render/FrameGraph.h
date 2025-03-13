@@ -3,6 +3,7 @@
 #include "RenderTask.h"
 #include "Graphics/AsyncCompute.h"
 #include "Graphics.h"
+#include "Scene/entt.hpp"
 
 namespace Immortal
 {
@@ -21,6 +22,8 @@ public:
 	void Execute(CommandBuffer *commandBuffer, const SceneParameters &params);
 
     void Composite(CommandBuffer *commandBuffer, const SceneParameters &params);
+
+    void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry);
 
 protected:
 	std::vector<Ref<RenderTask>> tasks;

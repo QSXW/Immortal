@@ -41,3 +41,6 @@
 [submodule "3rdparty/tweeny"]
 	path = 3rdparty/tweeny
 	url = https://github.com/mobius3/tweeny.git
+[submodule "3rdparty/meshoptimizer"]
+	path = 3rdparty/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer.git

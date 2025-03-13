@@ -70,6 +70,7 @@
 #include "Render/FrameGraph.h"
 #include "Render/Graphics.h"
 #include "Render/Mesh.h"
+#include "Render/MeshletTask.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"
 #include "Render/RenderTask.h"
