@@ -245,33 +245,33 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			KeyCode keyCode = KeyCode::Terminator;
             if (wParam == VK_CONTROL)
             {
-                if (IsVirtualKeyDown(VK_LCONTROL))
+				if (IsVirtualKeyDown(VK_LCONTROL) == down)
                 {
 					keyCode = KeyCode::LeftControl;
                 }
-                if (IsVirtualKeyDown(VK_RCONTROL))
+				if (IsVirtualKeyDown(VK_RCONTROL) == down)
 				{
 					keyCode = KeyCode::RightControl;
                 }
             }
             else if (wParam == VK_SHIFT)
             {
-				if (IsVirtualKeyDown(VK_LSHIFT))
+				if (IsVirtualKeyDown(VK_LSHIFT) == down)
 				{
 					keyCode = KeyCode::LeftShift;
 				}
-				if (IsVirtualKeyDown(VK_RSHIFT))
+				if (IsVirtualKeyDown(VK_RSHIFT) == down)
 				{
 					keyCode = KeyCode::RightShift;
 				}
             }
             else if (wParam == VK_MENU)
             {
-				if (IsVirtualKeyDown(VK_LMENU))
+				if (IsVirtualKeyDown(VK_LMENU) == down)
 				{
 					keyCode = KeyCode::LeftAlt;
 				}
-				if (IsVirtualKeyDown(VK_RMENU))
+				if (IsVirtualKeyDown(VK_RMENU) == down)
 				{
 					keyCode = KeyCode::RightAlt;
 				}

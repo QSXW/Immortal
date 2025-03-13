@@ -23,11 +23,17 @@ AudioStream::AudioStream() :
 
 AudioStream::~AudioStream()
 {
-    exited = true;
-    if (thread.joinable())
-    {
+
+}
+
+void AudioStream::Destroy()
+{
+	exited = true;
+	if (thread.joinable())
+	{
 		thread.join();
-    }
+	}
+	thread = {};
 }
 
 void AudioStream::Start(const PFN_AudioStreamPlayCallback &value)
@@ -80,6 +86,11 @@ int AudioStream::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
     }
 
     return frameRequested;
+}
+
+void AudioStream::SetDebugName(const std::string &value)
+{
+	name = value;
 }
 
 }

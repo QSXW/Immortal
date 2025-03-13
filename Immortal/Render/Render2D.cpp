@@ -33,7 +33,7 @@ Render2D::Render2D() :
                 { Format::VECTOR2,  "TEXCOORD"      },
                 { Format::FLOAT,    "INDEX"         },
                 { Format::FLOAT,    "TILING_FACTOR" },
-                { Format::R32_SINT, "OBJECT_ID"     }
+                { Format::R32_UINT, "OBJECT_ID"     }
             },
             {
                 Format::RGBA8,
@@ -49,8 +49,8 @@ Render2D::Render2D() :
 		descriptorSet->Set(0, linearSampler);
 		sampler = linearSampler;
 
-        vertexBuffer = device->CreateBuffer(sizeof(RectVertex) * MaxVertices, BufferType::Vertex);
-        indexBuffer  = device->CreateBuffer(sizeof(uint32_t) * MaxIndices, BufferType::Index);
+        vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(RectVertex) * MaxVertices);
+        indexBuffer  = device->CreateBuffer(BufferType::Index,  sizeof(uint32_t)   * MaxIndices );
 
         uint32_t *ptr = {};
 		indexBuffer->Map((void **)&ptr, indexBuffer->GetSize(), 0);

@@ -39,7 +39,7 @@ public:
 
     virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
 
     virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels = 1, uint16_t arrayLayers = 1, TextureType type = TextureType::None) override;
 

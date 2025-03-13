@@ -665,4 +665,6 @@ namespace ImGui
     }
 }
 
+#define IMGUI_NOTIFY(level, s, format, ...) ImGui::InsertNotification({ImGuiToastType::level, s * 1000, format, __VA_ARGS__ });
+
 #endif

@@ -751,6 +751,16 @@ public:
 		return state.isHovered;
     }
 
+    void SetHovered(bool enabled)
+    {
+		state.isHovered = enabled;
+    }
+
+    void AddHovered(bool enabled)
+    {
+		state.isHovered |= enabled;
+    }
+
     void SetFocus()
     {
 		ImGui::SetWindowFocus(Text().c_str());
@@ -815,7 +825,9 @@ public:
 class IMMORTAL_API WImage : public Widget
 {
 public:
-    WIDGET_SET_PROPERTIES(WImage)
+	WIDGET_SET_PROPERTIES(WImage)
+	WIDGET_SET_PROPERTY(ImageWidth,  imageWidth,  float, 0.0f)
+	WIDGET_SET_PROPERTY(ImageHeight, imageHeight, float, 0.0f)
 
 public:
     WImage(Widget *v = nullptr) :
@@ -830,6 +842,9 @@ public:
     {
         WidgetLock lock{ this };
 
+		size = ImGui::GetContentRegionAvail();
+		width  = size.x;
+		height = size.y;
         __PreClaculateImageSize();
 
         ImVec2 offset = ImGui::GetWindowPos();
@@ -877,14 +892,23 @@ public:
             return;
         }
 
-        auto scale = (float)resource.image->GetWidth() / (float)resource.image->GetHeight();
+        auto w = ImageWidth();
+		auto h = ImageHeight();
+
+        if (w == 0)
+        {
+			w = (float)resource.image->GetWidth();
+			h = (float)resource.image->GetHeight();
+        }
+
+        auto scale = w / h;
         auto rscale = renderWidth / renderHeight;
 
         float x = renderWidth;
         float y = renderHeight;
         if (scale > rscale)
         {
-            y = int(x * ((float) resource.image->GetHeight() / (float) resource.image->GetWidth()));
+            y = int(x * (h/ w));
         }
         else
         {
@@ -1139,8 +1163,43 @@ protected:
 };
 
 template <class T>
+class WDragDropSource : public Widget
+{
+public:
+    using WidgetType = WDragDropSource;
+
+public:
+	WDragDropSource(Widget *parent = nullptr) :
+	    Widget{parent}
+	{
+		width = 0;
+		height = 0;
+		Connect([&] {
+			Draw();
+		});
+	}
+
+    virtual bool Draw() override
+	{
+        using namespace ImGui;
+
+        if (BeginDragDropSource())
+        {
+			EndDragDropSource();
+			return true;
+        }
+
+		return false;
+	}
+};
+
+template <class T>
 class IMMORTAL_API WDragDropTarget : public Widget
 {
+public:
+    using WidgetType = WDragDropTarget;
+	WIDGET_SET_PROPERTY(Flags, flags, ImGuiDragDropFlags, 0)
+
 public:
     WDragDropTarget(Widget *parent = nullptr) :
         Widget{ parent },
@@ -1157,7 +1216,7 @@ public:
     {
 		if (ImGui::BeginDragDropTarget())
 		{
-			const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(type);
+			const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(type, Flags());
 			if (payload)
 			{
 				auto data = *(const T **) payload->Data;
@@ -1717,6 +1776,345 @@ public:
 	WInputText();
 
     virtual bool Draw(const ImVec2 &size = {-1, -1});
+};
+
+class WTextCheckBox
+{
+public:
+	using WidgetType = WTextCheckBox;
+	WIDGET_SET_PROPERTY(Active,                active,                bool,     false     )
+	WIDGET_SET_PROPERTY(BackgroundColor,       backgroundColor,       uint32_t, 0x860d0d0d)
+	WIDGET_SET_PROPERTY(ActiveBackgroundColor, activeBackgroundColor, uint32_t, 0xff1f1f1f)
+
+public:
+	virtual bool Draw(const String &text, const ImVec2 &sizeArgs, WAlignMode alignMode = WAlignMode::HCenter, float indent = 0.0f)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		bool hovered;
+		bool held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held, 0);
+		if (pressed)
+		{
+			Active(!Active());
+		}
+
+		RenderFrame(bb.Min, bb.Max, GetColorU32((hovered && !Active()) ? ImGuiCol_HeaderHovered : (!Active() ? ImGuiCol_Header : ImGuiCol_HeaderActive)), false, style.FrameRounding);
+
+        ImVec2 textPos = {};
+        if (alignMode == WAlignMode::HCenter)
+		{
+			textPos = GetCenterAlignPosition(size, textSize);
+        }
+        else if (alignMode == WAlignMode::Right)
+        {
+			textPos.x = GetRightAlignPosition(size.x, textSize.x);
+			textPos.y = GetCenterAlignPosition(size.y, textSize.y);
+        }
+        else
+        {
+			textPos.x = 4.0f;
+			textPos.y = GetCenterAlignPosition(size.y, textSize.y);
+        }
+
+        textPos.x += indent;
+		textPos += bb.Min;
+		RenderText(textPos, s, e);
+
+		return pressed;
+	}
+};
+
+class WCircleButton
+{
+public:
+	using WidgetType = WCircleButton;
+	WIDGET_PROPERTY_TEXT
+	WIDGET_SET_PROPERTY(Active, active, bool, false)
+
+public:
+	bool Draw(const ImVec2 &sizeArgs)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		bool hovered;
+		bool held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+
+		float radius = size.y * 0.5f;
+		auto center = bb.GetCenter();
+		window->DrawList->AddCircle(center, radius, 0xffffffff, 100, 1.2f);
+
+		if (hovered)
+		{
+			ImVec2 mouse_pos = ImGui::GetMousePos();
+			float distance = std::sqrt(std::pow(mouse_pos.x - center.x, 2) + std::pow(mouse_pos.y - center.y, 2));
+			hovered = distance <= radius;
+			pressed = hovered && pressed;
+		}
+
+		int textColor = hovered ? ImGuiCol_HeaderHovered : ImGuiCol_Text;
+		if (pressed)
+		{
+			textColor = ImGuiCol_Text;
+			Active(!Active());
+		}
+
+		ImVec2 textPos = GetCenterAlignPosition(size, textSize);
+		window->DrawList->AddText(bb.Min + textPos, GetColorU32(textColor), s, e);
+
+		return pressed;
+	}
+};
+
+class WTextRectangle
+{
+public:
+	bool Draw(const String &text, const ImVec2 &sizeArgs, uint32_t backgroundColor, float rounding = 0.0f, WAlignMode alignMode = WAlignMode::Left, float padding = 4.0f)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		RenderFrame(bb.Min, bb.Max, backgroundColor, false, rounding);
+
+		ImVec2 pos = bb.Min;
+		if (alignMode & WAlignMode::Right)
+		{
+			pos += GetRightAlignPosition(size, textSize);
+			pos.x -= padding;
+		}
+		else if (alignMode & WAlignMode::HCenter)
+		{
+			pos += GetCenterAlignPosition(size, textSize);
+		}
+		else
+		{
+			pos.y += GetCenterAlignPosition(size.y, textSize.y);
+			pos.x += padding;
+		}
+
+		RenderText(pos, s, e);
+	}
+};
+
+class WRoundedButton
+{
+public:
+	using WidgetType = WRoundedButton;
+	WIDGET_PROPERTY_TEXT
+	WIDGET_SET_PROPERTY(Active, active, bool, false)
+
+public:
+	bool Draw(const ImVec2 &sizeArgs, float rounding, uint32_t backgroundColor, uint32_t activeBackgroundColor, float borderSize = 0.0f, uint32_t borderColor = 0x0)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		bool hovered;
+		bool held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+		if (pressed)
+		{
+			Active(!Active());
+		}
+
+		window->DrawList->AddRectFilled(bb.Min, bb.Max, hovered ? activeBackgroundColor : backgroundColor, rounding, 0, g.Style.FrameShadowSize, GetColorU32(ImGuiCol_FrameShadowStart), GetColorU32(ImGuiCol_FrameShadowEnd));
+		if (borderSize > 0.0f)
+		{
+			window->DrawList->AddRect(bb.Min, bb.Max, borderColor, rounding, 0, borderSize);
+		}
+
+		ImVec2 textPos = GetCenterAlignPosition(size, textSize);
+		window->DrawList->AddText(bb.Min + textPos, GetColorU32(ImGuiCol_Text), s, e);
+
+		return pressed;
+	}
+};
+
+class WRoundedImageButton
+{
+public:
+	using WidgetType = WRoundedImageButton;
+	WIDGET_PROPERTY_TEXT
+	WIDGET_SET_PROPERTY(Active, active, bool, false)
+
+public:
+	bool Draw(Texture *image, const ImVec2 &sizeArgs, float rounding, uint32_t backgroundColor, uint32_t activeBackgroundColor, float borderSize = 0.0f, uint32_t borderColor = 0x0)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		bool hovered;
+		bool held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+		if (pressed)
+		{
+			Active(!Active());
+		}
+
+		// window->DrawList->AddRectFilled(bb.Min, bb.Max, hovered ? activeBackgroundColor : backgroundColor, rounding, 0, g.Style.FrameShadowSize, GetColorU32(ImGuiCol_FrameShadowStart), GetColorU32(ImGuiCol_FrameShadowEnd));
+		window->DrawList->AddImageRounded(WIMAGE(image), bb.Min, bb.Max, {0, 0}, {1, 1}, hovered ? activeBackgroundColor : 0xffffffff, rounding);
+		if (borderSize > 0.0f)
+		{
+			window->DrawList->AddRect(bb.Min, bb.Max, borderColor, rounding, 0, borderSize);
+		}
+
+		ImVec2 textPos = GetCenterAlignPosition(size, textSize);
+		window->DrawList->AddText(bb.Min + textPos, GetColorU32(ImGuiCol_Text), s, e);
+
+		return pressed;
+	}
+};
+
+class WTextClipped : public Widget
+{
+public:
+	using WidgetType = WTextClipped;
+
+public:
+	bool Draw(const String &text, const ImVec2 &sizeArgs, WAlignMode alignMode = WAlignMode::HCenter, float indent = 0.0f)
+	{
+		using namespace ImGui;
+		ImGuiContext &g = *GImGui;
+		const ImGuiStyle &style = g.Style;
+		ImGuiWindow *window = GetCurrentWindow();
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		auto [s, e] = text.GetTuple();
+		ImVec2 textSize = CalcTextSize(s, e);
+		ImVec2 size = textSize + style.ItemSpacing;
+		size = CalcItemSize(sizeArgs, size.x, size.y);
+
+		auto id = window->GetID(this);
+		ImRect bb = GetBoundingBox(window->DC.CursorPos, size);
+
+		ItemSize(size, 0);
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		ImVec2 textPos{};
+		if (alignMode == WAlignMode::HCenter)
+		{
+			textPos = GetCenterAlignPosition(size, textSize);
+		}
+		else if (alignMode == WAlignMode::Right)
+		{
+			textPos.x = GetRightAlignPosition(size.x, textSize.x);
+			textPos.y = GetCenterAlignPosition(size.y, textSize.y);
+		}
+
+		textPos.x += indent;
+		RenderTextClipped(bb.Min + textPos, bb.Max, s, e, nullptr);
+
+		return true;
+	}
 };
 
 }

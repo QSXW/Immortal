@@ -3,6 +3,7 @@
 #include "Graphics.h"
 #include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
+#include "MeshletGenerator.h"
 
 #if HAVE_ASSIMP
 #include <assimp/scene.h>
@@ -11,6 +12,8 @@
 #include <assimp/DefaultLogger.hpp>
 #include <assimp/LogStream.hpp>
 #endif
+
+#include "DirectXCollision.h"
 
 namespace Immortal
 {
@@ -163,12 +166,534 @@ void Mesh::LoadPrimitives()
 
 }
 
-Mesh::Mesh(const std::string &filepath) :
+static Ref<Buffer> TransferBuffer2Device(CommandBuffer *commandBuffer, Ref<Buffer> &buffer, const void *data, size_t size)
+{
+	Ref<Buffer> stagingBuffer = Graphics::GetCachedBuffer(BufferType::TransferSource, size);
+	stagingBuffer->Fill(data, size, 0);
+	commandBuffer->MemoryCopy(buffer, 0, stagingBuffer, 0, size);
+
+	return stagingBuffer;
+}
+
+template <typename T>
+class Span
+{
+public:
+	Span() :
+	    m_data(nullptr), m_count(0)
+	{}
+
+	Span(T *data, uint32_t count) :
+	    m_data(data), m_count(count)
+	{}
+
+	// std library container interface
+	T *data()
+	{
+		return m_data;
+	}
+	const T *data() const
+	{
+		return m_data;
+	}
+
+	T &back()
+	{
+		return *(m_data + m_count - 1);
+	}
+	const T &back() const
+	{
+		return *(m_data + m_count - 1);
+	}
+
+	size_t size() const
+	{
+		return m_count;
+	}
+
+	// Iterator interface
+	T *begin()
+	{
+		return m_data;
+	}
+	T *end()
+	{
+		return m_data + m_count;
+	}
+
+	T &operator[](uint32_t i)
+	{
+		return *(m_data + i);
+	}
+	const T &operator[](uint32_t i) const
+	{
+		return *(m_data + i);
+	}
+
+private:
+	T *m_data;
+	uint32_t m_count;
+};
+
+template <typename T>
+Span<T> MakeSpan(T *data, uint32_t size)
+{
+	return Span<T>(data, size);
+}
+
+
+struct Attribute
+{
+	enum EType : uint32_t
+	{
+		Position,
+		Normal,
+		TexCoord,
+		Tangent,
+		Bitangent,
+		Count
+	};
+
+	EType Type;
+	uint32_t Offset;
+};
+
+class Model
+{
+public:
+	struct PackedTriangle
+	{
+		uint32_t i0 : 10;
+		uint32_t i1 : 10;
+		uint32_t i2 : 10;
+	};
+
+	struct Mesh
+	{
+		D3D12_INPUT_ELEMENT_DESC LayoutElems[Attribute::Count];
+		D3D12_INPUT_LAYOUT_DESC LayoutDesc;
+
+		std::vector<Span<uint8_t>> Vertices;
+		std::vector<uint32_t> VertexStrides;
+		uint32_t VertexCount;
+		DirectX::BoundingSphere BoundingSphere;
+
+		Span<Subset> IndexSubsets;
+		Span<uint8_t> Indices;
+		uint32_t IndexSize;
+		uint32_t IndexCount;
+
+		Span<Subset> MeshletSubsets;
+		Span<Meshlet> Meshlets;
+		Span<uint8_t> UniqueVertexIndices;
+		Span<PackedTriangle> PrimitiveIndices;
+		Span<CullData> CullingData;
+
+		// Calculates the number of instances of the last meshlet which can be packed into a single threadgroup.
+		uint32_t GetLastMeshletPackCount(uint32_t subsetIndex, uint32_t maxGroupVerts, uint32_t maxGroupPrims)
+		{
+			if (Meshlets.size() == 0)
+				return 0;
+
+			auto &subset = MeshletSubsets[subsetIndex];
+			auto &meshlet = Meshlets[subset.Offset + subset.Count - 1];
+
+			return std::min(maxGroupVerts / meshlet.VertCount, maxGroupPrims / meshlet.PrimCount);
+		}
+
+		void GetPrimitive(uint32_t index, uint32_t &i0, uint32_t &i1, uint32_t &i2) const
+		{
+			auto prim = PrimitiveIndices[index];
+			i0 = prim.i0;
+			i1 = prim.i1;
+			i2 = prim.i2;
+		}
+
+		uint32_t GetVertexIndex(uint32_t index) const
+		{
+			const uint8_t *addr = UniqueVertexIndices.data() + index * IndexSize;
+			if (IndexSize == 4)
+			{
+				return *reinterpret_cast<const uint32_t *>(addr);
+			}
+			else
+			{
+				return *reinterpret_cast<const uint16_t *>(addr);
+			}
+		}
+	};
+
+	std::vector<Mesh> m_meshes;
+	DirectX::BoundingSphere m_boundingSphere;
+
+	std::vector<uint8_t> m_buffer;
+
+	const D3D12_INPUT_ELEMENT_DESC c_elementDescs[Attribute::Count] =
+	    {
+	        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 1},
+	        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 1},
+	        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 1},
+	        {"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 1},
+	        {"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 1},
+	};
+
+	static inline const uint32_t c_sizeMap[] =
+	{
+	        12,        // Position
+	        12,        // Normal
+	        8,         // TexCoord
+	        12,        // Tangent
+	        12,        // Bitangent
+	};
+
+	const uint32_t c_prolog = 'MSHL';
+
+	enum FileVersion
+	{
+		FILE_VERSION_INITIAL = 0,
+		CURRENT_FILE_VERSION = FILE_VERSION_INITIAL
+	};
+
+	struct FileHeader
+	{
+		uint32_t Prolog;
+		uint32_t Version;
+
+		uint32_t MeshCount;
+		uint32_t AccessorCount;
+		uint32_t BufferViewCount;
+		uint32_t BufferSize;
+	};
+
+	struct MeshHeader
+	{
+		uint32_t Indices;
+		uint32_t IndexSubsets;
+		uint32_t Attributes[Attribute::Count];
+
+		uint32_t Meshlets;
+		uint32_t MeshletSubsets;
+		uint32_t UniqueVertexIndices;
+		uint32_t PrimitiveIndices;
+		uint32_t CullData;
+	};
+
+	struct BufferView
+	{
+		uint32_t Offset;
+		uint32_t Size;
+	};
+
+	struct Accessor
+	{
+		uint32_t BufferView;
+		uint32_t Offset;
+		uint32_t Size;
+		uint32_t Stride;
+		uint32_t Count;
+	};
+
+	uint32_t GetFormatSize(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
+				return 16;
+			case DXGI_FORMAT_R32G32B32_FLOAT:
+				return 12;
+			case DXGI_FORMAT_R32G32_FLOAT:
+				return 8;
+			case DXGI_FORMAT_R32_FLOAT:
+				return 4;
+			default:
+				throw std::exception("Unimplemented type");
+		}
+	}
+
+	template <typename T, typename U>
+	constexpr T DivRoundUp(T num, U denom)
+	{
+		return (num + denom - 1) / denom;
+	}
+
+	template <typename T>
+	size_t GetAlignedSize(T size)
+	{
+		const size_t alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+		const size_t alignedSize = (size + alignment - 1) & ~(alignment - 1);
+		return alignedSize;
+	}
+
+	void LoadFromFile(const wchar_t *filename)
+	{
+		std::ifstream stream(filename, std::ios::binary);
+		if (!stream.is_open())
+		{
+			return;
+		}
+
+		std::vector<MeshHeader> meshes;
+		std::vector<BufferView> bufferViews;
+		std::vector<Accessor> accessors;
+
+		FileHeader header;
+		stream.read(reinterpret_cast<char *>(&header), sizeof(header));
+
+		if (header.Prolog != c_prolog)
+		{
+			return;        // Incorrect file format.
+		}
+
+		if (header.Version != CURRENT_FILE_VERSION)
+		{
+			return;        // Version mismatch between export and import serialization code.
+		}
+
+		// Read mesh metdata
+		meshes.resize(header.MeshCount);
+		stream.read(reinterpret_cast<char *>(meshes.data()), meshes.size() * sizeof(meshes[0]));
+
+		accessors.resize(header.AccessorCount);
+		stream.read(reinterpret_cast<char *>(accessors.data()), accessors.size() * sizeof(accessors[0]));
+
+		bufferViews.resize(header.BufferViewCount);
+		stream.read(reinterpret_cast<char *>(bufferViews.data()), bufferViews.size() * sizeof(bufferViews[0]));
+
+		m_buffer.resize(header.BufferSize);
+		stream.read(reinterpret_cast<char *>(m_buffer.data()), header.BufferSize);
+
+		char eofbyte;
+		stream.read(&eofbyte, 1);        // Read last byte to hit the eof bit
+
+		assert(stream.eof());        // There's a problem if we didn't completely consume the file contents.
+
+		stream.close();
+
+		// Populate mesh data from binary data and metadata.
+		m_meshes.resize(meshes.size());
+		for (uint32_t i = 0; i < static_cast<uint32_t>(meshes.size()); ++i)
+		{
+			auto &meshView = meshes[i];
+			auto &mesh = m_meshes[i];
+
+			// Index data
+			{
+				Accessor &accessor = accessors[meshView.Indices];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.IndexSize = accessor.Size;
+				mesh.IndexCount = accessor.Count;
+
+				mesh.Indices = MakeSpan(m_buffer.data() + bufferView.Offset, bufferView.Size);
+			}
+
+			// Index Subset data
+			{
+				Accessor &accessor = accessors[meshView.IndexSubsets];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.IndexSubsets = MakeSpan(reinterpret_cast<Subset *>(m_buffer.data() + bufferView.Offset), accessor.Count);
+			}
+
+			// Vertex data & layout metadata
+
+			// Determine the number of unique Buffer Views associated with the vertex attributes & copy vertex buffers.
+			std::vector<uint32_t> vbMap;
+
+			mesh.LayoutDesc.pInputElementDescs = mesh.LayoutElems;
+			mesh.LayoutDesc.NumElements = 0;
+
+			for (uint32_t j = 0; j < Attribute::Count; ++j)
+			{
+				if (meshView.Attributes[j] == -1)
+					continue;
+
+				Accessor &accessor = accessors[meshView.Attributes[j]];
+
+				auto it = std::find(vbMap.begin(), vbMap.end(), accessor.BufferView);
+				if (it != vbMap.end())
+				{
+					continue;        // Already added - continue.
+				}
+
+				// New buffer view encountered; add to list and copy vertex data
+				vbMap.push_back(accessor.BufferView);
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				Span<uint8_t> verts = MakeSpan(m_buffer.data() + bufferView.Offset, bufferView.Size);
+
+				mesh.VertexStrides.push_back(accessor.Stride);
+				mesh.Vertices.push_back(verts);
+				mesh.VertexCount = static_cast<uint32_t>(verts.size()) / accessor.Stride;
+			}
+
+			// Populate the vertex buffer metadata from accessors.
+			for (uint32_t j = 0; j < Attribute::Count; ++j)
+			{
+				if (meshView.Attributes[j] == -1)
+					continue;
+
+				Accessor &accessor = accessors[meshView.Attributes[j]];
+
+				// Determine which vertex buffer index holds this attribute's data
+				auto it = std::find(vbMap.begin(), vbMap.end(), accessor.BufferView);
+
+				D3D12_INPUT_ELEMENT_DESC desc = c_elementDescs[j];
+				desc.InputSlot = static_cast<uint32_t>(std::distance(vbMap.begin(), it));
+
+				mesh.LayoutElems[mesh.LayoutDesc.NumElements++] = desc;
+			}
+
+			// Meshlet data
+			{
+				Accessor &accessor = accessors[meshView.Meshlets];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.Meshlets = MakeSpan(reinterpret_cast<Meshlet *>(m_buffer.data() + bufferView.Offset), accessor.Count);
+			}
+
+			// Meshlet Subset data
+			{
+				Accessor &accessor = accessors[meshView.MeshletSubsets];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.MeshletSubsets = MakeSpan(reinterpret_cast<Subset *>(m_buffer.data() + bufferView.Offset), accessor.Count);
+			}
+
+			// Unique Vertex Index data
+			{
+				Accessor &accessor = accessors[meshView.UniqueVertexIndices];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.UniqueVertexIndices = MakeSpan(m_buffer.data() + bufferView.Offset, bufferView.Size);
+			}
+
+			// Primitive Index data
+			{
+				Accessor &accessor = accessors[meshView.PrimitiveIndices];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.PrimitiveIndices = MakeSpan(reinterpret_cast<PackedTriangle *>(m_buffer.data() + bufferView.Offset), accessor.Count);
+			}
+
+			// Cull data
+			{
+				Accessor &accessor = accessors[meshView.CullData];
+				BufferView &bufferView = bufferViews[accessor.BufferView];
+
+				mesh.CullingData = MakeSpan(reinterpret_cast<CullData *>(m_buffer.data() + bufferView.Offset), accessor.Count);
+			}
+		}
+
+		// Build bounding spheres for each mesh
+		for (uint32_t i = 0; i < static_cast<uint32_t>(m_meshes.size()); ++i)
+		{
+			auto &m = m_meshes[i];
+
+			uint32_t vbIndexPos = 0;
+
+			// Find the index of the vertex buffer of the position attribute
+			for (uint32_t j = 1; j < m.LayoutDesc.NumElements; ++j)
+			{
+				auto &desc = m.LayoutElems[j];
+				if (strcmp(desc.SemanticName, "POSITION") == 0)
+				{
+					vbIndexPos = j;
+					break;
+				}
+			}
+
+			// Find the byte offset of the position attribute with its vertex buffer
+			uint32_t positionOffset = 0;
+
+			for (uint32_t j = 0; j < m.LayoutDesc.NumElements; ++j)
+			{
+				auto &desc = m.LayoutElems[j];
+				if (strcmp(desc.SemanticName, "POSITION") == 0)
+				{
+					break;
+				}
+
+				if (desc.InputSlot == vbIndexPos)
+				{
+					positionOffset += GetFormatSize(m.LayoutElems[j].Format);
+				}
+			}
+
+			Vector3 *v0 = reinterpret_cast<Vector3 *>(m.Vertices[vbIndexPos].data() + positionOffset);
+			uint32_t stride = m.VertexStrides[vbIndexPos];
+
+			//DirectX::BoundingSphere::CreateFromPoints(m.BoundingSphere, m.VertexCount, (XMFLOAT3 *)v0, stride);
+
+			//if (i == 0)
+			//{
+			//	m_boundingSphere = m.BoundingSphere;
+			//}
+			//else
+			//{
+			//	BoundingSphere::CreateMerged(m_boundingSphere, m_boundingSphere, m.BoundingSphere);
+			//}
+		}
+	}
+};
+
+Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const std::string &filepath) :
     path{ filepath }
 {
 #if !HAVE_ASSIMP
     ThrowIf(false, "Assimp library not Found! Unable to import mesh from local file");
 #else
+	if (std::filesystem::path(filepath).extension() == ".bin")
+    {
+		std::filesystem::path file = filepath;
+		Model model;
+		model.LoadFromFile(file.c_str());
+
+		auto &m = model.m_meshes[0];
+
+        uint32_t vertexBufferSize              = m.Vertices[0].size();
+		uint32_t indexBufferSize               = m.Indices.size();
+		uint32_t meshletBufferSize             = m.Meshlets.size() * sizeof(m.Meshlets[0]);
+		uint32_t uniqueVertexIndicesBufferSize = m.UniqueVertexIndices.size();
+		uint32_t primitiveIndicesBufferSize    = m.PrimitiveIndices.size() * sizeof(m.PrimitiveIndices[0]);
+
+		nodes.resize(1);
+		Node &node = nodes[0];
+
+		auto device = Graphics::GetDevice();
+		node.Name = "Unknown";
+		node.MeshletSubsetCount = model.m_meshes[0].MeshletSubsets[0].Count;
+		node.Vertex              = device->CreateBuffer(BufferType::Vertex | BufferType::Storage, vertexBufferSize,              MemoryType::Device, sizeof(DirectXSampleVertex));
+		node.Index               = device->CreateBuffer(BufferType::Index,   indexBufferSize,               MemoryType::Device, sizeof(uint32_t));
+		node.Meshlets            = device->CreateBuffer(BufferType::Storage, meshletBufferSize,             MemoryType::Device, sizeof(Meshlet));
+		node.UniqueVertexIndices = device->CreateBuffer(BufferType::Storage, uniqueVertexIndicesBufferSize, MemoryType::Device, sizeof(uint32_t));
+		node.PrimitiveIndices    = device->CreateBuffer(BufferType::Storage, primitiveIndicesBufferSize,    MemoryType::Device, sizeof(m.PrimitiveIndices[0]));
+
+		node.Vertex->SetDebugName("VertexBuffer");
+
+		node.Meshlets->SetDebugName("Meshlets");
+
+		node.UniqueVertexIndices->SetDebugName("UniqueVertexIndices");
+
+		node.PrimitiveIndices->SetDebugName("PrimitiveIndices");
+
+		Ref<Buffer> stagingVertex              = TransferBuffer2Device(commandBuffer, node.Vertex,              m.Vertices[0].data(),         vertexBufferSize             );
+		Ref<Buffer> stagingIndex               = TransferBuffer2Device(commandBuffer, node.Index,               m.Indices.data(),             indexBufferSize              );
+		Ref<Buffer> stagingMeshlet             = TransferBuffer2Device(commandBuffer, node.Meshlets,            m.Meshlets.data(),            meshletBufferSize            );
+		Ref<Buffer> stagingUniqueVertexIndices = TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, m.UniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
+		Ref<Buffer> stagingPrimitiveIndices    = TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    m.PrimitiveIndices.data(),    primitiveIndicesBufferSize   );
+
+		asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingIndex);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingMeshlet);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingUniqueVertexIndices);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingPrimitiveIndices);
+		});
+
+		return;
+    }
+
     std::string workspace = ExtractModelFileWorkspace(path);
 
     LogStream::initialize();
@@ -179,19 +704,112 @@ Mesh::Mesh(const std::string &filepath) :
     const aiScene *scene = importer->ReadFile(filepath, ImportFlags);
     SLASSERT(scene && scene->HasMeshes() && "Failed to load Mesh file: {0}" && filepath.c_str());
 
-    LoadModelData(scene);
+    std::vector<CommonVertex> vertices;
+	std::vector<Face> faces;
+	std::vector<BufferBindInfo> vertexBindInfo;
+	std::vector<BufferBindInfo> indexBindInfo;
+
+	LoadModelData(scene, vertices, faces, vertexBindInfo, indexBindInfo);
+
+    for (size_t i = 0; i < nodes.size(); i++)
+	{
+		auto &node = nodes[i];
+		auto numVertices = vertexBindInfo[i].size / sizeof(vertices[0]);
+		auto startVertices = vertexBindInfo[i].offset / sizeof(vertices[0]);
+		auto numIndicies = indexBindInfo[i].size / sizeof(uint32_t);
+		auto startIndices = indexBindInfo[i].offset / sizeof(uint32_t);
+
+		std::vector<Vector3> positions;
+		positions.resize(numVertices);
+		for (size_t i = 0; i < numVertices; i++)
+		{
+			positions[i] = vertices[startVertices + i].Position;
+		}
+
+		size_t vertexStride = sizeof(CommonVertex);
+		auto pVertex = &vertices[startVertices];
+		const uint32_t *indices = (uint32_t *)faces.data();
+		MeshletGenerator generator;
+		generator.BuildMeshlets(pVertex, numVertices, vertexStride, &indices[startIndices], numIndicies);
+
+  //      auto &meshlets            = generator.meshlets;
+		//auto &uniqueVertexIndices = generator.uniqueVertexIndices;
+		//auto &primitiveIndices    = generator.primitiveIndices;
+		auto &meshlets            = generator.meshlets;
+		auto &uniqueVertexIndices = generator.meshletVertices;
+		auto &primitiveIndices    = generator.meshletTrianglesU32;
+
+        uint32_t vertexBufferSize              = numVertices           * vertexStride;
+		uint32_t indexBufferSize               = faces.size()               * sizeof(faces[0]);
+		uint32_t meshletBufferSize             = meshlets.size()            * sizeof(meshlets[0]);
+		uint32_t uniqueVertexIndicesBufferSize = uniqueVertexIndices.size() * sizeof(uniqueVertexIndices[0]);
+		uint32_t primitiveIndicesBufferSize    = primitiveIndices.size()    * sizeof(primitiveIndices[0]);
+
+        node.MeshletSubsetCount = meshlets.size();// generator.meshletSubsets[0].Count;
+
+		auto device = Graphics::GetDevice();
+		node.Vertex              = device->CreateBuffer(BufferType::Storage, vertexBufferSize,              MemoryType::Device, vertexStride  );
+		node.Index               = device->CreateBuffer(BufferType::Index,   indexBufferSize,               MemoryType::Device);
+		node.Meshlets            = device->CreateBuffer(BufferType::Storage, meshletBufferSize,             MemoryType::Device, sizeof(meshlets[0])   );
+		node.UniqueVertexIndices = device->CreateBuffer(BufferType::Storage, uniqueVertexIndicesBufferSize, MemoryType::Device, sizeof(uniqueVertexIndices[0]));
+		node.PrimitiveIndices    = device->CreateBuffer(BufferType::Storage, primitiveIndicesBufferSize,    MemoryType::Device, sizeof(primitiveIndices[0])   );
+
+		Ref<Buffer> stagingVertex              = TransferBuffer2Device(commandBuffer, node.Vertex,              pVertex,                    vertexBufferSize             );
+		Ref<Buffer> stagingIndex               = TransferBuffer2Device(commandBuffer, node.Index,               faces.data(),               indexBufferSize              );
+		Ref<Buffer> stagingMeshlet             = TransferBuffer2Device(commandBuffer, node.Meshlets,            meshlets.data(),            meshletBufferSize            );
+		Ref<Buffer> stagingUniqueVertexIndices = TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, uniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
+		Ref<Buffer> stagingPrimitiveIndices    = TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    primitiveIndices.data(),    primitiveIndicesBufferSize   );
+
+		asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingIndex);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingMeshlet);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingUniqueVertexIndices);
+			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingPrimitiveIndices);
+		});
+    }
 
     if (scene->HasMaterials())
     {
+		materials.resize(scene->mNumMaterials);
         for (size_t i = 0; i < scene->mNumMaterials; i++)
         {
-            auto &material = scene->mMaterials[i];
-            aiString texturePath;
-            auto count = material->GetTextureCount(aiTextureType_BASE_COLOR);
-            if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
-            {
+            auto &aiMaterial = scene->mMaterials[i];
+			auto &material   = materials[i];
+			aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE,   material.AlbedoColor);
+			aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR,  material.Specular   );
+			aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT,   material.Ambient    );
+			aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE,  material.Emissive   );
+			aiMaterial->Get(AI_MATKEY_SHININESS,       material.Roughness  );
+			aiMaterial->Get(AI_MATKEY_OPACITY,         material.Opacity    );
 
+            aiString texturePath;
+			if (aiMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &texturePath) == AI_SUCCESS ||
+				aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
+            {
+				material.Pathes.Diffuse = texturePath.C_Str();
             }
+			if (aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.Specular = texturePath.C_Str();
+			}
+			if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.Normal = texturePath.C_Str();
+			}
+			if (aiMaterial->GetTexture(aiTextureType_LIGHTMAP, 0, &texturePath) == AI_SUCCESS ||
+			    aiMaterial->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.AmbientOcclusion = texturePath.C_Str();
+			}
+			if (aiMaterial->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.Metallic = texturePath.C_Str();
+			}
+			if (aiMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.Roughness = texturePath.C_Str();
+			}
         }
     }
 #endif
@@ -227,13 +845,8 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 	head.Vertex = Graphics::CreateBuffer(Buffer::Type::Vertex, vertexBufferSize, MemoryType::Device);
 	head.Index  = Graphics::CreateBuffer(Buffer::Type::Index,   indexBufferSize,  MemoryType::Device);
 
-    Ref<Buffer> stagingVertex = Graphics::GetCachedBuffer(BufferType::TransferSource, vertexBufferSize);
-	Ref<Buffer> stagingIndex  = Graphics::GetCachedBuffer(BufferType::TransferSource, indexBufferSize);
-	stagingVertex->Fill(pVertex, vertexBufferSize, 0);
-	stagingIndex->Fill(pIndex,   indexBufferSize,  0);
-
-	commandBuffer->MemoryCopy(head.Vertex, 0, stagingVertex, 0, vertexBufferSize);
-	commandBuffer->MemoryCopy(head.Index,  0, stagingIndex,   0, indexBufferSize);
+    Ref<Buffer> stagingVertex = TransferBuffer2Device(commandBuffer, head.Vertex, pVertex, vertexBufferSize);
+	Ref<Buffer> stagingIndex  = TransferBuffer2Device(commandBuffer, head.Index,  pIndex,  indexBufferSize );
 
     asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
 		Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
@@ -295,19 +908,14 @@ void Mesh::CalculatedBoneTransform(const Matrix4 &parentTransform)
 }
 
 #if HAVE_ASSIMP
-void Mesh::LoadModelData(const aiScene *scene)
+void Mesh::LoadModelData(const aiScene *scene, std::vector<CommonVertex> &vertices, std::vector<Face> &faces, std::vector<BufferBindInfo> &vertexBindInfo, std::vector<BufferBindInfo> &indexBindInfo)
 {
-	std::vector<CommonVertex> vertices;
-    std::vector<Face> faces;
-
     uint32_t numBones = scene->mNumMeshes;
     uint32_t totalVertices = 0;
     uint32_t totalFaces = 0;
 
-    BufferBindInfo vertexBindInfo{Buffer::Type::Vertex, 0, 0};
-	BufferBindInfo faceBindInfo{Buffer::Type::Index, 0, 0};
-
-    for (size_t i = 0; i < scene->mNumMeshes; i++)
+	auto &numMeshes = scene->mNumMeshes;
+	for (size_t i = 0; i < numMeshes; i++)
     {
         totalVertices += scene->mMeshes[i]->mNumVertices;
         totalFaces += scene->mMeshes[i]->mNumFaces;
@@ -316,12 +924,11 @@ void Mesh::LoadModelData(const aiScene *scene)
     vertices.reserve(totalVertices);
     faces.reserve(totalFaces);
 
-    faceBindInfo.offset = totalVertices * sizeof(vertices[0]);
+	vertexBindInfo.resize(numMeshes);
+	indexBindInfo.resize(numMeshes);
+    nodes.resize(numMeshes);
 
-    //buffer = Graphics::CreateBuffer(faceBindInfo.offset + totalFaces * sizeof(Face), Buffer::Type{Buffer::Type::Vertex | Buffer::Type::Index});
-
-    nodes.resize(scene->mNumMeshes);
-    for (uint32_t i = 0; i < scene->mNumMeshes; i++)
+	for (uint32_t i = 0; i < numMeshes; i++)
     {
         auto mesh = scene->mMeshes[i];
         auto &node = nodes[i];
@@ -345,9 +952,9 @@ void Mesh::LoadModelData(const aiScene *scene)
                 vertex.Texcoord = { mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y };
             }
         }
-		vertexBindInfo.size = mesh->mNumVertices * sizeof(vertices[0]);
+		vertexBindInfo[i].size = mesh->mNumVertices * sizeof(vertices[0]);
 
-        uint32_t baseVertex = vertexBindInfo.offset / sizeof(vertices[0]);
+        //uint32_t baseVertex = vertexBindInfo[i].offset / sizeof(vertices[0]);
         //bool hasBone = LoadBoneData(mesh, vertices, baseVertex, numBones);
 
         //if (!hasBone && scene->HasAnimations())
@@ -366,27 +973,23 @@ void Mesh::LoadModelData(const aiScene *scene)
             face.v2 = mesh->mFaces[j].mIndices[1];
             face.v3 = mesh->mFaces[j].mIndices[2];
         }
-        faceBindInfo.size = mesh->mNumFaces * sizeof(Face);
+		indexBindInfo[i].size = mesh->mNumFaces * sizeof(Face);
 
-        //node.Vertex = buffer->Bind(vertexBindInfo);
-        //node.Index  = buffer->Bind(faceBindInfo);
-		node.Vertex = Graphics::CreateBuffer(BufferType::Vertex, vertexBindInfo.size, vertices.data());
-		node.Index = Graphics::CreateBuffer(BufferType::Index,   faceBindInfo.size,   faces.data()   );
-        vertexBindInfo.offset += vertexBindInfo.size;
-		faceBindInfo.offset += faceBindInfo.size;
+		if (i > 0)
+		{
+			vertexBindInfo[i].offset = vertexBindInfo[i - 1].offset + vertexBindInfo[i - 1].size;
+			indexBindInfo[i].offset  = indexBindInfo[i - 1].offset + indexBindInfo[i - 1].size;
+		}
     }
 
     LoadAnimationData(scene);
 
     transforms.resize(numBones + scene->mNumMeshes);
-	transformBuffer = Graphics::GetDevice()->CreateBuffer(transforms.size() * sizeof(Matrix4), Buffer::Type::ConstantBuffer, MemoryType::Device, Format::Matric4);
+	transformBuffer = Graphics::GetDevice()->CreateBuffer(Buffer::Type::ConstantBuffer, transforms.size() * sizeof(Matrix4), MemoryType::Device, Format::Matric4);
 
     rootNode = new BoneNode{};
     ReadAssimpNode(rootNode, scene->mRootNode);
     globalInverseTransform = Vector::Inverse(rootNode->Transform);
-
-    //buffer->Update(vertices);
-    //buffer->Update(faces, vertices.size() * sizeof(SkeletonVertex));
 }
 
 bool Mesh::LoadBoneData(const aiMesh *mesh, std::vector<SkeletonVertex> &vertices, uint32_t baseVertex, uint32_t &numBones)

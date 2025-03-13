@@ -46,6 +46,7 @@ static D3D12_SHADER_VISIBILITY CAST(ShaderStage stage)
 
 Shader::Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro) :
     Super{},
+    stage{ stage },
     visibility{ CAST(stage) },
     pushConstants{},
     pushConstantIndex{}
@@ -55,6 +56,7 @@ Shader::Shader(const std::string &name, Stage stage, const std::string &source, 
 
 Shader::Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t size) :
     Super{},
+    stage{ stage },
     visibility{ CAST(stage) },
     pushConstants{},
     pushConstantIndex{}
@@ -109,12 +111,26 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
 		    throw std::runtime_error("Compiler Error");
         }
 
-        ComPtr<ID3D12ShaderReflection> shaderReflection;
-		if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, &shaderReflection))
-        {
-			SetupDescriptorRanges(shaderReflection);
-			return;
+        if (stage & ShaderStage::WorkGraph)
+		{
+			ComPtr<ID3D12LibraryReflection> libraryReflection;
+			if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, &libraryReflection))
+			{
+				
+				SetupDescriptorRanges(libraryReflection);
+				return;
+			}
         }
+        else
+        {
+			ComPtr<ID3D12ShaderReflection> shaderReflection;
+			if (directXShaderCompiler.Reflect(ShaderBinaryType::DXIL, dxil, &shaderReflection))
+			{
+				SetupDescriptorRanges(shaderReflection);
+				return;
+			}
+        }
+
     }
 
     UINT compileFlags = 0;
@@ -172,17 +188,18 @@ void Shader::Reflect()
     SetupDescriptorRanges(shaderReflection);
 }
 
-void Shader::SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflection)
+template <class DESC, class Reflection>
+static void TSetupDescriptorRanges(Reflection *reflection, std::vector<DescriptorRange> &descriptorRanges, PushConstants &pushConstants, uint32_t &pushConstantIndex)
 {
-    D3D12_SHADER_DESC desc{};
-	Check(shaderReflection->GetDesc(&desc));
+	DESC desc{};
+	Check(reflection->GetDesc(&desc));
 
     for (uint32_t i = 0; i < desc.BoundResources; i++)
     {
         DescriptorRange range{};
         D3D12_DESCRIPTOR_RANGE_TYPE rangeType{};
         D3D12_SHADER_INPUT_BIND_DESC inputDesc{};
-		if (FAILED(shaderReflection->GetResourceBindingDesc(i, &inputDesc)))
+		if (FAILED(reflection->GetResourceBindingDesc(i, &inputDesc)))
         {
             break;
         }
@@ -195,7 +212,7 @@ void Shader::SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflecti
 				    !strcmp(inputDesc.Name, "$Globals"))
 				{
 					D3D12_SHADER_BUFFER_DESC bufferDesc{};
-					ID3D12ShaderReflectionConstantBuffer *constantBuffer = shaderReflection->GetConstantBufferByName(inputDesc.Name);
+					ID3D12ShaderReflectionConstantBuffer *constantBuffer = reflection->GetConstantBufferByName(inputDesc.Name);
 					Check(constantBuffer->GetDesc(&bufferDesc));
 					pushConstants.size = bufferDesc.Size;
 					pushConstants.biding = inputDesc.BindPoint;
@@ -227,6 +244,55 @@ void Shader::SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflecti
         range.Init(rangeType, inputDesc.BindCount, inputDesc.BindPoint, inputDesc.Space, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
         descriptorRanges.emplace_back(range);
     }
+}
+
+void Shader::SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflection)
+{
+	TSetupDescriptorRanges<D3D12_SHADER_DESC>(shaderReflection.Get(), descriptorRanges, pushConstants, pushConstantIndex);
+}
+
+
+void Shader::SetupDescriptorRanges(ComPtr<ID3D12LibraryReflection> libraryReflection)
+{
+	D3D12_LIBRARY_DESC desc;
+	if (FAILED(libraryReflection->GetDesc(&desc)))
+	{
+		LOG::ERR("Failed to get desc of library reflection!");
+		return;
+	}
+
+	for (uint32_t i = 0; i < desc.FunctionCount; i++)
+	{
+		ID3D12FunctionReflection *functionReflection = libraryReflection->GetFunctionByIndex(i);
+
+		D3D12_FUNCTION_DESC functionDesc;
+		if (FAILED(functionReflection->GetDesc(&functionDesc)))
+		{
+			LOG::ERR("Failed to get desc of function reflection at {}", i);
+			return;
+		}
+
+        std::vector<DescriptorRange> ranges;
+		TSetupDescriptorRanges<D3D12_FUNCTION_DESC>(functionReflection, ranges, pushConstants, pushConstantIndex);
+
+        for (auto &range : ranges)
+        {
+			size_t j;
+			for (j = 0; j < descriptorRanges.size(); j++)
+            {
+				if (range.RangeType == ranges[j].RangeType &&
+                    range.BaseShaderRegister == ranges[j].BaseShaderRegister &&
+				    range.NumDescriptors == ranges[j].NumDescriptors)
+                {
+					break;
+                }
+            }
+            if (j == descriptorRanges.size())
+            {
+				descriptorRanges.emplace_back(range);
+            }
+        }
+	}
 }
 
 }

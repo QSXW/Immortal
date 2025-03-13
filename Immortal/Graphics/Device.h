@@ -101,7 +101,7 @@ public:
      * @param size The size of the buffer
      * @param type The type of the buffer
      */
-    virtual Buffer *CreateBuffer(size_t size, BufferType type) = 0;
+	virtual Buffer *CreateBuffer(BufferType type, size_t size) = 0;
 
     /**
 	 * @brief Create a buffer with format
@@ -109,10 +109,15 @@ public:
 	 * @param type The type of the buffer
      * @param format of the buffer data
 	 */
-	virtual Buffer *CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format)
+	virtual Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, Format format)
     {
-		return nullptr;
+		return CreateBuffer(type, size, memoryType, format != Format::None ? format.GetTexelSize() : 1);
     }
+
+	virtual Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1)
+	{
+		return nullptr;
+	}
 
     /**
 	 * @brief Create a texture
@@ -125,10 +130,9 @@ public:
     virtual DescriptorSet *CreateDescriptorSet(Pipeline *pipeline) = 0;
 
     /**
-     * @brief Create a gpu event for synchoronization.
+     * @brief Create a gpu event for synchronization.
      */
 	virtual GPUEvent *CreateGPUEvent(const std::string &name = {}) = 0;
-
 
     /**
      * @brief Create a render target

@@ -120,7 +120,6 @@ WFrame::WFrame(Widget *parent) :
 			ImGui::BeginChild("###");
 			state.isFocused = ImGui::IsWindowFocused();
 			state.isHovered = ImGui::IsWindowHovered();
-
 			{
 
 				ImGuiWindow *window = ImGui::GetCurrentWindow();

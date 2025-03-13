@@ -6,6 +6,7 @@
 
 #include "VideoPlayerComponent.h"
 #include "Audio/Device.h"
+#include "Config.h"
 
 #include <shared_mutex>
 
@@ -76,6 +77,21 @@ public:
     CodecError SwitchTrack(MediaType mediaType, int index)
 	{
 		return demuxer.InterpretAs<Vision::FFDemuxer>()->SwitchTrack(mediaType, index);
+    }
+
+    Picture GetCurrentAudioFrame() const
+    {
+		return outputAudioFrame;
+    }
+
+    uint64_t GetUnconsumedSamples() const
+    {
+		return unconsumedSamples;
+    }
+
+    double &GetExternalClock()
+    {
+		return externalClock;
     }
 
 public:
@@ -153,6 +169,10 @@ public:
 
     bool pause = false;
 
+    double externalClock = -1.0f;
+
+    int64_t lastAudioTimestamp = 0;
+
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 	Timer timer;
 #endif
@@ -211,6 +231,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 				audioStream = audioDevice->CreateAudioStream([=, this](void *data, uint32_t samples) -> uint32_t {
 					return GetAudioData((uint8_t *)data, samples);
 				});
+				audioStream->SetDebugName(demuxer->GetSource().GetString());
 				audioDecoder.InterpretAs<Vision::FFCodec>()->SetSampleRate(audioStream->GetFormat().sampleRate);
 			}
 			else
@@ -446,6 +467,7 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
 VideoPlayerContext::~VideoPlayerContext()
 {
 	audioStream.Reset();
+	audioStream = {};
 
     state.exited = true;
     condition.notify_all();
@@ -515,6 +537,7 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
             {
 				break;
             }
+
 			PopAudioFrame();
 			unconsumedSamples = outputAudioFrame.GetWidth();
 			numSamples += WriteAudioData(&data[numSamples * sizeof(float) * 2], samples - numSamples);
@@ -581,6 +604,32 @@ void VideoPlayerComponent::StartPlay()
 	player->StartPlay();
 }
 
+static inline int64_t RescaleTimestamp(int64_t timestamp, int64_t a, int64_t b)
+{
+	return (timestamp * a + b / 2) / b;
+}
+
+static inline int CompareTimestamp(int64_t timestampA, Rational timebaseA, int64_t timestampB, Rational timebaseB)
+{
+	int64_t a = timebaseA.numerator * (int64_t) timebaseB.denominator;
+	int64_t b = timebaseB.numerator * (int64_t) timebaseA.denominator;
+
+    if (std::abs(a) | a | std::abs(b) <= std::numeric_limits<int32_t>::max())
+    {
+		return (timestampA * a > timestampB * b) - (timestampA * a < timestampB * b);
+    }
+	if (RescaleTimestamp(timestampA, a, b) < timestampB)
+    {
+		return -1;
+    }
+	if (RescaleTimestamp(timestampB, b, a) < timestampA)
+    {
+		return 1;
+    }
+
+	return 0;
+}
+
 Picture VideoPlayerComponent::GetLivePicture()
 {
 	Animator *animator = GetAnimator();
@@ -588,10 +637,52 @@ Picture VideoPlayerComponent::GetLivePicture()
     Picture picture = GetPicture();
     if (picture)
     {
-		if (animator->TryMoveToNextFrame(Time::DeltaTime))
+		int64_t videoTimestamp = picture.GetTimestamp();
+		Rational videoTimebase  = picture.GetTimebase();
+
+		float deltaTime = Time::DeltaTime;
+        double diff = 0;
+
+		double videoSeconds = 0.0f;
+        double audioSeconds = 0.0f;
+        videoSeconds = videoTimestamp * videoTimebase.Normalize();
+
+        Picture audioFrame = player->GetCurrentAudioFrame();
+        if (audioFrame)
+        {
+			auto unconsumedSamples = player->GetUnconsumedSamples();
+			int64_t audioTimestamp = audioFrame.GetTimestamp() - (audioFrame.GetWidth() - unconsumedSamples);
+			Rational audioTimebase = audioFrame.GetTimebase();
+			audioSeconds = audioTimestamp * audioTimebase.Normalize();
+            videoSeconds = videoSeconds + animator->Accumulator + deltaTime;
+			diff = (audioSeconds - videoSeconds);
+        }
+
+        if (std::abs(diff) > 0.5)
+		{
+            if (diff > 0)
+            {
+				deltaTime = 0;
+            }
+			else if (diff < 0)
+            {
+				deltaTime += std::abs(diff);
+            }
+        }
+
+		if (animator->TryMoveToNextFrame(deltaTime))
 		{
 			PopPicture();
 		}
+    }
+
+    if (currentPicture != picture)
+    {
+		currentPicture = picture;
+    }
+    else
+    {
+		picture = {};
     }
 
     return picture;
@@ -662,6 +753,20 @@ CodecError VideoPlayerComponent::SwitchTrack(MediaType mediaType, int index)
 void VideoPlayerComponent::EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks)
 {
 	player->EnumerateTracks(mediaType, tracks);
+}
+
+bool VideoPlayerComponent::HasStream(MediaType type) const
+{
+    if (type == MediaType::Video)
+    {
+		return player->decoder;
+    }
+    else if (type == MediaType::Audio)
+    {
+		return player->audioDecoder;
+    }
+
+    return false;
 }
 
 bool VideoPlayerComponent::operator!()

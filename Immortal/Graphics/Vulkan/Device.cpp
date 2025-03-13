@@ -138,6 +138,14 @@ Device::Device(PhysicalDevice *physicalDevice, std::unordered_map<const char*, b
 		physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT);
 		physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePipelineCreationCacheControlFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES);
     }
+    if (IsEnabled(VK_EXT_MESH_SHADER_EXTENSION_NAME))
+    {
+		auto extension = physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceMeshShaderFeaturesEXT>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+		extension->meshShader = VK_TRUE;
+		extension->taskShader = VK_TRUE;
+		extension->multiviewMeshShader = VK_FALSE;
+		extension->primitiveFragmentShadingRateMeshShader = VK_FALSE;
+    }
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -352,9 +360,14 @@ SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t heig
     return new Texture{ this, format, width, height, mipLevels, arrayLayers, type };
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
 {
     return new Buffer{ this, type, size };
+}
+
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride)
+{
+    return new Buffer{ this, type, size, memoryType, byteStride };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)

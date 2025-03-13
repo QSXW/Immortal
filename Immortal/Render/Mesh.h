@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "Algorithm/LightVector.h"
 #include "Math/Vector.h"
+#include "Material.h"
 
 #include <cmath>
 #include <vector>
@@ -185,6 +186,39 @@ public:
     LightVector<uint32_t> Meshes;
 };
 
+struct Meshlet
+{
+	uint32_t VertCount;
+	uint32_t VertOffset;
+	uint32_t PrimCount;
+	uint32_t PrimOffset;
+};
+
+struct Subset
+{
+	uint32_t Offset;
+	uint32_t Count;
+};
+
+union PackedTriangle
+{
+	struct
+	{
+		uint32_t i0 : 10;
+		uint32_t i1 : 10;
+		uint32_t i2 : 10;
+		uint32_t _unused : 2;
+	} indices;
+	uint32_t packed;
+};
+
+struct CullData
+{
+	Vector4 BoundingSphere;        // xyz = center, w = radius
+	uint8_t NormalCone[4];         // xyz = axis, w = sin(a + 90)
+	float ApexOffset;              // apex = center - axis * offset
+};
+
 class Mesh : public IObject
 {
 public:
@@ -219,6 +253,12 @@ public:
         Simple,
         Common,
         Skeleton
+    };
+
+    struct DirectXSampleVertex
+    {
+		Vector3 Position;
+		Vector3 Normal;
     };
 
     struct SimpleVertex
@@ -281,15 +321,19 @@ public:
         std::string Name;
         Ref<Buffer> Vertex;
         Ref<Buffer> Index;
-
+		Ref<Buffer> Meshlets;
+		Ref<Buffer> UniqueVertexIndices;
+		Ref<Buffer> PrimitiveIndices;
+		uint32_t MeshletSubsetCount;
         uint32_t MaterialIndex = 0;
+		Ref<DescriptorSet> descriptorSet;
         bool Animated = false;
     };
 
     using Index = Face;
 
 public:
-    Mesh(const std::string &filepath);
+	Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const std::string &filepath);
 
     Mesh(const std::vector<SimpleVertex> &vertices, const std::vector<Index> &indicies);
 
@@ -341,7 +385,7 @@ public:
     void CalculatedBoneTransform(const Matrix4 &parentTransform);
 
 private:
-    void LoadModelData(const aiScene *scene);
+	void LoadModelData(const aiScene *scene, std::vector<CommonVertex> &vertices, std::vector<Face> &faces, std::vector <BufferBindInfo> &vertexBindInfo, std::vector<BufferBindInfo> &indexBindInfo);
 
     void LoadAnimationData(const aiScene *scene);
 
@@ -352,11 +396,15 @@ private:
 private:
 	VertexType vertexType;
 
+    std::vector<Material> materials;
+
     URef<Buffer> buffer;
 
     std::string path;
 
     std::vector<Node> nodes;
+
+    URef<Buffer> meshletBuffer;
 
     std::unordered_map<std::string, BoneInfo> bones;
 

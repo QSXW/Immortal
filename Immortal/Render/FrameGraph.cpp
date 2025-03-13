@@ -98,4 +98,26 @@ void FrameGraph::Composite(CommandBuffer *commandBuffer, const SceneParameters &
 	commandBuffer->EndEvent();
 }
 
+void FrameGraph::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry)
+{
+	std::string label = "DrawMesh";
+	commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+	for (const auto &task : tasks)
+	{
+		auto &name = task->GetName();
+		commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+		auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
+		for (auto object : view)
+		{
+			auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
+			if (mesh.Mesh)
+			{
+				task->DrawMesh(commandBuffer, params, (uint32_t)object, transform, mesh.Mesh, material);
+            }
+		}
+		commandBuffer->EndEvent();
+	}
+	commandBuffer->EndEvent();
+}
+
 }

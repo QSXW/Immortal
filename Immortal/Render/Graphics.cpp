@@ -47,7 +47,7 @@ const FileSystem::Path &Graphics::GetShaderAssetPath()
 void Graphics::ConstructGlobalVariables()
 {
     constexpr uint32_t white = 0xffffffff;
-    constexpr uint32_t black = 0x000000ff;
+    constexpr uint32_t black = 0xff000000;
     constexpr uint32_t transparency = 0x00000000;
     constexpr uint32_t normal = 0xffff7f7f;
 
@@ -81,7 +81,7 @@ Graphics::~Graphics()
 Buffer *Graphics::CreateBuffer(BufferType type, size_t size, const void *data)
 {
     auto device = This->device;
-    Buffer *buffer = device->CreateBuffer(size, type);
+	Buffer *buffer = device->CreateBuffer(type, size);
 
     if (data)
     {
@@ -94,7 +94,7 @@ Buffer *Graphics::CreateBuffer(BufferType type, size_t size, const void *data)
 Buffer *Graphics::CreateBuffer(BufferType type, size_t size, MemoryType memoryType, Format format)
 {
 	auto device = Graphics::GetDevice();
-	Buffer *buffer = device->CreateBuffer(size, type, memoryType, format);
+	Buffer *buffer = device->CreateBuffer(type, size, memoryType, format);
 
     return buffer;
 }
@@ -172,7 +172,7 @@ Ref<Buffer> Graphics::GetCachedBuffer(BufferType bufferType, size_t size, std::s
 
     if (!buffer || buffer->GetSize() < size)
     {
-        buffer = This->device->CreateBuffer(size, bufferType);
+		buffer = This->device->CreateBuffer(bufferType, size);
     }
 
     return buffer;

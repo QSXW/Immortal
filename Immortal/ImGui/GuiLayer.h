@@ -51,6 +51,12 @@ namespace Iconfont
 #define kRadioButtonUnchecked "\xee\xa4\xa2"
 #define kCamera               "\xee\xa4\xa3"
 #define kHistoryToggleOff     "\xee\xa4\xa4"
+#define kStarFill             "\xee\xa4\xa5"
+#define kKidStarFill          "\xee\xa4\xa6"
+#define kKidStar              "\xee\xa4\xa7"
+#define kStar                 "\xee\xa4\xa8"
+#define kCheckBox             "\xee\xa4\xa9"
+#define kCheckBoxOutline      "\xee\xa4\xaa"
 }
 
 namespace ImGui

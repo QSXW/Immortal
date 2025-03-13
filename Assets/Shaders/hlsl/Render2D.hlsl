@@ -5,7 +5,7 @@ struct VSInput
     float2  uv           : TEXCOORD;
     float   index        : INDEX;
     float   tilingFactor : TILING_FACTOR;
-    int     id           : OBJECT_ID;
+    uint    id           : OBJECT_ID;
 };
 
 struct PSInput
@@ -15,7 +15,7 @@ struct PSInput
     float2 uv           : TEXCOORD;
     uint   index        : INDEX;
     float  tilingFactor : TILING_FACTOR;
-    int    id           : OBJECT_ID;
+    uint   id           : OBJECT_ID;
 };
 
 struct PSOutput

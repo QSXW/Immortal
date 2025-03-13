@@ -27,6 +27,10 @@ static inline const wchar_t *GetShaderTarget(ShaderStage stage)
             return L"ps_6_1";
         case ShaderStage::Compute:
             return L"cs_6_1";
+		case ShaderStage::Mesh:
+			return L"ms_6_5";
+		case ShaderStage::WorkGraph:
+			return L"lib_6_8";
         default:
             return nullptr;
     }
@@ -100,6 +104,11 @@ bool DirectXShaderCompiler::Compile(const std::string     &name,
 	    L"-E", lEntryPoint.c_str(),
         L"-T", GetShaderTarget(stage),
     };
+    if (binaryType == ShaderBinaryType::SPIRV)
+    {
+		arguments.emplace_back(L"-fvk-use-scalar-layout");
+    }
+
 	arguments.reserve(arguments.size() + numMacro * 2);
 
     std::vector<std::wstring> macros;
@@ -163,6 +172,23 @@ bool DirectXShaderCompiler::Compile(const std::string     &name,
 }
 
 bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12ShaderReflection **ppvReflection)
+{
+    DxcBuffer buffer = {
+         .Ptr     = binary.data(),
+	    .Size     = binary.size(),
+        .Encoding = 0,
+    };
+
+    if (FAILED(utils->CreateReflection(&buffer, IID_PPV_ARGS(ppvReflection))))
+    {
+		LOG::ERR("Failed to create shader reflection!");
+		return false;
+    }
+
+    return true;
+}
+
+bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12LibraryReflection **ppvReflection)
 {
     DxcBuffer buffer = {
          .Ptr     = binary.data(),

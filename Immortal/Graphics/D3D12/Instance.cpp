@@ -1,6 +1,14 @@
 #include "Instance.h"
 #include "Device.h"
 #include "PhysicalDevice.h"
+#include "Config.h"
+
+#if HAVE_AGILITY_SDK
+#include <d3d12.h>
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12_SDK_VERSION; }
+
+extern "C" { __declspec(dllexport) extern const char *D3D12SDKPath = (const char *)u8".\\D3D12\\"; }
+#endif
 
 namespace Immortal
 {
@@ -9,6 +17,7 @@ namespace D3D12
 
 Instance::Instance() :
 	D3D::Instance{},
+    d3d12CoreLibrary{},
 	d3d12Library{},
     D3D12CreateDevice{},
     GetDebugInterface{}
@@ -31,6 +40,13 @@ Instance::Instance() :
 
 Instance::~Instance()
 {
+#if HAVE_AGILITY_SDK
+	if (d3d12CoreLibrary)
+	{
+		FreeLibrary(d3d12CoreLibrary);
+		d3d12CoreLibrary = {};
+	}
+#endif
 	if (d3d12Library)
 	{
 		FreeLibrary(d3d12Library);
