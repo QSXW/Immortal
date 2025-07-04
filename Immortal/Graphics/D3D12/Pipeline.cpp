@@ -460,7 +460,9 @@ ComputePipeline::ComputePipeline(Device *device, Shader *shader) :
 
     if (shader->GetStage() == ShaderStage::WorkGraph)
     {
+#if HAVE_AGILITY_SDK
 		CreateWorkGraph(shader);
+#endif
     }
     else
     {
@@ -501,11 +503,9 @@ WorkGraphContext::~WorkGraphContext()
 {
 	backingMemory.Reset();
 }
-#endif
 
 void ComputePipeline::CreateWorkGraph(Shader *shader)
 {
-#if HAVE_AGILITY_SDK
 	CD3DX12_STATE_OBJECT_DESC desc(D3D12_STATE_OBJECT_TYPE_EXECUTABLE);
 	auto library = desc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
 
@@ -528,7 +528,6 @@ void ComputePipeline::CreateWorkGraph(Shader *shader)
 
 	DX_CHECK(device14->CreateStateObject(desc, IID_PPV_ARGS(&stateObject)));
 	workgraph = new WorkGraphContext(device, stateObject, workGraphName);
-#endif
 }
 
 D3D12_SET_PROGRAM_DESC ComputePipeline::GetSetProgramDesc() const
@@ -547,6 +546,8 @@ D3D12_SET_PROGRAM_DESC ComputePipeline::GetSetProgramDesc() const
 
     return setProgramDesc;
 }
+
+#endif
 
 }
 }

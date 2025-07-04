@@ -289,6 +289,7 @@ protected:
     D3D_PRIMITIVE_TOPOLOGY primitiveTopology{ D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 };
 
+#if HAVE_AGILITY_SDK
 class WorkGraphContext
 {
 public:
@@ -300,6 +301,7 @@ public:
 	D3D12_PROGRAM_IDENTIFIER programIdentifier = {};
 	D3D12_WORK_GRAPH_MEMORY_REQUIREMENTS memoryRequirements = {};
 };
+#endif
 
 class ComputePipeline : public Pipeline, public SuperComputePipeline
 {
@@ -313,12 +315,13 @@ public:
 
     virtual ~ComputePipeline() override;
 
+#if HAVE_AGILITY_SDK
     void CreateWorkGraph(Shader *shader);
 
     D3D12_SET_PROGRAM_DESC GetSetProgramDesc() const;
 
 protected:
-#if HAVE_AGILITY_SDK
+
 	URef<WorkGraphContext> workgraph;
 
     ComPtr<ID3D12StateObject> stateObject;

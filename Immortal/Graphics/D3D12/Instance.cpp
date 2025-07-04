@@ -17,7 +17,6 @@ namespace D3D12
 
 Instance::Instance() :
 	D3D::Instance{},
-    d3d12CoreLibrary{},
 	d3d12Library{},
     D3D12CreateDevice{},
     GetDebugInterface{}

@@ -241,6 +241,7 @@ bool Device::CheckExtendFeatures()
 		return false;
 	}
 
+#if HAVE_AGILITY_SDK
 	D3D12_FEATURE_DATA_D3D12_OPTIONS21 options;
 	if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options, sizeof(options))) ||
 		options.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
@@ -248,6 +249,9 @@ bool Device::CheckExtendFeatures()
 		LOG::ERR("Device does not report support for work graphs.");
 		return false;
 	}
+#else
+	return false;
+#endif
 
 	return true;
 }

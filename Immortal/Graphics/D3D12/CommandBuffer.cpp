@@ -125,11 +125,13 @@ void CommandBuffer::SetComputePipeline(ComputePipeline *computePipeline)
 	}
 	else
 	{
+#if HAVE_AGILITY_SDK
 		ComPtr<ID3D12GraphicsCommandList10> commandList10;
 		DX_CHECK(commandList.QueryInterface(commandList10.GetAddressOf()));
 
 		D3D12_SET_PROGRAM_DESC desc = computePipeline->GetSetProgramDesc();
 		commandList10->SetProgram(&desc);
+#endif
 	}
 
 	commandList.SetComputeRootSignature(computePipeline->GetRootSignature());
@@ -631,6 +633,7 @@ void CommandBuffer::DispatchRays(const DeviceAddressRegion *pRayGenerationShader
 
 void CommandBuffer::DispatchGraph(const DispatchGraphDescription *pDesc)
 {
+#if HAVE_AGILITY_SDK
 	D3D12_DISPATCH_GRAPH_DESC desc = {
 		.Mode         = (D3D12_DISPATCH_MODE) pDesc->mode,
 		.NodeCPUInput = (D3D12_NODE_CPU_INPUT &)pDesc->nodeCpuInput
@@ -639,6 +642,7 @@ void CommandBuffer::DispatchGraph(const DispatchGraphDescription *pDesc)
 	ComPtr<ID3D12GraphicsCommandList10> commandList10;
 	DX_CHECK(commandList.QueryInterface(commandList10.GetAddressOf()));
 	commandList10->DispatchGraph(&desc);
+#endif
 }
 
 void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange)

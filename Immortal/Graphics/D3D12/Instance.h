@@ -35,7 +35,7 @@ public:
 
 protected:
 #if HAVE_AGILITY_SDK
-	HMODULE d3d12CoreLibrary;
+	HMODULE d3d12CoreLibrary = {};
 #endif
 
 	HMODULE d3d12Library;
