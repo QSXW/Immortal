@@ -5,6 +5,7 @@
 #include "Core.h"
 #include "Stream.h"
 #include "String/IString.h"
+#include "String/LanguageSettings.h"
 #include "Shared/Log.h"
 
 namespace Immortal
@@ -39,6 +40,7 @@ enum class FileType
     Directory   = BIT(0),
     RegularFile = BIT(1),
     Volumn,
+    Desktop,
     Picture,
     Video,
     Audio,
@@ -108,10 +110,12 @@ enum class FileFormat : uint64_t
     CR3   = MakeIdentifier('C', 'R', '3'     ),
     AVIF  = MakeIdentifier('A', 'V', 'I', 'F'),
     FFF   = MakeIdentifier('F', 'F', 'F'     ),
+    _3FR  = MakeIdentifier('3', 'F', 'R'     ),
     RAF   = MakeIdentifier('R', 'A', 'F'     ),
     EXR   = MakeIdentifier('E', 'X', 'R'     ),
     RW2   = MakeIdentifier('R', 'W', '2'     ),
     WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
+    HEIC  = MakeIdentifier('H', 'E', 'I', 'C'),
 
     /** Video file format extensions */
     AVI   = MakeIdentifier('A', 'V', 'I'    ),
@@ -129,6 +133,7 @@ enum class FileFormat : uint64_t
     WEBM  = MakeIdentifier('W', 'E', 'B', 'M'),
     FLV   = MakeIdentifier('F', 'L', 'V'     ),
     BIT   = MakeIdentifier('B', 'I', 'T'     ),
+	MXF   = MakeIdentifier('M', 'X', 'F'     ),
 
     /** 3D Lookup Table */
     CUBE  = MakeIdentifier('C', 'U', 'B', 'E'),
@@ -163,7 +168,7 @@ static uint64_t MakeIdentifier(const std::string &path)
 {
     uint64_t id = 0;
 
-    size_t i = path.size() - 1;
+    int64_t i = path.size() - 1;
 
     id |= std::toupper(path[i--]);
     while (i && path[i] != '.')
@@ -210,11 +215,12 @@ static inline bool Is3DModel(const std::string &path)
 
 static inline bool IsRawImage(FileFormat id)
 {
-    return IsFormat<FileFormat::CR2>(id) ||
-           IsFormat<FileFormat::ARW>(id) ||
-           IsFormat<FileFormat::NEF>(id) ||
-           IsFormat<FileFormat::FFF>(id) ||
-           IsFormat<FileFormat::RAF>(id) ||
+    return IsFormat<FileFormat::CR2>(id)  ||
+           IsFormat<FileFormat::ARW>(id)  ||
+           IsFormat<FileFormat::NEF>(id)  ||
+           IsFormat<FileFormat::FFF>(id)  ||
+	       IsFormat<FileFormat::_3FR>(id) ||
+           IsFormat<FileFormat::RAF>(id)  ||
            IsFormat<FileFormat::RW2>(id);
 }
 
@@ -260,7 +266,9 @@ static inline bool IsVideo(FileFormat id)
            IsFormat<FileFormat::WEBM>(id) ||
            IsFormat<FileFormat::AVIF>(id) ||
            IsFormat<FileFormat::BIT>(id)  ||
-           IsFormat<FileFormat::GIF>(id);
+           IsFormat<FileFormat::GIF>(id)  ||
+	       IsFormat<FileFormat::MXF>(id)  ||
+           IsFormat<FileFormat::HEIC>(id);
 }
 
 static inline bool IsVideo(uint64_t format)
@@ -399,6 +407,69 @@ static std::string ExtractFileName(const std::string &path)
     return path.substr(lastSlash, std::min(lastDot, path.size()) - lastSlash);
 }
 
+struct FileAttributeString
+{
+	bool hasData;
+	String name;
+	String size;
+	String creationTime;
+	String lastWriteTime;
+	String lastAccessTime;
+};
+
+struct FileAttribute
+{
+    size_t size = 0;
+    std::filesystem::file_time_type creationTime;
+    std::filesystem::file_time_type lastWriteTime;
+    std::filesystem::file_time_type lastAccessTime;
+
+    static String FileTimeToString(const std::filesystem::file_time_type &ft, const char* fmt = "%Y/%m/%d, %H:%M:%S")
+    {
+        if (ft == std::filesystem::file_time_type{}) return "N/A";
+		auto sctp = std::chrono::system_clock::time_point(duration_cast<std::chrono::system_clock::duration>(ft.time_since_epoch()));
+		std::time_t cftime = std::chrono::system_clock::to_time_t(sctp);
+        std::tm tm;
+
+#ifdef _WIN32
+		localtime_s(&tm, &cftime);
+#else
+		localtime_r(&cftime, &tm);
+#endif
+
+        char buf[32];
+		std::strftime(buf, sizeof(buf), fmt, &tm);
+        return buf;
+    }
+
+    void ToString(FileAttributeString &attribute) const
+    {
+		float kb = size / 1024.0f;
+		float mb = kb / 1024.0f;
+
+        char s[128];
+        if (mb >= 1.0f)
+		{
+			sprintf(&s[0], "%.2f", mb);
+			attribute.size = s + String(" MB");
+        }
+		else if (kb >= 1.0f)
+		{
+			sprintf(&s[0], "%.2f", kb);
+			attribute.size = s + String(" KB");
+        }
+        else
+        {
+			attribute.size = std::to_string(size) + String(" ") + Translator::Translate("Byte(s)");
+        }
+
+		attribute.hasData = true;
+		attribute.creationTime   = FileTimeToString(creationTime);
+		attribute.lastWriteTime  = FileTimeToString(lastWriteTime);
+		attribute.lastAccessTime = FileTimeToString(lastAccessTime);
+    }
+};
+
 class Path : public std::filesystem::path
 {
 public:
@@ -493,6 +564,8 @@ public:
     {
         return std::filesystem::is_directory(*this);
     }
+
+    void GetAttribute(FileAttribute &attribute) const;
 };
 
 static inline bool CreateDirectory(const FileSystem::Path &path)
@@ -521,7 +594,22 @@ struct DirectoryEntry
 
     int star;
 
+    uint32_t id;
+
     bool isEmpty;
+
+    DirectoryEntry(String &&_path, FileType type) :
+	    path{std::move(_path)},
+	    type{type},
+	    fileName{ParseFileName(path)},
+	    subdirectories{},
+	    star{},
+	    id{},
+	    isEmpty{true},
+	    flags{}
+	{
+    
+    }
 
     DirectoryEntry(const String &_path, FileType type) :
         path{ _path },
@@ -529,6 +617,7 @@ struct DirectoryEntry
         fileName{ ParseFileName(path) },
 	    subdirectories{},
 	    star{},
+	    id{},
         isEmpty{ true },
         flags{}
     {
@@ -538,9 +627,10 @@ struct DirectoryEntry
     DirectoryEntry() :
         path{},
         type{},
-        fileName{},
+	    fileName{path.c_str()},
 	    subdirectories{},
 	    star{},
+	    id{},
         isEmpty{},
         flags{}
     {
@@ -550,11 +640,12 @@ struct DirectoryEntry
     DirectoryEntry(const DirectoryEntry &other) :
         path{ other.path },
         type{ other.type },
-        fileName{ path.c_str() + path.size() - other.fileName.size() },
+	    fileName{path.c_str() + path.size() - other.fileName.size()},
 	    subdirectories{other.subdirectories},
 	    star{ other.star },
+	    id{other.id},
         isEmpty{ other.isEmpty },
-        flags{}
+        flags{other.flags}
     {
 
     }
@@ -584,7 +675,7 @@ struct DirectoryEntry
 
     const char *GetFileName() const
     {
-        return fileName.empty() ? "" : fileName.data();
+        return fileName.empty() ? "" : (const char *)fileName.data();
     }
 
     bool IsDirectory() const
@@ -609,27 +700,21 @@ struct DirectoryEntry
 
     void Swap(DirectoryEntry &other)
     {
-        int lPos  = fileName.data() - path.c_str();
+		int lPos = fileName.data() - path.c_str();
         int lSize = path.size() - lPos;
 
-        int rPos  = other.fileName.data() - other.path.c_str();
+        int rPos = other.fileName.data() - other.path.c_str();
         int rSize = other.path.size() - rPos;
 
         path.Swap(other.path);
         std::swap(type,           other.type          );
-        std::swap(fileName,       other.fileName      );
 		std::swap(subdirectories, other.subdirectories);
 		std::swap(star,           other.star          );
+		std::swap(id,             other.id            );
         std::swap(isEmpty,        other.isEmpty       );
 
-        if (rSize > 0)
-        {
-            fileName = {path.c_str() + rPos, size_t(rSize)};
-        }
-        if (lSize > 0)
-        {
-            other.fileName = {other.path.c_str() + lPos, size_t(lSize)};
-        }
+        fileName = {path.c_str() + rPos, size_t(rSize)};
+		other.fileName = {other.path.c_str() + lPos, size_t(lSize)};
     }
 };
 
@@ -658,5 +743,8 @@ static inline std::string Join(const std::string &lpath, const std::string &rpat
 }
 
 }
+
+using Path          = FileSystem::Path;
+using FileAttribute = FileSystem::FileAttribute;
 
 }

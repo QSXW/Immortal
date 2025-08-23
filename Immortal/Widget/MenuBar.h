@@ -55,9 +55,12 @@ public:
 	WIDGET_SET_PROPERTY(PopupBackgroundColor, popupBackgroundColor,   uint32_t, 0xffffffff)
 	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t, 0xfff0f0f0)
 	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
+	WIDGET_SET_PROPERTY(OnEvent, onEvent, std::function<void(Event &)>)
 
 public:
 	WMenuBar(Widget *parent = nullptr);
+
+	virtual bool Draw() override;
 
 protected:
 	ImVec2 spacing;
@@ -78,6 +81,8 @@ public:
 
 public:
 	WItemList(Widget *parent = nullptr);
+
+	virtual bool Draw() override;
 
 	WItemList *Item(WItem &&item);
 

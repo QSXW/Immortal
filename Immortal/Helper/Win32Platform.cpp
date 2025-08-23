@@ -10,71 +10,166 @@
 namespace Immortal
 {
 
-std::optional<std::string> FileDialogs::OpenFile(const char *filter)
+std::optional<String> FileDialogs::OpenFile(const std::vector<COMDLG_FILTERSPEC>& filterSpecs)
 {
-    static char lastDir[1024] = { 0 };
-
-    OPENFILENAMEA ofn;
-    CHAR szFile[260] = { 0 };
-    ZeroMemory(&ofn, sizeof(OPENFILENAMEA));
-    ofn.lStructSize = sizeof(OPENFILENAMEA);
-    ofn.hwndOwner   = GetActiveWindow();;
-
-    ofn.lpstrFile = szFile;
-    ofn.nMaxFile = sizeof(szFile);
-    if (lastDir[0] != '\0' || GetCurrentDirectoryA(sizeof(lastDir), lastDir))
+    using Microsoft::WRL::ComPtr;
+    
+    ComPtr<IFileOpenDialog> pfd;
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr))
     {
-        ofn.lpstrInitialDir = lastDir;
-    }
+        DWORD dwOptions;
+        hr = pfd->GetOptions(&dwOptions);
+        if (SUCCEEDED(hr))
+        {
+            pfd->SetOptions(dwOptions & ~FOS_ALLOWMULTISELECT);
+        }
 
-    ofn.lpstrFilter = filter;
-    ofn.nFilterIndex = 1;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+        if (!filterSpecs.empty())
+        {
+            hr = pfd->SetFileTypes((UINT)filterSpecs.size(), filterSpecs.data());
+            if (SUCCEEDED(hr))
+            {
+                pfd->SetFileTypeIndex(1);
+            }
+        }
 
-    if (GetOpenFileNameA(&ofn) == TRUE)
-    {
-        strcat(lastDir, ofn.lpstrFile);
-        return ofn.lpstrFile;
+        hr = pfd->Show(nullptr);
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<IShellItem> pResult;
+            hr = pfd->GetResult(&pResult);
+            if (SUCCEEDED(hr))
+            {
+                wchar_t *pszFilePath = NULL;
+                hr = pResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                if (SUCCEEDED(hr))
+                {
+                    String filePath{pszFilePath};
+                    CoTaskMemFree(pszFilePath);
+                    return filePath;
+                }
+            }
+        }
     }
 
     return std::nullopt;
 }
 
-std::optional<std::string> FileDialogs::SaveFile(const char *filter)
+std::optional<std::vector<String>> FileDialogs::OpenMultipleFiles(const std::vector<COMDLG_FILTERSPEC>& filterSpecs)
 {
-    OPENFILENAMEA ofn;
-    CHAR szFile[260] = { 0 };
-    CHAR currentDir[256] = { 0 };
-    ZeroMemory(&ofn, sizeof(OPENFILENAME));
-    ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner   = GetActiveWindow();
-    ofn.lpstrFile   = szFile;
-    ofn.nMaxFile    = sizeof(szFile);
-    if (GetCurrentDirectoryA(256, currentDir))
+    using Microsoft::WRL::ComPtr;
+  
+    ComPtr<IFileOpenDialog> pfd;
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (FAILED(hr))
+	{
+		return std::nullopt;
+	}
+
+    DWORD dwOptions;
+    hr = pfd->GetOptions(&dwOptions);
+    if (SUCCEEDED(hr))
     {
-        ofn.lpstrInitialDir = currentDir;
+        pfd->SetOptions(dwOptions | FOS_ALLOWMULTISELECT);
     }
 
-    ofn.lpstrFilter = filter;
-    ofn.nFilterIndex = 1;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
-
-    // Sets the default extension by extracting it from the filter
-    ofn.lpstrDefExt = strchr(filter, '\0') + 1;
-
-    if (GetSaveFileNameA(&ofn) == TRUE)
+    if (!filterSpecs.empty())
     {
-        return ofn.lpstrFile;
+        hr = pfd->SetFileTypes((UINT)filterSpecs.size(), filterSpecs.data());
+        if (SUCCEEDED(hr))
+        {
+            pfd->SetFileTypeIndex(1);
+        }
+    }
+
+    hr = pfd->Show(nullptr);
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<IShellItemArray> pResults;
+        hr = pfd->GetResults(&pResults);
+        if (SUCCEEDED(hr))
+        {
+            DWORD count = 0;
+            hr = pResults->GetCount(&count);
+            if (SUCCEEDED(hr) && count > 0)
+            {
+                std::vector<String> files;
+                files.reserve(count);
+
+                for (DWORD i = 0; i < count; i++)
+                {
+                    ComPtr<IShellItem> pItem;
+                    hr = pResults->GetItemAt(i, &pItem);
+                    if (SUCCEEDED(hr))
+                    {
+                        wchar_t *pszFilePath = NULL;
+                        hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                        if (SUCCEEDED(hr))
+                        {
+                            files.push_back(String(pszFilePath));
+                            CoTaskMemFree(pszFilePath);
+                        }
+                    }
+                }
+
+                return files;
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<String> FileDialogs::SaveFile(const std::vector<COMDLG_FILTERSPEC>& filterSpecs)
+{
+    using Microsoft::WRL::ComPtr;
+    
+    ComPtr<IFileSaveDialog> pfd;
+    HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+    if (SUCCEEDED(hr))
+    {
+        DWORD dwOptions;
+        hr = pfd->GetOptions(&dwOptions);
+        if (SUCCEEDED(hr))
+        {
+            pfd->SetOptions(dwOptions | FOS_OVERWRITEPROMPT);
+        }
+
+        if (!filterSpecs.empty())
+        {
+            hr = pfd->SetFileTypes((UINT)filterSpecs.size(), filterSpecs.data());
+            if (SUCCEEDED(hr))
+            {
+                pfd->SetFileTypeIndex(1);
+            }
+        }
+
+        hr = pfd->Show(nullptr);
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<IShellItem> pResult;
+            hr = pfd->GetResult(&pResult);
+            if (SUCCEEDED(hr))
+            {
+                wchar_t *pszFilePath = NULL;
+                hr = pResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+                if (SUCCEEDED(hr))
+                {
+                    String filePath{pszFilePath};
+                    CoTaskMemFree(pszFilePath);
+                    return filePath;
+                }
+            }
+        }
     }
 
     return std::nullopt;
 }
 
 using Microsoft::WRL::ComPtr;
-String FileDialogs::BrowserFolder()
+std::optional<String> FileDialogs::BrowserFolder()
 {
-	CoInitialize(NULL);
-
 	ComPtr<IFileDialog> pfd;
 	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
 	if (SUCCEEDED(hr))
@@ -99,32 +194,81 @@ String FileDialogs::BrowserFolder()
 				{
 					String folderPath(pszFilePath);
 					CoTaskMemFree(pszFilePath);
-					CoUninitialize();
 					return folderPath;
 				}
 			}
 		}
 	}
 
-	CoUninitialize();
 	return {};
 }
 
-static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT operation)
+static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT operation, const std::filesystem::path &dest = {})
 {
-	std::wstring pathsWithDoubleNull;
-	for (auto &path : paths)
+	Microsoft::WRL::ComPtr<IFileOperation> pFileOp;
+	HRESULT hr = CoCreateInstance(CLSID_FileOperation, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOp));
+	if (FAILED(hr))
 	{
-		pathsWithDoubleNull += path.wstring() + L'\0';
+		return false;
 	}
 
-	pathsWithDoubleNull += L'\0';
-	SHFILEOPSTRUCTW fileOp = {0};
-	fileOp.wFunc  = operation;
-	fileOp.pFrom  = pathsWithDoubleNull.c_str();
-	fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT;
-	int result = SHFileOperationW(&fileOp);
-	return (result == 0);
+	DWORD dwFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_RENAMEONCOLLISION;
+	hr = pFileOp->SetOperationFlags(dwFlags);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	for (const auto& path : paths)
+	{
+		Microsoft::WRL::ComPtr<IShellItem> pSourceItem;
+		hr = SHCreateItemFromParsingName(path.wstring().c_str(), NULL, IID_PPV_ARGS(&pSourceItem));
+		if (SUCCEEDED(hr))
+		{
+			switch (operation)
+			{
+			case FO_COPY:
+				if (!dest.empty())
+				{
+					Microsoft::WRL::ComPtr<IShellItem> pDestItem;
+					hr = SHCreateItemFromParsingName(dest.wstring().c_str(), NULL, IID_PPV_ARGS(&pDestItem));
+					if (SUCCEEDED(hr))
+					{
+						hr = pFileOp->CopyItem(pSourceItem.Get(), pDestItem.Get(), nullptr, nullptr);
+					}
+				}
+				else
+				{
+					hr = pFileOp->CopyItem(pSourceItem.Get(), nullptr, nullptr, nullptr);
+				}
+				break;
+
+			case FO_MOVE:
+				if (!dest.empty())
+				{
+					Microsoft::WRL::ComPtr<IShellItem> pDestItem;
+					hr = SHCreateItemFromParsingName(dest.wstring().c_str(), NULL, IID_PPV_ARGS(&pDestItem));
+					if (SUCCEEDED(hr))
+					{
+						hr = pFileOp->MoveItem(pSourceItem.Get(), pDestItem.Get(), nullptr, nullptr);
+					}
+				}
+				else
+				{
+					hr = pFileOp->MoveItem(pSourceItem.Get(), nullptr, nullptr, nullptr);
+				}
+				break;
+
+			case FO_DELETE:
+				hr = pFileOp->DeleteItem(pSourceItem.Get(), nullptr);
+				break;
+			}
+		}
+	}
+
+	hr = pFileOp->PerformOperations();
+	
+	return SUCCEEDED(hr);
 }
 
 bool FileManagement::Cut(const std::vector<std::filesystem::path> &paths)
@@ -135,6 +279,19 @@ bool FileManagement::Cut(const std::vector<std::filesystem::path> &paths)
 bool FileManagement::Copy(const std::vector<std::filesystem::path> &paths)
 {
 	return FileOperation(paths, FO_COPY);
+}
+
+bool FileManagement::Paste(const std::filesystem::path &dest, const std::vector<std::filesystem::path> &paths)
+{
+	if (paths.empty())
+	{
+		return false;
+	}
+	if (!std::filesystem::is_directory(dest))
+	{
+		return false;
+	}
+	return FileOperation(paths, FO_COPY, dest);
 }
 
 bool FileManagement::MoveFileToReclycleBin(const std::vector<std::filesystem::path> &paths)
@@ -166,7 +323,7 @@ struct ClipboardScope
     ClipboardScope() :
 	    opened{}
     {
-		opened = OpenClipboard(GetActiveWindow()) && EmptyClipboard();
+		opened = OpenClipboard(GetActiveWindow());
     }
 
     ~ClipboardScope()
@@ -174,30 +331,49 @@ struct ClipboardScope
 		(void)CloseClipboard();
     }
 
+	bool EraseClipBoard()
+	{
+		return EmptyClipboard() != 0;
+	}
+
     BOOL opened;
 };
 
-void Clipboard::SetData(DataType type, const void *data, size_t size)
+bool Clipboard::SetData(DataType type, const void *data, size_t size)
 {
-	auto format = GetFormat(type);
-    if (!IsClipboardFormatAvailable(format))
-    {
-		return;
-    }
-
     ClipboardScope clipboard{};
     if (!clipboard.opened)
     {
-		LOG::ERR("Failed to open clipboard!");
-		return;
+		LOG_ERROR("Failed to open clipboard!");
+		return false;
     }
 
-    auto hglbCopy = GlobalAlloc(GMEM_MOVEABLE, size); 
-    auto lptstrCopy = GlobalLock(hglbCopy);
-	memcpy(lptstrCopy, data, size);
-	GlobalUnlock(hglbCopy); 
+	if (!clipboard.EraseClipBoard())
+	{
+		return false;
+	}
 
-    SetClipboardData(format, hglbCopy);
+	auto format = GetFormat(type);
+    auto hGlobalCopy = GlobalAlloc(GMEM_MOVEABLE, size);
+	if (!hGlobalCopy)
+	{
+		LOG_ERROR("Failed to allocate memory for clipboard!");
+		return false;
+	}
+
+    auto dst = GlobalLock(hGlobalCopy);
+	if (!dst)
+	{
+		LOG_ERROR("Error when locking memory for clipboard!");
+		GlobalFree(hGlobalCopy);
+		return false;
+	}
+
+	memcpy(dst, data, size);
+	GlobalUnlock(hGlobalCopy); 
+    SetClipboardData(format, hGlobalCopy);
+
+	return true;
 }
 
 bool Clipboard::SetFilePaths(const std::vector<std::filesystem::path> &paths, SetFileOperation operation)
@@ -240,7 +416,7 @@ bool Clipboard::SetFilePaths(const std::vector<std::filesystem::path> &paths, Se
 
 	GlobalUnlock(hGlobal);
 
-	if (!OpenClipboard(NULL))
+	if (!OpenClipboard(GetActiveWindow()))
 	{
 		GlobalFree(hGlobal);
 		LOG::ERR("OpenClipboard failed.");
@@ -270,6 +446,57 @@ bool Clipboard::SetFilePaths(const std::vector<std::filesystem::path> &paths, Se
 
 	CloseClipboard();
 	return true;
+}
+
+std::vector<std::filesystem::path> Clipboard::GetFilePaths()
+{
+	std::vector<std::filesystem::path> paths;
+
+	ClipboardScope clipboard{};
+	if (!clipboard.opened)
+	{
+		return {};
+	}
+
+	if (!IsClipboardFormatAvailable(CF_HDROP))
+	{
+		return {};
+	}
+
+	HDROP drop = (HDROP)GetClipboardData(CF_HDROP);
+	if (!drop)
+	{
+		return {};
+	}
+
+	uint32_t fileCount = DragQueryFileW(drop, 0xFFFFFFFF, NULL, 0);
+	if (fileCount == 0)
+	{
+		return {};
+	}
+
+	paths.reserve(fileCount);
+
+	std::wstring filepath;
+	for (uint32_t i = 0; i < fileCount; i++)
+	{
+		uint32_t length = DragQueryFileW(drop, i, NULL, 0);
+		if (length == 0)
+		{
+			continue;
+		}
+
+		filepath.resize(length);
+		if (DragQueryFileW(drop, i, &filepath[0], length + 1) == 0)
+		{
+			continue;
+		}
+		filepath.resize(length);
+
+		paths.emplace_back(filepath);
+	}
+
+	return paths;
 }
 
 FileSystem::Path System::GetTemperoryPath()

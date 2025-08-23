@@ -4,6 +4,8 @@
 namespace Immortal
 {
 
+using namespace ImGui;
+
 std::unordered_map<std::string, Widget *> Widget::Identify2WidgetTracker;
 std::unordered_map<Widget *, std::string> Widget::Widget2IdentifyTracker;
 
@@ -15,130 +17,140 @@ WWindow::WWindow()
 WDockerSpace::WDockerSpace() :
     Widget{nullptr}
 {
-	Connect([&]() {
-		static bool isOpen = true;
-		static bool optionalPadding = false;
-		static bool optionalFullScreen = true;
-		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 
-		if (optionalFullScreen)
+}
+
+bool WDockerSpace::Draw()
+{
+	static bool isOpen = true;
+	static bool optionalPadding = false;
+	static bool optionalFullScreen = true;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+
+	if (optionalFullScreen)
+	{
+		const ImGuiViewport *viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		// ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      { 0.0f, 0.0f });
+		ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 4.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	}
+	else
+	{
+		dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
+	}
+	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+	// and handle the pass-thru hole, so we ask Begin() to not render a background.
+	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+	{
+		window_flags |= ImGuiWindowFlags_NoBackground;
+	}
+	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+	// all active windows docked into it will lose their parent and become undocked.
+	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+	if (!optionalPadding)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	}
+	/* Dock place */
+	FontSizeStack fontSize{ImGui::GetFont(), 18.f};
+	if (ImGui::Begin("MyDockSpace", &isOpen, window_flags))
+	{
+		ImGuiIO &io = ImGui::GetIO();
+		ImGuiStyle &style = ImGui::GetStyle();
+
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
-			const ImGuiViewport *viewport = ImGui::GetMainViewport();
-			ImGui::SetNextWindowPos(viewport->WorkPos);
-			ImGui::SetNextWindowSize(viewport->WorkSize);
-			ImGui::SetNextWindowViewport(viewport->ID);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-			// ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      { 0.0f, 0.0f });
-			ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 4.0f);
-			ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 		}
-		else
-		{
-			dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-		}
-		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-		// and handle the pass-thru hole, so we ask Begin() to not render a background.
-		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-		{
-			window_flags |= ImGuiWindowFlags_NoBackground;
-		}
-		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-		// all active windows docked into it will lose their parent and become undocked.
-		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+
+		__Trampoline();
+
 		if (!optionalPadding)
 		{
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+			ImGui::PopStyleVar();
 		}
-		/* Dock place */
-		FontSizeStack fontSize{ImGui::GetFont(), 18.f};
-		if (ImGui::Begin("MyDockSpace", &isOpen, window_flags))
+		if (optionalFullScreen)
 		{
-			ImGuiIO &io = ImGui::GetIO();
-			ImGuiStyle &style = ImGui::GetStyle();
-
-			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-			{
-				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-			}
-
-			__Trampoline();
-
-			if (!optionalPadding)
-			{
-				ImGui::PopStyleVar();
-			}
-			if (optionalFullScreen)
-			{
-				ImGui::PopStyleVar(4);
-			}
+			ImGui::PopStyleVar(4);
 		}
-		ImGui::End();
-	});
+	}
+	ImGui::End();
+
+	return false;
 }
 
 WFrame::WFrame(Widget *parent) :
     Widget{parent},
     state{}
 {
-	Connect([&]() {
-		WidgetLock lock{this};
-		StyleColorStack<uint32_t> styleColor{
-		    {ImGuiCol_TabActive, color},
-		    {ImGuiCol_WindowBg, color}
-		};
 
-		StyleVarStack<ImVec2> styleVar{
-		    {ImGuiStyleVar_WindowPadding, {padding.right, padding.bottom}},
-		    {ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom}}
-		};
+}
 
-		const char *str = text.c_str();
-		ImVec2 windowPos;
-		ImVec2 windowSize;
-		float titleBarHeight = 0;
-		bool isFocused = false;
-		float borderOffset = 1.0f;
+bool WFrame::Draw()
+{
+	if (!visible)
+	{
+		return false;
+	}
 
-		if (ImGui::Begin(str, nullptr, Flags() | ImGuiWindowFlags_NoCollapse))
+	//StyleColorStack<uint32_t> styleColor{
+	//	{ImGuiCol_TabActive, color},
+	//	{ImGuiCol_WindowBg, color}
+	//};
+
+	StyleVarStack<ImVec2> styleVar{
+		{ImGuiStyleVar_WindowPadding, {padding.right, padding.bottom}},
+		{ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom}}
+	};
+
+	const char *str = text.c_str();
+	ImVec2 windowPos;
+	ImVec2 windowSize;
+	float titleBarHeight = 0;
+	bool isFocused = false;
+	float borderOffset = 1.0f;
+
+	using namespace ImGui;
+	if (Begin(str, nullptr, Flags() | ImGuiWindowFlags_NoCollapse))
+	{
+		windowPos      = GetWindowPos();
+		windowSize     = GetWindowSize();
+		titleBarHeight = GetCurrentWindow()->TitleBarHeight();
+
+		state.isFocused = IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+		state.isHovered = IsWindowHovered(ImGuiFocusedFlags_ChildWindows);
+		auto [x, y] = ImGui::GetContentRegionAvail();
+		RenderWidth(x - borderOffset);
+		RenderHeight(y - borderOffset);
+
+		bool opened = BeginChild("###");
+		if (opened)
 		{
-			windowPos = ImGui::GetWindowPos();
-			windowSize = ImGui::GetWindowSize();
-			titleBarHeight = ImGui::GetCurrentWindow()->TitleBarHeight();
-
-			isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-			auto [x, y] = ImGui::GetContentRegionAvail();
-			RenderWidth(x - borderOffset);
-			RenderHeight(y - borderOffset);
-
-			ImGui::BeginChild("###");
-			state.isFocused = ImGui::IsWindowFocused();
-			state.isHovered = ImGui::IsWindowHovered();
-			{
-
-				ImGuiWindow *window = ImGui::GetCurrentWindow();
-				position = window->DC.CursorStartPos;
-				scroll = window->Scroll;
-				__RelativeTrampoline();
-			}
-			ImGui::EndChild();
+			ImGuiWindow *window = ImGui::GetCurrentWindow();
+			position = window->DC.CursorStartPos;
+			scroll = window->Scroll;
+			__RelativeTrampoline();
+			//for (auto &c : children)
+			//{
+			//	c->Draw();
+			//}
 		}
-		ImGui::End();
+		EndChild();
+	}
+	End();
 
-		//if (isFocused)
-		//{
-		//	ImVec2 borderStart(windowPos.x - borderOffset, windowPos.y - borderOffset);
-		//	ImVec2 borderEnd(windowPos.x + windowSize.x, windowPos.y + windowSize.y);
-		//	ImDrawList *drawList = ImGui::GetForegroundDrawList();
-		//	drawList->AddRect(borderStart, borderEnd, 0xfff48f34, 0, 0, borderOffset);
-		//}
-	});
+	return false;
 }
 
 WCollapsingHeader::WCollapsingHeader(bool defaultOpen) :
@@ -148,6 +160,7 @@ WCollapsingHeader::WCollapsingHeader(bool defaultOpen) :
 	{
 		Expanded(true);
 		flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		targetSizeY = BodyHeigth();
 	}
 }
 
@@ -156,16 +169,13 @@ WRightClickPopup::WRightClickPopup(Widget *parent) :
     callback{}
 {
 	using tweeny::easing;
-	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::cubicInOut);
+	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::quadraticInOut);
 
 	Color(0xff020202);
 	BackgroundColor(0xffffffff);
 	HoveredColor(0x55d89624);
 
 	static ImGuiID activeItemId = 0;
-	Connect([=, this] {
-		Draw();
-	});
 }
 
 bool WRightClickPopup::Draw()
@@ -318,17 +328,17 @@ void WRightClickPopup::Open()
 bool InputText(int id, const char *hint, char *buf, size_t size, float width, float height, uint32_t borderColor, uint32_t activeBorderColor, float borderSize, float rounding, ImGuiInputTextCallback callback, void *userData)
 {
 	WidgetLock lock{id};
-	width  -= borderSize * 2;
-	height -= borderSize * 2;
+	//width  -= borderSize * 2;
+    //height -= borderSize * 2;
+	
+	StyleVarStack<ImVec2> styleVar{
+	    {ImGuiStyleVar_FramePadding, {8.0f, (height - ImGui::GetTextLineHeight()) * 0.618f}}
+	};
 
 	EXPORT_WINDOW
-	bool ret = ImGui::InputTextEx("##", hint, buf, size, {width, height}, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackResize, callback, userData);
+	bool ret = ImGui::InputTextEx("##", hint, buf, size, {width, height}, /*ImGuiInputTextFlags_EnterReturnsTrue |*/ ImGuiInputTextFlags_CallbackResize, callback, userData);
 
 	ImRect bb{ImGui::GetItemRectMin(), ImGui::GetItemRectMax()};
-	//bb.Min.x -= borderSize;
-	//bb.Min.y -= borderSize;
-	//bb.Max.x += borderSize;
-	//bb.Max.y += borderSize;
 	window->DrawList->AddRect(bb.Min, bb.Max, (ImGui::IsItemActive() || ImGui::IsItemHovered()) ? activeBorderColor : borderColor, rounding, ImDrawFlags_None, borderSize);
 
 	return ret;
@@ -355,8 +365,11 @@ WInputText::WInputText()
 
 bool WInputText::Draw(const ImVec2 &size)
 {
-	bool ret = InputText(ImGui::GetID(this), Hint().c_str(), text.data(), text.capacity(), size.x <= 0 ? ImGui::CalcItemWidth() : size.x, size.y <= 0 ? ImGui::GetFrameHeight() : size.y, OutlineColor(), ActiveOutlineColor(), OutlineBorderSize(), Rounding(), InputTextCallback, &text);
-
+	bool ret = InputText(ImGui::GetID(this), Hint().c_str(), text.data(), text.size() + 1, size.x <= 0 ? ImGui::CalcItemWidth() : size.x, size.y <= 0 ? ImGui::GetFrameHeight() : size.y, OutlineColor(), ActiveOutlineColor(), OutlineBorderSize(), Rounding(), InputTextCallback, &text);
+	if (text[0] == '\0')
+	{
+		text.resize(0);
+	}
 	return ret;
 }
 

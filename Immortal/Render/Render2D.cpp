@@ -114,7 +114,7 @@ void Render2D::BeginScene(CommandBuffer *_commandBuffer, const Camera &camera)
 {
 	commandBuffer = _commandBuffer;
 	const OrthographicCamera &orthographicCamera = (const OrthographicCamera &)camera;
-    if (orthographicCamera.GetZoomLevel() <= 0.002)
+    if (orthographicCamera.GetZoomLevel() <= 0.001)
     {
         if (sampler != pointSampler)
         {

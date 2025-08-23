@@ -102,6 +102,19 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
     {
 		auto &encodeInfo = pEncodeInfo[i];
 		codecs[i] = new Vision::FFCodec{encodeInfo};
+
+        switch (encodeInfo.mediaType)
+        {
+			case MediaType::Video:
+				videoEncoder = codecs[i];
+				break;
+
+            case MediaType::Audio:
+				audioEncoder = codecs[i];
+				break;
+			default:
+				break;
+        }
     }
 
     muxer = new Vision::FFDemuxer;
@@ -115,9 +128,16 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
         int64_t pts = 0;
         int64_t audioSamples = 0;
 
-        Rational videoTimebase = videoEncoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
-        Rational framerate     = videoEncoder.InterpretAs<Vision::FFCodec>()->GetFramerate();
-        Rational timebase      = videoTimebase * framerate;
+        Rational videoTimebase;
+		Rational framerate;
+        Rational timebase;
+        if (videoEncoder)
+        {
+			videoTimebase = videoEncoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
+			framerate     = videoEncoder.InterpretAs<Vision::FFCodec>()->GetFramerate();
+			timebase      = videoTimebase * framerate;
+        }
+
         Rational audioTimebase{};
         if (audioEncoder)
         {
@@ -151,8 +171,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
                     muxer->Write(audioFrame, 1);
                 }
             }
-            if (videoFinished &&
-                videoEncodeThread.TaskSize() == 0 &&
+			if ((!videoEncoder || (videoFinished && videoEncodeThread.TaskSize() == 0)) &&
                 (!audioEncoder || (audioFinished && audioEncodeThread.TaskSize() == 0)))
             {
 #ifdef IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
@@ -165,7 +184,6 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
         muxer->Close();
     } });
 
-    muxThread.Start();
     muxThread.SetDescription("Mux");
 
 #ifdef IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC

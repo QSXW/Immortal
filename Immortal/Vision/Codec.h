@@ -13,25 +13,15 @@ namespace Immortal
 namespace Vision
 {
 
-enum class PropertyType
-{
-	DisplayOrientation,
-};
-
-struct DisplayOrientation
-{
-	static constexpr PropertyType Type = PropertyType::DisplayOrientation;
-	int hflip;
-	int anticlockwiseRotation;
-};
-
 namespace Interface
 {
 
-class IMMORTAL_API Codec : public IObject
+class IMMORTAL_API Codec : public IClass, public IObject
 {
 public:
-    Codec() :
+	Codec(const char *name = {}) :
+	    IClass{name},
+	    mediaType{MediaType::Video},
 	    picture{}
     {
 
@@ -100,6 +90,13 @@ protected:
 class IMMORTAL_API VideoCodec : public Interface::Codec
 {
 public:
+	VideoCodec(const char *name = {}) :
+	    Interface::Codec{name},
+	    animator{}
+    {
+
+    }
+
     template <class T>
     T *GetAddress()
     {

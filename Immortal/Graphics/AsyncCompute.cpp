@@ -5,6 +5,7 @@ namespace Immortal
 {
 
 AsyncComputeThread::AsyncComputeThread(Device *device) :
+    ICLASS,
     thread{}
 {
     thread = std::move(Thread{[=, this] {
@@ -71,7 +72,7 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 							SLASSERT(queue != nullptr && "The queue must have set before invoke any recording tasks");
                             commandBuffer = device->CreateCommandBuffer(queue->GetType());
 							gpuEvent = device->CreateGPUEvent();
-							LOG::INFO("Allocate command buffer {}", (void *) commandBuffer);
+							CLOG_DEBUG("Allocate CommandBuffer@{}", (void *)commandBuffer);
                         }
                     }
 
@@ -161,7 +162,11 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
         }
     }});
     thread.SetDescription("AsyncComputeThread");
-    thread.Start();
+}
+
+AsyncComputeThread::~AsyncComputeThread()
+{
+
 }
 
 bool AsyncComputeThread::IsExecutionCompleted(uint64_t value)

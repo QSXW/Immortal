@@ -72,6 +72,8 @@ public:
 
 	virtual void MemoryCopy(SuperBuffer *dst, uint32_t dstOffset, SuperBuffer *src, uint32_t srcOffset, size_t size) override;
 
+	virtual void Memset(SuperBuffer *buffer, const ClearValue *pClearValue, Format format) override;
+
 	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
 
 	virtual void DrawInstanced(uint32_t vertexCountPerInstance, uint32_t instanceCount, uint32_t startVertexLocation, uint32_t startInstanceLocation) override;
@@ -89,6 +91,8 @@ public:
 	virtual void SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
 
 	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address) override;
+
+	virtual void ResolveImage(SuperTexture *dst, SuperTexture *src) override;
 
 public:
 	void SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline);

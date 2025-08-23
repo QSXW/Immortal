@@ -203,6 +203,11 @@ public:
         return (const char *)_s.c_str();
     }
 
+    const char8_t *u8_str() const
+    {
+		return _s.c_str();
+    }
+
     char *data()
     {
 		return (char *)_s.data();
@@ -309,6 +314,11 @@ public:
     {
 		return (char &)_s[i];
     }
+
+    const char &operator[](size_t i) const
+	{
+		return (char &) _s[i];
+	}
 
     std::pair<const char *, const char *> GetTuple() const
     {

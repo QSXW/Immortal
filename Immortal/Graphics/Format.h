@@ -212,6 +212,11 @@ public:
         return Format(ValueType(other.v & v));
     }
 
+    bool operator!=(const ValueType &other) const
+	{
+		return v != other;
+	}
+
     int ComponentCount() const;
 
     int GetComponent() const;

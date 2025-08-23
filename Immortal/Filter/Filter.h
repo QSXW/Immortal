@@ -8,7 +8,7 @@
 
 #include "Graphics/LightGraphics.h"
 #include "Render/Graphics.h"
-
+#
 namespace Immortal
 {
 
@@ -17,8 +17,10 @@ class FilterNode : public IObject
 public:
 	SL_ENABLE_COPY(FilterNode)
 
+public:
     FilterNode() :
-	    output{}
+	    output{},
+	    enabled{true}
     {
 
     }
@@ -28,9 +30,11 @@ public:
 
     }
 
-    FilterNode(const FilterNode &other)
+    FilterNode(const FilterNode &other) :
+	    output{ other.output },
+	    enabled{ other.enabled }
     {
-		output = other.output;
+
     }
 
     virtual void Preprocess()
@@ -53,14 +57,27 @@ public:
 		return output;
     }
 
+    const bool &Enabled() const
+    {
+		return enabled;
+    }
+
+    void Enabled(const bool &v)
+    {
+		enabled = v;
+    }
+
 public:
     void Swap(FilterNode &other)
     {
 		output.swap(other.output);
+		std::swap(enabled, other.enabled);
     }
 
 protected:
     std::vector<Ref<Texture>> output;
+
+    bool enabled;
 };
 
 }

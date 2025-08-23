@@ -14,7 +14,12 @@ namespace Immortal
 
 std::unique_ptr<NativeInput> DirectWindow::Input = nullptr;
 
-Window::EventCallbackFunc DirectWindow::EventDispatcher = nullptr;
+void EmptyEventCallback(Event &event)
+{
+
+}
+
+Window::EventCallbackFunc DirectWindow::EventDispatcher = &EmptyEventCallback;
 
 static bool IsVirtualKeyDown(int virtualKey)
 {
@@ -223,7 +228,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (UINT)LOWORD(lParam),
                 (UINT)HIWORD(lParam)
             };
-            DirectWindow::EventDispatcher(resizeEvent);
+			DirectWindow::EventDispatcher(resizeEvent);
 			break;
         }
 
@@ -233,7 +238,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (int)LOWORD(lParam),
                 (int)HIWORD(lParam)
             };
-            DirectWindow::EventDispatcher(moveEvent);
+		    DirectWindow::EventDispatcher(moveEvent);
 			break;
         }
         case WM_KEYDOWN:
@@ -495,6 +500,7 @@ void DirectWindow::SetIcon(const std::string &filepath)
 
 void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t height)
 {
+	Input.reset(new NativeInput{this});
     type = Type::Win32;
 
     std::wstring title = ToWString(_title);
@@ -526,7 +532,7 @@ void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t
         0,
         wc.lpszClassName,
         title.c_str(),
-        WS_OVERLAPPEDWINDOW,
+	    WS_OVERLAPPEDWINDOW,
 	    width  == 0 ? CW_USEDEFAULT : (x - width) / 2,
 	    height == 0 ? CW_USEDEFAULT : (y - height) / 2,
 	    width  == 0 ? CW_USEDEFAULT : width,
@@ -542,8 +548,6 @@ void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t
     }
 
     DragAcceptFiles(handle, TRUE);
-
-    Input.reset(new NativeInput{ this });
 }
 
 uint32_t DirectWindow::GetWidth() const

@@ -27,14 +27,18 @@ public:
     void OnPauseDown();
 
     void OnPauseRelease();
-
-    double GetPosition() const;
-    
-    int GetSampleRate() const;
-
-    int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
+   
+    AudioFormat GetFormat() const;
 
     IAudioStream *CreateAudioStream(const PFN_AudioStreamPlayCallback &callback);
+
+    void DestroyAudioStream(IAudioStream **ppStream);
+
+    bool SetOnEvent(const std::function<void(Event &)> &callback);
+
+    void OnEvent();
+
+    int EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice);
 
 public:
 	static AudioDevice *GetInstance();
@@ -53,7 +57,9 @@ protected:
 
     std::atomic_bool defaultDeviceChanged;
 
-    std::vector<URef<IAudioStream *>> streams;
+    std::vector<URef<IAudioStream>> streams;
+
+    std::function<void(Event &)> onEvent;
 
     uint64_t pts;
 

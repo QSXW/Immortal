@@ -16,13 +16,18 @@ set(HAVE_NVJPEG       ${LIB_NOT_FOUND})
 set(HAVE_WEBP         ${LIB_NOT_FOUND})
 set(HAVE_JXL          ${LIB_NOT_FOUND})
 set(HAVE_AGILITY_SDK  ${LIB_NOT_FOUND})
+set(HAVE_ZLIB         ${LIB_NOT_FOUND})
 set(3RDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 
 if (UNIX)
     set(LIB_SUFFIX ".a")
+    set(DLL_SUFFIX ".so")
 else()
     set(LIB_SUFFIX ".lib")
+    set(DLL_SUFFIX ".dll")
 endif()
+
+set(ENABLE_LCMS OFF)
 
 set(VCPKG_ROOT $ENV{VCPKG_ROOT})
 if (VCPKG_ROOT)
@@ -32,6 +37,42 @@ if (VCPKG_ROOT)
 endif()
 
 include(CheckIncludeFileCXX)
+
+function(process_libraries LIBRARIES OUTPUT_VAR)
+    set(PROCESSED_LIBRARIES)
+    set(IS_DEBUG_PATH OFF)
+    foreach(lib ${LIBRARIES})
+        if (lib STREQUAL "optimized")
+            set(IS_DEBUG_PATH OFF)
+            continue()
+        elseif(lib STREQUAL "debug")
+            set(IS_DEBUG_PATH ON)
+            continue()
+        endif()
+        string(REGEX REPLACE "\\.lib$" ".dll" lib_dll ${lib})
+        string(REGEX REPLACE "(.*)/lib/(.*)$" "\\1/bin/\\2" lib_dll ${lib_dll})
+
+        if (IS_DEBUG_PATH)
+            list(APPEND PROCESSED_LIBRARIES $<$<CONFIG:Debug>:${lib_dll}>)
+        else()
+            list(APPEND PROCESSED_LIBRARIES $<$<CONFIG:Release>:${lib_dll}>)
+            list(APPEND PROCESSED_LIBRARIES $<$<CONFIG:RelWithDebInfo>:${lib_dll}>)
+        endif()
+    endforeach()
+    set(${OUTPUT_VAR} ${PROCESSED_LIBRARIES} PARENT_SCOPE)
+endfunction()
+
+find_package(ZLIB)
+if(ZLIB_FOUND)
+    SET(HAVE_ZLIB ${LIB_FOUND})
+    message(${ZLIB_LIBRARIES})
+    process_libraries("${ZLIB_LIBRARIES}" ZLIB_RUNTIME)
+    foreach (lib_dll ${ZLIB_RUNTIME})
+        string(REGEX REPLACE "\\.dll>$" "1.dll>" lib_dll ${lib_dll})
+        list(APPEND NEW_ZLIB_RUNTIME ${lib_dll})
+    endforeach()
+    list(APPEND IMMORTAL_3RDPARTY_RUNTIME ${NEW_ZLIB_RUNTIME})
+endif()
 
 set(HAVE_MSVC false)
 message(STATUS "Compiler Detected: " ${CMAKE_CXX_COMPILER_ID})
@@ -229,25 +270,18 @@ add_library(imgui STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.h")
 
-set(IMGU_ENABLE_SDF ON)
-if (IMGU_ENABLE_SDF)
-    set(HAVE_FREETYPE OFF)
-endif()
-
-# if (HAVE_FREETYPE)
-#     target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
-#     target_sources(imgui PRIVATE
-#         ${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp
-#         ${IMGUI_DIR}/misc/freetype/imgui_freetype.h)
-#     target_link_libraries(imgui PRIVATE freetype)
-# endif()
-
-set(IMGUI_ENABLE_MSDFGEN ON)
-if (IMGUI_ENABLE_MSDFGEN)
-    target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_MSDFGEN")
+if (HAVE_FREETYPE)
+    target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
     target_sources(imgui PRIVATE
-        ${IMGUI_DIR}/imgui_msdfgen.cpp)
-    target_link_libraries(imgui PRIVATE "C:/SDK/C/imgui/build/cmsdfgen/RelWithDebInfo/cmsdfgen.lib")
+        ${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp
+        ${IMGUI_DIR}/misc/freetype/imgui_freetype.h)
+    target_link_libraries(imgui PRIVATE freetype)
+    if (IMGU_ENABLE_SDF)
+        target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_MSDFGEN")
+        target_sources(imgui PRIVATE
+            ${IMGUI_DIR}/imgui_msdfgen.cpp
+            ${IMGUI_DIR}/imgui_msdfgen.h)
+    endif()
 endif()
 
 target_include_directories(imgui PUBLIC
@@ -312,8 +346,33 @@ set(Assimp_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Assimp" CACHE STRING "Path to Assimp
 message(STATUS "Looking for Assimp directory...")
 find_package(Assimp QUIET PATHS ${Assimp_DIR})
 if (Assimp_FOUND)
+    get_target_property(IMPORTED_LOCATION_DEBUG assimp::assimp IMPORTED_LOCATION_DEBUG)
+    list(APPEND IMMORTAL_3RDPARTY_RUNTIME $<$<CONFIG:Debug>:${IMPORTED_LOCATION_DEBUG}>)
+    get_target_property(IMPORTED_LOCATION_RELEASE assimp::assimp IMPORTED_LOCATION_RELEASE)
+    list(APPEND IMMORTAL_3RDPARTY_RUNTIME $<$<CONFIG:Release>:${IMPORTED_LOCATION_RELEASE}>)
+    list(APPEND IMMORTAL_3RDPARTY_RUNTIME $<$<CONFIG:RelWithDebInfo>:${IMPORTED_LOCATION_RELEASE}>)
+
+    get_filename_component(ASSIMP_DEBUG_BIN_DIR ${IMPORTED_LOCATION_DEBUG} DIRECTORY)
+
+    if (WIN32)
+        set(ASSIMP_DEBUG_DEPS "poly2tri" "pugixml" "minizip")
+        foreach (dep ${ASSIMP_DEBUG_DEPS})
+            set(DEP_PATH "${ASSIMP_DEBUG_BIN_DIR}/${dep}.dll")
+            if(EXISTS ${DEP_PATH})
+                list(APPEND IMMORTAL_3RDPARTY_RUNTIME $<$<CONFIG:Debug>:${DEP_PATH}>)
+                message("Add Assimp Dependency ${DEP_PATH}")
+            else()
+                message(WARNING "Dependency ${DEP_PATH} does not exist.")
+            endif()
+        endforeach()
+    endif()
     message(STATUS "Looking for Assimp directory - found ${ASSIMP_ROOT_DIR}")
-    set(ASSIMP_BIN_DIR "${ASSIMP_ROOT_DIR}/bin")
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(ASSIMP_BIN_DIR "${ASSIMP_ROOT_DIR}/debug/bin")
+    else ()
+        set(ASSIMP_BIN_DIR "${ASSIMP_ROOT_DIR}/bin")
+    endif()
+
     set(HAVE_ASSIMP "${Assimp_VERSION_MAJOR}")
     if (HAVE_MSVC)
         set(LOCAL_ASSIMP_SHARED "${ASSIMP_BIN_DIR}/${ASSIMP_LIB}${SHARED_SUFFIX}.dll")
@@ -321,7 +380,6 @@ if (Assimp_FOUND)
         set(LOCAL_ASSIMP_SHARED "${ASSIMP_BIN_DIR}/libassimp${SHARED_SUFFIX}-${Assimp_VERSION_MAJOR}.dll")
     endif()
     message(STATUS "Looking for Assimp library ${LOCAL_ASSIMP_SHARED}")
-    set(ASSIMP_SHARED ${LOCAL_ASSIMP_SHARED} PARENT_SCOPE)
 else()
     message(STATUS "Looking for Assimp directory - not found")
 endif(Assimp_FOUND)
@@ -414,7 +472,21 @@ if (FFmpeg_FOUND)
     target_link_directories("FFmpeg" INTERFACE ${FFMPEG_LIBRARY_DIR})
 
     if (WIN32)
-        set(FFMPEG_SHARED "${FFMPEG_BINARY_DIR}/" PARENT_SCOPE)
+        file(GLOB ALL_FFMPEG_DLLS "${FFMPEG_BINARY_DIR}/*.dll")
+        set(FFMPEG_DLL_FILES "")
+
+        foreach(dll ${ALL_FFMPEG_DLLS})
+            get_filename_component(dll_name "${dll}" NAME_WE)
+            foreach(lib ${FFMPEG_LIBS})
+                if(dll_name MATCHES "^${lib}(-.*)?$")
+                    list(APPEND FFMPEG_DLL_FILES "${dll}")
+                    break()
+                endif()
+            endforeach()
+        endforeach()
+
+        list(APPEND IMMORTAL_3RDPARTY_RUNTIME ${FFMPEG_DLL_FILES})
+
         list(TRANSFORM FFMPEG_LIBS PREPEND "${FFMPEG_LIBRARY_DIR}/")
         list(TRANSFORM FFMPEG_LIBS APPEND ".lib")
     endif()
@@ -431,6 +503,8 @@ set_property(TARGET raw   PROPERTY FOLDER "3rdparty")
 set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 
 # libwebp
+set(IMMORTAL_DISABLE_LIBWEBP ON)
+set(IMMORTAL_DISABLE_LIBJXL ON)
 find_package(WebP QUIET)
 if (WebP_FOUND AND NOT IMMORTAL_DISABLE_LIBWEBP)
     set(HAVE_WEBP ${LIB_FOUND})
@@ -456,7 +530,7 @@ add_subdirectory(LightWSI)
 add_subdirectory(tweeny)
 
 add_library("D3D12AgilitySDK" INTERFACE)
-set(AgilitySDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK" CACHE STRING "Path to FFmpeg directory (default=${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK)")
+set(AgilitySDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK" CACHE STRING "Path to D3D12AgilitySDK directory (default=${CMAKE_CURRENT_SOURCE_DIR}/D3D12AgilitySDK)")
 set(AgilitySDK_LIBRARY_DIR "${AgilitySDK_DIR}/lib")
 set(AgilitySDK_BINARY_DIR  "${AgilitySDK_DIR}/bin")
 set(AgilitySDK_INCLUDE_DIR "${AgilitySDK_DIR}/include")
@@ -508,8 +582,8 @@ add_library("external" INTERFACE)
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     Vulkan-Headers imgui spdlog_header_only
-    SPIRV spirv-cross-glsl tweeny
-    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp meshoptimizer>
+    SPIRV spirv-cross-glsl tweeny meshoptimizer
+    $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${MONO_FOUND}>:mono>
 )
 
@@ -521,7 +595,7 @@ target_link_libraries("ExternalVision" INTERFACE
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>
     $<$<BOOL:${LIBJPEGTURBO_FOUND}>:turbojpeg>
-    $<$<BOOL:${NVJPEG_FOUND}>:nvJPEG>
+    $<$<BOOL:${HAVE_NVJPEG}>:nvJPEG>
     $<$<BOOL:${HAVE_WEBP}>:WebP::webp WebP::webpdecoder WebP::webpdemux>
     $<$<BOOL:${HAVE_JXL}>:LibjxlInterface>)
 
@@ -568,7 +642,7 @@ if (LIBJPEGTURBO_FOUND)
 else()
     message(STATUS "Immortal will be compiled with libjpeg-turbo ------ No")
 endif()
-if (NVJPEG_FOUND)
+if (HAVE_NVJPEG)
     message(STATUS "Immortal will be compiled with nvJPEG        ------ Yes")
 else()
     message(STATUS "Immortal will be compiled with nvJPEG        ------ No")
@@ -591,3 +665,5 @@ endif()
 message(STATUS "----------------------------------------------------------------------------------")
 
 configure_file(Config.h.in ${WORKSPACE}/Immortal/Config.h)
+
+set(IMMORTAL_3RDPARTY_RUNTIME ${IMMORTAL_3RDPARTY_RUNTIME} PARENT_SCOPE)
