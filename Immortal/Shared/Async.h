@@ -50,7 +50,6 @@ public:
 
 public:
     Thread() :
-        stub{},
         handle{}
     {
 
@@ -59,10 +58,7 @@ public:
     template <class T>
     Thread(T task)
     {
-        auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
-        stub = [=] {
-            (*wrapper)();
-        };
+		Start(task);
     }
 
     ~Thread()
@@ -70,9 +66,10 @@ public:
 		Join();
     }
 
-    void Start()
+    template <class T>
+    void Start(T task)
     {
-        handle = std::jthread{ stub };
+        handle = std::jthread{ task };
     }
 
     void Join()
@@ -101,13 +98,10 @@ public:
 
     void Swap(Thread &other)
     {
-		std::swap(stub,   other.stub  );
 		std::swap(handle, other.handle);
     }
 
 protected:
-    std::function<void()> stub;
-
     std::jthread handle;
 };
 
@@ -231,13 +225,18 @@ public:
         return wrapper->get_future();
     }
 
+    void SetDebugDescription(uint32_t index, const std::string &description)
+	{
+		threads[index].SetDebugDescription(description);
+	}
+
     void OnNotify(const std::function<void()> &value)
     {
 		notify = value;
     }
 
 protected:
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     
     std::atomic<uint32_t> taskRef;
 
@@ -257,9 +256,9 @@ protected:
 class IMMORTAL_API Async
 {
 public:
-    static void Init()
+	static void Init(const uint32_t threadCount = std::thread::hardware_concurrency())
     {
-        threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
+		threadPool.reset(new ThreadPool{threadCount});
     }
 
     template <class T>

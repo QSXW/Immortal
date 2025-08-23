@@ -152,7 +152,7 @@ int main(int, char **)
                 }
 
 				videoPlayerComponent->PopPicture();
-				filterGraphComponent->Run({ picture });
+				filterGraphComponent->Execute({ picture });
 
 				texture = filterGraphComponent->QueryOutput(0);
 

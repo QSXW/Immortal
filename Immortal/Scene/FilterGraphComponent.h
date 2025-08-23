@@ -9,7 +9,6 @@
 #include "Component.h"
 #include "Filter/DisplayOrientationFilter.h"
 #include "Filter/GaussianBlurFilter.h"
-#include "Filter/LogCurveFilter.h"
 #include "Filter/Lut3DFilter.h"
 #include "Filter/ScaleFilter.h"
 #include "Filter/Transfer.h"
@@ -34,11 +33,29 @@ public:
 		nodes[index] = std::move(node);
 	}
 
-	void Run(const std::vector<Picture> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+	template <class T, class... Args>
+	Ref<FilterNode> &Emplace(Args &&...args)
+	{
+		FilterNode *node = new T{device, std::forward<Args>(args)...};
+		nodes.emplace_back(node);
+		return nodes.back();
+	}
 
-	void Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+	template <class T>
+	void EmplaceBack(Ref<T> &node)
+	{
+		nodes.emplace_back(node);
+	}
 
-	const Ref<Texture> &QueryOutput(size_t filterNodeInstance) const;
+    void Execute(AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+	void Execute(const std::vector<Picture> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+	void Execute(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+	void Execute(FilterGraphComponent &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+	const Ref<Texture> &QueryOutput(size_t filterNodeInstance = 0) const;
 
 public:
 	Device *device;

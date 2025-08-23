@@ -24,7 +24,14 @@ FilterGraphComponent::~FilterGraphComponent()
 	nodes = {};
 }
 
-void FilterGraphComponent::Run(const std::vector<Picture> &input, AsyncComputeThread *asyncComputeThread)
+void FilterGraphComponent::Execute(AsyncComputeThread *asyncComputeThread)
+{
+	std::vector<Ref<Texture>> nextInputs;
+	nextInputs.insert(nextInputs.end(), transferNode.GetOutput().begin(), transferNode.GetOutput().end());
+	Execute(nextInputs, asyncComputeThread);
+}
+
+void FilterGraphComponent::Execute(const std::vector<Picture> &input, AsyncComputeThread *asyncComputeThread)
 {
 	std::vector<Ref<Texture>> nextInputs;
 	for (auto &picture : input)
@@ -33,10 +40,10 @@ void FilterGraphComponent::Run(const std::vector<Picture> &input, AsyncComputeTh
 		nextInputs.insert(nextInputs.end(), transferNode.GetOutput().begin(), transferNode.GetOutput().end());
 	}
 
-	Run(nextInputs, asyncComputeThread);
+	Execute(nextInputs, asyncComputeThread);
 }
 
-void FilterGraphComponent::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
+void FilterGraphComponent::Execute(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
 {
 	std::vector<Ref<Texture>> nextInputs = input;
 
@@ -44,23 +51,36 @@ void FilterGraphComponent::Run(const std::vector<Ref<Texture>> &input, AsyncComp
 	{
 		auto &node = nodes[i];
 		std::vector<Ref<Texture>> output;
-		node->Preprocess();
-		node->Run(nextInputs, asyncComputeThread);
-		node->PostProcess();
-		
-		for (auto &out : node->GetOutput())
+
+		if (node->Enabled())
 		{
-			if (out->GetMipLevels() > 1)
+			node->Preprocess();
+			node->Run(nextInputs, asyncComputeThread);
+			node->PostProcess();
+
+			auto &outputs = node->GetOutput();
+			if (!outputs.empty())
 			{
-				asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
-					commandBuffer->GenerateMipMaps(out, Filter::Linear);
-				});
+				for (auto &out : node->GetOutput())
+				{
+					if (out->GetMipLevels() > 1)
+					{
+						asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+							commandBuffer->GenerateMipMaps(out, Filter::Linear);
+						});
+					}
+				}
+				nextInputs = outputs;
 			}
 		}
-		nextInputs = node->GetOutput();
 	}
 
 	output = nextInputs;
+}
+
+void FilterGraphComponent::Execute(FilterGraphComponent &input, AsyncComputeThread *asyncComputeThread )
+{
+	Execute(input.output, asyncComputeThread);
 }
 
 const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t filterNodeInstance) const

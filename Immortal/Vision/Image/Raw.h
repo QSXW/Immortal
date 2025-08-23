@@ -20,7 +20,7 @@ public:
     using Super = Interface::Codec;
 
 public:
-	RawCodec(Format outputFormat = Format::BayerLayerRGGB);
+	RawCodec(Format outputFormat = Format::BayerLayerRGGB, int scale = 1);
 
     virtual ~RawCodec() override;
 
@@ -32,10 +32,14 @@ public:
 
     void GetCurve(float *curve);
 
-    void GetDisplayOrientation(int &hflip, int &vflip, int &anticlockwiseRotation);
+    DisplayOrientation GetDisplayOrientation();
+
+    Picture DecodeThumbnail(const CodedFrame &codedFrame);
 
 protected:
     Format format;
+
+    int scale;
 
     std::shared_ptr<LibRaw> processor;
 };

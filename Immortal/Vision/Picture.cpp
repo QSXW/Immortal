@@ -7,7 +7,25 @@ namespace Immortal
 namespace Vision
 {
 
-SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t height, uint32_t _stride, bool allocate, MemoryResource *memoryResource) :
+static BaseProperty *AllocateSideData(PropertyType type)
+{
+	size_t size = 0;
+    switch (type)
+    {
+    case PropertyType::DisplayOrientation:
+        size = sizeof(DisplayOrientation);
+	    break;
+
+    default:
+	    return nullptr;
+    }
+    
+    auto data = malloc(size);
+	memset(data, 0, size);
+	return (BaseProperty *)data;
+}
+
+SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t height, uint32_t _stride, bool allocate, MemoryResource *memoryResource, std::initializer_list<PropertyType> &&types) :
     data{},
     stride{},
     format{ format },
@@ -16,6 +34,7 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
     flags{},
     timestamp{},
     memoryType{},
+    colorSpace{},
     release{},
     memoryResource{ memoryResource },
     allocator{}
@@ -74,6 +93,14 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
             });
         }
     }
+
+    properties.reserve(types.size());
+	for (auto &type : types)
+    {
+		BaseProperty *p = AllocateSideData(type);
+		p->type = type;
+		properties.emplace_back(p);
+    }
 }
 
 SharedPictureData::SharedPictureData(Texture *texture) :
@@ -84,6 +111,10 @@ SharedPictureData::SharedPictureData(Texture *texture) :
 
 SharedPictureData::~SharedPictureData()
 {
+    for (auto &prop : properties)
+    {
+		free(prop);
+    }
 	if (release)
 	{
 		release(data[0]);
@@ -105,6 +136,20 @@ void SharedPictureData::Swap(SharedPictureData &other)
     std::swap(memoryType,     other.memoryType    );
 	std::swap(release,        other.release       );
 	std::swap(memoryResource, other.memoryResource);
+    std::swap(colorSpace,     other.colorSpace    );
+}
+
+BaseProperty *SharedPictureData::GetProperty(PropertyType type)
+{
+	for (auto &prop : properties)
+    {
+        if (prop->type == type)
+        {
+			return prop;
+        }
+    }
+
+    return nullptr;
 }
 
 Picture::Picture() :
@@ -113,8 +158,8 @@ Picture::Picture() :
 
 }
 
-Picture::Picture(uint32_t width, uint32_t height, Format format, bool allocated) :
-    shared{ new SharedPictureData{ format, width, height, (uint32_t)(width * format.GetTexelSize()), allocated }}
+Picture::Picture(uint32_t width, uint32_t height, Format format, bool allocated, std::initializer_list<PropertyType> &&types) :
+    shared{ new SharedPictureData{ format, width, height, (uint32_t)(width * format.GetTexelSize()), allocated, nullptr, std::move(types) }}
 {
 
 }

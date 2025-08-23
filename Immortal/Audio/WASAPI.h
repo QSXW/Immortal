@@ -14,6 +14,11 @@
 
 #include <mutex>
 #include <Audioclient.h>
+
+#ifndef INITGUID
+#define INITGUID
+#endif
+
 #include <mmdeviceapi.h>
 #include <wrl/client.h>
 
@@ -23,7 +28,7 @@ namespace WASAPI
 {
 
 class Device;
-class DeviceChangeListener : public IMMNotificationClient, public IObject
+class DeviceChangeListener : public IClass, public IMMNotificationClient, public IObject
 {
 public:
 	DeviceChangeListener(Device *device);
@@ -50,10 +55,10 @@ protected:
 
 using Microsoft::WRL::ComPtr;
 
-class AudioStream : public IAudioStream
+class AudioStream : public IClass, public IAudioStream
 {
 public:
-	AudioStream(ComPtr<IAudioClient> &&audioClient);
+	AudioStream(ComPtr<IMMDevice> &device, ComPtr<IAudioClient> &&audioClient);
 
     virtual ~AudioStream() override;
 
@@ -73,21 +78,30 @@ public:
 
 	virtual AudioFormat GetFormat() override;
 
+    virtual bool OnDeviceChanged(IAudioDevice *device) override;
+
 protected:
+	bool OpenStream();
+
+    void Release();
+
+protected:
+	ComPtr<IMMDevice> device;
+
     ComPtr<IAudioClient> audioClient;
 
 	ComPtr<IAudioRenderClient> renderClient;
 
 	ComPtr<IAudioClock> clock;
 
-	WAVEFORMATEX *waveFormat;
+    WAVEFORMATEX *waveFormat;
 
     uint8_t *data;
 
     uint32_t bufferSize;
 };
 
-class Device : public IAudioDevice
+class Device : public IClass, public IAudioDevice
 {
 public:
     using Super = IAudioDevice;
@@ -99,22 +113,30 @@ public:
 
     virtual ~Device();
 
-    virtual bool OpenDevice() override;
+    virtual bool OpenDevice(const AudioDeviceInfo &deviceInfo = {}) override;
 
     virtual IAudioStream *CreateStream() override;
 
-    virtual bool RegisterCallback(AudioDeviceEvent type, const std::function<void()> &callback) override;
+    virtual AudioFormat GetFormat() override;
+
+    virtual bool SetOnEvent(const std::function<void(Event &)> &callback) override;
+
+    virtual int EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice) override;
 
     bool OpenDefaultDevice();
 
     void Release();
 
-    void OnEvent(AudioDeviceEvent type);
+    void OnEvent(AudioDeviceEvent type, Event &event);
+
+    ComPtr<IAudioClient> CreateAudioClient();
 
 protected:
     ComPtr<IMMDeviceEnumerator> enumerator;
 
     ComPtr<IMMDevice> handle;
+
+    WAVEFORMATEX *waveFormat;
 
     ComPtr<DeviceChangeListener> deviceChangeListener;
 
@@ -126,7 +148,7 @@ protected:
 
     std::atomic_bool deviceChanged = false;
 
-    std::function<void()> callbacks[NumAudioDeviceEvent];
+    std::function<void(Event &)> callback;
 };
 
 }

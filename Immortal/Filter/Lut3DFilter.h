@@ -21,13 +21,17 @@ public:
 	};
 
 public:
-	Lut3DFilter(Device *device, const String &filepath, Type type, uint32_t width, uint32_t height);
+	Lut3DFilter(Device *device, const String &filepath, Type type);
 
 	virtual ~Lut3DFilter() override;
 
 	void Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread()) override;
 
+	bool LoadLutFile(const String &filepath);
+
 protected:
+	Device *device;
+
 	Ref<DescriptorSet> descriptorSet;
 
 	Ref<Pipeline> pipeline;

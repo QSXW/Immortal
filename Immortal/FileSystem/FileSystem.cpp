@@ -54,7 +54,8 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 			continue;
 		}
 
-		if (fileData.cFileName[0] != '.')
+		if (fileData.cFileName[0] != '.' &&
+			fileData.cFileName[0] != '$')
 		{
 			DirectoryEntry entry = { (_path / fileData.cFileName).u8string(), type};
 			directories.emplace_back(std::move(entry));
@@ -120,15 +121,53 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 std::string_view ParseFileName(const String &path)
 {
 	size_t pos = 0;
-	const char *start = path.c_str();
-	const char *last  = start + path.size();
-	const char *p = last;
+	const auto *start = path.c_str();
+	const auto *last  = start + path.size();
+	const auto *p = last;
 	while (p != start && !(p[-1] == '/' || p[-1] == '\\'))
 	{
 		--p;
 	}
 	
     return { p, (size_t)(last - p) };
+}
+
+void Path::GetAttribute(FileAttribute &attribute) const
+{
+#ifdef _WIN32
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesExW(this->c_str(), GetFileExInfoStandard, &data))
+    {
+        attribute.size = (static_cast<uint64_t>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
+
+        auto filetime_to_fst = [](const FILETIME &ft) -> std::filesystem::file_time_type {
+            ULARGE_INTEGER ull;
+            ull.LowPart = ft.dwLowDateTime;
+            ull.HighPart = ft.dwHighDateTime;
+            constexpr int64_t WINDOWS_TICK = 10000000LL;
+            constexpr int64_t SEC_TO_UNIX_EPOCH = 11644473600LL;
+            int64_t ticks = static_cast<int64_t>(ull.QuadPart) - SEC_TO_UNIX_EPOCH * WINDOWS_TICK;
+            return std::filesystem::file_time_type(std::chrono::duration_cast<std::filesystem::file_time_type::duration>(std::chrono::nanoseconds(ticks * 100)));
+        };
+        attribute.creationTime   = filetime_to_fst(data.ftCreationTime);
+        attribute.lastWriteTime  = filetime_to_fst(data.ftLastWriteTime);
+        attribute.lastAccessTime = filetime_to_fst(data.ftLastAccessTime);
+    }
+    else
+    {
+        attribute.size = 0;
+        attribute.creationTime = {};
+        attribute.lastWriteTime = {};
+        attribute.lastAccessTime = {};
+    }
+#else
+    // 非Windows平台可用std::filesystem实现
+    std::error_code ec;
+    attribute.size = std::filesystem::is_regular_file(*this, ec) ? std::filesystem::file_size(*this, ec) : 0;
+    attribute.creationTime = {};
+    attribute.lastWriteTime = std::filesystem::last_write_time(*this, ec);
+    attribute.lastAccessTime = {};
+#endif
 }
 
 }

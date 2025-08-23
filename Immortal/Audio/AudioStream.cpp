@@ -16,7 +16,8 @@ static inline float Seconds2Nanoseconds(float seconds)
 
 AudioStream::AudioStream() :
     thread{},
-    exited{}
+    exited{},
+    bytePerSample{}
 {
 
 }
@@ -29,68 +30,71 @@ AudioStream::~AudioStream()
 void AudioStream::Destroy()
 {
 	exited = true;
-	if (thread.joinable())
-	{
-		thread.join();
-	}
+    thread.Join();
 	thread = {};
 }
 
 void AudioStream::Start(const PFN_AudioStreamPlayCallback &value)
 {
     callback = value;
-    thread = std::thread{[=, this] {
+    thread = [=, this] {
         Start();
         uint64_t duration = 0;
+        AudioFormat format = GetFormat();    
 
-        const int kSamples = 1024;
-        alignas(8) StereoVector2 buffer[kSamples] = {};
-        AudioFormat format = GetFormat();
+        int samples = format.sampleRate * 0.02;
+		size_t bufferSize = samples * format.format.GetTexelSize() * format.channels;
+		URef<uint8_t> buffer = new uint8_t[bufferSize];
 
         while (!exited)
         {
             std::lock_guard lock{mutex};
             int frames = 0;
-            int size = callback(buffer, kSamples);
+			int size = callback(buffer, samples);
             if (size > 0)
             {
-                frames = std::max(frames, size);
-                auto frameLeft = PlaySamples(frames, (const uint8_t *)buffer);
-                duration = Seconds2Nanoseconds(((float) frameLeft / format.sampleRate));
+				PlaySamples(size, (const uint8_t *) buffer);
             }
-
-            duration /= 2;
-            std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+            else
+            {
+				std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+            }
         }
-    }};
+
+        CLOG_DEBUG("Exited {}", name);
+    };
 }
 
 int AudioStream::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
 {
-    uint32_t frameRequested = 0;
+	AudioFormat format = GetFormat(); 
+	uint32_t sampleRequested = 0;
     while (numberSamples > 0)
     {
         uint32_t numFramesPadding = GetAvailableFrameCount();
 
-        frameRequested = std::min(numberSamples, numFramesPadding);
-        if (frameRequested > 0)
+        sampleRequested = std::min(numberSamples, numFramesPadding);
+		if (sampleRequested > 0)
         {
-            BeginRender(frameRequested);
+			BeginRender(sampleRequested);
 
-            uint32_t bytes = frameRequested << 3;
+            uint32_t bytes = bytePerSample * sampleRequested;
             WriteBuffer(pSamples, bytes);
             pSamples += bytes;
-            numberSamples -= frameRequested;
-            EndRender(frameRequested);
+			numberSamples -= sampleRequested;
+			EndRender(sampleRequested);
+			uint64_t duration = Seconds2Nanoseconds(((float) sampleRequested / format.sampleRate)) / 2;
+			std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
         }
     }
 
-    return frameRequested;
+    return sampleRequested;
 }
 
 void AudioStream::SetDebugName(const std::string &value)
 {
 	name = value;
+	thread.SetDebugDescription(value);
 }
 
 }

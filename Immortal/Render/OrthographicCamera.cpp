@@ -77,7 +77,7 @@ bool OrthographicCamera::OnMouseScrolled(MouseScrolledEvent & e)
 		step = 1.0f;
     }
 	zoomLevelTarget -= e.GetOffsetY() * step * 0.01f; 
-	zoomLevelTarget = std::max(zoomLevelTarget, 0.001f);
+	zoomLevelTarget = std::max(zoomLevelTarget, 0.00001f);
     return false;
 }
 

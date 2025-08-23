@@ -19,21 +19,21 @@ RenderTarget::RenderTarget(Device *device) :
 
 }
 
-RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat) :
+RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount) :
     RenderTarget{ device }
 {
 	colorBuffers.reserve(colorAttachmentCount);
     for (int i = 0; i < colorAttachmentCount; i++)
     {
 	    Format format = pColorAttachmentFormats[i];
-		Ref<Texture> texture = new Texture{ device, format, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment };
+		Ref<Texture> texture = new Texture{ device, format, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment, sampleCount };
 		SetColorAttachment(i, texture);
     }
-	BuildRenderTargetView();
+	BuildRenderTargetView(sampleCount);
 
     if (depthAttachmentFormat != Format::None)
     {
-		Ref<Texture> texture = new Texture{device, depthAttachmentFormat, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::DepthStencilAttachment};
+		Ref<Texture> texture = new Texture{device, depthAttachmentFormat, width, height, (uint16_t) Texture::CalculateMipmapLevels(width, height), 1, TextureType::DepthStencilAttachment, sampleCount};
 		SetDepthAttachment(texture);
     }
 }
@@ -76,7 +76,7 @@ void RenderTarget::SetColorAttachment(uint32_t index, Ref<Texture> &texture)
 	colorBuffers.emplace_back(texture);
 }
 
-void RenderTarget::BuildRenderTargetView()
+void RenderTarget::BuildRenderTargetView(uint32_t sampleCount)
 {
     if (colorBuffers.empty())
     {
@@ -95,7 +95,11 @@ void RenderTarget::BuildRenderTargetView()
 		        .PlaneSlice = 0
             }
         };
-
+		
+        if (sampleCount > 1)
+        {
+			viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+        }
 		uint32_t arrayLayers = texture->GetArrayLayers();
 		if (arrayLayers > 1)
 		{

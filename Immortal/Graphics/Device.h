@@ -137,7 +137,7 @@ public:
     /**
      * @brief Create a render target
      */
-    virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) = 0;
+	virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, uint32_t sampleCount = 1) = 0;
 };
 
 using SuperDevice = Device;

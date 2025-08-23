@@ -8,15 +8,21 @@ namespace Immortal
 
 struct WImageResource
 {
-	WImageResource(Image *image = nullptr, const ImVec2 &uv0 = {}, const ImVec2 &uv1 = { 1, 1 }) :
+	WImageResource(Ref<Texture> image = nullptr, const ImVec2 &uv0 = {}, const ImVec2 &uv1 = {1, 1}) :
 		image{ image },
 		uv{ uv0, uv1 }
 	{
 
 	}
 
-	void Resource(Image *_image, const ImVec2 &uv0, const ImVec2 &uv1)
+	~WImageResource()
 	{
+		Graphics::ReleaseResource(image);
+	}
+
+	void Resource(Ref<Texture> _image, const ImVec2 &uv0, const ImVec2 &uv1)
+	{
+		Graphics::ReleaseResource(image);
 		image = _image;
 		uv._0 = uv0,
 		uv._1 = uv1;
@@ -27,7 +33,7 @@ struct WImageResource
 		std::swap(uv._0, uv._1);
 	}
 
-	Image *image;
+	Ref<Texture> image;
 	struct
 	{
 		ImVec2 _0 = { 0, 0 };

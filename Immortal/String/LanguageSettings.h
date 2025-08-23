@@ -11,6 +11,12 @@ namespace Immortal
 class Translator
 {
 public:
+    Translator() :
+	    words{}
+    {
+
+    }
+
 	Translator(const String &path) :
 	    words{}
     {
@@ -34,7 +40,7 @@ protected:
     {
         try
         {
-			auto json = JSON::Parse(path);
+			auto json = JSON::Parse(path.GetWString());
 			auto &map = json["settings"]["map"];
 
 			for (decltype(json)::iterator it = map.begin(); it != map.end(); ++it)

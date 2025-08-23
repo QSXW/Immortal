@@ -134,7 +134,7 @@ private:
 
     void Equirect2Cube();
 
-private:
+protected:
     String name;
 
     entt::registry registry;
@@ -150,26 +150,6 @@ private:
         float sigma = 1.5;
         bool changed   = true;
     } settings;
-
-    struct {
-       Ref<GraphicsPipeline> tonemap;
-       Ref<GraphicsPipeline> pbr;
-       Ref<GraphicsPipeline> basic;
-       Ref<GraphicsPipeline> outline;
-       Ref<GraphicsPipeline> skybox;
-       Ref<GraphicsPipeline> animatedBasic;
-       Ref<ComputePipeline>  colorMixing;
-       Ref<ComputePipeline>  horizontalGaussianBlur;
-       Ref<ComputePipeline>  verticalGaussianBlur;
-       Ref<ComputePipeline>  equirect2Cube;
-    } pipelines;
-
-    struct {
-        Ref<Buffer> host;
-        Ref<Buffer> transform;
-        Ref<Buffer> shading;
-        Ref<Buffer> gaussianKernal;
-    } uniforms;
 
     Ref<RenderTarget> renderTarget;
 

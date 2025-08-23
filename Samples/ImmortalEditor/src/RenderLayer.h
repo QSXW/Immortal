@@ -30,7 +30,7 @@ public:
         viewport{ new WFrame{} },
         editableArea{ new WImage{} },
         imguizmoWidget{ new WImGuizmo{} },
-        objectEditorText{new WText },
+	    objectEditorText{new WTextRectangle},
         separator{ new WSeparator },
         menuBar{ new WMenuBar },
         rightClickMenu{new WPopup}
@@ -350,7 +350,7 @@ public:
 
     bool LoadObject()
     {
-        auto res = FileDialogs::OpenFile(FileFilter::None);
+        auto res = FileDialogs::OpenFile();
         if (res.has_value())
         {
             const auto &filepath = res.value();
@@ -611,7 +611,7 @@ private:
     } items;
 
     URef<WSeparator> separator;
-    URef<WText> objectEditorText;
+    URef<WTextRectangle> objectEditorText;
 
     URef<WMenuBar> menuBar;
     std::array<URef<WMenu>, 6> menus; 

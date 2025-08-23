@@ -50,6 +50,23 @@ DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
 	rangeTypes = pipeline->GetDescriptorRangeType();
 }
 
+DescriptorSet::DescriptorSet(Device *device, uint32_t descriptorCount, D3D12_DESCRIPTOR_HEAP_TYPE type) :
+    NonDispatchableHandle{device},
+    descriptorHeaps{},
+    descriptors{},
+    descriptorCount{descriptorCount},
+    indexMap{}
+{
+	if (descriptorCount > 0)
+	{
+		device->AllocateShaderVisibleDescriptor(
+		    type,
+		    &descriptorHeaps[type],
+		    &descriptors[type],
+		    descriptorCount);
+	}
+}
+
 DescriptorSet::~DescriptorSet()
 {
 	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorHeaps); i++)

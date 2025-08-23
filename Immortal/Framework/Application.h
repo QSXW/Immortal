@@ -136,6 +136,18 @@ private:
 
     EventSink<Application> eventSink;
 
+    Ref<RenderTarget> MSAARenderTarget;
+
+    uint32_t sampleCount = 1;
+
+    enum class AntiAliasingMode
+	{
+		None,
+		MSAA,
+		SMAA
+	};
+	AntiAliasingMode aaMode = AntiAliasingMode::MSAA;
+
 public:
 	static Application *This;
 
