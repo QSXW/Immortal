@@ -26,7 +26,7 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual CodecError Open(const String &filepath, Codec **pCodec, uint32_t numCodec)
+    virtual CodecError Open(const String &filepath, Codec **pCodec, const EncodeInfo *encodeInfos, uint32_t numCodec)
     {
 		return CodecError::FailedToCallDecoder;
     }
@@ -56,6 +56,11 @@ public:
     virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max)
     {
         return CodecError::FailedToCallDecoder;
+    }
+
+    virtual CodecError GetStreamInfo(MediaType type, EncodeInfo &streamInfo)
+    {
+		return CodecError::FailedToCallDecoder;
     }
 
     virtual const String &GetSource() const = 0;

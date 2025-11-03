@@ -1,4 +1,5 @@
 #include "Exif.h"
+#include "Common/BitStream.h"
 
 namespace Immortal
 {
@@ -45,32 +46,32 @@ T MMInterpretAs(const void *data)
 }
 
 IFDEntry::IFDEntry() :
-	tag{ IFDTag::Invalid },
+	tag{},
 	type{ IFDType::Invalid },
-    length{},
+    count{},
     offset{}
 {
 
 }
 
-IFDEntry::IFDEntry(IFDMemoryResource *memoryResource, const uint8_t *data, size_t offset, size_t size) :
-    tag{ InterpretAs<uint16_t>(&data[offset]) },
-    type{ InterpretAs<uint16_t>(&data[offset] + 2) },
-    length{ InterpretAs<uint32_t>(&data[offset] + 4) },
-    offset{ InterpretAs<uint32_t>(&data[offset] + 8) },
-    value{ memoryResource }
+IFDEntry::IFDEntry(ByteStream &bs) :
+    tag{bs.get_le<uint16_t>()},
+    type{bs.get_le<uint16_t>()},
+    count{bs.get_le<uint32_t>()},
+    offset{bs.get_le<uint32_t>()},
+    values{}
 {
-	ReadValues(data, size);
+
 }
 
-IFDEntry::IFDEntry(IFDMemoryResource *memoryResource, const uint8_t *data, size_t offset, size_t size, bool isBigEndian) :
-    tag{ MMInterpretAs<uint16_t>(&data[offset]) },
-    type{ MMInterpretAs<uint16_t>(&data[offset] + 2) },
-    length{ MMInterpretAs<uint32_t>(&data[offset] + 4) },
-    offset{ MMInterpretAs<uint32_t>(&data[offset] + 8) },
-    value{ memoryResource }
+IFDEntry::IFDEntry(ByteStream &bs, bool be) :
+    tag{bs.get_be<uint16_t>()},
+    type{bs.get_be<uint16_t>()},
+    count{bs.get_be<uint32_t>()},
+    offset{bs.get_be<uint32_t>()},
+    values{}
 {
-	ReadValues(data, size);
+
 }
 
 IFDEntry::~IFDEntry()
@@ -78,7 +79,7 @@ IFDEntry::~IFDEntry()
 
 }
 
-void IFDEntry::ReadValues(const uint8_t *data, size_t size)
+void IFDEntry::ReadValues(ByteStream &bs, bool be)
 {
 	bool valid = false;
 	switch (type)
@@ -86,43 +87,53 @@ void IFDEntry::ReadValues(const uint8_t *data, size_t size)
 		case IFDType::BYTE:
 		case IFDType::SBYTE:
 		case IFDType::ASCII:
-			valid = ReadValue<uint8_t>(data, size);
+			valid = ReadValue<uint8_t>(bs, be);
+			if (type == IFDType::ASCII && values.back() != 0)
+			{
+				values.resize(values.size() + 1);
+				values.back() = 0;
+				v.ptr = values.data();
+			}
 			break;
 
 		case IFDType::SHORT:
-			valid = ReadValue<uint16_t>(data, size);
+			valid = ReadValue<uint16_t>(bs, be);
 			break;
 
 		case IFDType::LONG:
-			valid = ReadValue<uint32_t>(data, size);
+			valid = ReadValue<uint32_t>(bs, be);
 			break;
 
 		case IFDType::RATIONAL:
-			valid = ReadValue<TRational<uint32_t>>(data, size);
+			count <<= 1;
+			valid = ReadValue<uint32_t>(bs, be);
+			count >>= 1;
 			break;
 
 		case IFDType::UNDEFINED:
-			valid = ReadValue<uint8_t>(data, size);
+			valid = ReadValue<uint8_t>(bs, be);
 			break;
 
 		case IFDType::SSHORT:
-			valid = ReadValue<int16_t>(data, size);
+			valid = ReadValue<int16_t>(bs, be);
 			break;
 
 		case IFDType::SLONG:
-			valid = ReadValue<int32_t>(data, size);
+			valid = ReadValue<int32_t>(bs, be);
 			break;
 
 		case IFDType::SRATIONAL:
-			valid = ReadValue<TRational<int32_t>>(data, size);
+			count <<= 1;
+			valid = ReadValue<int32_t>(bs, be);
+			count >>= 1;
 			break;
 
 		case IFDType::FLOAT:
-			valid = ReadValue<float>(data, size);
+			valid = ReadValue<uint32_t>(bs, be);
 			break;
 
 		case IFDType::DOUBLE:
-			valid = ReadValue<double>(data, size);
+			valid = ReadValue<uint64_t>(bs, be);
 			break;
 
 		default:
@@ -131,29 +142,35 @@ void IFDEntry::ReadValues(const uint8_t *data, size_t size)
 
 	if (!valid)
 	{
-		tag = IFDTag::Invalid;
+		tag = {};
 	}
 }
 
-ExifReader::ExifReader(const uint8_t *data, size_t size) :
-    buffer{std::move(std::vector<uint8_t>(size))},
-    bufferResource{buffer.data(), buffer.size()},
-    offsetToFirstIDF{},
-    allocator{ &bufferResource },
+ExifReader::ExifReader() :
     IFD{},
-    isBigEndian{}
+    flags{flags},
+    be{}
 {
-	for (int i = 0; i < SL_ARRAY_LENGTH(IFD); i++)
-	{
-		IFD[i] = std::pmr::unordered_map<uint16_t, IFDEntry>{allocator};
-	}
 
-	if (ParseHeader(data, size) != CodecError::Success)
+}
+
+ExifReader::ExifReader(const uint8_t *data, size_t size, ExifFlags flags) :
+    ExifReader{}
+{
+	//for (int i = 0; i < SL_ARRAY_LENGTH(IFD); i++)
+	//{
+	//	IFD[i] = std::pmr::unordered_map<uint16_t, IFDEntry>{allocator};
+	//}
+
+	ByteStream bs{data, size};
+
+	uint32_t offsetToFirstIDF = 0;
+	if (ParseHeader(bs, offsetToFirstIDF, be) != CodecError::Success)
 	{
 		return;
 	}
-		
-	if (ParseIFD(data, size, IFD0, offsetToFirstIDF) != CodecError::Success)
+
+	if (ParseIFD(bs, IFD0, offsetToFirstIDF) != CodecError::Success)
 	{
 		return;
 	}
@@ -165,7 +182,8 @@ ExifReader::ExifReader(const uint8_t *data, size_t size) :
 			auto it = IFD[i].find(0x014a);
 			if (it != IFD[i].end())
 			{
-				if (ParseIFD(data, size, SubIFD0, it->second.GetValue<uint32_t>()) != CodecError::Success)
+				offsetToFirstIDF = it->second.GetValue<uint32_t>();
+				if (ParseIFD(bs, SubIFD0 + i, offsetToFirstIDF) != CodecError::Success)
 				{
 					return;
 				}
@@ -174,33 +192,28 @@ ExifReader::ExifReader(const uint8_t *data, size_t size) :
 	}
 }
 
-CodecError ExifReader::ParseHeader(const uint8_t *imageFileHeader, size_t size)
+CodecError ExifReader::ParseHeader(ByteStream &bs, uint32_t &offsetToFirstIDF, bool &be)
 {
-	auto p = imageFileHeader;
-
-	auto endian = InterpretAs<uint16_t>(imageFileHeader);
+	auto endian = bs.get_le<uint16_t>();
 	if (endian == 0x4D4D /* MM */)
 	{
-		isBigEndian = true;
+		be = true;
 	}
 	else if (endian != 0x4949 /* II */)
 	{
 		return CodecError::CorruptStream;
 	}
-	p += sizeof(uint16_t);
 
 	uint16_t _42 = 0;
-	if (isBigEndian)
+	if (be)
 	{
-		_42 = MMInterpretAs<uint16_t>(p);
-		p += sizeof(uint16_t);
-		offsetToFirstIDF = MMInterpretAs<uint32_t>(p);
+		_42 = bs.get_be<uint16_t>();
+		offsetToFirstIDF = bs.get_be<uint32_t>();
 	}
 	else
 	{
-		_42 = InterpretAs<uint16_t>(p);
-		p += sizeof(uint16_t);
-		offsetToFirstIDF = InterpretAs<uint32_t>(p);
+		_42 = bs.get_le<uint16_t>();
+		offsetToFirstIDF = bs.get_le<uint32_t>();
 	}
 
 	if (_42 != 0x002a)
@@ -211,21 +224,22 @@ CodecError ExifReader::ParseHeader(const uint8_t *imageFileHeader, size_t size)
 	return CodecError::Success;
 }
 
-CodecError ExifReader::ParseIFD(const uint8_t *imageFileHeader, size_t size, int startIFDindex, uint32_t offsetOfNextIFD)
+CodecError ExifReader::ParseIFD(ByteStream &bs, int startIFDindex, uint32_t offsetOfNextIFD)
 {
 	CodecError ret = {};
 	for (int index = startIFDindex; offsetOfNextIFD != 0; index++)
 	{
-		if (isBigEndian)
+		bs.seek(offsetOfNextIFD, SEEK_SET);
+		if (be)
 		{
-			if (MMParseIFD(imageFileHeader, size, index, &offsetOfNextIFD) != CodecError::Success)
+			if (MMParseIFD(bs, index, &offsetOfNextIFD) != CodecError::Success)
 			{
 				return ret;
 			}
 		}
 		else
 		{
-			if (ParseIFD(imageFileHeader, size, index, &offsetOfNextIFD) != CodecError::Success)
+			if (ParseIFD(bs, index, &offsetOfNextIFD) != CodecError::Success)
 			{
 				return ret;
 			}
@@ -235,57 +249,154 @@ CodecError ExifReader::ParseIFD(const uint8_t *imageFileHeader, size_t size, int
 	return CodecError::Success;
 }
 
-CodecError ExifReader::ParseIFD(const uint8_t *imageFileHeader, size_t size, int index, uint32_t *offsetOfNextIFD)
+enum
 {
-	auto p = imageFileHeader + *offsetOfNextIFD;
+	EXIF_IFD             = 0x8769, // EXIF IFD
+	GPS_IFD              = 0x8825, // GPS IFD
+	INTEROPERABILITY_IFD = 0xA005,  // Interoperability IFD
+	MAKERNOTE_TAG        = 0x927c
+};
 
-	int numDirectoryEntries = InterpretAs<uint16_t>(p);
-	p += sizeof(uint16_t);
+struct MakerHeader
+{
+	int offset;
+	std::vector<uint8_t> header;
+};
 
-	while (--numDirectoryEntries >= 0)
+static const std::vector<MakerHeader> KMakers = {
+	{  6, { 'A', 'O', 'C', 0, }},
+	{ -1, { 'Q', 'V', 'C', 0, 0, 0, }},
+	{ 10, { 'F', 'O', 'V', 'E', 'O', 'N', 0, 0, }},
+	{ -1, { 'F', 'U', 'J', 'I', }},
+	{  8, { 'O', 'L', 'Y', 'M', 'P', 0, }},
+	{ -1, { 'O', 'L', 'Y', 'M', 'P', 'U', 'S', 0, 'I', 'I', }},
+	{ 12, { 'P', 'a', 'n', 'a', 's', 'o', 'n', 'i', 'c', 0, 0, 0, }},
+	{ 10, { 'S', 'I', 'G', 'M', 'A', 0, 0, 0, }},
+	{ 12, { 'S', 'O', 'N', 'Y', ' ', 'D', 'S', 'C', ' ', 0, 0, 0, }},
+};
+
+#define EXIF_II 0x49492a00
+#define EXIF_MM 0x4d4d002a
+
+static int GetMakeNoteOffset(ByteStream &bs)
+{
+	if (bs.get_bytes_left() < 12)
 	{
-		size_t offset = p - imageFileHeader;
-		IFDEntry entry = { &bufferResource, imageFileHeader, offset, size };
-		p += entry.size();
+		return -1;
+	}
+
+	for (auto &maker : KMakers)
+	{
+		if (!memcmp(maker.header.data(), bs.buf, maker.header.size()))
+		{
+			return maker.offset;
+		}
+	}
+
+	const uint8_t hNikon[] = { 'N', 'i', 'k', 'o', 'n', 0, };
+    if (!memcmp(bs.buf, hNikon, sizeof(hNikon)))
+	{
+		if (bs.get_bytes_left() < 14)
+		{
+			return -1;
+		}
+		else if (InterpretAs<uint32_t>(bs.buf + 10) == EXIF_MM || InterpretAs<uint32_t>(bs.buf + 10) == EXIF_II)
+		{
+			return -1;
+		}
+
+		return 8;
+	}
+
+	return 0;
+}
+
+static int GetIndexByTag(int tag)
+{
+	switch (tag)
+	{
+		case EXIF_IFD:
+			return IFD_EXIF;
+		case GPS_IFD:
+			return IFD_GPS;
+		case INTEROPERABILITY_IFD:
+			return IFD_INTEROP;
+		case MAKERNOTE_TAG:
+			return IFD_MAKENOTE;
+		default:
+			return -1;
+	}
+}
+
+CodecError ExifReader::ParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNextIFD, bool be)
+{
+	int n = be ? bs.get_be<uint16_t>() : bs.get_le<uint16_t>();
+	while (--n >= 0)
+	{
+		IFDEntry entry{};
+		if (be)
+		{
+			entry = {bs, be};
+		}
+		{
+			entry = {bs};
+		}
+
+		auto tag = entry.tag;
+		IFDType type = entry.type;
+		if (type > IFDType::IFD)
+		{
+			return CodecError::CorruptedBitstream;
+		}
+
+		bool isIFD = type == IFDType::IFD || 
+			         tag  == EXIF_IFD ||
+			         tag  == GPS_IFD  ||
+			         tag  == INTEROPERABILITY_IFD ||
+		             tag  == MAKERNOTE_TAG;
+		if (isIFD && !entry.offset)
+		{
+			return CodecError::CorruptedBitstream;
+		}
+
+		ByteStream _bs{bs.start, bs.size()};
+		_bs.seek(entry.offset, SEEK_SET);
+		if (tag == MAKERNOTE_TAG)
+		{
+			auto makeNoteOffset = GetMakeNoteOffset(_bs);
+			if (!makeNoteOffset)
+			{
+				isIFD = false;
+			}
+			else
+			{
+				_bs.seek(makeNoteOffset, SEEK_CUR);
+			}
+		}
+
+		if (isIFD)
+		{
+			entry.type = IFDType::IFD;
+			if (!(flags & ExifFlags::DisabledRecursive))
+			{
+				ParseIFD(_bs, GetIndexByTag(tag), offsetOfNextIFD);
+			}
+		}
+		else
+		{
+			entry.ReadValues(_bs, be);
+		}
+
 		IFD[index][entry.GetTag()] = std::move(entry);
 	}
 
-	*offsetOfNextIFD = InterpretAs<uint32_t>(p);
+	*offsetOfNextIFD = be ? bs.get_be<uint32_t>() : bs.get_le<uint32_t>();
 	return CodecError::Success;
 }
 
-CodecError ExifReader::MMParseIFD(const uint8_t *imageFileHeader, size_t size, int index, uint32_t *offsetOfNextIFD)
+CodecError ExifReader::MMParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNextIFD)
 {
-	auto p = imageFileHeader + *offsetOfNextIFD;
-
-	int numDirectoryEntries = MMInterpretAs<uint16_t>(p);
-	p += sizeof(uint16_t);
-
-	while (--numDirectoryEntries >= 0)
-	{
-		size_t offset = p - imageFileHeader;
-		IFDEntry entry = { &bufferResource, imageFileHeader, offset, size, true };
-		p += entry.size();
-		IFD[index][entry.GetTag()] = std::move(entry);
-	}
-
-	*offsetOfNextIFD = MMInterpretAs<uint32_t>(p);
-	return CodecError::Success;
-}
-
-CodecError ExifReader::ParseIFD0(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry)
-{
-	return CodecError::Success;
-}
-
-CodecError ExifReader::ParseIFD1(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry)
-{
-	return CodecError::Success;
-}
-
-CodecError ExifReader::ParseIFD2(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry)
-{
-	return CodecError::Success;
+	return ParseIFD(bs, index, offsetOfNextIFD, true);
 }
 
 }

@@ -83,6 +83,8 @@ public:
 
     static Picture Transfer(const Ref<Texture> &texture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
+    static void Transfer(Picture &pictures, const std::vector<Ref<Texture>> &texture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
     static Shader *CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint);
     
     static void ReleaseResource(const Ref<RenderTarget> &renderTarget, uint64_t offset = 0);
@@ -104,6 +106,10 @@ public:
     static void MemoryCopyImage(Ref<Buffer> &buffer, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
 
     static std::string ReadShaderSource(const String &filepath);
+
+    static Shader *CreateShaderFromDXIL(Device *device, const Path &path);
+
+    static Shader *CreateShaderByName(const std::string &name, const std::string &entryPoint = "main");
 
     template <class T, class ...Args>
     static void Execute(Args && ...args)

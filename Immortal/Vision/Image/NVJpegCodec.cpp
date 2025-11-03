@@ -80,9 +80,7 @@ NVJpegCodec::~NVJpegCodec()
 
 CodecError NVJpegCodec::Decode(const CodedFrame &codedFrame)
 {
-    const auto &buffer = codedFrame.GetBuffer();
-
-    return Decode(buffer.data(), buffer.size());
+    return Decode(codedFrame.GetData(), codedFrame.GetSize());
 }
 
 CodecError NVJpegCodec::Encode(const Picture &picture, CodedFrame &codedFrame)

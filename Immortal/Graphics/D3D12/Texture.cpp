@@ -140,7 +140,7 @@ Texture::Texture(Device *device, const ComPtr<ID3D12Resource> &resource, D3D12_R
 Texture::~Texture()
 {
 	uint32_t mipLevels = GetMipLevels();
-	if (descriptor)
+ 	if (descriptor)
 	{
 		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeap, descriptor, mipLevels);
 	}
@@ -148,6 +148,7 @@ Texture::~Texture()
 	{
 		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, uavDescriptorHeap, uav, mipLevels);
 	}
+
 	resource.Reset();
 }
 

@@ -48,8 +48,7 @@ static inline void SimpleWritePicture(const std::string &path, const Picture &pi
 		CopyPictureMono2RGBA8<uint8_t>(picture, dstPicture);
 	}
 
-	Vision::BMPCodec bmp;
-	bmp.Write(path, width, height, 4, dstPicture.GetData());
+	Vision::Write(picture, path);
 }
 
 }

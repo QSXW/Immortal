@@ -27,6 +27,8 @@
 #include "Audio/WAV.h"
 
 #include "Common/Animator.h"
+#include "Common/BitStream.h"
+#include "Common/ByteStream.h"
 #include "Common/BitTracker.h"
 #include "Common/Checksum.h"
 #include "Common/Error.h"
@@ -47,6 +49,7 @@
 #include "Image/PPM.h"
 #include "Image/Raw.h"
 #include "Image/STBCodec.h"
+#include "Image/TIFF.h"
 #include "Image/TurboJpegCodec.h"
 #include "Image/Webp.h"
 

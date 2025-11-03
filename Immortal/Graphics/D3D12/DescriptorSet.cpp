@@ -2,6 +2,7 @@
 #include "DescriptorHeap.h"
 #include "Device.h"
 #include "Buffer.h"
+#include "BufferView.h"
 #include "Texture.h"
 #include "Sampler.h"
 #include "Pipeline.h"
@@ -84,6 +85,14 @@ void DescriptorSet::Set(uint32_t slot, SuperBuffer *buffer)
 	auto &rangeType = rangeTypes[slot];
 	auto descriptor = InterpretAs<Buffer>(buffer)->GetDescriptor();
 	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], D3D12_CPU_DESCRIPTOR_HANDLE(descriptor[rangeType]), type);
+}
+
+void DescriptorSet::Set(uint32_t slot, SuperBufferView *view)
+{
+	constexpr auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	auto &rangeType = rangeTypes[slot];
+	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = D3D12_CPU_DESCRIPTOR_HANDLE(InterpretAs<BufferView>(view)->GetDescriptor());
+	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptorHandle, type);
 }
 
 void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)

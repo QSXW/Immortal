@@ -125,6 +125,12 @@ Ref<Texture> Graphics::CreateTexture(const Picture &picture, AsyncComputeThread 
 
 Ref<Texture> Graphics::CreateTexture(Format format, uint32_t width, uint32_t height, uint32_t stride, const void *data, AsyncComputeThread *asyncComputeThread, uint32_t mipLevels)
 {
+    if (format == Format::None)
+	{
+		LOG_ERROR("Invalid image format specified!");
+		return nullptr;
+    }
+
     if (!mipLevels)
     {
         mipLevels = Texture::CalculateMipmapLevels(width, height);
@@ -209,18 +215,20 @@ void Graphics::ReleaseCachedBuffer(BufferType bufferType, const Ref<Buffer> &buf
 	}
 }
 
+static const Format kFormatsNV12[] = {Format::R8_UNORM, Format::R8G8_UNORM};
+static const Format kFormatsP016[] = {Format::R16_UNORM, Format::R16G16_UNORM};
+
 Picture Graphics::Transfer(const Ref<Texture> &texture, AsyncComputeThread *asyncComputeThread)
 {
     auto width  = texture->GetWidth();
     auto heigth = texture->GetHeight();
-    auto format = texture->GetFormat();
+	auto format = texture->GetFormat();
+
     Picture picture = Picture{ width, heigth, format, true };
     
     SamplingFactor factors[4];
     GetSamplingFactor(format, factors);
 
-    Format kFormatsNV12[] = { Format::R8_UNORM, Format::R8G8_UNORM };
-    Format kFormatsP016[] = { Format::R16_UNORM, Format::R16G16_UNORM};
     for (size_t i = 0; picture.GetData(i); i++)
     {
         Format subformat = format;
@@ -250,6 +258,92 @@ Picture Graphics::Transfer(const Ref<Texture> &texture, AsyncComputeThread *asyn
     }
 
     return picture;
+}
+
+void Graphics::Transfer(Picture &picture, const std::vector<Ref<Texture>> &textures, AsyncComputeThread *asyncComputeThread)
+{
+    struct TransferData
+    {
+		uint32_t width;
+		uint32_t height;
+		uint32_t stride;
+		uint32_t offset;
+        Format   format;
+		uint32_t subresource;
+		uint32_t index;
+    };
+
+    TransferData data[4] = {};
+
+    std::vector<Ref<Buffer>> bufs;
+	bufs.resize(textures.size());
+
+    SamplingFactor factors[4];
+	GetSamplingFactor(picture.GetFormat(), factors);
+
+    bool isPlanar = false;
+
+    size_t size = textures.size();
+	if (size == 1)
+    {
+		auto &format = textures[0]->GetFormat();
+		isPlanar = format == Format::NV12 || format == Format::P010 ||
+                   format == Format::P012 || format == Format::P016;
+		if (isPlanar)
+		{
+			size = 2;
+		}
+    }
+
+	auto &texture = textures[0];
+	for (size_t i = 0; i < size; i++)
+	{
+		auto &[width, height, stride, offset, format, subresource, index] = data[i];
+
+		offset = size;
+		width  = texture->GetWidth();
+		height = texture->GetHeight();
+		if (!picture.GetFormat().IsType(Format::YUYV))
+		{
+			width  >>= factors[i].x;
+			height >>= factors[i].y;
+		}
+            
+        if (isPlanar)
+		{
+			format = texture->GetFormat();
+			format = texture->GetFormat() == Format::NV12 ? kFormatsNV12[i] : kFormatsP016[i];
+			subresource = i;
+		}
+        else
+		{
+			format = textures[i]->GetFormat();
+			index = i;
+        }
+		stride = SLALIGN(width * format.GetTexelSize(), TextureAlignment);
+
+		size_t size = stride * height;
+		bufs[i] = GetCachedBuffer(BufferType::TransferDestination, stride * height);
+	}
+
+	asyncComputeThread->Execute<RecordingTask>([=](uint64_t sync, CommandBuffer *commandBuffer) {
+        for (size_t i = 0; i < size; i++)
+		{
+			commandBuffer->CopyImageToBuffer(bufs[i], textures[data[i].index], data[i].subresource, data[i].stride);
+        }
+	});
+
+   asyncComputeThread->Execute<ExecutionCompletedTask>([=]() {
+		for (size_t i = 0; i < size; i++)
+		{
+			auto &buf = bufs[i];
+			uint8_t *mapped = nullptr;
+			buf->Map((void **)&mapped, size, 0);
+			MemoryCopyImage(picture.GetData(i), picture.GetStride(i), mapped, data[i].stride, data[i].format, data[i].width, data[i].height);
+			buf->Unmap();
+			ReleaseCachedBuffer(BufferType::TransferDestination, buf);
+		}
+	});
 }
 
 Shader *Graphics::CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint)
@@ -420,6 +514,37 @@ std::string Graphics::ReadShaderSource(const String &filepath)
     stream.Read(source);
     
     return source;
+}
+
+Shader *Graphics::CreateShaderFromDXIL(Device *device, const Path &path)
+{
+	Stream stream{path, Stream::Mode::Read};
+	if (!stream.Readable())
+	{
+		return nullptr;
+	}
+
+	std::vector<uint8_t> dxil;
+	stream.Read(dxil);
+	return device->CreateShader(ShaderStage::Compute, ShaderBinaryType::DXIL, dxil.data(), dxil.size());
+}
+
+Shader *Graphics::CreateShaderByName(const std::string &name, const std::string &entryPoint)
+{
+    auto device = Graphics::GetDevice();
+	auto path = Graphics::GetShaderAssetPath() / (name + ".dxil");
+	if (!std::filesystem::exists(path))
+	{
+		std::string source = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / (name + ".hlsl"));
+		if (source.empty())
+		{
+			return nullptr;
+		}
+
+		return device->CreateShader(name, ShaderStage::Compute, source, entryPoint);
+	}
+
+	return Graphics::CreateShaderFromDXIL(device, path);
 }
 
 }

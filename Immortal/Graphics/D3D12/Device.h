@@ -55,6 +55,8 @@ public:
 
     virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
+    virtual SuperShader *CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size) override;
+
     virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
     virtual SuperComputePipeline *CreateComputePipeline(SuperShader *shader) override;
@@ -64,6 +66,8 @@ public:
     virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
 
     virtual SuperBuffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1) override;
+
+    virtual SuperBufferView *CreateBufferView(SuperBuffer *buffer, Format format, uint32_t byteStride) override;
 
     virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 

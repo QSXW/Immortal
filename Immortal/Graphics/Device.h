@@ -10,6 +10,7 @@ namespace Immortal
 
 class Queue;
 class Buffer;
+class BufferView;
 class Texture;
 class Window;
 class Swapchain;
@@ -84,6 +85,11 @@ public:
      * @param entryPoint The entry point of the shader program
      */
 	virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) = 0;
+    
+    virtual Shader *CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size)
+    {
+		return nullptr;
+    }
 
     /**
      * @brief Create a graphics pipeline
@@ -115,6 +121,11 @@ public:
     }
 
 	virtual Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1)
+	{
+		return nullptr;
+	}
+
+	virtual BufferView *CreateBufferView(Buffer *buffer, Format format, uint32_t byteStride)
 	{
 		return nullptr;
 	}

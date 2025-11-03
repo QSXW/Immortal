@@ -20,16 +20,18 @@ STBCodec::~STBCodec()
 CodecError STBCodec::Decode(const CodedFrame &codedFrame)
 {
     int width, height, depth;
-    const auto &buffer = codedFrame.GetBuffer();
+    
+    auto data = codedFrame.GetData();
+	auto size = codedFrame.GetSize();
 
     Format format = Format::RGBA8;
-    uint8_t *data = nullptr;
-	if (stbi_is_hdr_from_memory(buffer.data(), buffer.size()))
+    uint8_t *buf = nullptr;
+	if (stbi_is_hdr_from_memory(data, size))
     {
         format = Format::R32G32B32A32_SFLOAT;
-        data = (uint8_t *)stbi_loadf_from_memory(
-		    buffer.data(),
-		    static_cast<int>(buffer.size()),
+		buf = (uint8_t *) stbi_loadf_from_memory(
+		    data,
+		    static_cast<int>(size),
             &width,
             &height,
             &depth,
@@ -38,9 +40,9 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
     }
     else
     {
-        data = stbi_load_from_memory(
-		    buffer.data(),
-		    static_cast<int>(buffer.size()),
+		buf = stbi_load_from_memory(
+		    data,
+		    static_cast<int>(size),
             &width,
             &height,
             &depth,
@@ -48,15 +50,15 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         );
     }
 
-	if (!data)
+	if (!buf)
 	{
 		return CodecError::CorruptedBitstream;
 	}
 
     picture = Picture{ uint32_t(width), uint32_t(height), format };
-    picture.SetData(data);
-	picture.SetRelease([](void *data) {
-		stbi_image_free(data);
+	picture.SetData(buf);
+	picture.SetRelease([](void *buf) {
+		stbi_image_free(buf);
 	});
 
     return CodecError::Success;

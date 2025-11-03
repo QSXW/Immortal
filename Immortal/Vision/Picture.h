@@ -39,7 +39,9 @@ public:
 
     void Swap(SharedPictureData &other);
 
-    BaseProperty *GetProperty(PropertyType type);
+    BaseProperty *AllocateProperty(PropertyType type);
+
+    BaseProperty *GetProperty(PropertyType type) const;
 
 protected:
     uint8_t                     *data[8];
@@ -53,6 +55,7 @@ protected:
 	Rational                     timebase;
     PictureMemoryType            memoryType;
 	ColorSpace                   colorSpace;
+	ColorTransferCharacteristic  trc;
     std::function<void(void *)>  release;
     MemoryResource              *memoryResource;
     AAllocator<uint8_t>          allocator;
@@ -127,7 +130,7 @@ public:
         shared->memoryType = type;
     }
 
-    ColorSpace GetColorSpace() const
+    const ColorSpace &GetColorSpace() const
 	{
 		return shared->colorSpace;
 	}
@@ -135,6 +138,16 @@ public:
 	void SetColorSpace(ColorSpace colorSpace) const
 	{
 		shared->colorSpace = colorSpace;
+	}
+
+    const ColorTransferCharacteristic &GetColorTransferCharacteristic() const
+    {
+		return shared->trc;
+	}
+
+    void SetColorTransferCharacteristic(ColorTransferCharacteristic colorTransferCharacteristic) const
+    {
+		shared->trc = colorTransferCharacteristic;
 	}
 
     void SetStride(size_t index, uint32_t stride) const
@@ -222,8 +235,14 @@ public:
 		return shared->flags;
     }
 
+	template <class T>
+    T *AllocateProperty()
+    {
+		return (T *)shared->AllocateProperty(PropertyeTypeGetter<T>::type);
+    }
+
     template <class T>
-    T *GetProperty()
+    T *GetProperty() const
     {
 		return (T *) shared->GetProperty(PropertyeTypeGetter<T>::type);
     }

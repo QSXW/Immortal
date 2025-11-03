@@ -6,6 +6,7 @@
 #include "Helper/Platform.h"
 
 #include <list>
+#include <cmath>
 
 #if HAVE_FFMPEG
 extern "C" {
@@ -13,6 +14,7 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#include <libavutil/display.h>
 }
 #endif
 
@@ -24,6 +26,54 @@ namespace Vision
 #if HAVE_FFMPEG
 
 #define AVERR_STR(ret) av_make_error_string(err, 64, ret)
+
+static CodecId CAST(AVCodecID codecId)
+{
+    switch (codecId)
+    {
+    case AV_CODEC_ID_H264:
+        return CodecId::H264;
+
+    case AV_CODEC_ID_HEVC:
+        return CodecId::HEVC;
+
+    case AV_CODEC_ID_VVC:
+        return CodecId::VVC;
+
+    case AV_CODEC_ID_VP9:
+        return CodecId::VP9;
+
+    case AV_CODEC_ID_AV1:
+        return CodecId::AV1;
+
+    case AV_CODEC_ID_AAC:
+        return CodecId::AAC;
+
+    case AV_CODEC_ID_FLAC:
+        return CodecId::FLAC;
+
+    case AV_CODEC_ID_TIFF:
+        return CodecId::TIFF;
+
+    case AV_CODEC_ID_PNG:
+        return CodecId::PNG;
+
+    case AV_CODEC_ID_WEBP:
+        return CodecId::WEBP;
+
+    case AV_CODEC_ID_JPEGXL:
+        return CodecId::JPEGXL;
+
+    case AV_CODEC_ID_MPEG4:
+        return CodecId::MPEG4;
+
+    default:
+		return CodecId::None;
+    }
+}
+
+Format CAST(AVPixelFormat v);
+AVPixelFormat CAST(Format format);
 
 class FormatContext : public IObject
 {
@@ -233,7 +283,10 @@ CodecError FFDemuxer::Open(const String &_filepath, VideoCodec *codec, VideoCode
 		return CodecError::ExternalFailed;
     }
 
-    formatContext->OpenStream(codec, MediaType::Video);
+    if (codec)
+	{
+		formatContext->OpenStream(codec, MediaType::Video);
+	}
     if (audioCodec)
     {
         formatContext->OpenStream(audioCodec, MediaType::Audio);
@@ -274,7 +327,7 @@ static AVCodecID CAST(const CodecId id)
     }
 }
 
-CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, uint32_t numCodec)
+CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const EncodeInfo *encodeInfos, uint32_t numCodec)
 {
 	int ret = 0;
 	char err[64] = {};
@@ -296,10 +349,10 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, uint32_t num
 	for (uint32_t i = 0; i < numCodec; i++)
     {
 		AVCodecContext *codec = ((FFCodec *)pCodec[i])->GetHandle();
+		codecs[i] = codec;
 		AVStream *stream  = avformat_new_stream(handle, NULL);
 		stream->id        = handle->nb_streams - 1;
 		stream->time_base = codec->time_base;
-        streams.emplace_back(stream);
 
 		int ret = avcodec_parameters_from_context(stream->codecpar, codec);
         if (ret < 0)
@@ -307,10 +360,39 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, uint32_t num
 			LOG::ERR("Failed to copy codec parameters from codec");
 			return CodecError::ExternalFailed;
         }
+
+		if (pCodec[i]->GetMediaType() == MediaType::Video)
+		{
+			stream->avg_frame_rate = codec->framerate;
+
+            auto &displayOrientation = encodeInfos[i].displayOrientation;
+            if (displayOrientation.hflip != 0 || displayOrientation.anticlockwiseRotation != 0)
+            {
+				auto &codecpar = stream->codecpar;
+				AVPacketSideData *sideData = av_packet_side_data_new(&codecpar->coded_side_data,
+                    &codecpar->nb_coded_side_data, AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9, 0);
+               
+                int32_t *displayMatrix = (int32_t *)sideData->data;
+                if (displayMatrix)
+                {
+                    if (displayOrientation.anticlockwiseRotation != 0)
+                    {
+                        av_display_rotation_set(displayMatrix, displayOrientation.anticlockwiseRotation);
+                    }
+                    if (displayOrientation.hflip)
+                    {
+                        av_display_matrix_flip(displayMatrix, 1, 0);
+                    }
+                }
+            }
+		}
+
 		if (fmt->flags & AVFMT_GLOBALHEADER)
 		{
 			codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		}
+
+        streams.emplace_back(stream);
     }
 
     if (!(fmt->flags & AVFMT_NOFILE))
@@ -394,26 +476,17 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
         return CodecError::ExternalFailed;
     }
 
-    CodedFrame codedFrame;
     auto stream = formatContext->GetStream(packet->stream_index);
-  //  if (stream->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE)
-  //  {
-		//codedFrame = { packet->data, (size_t)packet->size };
-  //  }
-  //  else
-    {
-        codedFrame = { packet };
-    }
+	CodedFrame codedFrame{ packet->data, (size_t)packet->size };
+	codedFrame.SetAnonymous(packet);
 
 	codedFrame.SetTimestamp(packet->pts);
 	codedFrame.SetType((MediaType) stream->codecpar->codec_type);
 	packet->time_base = stream->time_base;
 
 	codedFrame.SetRelease([packet](void *data) {
-		Async::Execute([packet] {
-			//AVPacket *packet = (AVPacket *) (data);
-			av_packet_free((AVPacket **)&packet);
-		});
+		//AVPacket *packet = (AVPacket *) (data);
+		av_packet_free((AVPacket **)&packet);
 	});
 
 	*pCodedFrame = codedFrame;
@@ -447,6 +520,33 @@ CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t 
     if (avformat_seek_file(*formatContext, formatContext->GetStreamIndex(MediaType::Video), min, timestamp, max, 0) < 0)
     {
         return CodecError::ExternalFailed;
+    }
+
+    return CodecError::Success;
+}
+
+CodecError FFDemuxer::GetStreamInfo(MediaType type, EncodeInfo &streamInfo)
+{
+	auto index = formatContext->GetStreamIndex(type);
+	AVStream *stream = formatContext->GetStream(index);
+
+    auto &codecpar = stream->codecpar;
+    streamInfo = EncodeInfo{
+		.mediaType = type,
+		.codecId   = CAST(codecpar->codec_id),
+        .width     = uint32_t(codecpar->width),
+		.height    = uint32_t(codecpar->height),
+        .format    = CAST(AVPixelFormat(codecpar->format)),
+		.bitRate   = int(codecpar->bit_rate),
+		.gopSize   = 0,
+		.framerate = { codecpar->framerate.num, codecpar->framerate.den },
+		.timeBase  = { stream->time_base.num, stream->time_base.den },
+		.displayOrientation = {}
+	};
+
+    if (codecpar->codec_id == AV_CODEC_ID_NONE)
+    {
+		return CodecError::InvalidArguments;
     }
 
     return CodecError::Success;
