@@ -9,7 +9,7 @@
 namespace Immortal
 {
 
-DisplayOrientationFilter::DisplayOrientationFilter(Device *device, bool hflip, bool vflip, int anticlockwiseRotation) :
+DisplayOrientationFilter::DisplayOrientationFilter(Device *device, int hflip, int vflip, int anticlockwiseRotation) :
     FilterNode{},
     device{ device },
     hflip{ hflip },
@@ -18,19 +18,9 @@ DisplayOrientationFilter::DisplayOrientationFilter(Device *device, bool hflip, b
 {
 	if (anticlockwiseRotation == 180)
 	{
-		this->hflip = hflip ^ true;
-		this->vflip = vflip ^ true;
+		this->hflip = hflip ^ 1;
+		this->vflip = vflip ^ 1;
 	}
-}
-
-DisplayOrientationFilter::DisplayOrientationFilter(Device *device, int exifOrientaiton) :
-    FilterNode{},
-    device{},
-    hflip{},
-    vflip{},
-    anticlockwiseRotation{}
-{
-
 }
 
 void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
@@ -63,7 +53,9 @@ void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, Async
 		{
 			macros[numMacro++] = { "VFLIP", nullptr };
 		}
-		if (anticlockwiseRotation == 90)
+
+		auto rotation = std::abs(anticlockwiseRotation);
+		if (rotation == 90)
 		{
 			macros[numMacro++] = { "TRANSPOSE", nullptr };
 		}
@@ -76,7 +68,7 @@ void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, Async
 			uint32_t width  = input[i]->GetWidth();
 			uint32_t height = input[i]->GetHeight();
 
-			if (anticlockwiseRotation == 90 || anticlockwiseRotation == 270)
+			if (rotation == 90 || rotation == 270)
 			{
 				std::swap(width, height);
 			}

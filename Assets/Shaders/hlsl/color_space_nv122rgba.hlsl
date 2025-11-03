@@ -9,6 +9,7 @@ Texture2D<float2>    UV   : register(t1);
 RWTexture2D<float4>  RGBA : register(u2);
 SamplerState         S    : register(s4);
 
+#define INPUT_TRANSFORM
 struct PushConstant
 {
 #ifdef INPUT_TRANSFORM
@@ -24,7 +25,7 @@ struct PushConstant
 void main(uint3 DTid : SV_DispatchThreadID)
 {
     float4 pixel = float4(0, 0, 0, 1.0f);
-    float2 uv = DTid.xy * pushConstant.samplingFactor;
+    float2 uv = (float2(DTid.xy) + 0.5f) * pushConstant.samplingFactor;
 
     pixel.x  = Y[DTid.xy];
     pixel.yz = UV.SampleLevel(S, uv, 0);

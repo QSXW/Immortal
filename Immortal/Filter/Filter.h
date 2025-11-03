@@ -27,7 +27,10 @@ public:
 
     virtual ~FilterNode()
     {
-
+        for (auto &o : output)
+        {
+			Graphics::ReleaseResource(o);
+        }
     }
 
     FilterNode(const FilterNode &other) :
@@ -55,6 +58,11 @@ public:
     virtual const std::vector<Ref<Texture>> &GetOutput() const
     {
 		return output;
+    }
+
+    void SetOutput(const std::vector<Ref<Texture>> &value)
+    {
+		output = value;
     }
 
     const bool &Enabled() const

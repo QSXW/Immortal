@@ -16,3 +16,33 @@ function(immortal_target_link_runtime_dependency target_name)
     COMMAND ${CMAKE_COMMAND} -E
         copy_directory ${AgilitySDK_SHARED} $<TARGET_FILE_DIR:${target_name}>/D3D12)
 endfunction()
+
+function(add_shader_library TARGET HLSL_FILES)
+    add_library(${TARGET} INTERFACE)
+
+    foreach(HLSL_FILE ${HLSL_FILES})
+        get_filename_component(FILE_NAME "${HLSL_FILE}" NAME_WE)
+        get_filename_component(FILE_PATH "${HLSL_FILE}" ABSOLUTE)
+        set(DXIL_OUTPUT "${OUTPUT_DIR}/${FILE_NAME}.dxil")
+
+        add_custom_target(
+            compile_${FILE_NAME}_hlsl
+            COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} -Wignored-attributes -T cs_6_0 -E main -Fo ${DXIL_OUTPUT} ${HLSL_FILE}"
+            COMMAND "${DXC_EXE}"
+                    "-Wignored-attributes"
+                    "-T" "cs_6_0"
+                    "-E" "main"
+                    "-Fo" "${DXIL_OUTPUT}"
+                    "${HLSL_FILE}"
+            DEPENDS "${HLSL_FILE}"
+            COMMENT "Compile ${FILE_NAME}.hlsl -> ${DXIL_OUTPUT}"
+        )
+
+        add_dependencies(${TARGET} compile_${FILE_NAME}_hlsl)
+        set_property(TARGET compile_${FILE_NAME}_hlsl PROPERTY FOLDER "${TARGET}")
+    endforeach()
+
+    target_compile_definitions(${TARGET} INTERFACE
+        HLSL_SHADERS_LIBRARY
+    )
+endfunction()

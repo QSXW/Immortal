@@ -8,7 +8,7 @@ namespace Immortal
 namespace Vision
 {
 
-static Codec *SelectSuitableCodec(const std::string &path)
+Codec *SelectSuitableCodec(const std::string &path, bool decoder, const ImageEncodeInfo &info)
 {
     switch (FileSystem::DumpFileId(path))
     {
@@ -19,16 +19,23 @@ static Codec *SelectSuitableCodec(const std::string &path)
     case FileFormat::JPEG:
     case FileFormat::JFIF:
 #if HAVE_TURBOJPEG
-		return new TurboJpegCodec;
+		return new TurboJpegCodec{info};
+#endif
+    case FileFormat::PNG:
+#if HAVE_PNG
+		return new PNGCodec{info};
 #endif
     case FileFormat::HDR:
-    case FileFormat::PNG:
         return new STBCodec;
 
+    case FileFormat::JXL:
 #if HAVE_JXL:
-	case FileFormat::JXL:
 		return new JxlCodec;
 #endif
+		return new FFJpegxlCodec;
+
+    case FileFormat::TIFF:
+		return new FFTiffCodec;
 
     case FileFormat::PPM:
         return new PPMCodec;
@@ -41,10 +48,12 @@ static Codec *SelectSuitableCodec(const std::string &path)
 	case FileFormat::RW2:
         return new RawCodec{ Format::RGBA8 };
 
+    case FileFormat::WEBP:
 #if HAVE_WEBP
-	case FileFormat::WEBP:
 		return new WebpCodec{};
 #endif
+		return new FFWebpCodec;
+
     default:
         return new OpenCVCodec;
         break;
@@ -54,12 +63,17 @@ static Codec *SelectSuitableCodec(const std::string &path)
 Picture Read(const String &path)
 {
     Vision::CodedFrame codedFrame{ FileSystem::ReadBinary(path) };
-    if (codedFrame.GetBuffer().empty())
+    if (!codedFrame.GetData())
     {
 		return {};
     }
 
-    URef<Interface::Codec> codec = SelectSuitableCodec(path);
+    URef<Interface::Codec> codec = SelectSuitableCodec(path, true);
+    if (!codec)
+    {
+		return {};
+    }
+
     if (codec->Decode(codedFrame) != CodecError::Success)
     {
 		return {};
@@ -68,16 +82,16 @@ Picture Read(const String &path)
     return codec->GetPicture();
 }
 
-CodedFrame Write(const Picture &picture, const String &path)
+CodedFrame Write(const Picture &picture, const String &path, const ImageEncodeInfo &info)
 {
-	URef<Interface::Codec> codec = SelectSuitableCodec(path);
+	URef<Interface::Codec> codec = SelectSuitableCodec(path, false, info);
 
 	CodedFrame codedFrame;
 	if (codec->Encode(picture, codedFrame) != CodecError::Success)
 	{
 		return {};
 	}
-    
+
     if (!path.empty())
     {
 		Stream stream{path, StreamMode::Write};
@@ -86,7 +100,7 @@ CodedFrame Write(const Picture &picture, const String &path)
 			LOG::ERR("Failed to open file {} to write the encoded image data!", path.c_str());
 			return {};
         }
-		stream.Write(codedFrame.GetBuffer());
+		stream.Write(codedFrame.GetData(), codedFrame.GetSize());
     }
 
 	return codedFrame;

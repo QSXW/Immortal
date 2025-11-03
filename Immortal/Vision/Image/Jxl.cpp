@@ -227,7 +227,6 @@ JxlCodec::~JxlCodec()
 CodecError JxlCodec::Decode(const CodedFrame &codedFrame)
 {
     int width, height, depth;
-    const auto &buffer = codedFrame.GetBuffer();
 
     JxlDecoderWrapper decoder{};
     JxlDecoderStatus status;
@@ -238,7 +237,7 @@ CodecError JxlCodec::Decode(const CodedFrame &codedFrame)
 		return CodecError::ExternalFailed;
     }
 
-    status = decoder.SetInput(buffer.data(), buffer.size());
+    status = decoder.SetInput(codedFrame.GetData(), codedFrame.GetSize());
 	if (status != JxlDecoderStatus::JXL_DEC_SUCCESS)
 	{
 		LOG::ERR("[Jxl] Failed to set input - {}", (int)status);

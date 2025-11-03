@@ -26,6 +26,8 @@ public:
 
 	virtual void Set(uint32_t slot, SuperBuffer *buffer) override;
 
+	virtual void Set(uint32_t slot, SuperBufferView *view) override;
+
 	virtual void Set(uint32_t slot, SuperTexture *texture) override;
 
 	virtual void Set(uint32_t slot, SuperSampler *sampler) override;

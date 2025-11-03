@@ -75,14 +75,15 @@ static inline Format SelectFormat(int32_t bitDepth, int32_t chromaFormatIDC)
 
 CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
 {
-	const auto &rbsp = codedFrame.GetBuffer();
+	auto rbspData = codedFrame.GetData();
+	auto rbspSize = codedFrame.GetSize();
 
     std::vector<uint8_t> buffer;
     int32_t bytesConsumed = 0;
     int32_t bytes;
-    const uint8_t *end = rbsp.data() + rbsp.size();
+	const uint8_t *end = rbspData + rbspSize;
 
-    while ((bytes = FilterByteStream(buffer, rbsp.data() + bytesConsumed, end)) > 0)
+    while ((bytes = FilterByteStream(buffer, rbspData + bytesConsumed, end)) > 0)
     {
         bytesConsumed += bytes;
         if (Parse(buffer) != CodecError::Preparing)

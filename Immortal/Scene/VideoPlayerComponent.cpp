@@ -18,7 +18,7 @@ namespace Immortal
 struct VideoPlayerContext : public IClass
 {
 public:
-	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr, int cacheSize = 3, const VideoDecodeCallbacks &callbacks = {});
+	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr, int cacheSize = 3, VideoPlayerMode mode = VideoPlayerMode::Playing);
 
     ~VideoPlayerContext();
 
@@ -44,11 +44,20 @@ public:
 
 	uint32_t WriteAudioData(void *data, uint32_t samples);
 
+    void EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Picture &&)> &callback, MediaType type);
+	
+	void GetPictures(bool eof);
+
 public:
     const Vision::DisplayOrientation *GetDisplayOrientation() const
     {
 		return decoder->GetProperty<Vision::DisplayOrientation>();
     }
+
+	CodecError GetStreamInfo(MediaType type, EncodeInfo &streamInfo)
+	{
+		return demuxer ? demuxer->GetStreamInfo(type, streamInfo) : CodecError::ExternalFailed;
+	}
 
     void ClearPictures(ConcurrentQueue<Picture> &pictures, Picture &picture, int &size)
     {
@@ -104,7 +113,26 @@ public:
 		return externalClock;
     }
 
+    void SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph, Format _format)
+	{
+        if (!asyncComputeThread)
+        {
+			asyncComputeThread = new AsyncComputeThread{Graphics::GetDevice()};
+			queue = Graphics::GetDevice()->CreateQueue(QueueType::Compute);
+			asyncComputeThread->Execute<SetQueueTask>(queue);
+        }
+		filterGraph = graph;
+		format = _format;
+	}
+
+	void SetCallbacks(const VideoDecodeCallbacks &_callbacks)
+	{
+		callbacks = _callbacks;
+	}
+
 public:
+	VideoPlayerMode mode;
+
     Thread demuxerThread;
 
     std::atomic_bool decoding = false;
@@ -189,6 +217,24 @@ public:
 
     std::function<void()> task;
 
+    ColorSpace colorSpace = ColorSpace::Unspecified;
+
+    ColorTransferCharacteristic colorTransferCharacteristic = ColorTransferCharacteristic::Unspecified;
+
+    std::shared_ptr<FilterGraphComponent> filterGraph;
+
+	Format format;
+
+    URef<AsyncComputeThread> asyncComputeThread;
+
+    Ref<Queue> queue;
+
+    std::atomic<int> asyncComputeTaskCount = 0;
+
+	Ref<ScaleFilter> scaleFilter;
+
+	std::atomic_bool done = false;
+
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 	Timer timer;
 #endif
@@ -199,28 +245,91 @@ CodecError AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interface::
     return decoder->Decode(codedFrame);
 }
 
-void EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Picture &&)> &callback, int &frames)
+void VideoPlayerContext::GetPictures(bool eof = false)
 {
-	decoder->Flush();
-	Picture picture{};
-    while (decoder->GetPicture(picture) == CodecError::Success)
-    {
-		callback(std::move(picture));
+    Vision::Picture picture;
+	while (decoder->GetPicture(picture) == CodecError::Success)
+	{
+		if (filterGraph)
+		{
+			static bool hasScale = false;
+
+			if (format.IsType(Format::YUV) && !scaleFilter)
+			{
+				auto &format = picture.GetFormat();
+				Format dstFormat = Format::RGBA8;
+				bool isHighBitDepth = format.IsType(Format::_10Bits) || format.IsType(Format::_12Bits);
+				dstFormat = isHighBitDepth ? Format::R16G16B16A16_UNORM : Format::RGBA8;
+				scaleFilter = filterGraph->Insert<ScaleFilter>(0, picture.GetFormat(), dstFormat, picture.GetWidth(), picture.GetHeight());
+			}
+
+			asyncComputeTaskCount++;
+			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+			filterGraph->Execute({picture}, asyncComputeThread);
+
+			SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
+			GetSamplingFactor(format, factors);
+			auto &output = filterGraph->QueryOutputs();
+			picture = Picture{output[0]->GetWidth() << factors[0].x, output[0]->GetHeight() << factors[0].y, format, true};
+			Graphics::Transfer(picture, output, asyncComputeThread);
+			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
+			asyncComputeThread->Execute<ExecutionCompletedTask>([=, this]() {
+				callbacks.VideoDecodeFinishSlot(std::move((Picture &&)picture));
+				asyncComputeTaskCount--;
+				if (eof && asyncComputeTaskCount == 0)
+				{
+					done = true;
+					done.notify_one();
+				}
+				condition.notify_one();
+			});
+			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::Submiting);
+		}
+        else
+        {
+			callbacks.VideoDecodeFinishSlot(std::move(picture));
+        }
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 		frames++;
 #endif
-    }
+	}
+}
 
-    picture = Picture{ 0, 0, Format::None };
-	picture.SetFlags(Vision::PictureFlags::Eof);					
-    callback(std::move(picture));
+void VideoPlayerContext::EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Picture &&)> &callback, MediaType type)
+{
+	decoder->Flush();
+	if (type == MediaType::Video)
+	{
+		GetPictures(true);
+	}
+	else
+	{
+		while (decoder->GetPicture(picture) == CodecError::Success)
+		{
+			callback(std::move(picture));
+			audioSize++;
+		}
+	}
+
+	Picture picture = Picture{0, 0, Format::None};
+	picture.SetFlags(Vision::PictureFlags::Eof);
+    if (filterGraph && type == MediaType::Video)
+	{
+		done.wait(false);
+    }
+	
+	callback(std::move(picture));
 }
 
 void VideoPlayerContext::StartPlay()
 {
 	demuxerThread.Start(std::move(task));
 	timer.Start();
-	demuxerThread.SetDescription(GetName() + std::string("::") + demuxer->GetSource().GetStem());
+
+	auto stem = demuxer->GetSource().GetStem();
+	demuxerThread.SetDescription(std::string("Demux::") + stem);
+	videoThreadPool->SetDebugDescription(0, std::string("VideoDecode::") + stem);
+	audioThreadPool->SetDebugDescription(0, std::string("AudioDecode::") + stem);
 }
 
 void VideoPlayerContext::CreateAudioStream()
@@ -251,7 +360,7 @@ void VideoPlayerContext::CreateAudioStream()
 	audioStream->SetDebugName(demuxer->GetSource().GetString());
 }
 
-VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder, int cacheSize, const VideoDecodeCallbacks &callbacks) :
+VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder, int cacheSize, VideoPlayerMode mode) :
     ICLASS,
     demuxerThread{},
     videoThreadPool{ new ThreadPool{1} },
@@ -263,11 +372,11 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
     demuxer{demuxer},
     state{},
     kCacheSize{cacheSize},
-    callbacks{ callbacks },
+    callbacks{},
     timer{},
     audioStream{}
 {
-	if (!callbacks.VideoDecodeFinishSlot)
+	if (mode == VideoPlayerMode::Playing)
 	{
 		if (audioDecoder)
 		{
@@ -305,7 +414,16 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 			if (ret != CodecError::Success)
 			{
                 if (ret == CodecError::EndOfFile)
-                {
+				{
+					if (!eof)
+					{
+						videoThreadPool->Enqueue([=, this] {
+
+						});
+						audioThreadPool->Enqueue([=, this]() -> void {
+
+						});
+					}
 					eof = true;
                 }
 				continue;
@@ -323,14 +441,16 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 						frames++;
 #endif
-                        if (pictures.enqueue(picture))
+                        if (colorSpace != ColorSpace::Unspecified)
                         {
-							pictureSize++;
+							picture.SetColorSpace(colorSpace);
                         }
-                        else
-                        {
-							CLOG_ERROR("Failed to enqueue picture into pending queue for out of memory");
-                        }
+						if (colorTransferCharacteristic != ColorTransferCharacteristic::Unspecified)
+						{
+							picture.SetColorTransferCharacteristic(colorTransferCharacteristic);
+						}
+						pictures.enqueue(picture);
+						pictureSize++;
 					}
 				});
 				break;
@@ -354,16 +474,10 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 								CreateAudioStream();
 								audioDeviceChanged = false;
                             }
-                            if (audioFrames.enqueue(picture))
-                            {
+							audioFrames.enqueue(picture);
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-								audioSize++;
+							audioSize++;
 #endif
-                            }
-							else
-							{
-								CLOG_ERROR("Failed to enqueue picture into pending queue for out of memory");
-							}
 						}
 					});
                 }
@@ -409,7 +523,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
             {
                 std::unique_lock lock{ mutex.demux };
                 condition.wait(lock, [=, this] {
-					bool hasTask  = videoThreadPool->TaskSize() <= kCacheSize;
+					bool hasTask = asyncComputeTaskCount + videoThreadPool->TaskSize() <= kCacheSize;
 					return state.exited || eof || hasTask;
                 });
 
@@ -429,10 +543,10 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                         if (!eof)
                         {
 							videoThreadPool->Enqueue([=, this] {
-								EndOfFile(decoder, callbacks.VideoDecodeFinishSlot, frames);
+								EndOfFile(decoder, callbacks.VideoDecodeFinishSlot, MediaType::Video);
 							});
 							audioThreadPool->Enqueue([=, this]() -> void {
-								EndOfFile(audioDecoder, callbacks.AudioDecodeFinishSlot, audioSize);
+								EndOfFile(audioDecoder, callbacks.AudioDecodeFinishSlot, MediaType::Audio);
 							});
                         }
 						eof = true;
@@ -444,16 +558,9 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                 {
 			    case MediaType::Video:
                 {
-				    videoThreadPool->Enqueue([=, this]() -> void {
-					    AsyncDecode(codedFrame, decoder);
-						Vision::Picture picture;
-						while (decoder->GetPicture(picture) == CodecError::Success)
-					    {
-							callbacks.VideoDecodeFinishSlot(std::move(picture));
-    #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-						    frames++;
-    #endif
-					    }
+					videoThreadPool->Enqueue([=, this]() -> void {
+						AsyncDecode(codedFrame, decoder);
+						GetPictures();
 				    });
 				    break;
                 }
@@ -509,19 +616,41 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
 
 VideoPlayerContext::~VideoPlayerContext()
 {
-	AudioDevice *audioDevice = AudioDevice::GetInstance();
-	audioDevice->DestroyAudioStream(&audioStream);
+	if (audioStream)
+	{
+		AudioDevice *audioDevice = AudioDevice::GetInstance();
+		audioDevice->DestroyAudioStream(&audioStream);
+	}
 
     state.exited = true;
     condition.notify_all();
 	
     demuxerThread = {};
 
-    videoThreadPool->RemoveTasks();
-    audioThreadPool->RemoveTasks();
+	if (videoThreadPool)
+	{
+		videoThreadPool->RemoveTasks();
+	}
+	if (audioThreadPool)
+	{
+		audioThreadPool->RemoveTasks();
+	}
 
-    videoThreadPool->Join();
-    audioThreadPool->Join();
+	if (videoThreadPool)
+	{
+		videoThreadPool->Join();
+	}
+	if (audioThreadPool)
+	{
+		audioThreadPool->Join();
+	}
+
+    if (filterGraph)
+    {
+		filterGraph.reset();
+		asyncComputeThread.Reset();
+		queue.Reset();
+    }
 }
 
 Picture VideoPlayerContext::GetPicture()
@@ -642,20 +771,26 @@ VideoPlayerComponent::VideoPlayerComponent() :
 
 }
 
-VideoPlayerComponent::VideoPlayerComponent(const String &path, int cacheSize, const Vision::DecodingPreference &preference, const VideoDecodeCallbacks &callbacks) :
+VideoPlayerComponent::VideoPlayerComponent(const String &path, int cacheSize, const Vision::DecodingPreference &preference, VideoPlayerMode mode) :
     player{}
 {
-	Ref<Demuxer>    demuxer         = new Vision::FFDemuxer;
-	Ref<VideoCodec> decoder         = new Vision::FFCodec;
-	Ref<VideoCodec> audioDecoder    = new Vision::FFCodec;
-	Ref<VideoCodec> subtitleDecoder = new Vision::FFCodec;
-	decoder.InterpretAs<Vision::FFCodec>()->SetPreference(preference);
+	Ref<Demuxer>    demuxer = new Vision::FFDemuxer;
+	Ref<VideoCodec> decoder;        
+	Ref<VideoCodec> audioDecoder;
+	Ref<VideoCodec> subtitleDecoder;
+	if (mode != VideoPlayerMode::MetaReading)
+	{
+		decoder         = new Vision::FFCodec;
+		audioDecoder    = new Vision::FFCodec;
+		subtitleDecoder = new Vision::FFCodec;
+		decoder.InterpretAs<Vision::FFCodec>()->SetPreference(preference);
+	}
 	if (demuxer->Open(path, decoder, audioDecoder, subtitleDecoder) != CodecError::Success)
     {
 		return;
     }
 
-    player = { new VideoPlayerContext{demuxer, decoder, audioDecoder, subtitleDecoder, cacheSize, callbacks} };
+    player = { new VideoPlayerContext{demuxer, decoder, audioDecoder, subtitleDecoder, cacheSize, mode} };
 }
 
 VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder) :
@@ -837,6 +972,21 @@ bool VideoPlayerComponent::HasStream(MediaType type) const
     }
 
     return false;
+}
+
+CodecError VideoPlayerComponent::GetStreamInfo(MediaType type, EncodeInfo &streamInfo)
+{
+	return player->GetStreamInfo(type, streamInfo);
+}
+
+void VideoPlayerComponent::SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph, Format format)
+{
+	player->SetFilterGraph(graph, format);
+}
+
+void VideoPlayerComponent::SetCallbacks(const VideoDecodeCallbacks &callbacks)
+{
+	player->SetCallbacks(callbacks);
 }
 
 bool VideoPlayerComponent::operator!()

@@ -1,4 +1,7 @@
+#pragma once
+
 #include "Core.h"
+#include "Common/ByteStream.h"
 
 namespace Immortal
 {
@@ -28,56 +31,93 @@ enum class IFDType : uint16_t
 	SRATIONAL = 10,
 	FLOAT     = 11,
 	DOUBLE    = 12,
+	IFD       = 13,
 	Invalid   = 0xFFFF,
 };
 
-#define IFD0       0
-#define IFD1       1
-#define IFD2       2
-#define SubIFD0    3
-#define SubIFD1    4
-#define SubIFD2    5
-#define IFDPRIVATE 6
+#define IFD0         0
+#define IFD1         1
+#define IFD2         2
+#define SubIFD0      3
+#define SubIFD1      4
+#define SubIFD2      5
+#define IFD_EXIF     6
+#define IFD_INTEROP  7
+#define IFD_GPS      8
+#define IFD_MAKENOTE 9
+#define IFDPRIVATE   10
 
-enum class IFDTag : uint16_t
+//enum class IFDTag : uint16_t
+//{
+//	Invalid = 0xFFFF,
+//};
+
+union EntryValue
 {
-	Invalid = 0xFFFF,
+	void     *ptr;
+	int64_t  *sint;
+	uint64_t *uint;
+	double   *dbl;
+	char     *str;
+	uint8_t  *ubytes;
+	int8_t   *sbytes;
+	uint16_t *ushorts;
+	int16_t *shorts;
+	TRational<uint32_t> *rational;
+	TRational<int32_t> *srational;
 };
 
 class IFDEntry
 {
 public:
+	SL_ENABLE_COPY(IFDEntry)
+	SL_ENABLE_MOVE(IFDEntry)
+
 	IFDEntry();
 
-	IFDEntry(IFDMemoryResource *memoryResource, const uint8_t *data, size_t offset, size_t size);
+	IFDEntry(ByteStream &bs);
 
-    IFDEntry(IFDMemoryResource *memoryResource, const uint8_t *data, size_t offset, size_t size, bool isBigEndian);
+	IFDEntry(ByteStream &bs, bool be);
 
     ~IFDEntry();
 
-	void ReadValues(const uint8_t *data, size_t end);
+	void ReadValues(ByteStream &bs, bool be = false);
 
     template <class T>
-	bool ReadValue(const uint8_t *data, size_t end)
+	bool ReadValue(ByteStream &bs, bool be)
 	{
 		const uint8_t *src = nullptr;
 
-        auto size = sizeof(T) * length;
+		auto size = sizeof(T) * count;
+		values.resize(size);
+		
+		v.ptr = (void *) values.data();
 		if (size <= 4)
 		{
-			src = (const uint8_t *)&offset;
+			memcpy(values.data(), &offset, size);
+		}
+		else if (size > bs.get_bytes_left())
+		{
+			return false;
+		}
+		else if constexpr (std::is_same_v<T, uint8_t>)
+		{
+			bs.get_buffer(values.data(), size);
 		}
 		else
 		{
-			if (size + offset >= end)
+			if (be)
 			{
-				return false;
+				for (size_t i = 0; i < count; i++)
+				{
+					*(T *)v.ptr = bs.get_be<T>();
+				}
 			}
-			src = &data[offset];
+			else
+			{
+				bs.get_buffer(values.data(), size);
+			}
 		}
-
-		value.resize(size);
-		memcpy(value.data(), src, value.size());
 
         return true;
 	}
@@ -94,7 +134,7 @@ public:
 
     uint32_t GetLength() const
     {
-		return length;
+		return count;
     }
 
     uint32_t GetOffset() const
@@ -105,12 +145,12 @@ public:
     template <class T>
     T GetValue() const
     {
-		return *(T *)value.data();
+		return *(T *)values.data();
     }
 
     const char *GetString() const
 	{
-		return (const char *)value.data();
+		return (const char *)values.data();
     }
 
 	static size_t size()
@@ -118,44 +158,78 @@ public:
 		return 12;
 	}
 
-protected:
-	IFDTag   tag;
+	IFDEntry(const IFDEntry &other) :
+	    tag{other.tag},
+	    type{other.type},
+	    count{other.count},
+	    offset{other.offset},
+	    values{other.values},
+	    v{}
+	{
+		v.ptr = values.data();
+	}
+
+	void Swap(IFDEntry &other)
+	{
+		std::swap(tag,    other.tag   );
+		std::swap(type,   other.type  );
+		std::swap(count,  other.count );
+		std::swap(offset, other.offset);
+		std::swap(values, other.values);
+		std::swap(v.ptr,  other.v.ptr );
+	}
+
+public:
+	uint16_t tag;
 	IFDType  type;
-	uint32_t length;
+	uint32_t count;
 	uint32_t offset;
-	std::pmr::vector<uint8_t> value;
+	std::vector<uint8_t> values;
+	EntryValue v;
 };
+
+enum class ExifFlags
+{
+	DisabledRecursive = BIT(0),
+};
+SL_ENABLE_BITWISE_OPERATOR(ExifFlags)
 
 class ExifReader
 {
 public:
-	ExifReader(const uint8_t *data, size_t size);
-
-	CodecError ParseHeader(const uint8_t *imageFileHeader, size_t size);
-
-	CodecError ParseIFD(const uint8_t *imageFileHeader, size_t size, int startIFDindex, uint32_t offsetOfNextIFD);
-
-	CodecError ParseIFD(const uint8_t *imageFileHeader, size_t size, int index, uint32_t *offsetOfNextIFD);
-
-	CodecError MMParseIFD(const uint8_t *imageFileHeader, size_t size, int startIFDindex, uint32_t *offsetOfNextIFD);
-
-	CodecError ParseIFD0(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry);
-
-	CodecError ParseIFD1(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry);
-
-	CodecError ParseIFD2(const uint8_t *imageFileHeader, size_t size, const IFDEntry &entry);
+	SL_ENABLE_MOVE(ExifReader)
 
 public:
-	template <class T>
-	T GetValue(int IFDindex, uint16_t tag) const
+	ExifReader();
+
+	ExifReader(const uint8_t *data, size_t size, ExifFlags flags = {});
+
+	CodecError ParseHeader(ByteStream &bs, uint32_t &offsetToFirstIDF, bool &be);
+
+	CodecError ParseIFD(ByteStream &bs, int startIFDindex, uint32_t offsetOfNextIFD);
+
+	CodecError ParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNextIFD, bool be = false);
+
+	CodecError MMParseIFD(ByteStream &bs, int startIFDindex, uint32_t *offsetOfNextIFD);
+
+public:
+	const std::pmr::unordered_map<uint16_t, IFDEntry> &GetIFD(int index) const
 	{
-		if (IFDindex >= SL_ARRAY_LENGTH(IFD))
+		if (index >= SL_ARRAY_LENGTH(IFD))
 		{
 			return {};
 		}
 
-		auto it = IFD[IFDindex].find(tag);
-		if (it != IFD[IFDindex].end())
+		return IFD[index];
+	}
+
+	template <class T>
+	T GetValue(int index, uint16_t tag) const
+	{
+		auto &ifd = GetIFD(index);
+
+		auto it = ifd.find(tag);
+		if (it != ifd.end())
 		{
 			auto &[tag, entry] = *it;
 			return entry.GetValue<T>();
@@ -164,18 +238,101 @@ public:
 		return {};
 	}
 
+	String GetString(const std::pmr::unordered_map<uint16_t, IFDEntry> &ifd, uint16_t tag)
+	{
+		auto it = ifd.find(tag);
+		if (it == ifd.end())
+		{
+			return {};
+		}
+
+		auto &[t, entry] = *it;
+		auto &v = entry.v;
+		switch (entry.type)
+		{
+			case IFDType::ASCII:
+				return entry.v.str;
+
+			case IFDType::SHORT:
+				if (entry.count == 1)
+				{
+					return std::to_string((int16_t)*v.shorts);
+				}
+				return {};
+
+			case IFDType::LONG:
+				if (entry.count == 1)
+				{
+					return std::to_string((uint32_t)*v.uint);
+				}
+				return {};
+
+			case IFDType::RATIONAL:
+				if (entry.count == 1)
+				{
+					auto &r = *v.rational;
+					return std::to_string(r.numerator) + "/" + std::to_string(r.dominator);
+				}
+				return {};
+
+			case IFDType::UNDEFINED:
+				return {};
+
+			case IFDType::SSHORT:
+				if (entry.count == 1)
+				{
+					return std::to_string((uint32_t) *v.shorts);
+				}
+				return {};
+
+			case IFDType::SLONG:
+				if (entry.count == 1)
+				{
+					return std::to_string((int32_t) *v.sint);
+				}
+				return {};
+
+			case IFDType::SRATIONAL:
+				if (entry.count == 1)
+				{
+					auto &r = *v.srational;
+					return std::to_string(r.numerator) + "/" + std::to_string(r.dominator);
+				}
+				return {};
+
+			case IFDType::FLOAT:
+				if (entry.count == 1)
+				{
+					return std::to_string(*(float *)v.dbl);
+				}
+				return {};
+
+			case IFDType::DOUBLE:
+				if (entry.count == 1)
+				{
+					return std::to_string(*v.dbl);
+				}
+				return {};
+
+			default:
+				break;
+		}
+		return {};
+	}
+
+	void Swap(ExifReader &other)
+	{
+		std::swap(IFD,   other.IFD  );
+		std::swap(flags, other.flags);
+		std::swap(be,    other.be   );
+	}
+
 protected:
-	std::vector<uint8_t> buffer;
-
-	std::pmr::polymorphic_allocator<std::pair<const uint16_t, IFDEntry>> allocator;
-
-	IFDMemoryResource bufferResource;
-
-	uint32_t offsetToFirstIDF;
-
 	std::pmr::unordered_map<uint16_t, IFDEntry> IFD[IFDPRIVATE + 1];
 
-	bool isBigEndian;
+	ExifFlags flags;
+
+	bool be;
 };
 
 }

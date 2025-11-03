@@ -26,7 +26,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
 	return CodecError::EndOfFile;
     int width, height;
     size_t n = sizeof(PPM_HEADER);
-	auto ptr = (const char *)codedFrame.GetBuffer().data();
+	auto ptr = (const char *)codedFrame.GetData();
     sscanf(ptr, PPM_HEADER, &width, &height);
 
     uint8_t header[1024] = {};
