@@ -59,7 +59,7 @@ public:
         return picture;
     }
 
-    virtual CodecError DecodeHeader(CodedFrame &codedFrame, EncodeInfo &info)
+    virtual CodecError DecodeHeader(CodedFrame &codedFrame, CodecInfo &info)
     {
 		return CodecError::FailedToCallDecoder;
     }
@@ -111,11 +111,11 @@ public:
         return nullptr;
     }
 
-    virtual CodecError SetCodecContext(Anonymous anonymous)
+    virtual CodecError OpenDecoder(CodecInfo &info)
     {
-		(void)anonymous;
+		(void) info;
 		return CodecError::NotImplement;
-    }
+	}
 
 protected:
     Animator animator;

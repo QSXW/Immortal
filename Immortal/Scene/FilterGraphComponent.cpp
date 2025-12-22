@@ -97,9 +97,14 @@ void FilterGraphComponent::Execute(FilterGraphComponent &input, AsyncComputeThre
 	Execute(input.output, asyncComputeThread);
 }
 
-const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t filterNodeInstance) const
+const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t index) const
 {
-	return output[filterNodeInstance];
+	if (index >= output.size())
+	{
+		static Ref<Texture> empty;
+		return empty;
+	}
+	return output[index];
 }
 
 const std::vector<Ref<Texture>> &FilterGraphComponent::QueryOutputs() const

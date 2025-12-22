@@ -26,7 +26,7 @@ public:
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    virtual CodecError DecodeHeader(CodedFrame &codedFrame, EncodeInfo &Info) override;
+    virtual CodecError DecodeHeader(CodedFrame &codedFrame, CodecInfo &Info) override;
 
     void GetParams(RawParams *pParams);
 

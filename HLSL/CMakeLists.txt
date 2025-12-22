@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(ImmortalHLSL)
 
-set(HLSL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/hlsl")
-set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/$<CONFIG>/Assets/Shaders/hlsl/")
+set(HLSL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/")
+set(OUTPUT_DIR "${CMAKE_BINARY_DIR}/$<CONFIG>/Assets/Shaders/hlsl")
 
 set(HLSL_FILES
     color_space_nv122rgba.hlsl

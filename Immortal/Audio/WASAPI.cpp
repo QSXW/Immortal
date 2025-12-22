@@ -282,7 +282,7 @@ bool Device::OpenDefaultDevice()
 		LOG::ERR("Failed to GetDefaultAudioEndpoint!");
 		return false;
 	}
-	
+
 	(void)CreateAudioClient();
 
 	return true;
@@ -442,6 +442,8 @@ int Device::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, ui
 			PropVariantClear(&prop);
 		}
 	}
+
+	return 0;
 }
 
 void Device::Release()

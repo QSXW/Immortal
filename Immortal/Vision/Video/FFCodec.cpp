@@ -32,6 +32,11 @@ namespace Immortal
 namespace Vision
 {
 
+int64_t RationalRescale(int64_t a, Rational bq, Rational cq)
+{
+	return av_rescale_q(a, {(int)bq.numerator, (int)bq.denominator}, {(int)cq.numerator, (int)cq.denominator});
+}
+
 static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 {
     switch (v)
@@ -278,6 +283,8 @@ static AVCodecID Cast(CodecId id)
 			return AV_CODEC_ID_JPEGXL;
 		case CodecId::MPEG4:
 			return AV_CODEC_ID_MPEG4;
+		case CodecId::PCM_S16:
+			return AV_CODEC_ID_PCM_S16LE;
     }
 }
 
@@ -314,7 +321,7 @@ static const char *QueryEncodecById(const CodecId id)
 
     case CodecId::VVC:
 		return "libvvenc";
-        
+
     case CodecId::VVC_QSV:
 		return "vvc_qsv";
 
@@ -326,7 +333,7 @@ static const char *QueryEncodecById(const CodecId id)
 
 	case CodecId::AV1_QSV:
 		return "av1_qsv";
-    
+
     case CodecId::VP9:
 		return "libvpx-vp9";
 
@@ -347,6 +354,9 @@ static const char *QueryEncodecById(const CodecId id)
 
 	case CodecId::MPEG4:
 		return "mpeg4";
+
+	case CodecId::PCM_S16:
+		return "pcm_s16le";
 
     default:
         return nullptr;
@@ -708,8 +718,8 @@ bool SampleConverter::SetOptions(const AudioFormatSpec &_outputFormat, const Aud
 
     inputFormatSize = inputFormat.format.GetTexelSize();
 	if (!(inputFormat.format == Format::FLOATP    ||
-	      inputFormat.format == Format::FLOAT8P   || 
-	      inputFormat.format == Format::FLOAT16P  || 
+	      inputFormat.format == Format::FLOAT8P   ||
+	      inputFormat.format == Format::FLOAT16P  ||
           inputFormat.format == Format::R8_UINTP  ||
 	      inputFormat.format == Format::R16_SINTP ||
 	      inputFormat.format == Format::R32_SINTP
@@ -738,7 +748,7 @@ bool SampleConverter::Convert(Picture &out, const Picture &input)
         handle,
 	    &out.GetData(),
 	    out.GetWidth(),
-        &input.GetData(), 
+        &input.GetData(),
         input.GetWidth()
     );
 
@@ -751,6 +761,25 @@ bool SampleConverter::Convert(Picture &out, const Picture &input)
     out.SetWidth(ret);
 
     return true;
+}
+
+Picture SampleConverter::GetRemainingSamples()
+{
+	int samples = swr_get_out_samples(handle, 0);
+	if (samples <= 0)
+	{
+		return {};
+	}
+
+	Picture picture{ samples, outputFormat.numChannel, outputFormat.format, true };
+	int ret = swr_convert(handle, &picture.GetData(), samples, NULL, 0);
+	if (ret <= 0)
+	{
+		return {};
+	}
+
+	picture.SetSampleRate(outputFormat.sampleRate);
+	return picture;
 }
 
 SampleConverter::operator bool() const
@@ -783,7 +812,7 @@ FFCodec::FFCodec(CodecId codecId) :
 	InitializeDecoder(Cast(codecId));
 }
 
-FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
+FFCodec::FFCodec(const CodecInfo &encodeInfo) :
     FFCodec{"FFmpegEncoder"}
 {
 	char err[64] = {};
@@ -808,11 +837,11 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
 		CLOG_ERROR("Failed to alloc context for encoder");
 		return;
 	}
-    
+
     switch (handle->codec_type)
     {
 		case AVMEDIA_TYPE_AUDIO:
-	    {      
+	    {
             mediaType = MediaType::Audio;
 		    auto sampleFormat = CastSampleFormat(encodeInfo.format);
             for (int i = 0; codec->sample_fmts[i] != -1; i++)
@@ -833,7 +862,7 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
             {
 				handle->sample_rate = encodeInfo.sampleRate;
             }
-			else 
+			else
             {
 				for (int i = 0; codec->supported_samplerates[i]; i++)
 				{
@@ -853,10 +882,18 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
 
 		    handle->bit_rate    = encodeInfo.bitRate;
             handle->time_base   = { 1, handle->sample_rate };
-		    av_channel_layout_default(&handle->ch_layout, !encodeInfo.channels ? encodeInfo.channels : 2);
+
+			AudioFormatSpec spec{
+				.layout = encodeInfo.channelLayout,
+			};
+			if (!GetChannelLayout(handle->ch_layout, spec))
+			{
+				CLOG_ERROR("Failed to get channel layout");
+				return;
+			}
 	    }
 		break;
-        
+
         case AVMEDIA_TYPE_VIDEO:
         {
             if (!codec->pix_fmts)
@@ -885,11 +922,11 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
 			handle->color_range  = AVCOL_RANGE_JPEG;
             handle->width        = encodeInfo.width;
             handle->height       = encodeInfo.height;
-			handle->pix_fmt      = pixelFormat; 
+			handle->pix_fmt      = pixelFormat;
             handle->bit_rate     = encodeInfo.bitRate;
             handle->gop_size     = encodeInfo.gopSize;
             handle->time_base    = AVRational{ (int)encodeInfo.timeBase.numerator, (int)encodeInfo.timeBase.denominator };
-            handle->framerate    = AVRational{ encodeInfo.framerate.numerator, encodeInfo.framerate.denominator };
+            handle->framerate    = AVRational{ (int)encodeInfo.framerate.numerator, (int)encodeInfo.framerate.denominator };
 	        handle->max_b_frames = 1;
 			handle->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 			handle->hwaccel_flags |= AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH;
@@ -907,6 +944,11 @@ FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
 	{
 		CLOG_ERROR("Could not open codec: {}", AVERR_STR(ret));
 		return;
+	}
+
+	if (handle->codec_type == AVMEDIA_TYPE_AUDIO && handle->frame_size == 0)
+	{
+		handle->frame_size = 1024;
 	}
 }
 
@@ -967,11 +1009,15 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 		{
 			if (ret != AVERROR(EOF))
 			{
+				CLOG_ERROR("Failed to decode frame - {}", AVERR_STR(ret));
 				return CodecError::ExternalFailed;
 			}
 		}
 
-		handle->time_base = packet->time_base;
+		if (packet)
+		{
+			handle->time_base = packet->time_base;
+		}
     }
 
     return CodecError::Success;
@@ -1042,7 +1088,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 					case AV_PIX_FMT_YUVJ420P:
 						pixelFormat = AV_PIX_FMT_NV12;
 						break;
-                
+
                     default:
 						break;
                 }
@@ -1130,7 +1176,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 }
 
 void ReleasePicture(void *opaque, uint8_t *data)
-{        
+{
     {
 		Ref<IObject> object;
 		object.Attach(opaque);
@@ -1261,7 +1307,7 @@ CodecError FFCodec::SendAudioFifo()
 			CLOG_ERROR("Could not read data from FIFO");
 			return CodecError::ExternalFailed;
 		}
-                
+
         frame->pts = pts;
 		pts += frame->nb_samples;
 		frame->pts = av_rescale_q(frame->pts, AVRational{ 1, handle->sample_rate }, handle->time_base);
@@ -1377,7 +1423,7 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 	{
         if (!fifo)
         {
-			if (fifo.Allocate(handle->sample_fmt, handle->ch_layout.nb_channels, handle->frame_size) < 0)
+			if (fifo.Allocate(handle->sample_fmt, handle->ch_layout.nb_channels, handle->frame_size ? handle->frame_size : 1024) < 0)
 			{
 				return CodecError::OutOfMemory;
 			}
@@ -1402,7 +1448,6 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 				    0,
 				    nullptr);
 
-                                
 			    ret = swr_init(swrContext);
 				if (ret < 0)
 				{
@@ -1417,7 +1462,7 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 				}
             }
 
-            int intputFrameSize = picture.GetWidth();     
+            int intputFrameSize = picture.GetWidth();
             int numSamples = av_rescale_rnd(
 			    swr_get_delay(swrContext, picture.GetSampleRate()) + picture.GetWidth(),
 			    handle->sample_rate,
@@ -1491,7 +1536,7 @@ CodedFrame FFCodec::GetCodedFrame() const
 	}
 
 	packet->time_base = handle->time_base;
-    
+
     packet = packetWrapper.Detach();
 	CodedFrame codedFrame = {packet->data, (size_t)packet->size};
 	codedFrame.SetAnonymous(packet);
@@ -1552,7 +1597,8 @@ void FFCodec::Flush()
         }
         else
         {
-			avcodec_send_packet(handle, nullptr);
+			avcodec_flush_buffers(handle);
+			//avcodec_send_packet(handle, nullptr);
         }
 	}
 }
@@ -1722,7 +1768,7 @@ CodecError FFCodec::CreateHardwareAccelerateDevice(const AVCodec *codec)
             break;
         }
     }
-    
+
     return CodecError::Success;
 }
 
@@ -1740,7 +1786,7 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
         return CodecError::NotImplement;
     }
 
-    CodecError error = {};  
+    CodecError error = {};
     if (preference != DecodingPreference::Software && stream)
 	{
         if (stream->codecpar->profile != AV_PROFILE_HEVC_REXT &&
@@ -1841,6 +1887,7 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
     AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
 	av_dict_set(opts, "threads", device ? "1" : "16", 0);
 
+	//handle->skip_frame = AVDISCARD_NONKEY;
     handle->hwaccel_flags         |= AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH;
     handle->strict_std_compliance |= FF_COMPLIANCE_EXPERIMENTAL;
     if (avcodec_open2(handle, codec, opts) < 0)
@@ -1855,17 +1902,15 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
     return CodecError::Success;
 }
 
-CodecError FFCodec::SetCodecContext(Anonymous anonymous)
+CodecError FFCodec::OpenDecoder(CodecInfo &info)
 {
-    auto params = (FFDemuxer::Params *) (anonymous);
-    const AVStream *stream = params->stream;
-    startTimestamp = stream->start_time;
-
-    CodecError ret = InitializeDecoder(stream->codecpar->codec_id, stream);
-
-    return CodecError::Success;
+	const AVStream *stream = (const AVStream *)info.handle;
+	if (stream->start_time != AV_NOPTS_VALUE)
+	{
+		startTimestamp = stream->start_time;
+	}
+    return InitializeDecoder(stream->codecpar->codec_id, stream);
 }
-
 
 Rational FFCodec::GetFramerate() const
 {
@@ -1945,7 +1990,7 @@ CodecError FFImageCodec::Decode(const CodedFrame &codedFrame)
 
 CodecError FFImageCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-	EncodeInfo info{
+	CodecInfo info{
 	    .mediaType = MediaType::Video,
 	    .codecId   = codecId,
 	    .width     = picture.GetWidth(),
@@ -1960,7 +2005,7 @@ CodecError FFImageCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 	{
 		return err;
 	}
-	
+
 	avcodec_send_frame(codec.GetHandle(), nullptr);
 	codedFrame = codec.GetCodedFrame();
 	if (codedFrame)

@@ -64,7 +64,7 @@ GuiLayer::~GuiLayer()
 }
 
 ImFont *AddFontFromImage(const String &path, float size_pixels, const ImFontConfig *font_cfg_template, const ImWchar *glyph_ranges)
-{ 
+{
     Picture picture = Vision::Read(path);
     if (!picture)
     {
@@ -106,7 +106,7 @@ void GuiLayer::OnAttach()
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
-    
+
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowMinSize.x      = MinWindowSizeX;
     style.WindowMinSize.y      = MinWindowSizeY;
@@ -114,7 +114,7 @@ void GuiLayer::OnAttach()
     style.ScrollbarRounding    = 0.0f;
     style.ScrollbarSize        = 16.0f;
     style.DockingSeparatorSize = 1.2f;
-	style.AntiAliasedLines       = true; 
+	style.AntiAliasedLines       = true;
 	style.AntiAliasedLinesUseTex = true;
 	style.AntiAliasedFill        = true;
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -143,7 +143,7 @@ void GuiLayer::OnAttach()
 	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
 	builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
 	builder.BuildRanges(&fontRanges);
-    
+
     ImFontConfig fontConfig = {};
 	fontConfig.SignedDistanceFont = true;
 
@@ -157,7 +157,7 @@ void GuiLayer::OnAttach()
 	//fontConfig.GlyphExtraSpacing.x = 0.5f;
 	NotoSans.Bold = AddFontFromImage("Assets/Fonts/NotoSansSC-SemiBold.ttf.png", 18, &fontConfig, fontRanges.Data);
         //io.Fonts->AddFontFromFileTTF(
-	   // "Assets/Fonts/NotoSansSC-SemiBold.ttf",    
+	   // "Assets/Fonts/NotoSansSC-SemiBold.ttf",
        // 18,
 	   // &fontConfig,
 	   // fontRanges.Data);
@@ -356,16 +356,28 @@ void GuiLayer::OnEvent(Event &e)
     if (e.GetType() == Event::Type::WindowDragDrop)
     {
 		WindowDragDropEvent &dragDrapEvent = (WindowDragDropEvent &)e;
-        if (dragDrapEvent.GetSize() == 1)
+		size_t size = dragDrapEvent.GetSize();
+		if (size != 0)
         {
-			static FileSystem::DirectoryEntry dir;
-			dir = {
-				dragDrapEvent.QueryFile(0),
-				FileType::RegularFile
-			};
+			if (size > 1)
+            {
+				dragDropSources = {};
+				auto &sub = dragDropSources.subdirectories;
+				sub.resize(size);
+				for (size_t i = 0; i < size; i++)
+				{
+					sub[i] = {dragDrapEvent.QueryFile(i), FileType::RegularFile};
+				}
+            }
+            else
+            {
+				dragDropSources = {
+				    dragDrapEvent.QueryFile(0),
+				    FileType::RegularFile};
+            }
 		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
 		    {
-			    FileSystem::DirectoryEntry *entry = {&dir};
+				FileSystem::DirectoryEntry *entry = {&dragDropSources};
 				ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
 		    }
         }
@@ -509,7 +521,7 @@ void GuiLayer::Render()
 		    { ImGuiStyleVar_WindowRounding,     0.f  },
 		    { ImGuiStyleVar_WindowBorderSize,   0.f  },
 		};
-        
+
         StyleColorStack<ImVec4> styleColor{
 			{ ImGuiCol_Button,        ImVec4(0.05f, 0.05f, 0.05f, 0.f)},
 			{ ImGuiCol_ButtonHovered, ImVec4(0.19f, 0.19f, 0.19f, 0.54f)},

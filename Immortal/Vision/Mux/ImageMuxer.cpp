@@ -18,19 +18,18 @@ ImageMuxer::~ImageMuxer()
     Close();
 }
 
-CodecError ImageMuxer::Open(const String &_filepath, VideoCodec *codec, VideoCodec *audioCodec, VideoCodec *subtitleCodec)
+CodecError ImageMuxer::Open(const String &filepath)
 {
-    (void)audioCodec;
-    (void)subtitleCodec;
-    
-    return CodecError::Success;
+	this->filepath = filepath;
+
+	return CodecError::Success;
 }
 
-CodecError ImageMuxer::Open(const String &filepath, Codec **pCodec, const EncodeInfo *encodeInfos, uint32_t numCodec)
+CodecError ImageMuxer::Open(const String &filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
 {
     (void)pCodec;
     (void)numCodec;
-    
+
     this->filepath = filepath;
 
     return CodecError::Success;
@@ -67,7 +66,7 @@ CodecError ImageMuxer::Write(const CodedFrame &codedFrame, int stream)
     return CodecError::Success;
 }
 
-CodecError ImageMuxer::Seek(MediaType type, double seconds, int64_t min, int64_t max)
+CodecError ImageMuxer::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
     return CodecError::NotImplement;
 }
