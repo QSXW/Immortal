@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Math/Math.h"
 #include <cmath>
 
 namespace Immortal
@@ -22,6 +23,7 @@ public:
         SecondsPerFrame{},
         FramesPerSecond{},
         Duration{},
+        DurationRational{0, 1},
         Step{}
     {
 
@@ -83,6 +85,12 @@ public:
     double FramesPerSecond;
 
     int64_t Duration;
+
+    Rational TimebaseRational;
+
+    Rational Framerate;
+
+    Rational DurationRational;
 
     uint32_t Step;
 };

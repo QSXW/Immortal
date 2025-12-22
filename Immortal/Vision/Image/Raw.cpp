@@ -73,7 +73,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 
 		picture.SetData(((uint8_t *)(rawdata.raw_image + sizes.left_margin)) + sizes.raw_pitch * sizes.top_margin);
 		picture.SetStride(0, sizes.raw_pitch);
-	
+
         std::shared_ptr<LibRaw> ref = processor;
 		picture.SetRelease([ref](void *) { ref->recycle(); });
     }
@@ -120,7 +120,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Success;
 }
 
-CodecError RawCodec::DecodeHeader(CodedFrame &codedFrame, EncodeInfo &Info)
+CodecError RawCodec::DecodeHeader(CodedFrame &codedFrame, CodecInfo &Info)
 {
 	auto data = codedFrame.GetData();
 	auto size = codedFrame.GetSize();
@@ -133,7 +133,7 @@ CodecError RawCodec::DecodeHeader(CodedFrame &codedFrame, EncodeInfo &Info)
 	}
 
 	auto &img = processor.imgdata;
-	Info =  EncodeInfo{
+	Info = CodecInfo{
 		.mediaType = MediaType::Video,
 		.codecId   = CodecId::RAW,
         .width     = uint32_t(img.sizes.width),
@@ -375,7 +375,7 @@ Picture RawCodec::DecodeThumbnail(const CodedFrame &codedFrame)
 	auto data = codedFrame.GetData();
 	auto size = codedFrame.GetSize();
 	processor = std::make_shared<LibRaw>();
-	
+
 	if (processor->open_buffer(data, size) != LIBRAW_SUCCESS)
 	{
 		LOG_ERROR("[LibRaw] Error when open buffer!");

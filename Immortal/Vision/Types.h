@@ -19,6 +19,55 @@ enum class PictureFlags
 };
 SL_ENABLE_BITWISE_OPERATOR(PictureFlags)
 
+enum class ChannelLayout
+{
+	Mono,
+	Stereo,
+	_2Point1,
+	_2_1,
+	Surround,
+	_3Point1,
+	_4Point0,
+	_4Point1,
+	_2_2,
+	Quad,
+	_5Point0,
+	_5Point1,
+	_5Point0Back,
+	_5Point1Back,
+	_6Point0,
+	_6Point0Front,
+	_3Point1Point2,
+	Hexagonal,
+	_6Point1,
+	_6Point1Back,
+	_6Point1Front,
+	_7Point0,
+	_7Point0Front,
+	_7Point1,
+	_7Point1Wide,
+	_7Point1WideBack,
+	_5Point1Point2Back,
+	Octagonal,
+	Cube,
+	_5Point1Point4Back,
+	_7Point1Point2,
+	_7Point1Point4Back,
+	_7Point2Point3,
+	_9Point1Point4Back,
+	Hexadecagonal,
+	StereoDownmix,
+	_22Point2,
+};
+
+struct AudioFormatSpec
+{
+	Format format;
+	ChannelLayout layout;
+	int sampleRate;
+	int numChannel;
+};
+
 enum class PropertyType
 {
 	Unspecified,
@@ -64,6 +113,7 @@ struct TrackInfo
 {
 	std::string name;
 	int streamIndex;
+	void *handle;
 };
 
 enum class DecodingPreference
@@ -263,13 +313,15 @@ enum class CodecId
 	JPEGXL,
 	MPEG4,
 	RAW,
+	PCM_S16,
 	H264 = AVC,
 	H265 = HEVC,
 	H266 = VVC,
 };
 
-struct EncodeInfo
+struct CodecInfo
 {
+	void *handle;
 	MediaType mediaType;
 	CodecId codecId;
 	union
@@ -281,7 +333,7 @@ struct EncodeInfo
 	union
 	{
 		uint32_t height;
-		uint32_t channels;
+		Vision::ChannelLayout channelLayout;
 	};
 
 	Format format;

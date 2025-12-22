@@ -17,7 +17,7 @@ int CompareTimestamp(int64_t timestampA, Rational timebaseA, int64_t timestampB,
 class VideoOutput : public IObject
 {
 public:
-	VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo);
+	VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, uint32_t numEncodeInfo);
 
 	~VideoOutput();
 
@@ -87,9 +87,11 @@ protected:
 	std::atomic<int> frameInQueue;
 
 	std::shared_ptr<FilterGraphComponent> filterGraph;
+
+	int streamIndex[4] = {};
 };
 
-VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
+VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, uint32_t numEncodeInfo) :
     codecs{},
     videoEncoder{},
     audioEncoder{},
@@ -113,7 +115,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 	    .quality = 100
 	};
 
-	EncodeInfo videoEncodeInfo = {};
+	CodecInfo videoEncodeInfo = {};
 	for (uint32_t i = 0; i < numEncodeInfo; i++)
 	{
 		auto &encodeInfo = pEncodeInfo[i];
@@ -123,6 +125,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 				videoEncodeInfo = encodeInfo;
 				videoEncoder = image ? Vision::SelectSuitableCodec(filepath, false, imageEncodeInfo) : new Vision::FFCodec{encodeInfo};
 				codecs[i] = videoEncoder.Get();
+				streamIndex[int(MediaType::Video)] = i;
 				break;
 
 			case MediaType::Audio:
@@ -130,6 +133,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 				{
 					audioEncoder = new Vision::FFCodec{encodeInfo};
 					codecs[i] = audioEncoder.Get();
+					streamIndex[int(MediaType::Audio)] = i;
 				}
 				break;
 			default:
@@ -183,7 +187,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 				if (videoQueue.try_dequeue(videoFrame))
 				{
 					pts = videoFrame.GetTimestamp();
-					muxer->Write(videoFrame, 0);
+					muxer->Write(videoFrame, streamIndex[(int) MediaType::Video]);
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 					//              if (callbacks.progressListener)
 					//              {
@@ -202,7 +206,7 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 				if (audioQueue.try_dequeue(audioFrame))
 				{
 					audioSamples = audioFrame.GetTimestamp();
-					muxer->Write(audioFrame, 1);
+					muxer->Write(audioFrame, streamIndex[(int)MediaType::Audio]);
 				}
 			}
 			if ((!videoEncoder || (videoFinished && videoQueue.empty() && videoEncodeThread.TaskSize() == 0)) &&
@@ -398,7 +402,7 @@ VideoOutputComponent::VideoOutputComponent() :
 
 }
 
-VideoOutputComponent::VideoOutputComponent(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
+VideoOutputComponent::VideoOutputComponent(const String &filepath, const CodecInfo *pEncodeInfo, uint32_t numEncodeInfo) :
     v{new VideoOutput{filepath, pEncodeInfo, numEncodeInfo}}
 {
 

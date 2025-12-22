@@ -20,6 +20,7 @@ endfunction()
 function(add_shader_library TARGET HLSL_FILES)
     add_library(${TARGET} INTERFACE)
 
+    set(DXC_EXE "dxc")
     foreach(HLSL_FILE ${HLSL_FILES})
         get_filename_component(FILE_NAME "${HLSL_FILE}" NAME_WE)
         get_filename_component(FILE_PATH "${HLSL_FILE}" ABSOLUTE)

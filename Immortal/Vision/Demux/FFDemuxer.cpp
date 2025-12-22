@@ -114,6 +114,8 @@ public:
         streamIndex[AVMEDIA_TYPE_AUDIO]    = FindBestStream(MediaType::Audio,    streamIndex[AVMEDIA_TYPE_AUDIO],    streamIndex[AVMEDIA_TYPE_VIDEO]);
 		streamIndex[AVMEDIA_TYPE_DATA]     = FindBestStream(MediaType::Data,     streamIndex[AVMEDIA_TYPE_DATA],     streamIndex[AVMEDIA_TYPE_VIDEO]);
 		streamIndex[AVMEDIA_TYPE_SUBTITLE] = FindBestStream(MediaType::Subtitle, streamIndex[AVMEDIA_TYPE_SUBTITLE], streamIndex[AVMEDIA_TYPE_AUDIO] >= 0 ? streamIndex[AVMEDIA_TYPE_AUDIO] : streamIndex[AVMEDIA_TYPE_VIDEO]);
+
+        SetAnimator();
     }
 
     ~FormatContext()
@@ -122,6 +124,43 @@ public:
         {
             avformat_close_input(&handle);
             avformat_free_context(handle);
+        }
+    }
+
+    void SetAnimator()
+    {
+		animators.resize(handle->nb_streams);
+        for (size_t i = 0; i < animators.size(); i++)
+        {
+			auto &stream  = handle->streams[i];
+			auto animator = &animators[i];
+			auto fps = stream->avg_frame_rate;
+			animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
+			animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
+			animator->Duration = handle->duration != AV_NOPTS_VALUE ? handle->duration / AV_TIME_BASE : -1;
+
+            animator->Framerate = { fps.num, fps.den };
+            if (fps.den == 0)
+            {
+				animator->Framerate = {24, 1};
+            }
+
+            animator->TimebaseRational = {stream->time_base.num, stream->time_base.den};
+			if (stream->duration != AV_NOPTS_VALUE && stream->time_base.den != 0)
+			{
+				int64_t num = (int64_t)stream->duration * (int64_t)stream->time_base.num;
+				int den = stream->time_base.den;
+				animator->DurationRational = Rational((int)num, den);
+			}
+			else if (handle->duration != AV_NOPTS_VALUE)
+			{
+				animator->DurationRational = Rational(handle->duration, AV_TIME_BASE);
+			}
+			else
+			{
+				// Default to zero duration
+				animator->DurationRational = Rational(0, 1);
+			}
         }
     }
 
@@ -145,7 +184,7 @@ public:
         {
             auto stream = handle->streams[i];
             int flags = handle->oformat ? AV_OPT_FLAG_ENCODING_PARAM : AV_OPT_FLAG_DECODING_PARAM;
-            codec = handle->oformat ? avcodec_find_encoder(stream->codecpar->codec_id) : avcodec_find_decoder(stream->codecpar->codec_id);
+            //codec = handle->oformat ? avcodec_find_encoder(stream->codecpar->codec_id) : avcodec_find_decoder(stream->codecpar->codec_id);
 
             switch (stream->codecpar->codec_type)
             {
@@ -164,25 +203,6 @@ public:
         }
 
         return options;
-    }
-
-    void OpenStream(VideoCodec *ffCodec, MediaType type)
-    {
-        if (streamIndex[(size_t)type] < 0)
-        {
-            return;
-        }
-        auto stream = handle->streams[GetIndex(type)];
-
-		FFDemuxer::Params params = { .stream = stream };
-		ffCodec->SetCodecContext((void *)&params);
-
-        auto animator = ffCodec->GetAddress<Animator>();
-
-        auto fps = stream->avg_frame_rate;
-        animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
-        animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
-        animator->Duration        = handle->duration != AV_NOPTS_VALUE ? handle->duration / AV_TIME_BASE : -1;
     }
 
     AVStream *GetStream(MediaType type)
@@ -247,12 +267,11 @@ public:
 
     int streamIndex[4] = { 0 };
 
-    const AVCodec *codec;
+    std::vector<Animator> animators;
 };
 
 FFDemuxer::FFDemuxer() :
-    handle{},
-    codecs{}
+    handle{}
 {
 
 }
@@ -271,7 +290,7 @@ void FFDemuxer::Destroy()
 	formatContext.Reset();
 }
 
-CodecError FFDemuxer::Open(const String &_filepath, VideoCodec *codec, VideoCodec *audioCodec, VideoCodec *subtitleCodec)
+CodecError FFDemuxer::Open(const String &_filepath)
 {
 	formatContext.Reset();
     filepath = _filepath;
@@ -281,19 +300,6 @@ CodecError FFDemuxer::Open(const String &_filepath, VideoCodec *codec, VideoCode
     if (!*formatContext)
     {
 		return CodecError::ExternalFailed;
-    }
-
-    if (codec)
-	{
-		formatContext->OpenStream(codec, MediaType::Video);
-	}
-    if (audioCodec)
-    {
-        formatContext->OpenStream(audioCodec, MediaType::Audio);
-    }
-    if (subtitleCodec)
-    {
-		formatContext->OpenStream((VideoCodec *)subtitleCodec, MediaType::Subtitle);
     }
 
     return CodecError::Success;
@@ -327,7 +333,7 @@ static AVCodecID CAST(const CodecId id)
     }
 }
 
-CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const EncodeInfo *encodeInfos, uint32_t numCodec)
+CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
 {
 	int ret = 0;
 	char err[64] = {};
@@ -371,7 +377,7 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const Encode
 				auto &codecpar = stream->codecpar;
 				AVPacketSideData *sideData = av_packet_side_data_new(&codecpar->coded_side_data,
                     &codecpar->nb_coded_side_data, AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9, 0);
-               
+
                 int32_t *displayMatrix = (int32_t *)sideData->data;
                 if (displayMatrix)
                 {
@@ -426,7 +432,7 @@ void FFDemuxer::Close()
 {
 	int ret = {};
 	char err[64] = {};
-    
+
     if (!handle)
     {
 		return;
@@ -462,11 +468,18 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
         av_packet_free(&packet);
         if (ret == AVERROR_EOF)
         {
+			*pCodedFrame = {(AVPacket *)nullptr};
 			return CodecError::EndOfFile;
         }
 		LOG::DEBUG("Failed to read frame: {}", AVERR_STR(ret));
         return CodecError::EndOfFile;
     }
+
+  //  if (!(packet->flags & AV_PKT_FLAG_KEY))
+  //  {
+		//av_packet_free(&packet);
+		//return CodecError::Again;
+  //  }
 
     if (packet->stream_index != formatContext->GetStreamIndex(MediaType::Video) &&
         packet->stream_index != formatContext->GetStreamIndex(MediaType::Audio) &&
@@ -511,27 +524,30 @@ CodecError FFDemuxer::Write(const CodedFrame &codedFrame, int stream)
     return CodecError::Success;
 }
 
-CodecError FFDemuxer::Seek(MediaType type, double seconds, int64_t min, int64_t max)
+CodecError FFDemuxer::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
-    int streamIndex = formatContext->GetStreamIndex(type);
-    auto stream = formatContext->GetStream(streamIndex);
-	int64_t timestamp = av_rescale_q(seconds * AV_TIME_BASE, {1, AV_TIME_BASE}, stream->time_base) + stream->start_time;
+	int streamIndex = formatContext->GetStreamIndex(type);
+	auto stream = formatContext->GetStream(streamIndex);
+	if (avformat_seek_file(*formatContext, streamIndex, min, pts + stream->start_time, max, AVSEEK_FLAG_BACKWARD) < 0)
+	{
+		return CodecError::ExternalFailed;
+	}
 
-    if (avformat_seek_file(*formatContext, formatContext->GetStreamIndex(MediaType::Video), min, timestamp, max, 0) < 0)
-    {
-        return CodecError::ExternalFailed;
-    }
-
-    return CodecError::Success;
+	return CodecError::Success;
 }
 
-CodecError FFDemuxer::GetStreamInfo(MediaType type, EncodeInfo &streamInfo)
+CodecError FFDemuxer::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
 {
 	auto index = formatContext->GetStreamIndex(type);
-	AVStream *stream = formatContext->GetStream(index);
+    if (index < 0)
+    {
+		return CodecError::NotFound;
+    }
 
+	AVStream *stream = formatContext->GetStream(index);
     auto &codecpar = stream->codecpar;
-    streamInfo = EncodeInfo{
+	streamInfo = CodecInfo{
+        .handle    = stream,
 		.mediaType = type,
 		.codecId   = CAST(codecpar->codec_id),
         .width     = uint32_t(codecpar->width),
@@ -567,6 +583,11 @@ CodecError FFDemuxer::SwitchTrack(MediaType mediaType, int index)
 	formatContext->streamIndex[int(mediaType)] = index;
 
     return CodecError::Success;
+}
+
+Animator &FFDemuxer::GetAnimator(MediaType mediaType)
+{
+	return formatContext->animators[formatContext->streamIndex[int(mediaType)]];
 }
 
 #endif

@@ -25,7 +25,7 @@ public:
 public:
 	VideoOutputComponent();
 
-    VideoOutputComponent(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo);
+    VideoOutputComponent(const String &filepath, const CodecInfo *pEncodeInfo, uint32_t numEncodeInfo);
 
     ~VideoOutputComponent();
 

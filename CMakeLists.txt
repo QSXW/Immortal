@@ -28,7 +28,7 @@ set(IMMORTAL_ASSET_DIR "${WORKSPACE}/Assets")
 set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${IMMORTAL_3RDPARTY_RUNTIME} ${DXC_SHARED})
 
 add_subdirectory(Immortal)
-add_subdirectory(Assets)
+add_subdirectory(HLSL)
 add_subdirectory(Samples/UnitTest)
 add_subdirectory(Samples/ImmortalEditor)
 add_subdirectory(Samples/MediaTest)

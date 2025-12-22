@@ -147,6 +147,19 @@ public:                              \
 		return L;                    \
 	}
 
+#define WIDGET_SET_MUTABLE_PROPERTY_FUNC(U, L, T) \
+public:                                           \
+	WidgetType *U(const T _##L)                   \
+	{                                             \
+		L = _##L;                                 \
+		return this;                              \
+	}                                             \
+                                                  \
+	T U()                                         \
+	{                                             \
+		return L;                                 \
+	}
+
 #define WIDGET_SET_PROPERTY(U, L, T, ...)     \
     WIDGET_SET_PROPERTY_FUNC(U, L, const T &) \
 protected:                                    \
@@ -156,6 +169,11 @@ protected:                                    \
 	WIDGET_SET_PROPERTY_FUNC(U, L, T *) \
 protected:                                    \
 	T *L{__VA_ARGS__}; \
+
+#define WIDGET_SET_MUTABLE_PROPERTY(U, L, T, ...) \
+	WIDGET_SET_MUTABLE_PROPERTY_FUNC(U, L, T &)   \
+protected:                                        \
+	T L{__VA_ARGS__};
 
 #define WIDGET_SET_PROPERTY_CSTR(U, L, ...)      \
 public:                                          \
@@ -850,7 +868,7 @@ public:
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{renderPadding.right, renderPadding.bottom});
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         window->DC.CursorPos = window->DC.CursorPos + ImVec2{renderPadding.left, renderPadding.top};
-    
+
         ImTextureID id = (ImTextureID)(uint64_t)image.Get();
 		ImVec2 size = { renderWidth,renderHeight};
 		ImVec2 cursor = GetCursorScreenPos();
@@ -982,7 +1000,7 @@ public:
 
     }
 
-    virtual bool Draw() override 
+    virtual bool Draw() override
     {
 		if (isOpen)
 		{
@@ -1311,7 +1329,7 @@ public:
 	void Draw(T &&callback)
 	{
         using namespace ImGui;
-        
+
         StyleColorStack<uint32_t> styleColor{
 		    {ImGuiCol_ChildBg, BodyBackgroundColor()}
 		};
@@ -1325,7 +1343,7 @@ public:
         };
 
 		auto region = GetContentRegionAvail();
-		
+
         ImGuiWindow *window = GetCurrentWindow();
 
 		auto name = Text().c_str();
@@ -1381,7 +1399,7 @@ public:
 
 			//factor = tween.step(ExpandSpeed() * Time::DeltaTime);
 			DrawBorder(region);
-            
+
 			{
 				region = GetContentRegionAvail();
 				WidgetLock lock{this};
@@ -1418,7 +1436,7 @@ public:
 				    EndChild();
                 }
 			}
-            
+
    //         if (expanded)
 			//{
 			//	TreePop();
@@ -1463,7 +1481,7 @@ public:
     {
 
     }
-    
+
     template <class T>
 
 
@@ -1512,7 +1530,7 @@ public:
    //         ImVec2 size = { std::max(width, labelSize.x), height };
    //         ImRect bb = { window->DC.CursorPos, {} };
    //         bb.Max = bb.Min + size;
-   //             
+   //
    //         ItemSize(size, 0);
    //         if (!ItemAdd(bb, id))
    //             continue;
@@ -1633,6 +1651,23 @@ public:
         bool held    = false;
         bool pressed = ButtonBehavior({ bb.Min, {bb.Max.x - height, bb.Max.y} }, id, &hovered, &held);
 
+        if (hovered)
+		{
+			SetKeyOwner(ImGuiKey_MouseWheelY, id, ImGuiInputFlags_LockUntilRelease);
+			if (io.MouseWheel > 1.0f)
+			{
+				selected = std::max(0, selected - 1);
+				selectedChange = true;
+				Application::Reference().GetGuiLayer()->SetScrollEnergy({});
+			}
+			else if (io.MouseWheel < -1.0f)
+			{
+				selected = std::min((int) data.size() - 1, selected + 1);
+				selectedChange = true;
+				Application::Reference().GetGuiLayer()->SetScrollEnergy({});
+			}
+        }
+
         auto textColor    = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Text]);
         auto hoveredColor = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_HeaderHovered]);
         window->DrawList->AddRectFilled(bb.Min, bb.Max, Color(), Rounding(), ImDrawFlags_None);
@@ -1656,7 +1691,7 @@ public:
             auto iconId = ImHashStr("##Arrow", 0, id);
             ImRect bbIcon = { {bb.Max.x - height, bb.Min.y}, bb.Max };
             WindowCursorSwitcher s(bbIcon.Min);
-            
+
             auto size = bbIcon.Max - bbIcon.Min;
             ItemSize(size, 0);
             if (!ItemAdd(bbIcon, iconId))
@@ -1681,17 +1716,6 @@ public:
                 ImGui::Dummy({ 0, 2 });
                 EndTooltip();
             }
-
-			if (io.MouseWheel > 1.0f)
-			{
-				selected = std::max(0, selected - 1);
-				selectedChange = true;
-			}
-			else if (io.MouseWheel < -1.0f)
-			{
-				selected = std::min((int) data.size() - 1, selected + 1);
-				selectedChange = true;
-			}
         }
 
         auto popupId = ImHashStr("##ComboUI", 0, id);
@@ -1729,7 +1753,7 @@ public:
 		{
 			height = ImGui::GetFrameHeight();
 			//height += PaddingY() * 4;
-            
+
 			ImVec2 popupSize = {width, height * std::min(maxVisibleItem, uint32_t(data.size()))};
             if (popupSize.y != tween.peek(1.0f))
             {
@@ -1756,7 +1780,7 @@ public:
             {
 				windowFlags |= ImGuiWindowFlags_NoScrollbar;
             }
-            
+
 			if (Begin(name, nullptr, windowFlags))
 			{
 				Indent(4.0f);
@@ -1805,13 +1829,7 @@ static inline bool IconButton(ImGuiID id, const char *text, const char *textEnd 
 	}
 
 	ImVec2 textSize = CalcTextSize(text, textEnd);
-	textSize = textSize + style.ItemSpacing;
-	ImVec2 size = CalcItemSize(bbSize, textSize.x, textSize.y);
-	if (size.x == 0 && size.y == 0)
-	{
-		auto lineHeight = ImGui::GetTextLineHeight();
-		size = {lineHeight, lineHeight};
-	}
+	ImVec2 size = CalcItemSize(bbSize, textSize.x, ImGui::GetFrameHeightWithSpacing()) + style.ItemSpacing;
 
 	ImRect bb = {window->DC.CursorPos, window->DC.CursorPos + size};
 	ItemSize(bb, style.FramePadding.y);
@@ -1820,6 +1838,7 @@ static inline bool IconButton(ImGuiID id, const char *text, const char *textEnd 
 		return false;
 	}
 
+    size = bb.GetSize();
 	bool hovered, held;
 	bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 	if (hovered)
