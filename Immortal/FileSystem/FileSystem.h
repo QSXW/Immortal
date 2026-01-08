@@ -96,6 +96,7 @@ enum class FileFormat : uint64_t
     WAV  = MakeIdentifier('W', 'A', 'V'     ),
     FLAC = MakeIdentifier('F', 'L', 'A', 'C'),
     MP3  = MakeIdentifier('M', 'P', '3'     ),
+	OPUS = MakeIdentifier('O', 'P', 'U', 'S'),
 
     /** Still Image formats */
     BMP   = MakeIdentifier('B', 'M', 'P'     ),
@@ -122,7 +123,8 @@ enum class FileFormat : uint64_t
     DNG   = MakeIdentifier('D', 'N', 'G'     ),
 
     /** Video file format extensions */
-    AVI   = MakeIdentifier('A', 'V', 'I'    ),
+    AVI   = MakeIdentifier('A', 'V', 'I'     ),
+    OBU   = MakeIdentifier('O', 'B', 'U'     ),
     IVF   = MakeIdentifier('I', 'V', 'F'     ),
     MP4   = MakeIdentifier('M', 'P', '4'     ),
     VVC   = MakeIdentifier('V', 'V', 'C'     ),
@@ -138,6 +140,18 @@ enum class FileFormat : uint64_t
     FLV   = MakeIdentifier('F', 'L', 'V'     ),
     BIT   = MakeIdentifier('B', 'I', 'T'     ),
 	MXF   = MakeIdentifier('M', 'X', 'F'     ),
+    OGV   = MakeIdentifier('O', 'G', 'V'     ),
+    OGG   = MakeIdentifier('O', 'G', 'G'     ),
+    VC1   = MakeIdentifier('V', 'C', '1'     ),
+    MNG   = MakeIdentifier('M', 'N', 'G'     ),
+    QT    = MakeIdentifier('Q', 'T'          ),
+    WMV   = MakeIdentifier('W', 'M', 'V'     ),
+    RMVB  = MakeIdentifier('R', 'M', 'V', 'B'),
+	ASF   = MakeIdentifier('A', 'S', 'F'     ),
+	AMV   = MakeIdentifier('A', 'M', 'V'     ),
+	M4V   = MakeIdentifier('M', '4', 'V'     ),
+	MPG   = MakeIdentifier('M', 'P', 'G'     ),
+    _3GP  = MakeIdentifier('3', 'G', 'P'     ),
 
     /** 3D Lookup Table */
     CUBE  = MakeIdentifier('C', 'U', 'B', 'E'),
@@ -261,6 +275,7 @@ static inline bool IsImage(const std::string &path)
 static inline bool IsVideo(FileFormat id)
 {
     return IsFormat<FileFormat::IVF>(id)  ||
+	       IsFormat<FileFormat::OBU>(id)  ||
            IsFormat<FileFormat::MP4>(id)  ||
            IsFormat<FileFormat::VVC>(id)  ||
            IsFormat<FileFormat::H264>(id) ||
@@ -277,7 +292,19 @@ static inline bool IsVideo(FileFormat id)
            IsFormat<FileFormat::BIT>(id)  ||
            IsFormat<FileFormat::GIF>(id)  ||
 	       IsFormat<FileFormat::MXF>(id)  ||
-           IsFormat<FileFormat::HEIC>(id);
+           IsFormat<FileFormat::HEIC>(id) ||
+	       IsFormat<FileFormat::OGV>(id)  ||
+	       IsFormat<FileFormat::OGG>(id)  ||
+	       IsFormat<FileFormat::VC1>(id)  ||
+	       IsFormat<FileFormat::MNG>(id)  ||
+	       IsFormat<FileFormat::QT>(id)   ||
+	       IsFormat<FileFormat::WMV>(id)  ||
+	       IsFormat<FileFormat::RMVB>(id) ||
+	       IsFormat<FileFormat::ASF>(id)  ||
+	       IsFormat<FileFormat::AMV>(id)  ||
+	       IsFormat<FileFormat::M4V>(id)  ||
+	       IsFormat<FileFormat::MPG>(id)  ||
+	       IsFormat<FileFormat::_3GP>(id);
 }
 
 static inline bool IsVideo(uint64_t format)
@@ -290,7 +317,8 @@ static inline bool IsAudio(FileFormat id)
 	return IsFormat<FileFormat::AAC>(id)  ||
 	       IsFormat<FileFormat::MP3>(id)  ||
            IsFormat<FileFormat::FLAC>(id) ||
-	       IsFormat<FileFormat::WAV>(id);
+	       IsFormat<FileFormat::WAV>(id)  ||
+           IsFormat<FileFormat::OPUS>(id);
 }
 
 static inline bool IsAudio(uint64_t format)
@@ -319,6 +347,11 @@ static FileType GetFileType(const std::string &path)
         return FileType::RAW;
     }
 
+    if (IsAudio(id))
+    {
+		return FileType::Audio;
+    }
+
 #define CASE(X) case FileFormat::##X: return FileType::##X;
     switch (id)
     {
@@ -327,11 +360,6 @@ static FileType GetFileType(const std::string &path)
     case FileFormat::FBX:
     case FileFormat::OBJ:
         return FileType::OBJ;
-
-    case FileFormat::WAV:
-    case FileFormat::FLAC:
-    case FileFormat::MP3:
-        return FileType::Audio;
 
     case FileFormat::IVF:
     case FileFormat::H264:

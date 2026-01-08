@@ -90,12 +90,20 @@ struct VideoPlayerComponent : public IObject, public Component
 
     void Join();
 
+    int64_t GetLastAudioTimestamp() const;
+
+    Rational GetAudioTimebase() const;
+
     bool operator !();
 
     operator bool() const;
 
+    void SetSpeed(double speed);
+
 public:
     URef<VideoPlayerContext> player;
+
+    double speed = 1.0f;
 
     Picture currentPicture;
 };

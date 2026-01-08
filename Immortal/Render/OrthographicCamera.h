@@ -16,7 +16,7 @@ public:
     OrthographicCamera() :
         Super{ ProjectionType::Orthographic }
     {
-        
+
     }
 
     OrthographicCamera(const Vector2 &size) :
@@ -49,7 +49,7 @@ public:
         position = pos;
         ReCalculateViewMatrix();
     }
-        
+
     void Set(const Vector3 &pos, float rot)
     {
         position = pos;
@@ -58,17 +58,17 @@ public:
     }
 
     float Rotation() const
-    { 
+    {
         return rotation;
     }
 
     const Vector3 &Position() const
-    { 
+    {
         return position;
     }
 
     void SetRotation(float other)
-    { 
+    {
         rotation = other;
         ReCalculateViewMatrix();
     }
@@ -94,6 +94,8 @@ public:
     virtual void OnUpdate(const float &deltaTime = Time::DeltaTime) override;
 
     virtual bool OnMouseScrolled(MouseScrolledEvent &e) override;
+
+    void OnKeyCodeUpdate(const float &deltaTime = Time::DeltaTime);
 
 private:
     void ReCalculateViewMatrix();

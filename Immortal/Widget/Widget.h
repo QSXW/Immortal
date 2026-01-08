@@ -333,6 +333,9 @@ protected:                           \
 	const String &L = {__VA_ARGS__};
 
 #define WIDGET_SET_KCSTR(U, ...) WIDGET_SET_CSTR(U, k##U, __VA_ARGS__)
+#define WIDGET_SET_KCSTR_ID(U, ...) \
+    WIDGET_SET_CSTR(U, k##U, Translator::Translate(__VA_ARGS__)) \
+    WIDGET_SET_CSTR(ID##U, id##U, k##U + "##" __VA_ARGS__)
 
 #define WIDGET_PROPERTY_VAR_COLOR(U, L, ...)                  \
     WIDGET_SET_PROPERTY(U, L, uint32_t, 0xff000000)
@@ -1632,8 +1635,9 @@ public:
         auto &io = ImGui::GetIO();
 
 		auto width = ImGui::CalcItemWidth();
-        auto lineHeight = ImGui::GetTextLineHeight();
-        auto height = lineHeight + PaddingY() * 2;
+        auto lineHeight = GetTextLineHeight();
+        auto height = GetFrameHeight();
+		auto padding = (height - lineHeight) * 0.5f;
 
         auto text = data[selected];
         auto textStart = text.c_str();
@@ -1641,6 +1645,7 @@ public:
 
         auto id = ImGui::GetID(this);
         ImVec2 pos = window->DC.CursorPos;
+		pos.y += paddingY;
         ImVec2 size = { width, height };
         const ImRect bb(pos, pos + size);
         ItemSize(size, 0);
@@ -1673,7 +1678,7 @@ public:
         window->DrawList->AddRectFilled(bb.Min, bb.Max, Color(), Rounding(), ImDrawFlags_None);
         window->DrawList->AddRect(bb.Min, bb.Max, BorderColor(), Rounding(), ImDrawFlags_None, BorderSize());
 
-        ImRect textRect{ { bb.Min.x + TextStartOffset(), bb.Min.y + PaddingY() }, {bb.Max.x - height, bb.Max.y - PaddingY() }};
+        ImRect textRect{ { bb.Min.x + TextStartOffset(), bb.Min.y + padding }, {bb.Max.x - height, bb.Max.y - padding }};
         ImVec4 textClipRect{ textRect.Min.x, textRect.Min.y, textRect.Max.x, textRect.Max.y };
         window->DrawList->AddText(
             GetFont(),

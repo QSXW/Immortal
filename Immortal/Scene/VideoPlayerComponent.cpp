@@ -390,6 +390,7 @@ Picture VideoPlayerContext::ResampleAudioFrame(Picture &picture)
 		if (sampleConverter.Convert(rescaledPicture, picture))
 		{
 			rescaledPicture.SetSampleRate(outputAudioFormat.sampleRate);
+			rescaledPicture.SetTimestamp(picture.GetTimestamp());
 			return rescaledPicture;
 		}
 	}
@@ -586,13 +587,16 @@ void VideoPlayerContext::Playback()
 		}
 	}
 
+	ThreadPool *primaryThread = videoThreadPool ? videoThreadPool.get() : audioThreadPool.get();
+	int *primarySize = videoThreadPool ? &pictureSize : &audioSize;
+
     task = [=, this]() {
     while (true)
     {
         std::unique_lock lock{ mutex.demux };
-        condition.wait(lock, [this] {
+        condition.wait(lock, [=, this] {
 			return state.exited || (!eof &&
-                ((pictureSize + videoThreadPool->TaskSize()) <= kCacheSize));
+                ((*primarySize + primaryThread->TaskSize()) <= kCacheSize));
         });
 
         if (state.exited)
@@ -762,10 +766,7 @@ void VideoPlayerContext::Transcode()
 
 void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
-	audioStream->Stop();
-	audioStream->Reset();
-
-    std::unique_lock lock{ mutex.demux };
+	std::unique_lock lock{mutex.demux};
 	if (videoThreadPool)
 	{
 		videoThreadPool->RemoveTasks();
@@ -773,6 +774,11 @@ void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t 
 
 	if (audioThreadPool)
 	{
+		if (audioStream)
+		{
+			audioStream->Stop();
+			audioStream->Reset();
+		}
 		audioThreadPool->RemoveTasks();
 	}
 
@@ -796,10 +802,14 @@ void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t 
 		ClearPictures(audioFrames, audioFrame, audioSize);
 	}
 
-    eof = false;
-    demuxer->Seek(type, pts, min, max);
-    condition.notify_all();
-	audioStream->Start();
+	eof = false;
+	demuxer->Seek(type, pts, min, max);
+	condition.notify_all();
+
+	if (audioStream)
+	{
+		audioStream->Start();
+	}
 }
 
 VideoPlayerContext::~VideoPlayerContext()
@@ -864,6 +874,10 @@ Picture VideoPlayerContext::GetAudioFrame()
     }
 
     audioFrames.try_dequeue(audioFrame);
+	if (!videoThreadPool && !audioFrame)
+	{
+		condition.notify_one();
+	}
 
 	return audioFrame;
 }
@@ -877,6 +891,7 @@ void VideoPlayerContext::PopPicture()
 
 void VideoPlayerContext::PopAudioFrame()
 {
+	lastAudioTimestamp = audioFrame.GetTimestamp();
 	audioFrame = {};
 	audioSize--;
 }
@@ -1031,7 +1046,7 @@ Picture VideoPlayerComponent::GetLivePicture()
   //          }
   //      }
 
-		if (animator->TryMoveToNextFrame(deltaTime))
+		if (animator->TryMoveToNextFrame(deltaTime, speed))
 		{
 			PopPicture();
 		}
@@ -1152,9 +1167,24 @@ bool VideoPlayerComponent::operator!()
 	return !player;
 }
 
+int64_t VideoPlayerComponent::GetLastAudioTimestamp() const
+{
+	return player->lastAudioTimestamp;
+}
+
+Rational VideoPlayerComponent::GetAudioTimebase() const
+{
+	return player->audioDecoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
+}
+
 VideoPlayerComponent::operator bool() const
 {
 	return !!player;
+}
+
+void VideoPlayerComponent::SetSpeed(double value)
+{
+	speed = value;
 }
 
 }

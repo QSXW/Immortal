@@ -9,6 +9,7 @@
 #pragma warning(pop)
 
 #include "IObject.h"
+#include <filesystem>
 
 namespace Immortal
 {
@@ -16,13 +17,13 @@ namespace Immortal
 class LOG
 {
 public:
-    static void Setup(bool async = false);
+	static void Setup(bool async = false, const std::filesystem::path &path = {});
 
     static void Release();
 
-    static void Init(bool async = false)
+    static void Init(bool async = false, const std::filesystem::path &path = {})
     {
-        Setup(async);
+		Setup(async, path);
     }
 
     template <class... Args>

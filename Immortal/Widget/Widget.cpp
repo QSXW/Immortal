@@ -248,7 +248,7 @@ bool WRightClickPopup::Draw()
 		return false;
 	}
 
-	ImVec2 windowSize = {kItemWidth + kPadding * 2, kItemHeight * std::max(items.size(), size_t(10)) + kPadding * 2};
+	ImVec2 windowSize = {kItemWidth + kPadding * 2, kItemHeight * std::max(items.size(), size_t(1)) + kPadding * 2};
 	if (mousePos.x != 0 && mousePos.y != 0 && mousePos.y + windowSize.y > g.IO.DisplaySize.y)
 	{
 		ImGui::SetNextWindowPos({mousePos.x, mousePos.y - windowSize.y}, ImGuiCond_Always);
@@ -359,7 +359,7 @@ bool InputText(int id, const char *hint, char *buf, size_t size, float width, fl
 	WidgetLock lock{id};
 	//width  -= borderSize * 2;
     //height -= borderSize * 2;
-	
+
 	StyleVarStack<ImVec2> styleVar{
 	    {ImGuiStyleVar_FramePadding, {8.0f, (height - ImGui::GetTextLineHeight()) * 0.618f}}
 	};
