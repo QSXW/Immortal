@@ -12,53 +12,56 @@ void OrthographicCamera::SetViewportSize(Vector2 size)
     SetProjection(-aspectRatio * zoomLevel, aspectRatio * zoomLevel, -zoomLevel, zoomLevel);
 }
 
+void OrthographicCamera::OnKeyCodeUpdate(const float &deltaTime)
+{
+	if (Input::IsKeyPressed(KeyCode::A))
+	{
+		position.x -= cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+		position.y -= sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+	}
+	else if (Input::IsKeyPressed(KeyCode::D))
+	{
+		position.x += cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+		position.y += sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+	}
+
+	if (Input::IsKeyPressed(KeyCode::W))
+	{
+		position.x += -sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+		position.y += cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+	}
+	else if (Input::IsKeyPressed(KeyCode::S))
+	{
+		position.x -= -sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+		position.y -= cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
+	}
+
+	if (rotated)
+	{
+		if (Input::IsKeyPressed(KeyCode::Q))
+		{
+			rotation += rotateSpeed * deltaTime;
+		}
+		if (Input::IsKeyPressed(KeyCode::E))
+		{
+			rotation -= rotateSpeed * deltaTime;
+		}
+
+		if (rotation > 180.0f)
+		{
+			rotation -= 360.0f;
+		}
+		else if (rotation <= -180.0f)
+		{
+			rotation += 360.0f;
+		}
+
+		SetRotation(rotation);
+	}
+}
+
 void OrthographicCamera::OnUpdate(const float &deltaTime)
 {
-    if (Input::IsKeyPressed(KeyCode::A))
-    {
-        position.x -= cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-        position.y -= sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-    }
-    else if (Input::IsKeyPressed(KeyCode::D))
-    {
-        position.x += cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-        position.y += sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-    }
-
-    if (Input::IsKeyPressed(KeyCode::W))
-    {
-        position.x += -sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-        position.y += cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-    }
-    else if (Input::IsKeyPressed(KeyCode::S))
-    {
-        position.x -= -sin(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-        position.y -= cos(Vector::Radians(rotation)) * translateSpeed * deltaTime;
-    }
-
-    if (rotated)
-    {
-        if (Input::IsKeyPressed(KeyCode::Q))
-        {
-            rotation += rotateSpeed * deltaTime;
-        }
-        if (Input::IsKeyPressed(KeyCode::E))
-        {
-            rotation -= rotateSpeed * deltaTime;
-        }
-
-        if (rotation > 180.0f)
-        {
-            rotation -= 360.0f;
-        }
-        else if (rotation <= -180.0f)
-        {
-            rotation += 360.0f;
-        }
-
-        SetRotation(rotation);
-    }
-
     if (std::abs(zoomLevelTarget - zoomLevel) > 0.001)
     {
 		zoomLevel = Math::HermiteLerp(zoomLevel, zoomLevelTarget, Time::DeltaTime * 15.0f);
@@ -76,7 +79,7 @@ bool OrthographicCamera::OnMouseScrolled(MouseScrolledEvent & e)
     {
 		step = 1.0f;
     }
-	zoomLevelTarget -= e.GetOffsetY() * step * 0.01f; 
+	zoomLevelTarget -= e.GetOffsetY() * step * 0.01f;
 	zoomLevelTarget = std::max(zoomLevelTarget, 0.00001f);
     return false;
 }

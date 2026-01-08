@@ -96,7 +96,7 @@ private:
     int inputFormatSize;
 };
 
-class IMMORTAL_API FFCodec : public VideoCodec
+class IMMORTAL_API FFCodec : public VideoCodec, public IClass
 {
 #if HAVE_FFMPEG
 public:
@@ -121,6 +121,8 @@ public:
     virtual void *GetProperty(PropertyType type) const override;
 
     virtual CodecError OpenDecoder(CodecInfo &info) override;
+
+    Picture ScaleToSupportFormat(AVFrame *frame);
 
     CodecError SendAudioFifo();
 

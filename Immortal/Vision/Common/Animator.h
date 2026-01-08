@@ -54,15 +54,15 @@ public:
         return Accumulator = fmodf(Accumulator, SecondsPerFrame);
     }
 
-    bool IsFrameDone() const
+    bool IsFrameDone(double speed) const
     {
-        return Accumulator >= SecondsPerFrame;
+		return (Accumulator * speed) >= SecondsPerFrame;
     }
 
-    bool TryMoveToNextFrame(float deltaTime)
+    bool TryMoveToNextFrame(float deltaTime, double speed)
     {
         Accumulator += deltaTime;
-        if (IsFrameDone())
+		if (IsFrameDone(speed))
         {
             MoveToNextFrame();
             return true;

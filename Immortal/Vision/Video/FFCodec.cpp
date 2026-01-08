@@ -788,6 +788,7 @@ SampleConverter::operator bool() const
 }
 
 FFCodec::FFCodec(const char *name) :
+    IClass{name},
     VideoCodec{name},
     handle{},
     device{},
@@ -1100,40 +1101,49 @@ CodecError FFCodec::GetPicture(Picture &picture)
             format = CAST(pixelFormat);
         }
 
-        picture = Picture{ref->width, ref->height, format };
-        picture.SetStride(0, ref->linesize[0]);
-        picture.SetStride(1, ref->linesize[1]);
-        picture.SetStride(2, ref->linesize[2]);
-		picture.SetColorSpace(colorSpace);
-		if (ref->color_range == AVCOL_RANGE_JPEG)
+		if (format == Format::None)
 		{
-			picture.SetFlags(PictureFlags::FullRange);
+			picture = ScaleToSupportFormat(ref);
+			av_frame_unref(ref);
+			av_frame_free(&ref);
 		}
+		else
+		{
+			picture = Picture{ref->width, ref->height, format};
+			picture.SetStride(0, ref->linesize[0]);
+			picture.SetStride(1, ref->linesize[1]);
+			picture.SetStride(2, ref->linesize[2]);
+			picture.SetColorSpace(colorSpace);
+			if (ref->color_range == AVCOL_RANGE_JPEG)
+			{
+				picture.SetFlags(PictureFlags::FullRange);
+			}
 
-#ifdef _WIN32
-        if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
-        {
-			AVD3D12VAFrame *f = (AVD3D12VAFrame *) frame->data[0];
-			auto &[texture, index, syncCtx, flags] = *f;
-            picture.SetMemoryType(PictureMemoryType::Device);
-            picture[0] = (uint8_t *)texture;
-            picture[1] = (uint8_t *)syncCtx.fence;
-            picture[2] = (uint8_t *)syncCtx.fence_value;
-        }
-        else
-#endif
-        {
-            picture.SetMemoryType(PictureMemoryType::System);
+#	ifdef _WIN32
+			if (handle->pix_fmt == AV_PIX_FMT_D3D12 && Graphics::GetDevice()->GetBackendAPI() == BackendAPI::D3D12)
+			{
+				AVD3D12VAFrame *f = (AVD3D12VAFrame *) frame->data[0];
+				auto &[texture, index, syncCtx, flags] = *f;
+				picture.SetMemoryType(PictureMemoryType::Device);
+				picture[0] = (uint8_t *) texture;
+				picture[1] = (uint8_t *) syncCtx.fence;
+				picture[2] = (uint8_t *) syncCtx.fence_value;
+			}
+			else
+#	endif
+			{
+				picture.SetMemoryType(PictureMemoryType::System);
 
-            picture[0] = (uint8_t *) ref->data[0];
-            picture[1] = (uint8_t *) ref->data[1];
-            picture[2] = (uint8_t *) ref->data[2];
-        }
+				picture[0] = (uint8_t *) ref->data[0];
+				picture[1] = (uint8_t *) ref->data[1];
+				picture[2] = (uint8_t *) ref->data[2];
+			}
 
-        picture.SetRelease([ref] (void *) {
-            av_frame_unref(ref);
-            av_frame_free((AVFrame **)&ref);
-        });
+			picture.SetRelease([ref](void *) {
+				av_frame_unref(ref);
+				av_frame_free((AVFrame **) &ref);
+			});
+		}
 
         picture.SetTimestamp(NAN);
 		if (frame->pts != AV_NOPTS_VALUE)
@@ -1145,12 +1155,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-        AVRational tb{ 1, frame->sample_rate };
-        if (frame->pts != AV_NOPTS_VALUE)
-        {
-            frame->pts = av_rescale_q(frame->pts - startTimestamp, timeBase, tb);
-        }
-
+		AVRational &tb = handle->time_base;
 		AVFrame *ref = av_frame_clone(frame);
         picture = Picture{ frame->nb_samples, frame->ch_layout.nb_channels, CAST(handle->sample_fmt) };
 		picture.SetSampleRate(handle->sample_rate);
@@ -1279,6 +1284,37 @@ CodecError FFCodec::EncodeFrame(AVFrame *frame)
 	}
 
     return CodecError::Success;
+}
+
+Picture FFCodec::ScaleToSupportFormat(AVFrame *frame)
+{
+	char err[64];
+
+	Picture picture{};
+	AVPixelFormat dstFormat = frame->format == AV_PIX_FMT_XV36 ? AV_PIX_FMT_YUV444P10 : AV_PIX_FMT_NV12;
+	picture = Picture{handle->width, handle->height, CAST(dstFormat), true};
+	if (!swsContext)
+	{
+		swsContext = sws_getContext(
+		    handle->width,
+		    handle->height,
+		    handle->pix_fmt,
+		    picture.GetWidth(),
+		    picture.GetHeight(),
+		    dstFormat,
+		    SWS_BILINEAR,
+		    nullptr,
+		    nullptr,
+		    nullptr);
+	}
+
+	int ret = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, &picture.GetData(), (const int *) &picture.GetStride());
+	if (ret < 0)
+	{
+		LOG_ERROR("Failed to scale picture - {}", AVERR_STR(ret));
+	}
+
+	return picture;
 }
 
 CodecError FFCodec::SendAudioFifo()

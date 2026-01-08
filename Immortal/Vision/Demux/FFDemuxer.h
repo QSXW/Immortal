@@ -52,14 +52,15 @@ public:
 
     virtual Animator &GetAnimator(MediaType mediaType);
 
-    void Destroy();
+private:
+	void SetAnimator();
 
 private:
-    Ref<FormatContext> formatContext;
-
     AVFormatContext *handle;
 
-    AVIOContext *pb;
+    int streamIndex[4];
+
+	std::vector<Animator> animators;
 
     AVCodecContext *codecs[4];
 
