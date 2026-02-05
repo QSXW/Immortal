@@ -1817,7 +1817,7 @@ public:
     }
 };
 
-static inline bool IconButton(ImGuiID id, const char *text, const char *textEnd = nullptr, const ImVec2 &bbSize = {}, const char *hoveredIcon = nullptr)
+static inline bool IconButton(ImGuiID id, const char *text, const char *textEnd = nullptr, const ImVec2 &bbSize = {}, const char *hoveredIcon = nullptr, const char *activeIcon = nullptr, bool active = false)
 {
 	using namespace ImGui;
 	ImGuiWindow *window = GetCurrentWindow();
@@ -1854,7 +1854,14 @@ static inline bool IconButton(ImGuiID id, const char *text, const char *textEnd 
 			textEnd = nullptr;
 		}
 	}
-	uint32_t color = ColorConvertFloat4ToU32(hovered ? style.Colors[ImGuiCol_ButtonHovered] : style.Colors[ImGuiCol_Text]);
+
+	if (!activeIcon && active)
+	{
+		RenderFrame({bb.Min.x, bb.Min.y + 4.0f}, {bb.Max.x, bb.Max.y - 4.0f}, 0xff333333, false, 0.0f);
+	}
+
+    bool highlight = hovered || (!activeIcon && active);
+	uint32_t color = ColorConvertFloat4ToU32(highlight ? style.Colors[ImGuiCol_ButtonHovered] : style.Colors[ImGuiCol_Text]);
 	if (textEnd == nullptr)
 	{
 		textEnd = text + strlen(text);
@@ -1880,10 +1887,6 @@ public:
 	WIconButton(const char *icon = nullptr, const char *activeIcon = nullptr, const char *hoveredIcon = nullptr)
 	{
 		Icon(icon);
-        if (!activeIcon)
-        {
-			activeIcon = icon;
-        }
 		ActiveIcon(activeIcon);
 		HoveredIcon(hoveredIcon);
 	}
@@ -1892,7 +1895,7 @@ public:
 	{
 		ImGuiWindow *window = ImGui::GetCurrentWindow();
 		auto visibleIcon = Active() && ActiveIcon() ? ActiveIcon() : Icon();
-		bool pressed = IconButton(window->GetID(this), visibleIcon, nullptr, size, HoveredIcon() ? HoveredIcon() : visibleIcon);
+		bool pressed = IconButton(window->GetID(this), visibleIcon, nullptr, size, HoveredIcon() ? HoveredIcon() : visibleIcon, activeIcon, active);
 		if (pressed)
 		{
 			Active(!Active());

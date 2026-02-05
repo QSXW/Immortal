@@ -58,7 +58,7 @@ void WriteCallback(png_structp png, png_bytep data, png_size_t length)
 		LOG_ERROR("NULL PngWriteState");
 		return;
 	}
-	
+
 	auto pos = state->data.size();
 	state->data.resize(pos + length);
 	std::memcpy(&state->data[pos], data, length);
@@ -165,7 +165,7 @@ CodecError PNGCodec::Decode(const CodedFrame &codedFrame)
 
 	png_read_update_info(png, info);
 
-	picture = Picture{uint32_t(width), uint32_t(height), CAST(colorType, bitDepth), true};
+	picture = Picture{uint32_t(width), uint32_t(height), CAST(PNG_COLOR_TYPE_RGBA, bitDepth), true};
 
 	size_t stride = png_get_rowbytes(png, info);
 	auto buf = picture.GetData();

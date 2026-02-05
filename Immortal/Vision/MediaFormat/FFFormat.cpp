@@ -1,4 +1,4 @@
-#include "FFDemuxer.h"
+#include "FFFormat.h"
 #include "Config.h"
 #include "Vision/Video/FFCodec.h"
 #include "FileSystem/FileSystem.h"
@@ -109,7 +109,7 @@ static AVDictionary **GenerateStreamInfo(AVFormatContext *handle)
 	return options;
 }
 
-FFDemuxer::FFDemuxer() :
+FFFormat::FFFormat() :
     handle{},
     streamIndex{-1,-1,-1,-1},
     animators{}
@@ -117,7 +117,7 @@ FFDemuxer::FFDemuxer() :
 
 }
 
-FFDemuxer::~FFDemuxer()
+FFFormat::~FFFormat()
 {
 	if (handle)
 	{
@@ -125,14 +125,14 @@ FFDemuxer::~FFDemuxer()
 	}
 }
 
-void FFDemuxer::SetAnimator()
+void FFFormat::SetAnimator()
 {
 	animators.resize(handle->nb_streams);
 	for (size_t i = 0; i < animators.size(); i++)
 	{
 		auto &stream = handle->streams[i];
 		auto animator = &animators[i];
-		auto fps = stream->avg_frame_rate;
+		auto fps = stream->r_frame_rate;
 		animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
 		animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
 		animator->Duration = handle->duration != AV_NOPTS_VALUE ? handle->duration / AV_TIME_BASE : -1;
@@ -163,7 +163,7 @@ void FFDemuxer::SetAnimator()
 	}
 }
 
-CodecError FFDemuxer::Open(const String &_filepath)
+CodecError FFFormat::Open(const String &_filepath)
 {
     filepath = _filepath;
 
@@ -234,7 +234,7 @@ static AVCodecID CAST(const CodecId id)
     }
 }
 
-CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
+CodecError FFFormat::Open(const String &_filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
 {
 	int ret = 0;
 	char err[64] = {};
@@ -329,7 +329,7 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, const CodecI
     return CodecError::Success;
 }
 
-void FFDemuxer::Close()
+void FFFormat::Close()
 {
 	int ret = {};
 	char err[64] = {};
@@ -361,7 +361,7 @@ void FFDemuxer::Close()
 	}
 }
 
-CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
+CodecError FFFormat::Read(CodedFrame *pCodedFrame)
 {
 	char err[64];
 	AVPacket *packet = av_packet_alloc();
@@ -416,7 +416,7 @@ CodecError FFDemuxer::Read(CodedFrame *pCodedFrame)
     return CodecError::Success;
 }
 
-CodecError FFDemuxer::Write(const CodedFrame &codedFrame, int stream)
+CodecError FFFormat::Write(const CodedFrame &codedFrame, int stream)
 {
 	auto packet = codedFrame.InterpretAs<AVPacket>();
     packet->stream_index = stream;
@@ -433,7 +433,7 @@ CodecError FFDemuxer::Write(const CodedFrame &codedFrame, int stream)
     return CodecError::Success;
 }
 
-CodecError FFDemuxer::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
+CodecError FFFormat::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
 	int index = streamIndex[(int)type];
 	if (index < 0)
@@ -450,7 +450,7 @@ CodecError FFDemuxer::Seek(MediaType type, int64_t pts, int64_t min, int64_t max
 	return CodecError::Success;
 }
 
-CodecError FFDemuxer::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
+CodecError FFFormat::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
 {
 	int index = streamIndex[int(type)];
     if (index < 0)
@@ -482,7 +482,7 @@ CodecError FFDemuxer::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
     return CodecError::Success;
 }
 
-void FFDemuxer::EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks)
+void FFFormat::EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks)
 {
 	tracks.resize(0);
 	for (int i = 0; i < handle->nb_streams; i++)
@@ -498,7 +498,7 @@ void FFDemuxer::EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tra
 	}
 }
 
-CodecError FFDemuxer::SwitchTrack(MediaType mediaType, int index)
+CodecError FFFormat::SwitchTrack(MediaType mediaType, int index)
 {
     if (mediaType > MediaType::Subtitle)
     {
@@ -510,7 +510,7 @@ CodecError FFDemuxer::SwitchTrack(MediaType mediaType, int index)
     return CodecError::Success;
 }
 
-Animator &FFDemuxer::GetAnimator(MediaType mediaType)
+Animator &FFFormat::GetAnimator(MediaType mediaType)
 {
 	static Animator empty{};
 	auto index = streamIndex[int(mediaType)];
@@ -524,7 +524,7 @@ Animator &FFDemuxer::GetAnimator(MediaType mediaType)
 
 #endif
 
-const String &FFDemuxer::GetSource() const
+const String &FFFormat::GetSource() const
 {
     return filepath;
 }

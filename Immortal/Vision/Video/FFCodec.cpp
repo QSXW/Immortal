@@ -1,5 +1,5 @@
 #include "FFCodec.h"
-#include "Vision/Demux/FFDemuxer.h"
+#include "Vision/MediaFormat/FFFormat.h"
 #include "Vision/Processing/ColorSpace.h"
 #include "Render/Graphics.h"
 #include "Audio/Device.h"
@@ -35,6 +35,11 @@ namespace Vision
 int64_t RationalRescale(int64_t a, Rational bq, Rational cq)
 {
 	return av_rescale_q(a, {(int)bq.numerator, (int)bq.denominator}, {(int)cq.numerator, (int)cq.denominator});
+}
+
+int64_t RationalRescaleRound(int64_t a, int64_t b, int64_t c, int rnd)
+{
+	return av_rescale_rnd(a, b, c, (AVRounding)rnd);
 }
 
 static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
@@ -787,13 +792,62 @@ SampleConverter::operator bool() const
 	return !!handle;
 }
 
+Scaler::Scaler() :
+	handle{}
+{
+
+}
+
+Scaler::~Scaler()
+{
+	if (!handle)
+	{
+		sws_freeContext(handle);
+		handle = nullptr;
+	}
+}
+
+void Scaler::Init(uint32_t srcW, uint32_t srcH, int srcFormat, uint32_t dstW, uint32_t dstH, int dstFormat, int flags)
+{
+	handle = sws_getContext(srcW, srcH, (AVPixelFormat) srcFormat, dstW, dstH, (AVPixelFormat)dstFormat, flags, nullptr, nullptr, nullptr);
+}
+
+void Scaler::Init(uint32_t srcW, uint32_t srcH, Format srcFormat, uint32_t dstW, uint32_t dstH, Format dstFormat, Filter filter)
+{
+	Init(srcW, srcH, (int)CAST(srcFormat), dstW, dstH, (int)CAST(dstFormat), filter == Filter::Bilinear ? SWS_BILINEAR : SWS_POINT);
+}
+
+CodecError Scaler::Scale(const uint8_t *const srcSlice[], const int srcStride[], int srcSliceY, int srcSliceH, uint8_t *const dst[], const int dstStride[])
+{
+	char err[64];
+	int ret = sws_scale(handle, srcSlice, srcStride, srcSliceY, srcSliceH, dst, dstStride);
+	if (ret < 0)
+	{
+		LOG_ERROR("Failed to scale picture - {}", AVERR_STR(ret));
+		return CodecError::ExternalFailed;
+	}
+
+	return CodecError::Success;
+}
+
+CodecError Scaler::Scale(Picture &dst, const Picture &src)
+{
+	return Scale(&src.GetData(), (const int *) &src.GetStride(), 0, src.GetHeight(),
+	             &dst.GetData(), (const int *) &dst.GetStride());
+}
+
+Scaler::operator bool() const
+{
+	return !!handle;
+}
+
 FFCodec::FFCodec(const char *name) :
     IClass{name},
     VideoCodec{name},
     handle{},
     device{},
     swrContext{},
-    swsContext{},
+    scaler{},
     type{PictureMemoryType::System},
     startTimestamp{},
     displayOrientation{},
@@ -972,11 +1026,6 @@ FFCodec::~FFCodec()
 	{
 		swr_free(&swrContext);
 	}
-    if (!swsContext)
-    {
-		sws_freeContext(swsContext);
-		swsContext = nullptr;
-    }
 
     memoryResource.Reset();
 }
@@ -1050,7 +1099,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 
             if (type == PictureMemoryType::System)
             {
-                ret = av_hwframe_transfer_data(ref, frame, 0);
+				ret = av_hwframe_transfer_data(ref, frame, 0);
             }
             else if (type == PictureMemoryType::Device && hwaccelType == AV_HWDEVICE_TYPE_VIDEOTOOLBOX)
             {
@@ -1288,30 +1337,18 @@ CodecError FFCodec::EncodeFrame(AVFrame *frame)
 
 Picture FFCodec::ScaleToSupportFormat(AVFrame *frame)
 {
-	char err[64];
-
 	Picture picture{};
 	AVPixelFormat dstFormat = frame->format == AV_PIX_FMT_XV36 ? AV_PIX_FMT_YUV444P10 : AV_PIX_FMT_NV12;
 	picture = Picture{handle->width, handle->height, CAST(dstFormat), true};
-	if (!swsContext)
+	if (!scaler)
 	{
-		swsContext = sws_getContext(
-		    handle->width,
-		    handle->height,
-		    handle->pix_fmt,
-		    picture.GetWidth(),
-		    picture.GetHeight(),
-		    dstFormat,
-		    SWS_BILINEAR,
-		    nullptr,
-		    nullptr,
-		    nullptr);
+		scaler.Init(handle->width, handle->height, (int)handle->pix_fmt, picture.GetWidth(), picture.GetHeight(), (int)dstFormat, SWS_BILINEAR);
 	}
 
-	int ret = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, &picture.GetData(), (const int *) &picture.GetStride());
-	if (ret < 0)
+	CodecError ret = scaler.Scale(frame->data, frame->linesize, 0, frame->height, &picture.GetData(), (const int *) &picture.GetStride());
+	if (ret != CodecError::Success)
 	{
-		LOG_ERROR("Failed to scale picture - {}", AVERR_STR(ret));
+		return {};
 	}
 
 	return picture;
@@ -1377,28 +1414,16 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 			picture.GetWidth()  != handle->width ||
 			picture.GetHeight() != handle->height)
         {
-            if (!swsContext)
+            if (!scaler)
             {
-				swsContext = sws_getContext(
-				    picture.GetWidth(),
-				    picture.GetHeight(),
-				    format,
-                    handle->width,
-                    handle->height,
-                    handle->pix_fmt,
-                    SWS_BILINEAR,
-                    nullptr,
-                    nullptr,
-                    nullptr
-                );
-
+				scaler.Init(picture.GetWidth(), picture.GetHeight(), picture.GetFormat(), handle->width, handle->height, CAST(handle->pix_fmt), Filter::Bilinear);
                 this->picture = Picture{ handle->width, handle->height, CAST(handle->pix_fmt), true };
             }
 
-			ret = sws_scale(swsContext, &picture.GetData(), (const int *) &picture.GetStride(), 0, picture.GetHeight(), &this->picture.GetData(), (const int *) &this->picture.GetStride());
-			if (ret < 0)
+			CodecError ret = scaler.Scale(this->picture, picture);
+			if (ret != CodecError::Success)
 			{
-				LOG_ERROR("Failed to scale picture - {}", AVERR_STR(ret));
+				CLOG_ERROR("Failed to scale picture");
 			}
 			ref = this->picture;
         }

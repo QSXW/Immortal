@@ -108,12 +108,12 @@ public:
 
     void EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks)
     {
-		demuxer.InterpretAs<Vision::FFDemuxer>()->EnumerateTracks(mediaType, tracks);
+		demuxer.InterpretAs<Vision::FFFormat>()->EnumerateTracks(mediaType, tracks);
     }
 
     CodecError SwitchTrack(MediaType mediaType, int index)
 	{
-		return demuxer.InterpretAs<Vision::FFDemuxer>()->SwitchTrack(mediaType, index);
+		return demuxer.InterpretAs<Vision::FFFormat>()->SwitchTrack(mediaType, index);
     }
 
     Picture GetCurrentAudioFrame() const
@@ -186,7 +186,7 @@ public:
 
     Ref<VideoCodec> subtitleDecoder;
 
-    Ref<Demuxer> demuxer;
+    Ref<Vision::MediaFormat> demuxer;
 
     ConcurrentQueue<Picture> pictures;
 
@@ -200,7 +200,7 @@ public:
 
     Picture outputAudioFrame;
 
-    const int kCacheSize;
+    int kCacheSize;
 
     struct State
     {
@@ -315,7 +315,9 @@ void VideoPlayerContext::GetPictures(bool eof = false)
 
 void VideoPlayerContext::EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Picture &&)> &callback, MediaType type)
 {
-	decoder->Flush();
+	CodedFrame codedFrame{(uint8_t *)nullptr};
+	decoder->Decode(codedFrame);
+
 	if (type == MediaType::Video)
 	{
 		GetPictures(true);
@@ -528,7 +530,7 @@ CodecError VideoPlayerContext::Open(const String &path, int cacheSize, const Vis
 
 CodecError VideoPlayerContext::Open(const String &path, const Vision::DecodingPreference &preference, StreamEnabledFlags flags)
 {
-	demuxer = new Vision::FFDemuxer{};
+	demuxer = new Vision::FFFormat{};
 	if (demuxer->Open(path) != CodecError::Success)
 	{
 		demuxer = {};
@@ -589,6 +591,20 @@ void VideoPlayerContext::Playback()
 
 	ThreadPool *primaryThread = videoThreadPool ? videoThreadPool.get() : audioThreadPool.get();
 	int *primarySize = videoThreadPool ? &pictureSize : &audioSize;
+	if (audioDecoder && decoder)
+	{
+		CodecInfo info{};
+		if (demuxer->GetStreamInfo(MediaType::Video, info) == CodecError::Success)
+		{
+			// Workaround
+			if (info.width < 1920 && info.height < 1080)
+			{
+				kCacheSize = 1;
+				primaryThread = audioThreadPool.get();
+				primarySize = &audioSize;
+			}
+		}
+	}
 
     task = [=, this]() {
     while (true)
