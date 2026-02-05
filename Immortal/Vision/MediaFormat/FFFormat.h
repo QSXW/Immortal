@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "Vision/Codec.h"
-#include "Vision/Demuxer.h"
+#include "Vision/MediaFormat.h"
 #include "FileSystem/Stream.h"
 #include "String/IString.h"
 
@@ -17,8 +17,7 @@ namespace Immortal
 namespace Vision
 {
 
-class FormatContext;
-class IMMORTAL_API FFDemuxer : public Demuxer
+class IMMORTAL_API FFFormat : public MediaFormat
 {
 #if HAVE_FFMPEG
 public:
@@ -28,9 +27,9 @@ public:
 	};
 
 public:
-    FFDemuxer();
+    FFFormat();
 
-    ~FFDemuxer();
+    ~FFFormat();
 
     virtual CodecError Open(const String &filepath) override;
 

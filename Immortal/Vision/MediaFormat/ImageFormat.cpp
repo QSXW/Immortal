@@ -1,4 +1,4 @@
-#include "ImageMuxer.h"
+#include "ImageFormat.h"
 #include "Vision/Image/ImageCodec.h"
 #include "FileSystem/FileSystem.h"
 
@@ -7,25 +7,25 @@ namespace Immortal
 namespace Vision
 {
 
-ImageMuxer::ImageMuxer() :
+ImageFormat::ImageFormat() :
     frameNumber{1}
 {
 
 }
 
-ImageMuxer::~ImageMuxer()
+ImageFormat::~ImageFormat()
 {
     Close();
 }
 
-CodecError ImageMuxer::Open(const String &filepath)
+CodecError ImageFormat::Open(const String &filepath)
 {
 	this->filepath = filepath;
 
 	return CodecError::Success;
 }
 
-CodecError ImageMuxer::Open(const String &filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
+CodecError ImageFormat::Open(const String &filepath, Codec **pCodec, const CodecInfo *encodeInfos, uint32_t numCodec)
 {
     (void)pCodec;
     (void)numCodec;
@@ -35,18 +35,18 @@ CodecError ImageMuxer::Open(const String &filepath, Codec **pCodec, const CodecI
     return CodecError::Success;
 }
 
-void ImageMuxer::Close()
+void ImageFormat::Close()
 {
     isOpen = false;
 }
 
-CodecError ImageMuxer::Read(CodedFrame *codedFrame)
+CodecError ImageFormat::Read(CodedFrame *codedFrame)
 {
     (void)codedFrame;
     return CodecError::NotImplement;
 }
 
-CodecError ImageMuxer::Write(const CodedFrame &codedFrame, int stream)
+CodecError ImageFormat::Write(const CodedFrame &codedFrame, int stream)
 {
 	char data[4096] = {};
 	sprintf(data, filepath.c_str(), frameNumber++);
@@ -66,17 +66,17 @@ CodecError ImageMuxer::Write(const CodedFrame &codedFrame, int stream)
     return CodecError::Success;
 }
 
-CodecError ImageMuxer::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
+CodecError ImageFormat::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
     return CodecError::NotImplement;
 }
 
-void ImageMuxer::Destroy()
+void ImageFormat::Destroy()
 {
     Close();
 }
 
-const String &ImageMuxer::GetSource() const
+const String &ImageFormat::GetSource() const
 {
     return filepath;
 }

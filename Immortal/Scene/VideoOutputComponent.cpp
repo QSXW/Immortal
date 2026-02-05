@@ -1,5 +1,5 @@
 #include "VideoOutputComponent.h"
-#include "Vision/Mux/ImageMuxer.h"
+#include "Vision/MediaFormat/ImageFormat.h"
 
 namespace Immortal
 {
@@ -52,7 +52,7 @@ protected:
 
 	std::vector<MediaType> mediaTypes;
 
-	URef<Demuxer> muxer;
+	URef<Vision::MediaFormat> muxer;
 
 	ConcurrentQueue<Vision::CodedFrame> videoQueue;
 
@@ -143,11 +143,11 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 
 	if (image)
 	{
-		muxer = new Vision::ImageMuxer;
+		muxer = new Vision::ImageFormat;
 	}
 	else
 	{
-		muxer = new Vision::FFDemuxer;
+		muxer = new Vision::FFFormat;
 	}
 
 	if (muxer->Open(filepath, codecs.data(), pEncodeInfo, numEncodeInfo) != CodecError::Success)
