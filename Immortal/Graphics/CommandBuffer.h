@@ -73,6 +73,8 @@ public:
 
 	virtual void GenerateMipMaps(Texture *texture, Filter filter) = 0;
 
+	virtual void CopyTextureRegion(Texture *texture, uint32_t subresource, uint32_t width, uint32_t height, uint32_t x, uint32_t y, uint32_t z, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) {}
+
 	virtual void CopyBufferToImage(Texture *texture, uint32_t subresource, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) = 0;
 
 	virtual void CopyImageToBuffer(Buffer *buffer, Texture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) {}

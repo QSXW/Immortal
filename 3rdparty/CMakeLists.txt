@@ -288,16 +288,17 @@ add_library(imgui STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.h")
 
 if (HAVE_FREETYPE)
-    target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
     target_sources(imgui PRIVATE
         ${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp
         ${IMGUI_DIR}/misc/freetype/imgui_freetype.h)
     target_link_libraries(imgui PRIVATE freetype)
     if (IMGU_ENABLE_SDF)
-        target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_MSDFGEN")
+        target_compile_definitions(imgui PUBLIC "IMGUI_ENABLE_MSDFGEN")
         target_sources(imgui PRIVATE
             ${IMGUI_DIR}/imgui_msdfgen.cpp
             ${IMGUI_DIR}/imgui_msdfgen.h)
+    else()
+        target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
     endif()
 endif()
 

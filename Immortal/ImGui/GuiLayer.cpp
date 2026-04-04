@@ -133,69 +133,6 @@ void GuiLayer::OnAttach()
     io.DisplaySize.y = window->GetHeight();
 	ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3, ImGuiBackendFlags_DefaultDesktop);
 
-	ImFontGlyphRangesBuilder builder;
-    const auto &words = Translator::GetWords();
-	for (auto &[key, value] : words)
-    {
-		builder.AddText(key.c_str());
-		builder.AddText(value.c_str());
-    }
-	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
-	builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
-	builder.BuildRanges(&fontRanges);
-
-    ImFontConfig fontConfig = {};
-	fontConfig.SignedDistanceFont = true;
-
- //   Profiler p{ "Loading DemiLight File" };
-	//NotoSans.Regular = io.Fonts->AddFontFromFileTTF(
- //       "Assets/Fonts/NotoSansSC-Regular.ttf",
-	//    32,
-	//    &fontConfig,
-	//    fontRanges.Data);
-
-	//fontConfig.GlyphExtraSpacing.x = 0.5f;
-	NotoSans.Bold = AddFontFromImage("Assets/Fonts/NotoSansSC-SemiBold.ttf.png", 18, &fontConfig, fontRanges.Data);
-        //io.Fonts->AddFontFromFileTTF(
-	   // "Assets/Fonts/NotoSansSC-SemiBold.ttf",
-       // 18,
-	   // &fontConfig,
-	   // fontRanges.Data);
-    //NotoSans.Bold->FontSize -= 1.0f;
-
-	static const ImWchar icons_ranges[] = {
-	    0xE000, 0xFFFF, 0,
-        /*0xe005, 0xf8ff, 0*/
-    };
-	ImFontConfig icons_config;
-	icons_config.MergeMode = true;
-	icons_config.PixelSnapH = true;
-	icons_config.GlyphMinAdvanceX = 18;
-	icons_config.SignedDistanceFont = true;
-
-    const char *kIconFont = "Assets/Fonts/Montage.ttf";
-	if (std::filesystem::exists(kIconFont))
-	{
-		io.Fonts->AddFontFromFileTTF(kIconFont, (icons_config.GlyphMinAdvanceX) /* 2.0 / 3.0*/, &icons_config, icons_ranges);
-	}
-
-    const char *KIconsFontAwesome6 = "Assets/Fonts/fa-solid-900.ttf";
-    if (!std::filesystem::exists(KIconsFontAwesome6))
-    {
-		LOG::ERR("{} not found. Some icon will be invalid!");
-    }
-	ImFontGlyphRangesBuilder iconBuilder;
-	ImVector<ImWchar> iconRanges;
-	iconBuilder.AddText(ICON_FA_CIRCLE_CHECK);
-	iconBuilder.AddText(ICON_FA_TRIANGLE_EXCLAMATION);
-	iconBuilder.AddText(ICON_FA_CIRCLE_EXCLAMATION);
-	iconBuilder.AddText(ICON_FA_CIRCLE_INFO);
-	iconBuilder.AddText(ICON_FA_XMARK);
-	iconBuilder.BuildRanges(&iconRanges);
-	io.Fonts->AddFontFromFileTTF(KIconsFontAwesome6, icons_config.GlyphMinAdvanceX * 2.0 / 3.0, &icons_config, iconRanges.Data);
-
-    io.Fonts->Build();
-
     decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
     decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
 
@@ -631,6 +568,10 @@ void from_json(const JSON::SuperJSON &j, ImVec4 &v)
 bool GuiLayer::LoadTheme()
 {
     auto json = JSON::Parse(ThemePath);
+    if (json.is_null())
+    {
+		return false;
+    }
 
     ImGuiStyle *style = &ImGui::GetStyle();
     ImVec4 *colors = style->Colors;
@@ -773,6 +714,27 @@ bool GuiLayer::SaveTheme()
     stream.Write(json.dump(4));
 
     return true;
+}
+
+ImFont *GuiLayer::AddFont(const std::string &path, float fontSize, const ImWchar *ranges, float glyphMinAdvanceX, bool mergeMode)
+{
+	auto &io = ImGui::GetIO();
+	ImFontConfig fontConfig = {};
+	fontConfig.MergeMode          = mergeMode;
+	fontConfig.SignedDistanceFont = true;
+
+    if (glyphMinAdvanceX > 0.0f)
+	{
+		float scaling = 1.0f;
+		fontConfig.PixelSnapH = true;
+		fontConfig.GlyphMinAdvanceX = 0;//glyphMinAdvanceX;
+		fontConfig.GlyphOffset      = { 0, glyphMinAdvanceX * (0.5f * scaling - 0.25f) };
+	}
+
+	auto font = io.Fonts->AddFontFromFileTTF(path.c_str(), fontSize, &fontConfig, ranges);
+	io.Fonts->AddFontDefault(&fontConfig);
+
+    return font;
 }
 
 }
