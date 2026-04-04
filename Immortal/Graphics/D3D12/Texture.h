@@ -43,6 +43,8 @@ protected:
 
     void ConstructShaderResourceView();
 
+    void ConstructDepthShaderResourceView();
+
 protected:
     DXGI_FORMAT format;
 

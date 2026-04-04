@@ -130,6 +130,10 @@ set(RENDER_FILES
     MeshletGenerator.h
     MeshletTask.cpp
     MeshletTask.h
+    DeferredTask.cpp
+    DeferredTask.h
+    IBLTask.cpp
+    IBLTask.h
     OrthographicCamera.cpp
     OrthographicCamera.h
     Render2D.cpp
@@ -137,7 +141,9 @@ set(RENDER_FILES
     RenderTask.cpp
     RenderTask.h
     SkyboxTask.cpp
-    SkyboxTask.h)
+    SkyboxTask.h
+    AtmosphereTask.cpp
+    AtmosphereTask.h)
 list(TRANSFORM RENDER_FILES PREPEND "Render/")
 
 set(SYNC_FILES

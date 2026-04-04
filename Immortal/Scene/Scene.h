@@ -14,6 +14,8 @@
 #include "Graphics/Event/KeyEvent.h"
 #include "Render/Render2D.h"
 #include "Render/FrameGraph.h"
+#include "Render/MeshletTask.h"
+#include "Render/DeferredTask.h"
 #include <map>
 
 namespace Immortal
@@ -78,12 +80,6 @@ public:
 
     Object Query(const std::string &name);
 
-    void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
-
-    void RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
-
-    void ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma, int kernalSize);
-
     void SetViewportSize(const Vector2 &size);
 
     const Vector2 &GetViewportSize() const;
@@ -99,6 +95,18 @@ public:
     void OnKeyPressed(KeyPressedEvent &e);
 
     void SetFrameGraph(const Ref<FrameGraph> &frameGraph);
+
+	/** When enabled, mesh geometry renders to an internal G-buffer; DeferredLighting task composites over the scene RT. */
+	void ConfigureDeferredPipeline(bool useDeferred, const Ref<MeshletTask> &meshlet, const Ref<DeferredTask> &deferred);
+
+	bool IsDeferredPipelineEnabled() const
+	{
+		return useDeferredPipeline;
+	}
+
+	void SetDeferredPBRResolve(bool enable);
+
+	bool IsDeferredPBRResolveEnabled() const;
 
     auto &Registry()
     {
@@ -124,6 +132,9 @@ public:
     {
         return renderTarget;
     }
+
+	/** Object-id buffer for picking: forward path uses main RT attachment 1; deferred uses G-buffer attachment 2. */
+	Ref<Texture> GetObjectIdPickTexture() const;
 
 private:
     void Init();
@@ -160,6 +171,14 @@ protected:
     URef<Render2D> render2d;
 
     Ref<FrameGraph> frameGraph;
+
+	bool useDeferredPipeline = false;
+
+	Ref<MeshletTask> meshletTask;
+
+	Ref<DeferredTask> deferredTask;
+
+	Ref<RenderTarget> gbufferTarget;
 
 private:
     SceneCamera *primaryCamera = nullptr;

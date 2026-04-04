@@ -10,7 +10,6 @@
 namespace Immortal
 {
 
-
 struct SceneConstantBuffer
 {
 	Matrix4  World;
@@ -26,6 +25,12 @@ struct MeshInfo
 	uint32_t MeshletOffset;
 };
 
+enum class MeshletRenderPath : uint32_t
+{
+	Forward = 0,
+	Deferred = 1,
+};
+
 class MeshletTask : public RenderTask
 {
 public:
@@ -39,14 +44,26 @@ public:
 
 	virtual void Composite(CommandBuffer *commandBuffer, const SceneParameters &params) override;
 
-	virtual void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, const Ref<Mesh> &mesh, const MaterialComponent &materialComponent) override;
+	virtual void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, MeshComponent &meshComponent, const MaterialComponent &materialComponent) override;
+
+	void SetRenderPath(MeshletRenderPath path)
+	{
+		renderPath = path;
+	}
+
+	MeshletRenderPath GetRenderPath() const
+	{
+		return renderPath;
+	}
 
 protected:
-	Ref<GraphicsPipeline> pipeline;
+	MeshletRenderPath renderPath = MeshletRenderPath::Forward;
+
+	Ref<GraphicsPipeline> pipelineForward;
+
+	Ref<GraphicsPipeline> pipelineDeferred;
 
 	Ref<Sampler> sampler;
-
-	Ref<DescriptorSet> descriptorSet;
 
 	Ref<Buffer> stagingBuffer;
 
