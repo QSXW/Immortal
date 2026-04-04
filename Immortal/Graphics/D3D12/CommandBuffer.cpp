@@ -401,7 +401,7 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 	commandList.ResourceBarrier(&barrier);
 }
 
-void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresource, SuperBuffer *_buffer, size_t bufferRowLength, uint32_t offset)
+void CommandBuffer::CopyTextureRegion(SuperTexture *_texture, uint32_t subresource, uint32_t width, uint32_t height, uint32_t x, uint32_t y, uint32_t z, SuperBuffer *_buffer, size_t bufferRowLength, uint32_t offset)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
 	Buffer *buffer   = InterpretAs<Buffer>(_buffer);
@@ -413,8 +413,8 @@ void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresour
 	        .Offset = offset,
 			.Footprint = {
 	            .Format   = texture->GetFormat(),
-	            .Width    = texture->GetWidth(),
-	            .Height   = texture->GetHeight(),
+	            .Width    = width,
+	            .Height   = height,
 	            .Depth    = 1,
 	            .RowPitch = (UINT)bufferRowLength
 			}
@@ -441,10 +441,15 @@ void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresour
 		commandList.ResourceBarrier(&barrier, 1);
 	}
 
-	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+	commandList.CopyTextureRegion(&dstLocation, x, y, z, &srcLocation, nullptr);
 	barrier.Swap();
 	commandList.ResourceBarrier(&barrier, 1);
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
+}
+
+void CommandBuffer::CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset)
+{
+	return CopyTextureRegion(texture, subresource, texture->GetWidth(), texture->GetHeight(), 0, 0, 0, buffer, bufferRowLength, offset);
 }
 
 void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect)

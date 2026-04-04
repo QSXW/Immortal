@@ -10,10 +10,12 @@ namespace Icon
 {
 WidgetIcon Icons;
 const char *Arrows[2];
+ImFont *Font;
 }
 
-void SetWidgetArrows(const char *left, const char *right, const char *down, const char *up)
+void SetWidgetArrows(ImFont *font, const char *left, const char *right, const char *down, const char *up)
 {
+	Icon::Font = font;
 	Icon::Icons = {
 		down,
 		left,
@@ -144,7 +146,7 @@ bool WFrame::Draw()
 	{
 		windowPos      = GetWindowPos();
 		windowSize     = GetWindowSize();
-		titleBarHeight = GetCurrentWindow()->TitleBarHeight();
+		titleBarHeight = GetCurrentWindow()->TitleBarHeight;
 
 		state.isFocused = IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 		state.isHovered = IsWindowHovered(ImGuiFocusedFlags_ChildWindows);
@@ -152,7 +154,7 @@ bool WFrame::Draw()
 		RenderWidth(x - borderOffset);
 		RenderHeight(y - borderOffset);
 
-		bool opened = BeginChild("###");
+		bool opened = BeginChild("##ChildFrame");
 		if (opened)
 		{
 			ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -202,8 +204,7 @@ bool WRightClickPopup::Draw()
 	constexpr float kItemHeight = 28.0f;
 	constexpr float kPadding    = 5.0f;
 
-	int mouseButton = (ImGuiMouseButton_Right & ImGuiPopupFlags_MouseButtonMask_);
-	if (IsMouseReleased(mouseButton) && IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+	if (IsMouseReleased(ImGuiMouseButton_Right) && IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
 	{
 		mousePos = ImGui::GetMousePos();
 		Open();

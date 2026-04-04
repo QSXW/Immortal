@@ -98,10 +98,10 @@ public:
                     ->Text("Right Click Menu")
                     ->Color(0xff262626)
                     ->Wrap({ 
-                    objectEditorText
-                        ->Text("Object Editor")
-		                ->Height(10)
-                        ->Color(0xa5ffffff),
+                  //  objectEditorText
+                  //      ->Text("Object Editor")
+		                //->Height(10)
+                  //      ->Color(0xa5ffffff),
                     separator,
                     items.primary
                         ->Color(0xffffffff)
@@ -378,11 +378,7 @@ public:
             }
             else if (FileSystem::IsVideo(filepath))
             {
-                Ref<Demuxer> demuxer    = new Vision::FFDemuxer;
-                Ref<VideoCodec> decoder = new Vision::FFCodec;
-				demuxer->Open(res.value(), decoder);
-
-                auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(demuxer, decoder);
+                auto &videoPlayer = object.AddComponent<VideoPlayerComponent>(res.value());
                 auto &sprite = object.AddComponent<SpriteRendererComponent>();
                 object.AddComponent<ColorMixingComponent>();
             }
