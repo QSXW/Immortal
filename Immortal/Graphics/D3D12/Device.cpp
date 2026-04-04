@@ -285,7 +285,7 @@ Pipeline *Device::GetPipeline(const std::string &name)
 	};
 
 	static const std::unordered_map<std::string, PipelineCreateInfo> pipelineCreateInfos = {
-		{ "GenerateMipMaps",     { "Assets/Shaders/hlsl/generatemipmaps",     ShaderStage::Compute,  "GenerateMipMaps"    } },
+		{ "GenerateMipMaps",     { "Assets/Shaders/hlsl/generatemipmaps",      ShaderStage::Compute, "GenerateMipMaps"    } },
 		{ "GenerateMipMapsCube", { "Assets/Shaders/hlsl/generatemipmaps_cube", ShaderStage::Compute, "GenerateMipMapsCube"} }
 	};
 

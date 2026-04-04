@@ -4,79 +4,84 @@ namespace Immortal
 {
 
 WMenu::WMenu(Widget *parent) :
-	Widget{parent}
+    Widget{parent}
 {
-	Connect([this] {
-		ImVec4 popbgColor = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
-		popbgColor.w *= factor;
-		ImGui::PushStyleColor(ImGuiCol_PopupBg, popbgColor);
-		StyleColorStack<uint32_t> styleColor{
-			{ImGuiCol_PopupBg, ImGui::ColorConvertFloat4ToU32(popbgColor)},
-		    {ImGuiCol_Text, Color()}};
 
-		StyleVarStack<ImVec2> styleVar{
-		    {ImGuiStyleVar_ItemSpacing, {10.0f, 10.0f}},
-		};
-		FontSizeStack fontSize(17.0f);
-		ImGui::SetNextWindowSize({240.0f, ImGui::GetTextLineHeightWithSpacing() * items.size() + 10.0f /*+ (10.0f * (items.size()))*/}, ImGuiCond_Always);
-		if (ImGui::BeginMenu(text.c_str()))
+}
+
+bool WMenu::Draw()
+{
+	ImVec4 popbgColor = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
+	popbgColor.w *= factor;
+	ImGui::PushStyleColor(ImGuiCol_PopupBg, popbgColor);
+	StyleColorStack<uint32_t> styleColor{
+		{ImGuiCol_PopupBg, ImGui::ColorConvertFloat4ToU32(popbgColor)},
+		{ImGuiCol_Text, Color()}};
+
+	StyleVarStack<ImVec2> styleVar{
+		{ImGuiStyleVar_ItemSpacing, {10.0f, 10.0f}},
+	};
+	FontSizeStack fontSize(17.0f);
+	ImGui::SetNextWindowSize({240.0f, ImGui::GetTextLineHeightWithSpacing() * items.size() + 10.0f /*+ (10.0f * (items.size()))*/}, ImGuiCond_Always);
+	if (ImGui::BeginMenu(text.c_str()))
+	{
+		ImGui::Dummy({0, 0});
+		EXPORT_WINDOW
+		window->DC.MenuColumns.OffsetLabel = 24.0f;
+		if (t < 1.0f)
 		{
-			ImGui::Dummy({0, 0});
-			EXPORT_WINDOW
-			window->DC.MenuColumns.OffsetLabel = 24.0f;
-			if (t < 1.0f)
-			{
-				t += Time::DeltaTime * 8.0f;
+			t += Time::DeltaTime * 8.0f;
 
-				auto easeInOut = [](float t, float b, float c, float d) {
-					return c * Math::Sin(t / d * (Math::PI / 2)) + b;
-				};
+			auto easeInOut = [](float t, float b, float c, float d) {
+				return c * Math::Sin(t / d * (Math::PI / 2)) + b;
+			};
 
-				factor = easeInOut(t, 0.0, 1.0f, 1.0f);
-			}
-			// factor = std::min(factor + Time::DeltaTime * 4.f, (float) (0.5f * Math::PI));
-			for (auto &item : items)
-			{
-				if (item.type == MenuItemType::Item)
-				{
-					//ImGui::Dummy(ImVec2(.0f, 0.0f));
-					//ImGui::SameLine();
-					//if (ImGui::MenuItem(item.name.c_str(), item.tips.c_str()))
-					//{
-					//	item.callback();
-					//}
-					ImGui::Dummy(ImVec2(.0f, 0.0f));
-					ImGui::SameLine();
-					float window_width = 240.0f;
-					float padding = 10.0f;
-					float menu_item_width = window_width - (2 * padding); 
-					//ImGui::SetCursorPosX(padding);
-					if (ImGui::Selectable(item.name.c_str(), false, 0, ImVec2(menu_item_width, 0)))
-					{
-						item.callback();
-					}
-					ImGui::SameLine();
-					ImGui::Dummy(ImVec2(.0f, 0.0f));
-					//ImGui::SetCursorPosX(window_width);
-				}
-				else
-				{
-					if (ImGui::BeginMenu(item.name.c_str()))
-					{
-						item.callback();
-					}
-				}
-			}
-			ImGui::Dummy({0, 0});
-			ImGui::EndMenu();
+			factor = easeInOut(t, 0.0, 1.0f, 1.0f);
 		}
-		else
+		// factor = std::min(factor + Time::DeltaTime * 4.f, (float) (0.5f * Math::PI));
+		for (auto &item : items)
 		{
-			t = 0.0f;
-			factor = 0.0f;
+			if (item.type == MenuItemType::Item)
+			{
+				//ImGui::Dummy(ImVec2(.0f, 0.0f));
+				//ImGui::SameLine();
+				//if (ImGui::MenuItem(item.name.c_str(), item.tips.c_str()))
+				//{
+				//	item.callback();
+				//}
+				ImGui::Dummy(ImVec2(.0f, 0.0f));
+				ImGui::SameLine();
+				float window_width = 240.0f;
+				float padding = 10.0f;
+				float menu_item_width = window_width - (2 * padding); 
+				//ImGui::SetCursorPosX(padding);
+				if (ImGui::Selectable(item.name.c_str(), false, 0, ImVec2(menu_item_width, 0)))
+				{
+					item.callback();
+				}
+				ImGui::SameLine();
+				ImGui::Dummy(ImVec2(.0f, 0.0f));
+				//ImGui::SetCursorPosX(window_width);
+			}
+			else
+			{
+				if (ImGui::BeginMenu(item.name.c_str()))
+				{
+					item.callback();
+				}
+			}
 		}
-		ImGui::PopStyleColor();
-	});
+		ImGui::Dummy({0, 0});
+		ImGui::EndMenu();
+	}
+	else
+	{
+		t = 0.0f;
+		factor = 0.0f;
+	}
+	ImGui::PopStyleColor();
+
+	return false;
 }
 
 WMenu *WMenu::Item(MenuItem &&item)
@@ -137,7 +142,7 @@ bool WMenuBar::Draw()
 
 		for (auto &child : children)
 		{
-			child->render();
+			child->Draw();
 		}
 
 		ImGui::EndMainMenuBar();

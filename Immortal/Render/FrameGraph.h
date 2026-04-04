@@ -19,6 +19,8 @@ public:
 
 	void AddTask(const Ref<RenderTask> &task, const std::string &dependency = {});
 
+	Ref<RenderTask> FindTask(const std::string &taskName) const;
+
 	void Execute(CommandBuffer *commandBuffer, const SceneParameters &params);
 
     void Composite(CommandBuffer *commandBuffer, const SceneParameters &params);

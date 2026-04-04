@@ -17,7 +17,7 @@ public:
 
     void SetOrthographic(float size, float nearClip = 0.0f, float farClip = 1.0f);
 
-    void SetViewportSize(float width, float height);
+    virtual void SetViewportSize(float width, float height);
 
     void SetViewportSize(const Vector2 &size)
     {

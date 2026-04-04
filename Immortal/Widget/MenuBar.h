@@ -34,6 +34,8 @@ public:
 public:
 	WMenu(Widget *parent = nullptr);
 
+	virtual bool Draw() override;
+
     WMenu *Item(MenuItem &&item);
 
 	WMenu *Sub(MenuItem &&item);

@@ -49,7 +49,7 @@ public:
 
 public:
     Graphics(Instance *instance, Device *device);
-   
+
     ~Graphics();
 
 public:
@@ -86,7 +86,7 @@ public:
     static void Transfer(Picture &pictures, const std::vector<Ref<Texture>> &texture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
     static Shader *CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint);
-    
+
     static void ReleaseResource(const Ref<RenderTarget> &renderTarget, uint64_t offset = 0);
 
     static void ReleaseResource(const Ref<Texture> &texture, uint64_t offset = 0);
@@ -107,7 +107,9 @@ public:
 
     static std::string ReadShaderSource(const String &filepath);
 
-    static Shader *CreateShaderFromDXIL(Device *device, const Path &path);
+    static Shader *CreateShaderFromDXIL(Device *device, const Path &path, ShaderStage stage = ShaderStage::Compute);
+
+    static Shader *GetShaderByName(const std::string &name, ShaderStage stage, const std::string &entryPoint);
 
     static Shader *CreateShaderByName(const std::string &name, const std::string &entryPoint = "main");
 
@@ -139,11 +141,11 @@ public:
     URef<CommandBuffer> commandBuffer;
 
     Data data;
-    
+
     std::mutex mutex;
 
     std::set<Ref<Buffer>, BufferCompare> stagingBuffers;
- 
+
     std::set<Ref<Buffer>, BufferCompare> readBackBuffers;
 
     uint32_t index = 0;
@@ -151,12 +153,12 @@ public:
     std::mutex discardedMutex;
 
     std::unordered_map<uint64_t, std::vector<Ref<RenderTarget>>> expiredRenderTargets;
-    
+
     std::unordered_map<uint64_t, std::vector<Ref<Texture>>> expiredTextures;
 
 	std::unordered_map<uint64_t, std::vector<Ref<Buffer>>> expiredBuffers;
 
-    std::unordered_map<std::string, Ref<Pipeline>> pipelines; 
+    std::unordered_map<std::string, Ref<Pipeline>> pipelines;
 
     ThreadPool releaseThread;
 

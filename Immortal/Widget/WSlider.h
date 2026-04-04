@@ -38,9 +38,6 @@ public:
         Widget{ v }
     {
         bbGrab = ImRect({ radius, radius }, { radius, radius });
-        Connect([=, this]() -> void {
-            Draw();
-        });
     }
 
     virtual bool Draw() override
