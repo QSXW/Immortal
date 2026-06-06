@@ -10,6 +10,11 @@
 #include <functional>
 #include <unordered_map>
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <tweeny.h>
 
 #include "Core.h"
@@ -35,10 +40,96 @@ namespace Immortal
 namespace Icon
 {
 	static const char *Arrows[] = {
-        kKeyboardArrowRight,
-        kKeyboardArrowDown,
+        kArrowRight,
+        kArrowDown
     };
 };
+
+enum ColorStyle
+{
+    Text                  = ImGuiCol_Text,
+    TextDisabled          = ImGuiCol_TextDisabled,
+    WindowBg              = ImGuiCol_WindowBg,
+    ChildBg               = ImGuiCol_ChildBg,
+    PopupBg               = ImGuiCol_PopupBg,
+    Border                = ImGuiCol_Border,
+    BorderShadow          = ImGuiCol_BorderShadow,
+    FrameBg               = ImGuiCol_FrameBg,
+    FrameBgHovered        = ImGuiCol_FrameBgHovered,
+    FrameBgActive         = ImGuiCol_FrameBgActive,
+    TitleBg               = ImGuiCol_TitleBg,
+    TitleBgActive         = ImGuiCol_TitleBgActive,
+    TitleBgCollapsed      = ImGuiCol_TitleBgCollapsed,
+    MenuBarBg             = ImGuiCol_MenuBarBg,
+    ScrollbarBg           = ImGuiCol_ScrollbarBg,
+    ScrollbarGrab         = ImGuiCol_ScrollbarGrab,
+    ScrollbarGrabHovered  = ImGuiCol_ScrollbarGrabHovered,
+    ScrollbarGrabActive   = ImGuiCol_ScrollbarGrabActive,
+    CheckMark             = ImGuiCol_CheckMark,
+    SliderGrab            = ImGuiCol_SliderGrab,
+    SliderGrabActive      = ImGuiCol_SliderGrabActive,
+    Button                = ImGuiCol_Button,
+    ButtonHovered         = ImGuiCol_ButtonHovered,
+    ButtonActive          = ImGuiCol_ButtonActive,
+    Header                = ImGuiCol_Header,
+    HeaderHovered         = ImGuiCol_HeaderHovered,
+    HeaderActive          = ImGuiCol_HeaderActive,
+    Separator             = ImGuiCol_Separator,
+    SeparatorHovered      = ImGuiCol_SeparatorHovered,
+    SeparatorActive       = ImGuiCol_SeparatorActive,
+    ResizeGrip            = ImGuiCol_ResizeGrip,
+    ResizeGripHovered     = ImGuiCol_ResizeGripHovered,
+    ResizeGripActive      = ImGuiCol_ResizeGripActive,
+    Tab                   = ImGuiCol_Tab,
+    TabHovered            = ImGuiCol_TabHovered,
+    TabActive             = ImGuiCol_TabActive,
+    TabUnfocused          = ImGuiCol_TabUnfocused,
+    TabUnfocusedActive    = ImGuiCol_TabUnfocusedActive,
+    DockingPreview        = ImGuiCol_DockingPreview,
+    DockingEmptyBg        = ImGuiCol_DockingEmptyBg,
+    PlotLines             = ImGuiCol_PlotLines,
+    PlotLinesHovered      = ImGuiCol_PlotLinesHovered,
+    PlotHistogram         = ImGuiCol_PlotHistogram,
+    PlotHistogramHovered  = ImGuiCol_PlotHistogramHovered,
+    TableHeaderBg         = ImGuiCol_TableHeaderBg,
+    TableBorderStrong     = ImGuiCol_TableBorderStrong,
+    TableBorderLight      = ImGuiCol_TableBorderLight,
+    TableRowBg            = ImGuiCol_TableRowBg,
+    TableRowBgAlt         = ImGuiCol_TableRowBgAlt,
+    TextSelectedBg        = ImGuiCol_TextSelectedBg,
+    DragDropTarget        = ImGuiCol_DragDropTarget,
+    NavHighlight          = ImGuiCol_NavHighlight,
+    NavWindowingHighlight = ImGuiCol_NavWindowingHighlight,
+    NavWindowingDimBg     = ImGuiCol_NavWindowingDimBg,
+    ModalWindowDimBg      = ImGuiCol_ModalWindowDimBg,
+    MaxCount
+};
+
+static inline ImVec2 operator-(const ImVec2 &a, const ImVec2 &b)
+{
+    return { a.x - b.x, a.y - b.y };
+}
+
+static inline ImVec2 operator+(const ImVec2 &a, const ImVec2 &b)
+{
+    return { a.x + b.x, a.y + b.y };
+}
+
+static inline ImVec2 &operator-=(ImVec2 &a, const ImVec2 &b)
+{
+    a.x -= b.x;
+    a.y -= b.y;
+
+    return a;
+}
+
+static inline ImVec2 &operator+=(ImVec2 &a, const ImVec2 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+
+    return a;
+}
 
 inline float GetCenterAlignPosition(float avilableWidth, float itemWidth)
 {
@@ -345,32 +436,17 @@ public:
         parent{}
     {
         AddParent(parent);
+        Connect([&]() {
+            for (auto &child : children)
+            {
+                child->RealRender();
+            }
+            });
     }
 
     virtual bool Draw()
     {
-		bool ret = false;
-		for (auto &child : children)
-		{
-			ret |= child->Draw();
-		}
-
-        return ret;
-    }
-
-    virtual bool OnEvent(Event &event)
-    {
-		bool ret = false;
-		for (auto &child : children)
-		{
-			ret |= child->OnEvent(event);
-            if (ret)
-            {
-				break;
-            }
-		}
-
-        return ret;
+		return false;
     }
 
     Widget *AddParent(Widget *other)
@@ -414,10 +490,15 @@ public:
         return AddChildren(std::move(widgets));
     }
 
+    void RealRender()
+    {
+        render();
+    }
+
     void Render()
     {
         SLASSERT(!parent && "Widget::Render{ Only the root node could emit the render functions }");
-		Draw();
+        RealRender();
     }
 
     Vector2 Size() const
@@ -550,7 +631,7 @@ public:
         auto relative = position;
         for (auto &child : children)
         {
-            child->Draw();
+            child->RealRender();
         }
     }
 
@@ -579,7 +660,7 @@ public:
         for (auto &child : children)
         {
             window->DC.CursorPos = child->position;
-            child->Draw();
+            child->render();
         }
         POP_WINDOW_POS
     }
@@ -628,8 +709,6 @@ class IMMORTAL_API WDockerSpace : public Widget
 {
 public:
 	WDockerSpace();
-
-    virtual bool Draw() override;
 };
 
 class IMMORTAL_API WDemoWindow : public Widget
@@ -638,13 +717,7 @@ public:
     WDemoWindow(Widget *parent = nullptr) :
         Widget{ parent }
     {
-
-    }
-
-    virtual bool Draw() override
-    {
-		ImGui::ShowDemoWindow(&isOpen);
-		return isOpen;
+		Connect([&] { ImGui::ShowDemoWindow(&isOpen); });
     }
 
     bool Toggle()
@@ -663,13 +736,10 @@ public:
     WIDGET_SET_PROPERTIES(WFrame)
 	WIDGET_PROPERTY_TEXT
 	WIDGET_PROPERTY_COLOR
-	WIDGET_SET_PROPERTY(Flags,   flags,   ImGuiWindowFlags, 0   )
-	WIDGET_SET_PROPERTY(Visible, visible, bool,             true)
+	WIDGET_SET_PROPERTY(Flags, flags, ImGuiWindowFlags, 0)
 
 public:
 	WFrame(Widget *parent = nullptr);
-
-    virtual bool Draw() override;
 
     bool IsFocused() const
     {
@@ -701,15 +771,6 @@ public:
 		state = {};
     }
 
-    virtual bool OnEvent(Event &event)
-	{
-        if (!state.isFocused && !state.isHovered)
-        {
-			return false;
-        }
-		return Widget::OnEvent(event);
-	}
-
 protected:
 	WidgetState state;
 
@@ -726,25 +787,20 @@ public:
     WRect(Widget *v = nullptr) :
         Widget{ v }
     {
+        Connect([&]() {
+            WidgetLock lock{this};
 
-    }
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{padding.right, padding.bottom});
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{padding.left, padding.top};
+            Draw({ renderWidth, renderHeight });
 
-    virtual bool Draw() override
-    {
-		WidgetLock lock{this};
+            __RelativeTrampoline();
 
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{padding.right, padding.bottom});
-		ImGuiWindow *window = ImGui::GetCurrentWindow();
-		window->DC.CursorPos = window->DC.CursorPos + ImVec2{padding.left, padding.top};
-		Draw({renderWidth, renderHeight});
-
-		__RelativeTrampoline();
-
-		ImGui::PopStyleVar();
-		ImGui::PopStyleColor();
-
-        return false;
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+            });
     }
 
     void Draw(const ImVec2 &size)
@@ -770,62 +826,25 @@ class IMMORTAL_API WImage : public Widget
 {
 public:
 	WIDGET_SET_PROPERTIES(WImage)
-	WIDGET_SET_PROPERTY(ImageWidth,  imageWidth,  float,   0.0f)
-	WIDGET_SET_PROPERTY(ImageHeight, imageHeight, float,   0.0f)
-	WIDGET_SET_PROPERTY(UV0,         uv0,         ImVec2,  0.0f, 0.0f)
-	WIDGET_SET_PROPERTY(UV1,         uv1,         ImVec2,  1.0f, 1.0f)
-	WIDGET_SET_PROPERTY(Image,       image,       Ref<Texture>)
-	WIDGET_SET_PROPERTY(Rotation,    rotation,    float,   0.0f)
+	WIDGET_SET_PROPERTY(ImageWidth,  imageWidth,  float, 0.0f)
+	WIDGET_SET_PROPERTY(ImageHeight, imageHeight, float, 0.0f)
 
 public:
     WImage(Widget *v = nullptr) :
         Widget{ v }
     {
-
+        Connect([&]() {
+			Draw();
+            });
     }
-
-    ~WImage()
-    {
-		Graphics::ReleaseResource(image);
-    }
-
-	static inline ImVec2 ImRotate(const ImVec2 &v, float cos_a, float sin_a)
-	{
-		return ImVec2(v.x * cos_a - v.y * sin_a, v.x * sin_a + v.y * cos_a);
-	}
-
-	void ImageRotated(ImTextureID textureId, ImVec2 center, ImVec2 size, float angle)
-	{
-		ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-		float cos_a = cosf(angle);
-		float sin_a = sinf(angle);
-		ImVec2 pos[4] = {
-		    center + ImRotate(ImVec2(-size.x * 0.5f, -size.y * 0.5f), cos_a, sin_a),
-		    center + ImRotate(ImVec2(+size.x * 0.5f, -size.y * 0.5f), cos_a, sin_a),
-		    center + ImRotate(ImVec2(+size.x * 0.5f, +size.y * 0.5f), cos_a, sin_a),
-		    center + ImRotate(ImVec2(-size.x * 0.5f, +size.y * 0.5f), cos_a, sin_a)
-        };
-		ImVec2 uvs[4] =
-		{
-		        ImVec2(0.0f, 0.0f),
-		        ImVec2(1.0f, 0.0f),
-		        ImVec2(1.0f, 1.0f),
-		        ImVec2(0.0f, 1.0f)
-        };
-
-		draw_list->AddImageQuad(textureId, pos[0], pos[1], pos[2], pos[3], uvs[0], uvs[1], uvs[2], uvs[3], IM_COL32_WHITE);
-	}
 
     virtual bool Draw() override
     {
-        using namespace ImGui;
         WidgetLock lock{ this };
 
 		size = ImGui::GetContentRegionAvail();
 		width  = size.x;
 		height = size.y;
-
         __PreClaculateImageSize();
 
         ImVec2 offset = ImGui::GetWindowPos();
@@ -841,34 +860,23 @@ public:
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{renderPadding.right, renderPadding.bottom});
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         window->DC.CursorPos = window->DC.CursorPos + ImVec2{renderPadding.left, renderPadding.top};
-    
-        ImTextureID id = (ImTextureID)(uint64_t)image.Get();
-		ImVec2 size = { renderWidth, renderHeight };
-		ImVec2 cursor = GetCursorScreenPos();
 
-        if (rotation != 0)
+        if (descriptor)
         {
-			if (rotation != -180)
-			{
-				std::swap(size.x, size.y);
-			}
-            ImageRotated(
-			    id,
-			    {cursor.x + size.y * 0.5f, cursor.y + size.x * 0.5f},
-			    size,
-                Vector::Radians(rotation)
+            ImGui::Image(
+                (ImTextureID)descriptor,
+                {renderWidth, renderHeight}
             );
         }
         else
         {
             ImGui::Image(
-			    id,
-                size,
-                uv0,
-                uv1
+                (ImTextureID)(uint64_t)resource.image,
+                {renderWidth, renderHeight},
+                resource.uv._0,
+                resource.uv._1
             );
         }
-
         ImGui::PopStyleVar();
 
         __RelativeTrampoline();
@@ -879,7 +887,7 @@ public:
     void __PreClaculateImageSize()
     {
 		size = { renderWidth, renderHeight };
-		if (!image)
+		if (descriptor || !resource.image)
         {
             return;
         }
@@ -889,12 +897,8 @@ public:
 
         if (w == 0)
         {
-			w = (float)image->GetWidth();
-			h = (float)image->GetHeight();
-            if (rotation == -90 || rotation == -270)
-            {
-				std::swap(w, h);
-            }
+			w = (float)resource.image->GetWidth();
+			h = (float)resource.image->GetHeight();
         }
 
         auto scale = w / h;
@@ -923,10 +927,11 @@ public:
         renderHeight = y;
     }
 
-    WidgetType *Source(const Ref<Texture> &_image)
+    WIDGET_SET_PROPERTY_FUNC(Descriptor, descriptor, uint64_t)
+
+    WidgetType *Source(const WImageResource &res)
     {
-		Graphics::ReleaseResource(image);
-		image = _image;
+        resource = res;
         return this;
     }
 
@@ -954,6 +959,10 @@ public:
 
     Vector2 size;
 
+    uint64_t descriptor = 0;
+
+    WImageResource resource;
+
     WPadding renderPadding;
 };
 
@@ -968,33 +977,30 @@ public:
     WPopup(Widget *parent = nullptr) :
         Widget{ parent }
     {
+        Connect([&] {
+            if (isOpen)
+            {
+				ImGui::OpenPopup(Text().c_str());
+            }
 
+            ImGui::SetNextWindowSize({ renderWidth, renderHeight });
+
+            StyleColorStack<uint32_t> styleColor{
+			    {ImGuiCol_PopupBg, Color() }
+            };
+
+            StyleVarStack<ImVec2> styleVar{
+			    {ImGuiStyleVar_WindowPadding, ImVec2{ padding.right, padding.bottom}}
+            };
+			if (ImGui::BeginPopup(Text().c_str(), ImGuiWindowFlags_NoMove))
+            {
+                position = ImGui::GetItemRectMin();
+                __RelativeTrampoline();
+                ImGui::EndPopup();
+            }
+
+        });
     }
-
-    virtual bool Draw() override 
-    {
-		if (isOpen)
-		{
-			ImGui::OpenPopup(Text().c_str());
-		}
-
-		ImGui::SetNextWindowSize({renderWidth, renderHeight});
-
-		StyleColorStack<uint32_t> styleColor{
-		    {ImGuiCol_PopupBg, Color()}};
-
-		StyleVarStack<ImVec2> styleVar{
-		    {ImGuiStyleVar_WindowPadding, ImVec2{padding.right, padding.bottom}}};
-		bool opened = ImGui::BeginPopup(Text().c_str(), ImGuiWindowFlags_NoMove);
-        if (opened)
-		{
-			position = ImGui::GetItemRectMin();
-			__RelativeTrampoline();
-			ImGui::EndPopup();
-		}
-
-        return opened;
-	}
 
     void Trigger(bool enable)
     {
@@ -1017,16 +1023,11 @@ public:
     WSeparator(Widget *parent = nullptr) :
         Widget{ parent }
     {
-
-    }
-
-    virtual bool Draw() override
-    {
-		ImGui::PushStyleColor(ImGuiCol_Separator, color);
-		ImGui::Separator();
-		ImGui::PopStyleColor();
-
-        return false;
+        Connect([&] {
+            ImGui::PushStyleColor(ImGuiCol_Separator, color);
+            ImGui::Separator();
+            ImGui::PopStyleColor();
+        });
     }
 };
 
@@ -1040,45 +1041,40 @@ public:
     WHBox(Widget *parent = nullptr) :
         Widget{parent}
     {
-
-    }
-
-    virtual bool Draw() override
-    {
-        auto pos = position + ImVec2{ padding.left, padding.top };
-        auto relative = pos;
-        for (auto &child : children)
-        {
-            child->RelativeTo(relative);
-            child->__PreCalculateSize();
-            relative.x += child->padding.left + child->renderWidth + child->padding.right;
-        }
-
-        size_t totalWidth = relative.x - position.x;
-        if (align & WAlignMode::HCenter && totalWidth < renderWidth)
-        {
-            auto paddingLeft = (renderWidth - totalWidth) * 0.5;
-            position.x += paddingLeft;
-
+        Connect([this] {
+            auto pos = position + ImVec2{ padding.left, padding.top };
+            auto relative = pos;
             for (auto &child : children)
             {
-                child->position.x += paddingLeft;
+                child->RelativeTo(relative);
+                child->__PreCalculateSize();
+                relative.x += child->padding.left + child->renderWidth + child->padding.right;
             }
-        }
-        else
-        {
-            position = pos;
-        }
 
-        PUSH_WINDOW_POS(position)
-        for (auto &child : children)
-        {
-            window->DC.CursorPos = child->position;
-            child->render();
-        }
-		POP_WINDOW_POS
+            size_t totalWidth = relative.x - position.x;
+            if (align & WAlignMode::HCenter && totalWidth < renderWidth)
+            {
+                auto paddingLeft = (renderWidth - totalWidth) * 0.5;
+                position.x += paddingLeft;
 
-		return false;
+                for (auto &child : children)
+                {
+                    child->position.x += paddingLeft;
+                }
+            }
+            else
+            {
+                position = pos;
+            }
+
+            PUSH_WINDOW_POS(position)
+            for (auto &child : children)
+            {
+                window->DC.CursorPos = child->position;
+                child->render();
+            }
+            POP_WINDOW_POS
+        });
     }
 };
 
@@ -1091,13 +1087,9 @@ public:
     WVBox(Widget *parent = nullptr) :
         Widget{parent}
     {
-
-    }
-
-    virtual bool Draw() override
-    {
-		__RelativeTrampoline();
-		return false;
+        Connect([this] {
+            __RelativeTrampoline();
+        });
     }
 };
 
@@ -1112,22 +1104,62 @@ public:
 	    Widget{ parent },
 	    visible{ true }
 	{
-
+		Connect([this] {
+            if (visible)
+		    {
+                for (auto &child : children)
+                {
+					child->RealRender();
+                }
+		    }
+        });
 	}
+};
 
-    virtual bool Draw() override
+class IMMORTAL_API WText : public Widget
+{
+public:
+    WIDGET_SET_PROPERTIES(WText)
+	WIDGET_PROPERTY_TEXT
+	WIDGET_PROPERTY_COLOR
+	WIDGET_PROPERTY_ALIGN
+
+public:
+    WText(Widget *parent = nullptr) :
+        Widget{parent}
     {
-		bool ret = false;
-		if (visible)
-		{
-			for (auto &child : children)
-			{
-				ret |= child->Draw();
-			}
-		}
+        Connect([&] {
+            if (align & WAlignMode::VCenter)
+            {
+                renderHeight += padding.top + padding.bottom;
+                padding.top = padding.bottom = (renderHeight - fontSize) * 0.5f;
+            }
+            if (align & WAlignMode::HCenter)
+            {
+                renderWidth += padding.left + padding.right;
+				auto [x, y] = ImGui::CalcTextSize(Text().c_str());
+                padding.left = padding.right = (renderWidth - x) * 0.5f;
+            }
 
-        return ret;
+            auto fontScale = fontSize / ImGui::GetFontSize();
+            ImGui::SetWindowFontScale(fontScale);
+            ImGui::PushStyleColor(ImGuiCol_Text, color);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{padding.right, padding.bottom});
+            ImGuiWindow *window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{padding.left, padding.top};
+			ImGui::Text("%s", Text().c_str());
+            ImGui::PopStyleVar();
+            ImGui::PopStyleColor();
+            ImGui::SetWindowFontScale(1.0f);
+        });
     }
+
+    WIDGET_SET_PROPERTY_FUNC(FontSize, fontSize, float     )
+
+protected:
+    float fontSize = 16.0f;
+
+    float spacing = 0;
 };
 
 template <class T>
@@ -1142,6 +1174,9 @@ public:
 	{
 		width = 0;
 		height = 0;
+		Connect([&] {
+			Draw();
+		});
 	}
 
     virtual bool Draw() override
@@ -1172,6 +1207,9 @@ public:
     {
         width = 0;
         height = 0;
+        Connect([&] {
+			Draw();
+            });
     }
 
     virtual bool Draw() override
@@ -1214,65 +1252,6 @@ protected:
     std::function<void(const T *)> callback;
 };
 
-constexpr float kAlignPaddingY = 2.0f;
-constexpr float CalculateCircleCheckboxWidth(float height)
-{
-    height -= kAlignPaddingY * 2;
-    return height * 1.5 + 1;
-}
-
-static inline bool CircleCheckbox(const char *label, bool *v, uint32_t backgroundColor, uint32_t enabledColor = 0xCCdd8844, uint32_t disabledColor = 0xAAeeeeee)
-{
-    //ImGui::Checkbox(label, v);
-
-    ImGuiContext &g = *GImGui;
-    const ImGuiStyle &style = g.Style;
-    ImGuiWindow *window = ImGui::GetCurrentWindow();
-    if (window->SkipItems)
-        return false;
-
-    const ImGuiID id = window->GetID(label);
-
-    float height = ImGui::GetFrameHeightWithSpacing();
-    const Vector2 pos = window->DC.CursorPos;
-
-    const float width = CalculateCircleCheckboxWidth(height);
-	height -= kAlignPaddingY * 2;
-    ImVec2 bbMin = {pos.x, pos.y + kAlignPaddingY};
-	ImVec2 bbMax = {pos.x + width, bbMin.y + height};
-
-    ImRect bb{bbMin, bbMax};
-    window->DrawList->AddRectFilled(bb.Min, bb.Max, backgroundColor, width);
-
-    bool value = *v;
-    bool hovered = false;
-    bool held    = false;
-
-    ImGui::ItemSize(bb, style.FramePadding.y);
-    if (!ImGui::ItemAdd(bb, id))
-    {
-        IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Checkable | (*v ? ImGuiItemStatusFlags_Checked : 0));
-        return false;
-    }
-    if (ImGui::ButtonBehavior(bb, id, &hovered, &held))
-    {
-        value = !value;
-    }
-
-    float radius = height * 0.5f;
-	ImVec2 center = { bbMin.x + radius,bbMin.y + radius };
-    if (value)
-    {
-        center.x += radius + 1;
-    }
-    *v = value;
-
-    uint32_t color = !value ? disabledColor : enabledColor;
-    window->DrawList->AddCircleFilled(center, radius - 2.0f, color);
-
-    return true;
-}
-
 class WCollapsingHeader
 {
 public:
@@ -1285,13 +1264,8 @@ public:
 	WIDGET_SET_PROPERTY(IndentSpacing,       indentSpacing,       float,    8.0f      )
 	WIDGET_SET_PROPERTY(ExpandSpeed,         expandSpeed,         float,    3.0f      )
 	WIDGET_SET_PROPERTY(ContentPaddingY,     contentPaddingY,     float,    8.0f      )
-	WIDGET_SET_PROPERTY(HasBorder,           hasBorder,           bool,     false     )
+	WIDGET_SET_PROPERTY(HasBorder,           hasBorder,           bool,     true      )
 	WIDGET_SET_PROPERTY(BodyBackgroundColor, bodyBackgroundColor, uint32_t, 0x861f1f1f)
-	WIDGET_SET_PROPERTY(CurrentSizeY,        currentSizeY,        float,    0         )
-	WIDGET_SET_PROPERTY(TargetSizeY,         targetSizeY,         float,    0         )
-    WIDGET_SET_PROPERTY(SizeChanged,         sizeChanged,         bool,     true      )
-	WIDGET_SET_PROPERTY(HasTriggerButton,    hasTriggerButton,    bool,     false     )
-	WIDGET_SET_PROPERTY(Enabled,             enabled,             bool,     false     )
 
 public:
 	WCollapsingHeader(bool defaultOpen = false);
@@ -1299,113 +1273,52 @@ public:
 	template <class T>
 	void Draw(T &&callback)
 	{
+		EXPORT_WINDOW
         using namespace ImGui;
-        
+		//Dummy({margin, 0});
+		//ImGui::SameLine(0, 0);
+
         StyleColorStack<uint32_t> styleColor{
 		    {ImGuiCol_ChildBg, BodyBackgroundColor()}
 		};
-
-        ImGuiContext &g = *GImGui;
-		float indentSpacing = g.Style.IndentSpacing;
-
 		StyleVarStack<ImVec2> styleVar{};
 		StyleVarStack<float> styleVar2{
 		    {ImGuiStyleVar_IndentSpacing, 0.0f}
         };
 
+		window->WorkRect.Max.x -= margin;
 		auto region = GetContentRegionAvail();
-		
-        ImGuiWindow *window = GetCurrentWindow();
 
-		auto name = Text().c_str();
-        ImGuiID id = window->GetID(name);
-
-        ImGuiTreeNodeFlags flags = Flags() | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-        if (!hasTriggerButton)
-        {
-			flags |= ImGuiTreeNodeFlags_SpanFullWidth;
-        }
-		bool newState = TreeNodeEx(name, flags, "%s%s", Icon::Arrows[expanded], name);
-
-        if (hasTriggerButton)
-        {
-			auto width = ImGui::GetWindowWidth();
-			float height = ImGui::GetFrameHeightWithSpacing();
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - height);
-			width = width - CalculateCircleCheckboxWidth(height) - 10;
-			ImGui::SameLine(width);
-			CircleCheckbox("UICheckBox", &enabled, 0xff111111);
-        }
-
-		float renderSize = BodyHeigth() + ContentPaddingY() * 2;
-        sizeChanged |= newState != expanded;
-		expanded = newState;
-
-		if (sizeChanged)
+        auto name = Text().c_str();
+		if ((expanded = TreeNodeEx(name, flags | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanFullWidth, "%s%s", Icon::Arrows[expanded], name)))
 		{
-			targetSizeY = expanded ? renderSize : 0.0f;
-			if (currentSizeY == 0 && targetSizeY == 0)
-			{
-				currentSizeY = expanded ? 0.0f : renderSize;
-			}
-
-		    tween = tweeny::from(currentSizeY).to(targetSizeY).during(1000).via(tweeny::easing::quadraticOut);
-			sizeChanged = false;
-		}
-
-		if (expanded || currentSizeY > 0)
-		{
-			float t = 5 * Time::DeltaTime;
-			//currentSizeY = Math::HermiteLerp(currentSizeY, targetSizeY, t);
-
-   //         float diff = std::abs(targetSizeY - currentSizeY);
-   //         if (diff < 0.001f)
-   //         {
-			//	currentSizeY = targetSizeY;
-   //         }
-
-            currentSizeY = tween.step(t);
-			//currentSizeY = std::clamp(currentSizeY, 0.0f, renderSize);
-
-			//factor = tween.step(ExpandSpeed() * Time::DeltaTime);
+			factor = tween.step(ExpandSpeed() * Time::DeltaTime);
 			DrawBorder(region);
-            
+
 			{
 				region = GetContentRegionAvail();
 				WidgetLock lock{this};
-				ImVec2 size = {region.x, currentSizeY};
-				if (size.y > 0 || bodyHeigth == 0)
+				ImVec2 size = {region.x, (BodyHeigth() + ContentPaddingY() * 2) * factor};
+				if (BodyHeigth() != 0)
 				{
-					if (BeginChild(window->GetID(this), size, bodyHeigth == 0 ? ImGuiChildFlags_AutoResizeY : 0, ImGuiWindowFlags_NoDecoration))
-				    {
-					    EXPORT_WINDOW
-					    Indent(IndentSpacing() + Margin());
-					    StyleVarStack<float> styleVar2{
-					        {ImGuiStyleVar_IndentSpacing, indentSpacing }};
-
-						float padding = bodyHeigth > 0 ? ContentPaddingY() : 0;
-					    Dummy({ 0, padding });
-					    auto startY = window->DC.CursorPos.y;
-					    callback();
-
-                        float newBodyHeight = window->DC.CursorPos.y - startY;
-						if (newBodyHeight != bodyHeigth)
-                        {
-							sizeChanged = true;
-                        }
-						BodyHeigth(newBodyHeight);
-					    Dummy({ 0, padding });
-						Unindent();
-				    }
-				    EndChild();
-                }
+					if (BeginChild(window->GetID(this), size, 0, ImGuiWindowFlags_NoDecoration))
+					{
+						Indent(IndentSpacing() + Margin());
+						Dummy({0, ContentPaddingY()});
+						callback();
+						Dummy({0, ContentPaddingY()});
+					}
+					EndChild();
+				}
 			}
-            
-   //         if (expanded)
-			//{
-			//	TreePop();
-			//}
+			TreePop();
 		}
+		else
+		{
+			tween.seek(0);
+			DrawBorder(region);
+		}
+		window->WorkRect.Max.x += margin;
 	}
 
 	~WCollapsingHeader()
@@ -1464,6 +1377,7 @@ public:
         bool valueChanged = false;
         for (int i = 0; i < data.size(); i++)
         {
+            //FontSizeStack font{ GuiLayer::NotoSans.Bold, 17.0f };
             int flags = 0;
             const char *itemText = data[i].c_str();
 			const char *textEnd = itemText + data[i].size();
@@ -1472,53 +1386,40 @@ public:
                 itemText = "*Unknown item*";
             }
 
-            float linePadding = (height - GetTextLineHeight()) * 0.5f;
-
-            WidgetLock lock{itemText};
             const bool itemSelected = (i == selected);
-			bool pressed = Selectable("###", itemSelected, 0, ImVec2(width, height));
-			if (IsItemVisible())
+
+            WidgetLock lock{ itemText };
+            auto id = window->GetID(itemText);
+
+            auto labelSize = ImGui::CalcTextSize(itemText, textEnd);
+            ImVec2 size = { std::max(width, labelSize.x), height };
+            ImRect bb = { window->DC.CursorPos, {} };
+            bb.Max = bb.Min + size;
+                
+            ItemSize(size, 0);
+            if (!ItemAdd(bb, id))
+                continue;
+
+            bool hovered;
+            bool held;
+            bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
+            RenderFrame(bb.Min, bb.Max, hovered ? hoveredColor : (itemSelected ? activeColor : backgroundColor), false);
+
+            if (size.y >= height)
+            {
+                ImRect textRect{ { bb.Min.x + 4.0f, bb.Min.y + PaddingY() }, { bb.Max.x, bb.Max.y - PaddingY() } };
+                ImVec4 textClipRect{ textRect.Min.x, textRect.Min.y, textRect.Max.x, textRect.Max.y };
+				RenderTextClipped(textRect.Min, textRect.Max, itemText, textEnd, nullptr, {}, &textRect);
+            }
+
+            if (hovered && labelSize.x > width)
 			{
-				ImRect bb{GetItemRectMin(), GetItemRectMax()};
-				const char *s = itemText;
-				const char *e = textEnd;
-				auto labelSize = CalcTextSize(s, e);
-
-				ImVec2 primaryLabelPos{bb.Min.x + 8, bb.Min.y + linePadding};
-				RenderTextClipped(primaryLabelPos, bb.Max, s, e, &labelSize);
+                if (BeginTooltip())
+                {
+					ImGui::TextEx(itemText, textEnd);
+					EndTooltip();
+                }
 			}
-
-   //         auto id = window->GetID(itemText);
-
-   //         auto labelSize = ImGui::CalcTextSize(itemText, textEnd);
-   //         ImVec2 size = { std::max(width, labelSize.x), height };
-   //         ImRect bb = { window->DC.CursorPos, {} };
-   //         bb.Max = bb.Min + size;
-   //             
-   //         ItemSize(size, 0);
-   //         if (!ItemAdd(bb, id))
-   //             continue;
-
-   //         bool hovered;
-   //         bool held;
-   //         bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held);
-   //         //RenderFrame(bb.Min, bb.Max, hovered ? hoveredColor : (itemSelected ? activeColor : backgroundColor), false);
-
-   //         if (size.y >= height)
-   //         {
-   //             ImRect textRect{ { bb.Min.x + 8.0f, bb.Min.y + PaddingY() }, { bb.Max.x, bb.Max.y - PaddingY() } };
-   //             ImVec4 textClipRect{ textRect.Min.x, textRect.Min.y, textRect.Max.x, textRect.Max.y };
-			//	RenderTextClipped(textRect.Min, textRect.Max, itemText, textEnd, nullptr, {}, &textRect);
-   //         }
-
-   //         if (hovered && labelSize.x > width)
-			//{
-   //             if (BeginTooltip())
-   //             {
-			//		ImGui::TextEx(itemText, textEnd);
-			//		EndTooltip();
-   //             }
-			//}
 
             if (pressed && (window->Flags & ImGuiWindowFlags_Popup) && !(flags & ImGuiSelectableFlags_DontClosePopups) && !(g.LastItemData.InFlags & ImGuiItemFlags_SelectableDontClosePopup))
             {
@@ -1550,12 +1451,11 @@ class WCombo
 {
 public:
     using WidgetType = WCombo;
-    WIDGET_SET_PROPERTY(TextStartOffset, textStartOffset, float,       8.0f      )
+    WIDGET_SET_PROPERTY(TextStartOffset, textStartOffset, float,       4.0f      )
     WIDGET_SET_PROPERTY(Color,           color,           uint32_t,    0xff1f1f1f)
     WIDGET_SET_PROPERTY(BorderColor,     borderColor,     uint32_t,    0xff121212)
     WIDGET_SET_PROPERTY(BorderSize,      borderSize,      float,       1         )
     WIDGET_SET_PROPERTY(Rounding,        rounding,        float,       2         )
-	WIDGET_SET_PROPERTY(MaxVisibleItem,  maxVisibleItem,  uint32_t,    0xffffffff)
     WIDGET_SET_PROPERTY(Selected,        selected,        int,         0         )
     WIDGET_SET_PROPERTY(SeletableUI,     seletableUI,     WSelectable            )
     WIDGET_SET_PROPERTY(PaddingY,        paddingY,        float,       2.0f      )
@@ -1647,7 +1547,7 @@ public:
             bool hovered;
             bool held;
             pressed |= ButtonBehavior(bbIcon, iconId, &hovered, &held);
-			window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, kKeyboardArrowDown);
+			window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, kArrowDown);
         }
 
         if (hovered)
@@ -1664,12 +1564,12 @@ public:
                 EndTooltip();
             }
 
-			if (io.MouseWheel > 1.0f)
+			if (io.MouseWheel > 0)
 			{
 				selected = std::max(0, selected - 1);
 				selectedChange = true;
 			}
-			else if (io.MouseWheel < -1.0f)
+			else if (io.MouseWheel < 0)
 			{
 				selected = std::min((int) data.size() - 1, selected + 1);
 				selectedChange = true;
@@ -1709,61 +1609,25 @@ public:
 
         if (!(flags & WComboFlagBit_NoFixedWidth))
 		{
-			height = ImGui::GetFrameHeight();
-			//height += PaddingY() * 4;
-            
-			ImVec2 popupSize = {width, height * std::min(maxVisibleItem, uint32_t(data.size()))};
-            if (popupSize.y != tween.peek(1.0f))
-            {
-				tween = tweeny::from(0.0f).to(popupSize.y).during(500).via(tweeny::easing::quadraticOut);
-            }
+			height = ImGui::GetTextLineHeight();
+			height += PaddingY() * 4;
 
-			popupSize.y = tween.step(5.0f * Time::DeltaTime);
+			ImVec2 popupSize = {width, height * data.size()};
+			popupSize.y *= tween.step(5.0f * Time::DeltaTime);
 			SetNextWindowSize(popupSize);
 			SetNextWindowPos({bb.Min.x, bb.Max.y});
         }
 
+		ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_Popup | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove;
+		if (Begin(name, nullptr, windowFlags))
         {
-			StyleVarStack<float> styleVar{
-                { ImGuiStyleVar_WindowRounding,  4.0f },
-			    { ImGuiStyleVar_PopupRounding,   4.0f },
-			    { ImGuiStyleVar_PopupBorderSize, 0.0f },
-			    { ImGuiStyleVar_FrameRounding,   4.0f }
-			};
+			StyleVarStack<ImVec2> styleVar = {
+			    {ImGuiStyleVar_ItemSpacing, {0, 0}}};
 
-            bool hasScrollBar = maxVisibleItem < data.size();
-			ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_Popup | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove;
-			windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
-            if (!hasScrollBar)
-            {
-				windowFlags |= ImGuiWindowFlags_NoScrollbar;
-            }
-            
-			if (Begin(name, nullptr, windowFlags))
-			{
-				Indent(4.0f);
-				StyleVarStack<ImVec2> styleVar = {
-				    {ImGuiStyleVar_ItemSpacing, {0, 0}},
-                };
-				StyleColorStack<uint32_t> styleColor{
-				    {ImGuiCol_ScrollbarBg, 0x0},
-				    {ImGuiCol_ScrollbarGrab, 0x88444444},
-				    {ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
-				    {ImGuiCol_ScrollbarGrabActive, 0xdd444444},
-				    {ImGuiCol_HeaderHovered, 0x33ff8844}};
+			selectedChange |= seletableUI.Draw(popupId, Opened(), bb, {bb.Min.x, bb.Max.y}, width, height, data, selected, hoveredColor);
+        }
 
-                float itemWidth = width - 8.0f;
-                if (hasScrollBar)
-				{
-					ImGuiStyle &style = GetStyle();
-					itemWidth -= style.ScrollbarSize;
-                }
-				selectedChange |= seletableUI.Draw(popupId, Opened(), bb, {bb.Min.x, bb.Max.y}, itemWidth, height, data, selected, hoveredColor);
-				Unindent();
-			}
-
-			ImGui::End();
-		}
+        ImGui::End();
 		g.BeginComboDepth--;
 
         return selectedChange;
@@ -2092,8 +1956,6 @@ public:
 		}
 
 		RenderText(pos, s, e);
-
-        return true;
 	}
 };
 
@@ -2145,8 +2007,7 @@ public:
 		}
 
 		ImVec2 textPos = GetCenterAlignPosition(size, textSize);
-		//window->DrawList->AddText(bb.Min + textPos, GetColorU32(ImGuiCol_Text), s, e);
-		RenderTextClipped(bb.Min, bb.Max, s, e, &textSize, {0.5, 0.5}, &bb);
+		window->DrawList->AddText(bb.Min + textPos, GetColorU32(ImGuiCol_Text), s, e);
 
 		return pressed;
 	}
@@ -2160,7 +2021,7 @@ public:
 	WIDGET_SET_PROPERTY(Active, active, bool, false)
 
 public:
-	bool Draw(Texture *image, const ImVec2 &sizeArgs, float rounding, uint32_t backgroundColor, uint32_t activeBackgroundColor, float borderSize = 0.0f, uint32_t borderColor = 0x0, const ImVec2 &uv0 = {0, 0}, const ImVec2 &uv1 = {1, 1})
+	bool Draw(Texture *image, const ImVec2 &sizeArgs, float rounding, uint32_t backgroundColor, uint32_t activeBackgroundColor, float borderSize = 0.0f, uint32_t borderColor = 0x0)
 	{
 		using namespace ImGui;
 		ImGuiContext &g = *GImGui;
@@ -2194,15 +2055,14 @@ public:
 		}
 
 		// window->DrawList->AddRectFilled(bb.Min, bb.Max, hovered ? activeBackgroundColor : backgroundColor, rounding, 0, g.Style.FrameShadowSize, GetColorU32(ImGuiCol_FrameShadowStart), GetColorU32(ImGuiCol_FrameShadowEnd));
-		window->DrawList->AddImageRounded(WIMAGE(image), bb.Min, bb.Max, uv0, uv1, hovered ? activeBackgroundColor : 0xffffffff, rounding);
+		window->DrawList->AddImageRounded(WIMAGE(image), bb.Min, bb.Max, {0, 0}, {1, 1}, hovered ? activeBackgroundColor : 0xffffffff, rounding);
 		if (borderSize > 0.0f)
 		{
 			window->DrawList->AddRect(bb.Min, bb.Max, borderColor, rounding, 0, borderSize);
 		}
 
 		ImVec2 textPos = GetCenterAlignPosition(size, textSize);
-
-        RenderTextClipped(bb.Min, bb.Max, s, e, &textSize, {0.5, 0.5}, &bb);
+		window->DrawList->AddText(bb.Min + textPos, GetColorU32(ImGuiCol_Text), s, e);
 
 		return pressed;
 	}
@@ -2247,8 +2107,8 @@ public:
 		else if (alignMode == WAlignMode::Right)
 		{
 			textPos.x = GetRightAlignPosition(size.x, textSize.x);
+			textPos.y = GetCenterAlignPosition(size.y, textSize.y);
 		}
-		textPos.y = GetCenterAlignPosition(size.y, textSize.y);
 
 		textPos.x += indent;
 		RenderTextClipped(bb.Min + textPos, bb.Max, s, e, nullptr);

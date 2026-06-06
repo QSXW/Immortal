@@ -20,8 +20,6 @@ public:
 public:
 	DescriptorSet(Device *device, Pipeline *pipeline);
 
-	DescriptorSet(Device *device, uint32_t descriptorCount, D3D12_DESCRIPTOR_HEAP_TYPE type);
-
     virtual ~DescriptorSet() override;
 
 	virtual void Set(uint32_t slot, SuperBuffer *buffer) override;

@@ -49,14 +49,14 @@ WFileDialog::WFileDialog(Widget *v) :
             return;
         }
 
-    //ImGui::PushStyleColor(ImGuiCol_ChildBg, navigateBackgroundColor);
+    //ImGui::PushStyleColor(ColorStyle::ChildBg, navigateBackgroundColor);
     //ImGui::BeginChild(IM_ANONY, { ImGui::GetWindowWidth(), 32.0f }, true, ImGuiWindowFlags_AlwaysUseWindowPadding);
 
     //auto window = ImGui::GetCurrentWindow();
     //MOVEPOS(10, 5);
     //constexpr ImVec2 buttonSize = { 18.0f, 18.0f };
-    //ImGui::PushStyleColor(ImGuiCol_Button, { 0, 0, 0, 0.0f });
-    //ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::RGBA32(0x007bffff));
+    //ImGui::PushStyleColor(ColorStyle::Button, { 0, 0, 0, 0.0f });
+    //ImGui::PushStyleColor(ColorStyle::ButtonHovered, ImGui::RGBA32(0x007bffff));
 
     //if (ImGui::ImageButton(WIMAGE(icon), buttonSize, { 0 * xFactor, splitPos }, { 1 * xFactor, splitPos + yFactor }, -1, { 0, 0, 0, 0 }, { 1, 1, 1, 1.0f }))
     //{
@@ -132,7 +132,7 @@ WFileDialog::WFileDialog(Widget *v) :
     //ImGui::EndChild();
     //ImGui::PopStyleColor(1);
 
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, backgroundColor);
+    ImGui::PushStyleColor(ColorStyle::ChildBg, backgroundColor);
     //if (on)
     {
 		DrawListDirectories();

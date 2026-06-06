@@ -574,49 +574,6 @@ void CommandBuffer::MemoryCopy(SuperBuffer *_dst, uint32_t dstOffset, SuperBuffe
 	commandList.ResourceBarrier(&barrier, 1);
 }
 
-void CommandBuffer::Memset(SuperBuffer *_buffer, const ClearValue *pClearValue, Format format)
-{
-	Buffer *buffer = InterpretAs<Buffer>(_buffer);
-
-	auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	URef<DescriptorSet> descriptorSet = new DescriptorSet{device, 1, type};
-	
-	auto srcDescriptor = buffer->GetDescriptor();
-	auto dstDescriptor = descriptorSet->GetDescriptors(type);
-	device->CopyDescriptors(1, dstDescriptor.descriptor, srcDescriptor, type);
-
-	DescriptorHeap *descriptorHeap = descriptorSet->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	ID3D12DescriptorHeap *ppDescriptorHeap[2] = { *descriptorHeap };
-	commandList.SetDescriptorHeaps(ppDescriptorHeap, 1);
-
-	Barrier<Transition> barrier(*buffer, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	commandList.ResourceBarrier(&barrier, 1);
-	if (format == Format::UINT32)
-	{
-		commandList.Handle()->ClearUnorderedAccessViewUint(
-		    dstDescriptor.shaderVisibleDescriptor,
-		    srcDescriptor,
-		    *buffer,
-		    (const UINT *)pClearValue,
-		    0,
-		    nullptr);
-	}
-	else
-	{
-		commandList.Handle()->ClearUnorderedAccessViewFloat(
-		    dstDescriptor.shaderVisibleDescriptor,
-		    srcDescriptor,
-		    *buffer,
-		    (const FLOAT *)pClearValue,
-		    0,
-		    nullptr);
-	}
-
-	barrier.Swap();
-	commandList.ResourceBarrier(&barrier, 1);
-	descriptorSets.emplace_back(std::move(descriptorSet));
-}
-
 void CommandBuffer::SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer)
 {
 	CommandBuffer *commandBuffer = InterpretAs<CommandBuffer>(secondaryCommandBuffer);
@@ -729,31 +686,6 @@ void CommandBuffer::SetShaderResource(uint32_t slot, GpuVirtualAddress address)
 		default:
 			break;
 	}
-}
-
-void CommandBuffer::ResolveImage(SuperTexture *_dst, SuperTexture *_src)
-{
-	Texture *dst = InterpretAs<Texture>(_dst);
-	Texture *src = InterpretAs<Texture>(_src);
-
-	Barrier<BarrierType::Transition> barriers[2] = {};
-	barriers[0].Transition(*src, 
-		D3D12_RESOURCE_STATE_COMMON, 
-		D3D12_RESOURCE_STATE_RESOLVE_SOURCE
-	);
-	barriers[1].Transition(*dst, 
-		D3D12_RESOURCE_STATE_COMMON, 
-		D3D12_RESOURCE_STATE_RESOLVE_DEST
-	);
-	
-	commandList.Handle()->ResourceBarrier(SL_ARRAY_LENGTH(barriers), barriers);
-	commandList.Handle()->ResolveSubresource(*dst, 0, *src, 0, dst->GetFormat());
-
-	for (auto &b : barriers)
-	{
-		b.Swap();
-	}
-	commandList.Handle()->ResourceBarrier(SL_ARRAY_LENGTH(barriers), barriers);
 }
 
 }

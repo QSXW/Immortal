@@ -417,7 +417,6 @@ float stretch(float low, float high, float x)
         bd->pipeline = bd->device->CreateGraphicsPipeline();
         bd->pipeline->Enable(Pipeline::Blend);
         bd->pipeline->Disable(Pipeline::Depth);
-		//bd->pipeline->Enable(Pipeline::MSAA4X);
         bd->pipeline->Construct(shaders, 2,
 			inputElementDescription,
             { Format::BGRA8 } /* render target color attachments */
@@ -592,19 +591,6 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
         { 0.0f,         0.0f,           0.5f,       0.0f },
         { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
     };
-
-    //float L = drawData->DisplayPos.x - 0.5f;
-    //float R = drawData->DisplayPos.x + drawData->DisplaySize.x - 0.5f;
-    //float T = drawData->DisplayPos.y - 0.5f;
-    //float B = drawData->DisplayPos.y + drawData->DisplaySize.y - 0.5f;
-
-    //float mvp[4][4] =
-    //{
-    //    { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
-    //    { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
-    //    { 0.0f,         0.0f,           1.0f,       0.0f },  // 深度范围 [0,1]
-    //    { (R+L)/(L-R),  (T+B)/(B-T),    0.0f,       1.0f },  // 深度偏移 0
-    //};
 
     commandBuffer->PushConstants(Shader::Stage::Vertex, &mvp, sizeof(mvp), 0);
 

@@ -53,11 +53,6 @@ public:
         MouseButtonReleased,
         MouseMoved,
         MouseScrolled,
-		AudioDefaultDeviceChanged,
-		AudioDeviceRemoved,
-		AudioDeviceAdded,
-		AudioDeviceStateChanged,
-		AudioDevicePropertyValueChanged,
         MaxCount
     };
 
@@ -68,8 +63,7 @@ public:
         Input       = BIT(1),
         Keyboard    = BIT(2),
         Mouse       = BIT(3),
-        MouseButton = BIT(4),
-        Audio       = BIT(5),
+        MouseButton = BIT(4)
     };
 
 public:

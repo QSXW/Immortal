@@ -30,10 +30,9 @@ void ReadPixelsToPicture(uint8_t *_dst, int dstStride, T *pixels, uint32_t width
     }
 }
 
-RawCodec::RawCodec(Format outputFormat, int scale) :
+RawCodec::RawCodec(Format outputFormat) :
     processor{},
-    format{ outputFormat },
-    scale{ scale }
+    format{ outputFormat }
 {
 
 }
@@ -324,66 +323,16 @@ void RawCodec::GetCurve(float *curve)
 	}
 }
 
-DisplayOrientation RawCodec::GetDisplayOrientation()
+void RawCodec::GetDisplayOrientation(int &hflip, int &vflip, int &anticlockwiseRotation)
 {
-	DisplayOrientation displayOrientation = {
-		.hflip                 = 0,
-		.anticlockwiseRotation = 0
-	};
-
+	hflip = 0;
+	vflip = 0;
+	anticlockwiseRotation = 0;
 	if (processor->imgdata.sizes.flip > 0 && processor->imgdata.sizes.flip < 8)
 	{
 		int rotations[9] = {0, 0, 0, 0, 0, -90, -180, 0, 0};
-		displayOrientation.anticlockwiseRotation = rotations[processor->imgdata.sizes.flip];
+		anticlockwiseRotation = rotations[processor->imgdata.sizes.flip];
 	}
-
-	return displayOrientation;
-}
-
-Picture RawCodec::DecodeThumbnail(const CodedFrame &codedFrame)
-{
-	const auto &buffer = codedFrame.GetBuffer();
-	processor = std::make_shared<LibRaw>();
-	
-	if (processor->open_buffer(buffer.data(), buffer.size()) != LIBRAW_SUCCESS)
-	{
-		LOG_ERROR("[LibRaw] Error when open buffer!");
-		return {};
-	}
-
-	if (processor->unpack_thumb() != LIBRAW_SUCCESS)
-	{
-		return {};
-	}
-
-	auto &thumbnail = processor->imgdata.thumbnail;
-	if (thumbnail.tformat == LIBRAW_THUMBNAIL_JPEG)
-	{
-		Picture picture{ thumbnail.tlength, 1, Format::R8 };
-		picture.SetData(thumbnail.thumb);
-
-		std::shared_ptr<LibRaw> ref = processor;
-		picture.SetRelease([ref](void *) { ref->recycle(); });
-
-		return picture;
-	}
-	else if (thumbnail.tformat == LIBRAW_THUMBNAIL_BITMAP)
-	{
-		Picture picture{thumbnail.twidth, thumbnail.theight, Format::RGBA8, true};
-		for (int y = 0; y < thumbnail.theight; y++)
-		{
-			uint8_t *src = (uint8_t *)&thumbnail.thumb[y * thumbnail.twidth * 3];
-			uint8_t *dst = (uint8_t *) &picture.GetData()[y * picture.GetStride(0)];
-			for (int x = 0; x < thumbnail.twidth; x++, src += 3, dst += 4)
-			{
-				*(uint32_t *)dst = *(uint32_t *)src & 0x00ffffff | 0xff000000;
-			}
-		}
-
-		return picture;
-	}
-
-	return {};
 }
 
 }

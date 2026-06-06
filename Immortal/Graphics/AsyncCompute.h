@@ -154,12 +154,10 @@ protected:
 	std::function<void()> callbackWarpper;
 };
 
-class AsyncComputeThread : public IClass
+class AsyncComputeThread
 {
 public:
     AsyncComputeThread(Device *device);
-
-    ~AsyncComputeThread();
 
     bool IsExecutionCompleted(uint64_t value);
 

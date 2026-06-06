@@ -8,7 +8,6 @@
 
 #include "IAudioDevice.h"
 #include "Shared/IObject.h"
-#include "Shared/Async.h"
 
 #include <thread>
 #include <mutex>
@@ -41,8 +40,6 @@ public:
 
 	virtual AudioFormat GetFormat() = 0;
 
-	virtual bool OnDeviceChanged(IAudioDevice *device) = 0;
-
 	void Start(const PFN_AudioStreamPlayCallback &callback);
 
 	int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
@@ -53,7 +50,7 @@ protected:
 	void Destroy();
 
 protected:
-	Thread thread;
+	std::thread thread;
 
 	PFN_AudioStreamPlayCallback callback;
 
@@ -62,8 +59,6 @@ protected:
 	std::atomic_bool exited;
 
 	std::string name;
-
-	uint32_t bytePerSample;
 };
 
 using IAudioStream = AudioStream;

@@ -16,8 +16,8 @@ void LOG::Setup(bool async)
     logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/Immortal.log"));
 
-    logSinks[0]->set_pattern("[%T][%^%l%$] %v");
-    logSinks[1]->set_pattern("[%T][%l] %n: %v");
+    logSinks[0]->set_pattern("%n: [%^%l%$][%T]: %v");
+    logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
     if (async)
     {

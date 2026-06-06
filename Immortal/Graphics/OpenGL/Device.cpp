@@ -126,7 +126,7 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &/*name*/)
 	return new GPUEvent{};
 }
 
-SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount)
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
 {
 	return new RenderTarget{ width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat };
 }

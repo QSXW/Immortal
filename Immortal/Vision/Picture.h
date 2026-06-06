@@ -29,7 +29,7 @@ public:
     SL_SWAPPABLE(SharedPictureData)
 
 public:
-	SharedPictureData(Format format = Format::None, uint32_t width = 0, uint32_t height = 0, uint32_t stride = 0, bool allocate = false, MemoryResource *memoryResource = nullptr, std::initializer_list<PropertyType> &&types = {});
+    SharedPictureData(Format format = Format::None, uint32_t width = 0, uint32_t height = 0, uint32_t stride = 0, bool allocate = false, MemoryResource *memoryResource = nullptr);
 
     SharedPictureData(Texture *texture);
 
@@ -38,8 +38,6 @@ public:
     void SetRelease(std::function<void(void *)> &&func);
 
     void Swap(SharedPictureData &other);
-
-    BaseProperty *GetProperty(PropertyType type);
 
 protected:
     uint8_t                     *data[8];
@@ -52,11 +50,9 @@ protected:
     int64_t                      timestamp;
 	Rational                     timebase;
     PictureMemoryType            memoryType;
-	ColorSpace                   colorSpace;
     std::function<void(void *)>  release;
     MemoryResource              *memoryResource;
     AAllocator<uint8_t>          allocator;
-	std::vector<BaseProperty *>  properties;
 };
 
 class IMMORTAL_API Picture
@@ -64,7 +60,7 @@ class IMMORTAL_API Picture
 public:
     Picture();
 
-    Picture(uint32_t width, uint32_t height, Format format, bool allocated = false, std::initializer_list<PropertyType> &&types = {});
+    Picture(uint32_t width, uint32_t height, Format format, bool allocated = false);
 
     Picture(Texture *texture);
 
@@ -126,16 +122,6 @@ public:
     {
         shared->memoryType = type;
     }
-
-    ColorSpace GetColorSpace() const
-	{
-		return shared->colorSpace;
-	}
-
-	void SetColorSpace(ColorSpace colorSpace) const
-	{
-		shared->colorSpace = colorSpace;
-	}
 
     void SetStride(size_t index, uint32_t stride) const
     {
@@ -220,12 +206,6 @@ public:
     PictureFlags GetFlags() const
     {
 		return shared->flags;
-    }
-
-    template <class T>
-    T *GetProperty()
-    {
-		return (T *) shared->GetProperty(PropertyeTypeGetter<T>::type);
     }
 
 protected:

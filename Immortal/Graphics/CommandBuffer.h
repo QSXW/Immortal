@@ -85,11 +85,6 @@ public:
 
 	virtual void MemoryCopy(Buffer *dst, uint32_t dstOffset, Buffer *src, uint32_t srcOffset, size_t size) {}
 
-	virtual void Memset(Buffer *buffer, const ClearValue *pClearValue, Format format)
-	{
-
-	}
-
 	/**
 	 * @brief Submit a secondary command buffer. Only support Vulkan and D3D12 backend
 	 */
@@ -116,11 +111,6 @@ public:
 	}
 	
 	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address)
-	{
-
-	}
-
-	virtual void ResolveImage(Texture *dst, Texture *src)
 	{
 
 	}

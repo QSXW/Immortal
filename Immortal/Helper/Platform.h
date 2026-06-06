@@ -4,58 +4,45 @@
 #include <optional>
 #include "FileSystem/FileSystem.h"
 
-#ifdef _WIN32
-#include <shobjidl.h> 
-#endif
-
 namespace Immortal
 {
-
-#define RAW_FILES L"*.cr2;*.fff;*.3fr;*.arw;*.nef;*.dng;*.raf;*.rw2;*.pef;*.srw;*.orf;*.rwz;*.bay;*.erf;*.mef;*.mos;*.mrw;*.nrw;*.raw;*.rwl;*.srw;*.x3f"
 
 class FileFilter
 {
 public:
-	static inline const std::vector<COMDLG_FILTERSPEC> AllFiles = {
-        { L"All Files", L"*.*" }
+    static inline char None[] = {
+        "All Files\0*.*\0\0"
     };
 
-    static inline const std::vector<COMDLG_FILTERSPEC> Image = {
-        { L"Image Files", L"*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif" RAW_FILES },
-        { L"Raw Files", RAW_FILES }
+    static inline char Scene[] = {
+        "Immortal Scene\0*.iml\0"
     };
 
-    static inline const std::vector<COMDLG_FILTERSPEC> Text = {
-        { L"Text Files", L"*.txt;*.md;*.log" }
+    static inline char Executable[] = {
+	    "Executable\0*.exe\0"
     };
 
-    static inline const std::vector<COMDLG_FILTERSPEC> Model = {
-        { L"Model Files", L"*.fbx;*.obj;*.glTF;*.blend" }
+    static inline char Image[] = {
+        "Image File\0*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif\0"
     };
 
-    static inline const std::vector<COMDLG_FILTERSPEC> Lut = {
-        { L"3D Lookup Table(3D Lut)", L"*.cube" }
+    static inline char Model[] = {
+        "Model File\0*.fbx;*.obj;*.glTF;*.blend\0"
     };
 
-    static inline const std::vector<COMDLG_FILTERSPEC> Executable = {
-        { L"Executable Files", L"*.exe;*.com;*.bat;*.cmd;*.msi" }
-    };
-
-    static inline const std::vector<COMDLG_FILTERSPEC> Scene = {
-        { L"Immortal Scene Files", L"*.iml" }
+    static inline char Lut[] = {
+	    "3D Lookup Table(3D Lut)\0*.cube\0"
     };
 };
 
 class FileDialogs
 {
 public:
-    static std::optional<String> OpenFile(const std::vector<COMDLG_FILTERSPEC>& filterSpecs = {});
+    static std::optional<std::string> OpenFile(const char *filter = FileFilter::None);
 
-    static std::optional<std::vector<String>> OpenMultipleFiles(const std::vector<COMDLG_FILTERSPEC>& filterSpecs = {});
+    static std::optional<std::string> SaveFile(const char *filter = FileFilter::None);
 
-    static std::optional<String> SaveFile(const std::vector<COMDLG_FILTERSPEC>& filterSpecs = {});
-
-    static std::optional<String> BrowserFolder();
+    static String BrowserFolder();
 };
 
 class FileManagement
@@ -64,8 +51,6 @@ public:
 	static bool Cut(const std::vector<std::filesystem::path> &paths);
 
 	static bool Copy(const std::vector<std::filesystem::path> &paths);
-
-    static bool Paste(const std::filesystem::path &destination, const std::vector<std::filesystem::path> &paths);
 
 	static bool MoveFileToReclycleBin(const std::vector<std::filesystem::path> &paths);
 
@@ -88,17 +73,17 @@ public:
     };
 
 public:
-	static bool SetData(DataType type, const void *data, size_t size);
+	static void SetData(DataType type, const void *data, size_t size);
 
     static bool SetFilePaths(const std::vector<std::filesystem::path> &paths, SetFileOperation operation = SetFileOperation::Copy);
-
-    static std::vector<std::filesystem::path> GetFilePaths();
 };
 
 class System
 {
 public:
 	static FileSystem::Path GetTemperoryPath();
+
 };
+
 
 }

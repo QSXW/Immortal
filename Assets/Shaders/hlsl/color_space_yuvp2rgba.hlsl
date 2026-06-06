@@ -4,17 +4,13 @@
  * This library is distributed under the Apache-2.0 license.
  */
 
-Texture2D<float>    Y    : register(t0);
-Texture2D<float>    U    : register(t1);
-Texture2D<float>    V    : register(t2);
-RWTexture2D<float4> RGBA : register(u3);
-SamplerState        S    : register(s4);
+RWTexture2D<unorm float4> Y    : register(u0);
+RWTexture2D<unorm float4> U    : register(u1);
+RWTexture2D<unorm float4> V    : register(u2);
+RWTexture2D<float4>       RGBA : register(u3);
 
 struct PushConstant
 {
-#ifdef INPUT_TRANSFORM
-    float4x4 transform;
-#endif
     float2 samplingFactor;
     float  nomalizedFactor;
 };
@@ -28,23 +24,16 @@ void main(uint3 DTid : SV_DispatchThreadID)
     float2 uv = DTid.xy * pushConstant.samplingFactor;
 
     pixel.x = Y[DTid.xy].x;
-    pixel.y = U.SampleLevel(S, uv, 0).x;
-    pixel.z = V.SampleLevel(S, uv, 0).x;
+    pixel.y = U[uv].x;
+    pixel.z = V[uv].x;
 
     pixel.xyz *= pushConstant.nomalizedFactor;
-
-#ifdef INPUT_TRANSFORM
-#define T_MAT4_BT709 pushConstant.transform
-    RGBA[DTid.xy] = mul(pixel, T_MAT4_BT709);
-#else
-    const double Y_RANGE_OFFSET = (16.0 / 255.0);
     float4x4 T_MAT4_BT709 = float4x4(
-        1.0, -1.51500715e-04,  1.57476528e+00, -0.7873068896425 - Y_RANGE_OFFSET,
-        1.0, -1.87280216e-01, -4.68124625e-01,     0.3277024205 - Y_RANGE_OFFSET,
-        1.0,  1.85560969e+00,  1.05739981e-04, -0.9278577149905 - Y_RANGE_OFFSET,
-        0.0,             0.0,             0.0,             1.0
+        1.00000000e+00, -1.51500715e-04,  1.57476528e+00, -8.50051986e-01,
+        1.00000000e+00, -1.87280216e-01, -4.68124625e-01,  2.64957323e-01,
+        1.00000000e+00,  1.85560969e+00,  1.05739981e-04, -9.90602811e-01,
+        0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00
     );
-    RGBA[DTid.xy] = mul(T_MAT4_BT709, pixel);
-#endif
 
+    RGBA[DTid.xy] = mul(T_MAT4_BT709, pixel);
 }

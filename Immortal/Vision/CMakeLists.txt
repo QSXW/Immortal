@@ -75,8 +75,6 @@ set(IMAGE_CODEC_FILES
     Raw.cpp
     Raw.h
     RawSpeed.h
-    ShellItemImage.cpp
-    ShellItemImage.h
     OpenCVCodec.cpp
     OpenCVCodec.h
     TurboJpegCodec.cpp

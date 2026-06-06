@@ -150,7 +150,7 @@ Ref<Texture> Graphics::CreateTexture(Format format, uint32_t width, uint32_t hei
     });
 
     asyncComputeThread->Execute<ExecutionCompletedTask>([buffer]() {
-		ReleaseCachedBuffer(BufferType::TransferSource, buffer);
+		ReleaseCachedBuffer(BufferType::TransferDestination, buffer);
     });
 
     return texture;
@@ -193,18 +193,10 @@ void Graphics::ReleaseCachedBuffer(BufferType bufferType, const Ref<Buffer> &buf
 	std::lock_guard lock{This->mutex};
 	if (bufferType == BufferType::TransferSource)
 	{
-		if (This->stagingBuffers.size() >= 3)
-		{
-			This->stagingBuffers.erase(--This->stagingBuffers.end());
-		}
 		This->stagingBuffers.insert(buffer);
 	}
 	else
 	{
-		if (This->readBackBuffers.size() >= 3)
-		{
-			This->readBackBuffers.erase(--This->readBackBuffers.end());
-		}
 		This->readBackBuffers.insert(buffer);
 	}
 }
@@ -370,11 +362,6 @@ Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
     }
 
     return nullptr;
-}
-
-void Graphics::StorePipeline(const std::string &name, const Ref<Pipeline> &pipeline)
-{
-	This->pipelines[name] = pipeline;
 }
 
 void Graphics::MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height)

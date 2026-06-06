@@ -48,8 +48,7 @@ TurboJpegCodec::TurboJpegCodec(bool isOutputYUV) :
     numerator{ 1 },
 	denominator{ 1 },
     isOutputYUV{ isOutputYUV },
-    quality{ 90 },
-    desireSize{}
+    quality{ 90 }
 {
 
 }
@@ -145,89 +144,83 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
     tjhandle handle = {};
 
     handle = tjInitDecompress();
-    if (!handle)
-    {
-        LOG::ERR("Failed to initialize turbo jpeg decompress handle!");
-        return CodecError::ExternalFailed;
-    }
 
-    tjscalingfactor scalingFactor = {1, 1};
-	int width, height, subsample, colorSpace;
-	int result = tjDecompressHeader3(handle, data, size, &width, &height, &subsample, &colorSpace);
-	if (result != 0)
-	{
-		LOG::ERR("Failed to decompress JPEG header: {}", tjGetErrorStr2(handle));
-		tjDestroy(handle);
-		return CodecError::ExternalFailed;
-	}
+    int width, height, subsample, colorSpace;
+	tjDecompressHeader3(handle, data, size, &width, &height, &subsample, &colorSpace);
 
-    if (desireSize > 0)
-    {       
-		int size = std::max(width, height);
-		if (size > desireSize)
-        {
-			float ratio = size / (float) desireSize;
-            if (ratio >= 2.0f)
-            {
-                scalingFactor.num = 1;
-                scalingFactor.denom = std::clamp(int((ratio + 1.0f) / 2.0f) * 2, 1, 8);
-            }
-        }  
-    }
-    else if (numerator != 1 || denominator != 1)
-    {
-        scalingFactor.num   = numerator;
-        scalingFactor.denom = denominator;
-    }
-    
-    result = tj3SetScalingFactor(handle, scalingFactor);
-    if (result != 0)
-    {
-        LOG::ERR("Failed to set scaling factor: {}", tjGetErrorStr2(handle));
-        tjDestroy(handle);
-        return CodecError::ExternalFailed;
-    }
+    tjscalingfactor scalingFactor = {
+        .num   = numerator,
+        .denom = denominator
+    };
 
-    width  = TJSCALED(width,  scalingFactor);
+	width  = TJSCALED(width, scalingFactor );
 	height = TJSCALED(height, scalingFactor);
 
-    Format format = Format::RGBA8;
+	Format format = Format::RGBA8;
     if (isOutputYUV)
-    {
-        format = Format::YUV420P;
-        if (subsample == TJSAMP_422)
-        {
-            format = Format::YUV422P;
-        }
-        else if (subsample == TJSAMP_444)
-        {
-            format = Format::YUV444P;
-        }
+	{
+		format = Format::YUV420P;
+		if (subsample == TJSAMP_422)
+		{
+			format = Format::YUV422P;
+		}
+		else if (subsample == TJSAMP_444)
+		{
+			format = Format::YUV444P;
+		}
     }
 	
-    picture = Picture{(uint32_t)width, (uint32_t)height, format, true, {PropertyType::DisplayOrientation}};
+    picture = Picture{ width, height, format, true };
 
-    if (isOutputYUV)
-    {
-        result = tjDecompressToYUV2(handle, data, size, picture.GetData(), width, 8, height, 0);
-    }
-    else
-    {
-        auto pitch = picture.GetStride(0);
-        result = tjDecompress2(handle, data, size, picture.GetData(), width, pitch, height, TJPF_RGBX, 0);
-    }
+	if (isOutputYUV)
+	{
+		//jpeg_decompress_struct cinfo = {};
+		//jpeg_error_mgr jerr = {};
+		//cinfo.err = jpeg_std_error(&jerr);
 
-    if (result != 0)
-    {
-        LOG::ERR("Failed to decompress JPEG data: {}", tjGetErrorStr2(handle));
-        tjDestroy(handle);
-        return CodecError::ExternalFailed;
-    }
+		//jerr.error_exit = [](j_common_ptr cinfo) {
+		//	char pszErr[1024];
+		//	(cinfo->err->format_message)(cinfo, pszErr);
+		//	throw std::runtime_error(pszErr);
+		//};
 
-    tjDestroy(handle);
+		//jpeg_create_decompress(&cinfo);
+		//jpeg_mem_src(&cinfo, data, size);
+
+		//(void) jpeg_read_header(&cinfo, TRUE);
+
+		//jvirt_barray_ptr *coefficients = jpeg_read_coefficients(&cinfo);
+
+		//for (int i = 0; i < cinfo.num_components; i++)
+		//{
+		//	auto w = cinfo.comp_info[i].width_in_blocks;
+		//	auto h = cinfo.comp_info[i].height_in_blocks;
+
+		//	auto compptr = &cinfo.comp_info[i];
+		//	for (JDIMENSION blk_y = 0; blk_y < compptr->height_in_blocks; blk_y += compptr->v_samp_factor)
+		//	{
+		//		auto buffer = (*cinfo.mem->access_virt_barray)((j_common_ptr) &cinfo, coefficients[i], blk_y, (JDIMENSION)compptr->v_samp_factor, TRUE);
+		//		for (JDIMENSION offset_y = 0; offset_y < compptr->v_samp_factor; offset_y++)
+		//		{
+		//			auto block = buffer[offset_y];
+		//			memcpy(picture.GetData(i), &block[0], compptr->width_in_blocks * DCTSIZE2);
+		//		}
+		//	}
+		//}
+
+		tjDecompressToYUV2(handle, data, size, picture.GetData(), width, 8, height, 0);
+	}
+	else
+	{
+		auto pitch = picture.GetStride(0);
+		tjDecompress2(handle, data, size, picture.GetData(), width, pitch, height, TJPF_RGBX, 0);
+	}
+
+	tjDestroy(handle);
+
     return CodecError::Success;
 #else
-    return CodecError::NotImplement;
+	return CodecError::NotImplement;
 #endif
 }
 
@@ -242,11 +235,6 @@ void TurboJpegCodec::SetScale(int _numerator, int _denominator)
 void TurboJpegCodec::SetQuality(int value)
 {
 	quality = value;
-}
-
-void TurboJpegCodec::SetDesireSize(int value)
-{
-	desireSize = value;
 }
 
 }

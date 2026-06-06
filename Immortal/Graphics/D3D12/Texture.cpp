@@ -9,7 +9,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount) :
+Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) :
     Super{},
     NonDispatchableHandle{ device },
     descriptor{},
@@ -18,10 +18,10 @@ Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height
     uavDescriptorHeap{}
 {
 	SetMeta(_format, width, height, mipLevels, arrayLayers);
-	Construct(_format, width, height, mipLevels, arrayLayers, type, sampleCount);
+	Construct(_format, width, height, mipLevels, arrayLayers, type);
 }
 
-void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount)
+void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type)
 {
 	format = _format;
     D3D12_HEAP_PROPERTIES props = {
@@ -77,28 +77,10 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         .DepthOrArraySize   = arrayLayers,
         .MipLevels          = mipLevels,
         .Format             = format,
-        .SampleDesc         = { .Count = sampleCount, .Quality = 0 },
+        .SampleDesc         = { .Count = 1, .Quality = 0 },
         .Layout             = D3D12_TEXTURE_LAYOUT_UNKNOWN,
         .Flags              = flags,
     };
-
-    if (sampleCount > 1)
-    {
-		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS qualityLevels = {
-			.Format           = resourceDesc.Format,
-			.SampleCount      = resourceDesc.SampleDesc.Count,
-		    .Flags            = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE,
-		    .NumQualityLevels = 0,
-        };
-
-		DX_CHECK(device->Handle()->CheckFeatureSupport(
-		    D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,
-		    &qualityLevels,
-		    sizeof(qualityLevels))
-        );
-		resourceDesc.SampleDesc.Quality = qualityLevels.NumQualityLevels > 0 ? qualityLevels.NumQualityLevels - 1 : 0;
-		resourceDesc.MipLevels = _mipLevels = 1;
-    }
 
     DX_CHECK(device->CreateCommittedResource(
         &props,
@@ -109,7 +91,7 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         &resource
         ));
 
-    if (!(type & TextureType::DepthStencilAttachment) && resourceDesc.SampleDesc.Count == 1)
+    if (!(type & TextureType::DepthStencilAttachment))
     {
 		ConstructShaderResourceView();
     }

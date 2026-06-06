@@ -60,9 +60,9 @@ public:
             ImGuiWindow* window = ImGui::GetCurrentWindow();
             window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
-            ImGui::PushStyleColor(ImGuiCol_Button,        color);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  activeColor);
+            ImGui::PushStyleColor(ColorStyle::Button,        color);
+            ImGui::PushStyleColor(ColorStyle::ButtonHovered, hoveredColor);
+            ImGui::PushStyleColor(ColorStyle::ButtonActive,  activeColor);
 
             auto resource = imageResources[status];
             if (ImGui::ImageButton(

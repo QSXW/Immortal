@@ -157,7 +157,7 @@ public:
 public:
     RenderTarget(Device *device = nullptr);
 
-    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount = 0);
+    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat);
 
     ~RenderTarget();
 
@@ -170,7 +170,7 @@ public:
 public:
     void SetColorAttachment(uint32_t index, Ref<Texture> &texture);
 
-    void BuildRenderTargetView(uint32_t sampleCount = 1);
+    void BuildRenderTargetView();
 
 	void SetDepthAttachment(Ref<Texture> &texture);
 

@@ -21,7 +21,7 @@ Application::Application(BackendAPI graphicsBackendAPI, int deviceId, const std:
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
     eventSink.Listen(&Application::OnWindowMove,   Event::Type::WindowMove);
 
-    Async::Init(1);
+    Async::Init();
 
 	window = Window::CreateInstance(title, width, height, graphicsBackendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
     window->SetIcon("Assets/Icon/Terminal.png");
@@ -37,14 +37,6 @@ Application::Application(BackendAPI graphicsBackendAPI, int deviceId, const std:
     Graphics::ConstructGlobalVariables();
 
     swapchain = device->CreateSwapchain(queue, window, Format::BGRA8, bufferCount, SwapchainMode::VerticalSync);
-	RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-    Texture *texture = renderTarget->GetColorAttachment(0);
-
-    if (sampleCount > 1)
-	{
-		Format format = Format::BGRA8;
-	    MSAARenderTarget = device->CreateRenderTarget(texture->GetWidth(), texture->GetHeight(), &format, 1, {}, sampleCount);
-	}
 
     commandBuffers.resize(bufferCount);
     for (size_t i = 0; i < bufferCount; i++)
@@ -121,17 +113,16 @@ void Application::OnRender()
     }
 
 	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+    for (Layer *layer : layerStack)
+    {
+        layer->OnUpdate();
+    }
 
     if (!runtime.minimized)
 	{
 		gui->Begin();
 		gui->Render();
 		gui->End();
-
-		for (Layer *layer : layerStack)
-		{
-			layer->OnUpdate();
-		}
 	}
 
     Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
@@ -143,15 +134,10 @@ void Application::OnRender()
 
         ClearValue clearValues = {};
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-		commandBuffer->BeginRenderTarget(MSAARenderTarget ? MSAARenderTarget.Get() : renderTarget, &clearValues);
+		commandBuffer->BeginRenderTarget(renderTarget, &clearValues);
 
 		gui->SubmitRenderDrawCommands(commandBuffer, gpuEvent, syncValue);
 	    commandBuffer->EndRenderTarget();
-
-        if (MSAARenderTarget)
-		{
-			commandBuffer->ResolveImage(renderTarget->GetColorAttachment(0), MSAARenderTarget->GetColorAttachment(0));
-		}
 	    commandBuffer->End();
 
 		queue->Submit(commandBuffer, gpuEvent, swapchain);
@@ -214,11 +200,6 @@ bool Application::OnWindowClosed(WindowCloseEvent &e)
 
 bool Application::OnWindowResize(WindowResizeEvent &e)
 {
-    if (!swapchain)
-    {
-		return false;
-    }
-
     auto width  = e.Width();
     auto height = e.Height();
 
@@ -228,11 +209,6 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
     {
 		queue->WaitIdle(0xffffffff);
 		swapchain->Resize(width, height);
-		if (sampleCount > 1)
-        {
-			Format format = Format::BGRA8;
-			MSAARenderTarget = device->CreateRenderTarget(width, height, &format, 1, {}, sampleCount);
-        }
     }
 
     OnRender();
@@ -242,12 +218,7 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
 
 bool Application::OnWindowMove(WindowMoveEvent &e)
 {
-	if (!swapchain)
-	{
-		return false;
-    }
-
-	OnRender();
+    OnRender();
     return true;
 }
 

@@ -31,9 +31,7 @@ public:
 
     ~AudioFifo();
 
-    int Allocate(int sampleFormat, int channels, int numSamples = 1024);
-
-	int Allocate(Format format, int channels, int numSamples = 1024);
+	int Allocate(AVCodecContext *codecContext, int numSamples = 1024);
 
     int Enqueue(uint8_t **convertedInputSamples, int frameSize);
 
@@ -52,99 +50,12 @@ protected:
 };
 #endif
 
-enum class ChannelLayout
-{
-    Mono,
-    Stereo,
-    _2Point1,
-    _2_1,
-    Surround,
-    _3Point1,
-    _4Point0,
-    _4Point1,
-    _2_2,
-    Quad,
-    _5Point0,
-    _5Point1,
-    _5Point0Back,
-    _5Point1Back,
-    _6Point0,
-    _6Point0Front,
-    _3Point1Point2,
-    Hexagonal,
-    _6Point1,
-    _6Point1Back,
-    _6Point1Front,
-    _7Point0,
-    _7Point0Front,
-    _7Point1,
-    _7Point1Wide,
-    _7Point1WideBack,
-    _5Point1Point2Back,
-    Octagonal,
-    Cube,
-    _5Point1Point4Back,
-    _7Point1Point2,
-    _7Point1Point4Back,
-    _7Point2Point3,
-    _9Point1Point4Back,
-    Hexadecagonal,
-    StereoDownmix,
-    _22Point2,
-};
-
-struct AudioFormatSpec
-{
-	Format format;
-	ChannelLayout layout;
-	int sampleRate;
-	int numChannel;
-};
-
-ChannelLayout GetLayoutFromMask(uint64_t mask);
-
-class SampleConverter : public IClass
-{
-public:
-	SampleConverter();
-
-    ~SampleConverter();
-
-    void Release();
-
-    bool SetOptions(const AudioFormatSpec &outputFormat, const AudioFormatSpec &inputFormat);
-
-    int RescaleRound(int numSamples);
-
-    bool Convert(Picture &out, const Picture &input);
-
-    operator bool() const;
-
-public:
-    const AudioFormatSpec &GetOutputFormat() const
-    {
-		return outputFormat;
-    }
-
-private:
-#if HAVE_FFMPEG
-	SwrContext *handle;
-#endif
-
-    AudioFormatSpec inputFormat;
-
-    AudioFormatSpec outputFormat;
-
-    int outFormatSize;
-
-    int inputFormatSize;
-};
-
 class IMMORTAL_API FFCodec : public VideoCodec
 {
 #if HAVE_FFMPEG
 public:
-	FFCodec(int sampleRate = 0, const char *name = "FFmpegDecoder");
+
+    FFCodec(int sampleRate = 0);
 
     FFCodec(const EncodeInfo &encodeInfo);
 
@@ -175,8 +86,6 @@ public:
     Rational GetFramerate() const;
 
     Rational GetTimebase() const;
-
-    AudioFormatSpec GetAudioFormat() const;
 
 public:
     void SetPreference(DecodingPreference value)
@@ -240,8 +149,6 @@ protected:
     AVSubtitle *subtitle;
 
     uint8_t **rescaledSamples = {};
-
-    ColorSpace colorSpace = ColorSpace::BT709;
 
     int numRescaledSamples = 0;
 

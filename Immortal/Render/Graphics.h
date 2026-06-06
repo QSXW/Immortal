@@ -97,8 +97,6 @@ public:
 
     static Ref<Pipeline> GetPipeline(const std::string &name);
 
-    static void StorePipeline(const std::string &name, const Ref<Pipeline> &pipeline);
-
     static void MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
 
     static void MemoryCopyImage(Ref<Buffer> &buffer, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);

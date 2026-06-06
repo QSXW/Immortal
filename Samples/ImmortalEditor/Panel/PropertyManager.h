@@ -100,7 +100,7 @@ public:
                                     bool modified = false;
                                     if ((modified = ImGui::Button(script.className.c_str(), ImVec2{script.className.empty() ? 64.0f : 0, 0})))
                                     {
-									    auto path = FileDialogs::OpenFile();
+                                        auto path = FileDialogs::OpenFile("C Sharp Scripts\0 * .cs\0");
                                         if (path.has_value())
                                         {
                                             script.path = path.value();

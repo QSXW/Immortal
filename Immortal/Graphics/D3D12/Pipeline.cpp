@@ -294,6 +294,7 @@ UINT GraphicsPipeline::ConstructRenderTargetFormats(const std::vector<Format> &o
 				continue;
 			}
 
+			blendState.AlphaToCoverageEnable                 = false;
 			blendState.RenderTarget[i].BlendEnable           = true;
 			blendState.RenderTarget[i].SrcBlend              = D3D12_BLEND_SRC_ALPHA;
 			blendState.RenderTarget[i].DestBlend             = D3D12_BLEND_INV_SRC_ALPHA;
@@ -304,11 +305,6 @@ UINT GraphicsPipeline::ConstructRenderTargetFormats(const std::vector<Format> &o
 			blendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		}
 	}
-
-    if (flags & State::MSAA4X)
-    {
-		blendState.AlphaToCoverageEnable = TRUE;
-    }
 
     return numRenderTargets;
 }
@@ -433,11 +429,6 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipeline::ConstructDescription()
         .CachedPSO             = { .pCachedBlob = nullptr, .CachedBlobSizeInBytes = 0 },
         .Flags                 = D3D12_PIPELINE_STATE_FLAG_NONE,
     };
-
-    if (flags & State::MSAA4X)
-    {
-		pipelineStateDesc.SampleDesc.Count = 4;
-    }
 
     //if (!(flags & Pipeline::State::Depth))
     //{

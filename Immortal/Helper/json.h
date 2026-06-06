@@ -7,14 +7,13 @@
 namespace Immortal
 {
 
-using Json = nlohmann::json;
 class JSON
 {
 public:
     using SuperJSON = nlohmann::json;
 
 public:
-    static SuperJSON Parse(const std::filesystem::path &path)
+    static SuperJSON Parse(const std::string &path)
     {
         std::ifstream input{ path, std::ifstream::in };
         
@@ -27,6 +26,7 @@ public:
 
         return json;
     }
+
 };
 
 }

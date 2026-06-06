@@ -27,7 +27,7 @@ inline VkExtent2D SelectExtent(VkExtent2D request, const VkExtent2D &min, const 
 {
     if (request.width < 1 || request.height < 1)
     {
-        LOG::WARN("(Swapchain) Image extent ({0}, {1}) not supported",
+        LOG::WARN<false>("(Swapchain) Image extent ({0}, {1}) not supported",
             request.width, request.height);
         if (Swapchain::IsValidExtent(current))
         {
@@ -67,7 +67,7 @@ inline VkSurfaceFormatKHR SelectSurfaceFormat(const VkSurfaceFormatKHR request, 
                 });
             if (it != available.end())
             {
-                LOG::WARN("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
+                LOG::WARN<false>("(Swapchain) Surface format ({0}) not supported. Selecting ({1}).",
                             Stringify(request), Stringify(*it));
                 return *it;
             }
@@ -75,7 +75,7 @@ inline VkSurfaceFormatKHR SelectSurfaceFormat(const VkSurfaceFormatKHR request, 
     }
     else
     {
-        LOG::DEBUG("(Swapchain) Surface format selected: {0}", Stringify(request));
+        LOG::DEBUG<false>("(Swapchain) Surface format selected: {0}", Stringify(request));
     }
     return *it;
 }
@@ -89,7 +89,7 @@ inline VkImageUsageFlags SelectImageUsage(VkImageUsageFlags &request, VkImageUsa
         VkImageUsageFlagBits flag = VkImageUsageFlagBits(1);
         while (!(flag & request) && !(flag & validated))
         {
-            LOG::WARN("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
+            LOG::WARN<false>("(Swapchain) Image usage ({0}) requested but not supported.", Stringify(flag));
             flag = VkImageUsageFlagBits((int)flag << 1);
         }
     }
@@ -126,7 +126,7 @@ inline VkSurfaceTransformFlagBitsKHR SelectTransform(VkSurfaceTransformFlagBitsK
         return request;
     }
 
-    LOG::WARN("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
+    LOG::WARN<false>("(Swapchain) Surface transform '{0}' not supported. Selecting '{1}'.", Stringify(request), Stringify(current));
 
     return current;
 }
@@ -149,7 +149,7 @@ inline VkCompositeAlphaFlagBitsKHR SelectCompositeAlpha(VkCompositeAlphaFlagBits
     {
         if (compositeAlphaFlags[i] & support)
         {
-            LOG::WARN("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
+            LOG::WARN<false>("(Swapchain) Composite alpha '{0}' not supported. Selecting '{1}.",
                         Stringify(request), Stringify(compositeAlphaFlags[i]));
             return compositeAlphaFlags[i];
         }
@@ -175,13 +175,13 @@ inline VkPresentModeKHR SelectPresentMode(VkPresentModeKHR request, const std::v
                 chosen = presentMode;
             }
         }
-        LOG::WARN("(Swapchain) Present mode '{}' not supported. Selecting '{}'.",
+        LOG::WARN<false>("(Swapchain) Present mode '{}' not supported. Selecting '{}'.",
                     Stringify(request), Stringify(chosen));
         return chosen;
     }
     else
     {
-        LOG::DEBUG("(Swapchain) Present mode selected: {0}", Stringify(request));
+        LOG::DEBUG<false>("(Swapchain) Present mode selected: {0}", Stringify(request));
         return *it;
     }
 }

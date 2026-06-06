@@ -146,7 +146,7 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
         }
     });
 
-    asyncComputeThread->Execute<ExecutionCompletedTask>([picture, this]() {});
+    Graphics::Execute<ExecutionCompletedTask>([picture, this]() {});
 }
 
 }

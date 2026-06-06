@@ -11,19 +11,19 @@
 namespace Immortal
 {
 
-class Lut3DFilter : public FilterNode
+class LogCurveFilterNode : public FilterNode
 {
 public:
-	enum class Type
-	{
-		Nearest,
-		Trilinear
-	};
+    enum class LogCurveType
+    {
+        Slog2,
+        Slog3,
+    };
 
 public:
-	Lut3DFilter(Device *device, const String &filepath, Type type, uint32_t width, uint32_t height);
+	LogCurveFilterNode(Device *device, LogCurveType type, uint32_t width, uint32_t height);
 
-	virtual ~Lut3DFilter() override;
+    virtual ~LogCurveFilterNode() override;
 
 	void Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread()) override;
 
@@ -31,14 +31,6 @@ protected:
 	Ref<DescriptorSet> descriptorSet;
 
 	Ref<Pipeline> pipeline;
-
-    Ref<Buffer> lut;
-
-    Ref<Buffer> stagingLut;
-
-    Type type;
-
-    int lutSize;
 };
 
 }

@@ -59,7 +59,6 @@ DirectXShaderCompiler::DirectXShaderCompiler() :
 		LOG::ERR("Failed to get handle to DxcCreateInstance!");
 		return;
     }
-
     if (FAILED(pDxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler))))
     {
 		LOG::ERR("Failed to init DirectX Shader Compiler");
@@ -121,7 +120,6 @@ bool DirectXShaderCompiler::Compile(const std::string     &name,
         {
 			definition += L"=" + String2WString(pMacro[i].definition);
         }
-
 		macros.emplace_back(std::move(definition));
 
 		arguments.emplace_back(L"-D");
@@ -139,7 +137,7 @@ bool DirectXShaderCompiler::Compile(const std::string     &name,
 	    buffer.Encoding = DXC_CP_ACP
     };
 
-    CComPtr<IDxcOperationResult> result{nullptr};
+    CComPtr<IDxcResult> result{nullptr};
     auto hres = compiler->Compile(
         &buffer,
         arguments.data(),
@@ -196,7 +194,7 @@ bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vect
          .Ptr     = binary.data(),
 	    .Size     = binary.size(),
         .Encoding = 0,
-	};
+    };
 
     if (FAILED(utils->CreateReflection(&buffer, IID_PPV_ARGS(ppvReflection))))
     {

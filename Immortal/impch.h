@@ -31,6 +31,7 @@
 #include "Filter/DisplayOrientationFilter.h"
 #include "Filter/Filter.h"
 #include "Filter/GaussianBlurFilter.h"
+#include "Filter/LogCurveFilter.h"
 #include "Filter/Lut3DFilter.h"
 #include "Filter/ScaleFilter.h"
 #include "Filter/Transfer.h"

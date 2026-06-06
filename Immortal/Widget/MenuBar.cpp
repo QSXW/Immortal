@@ -105,71 +105,60 @@ WMenuBar::WMenuBar(Widget *parent) :
 	Widget{parent},
 	spacing{}
 {
+	Connect([this] {
+		__PreCalculateSize();
 
-}
+		StyleColorStack<uint32_t> styleColor{
+		    {ImGuiCol_MenuBarBg,     BackgroundColor()     },
+		    {ImGuiCol_PopupBg,       PopupBackgroundColor()},
+		    {ImGuiCol_Text,          Color()               },
+		    {ImGuiCol_Header,        HoveredColor()        },
+		    {ImGuiCol_HeaderHovered, HoveredColor()        },
+		    {ImGuiCol_HeaderActive,  HoveredColor()        },
+		};
 
-bool WMenuBar::Draw()
-{
-	using namespace ImGui;
-	__PreCalculateSize();
+		StyleVarStack<float> styleVar{
+		    {ImGuiStyleVar_PopupRounding, 2.0f},
+			{ImGuiStyleVar_WindowShadowSize, 4.0f },
+		    {ImGuiStyleVar_FrameRounding, 4.0f}
+		};
 
-	StyleColorStack<uint32_t> styleColor{
-		{ImGuiCol_MenuBarBg,     BackgroundColor()     },
-		{ImGuiCol_PopupBg,       PopupBackgroundColor()},
-		{ImGuiCol_Text,          Color()               },
-		{ImGuiCol_Header,        HoveredColor()        },
-		{ImGuiCol_HeaderHovered, HoveredColor()        },
-		{ImGuiCol_HeaderActive,  HoveredColor()        },
-	};
-
-	StyleVarStack<float> styleVar{
-		{ImGuiStyleVar_PopupRounding, 2.0f},
-		{ImGuiStyleVar_WindowShadowSize, 4.0f },
-		{ImGuiStyleVar_FrameRounding, 4.0f}
-	};
-
-	if (ImGui::BeginMainMenuBar())
-	{
-		position = ImGui::GetItemRectMin();
-		auto [x, y] = ImGui::GetWindowSize();
-		renderWidth = x;
-		renderHeight = y;
-
-		for (auto &child : children)
+		if (ImGui::BeginMainMenuBar())
 		{
-			child->render();
-		}
+			position = ImGui::GetItemRectMin();
+			auto [x, y] = ImGui::GetWindowSize();
+			renderWidth = x;
+			renderHeight = y;
 
-		ImGui::EndMainMenuBar();
-	}
-	return false;
+			for (auto &child : children)
+			{
+				child->render();
+			}
+			ImGui::EndMainMenuBar();
+		}
+	});
 }
 
 WItemList::WItemList(Widget *parent) :
 	Widget{parent}
 {
+	Connect([&] {
+		__PreCalculateSize();
 
-}
+		StyleColorStack<uint32_t> styleColor{
+		    {ImGuiCol_HeaderHovered, HoveredColor()},
+		    {ImGuiCol_ButtonHovered, HoveredColor()},
+		    {ImGuiCol_Text, Color()}
+		};
 
-bool WItemList::Draw()
-{
-	__PreCalculateSize();
-
-	StyleColorStack<uint32_t> styleColor{
-		{ImGuiCol_HeaderHovered, HoveredColor()},
-		{ImGuiCol_ButtonHovered, HoveredColor()},
-		{ImGuiCol_Text, Color()}
-	};
-
-	for (auto &item : items)
-	{
-		if (ImGui::MenuItem(item.name.c_str()))
+		for (auto &item : items)
 		{
-			item.callback();
+			if (ImGui::MenuItem(item.name.c_str()))
+			{
+				item.callback();
+			}
 		}
-	}
-
-	return true;
+	});
 }
 
 WItemList *WItemList::Item(WItem &&item)

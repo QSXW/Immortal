@@ -32,8 +32,6 @@ public:
 
     void SetQuality(int value);
 
-    void SetDesireSize(int value);
-
 protected:
 	bool isOutputYUV;
 
@@ -42,8 +40,6 @@ protected:
     int denominator;
 
     int quality;
-
-    int desireSize;
 };
 
 }

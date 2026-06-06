@@ -1,5 +1,7 @@
 #include "GuiLayer.h"
 
+#include <imgui.h>
+#include <imgui_internal.h>
 #include "ImGuizmo.h"
 #include "ImGuiNotify.hpp"
 #include "imgui_impl_immortal.h"
@@ -103,21 +105,19 @@ void GuiLayer::OnAttach()
 
     ImGuiIO& io = ImGui::GetIO();
 
-    //io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
-    
+
     ImGuiStyle &style = ImGui::GetStyle();
     style.WindowMinSize.x      = MinWindowSizeX;
     style.WindowMinSize.y      = MinWindowSizeY;
     style.WindowBorderSize     = 0.0f;
-    style.ScrollbarRounding    = 0.0f;
-    style.ScrollbarSize        = 16.0f;
-    style.DockingSeparatorSize = 1.2f;
-	style.AntiAliasedLines       = true; 
-	style.AntiAliasedLinesUseTex = true;
-	style.AntiAliasedFill        = true;
+    style.ScrollbarRounding    = 2.0f;
+    style.ScrollbarSize        = 12.0f;
+    style.DockingSeparatorSize = 1.0f;
+
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
@@ -165,7 +165,7 @@ void GuiLayer::OnAttach()
     //NotoSans.Bold->FontSize -= 1.0f;
 
 	static const ImWchar icons_ranges[] = {
-	    0xE000, 0xFFFF, 0,
+	    0xe900, 0xe9ff, 0,
         /*0xe005, 0xf8ff, 0*/
     };
 	ImFontConfig icons_config;
@@ -236,38 +236,8 @@ void GuiLayer::OnDetach()
     platformSpecficWindow = {};
 }
 
-void GuiLayer::SmoothScroll()
-{
-	auto &io = ImGui::GetIO();
-
-	const float kScrollSmoothing = 8.0f;
-	ImVec2 scroll = ImVec2(0.0f, 0.0f);
-	if (std::abs(scrollEnergy.x) > 0.01f)
-	{
-		scroll.x = scrollEnergy.x * io.DeltaTime * kScrollSmoothing;
-		scrollEnergy.x -= scroll.x;
-	}
-	else
-	{
-		scrollEnergy.x = 0.0f;
-	}
-	if (std::abs(scrollEnergy.y) > 0.01f)
-	{
-		scroll.y = scrollEnergy.y * io.DeltaTime * kScrollSmoothing;
-		scrollEnergy.y -= scroll.y;
-	}
-	else
-	{
-		scrollEnergy.y = 0.0f;
-	}
-
-    io.MouseWheel  =  scroll.y;
-	io.MouseWheelH = -scroll.x;
-}
-
 void GuiLayer::Begin()
 {
-    SmoothScroll();
     ImGui_ImplImmortal_NewFrame();
 	platformSpecficWindow.NewFrame();
     ImGui::NewFrame();
@@ -371,29 +341,6 @@ void GuiLayer::OnEvent(Event &e)
 		    }
         }
     }
-    else if (e.GetType() == Event::Type::MouseScrolled)
-    {
-		MouseScrolledEvent &event = (MouseScrolledEvent &)e;
-
-        float wheelX = event.GetOffsetX();
-		float wheelY = event.GetOffsetY();
-
-        constexpr float multiplier = 2.0f;
-		wheelX *= multiplier;
-		wheelY *= multiplier;
-		if (scrollEnergy.x * wheelX < 0.0f)
-		{
-			scrollEnergy.x = 0.0f;
-		}
-		if (scrollEnergy.y * wheelY < 0.0f)
-		{
-			scrollEnergy.y = 0.0f;
-		}
-		scrollEnergy.x += wheelX;
-		scrollEnergy.y += wheelY;
-    }
-
-    dockspace->OnEvent(e);
 }
 
 void GuiLayer::UpdateTheme()
@@ -475,40 +422,11 @@ void GuiLayer::Render()
 {
     {
 		FontSizeStack fontSize{ NotoSans.Bold, 18.f};
-		StyleVarStack<float> styleVar1{
-		    { ImGuiStyleVar_ScrollbarRounding, 0.0f},
-		    { ImGuiStyleVar_ScrollbarSize,     16.0f}
-        };
-
-        StyleColorStack<uint32_t> styleColor2{
-            { ImGuiCol_WindowBg,             0xff222222},
-		    { ImGuiCol_ChildBg,              0xff222222},
-		    { ImGuiCol_Border,               0xff3b3b3b},
-            { ImGuiCol_Separator,            0xff3b3b3b},
-		    { ImGuiCol_TitleBg,              0xff222222},
-		    { ImGuiCol_TitleBgActive,        0xff222222},
-		    //{ ImGuiCol_Tab,                  0xff222222},
-		    { ImGuiCol_TabHovered,           0x33ff8844},
-		    //{ ImGuiCol_TabActive,            0x33ff8844},
-		    { ImGuiCol_TabUnfocused,         0xff333333},
-		    { ImGuiCol_TabUnfocusedActive,   0xff222222},
-            { ImGuiCol_ScrollbarBg,          0x0},
-            { ImGuiCol_ScrollbarGrab,        0x88444444},
-            { ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
-            { ImGuiCol_ScrollbarGrabActive,  0xdd444444},
-            { ImGuiCol_Button,               0xccff8844},
-		    { ImGuiCol_ButtonHovered,        0x33ff8844},
-		    { ImGuiCol_ButtonActive,         0x33ff8844},
-		    { ImGuiCol_Header,               0xccff8844},
-		    { ImGuiCol_HeaderHovered,        0x33ff8844},
-		    { ImGuiCol_HeaderActive,         0x33ff8844},
-        };
-
 		dockspace->Render();
 
         StyleVarStack<float> styleVar{
-		    { ImGuiStyleVar_WindowRounding,     0.f  },
-		    { ImGuiStyleVar_WindowBorderSize,   0.f  },
+		    { ImGuiStyleVar_WindowRounding,   0.f },
+		    { ImGuiStyleVar_WindowBorderSize, 0.f }
 		};
         
         StyleColorStack<ImVec4> styleColor{
@@ -517,8 +435,6 @@ void GuiLayer::Render()
 			{ ImGuiCol_ButtonActive,  ImVec4(0.20f, 0.22f, 0.23f, 1.00f)},
 			{ ImGuiCol_WindowBg,      ImVec4(0.10f, 0.10f, 0.10f, 1.00f)}
         };
-
-
 
 		ImGui::RenderNotifications();
     }

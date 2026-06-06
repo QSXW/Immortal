@@ -77,7 +77,7 @@ void Pipeline::ConstructPipelineLayout(const std::vector<VkDescriptorSetLayoutBi
         .pushConstantRangeCount  = uint32_t(pushConstantRanges.size()),
         .pPushConstantRanges     = pushConstantRanges.data()
     };
-    
+
     PipelineLayout{
 	    *device,
 	    &pipelineLayoutCreateInfo

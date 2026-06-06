@@ -47,7 +47,7 @@ public:
 
     virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, uint32_t sampleCount = 0) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
 
 public:
     HRESULT CreateFence(ID3D11Fence **ppFence, UINT64 initialValue, D3D11_FENCE_FLAG flags)

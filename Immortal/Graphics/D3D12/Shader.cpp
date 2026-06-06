@@ -108,7 +108,7 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
             )
         {
 		    LOG::ERR("Shader compiling failing: \n\n{}", error);
-   		    throw std::runtime_error("Compiler Error");
+		    throw std::runtime_error("Compiler Error");
         }
 
         if (stage & ShaderStage::WorkGraph)

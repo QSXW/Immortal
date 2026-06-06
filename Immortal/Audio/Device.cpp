@@ -49,17 +49,112 @@ AudioDevice::AudioDevice() :
         return;
     }
 
-    handle->SetOnEvent([=, this](Event &event) {
-        if (event.GetType() == Event::Type::AudioDefaultDeviceChanged)
-        {
-			handle->OpenDevice();
-        }
-
-        if (onEvent)
-		{
-			onEvent(event);
-		}
+    handle->RegisterCallback(AudioDeviceEvent_OnDefaultDeviceChanged, [=, this] {
+		defaultDeviceChanged = true;
 	});
+
+    handle->RegisterCallback(AudioDeviceEvent_OnDeviceRemoved, [=, this] {
+
+	});
+
+  //  thread = new Thread{ [=, this] {
+  //      uint64_t duration = 0;
+  //      handle->Begin();
+
+  //      const int kSamples = 1024;
+		//alignas(8) StereoVector2 buffer[kSamples] = {};
+		//alignas(8) StereoVector2 mixBuffer[kSamples] = {};
+		//StereoVector2 *ptr = buffer;
+  //      AudioFormat format = handle->GetFormat();
+
+  //      static int lastSamples = 1024;
+  //      while (!stopping)
+  //      {
+  //          if (callbacks.empty())
+  //          {
+		//		duration = Seconds2Nanoseconds(((float) kSamples / format.sampleRate));
+  //          }
+		//	else
+  //          {
+		//		std::lock_guard lock{mutex};
+  //              int frames = 0;
+		//	    for (size_t i = 0; i < callbacks.size(); i++)
+		//	    {
+		//		    auto &callback = callbacks[i];
+		//		    int size = 0;
+  //                  if (i > 0)
+  //                  {
+		//				size = callback(mixBuffer, kSamples);
+  //                      if (size > 0)
+  //                      {
+		//					MixAudioSamples((float *) ptr, (float *) ptr, (float *) mixBuffer, kSamples * 2);
+  //                      }
+  //                  }
+  //                  else
+  //                  {
+		//				size = callback(buffer, kSamples);
+		//			    ptr = buffer;
+  //                  }
+
+  //                  frames = std::max(frames, size);
+  //              }
+
+		//	    auto frameLeft = PlaySamples(frames, (const uint8_t *)ptr);
+		//	    duration = Seconds2Nanoseconds(((float) frameLeft / format.sampleRate));
+  //          }
+  //          //Picture picture{};
+  //          //if (callBack)
+  //          //{
+  //          //    callBack(picture);
+  //          //}
+
+
+  //  //        if (picture)
+  //  //        {
+  //  //            if (reset)
+  //  //            {
+  //  //                startpts = picture.GetTimestamp();
+  //  //                samples  = picture.GetWidth();
+  //  //                reset = false;
+  //  //            }
+  //  //            int frameLeft = 0;
+		//		//lastSamples = picture.GetWidth();
+		//		//if (picture.GetWidth() < 1024)
+  //  //            {
+  //  //                size_t bytes = picture.GetWidth() << 3;
+		//		//	memcpy(ptr, picture.GetData(), bytes);
+		//		//	ptr += picture.GetWidth();
+  //  //                uint32_t frames = uint32_t(ptr - buffer);
+  //  //                if (frames > 1024)
+  //  //                {
+  //  //                    frameLeft = PlaySamples(frames, (const uint8_t *)buffer);
+  //  //                    ptr = buffer;
+  //  //                }
+  //  //            }
+  //  //            else
+  //  //            {
+		//		//	pts       = picture.GetTimestamp();
+  //  //                samples   = picture.GetWidth();
+		//		//	frameLeft = PlaySamples(samples, picture.GetData());
+  //  //            }
+		//		//duration = Seconds2Nanoseconds(((float) frameLeft / format.sampleRate));
+  //  //        }
+  //  //        else
+  //  //        {
+  //  //            if (lastSamples >= 512)
+  //  //            {
+		//		//	duration = Seconds2Nanoseconds(((float)1024 / format.sampleRate));
+  //  //            }
+  //  //        }
+
+  //          duration >>= 1;
+  //          std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+
+  //          status.wait(true);
+  //      }
+
+  //      handle->End();
+  //  } };
 }
 
 AudioDevice::~AudioDevice()
@@ -91,15 +186,21 @@ void AudioDevice::Reset()
     reset = true;
 }
 
-AudioFormat AudioDevice::GetFormat() const
+double AudioDevice::GetPosition() const
 {
-	return handle->GetFormat();
+	return 0;
 }
 
-bool AudioDevice::SetOnEvent(const std::function<void(Event &)> &callback)
+int AudioDevice::GetSampleRate() const
 {
-	onEvent = callback;
-	return true;
+	//AudioFormat format = handle->GetFormat();
+	//return format.sampleRate;
+	return 44100;
+}
+
+int AudioDevice::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
+{
+  return 0;
 }
 
 IAudioStream *AudioDevice::CreateAudioStream(const PFN_AudioStreamPlayCallback &callback)
@@ -107,30 +208,10 @@ IAudioStream *AudioDevice::CreateAudioStream(const PFN_AudioStreamPlayCallback &
 	IAudioStream *stream = handle->CreateStream();
     if (stream)
     {
-		streams.emplace_back(stream);
 		stream->Start(callback);
     }
 
     return stream;
-}
-
-void AudioDevice::DestroyAudioStream(IAudioStream **ppStream)
-{
-	IAudioStream *stream = *ppStream;
-    for (auto it = streams.begin(); it != streams.end(); it++)
-    {
-        if (stream == (it)->Get())
-        {
-			streams.erase(it);
-			break;
-        }
-    }
-	*ppStream = nullptr;
-}
-
-int AudioDevice::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice)
-{
-	return handle->EnumeratorDevices(type, devices, numDevice);
 }
 
 AudioDevice *AudioDevice::GetInstance()

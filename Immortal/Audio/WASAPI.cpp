@@ -7,25 +7,20 @@
 #include "WASAPI.h"
 #include "String/IString.h"
 
-#include <functiondiscoverykeys_devpkey.h>
-
 namespace Immortal
 {
 namespace WASAPI
 {
 
-static inline bool Check(HRESULT hr)
+static inline void Check(HRESULT hr)
 {
     if (FAILED(hr))
     {
-		abort();
+        abort();
     }
 }
 
-#define WASAPI_CHECK(x) if (x) return false;
-
 DeviceChangeListener::DeviceChangeListener(Device *device) :
-    ICLASS,
     device{ device }
 {
 
@@ -58,19 +53,15 @@ HRESULT STDMETHODCALLTYPE DeviceChangeListener::QueryInterface(REFIID riid, VOID
 HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState)
 {
 	LOG::DEBUG("Device state changed");
-
-	AudioDeviceStateChangedEvent event;
-	device->OnEvent(AudioDeviceEvent_OnDeviceStateChanged, event);
+	device->OnEvent(AudioDeviceEvent_OnDeviceStateChanged);
 
 	return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceAdded(LPCWSTR pwstrDeviceId)
 {
-	CLOG_INFO("Device added");
-
-	AudioDeviceAddedEvent event;
-	device->OnEvent(AudioDeviceEvent_OnDeviceAdded, event);
+	LOG::DEBUG("Device added");
+	device->OnEvent(AudioDeviceEvent_OnDeviceAdded);
 
 	return S_OK;
 }
@@ -78,24 +69,24 @@ HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceAdded(LPCWSTR pwstrDevic
 HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDeviceRemoved(LPCWSTR pwstrDeviceId)
 {
 	wchar_t id[64];
-	CLOG_INFO("Device removed: {}", WString2String(pwstrDeviceId));
-
-	AudioDeviceRemovedEvent event;
+	LOG::DEBUG("Device removed: {}", WString2String(pwstrDeviceId));
 	if (device->handle->GetId((wchar_t **)&id) == S_OK && lstrcmpW(id, pwstrDeviceId))
 	{
-		device->OnEvent(AudioDeviceEvent_OnDeviceRemoved, event);
+		device->OnEvent(AudioDeviceEvent_OnDeviceRemoved);
     }
 
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR defaultDeviceId)
+HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId)
 {
+	if (pwstrDefaultDeviceId)
+	{
+		LOG::DEBUG("Default device changed: {} {} {}", WString2String(pwstrDefaultDeviceId), (int) flow, (int) role);
+	}
 	if (role == device->role)
 	{
-		CLOG_INFO("Default device changed from {} {} {}", defaultDeviceId ? WString2String(defaultDeviceId) : "", (int) flow, (int) role);
-		AudioDefaultDeviceChangedEvent event = {};
-		device->OnEvent(AudioDeviceEvent_OnDefaultDeviceChanged, event);
+		device->OnEvent(AudioDeviceEvent_OnDefaultDeviceChanged);
     }
 
 	return S_OK;
@@ -103,33 +94,32 @@ HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnDefaultDeviceChanged(EDataFlow
 
 HRESULT STDMETHODCALLTYPE DeviceChangeListener::OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key)
 {
-	CLOG_INFO("Property value changed");
-
-	AudioDevicePropertyValueChangedEvent event;
-	device->OnEvent(AudioDeviceEvent_OnPropertyValueChanged, event);
+	LOG::DEBUG("Property value changed");
+	device->OnEvent(AudioDeviceEvent_OnPropertyValueChanged);
 	return S_OK;
 }
 
-AudioStream::AudioStream(ComPtr<IMMDevice> &device, ComPtr<IAudioClient> &&_audioClient) :
-    IClass{"WASPIAudioStream"},
+AudioStream::AudioStream(ComPtr<IAudioClient> &&_audioClient) :
     IAudioStream{},
-    device{ device },
     audioClient{std::move(_audioClient)},
     renderClient{},
     clock{},
     waveFormat{},
-    data{},
+	data{},
     bufferSize{}
 {
-	OpenStream();
+	Check(audioClient->GetMixFormat(&waveFormat));
+
+	Check(audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, REFTIMES_PER_SEC, 0, waveFormat, NULL));
+
+	Check(audioClient->GetService(IID_PPV_ARGS(&renderClient)));
+
+	Check(audioClient->GetService(IID_PPV_ARGS(&clock)));
+
+	Check(audioClient->GetBufferSize(&bufferSize));
 }
 
 AudioStream::~AudioStream()
-{
-	Release();
-}
-
-void AudioStream::Release()
 {
 	Destroy();
 	if (waveFormat)
@@ -137,23 +127,6 @@ void AudioStream::Release()
 		CoTaskMemFree(waveFormat);
 		waveFormat = nullptr;
 	}
-}
-
-bool AudioStream::OpenStream()
-{
-	WASAPI_CHECK(audioClient->GetMixFormat(&waveFormat));
-
-	WASAPI_CHECK(audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, REFTIMES_PER_SEC, 0, waveFormat, NULL));
-
-	WASAPI_CHECK(audioClient->GetService(IID_PPV_ARGS(&renderClient)));
-
-	WASAPI_CHECK(audioClient->GetService(IID_PPV_ARGS(&clock)));
-
-	WASAPI_CHECK(audioClient->GetBufferSize(&bufferSize));
-
-	bytePerSample = (waveFormat->wBitsPerSample >> 3) * waveFormat->nChannels;
-
-	return true;
 }
 
 bool AudioStream::Start()
@@ -205,37 +178,20 @@ uint32_t AudioStream::GetAvailableFrameCount()
 AudioFormat AudioStream::GetFormat()
 {
 	AudioFormat format = {
-        .format     = Format::FLOAT,
-	    .channels   = (int)waveFormat->nChannels,
+        .format     = Format::VECTOR2,
+	    .channels   = (uint8_t)waveFormat->nChannels,
         .silence    = 0,
-	    .sampleRate = (int)waveFormat->nSamplesPerSec,
+	    .sampleRate = waveFormat->nSamplesPerSec,
     };
 
     return format;
 }
 
-bool AudioStream::OnDeviceChanged(IAudioDevice *_device)
-{
-	std::lock_guard lock{ mutex };
-
-	Device *device = InterpretAs<Device>(_device);
-	audioClient = device->CreateAudioClient();
-	if (!audioClient)
-	{
-		CLOG_ERROR("Error when creating audio client");
-		return false;
-	}
-
-	return OpenStream();
-}
-
 Device::Device() :
-    IClass{"WASAPI"},
     Super{},
     flow{ eRender },
     role{ eMultimedia },
-    callback{},
-    waveFormat{}
+    callbacks{}
 {
 	Check(CoInitializeEx(NULL, COINIT_MULTITHREADED));
 
@@ -253,24 +209,11 @@ Device::~Device()
     Release();
 }
 
-bool Device::OpenDevice(const AudioDeviceInfo &deviceInfo)
+bool Device::OpenDevice()
 {
     Release();
 
-	if (deviceInfo.uuid.empty())
-	{
-		return OpenDefaultDevice();
-	}
-
-	if (FAILED(enumerator->GetDevice(String2WString(deviceInfo.uuid).c_str(), &handle)))
-	{
-		CLOG_ERROR("Error when opening {}", deviceInfo.name);
-		return false;
-	}
-
-	(void) CreateAudioClient();
-
-	return true;
+	return OpenDefaultDevice();
 }
 
 bool Device::OpenDefaultDevice()
@@ -282,8 +225,6 @@ bool Device::OpenDefaultDevice()
 		LOG::ERR("Failed to GetDefaultAudioEndpoint!");
 		return false;
 	}
-	
-	(void)CreateAudioClient();
 
 	return true;
 }
@@ -291,197 +232,39 @@ bool Device::OpenDefaultDevice()
 IAudioStream *Device::CreateStream()
 {
 	HRESULT ret;
-	ComPtr<IAudioClient> audioClient = CreateAudioClient();
-	return new AudioStream{ handle,  std::move(audioClient) };
+	ComPtr<IAudioClient> audioClient;
+	ret = handle->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void **) &audioClient);
+	if (FAILED(ret))
+	{
+		LOG::ERR("Failed to activate audio client!");
+		return nullptr;
+	}
+
+	return new AudioStream{ std::move(audioClient) };
 }
 
-static Format CAST(const GUID &guid, WORD bitPerSample)
+bool Device::RegisterCallback(AudioDeviceEvent type, const std::function<void()> &callback)
 {
-	if (IsEqualGUID(guid, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))
-	{
-		return Format::FLOAT;
-	}
-	else if (IsEqualGUID(guid, KSDATAFORMAT_SUBTYPE_PCM))
-	{
-		switch (bitPerSample)
-		{
-			case 8:
-				return Format::R8_SINT;
-				break;
-			case 16:
-				return Format::R16_SINT;
-			case 24:
-			case 32:
-				return Format::R32_SINT;
-			default:
-				break;
-		}
-	}
+	if (type >= NumAudioDeviceEvent)
+    {
+		return false;
+    }
 
-	return Format::None;
-}
-
-static Format CAST(WORD format, WORD bitPerSample)
-{
-	if (format == WAVE_FORMAT_IEEE_FLOAT)
-	{
-		return Format::FLOAT;
-	}
-	else if (format == WAVE_FORMAT_PCM)
-	{
-		switch (bitPerSample)
-		{
-			case 8:
-				return Format::R8_SINT;
-			case 16:
-				return Format::R16_SINT;
-			case 24:
-			case 32:
-				return Format::R32_SINT;
-			default:
-				break;
-		}
-	}
-
-	return Format::None;
-}
-
-AudioFormat Device::GetFormat()
-{
-	if (!waveFormat)
-	{
-		return {};
-	}
-
-	AudioFormat format{
-	    .format     = Format::None,
-		.channels   = (int)waveFormat->nChannels,
-		.sampleRate = (int)waveFormat->nSamplesPerSec,
-		.mask       = 0,
-	};
-
-	const WAVEFORMATEXTENSIBLE *ext = NULL;
-	if (waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
-	    waveFormat->cbSize >= sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX))
-	{
-		ext = (const WAVEFORMATEXTENSIBLE *) waveFormat;
-		format.mask = ext->dwChannelMask;
-		format.format = CAST(ext->SubFormat, waveFormat->wBitsPerSample);
-	}
-	else
-	{
-		format.format = CAST(waveFormat->wFormatTag, waveFormat->wBitsPerSample);
-		for (int i = 0; i < waveFormat->nChannels; i++)
-		{
-			format.mask |= (1llu << i);
-		}
-	}
-
-	return format;
-}
-
-bool Device::SetOnEvent(const std::function<void(Event &)> &_callback)
-{
-    callback = _callback;
+    callbacks[type] = callback;
 	return true;
-}
-
-int Device::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice)
-{
-	ComPtr<IMMDeviceCollection> deviceCollection;
-	HRESULT hr = enumerator->EnumAudioEndpoints(type == AudioDeviceType::Capture ? eCapture : eRender, DEVICE_STATE_ACTIVE, &deviceCollection);
-	if (FAILED(hr))
-	{
-		*numDevice = 0;
-		CLOG_ERROR("Error when calling EnumAudioEndpoints");
-		return -1;
-	}
-
-	deviceCollection->GetCount(numDevice);
-	if (!devices)
-	{
-		return 0;
-	}
-
-	for (UINT i = 0; i < *numDevice; i++)
-	{
-		auto &info = devices[i];
-		info.type = type;
-
-		ComPtr<IMMDevice> device;
-		hr = deviceCollection->Item(i, &device);
-
-		if (FAILED(hr))
-		{
-			continue;
-		}
-
-		LPWSTR deviceId = NULL;
-		hr = device->GetId(&deviceId);
-		if (FAILED(hr))
-		{
-			return -1;
-		}
-
-		info.uuid = WString2String(deviceId);
-		CoTaskMemFree(deviceId);
-
-		ComPtr<IPropertyStore> pProps;
-		hr = device->OpenPropertyStore(STGM_READ, &pProps);
-		if (SUCCEEDED(hr))
-		{
-			PROPVARIANT prop;
-			PropVariantInit(&prop);
-			hr = pProps->GetValue(PKEY_Device_FriendlyName, &prop);
-
-			if (SUCCEEDED(hr) && prop.vt == VT_LPWSTR)
-			{
-				info.name = WString2String(prop.pwszVal);
-			}
-
-			PropVariantClear(&prop);
-		}
-	}
 }
 
 void Device::Release()
 {
-	if (waveFormat)
-	{
-		CoTaskMemFree(waveFormat);
-		waveFormat = nullptr;
-	}
-	handle.Reset();
+
 }
 
-void Device::OnEvent(AudioDeviceEvent type, Event &event)
+void Device::OnEvent(AudioDeviceEvent type)
 {
-	if (callback)
+	if (callbacks[type])
 	{
-		callback(event);
+		callbacks[type]();
 	}
-}
-
-ComPtr<IAudioClient> Device::CreateAudioClient()
-{
-	ComPtr<IAudioClient> audioClient;
-	HRESULT ret = handle->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void **)&audioClient);
-	if (FAILED(ret))
-	{
-		CLOG_ERROR("Failed to activate audio client!");
-		return nullptr;
-	}
-
-	if (!waveFormat)
-	{
-		if (FAILED(audioClient->GetMixFormat(&waveFormat)))
-		{
-			CLOG_ERROR("Error when getting mix format!");
-			return nullptr;
-		}
-	}
-
-	return audioClient;
 }
 
 }

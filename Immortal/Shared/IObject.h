@@ -6,24 +6,6 @@
 namespace Immortal
 {
 
-#define ICLASS IClass{__func__}
-class IClass
-{
-public:
-	IClass(const char *name = nullptr) :
-	    name{name}
-	{
-	}
-
-	const char *GetName() const
-	{
-		return name;
-	}
-
-private:
-	const char *name;
-};
-
 struct IMMORTAL_API IObject
 {
 public:

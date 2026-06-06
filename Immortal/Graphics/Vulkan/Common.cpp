@@ -240,7 +240,7 @@ VkFormat SuitableDepthFormat(VkPhysicalDevice physicalDevice, bool depthOnly, co
 
     if (depthFormat != VK_FORMAT_UNDEFINED)
     {
-        LOG::DEBUG("Depth format selected: {0}", Stringify(depthFormat));
+        LOG::DEBUG<false>("Depth format selected: {0}", Stringify(depthFormat));
         return depthFormat;
     }
 

@@ -15,7 +15,7 @@
 namespace Immortal
 {
 
-struct VideoPlayerContext : public IClass
+struct VideoPlayerContext
 {
 public:
 	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr, int cacheSize = 3, const VideoDecodeCallbacks &callbacks = {});
@@ -38,8 +38,6 @@ public:
 
     void StartPlay();
 
-    void CreateAudioStream();
-
     uint32_t GetAudioData(uint8_t *data, uint32_t samples);
 
 	uint32_t WriteAudioData(void *data, uint32_t samples);
@@ -48,14 +46,6 @@ public:
     const Vision::DisplayOrientation *GetDisplayOrientation() const
     {
 		return decoder->GetProperty<Vision::DisplayOrientation>();
-    }
-
-    void ClearPictures(ConcurrentQueue<Picture> &pictures, Picture &picture, int &size)
-    {
-		ConcurrentQueue<Picture> empty;
-		pictures.swap(empty);
-		picture = {};
-		size = 0;
     }
 
     const String &GetSource() const
@@ -105,7 +95,7 @@ public:
     }
 
 public:
-    Thread demuxerThread;
+    URef<Thread> demuxerThread;
 
     std::atomic_bool decoding = false;
 
@@ -119,9 +109,7 @@ public:
 
     std::unique_ptr<ThreadPool> subtitleThreadPool;
 
-    AudioStream *audioStream;
-
-    Vision::SampleConverter sampleConverter;
+    URef<AudioStream> audioStream;
 
     struct
     {
@@ -175,7 +163,7 @@ public:
 
     uint32_t unconsumedSamples = 0;
 
-    int pictureSize = 0;
+    std::atomic_int pictureSize = 0;
 
     VideoDecodeCallbacks callbacks{};
 
@@ -184,10 +172,6 @@ public:
     double externalClock = -1.0f;
 
     int64_t lastAudioTimestamp = 0;
-
-    bool audioDeviceChanged = false;
-
-    std::function<void()> task;
 
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 	Timer timer;
@@ -218,41 +202,12 @@ void EndOfFile(Vision::Interface::Codec *decoder, const std::function<void(Pictu
 
 void VideoPlayerContext::StartPlay()
 {
-	demuxerThread.Start(std::move(task));
+	demuxerThread->Start();
 	timer.Start();
-	demuxerThread.SetDescription(GetName() + std::string("::") + demuxer->GetSource().GetStem());
-}
-
-void VideoPlayerContext::CreateAudioStream()
-{
-	AudioDevice *audioDevice = AudioDevice::GetInstance();
-	auto decoder = audioDecoder.InterpretAs<Vision::FFCodec>();
-	auto audioFormat = audioDevice->GetFormat();
-	Vision::AudioFormatSpec outputSpec{
-        .format     = audioFormat.format,
-		.layout     = Vision::GetLayoutFromMask(audioFormat.mask),
-        .sampleRate = audioFormat.sampleRate,
-		.numChannel = audioFormat.channels,
-    };
-
-    Vision::AudioFormatSpec inputSpec = decoder->GetAudioFormat();
-    if (inputSpec.layout != outputSpec.layout || inputSpec.format != outputSpec.format)
-    {
-		if (!sampleConverter.SetOptions(outputSpec, inputSpec))
-		{
-			CLOG_ERROR("Error when creating sampleConverter. Audio playing maybe corrupted!");
-		}
-    }
-
-	audioStream = audioDevice->CreateAudioStream([=, this](void *data, uint32_t samples) -> uint32_t {
-		return GetAudioData((uint8_t *)data, samples);
-	});
-
-	audioStream->SetDebugName(demuxer->GetSource().GetString());
+	demuxerThread->SetDescription("VideoDemux");
 }
 
 VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, Ref<VideoCodec> subtitleDecoder, int cacheSize, const VideoDecodeCallbacks &callbacks) :
-    ICLASS,
     demuxerThread{},
     videoThreadPool{ new ThreadPool{1} },
     audioThreadPool{ audioDecoder ? new ThreadPool{1} : nullptr },
@@ -264,8 +219,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
     state{},
     kCacheSize{cacheSize},
     callbacks{ callbacks },
-    timer{},
-    audioStream{}
+    timer{}
 {
 	if (!callbacks.VideoDecodeFinishSlot)
 	{
@@ -274,29 +228,30 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 			AudioDevice *audioDevice = AudioDevice::GetInstance();
 			if (audioDevice)
 			{
-				CreateAudioStream();
-                audioDevice->SetOnEvent([=, this] (Event &event) {
-                    if (event.GetType() == Event::Type::AudioDefaultDeviceChanged)
-					{
-						audioDeviceChanged = true;
-                    }
-                });
+				audioStream = audioDevice->CreateAudioStream([=, this](void *data, uint32_t samples) -> uint32_t {
+					return GetAudioData((uint8_t *)data, samples);
+				});
+				audioStream->SetDebugName(demuxer->GetSource().GetString());
+				audioDecoder.InterpretAs<Vision::FFCodec>()->SetSampleRate(audioStream->GetFormat().sampleRate);
+			}
+			else
+			{
+				LOG::ERR("No audio device available!");
 			}
 		}
 
-        task = [=, this]() {
+        demuxerThread = new Thread{[=, this]() {
         while (true)
         {
             std::unique_lock lock{ mutex.demux };
             condition.wait(lock, [this] {
-				return state.exited ||
-                    ((pictureSize + videoThreadPool->TaskSize()) <= kCacheSize);
+				return state.exited || ((pictureSize + videoThreadPool->TaskSize()) <= kCacheSize);
             });
 
             if (state.exited)
             {
 				double time = timer.Duration();
-				CLOG_INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
+				LOG::INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
                 break;
             }
 
@@ -329,7 +284,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                         }
                         else
                         {
-							CLOG_ERROR("Failed to enqueue picture into pending queue for out of memory");
+							LOG::ERR("Failed to enqueue picture into pending queue for out of memory");
                         }
 					}
 				});
@@ -344,16 +299,6 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 						Picture picture{};
 						while (audioDecoder->GetPicture(picture) == CodecError::Success)
 						{
-                            if (audioDeviceChanged)
-                            {
-								ClearPictures(audioFrames, audioFrame, audioSize);
-								auto audioDevice = AudioDevice::GetInstance();
-								audioStream->Stop();
-								audioStream->Reset();
-								audioDevice->DestroyAudioStream(&audioStream);
-								CreateAudioStream();
-								audioDeviceChanged = false;
-                            }
                             if (audioFrames.enqueue(picture))
                             {
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
@@ -362,7 +307,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                             }
 							else
 							{
-								CLOG_ERROR("Failed to enqueue picture into pending queue for out of memory");
+								LOG::ERR("Failed to enqueue picture into pending queue for out of memory");
 							}
 						}
 					});
@@ -395,7 +340,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 				break;
             }
         }
-        };
+        }};
 		StartPlay();
     }
 	else
@@ -404,7 +349,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 			condition.notify_one();
 		});
 
-        task = [=, this]() {
+        demuxerThread = new Thread{[=, this]() {
             while (true)
             {
                 std::unique_lock lock{ mutex.demux };
@@ -416,7 +361,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
                 if (state.exited)
                 {
 				    double time = timer.Duration();
-				    CLOG_INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
+				    LOG::INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
                     break;
                 }
 
@@ -483,7 +428,7 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 				    break;
                 }
             }
-        };
+        }};
     }
 }
 
@@ -498,8 +443,20 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
     videoThreadPool->Join();
     audioThreadPool->Join();
 
-	ClearPictures(pictures, picture, pictureSize);
-    ClearPictures(audioFrames, audioFrame, audioSize);
+    {
+		ConcurrentQueue<Picture> _empty;
+		pictures.swap(_empty);
+		picture = {};
+		pictureSize = 0;
+    }
+
+    {
+
+        ConcurrentQueue<Picture> _audioFrames;
+		audioFrames.swap(_audioFrames);
+		audioFrame = {};
+		audioSize = 0;
+    }
 
     eof = false;
     demuxer->Seek(MediaType::Video, seconds, min, max);
@@ -509,19 +466,19 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
 
 VideoPlayerContext::~VideoPlayerContext()
 {
-	AudioDevice *audioDevice = AudioDevice::GetInstance();
-	audioDevice->DestroyAudioStream(&audioStream);
+	audioStream.Reset();
+	audioStream = {};
 
     state.exited = true;
     condition.notify_all();
-	
-    demuxerThread = {};
 
     videoThreadPool->RemoveTasks();
     audioThreadPool->RemoveTasks();
 
     videoThreadPool->Join();
     audioThreadPool->Join();
+
+    demuxerThread.Reset();
 }
 
 Picture VideoPlayerContext::GetPicture()
@@ -547,21 +504,6 @@ Picture VideoPlayerContext::GetAudioFrame()
     }
 
     audioFrames.try_dequeue(audioFrame);
-	if (audioFrame)
-	{
-		if (sampleConverter)
-		{
-			auto &outputAudioFormat = sampleConverter.GetOutputFormat();
-			int rescaledSampleWidth = sampleConverter.RescaleRound(audioFrame.GetWidth());
-			Picture rescaledPicture = {(uint32_t) rescaledSampleWidth * outputAudioFormat.numChannel, 1, outputAudioFormat.format, true};
-			rescaledPicture.SetWidth(rescaledSampleWidth);
-			if (sampleConverter.Convert(rescaledPicture, audioFrame))
-			{
-				audioFrame = rescaledPicture;
-			}
-		}
-	}
-
 	return audioFrame;
 }
 
@@ -575,7 +517,6 @@ void VideoPlayerContext::PopPicture()
 void VideoPlayerContext::PopAudioFrame()
 {
 	audioFrame = {};
-	audioSize--;
 }
 
 uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
@@ -585,25 +526,23 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
 		return 0;
 	}
 
-	uint32_t numSamples = WriteAudioData(data, samples);
-	while (numSamples != samples)
+	uint32_t numSamples = 0;
+	//if (audioMutex.try_lock())
 	{
-		outputAudioFrame = GetAudioFrame();
-        if (!outputAudioFrame)
-        {
-			break;
-        }
-
-		PopAudioFrame();
-		unconsumedSamples = outputAudioFrame.GetWidth();
-
-        int numChannel = 2;
-		if (sampleConverter)
+		numSamples = WriteAudioData(data, samples);
+		while (numSamples != samples)
 		{
-			numChannel = sampleConverter.GetOutputFormat().numChannel;
+			outputAudioFrame = GetAudioFrame();
+            if (!outputAudioFrame)
+            {
+				break;
+            }
+
+			PopAudioFrame();
+			unconsumedSamples = outputAudioFrame.GetWidth();
+			numSamples += WriteAudioData(&data[numSamples * sizeof(float) * 2], samples - numSamples);
 		}
-		size_t bytePerPixel = outputAudioFrame.GetFormat().GetTexelSize() * numChannel;
-		numSamples += WriteAudioData(&data[numSamples * bytePerPixel], samples - numSamples);
+		//audioMutex.unlock();
 	}
 
 	return numSamples;
@@ -616,18 +555,9 @@ uint32_t VideoPlayerContext::WriteAudioData(void *data, uint32_t samples)
 	{
 		uint32_t request = std::min(unconsumedSamples, samples);
 
-        int numChannel = 2;
-        if (sampleConverter)
-        {
-			numChannel = sampleConverter.GetOutputFormat().numChannel;
-        }
-
-		size_t bytePerPixel = outputAudioFrame.GetFormat().GetTexelSize() * numChannel;
-
-		auto size = request * bytePerPixel;
-        auto consumed = (outputAudioFrame.GetWidth() - unconsumedSamples) * bytePerPixel;
-
-		memcpy(data, outputAudioFrame.GetData() + consumed, size);
+		size_t sizePerSample = sizeof(float) * 2;
+		auto size = request * sizePerSample;
+		memcpy(data, outputAudioFrame.GetData() + (outputAudioFrame.GetWidth() - unconsumedSamples) * sizePerSample, size);
 
 		numSamples += request;
 		unconsumedSamples -= request;
@@ -728,17 +658,17 @@ Picture VideoPlayerComponent::GetLivePicture()
 			diff = (audioSeconds - videoSeconds);
         }
 
-  //      if (std::abs(diff) > 0.5)
-		//{
-  //          if (diff > 0)
-  //          {
-		//		deltaTime = 0;
-  //          }
-		//	else if (diff < 0)
-  //          {
-		//		deltaTime += std::abs(diff);
-  //          }
-  //      }
+        if (std::abs(diff) > 0.5)
+		{
+            if (diff > 0)
+            {
+				deltaTime = 0;
+            }
+			else if (diff < 0)
+            {
+				deltaTime += std::abs(diff);
+            }
+        }
 
 		if (animator->TryMoveToNextFrame(deltaTime))
 		{

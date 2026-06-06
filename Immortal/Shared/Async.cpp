@@ -33,7 +33,7 @@ ThreadPool::ThreadPool(uint32_t numThreads) :
                 taskRef--;
 				if (taskRef.load() == 0)
 				{
-					tasked.store(false);
+					tasked.store(true);
 					tasked.notify_all();
 				}
 				if (notify)
@@ -55,13 +55,13 @@ ThreadPool::~ThreadPool()
 
     for (auto &thread : threads)
     {
-        thread.Join();
+        thread.join();
     }
 }
 
 void ThreadPool::Join()
 {
-    tasked.wait(true);
+    tasked.wait(false);
 }
 
 void ThreadPool::RemoveTasks()
@@ -76,7 +76,7 @@ void ThreadPool::RemoveTasks()
     }
     if (taskRef.load() == 0)
     {
-		tasked.store(false);
+		tasked.store(true);
 		tasked.notify_all();
     }
 }

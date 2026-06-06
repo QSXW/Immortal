@@ -68,6 +68,8 @@ set(FILTER_FILES
     Filter.h
     GaussianBlurFilter.cpp
     GaussianBlurFilter.h
+    LogCurveFilter.cpp
+    LogCurveFilter.h
     Lut3DFilter.cpp
     Lut3DFilter.h
     ScaleFilter.cpp
