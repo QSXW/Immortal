@@ -19,7 +19,7 @@
 
 #include "Codec.h"
 #include "CodedFrame.h"
-#include "MediaFormat.h"
+#include "Demuxer.h"
 #include "Image.h"
 #include "Picture.h"
 #include "Types.h"
@@ -35,11 +35,10 @@
 #include "Common/NetworkAbstractionLayer.h"
 #include "Common/SamplingFactor.h"
 
-#include "External/stb_image.h"
+#include "Demux/FFDemuxer.h"
+#include "Demux/IVFDemuxer.h"
 
-#include "MediaFormat/FFFormat.h"
-#include "MediaFormat/ImageFormat.h"
-#include "MediaFormat/IVFFormat.h"
+#include "External/stb_image.h"
 
 #include "Image/BMP.h"
 #include "Image/Helper.h"

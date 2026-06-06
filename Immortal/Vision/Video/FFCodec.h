@@ -26,8 +26,6 @@ namespace Vision
 
 int64_t RationalRescale(int64_t a, Rational bq, Rational cq);
 
-int64_t RationalRescaleRound(int64_t a, int64_t b, int64_t c, int rnd = 5);
-
 #if HAVE_FFMPEG
 class AudioFifo
 {
@@ -96,29 +94,6 @@ private:
     int outFormatSize;
 
     int inputFormatSize;
-};
-
-class Scaler
-{
-public:
-	Scaler();
-
-    ~Scaler();
-
-    void Init(uint32_t srcW, uint32_t srcH, int srcFormat, uint32_t dstW, uint32_t dstH, int dstFormat, int flags);
-
-    void Init(uint32_t srcW, uint32_t srcH, Format srcFormat, uint32_t dstW, uint32_t dstH, Format dstFormat, Filter filter);
-
-    CodecError Scale(const uint8_t *const srcSlice[], const int srcStride[], int srcSliceY, int srcSliceH, uint8_t *const dst[], const int dstStride[]);
-
-    CodecError Scale(Picture &dst, const Picture &src);
-
-    operator bool() const;
-
-protected:
-#if HAVE_FFMPEG
-	SwsContext *handle;
-#endif
 };
 
 class IMMORTAL_API FFCodec : public VideoCodec, public IClass
@@ -191,7 +166,7 @@ protected:
 
     SwrContext *swrContext;
 
-    Scaler scaler;
+    SwsContext *swsContext;
 
     int64_t startTimestamp;
 

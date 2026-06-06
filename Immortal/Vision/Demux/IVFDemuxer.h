@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Codec.h"
-#include "MediaFormat.h"
+#include "Demuxer.h"
 #include "FileSystem/Stream.h"
 
 namespace Immortal
@@ -9,7 +9,7 @@ namespace Immortal
 namespace Vision
 {
 
-class IMMORTAL_API IVFFormat : public MediaFormat
+class IMMORTAL_API IVFDemuxer : public Demuxer
 {
 public:
     struct Header
@@ -20,7 +20,7 @@ public:
     };
 
 public:
-	IVFFormat();
+    IVFDemuxer();
 
     virtual CodecError Open(const String &filepath) override;
 

@@ -146,7 +146,6 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     }
                     else
 					{
-						CLOG_DEBUG("Release CommandBuffer@{}", (void *)commandBuffer);
 						executionCompletedThread.Enqueue([gpuEvent, commandBuffer] {
 							gpuEvent->Wait(kMaxTimeOut);
 							delete gpuEvent;

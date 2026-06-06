@@ -1,4 +1,4 @@
-#include "IVFFormat.h"
+#include "IVFDemuxer.h"
 #include "FileSystem/Stream.h"
 #include "Math/Math.h"
 #include "Shared/Log.h"
@@ -38,13 +38,13 @@ struct QuardWord
     uint64_t v;
 };
 
-IVFFormat::IVFFormat() :
+IVFDemuxer::IVFDemuxer() :
     stream{ Stream::Mode::Read }
 {
 
 }
 
-CodecError IVFFormat::Open(const String &filepath)
+CodecError IVFDemuxer::Open(const String &filepath)
 {
     uint8_t data[32];
 	URef<Animator> animator = new Animator;
@@ -106,7 +106,7 @@ CodecError IVFFormat::Open(const String &filepath)
     return CodecError::Success;
 }
 
-CodecError IVFFormat::Read(CodedFrame *pCodedFrame)
+CodecError IVFDemuxer::Read(CodedFrame *pCodedFrame)
 {
     auto header = ReadHeader();
 
@@ -123,7 +123,7 @@ CodecError IVFFormat::Read(CodedFrame *pCodedFrame)
     return CodecError::Success;
 }
 
-IVFFormat::Header IVFFormat::ReadHeader()
+IVFDemuxer::Header IVFDemuxer::ReadHeader()
 {
     Header header{};
 

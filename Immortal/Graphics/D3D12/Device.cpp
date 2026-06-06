@@ -46,19 +46,18 @@ void MessageCallbackFunc(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY
 	switch (severity)
 	{
 		case D3D12_MESSAGE_SEVERITY_WARNING:
-			LOG_WARNING("{}", pDescription);
+			LOG::WARN("{}", pDescription);
 			break;
 
 		case D3D12_MESSAGE_SEVERITY_INFO:
 		case D3D12_MESSAGE_SEVERITY_MESSAGE:
-			LOG_INFO("{}", pDescription);
+			LOG::INFO("{}", pDescription);
 			break;
 
 		case D3D12_MESSAGE_SEVERITY_CORRUPTION:
 		case D3D12_MESSAGE_SEVERITY_ERROR:
-		default:
-			LOG_ERROR("{}", pDescription);
-			break;
+	    default:
+			LOG::ERR("{}", pDescription);
 	}
 }
 
@@ -76,7 +75,7 @@ Device::Device(PhysicalDevice *phsicalDevice) :
 	);
 
 #ifdef _DEBUG
-	HRESULT hr = handle.As(&infoQueue);
+	HRESULT hr = handle->QueryInterface<ID3D12InfoQueue1>(&infoQueue);
 	if (SUCCEEDED(hr) && infoQueue)
 	{
 		DWORD callbackCookie = 0;
@@ -443,34 +442,6 @@ void Device::FreeShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, Descri
 	{
 		delete descriptorHeap;
 	}
-}
-
-void Device::PollInfoQueue()
-{
-#ifdef _DEBUG
-	ComPtr<ID3D12InfoQueue> infoQueue;
-	HRESULT hr = handle.As(&infoQueue);
-	if (SUCCEEDED(hr) && infoQueue)
-	{
-		uint64_t num = infoQueue->GetNumStoredMessages();
-		for (uint64_t i = 0; i < num; i++)
-		{
-			SIZE_T length = 0;
-			hr = infoQueue->GetMessageW(i, nullptr, &length);
-			if (SUCCEEDED(hr))
-			{
-				D3D12_MESSAGE *message = (D3D12_MESSAGE *)malloc(length);
-				hr = infoQueue->GetMessageW(i, message, &length);
-				if (SUCCEEDED(hr))
-				{
-					MessageCallbackFunc(message->Category, message->Severity, message->ID, message->pDescription, this);
-				}
-				free(message);
-			}
-		}
-		infoQueue->ClearStoredMessages();
-	}
-#endif
 }
 
 }

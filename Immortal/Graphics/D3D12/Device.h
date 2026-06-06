@@ -96,8 +96,6 @@ public:
 
 	void FreeShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *ppHeap, Descriptor descriptor, uint32_t descriptorCount = 1);
 
-    void PollInfoQueue();
-
 public:
 #define DEFINE_CRETE_FUNC(U, T, O) \
     HRESULT Create(const D3D12_##U##_DESC *pDesc, ID3D12##T **ppObject) \

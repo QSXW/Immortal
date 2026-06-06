@@ -2,7 +2,7 @@
 
 #include "Config.h"
 #include "Vision/Codec.h"
-#include "Vision/MediaFormat.h"
+#include "Vision/Demuxer.h"
 #include "FileSystem/Stream.h"
 #include "String/IString.h"
 #include <vector>
@@ -13,13 +13,13 @@ namespace Immortal
 namespace Vision
 {
 
-class ImageFormat : public MediaFormat
+class ImageMuxer : public Demuxer
 {
 public:
 public:
-    ImageFormat();
+    ImageMuxer();
 
-    ~ImageFormat();
+    ~ImageMuxer();
 
     virtual CodecError Open(const String &filepath) override;
 
