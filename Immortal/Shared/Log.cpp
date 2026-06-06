@@ -10,19 +10,14 @@ namespace Immortal
 
 std::shared_ptr<spdlog::logger> LOG::logger;
 
-void LOG::Setup(bool async, const std::filesystem::path &path)
+void LOG::Setup(bool async)
 {
     std::vector<spdlog::sink_ptr> logSinks;
-
     logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-    logSinks.back()->set_pattern("[%T][%^%l%$] %v");
+    //logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/Immortal.log"));
 
-    if (!path.empty())
-	{
-		std::string spath = path.string();
-		logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(spath));
-		logSinks.back()->set_pattern("[%T][%l] %n: %v");
-	}
+    logSinks[0]->set_pattern("[%T][%^%l%$] %v");
+    //logSinks[1]->set_pattern("[%T][%l] %n: %v");
 
     if (async)
     {
@@ -33,7 +28,7 @@ void LOG::Setup(bool async, const std::filesystem::path &path)
     {
         logger = std::make_shared<spdlog::logger>("Immortal", logSinks.begin(), logSinks.end());
     }
-
+    
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
 }

@@ -145,8 +145,8 @@ public:
         {
             if (type == WSliderType::RangeEditor)
             {
-				ImVec2 bbMin = {outGrab.Min.x - 2.0f, bbFrame.Min.y};
-				ImVec2 bbMax = {outGrab.Min.x + 2.0f, bbFrame.Max.y};
+				ImVec2 bbMin = {outGrab.Min.x - 1.5f, bbFrame.Min.y};
+				ImVec2 bbMax = {outGrab.Min.x + 1.5f, bbFrame.Max.y};
 				window->DrawList->AddRectFilled(bbMin, bbMax, grabColor, 0.0f);
             }
             else
