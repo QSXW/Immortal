@@ -286,7 +286,7 @@ CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
         DecodeMCU();
     }
     ConvertColorSpace();
-    return CodecError::Success;
+    return CodecError::Succeed;
 }
 
 inline void JpegCodec::ParseAPP(const uint8_t *data)

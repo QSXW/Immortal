@@ -7,7 +7,6 @@
 #include "Memory/MemoryResource.h"
 #include "Graphics/LightGraphics.h"
 
-struct AVStream;
 struct AVFrame;
 struct AVCodec;
 struct AVBufferRef;
@@ -22,7 +21,7 @@ class IMMORTAL_API FFCodec : public VideoCodec
 {
 #if HAVE_FFMPEG
 public:
-    FFCodec(int sampleRate = 0);
+    FFCodec();
 
     virtual ~FFCodec();
 
@@ -32,15 +31,8 @@ public:
 
     virtual void Flush() override;
 
-    virtual CodecError SetCodecContext(Anonymous anonymous) override;
-
-    CodecError InitializeDecoder(int codecId, const AVStream *stream = nullptr);
-
 public:
-    AVCodecContext *GetHandle() const
-    {
-        return handle;
-    }
+	virtual CodecError SetCodecContext(Anonymous anonymous) override;
 
 protected:
     AVCodecContext *handle;
@@ -56,10 +48,8 @@ protected:
     PictureMemoryType type;
 
     URef<MemoryResource> memoryResource;
-
+    
     int hwaccelType;
-
-    int sampleRate;
 #endif // HAVE_FFMPEG
 };
 

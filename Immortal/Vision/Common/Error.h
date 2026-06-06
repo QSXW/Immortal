@@ -8,7 +8,7 @@ namespace Immortal
 
 #define NEG(N) -(N)
 
-enum class CodecError
+enum CodecError
 {
     CorruptedBitstream = NEG(1114),
     OutOfMemory,
@@ -20,7 +20,7 @@ enum class CodecError
     Repeat,
     Again,
     NotImplement,
-	Success = 0,
+    Succeed = 0,
     Preparing
 };
 

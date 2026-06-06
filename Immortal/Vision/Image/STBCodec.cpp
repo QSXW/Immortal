@@ -54,7 +54,7 @@ CodecError STBCodec::Decode(const CodedFrame &codedFrame)
         return CodecError::CorruptedBitstream;
     }
 
-    return CodecError::Success;
+    return CodecError::Succeed;
 }
 
 CodecError STBCodec::Encode(const Picture &picture, CodedFrame &codedFrame)

@@ -73,7 +73,6 @@ enum class FileFormat : uint64_t
     NEF   = MakeIdentifier('N', 'E', 'F'     ),
     CR2   = MakeIdentifier('C', 'R', '2'     ),
     CR3   = MakeIdentifier('C', 'R', '3'     ),
-    AVIF  = MakeIdentifier('A', 'V', 'I', 'F'),
 
     /** Video file format extensions */
     IVF   = MakeIdentifier('I', 'V', 'F'     ),
@@ -172,12 +171,11 @@ static inline bool IsVideo(uint64_t id)
 	       IsFormat<FileFormat::H264>(id) ||
 	       IsFormat<FileFormat::H265>(id) ||
            IsFormat<FileFormat::H266>(id) ||
-           IsFormat<FileFormat::_266>(id) ||
+           IsFormat<FileFormat::_266>(id)  ||
 	       IsFormat<FileFormat::MKV>(id)  ||
 	       IsFormat<FileFormat::M2TS>(id) ||
 	       IsFormat<FileFormat::TS>(id)   ||
-	       IsFormat<FileFormat::WEBM>(id) ||
-	       IsFormat<FileFormat::AVIF>(id);
+	       IsFormat<FileFormat::WEBM>(id);
 }
 
 static inline bool IsVideo(const std::string &path)

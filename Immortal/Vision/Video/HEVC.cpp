@@ -92,7 +92,7 @@ CodecError HEVCCodec::Decode(const CodedFrame &codedFrame)
         buffer.clear();
     }
 
-    return CodecError::Success;
+    return CodecError::Succeed;
 }
 
 #define EXTRACT(V, N) ((V >> (31 - N)) & 0x1)
@@ -608,7 +608,7 @@ CodecError HEVCCodec::Parse(const uint8_t *data, size_t size)
 
     default:
         LOG::WARN("Unsupported NAL unit type {0}", nal.GetType());
-        return CodecError::Success;
+        return CodecError::Succeed;
     }
 
     while (!bitTracker.NoMoreData() &&
