@@ -61,7 +61,6 @@ public:
 		{
 			delete descriptorSet;
 		}
-        freeDescriptorSets.clear();
 		descriptorSets.clear();
     }
 
@@ -71,7 +70,7 @@ public:
     void RefreshDescriptorSet()
     {
         uint32_t rest = freeDescriptorSets.size() - allocated;
-		if (allocated > 0)
+        if (rest > 0)
         {
             memmove(freeDescriptorSets.data(), freeDescriptorSets.data() + allocated, rest * sizeof(freeDescriptorSets[0]));
             freeDescriptorSets.resize(rest);
@@ -86,17 +85,12 @@ public:
 
     DescriptorSet *AllocateDescriptorSet(Device *device, Pipeline *pipeline, Texture *texture)
     {
-		DescriptorSet *descriptorSet = nullptr;
         if (allocated < freeDescriptorSets.size())
         {
-			descriptorSet = freeDescriptorSets[allocated];
-			freeDescriptorSets[allocated++] = nullptr;
-        }
-        else
-        {
-			descriptorSet = device->CreateDescriptorSet(pipeline);
+            return freeDescriptorSets[allocated++];
         }
 
+        DescriptorSet *descriptorSet = device->CreateDescriptorSet(pipeline);
         descriptorSets[texture] = descriptorSet;
         return descriptorSet;
     }
