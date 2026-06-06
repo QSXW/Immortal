@@ -146,8 +146,7 @@ enum class ShaderBinaryType
 
 enum class ShaderCompilerType
 {
-    DirectXShaderCompiler,
-    glslang
+    DirectXShaderCompiler
 };
 
 enum class AddressMode

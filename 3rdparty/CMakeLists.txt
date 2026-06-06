@@ -320,37 +320,6 @@ target_link_libraries("imgui" PUBLIC glfw)
 
 set_property(TARGET imgui PROPERTY FOLDER "3rdparty")
 
-#glslang
-option(ENABLE_SPVREMAPPER OFF)
-option(ENABLE_GLSLANG_BINARIES OFF)
-option(ENABLE_HLSL OFF)
-option(ENABLE_OPT OFF)
-option(BUILD_TESTING OFF)
-option(BUILD_EXTERNAL OFF)
-
-add_subdirectory(glslang)
-
-if (NOT TARGET glslang-default-resource-limits)
-    add_library(glslang-default-resource-limits
-                glslang/StandAlone/ResourceLimits.cpp)
-
-    set_property(TARGET glslang-default-resource-limits PROPERTY FOLDER "3rdparty")
-
-    target_include_directories(glslang-default-resource-limits PUBLIC
-                                ${CMAKE_CURRENT_SOURCE_DIR}/glslang/
-                                ${CMAKE_CURRENT_SOURCE_DIR}/glslang/glslang)
-endif()
-
-if(NOT MSVC)
-    target_compile_options(glslang PRIVATE "-Wno-logical-op-parentheses" "-Wno-unused-parameter")
-
-    target_compile_options(SPIRV PRIVATE "-Wno-logical-op-parentheses" "-Wno-unused-parameter")
-endif()
-
-set_property(TARGET glslang     PROPERTY FOLDER "3rdparty")
-set_property(TARGET OSDependent PROPERTY FOLDER "3rdparty")
-set_property(TARGET SPIRV       PROPERTY FOLDER "3rdparty")
-
 # SPIRV-Cross
 add_subdirectory(SPIRV-Cross)
 
@@ -689,11 +658,11 @@ add_subdirectory(json)
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
-    glm glad glfw glslang glslang-default-resource-limits
+    glm glad glfw
     EnTT::EnTT
     nlohmann_json::nlohmann_json
     Vulkan-Headers imgui spdlog_header_only
-    SPIRV spirv-cross-glsl tweeny meshoptimizer
+    spirv-cross-glsl tweeny meshoptimizer
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${MONO_FOUND}>:mono>
 )
