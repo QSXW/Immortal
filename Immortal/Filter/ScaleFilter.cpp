@@ -97,15 +97,10 @@ static void FillComponentFormat(Format format, Format *formats)
 		formats[1] = format;
 		formats[2] = format;
 	}
-    else
+    else 
     {
 		formats[0] = format;
     }
-}
-
-static bool IsRGBA(Format format)
-{
-	return format == Format::RGBA16 || format == Format::RGBA8;
 }
 
 ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uint32_t width, uint32_t height, ColorSpace colorSpace, bool fullRange) :
@@ -113,7 +108,7 @@ ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uin
     device{ device },
     srcFormat{ srcFormat },
     dstFormat{ dstFormat },
-    colorSpace{colorSpace == ColorSpace::Unspecified ? (colorSpace = ColorSpace::BT709) : colorSpace},
+    colorSpace{ colorSpace },
     transformIndex{ 0 }
 {
     if (width != 0 && height != 0)
@@ -130,10 +125,6 @@ ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uin
     else if (srcFormat == Format::Y210)
     {
 		name = "color_space_y2102rgba";
-    }
-	else if (IsRGBA(srcFormat) && IsRGBA(f))
-	{
-		name = "color_space_rgba2rgba";
     }
 	else if (f.IsType(Format::YUYV))
     {
@@ -290,7 +281,7 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 			float samplingFactor[2];
 			float nomalizedFactor;
         };
-
+           
         float normalizedFactor = 1.0f;
 		if (dstFormat.IsType(Format::YUV) &&
             !dstFormat.IsType(Format::YUYV) &&
@@ -327,7 +318,7 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 
         void *ps = &pushConstant.samplingFactor;
         uint32_t size = sizeof(pushConstant.samplingFactor) + sizeof(pushConstant.nomalizedFactor);
-		if (!(IsRGBA(srcFormat) && IsRGBA(dstFormat)))
+		//if (transformIndex || dstFormat.IsType(Format::YUV))
 		{
 			memcpy(&pushConstant.transform, &transform, sizeof(Matrix4));
 			size = sizeof(pushConstant);

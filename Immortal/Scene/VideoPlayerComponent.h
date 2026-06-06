@@ -22,19 +22,9 @@ enum class VideoPlayerMode
 {
     Playing,
     Transcoding,
-    MetaReading
+    MetaReading,
 };
 
-enum class StreamEnabledFlags
-{
-    None     = 0,
-	Video    = BIT(0),
-	Audio    = BIT(1),
-	Subtitle = BIT(2),
-};
-SL_ENABLE_BITWISE_OPERATOR(StreamEnabledFlags, uint32_t)
-
-class FilterGraphComponent;
 class VideoPlayerContext;
 struct VideoPlayerComponent : public IObject, public Component
 {
@@ -44,7 +34,9 @@ struct VideoPlayerComponent : public IObject, public Component
 
     VideoPlayerComponent();
 
-    VideoPlayerComponent(const String &path, int cacheSize = 3, const Vision::DecodingPreference &preference = Vision::DecodingPreference::Auto, VideoPlayerMode mode = VideoPlayerMode::Playing, StreamEnabledFlags flags = StreamEnabledFlags::None);
+    VideoPlayerComponent(const String &path, int cacheSize = 3, const Vision::DecodingPreference &preference = Vision::DecodingPreference::Auto, VideoPlayerMode mode = VideoPlayerMode::Playing);
+
+    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr);
 
     ~VideoPlayerComponent();
 
@@ -60,13 +52,13 @@ struct VideoPlayerComponent : public IObject, public Component
 
     void PopAudioFrame();
 
-    void Seek(MediaType type, int64_t pts, int64_t min, int64_t max);
+    void Seek(double seconds, int64_t min, int64_t max);
 
     bool IsEof() const;
 
     void Swap(VideoPlayerComponent &other);
 
-    Animator *GetAnimator(MediaType type = MediaType::Video) const;
+    Animator *GetAnimator() const;
 
     const String &GetSource() const;
 
@@ -80,22 +72,20 @@ struct VideoPlayerComponent : public IObject, public Component
 
     bool HasStream(MediaType type) const;
 
-    CodecError GetStreamInfo(MediaType type, CodecInfo &streamInfo);
+    CodecError GetStreamInfo(MediaType type, EncodeInfo &streamInfo);
 
     void SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph, Format format);
 
     void SetCallbacks(const VideoDecodeCallbacks &callbacks);
 
-    void SetAudioOutputSpec(const Vision::AudioFormatSpec &outputSpec);
-
-    void Join();
-
     bool operator !();
 
-    operator bool() const;
+    bool pause = false;
 
 public:
     URef<VideoPlayerContext> player;
+
+    bool startPlay = false;
 
     Picture currentPicture;
 };

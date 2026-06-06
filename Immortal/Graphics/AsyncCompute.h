@@ -183,21 +183,6 @@ public:
 		Execute<AsyncTask>(type);
     }
 
-    void Begin()
-    {
-		Execute(AsyncTaskType::BeginRecording);
-    }
-
-    void End()
-    {
-		Execute(AsyncTaskType::EndRecording);
-    }
-
-    void Submit()
-    {
-		Execute(AsyncTaskType::Submiting);
-    }
-
 protected:
     Thread thread;
 
@@ -208,25 +193,6 @@ protected:
     ConcurrentQueue<URef<AsyncTask>> tasks;
 
     std::vector<std::pair<uint64_t, URef<AsyncTask>>> executionCompletedTasks;
-};
-
-class AsyncTaskLock
-{
-public:
-	explicit AsyncTaskLock(AsyncComputeThread *thread) :
-	    thread{ thread }
-    {
-		thread->Begin();
-    }
-
-    ~AsyncTaskLock()
-    {
-		thread->End();
-		thread->Submit();
-    }
-
-protected:
-	AsyncComputeThread *thread;
 };
 
 }

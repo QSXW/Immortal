@@ -19,7 +19,6 @@ enum class CodecError
 	EndOfFile,
 	Repeat,
 	Again,
-	NotFound,
 	NotImplement,
 	InvalidArguments,
     CorruptStream,

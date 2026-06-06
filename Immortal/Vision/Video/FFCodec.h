@@ -2,7 +2,6 @@
 
 #include "Core.h"
 #include "Config.h"
-#include "Vision/Types.h"
 #include "Vision/Codec.h"
 #include "Vision/Common/Animator.h"
 #include "Memory/MemoryResource.h"
@@ -23,8 +22,6 @@ namespace Immortal
 {
 namespace Vision
 {
-
-int64_t RationalRescale(int64_t a, Rational bq, Rational cq);
 
 #if HAVE_FFMPEG
 class AudioFifo
@@ -55,9 +52,58 @@ protected:
 };
 #endif
 
+enum class ChannelLayout
+{
+    Mono,
+    Stereo,
+    _2Point1,
+    _2_1,
+    Surround,
+    _3Point1,
+    _4Point0,
+    _4Point1,
+    _2_2,
+    Quad,
+    _5Point0,
+    _5Point1,
+    _5Point0Back,
+    _5Point1Back,
+    _6Point0,
+    _6Point0Front,
+    _3Point1Point2,
+    Hexagonal,
+    _6Point1,
+    _6Point1Back,
+    _6Point1Front,
+    _7Point0,
+    _7Point0Front,
+    _7Point1,
+    _7Point1Wide,
+    _7Point1WideBack,
+    _5Point1Point2Back,
+    Octagonal,
+    Cube,
+    _5Point1Point4Back,
+    _7Point1Point2,
+    _7Point1Point4Back,
+    _7Point2Point3,
+    _9Point1Point4Back,
+    Hexadecagonal,
+    StereoDownmix,
+    _22Point2,
+};
+
+struct AudioFormatSpec
+{
+	Format format;
+	ChannelLayout layout;
+	int sampleRate;
+	int numChannel;
+};
+
 ChannelLayout GetLayoutFromMask(uint64_t mask);
 
-class SampleConverter : public IClass, public IObject
+class SampleConverter : public IClass
 {
 public:
 	SampleConverter();
@@ -71,8 +117,6 @@ public:
     int RescaleRound(int numSamples);
 
     bool Convert(Picture &out, const Picture &input);
-
-    Picture GetRemainingSamples();
 
     operator bool() const;
 
@@ -104,12 +148,12 @@ public:
 
     FFCodec(CodecId codecId);
 
-    FFCodec(const CodecInfo &encodeInfo);
+    FFCodec(const EncodeInfo &encodeInfo);
 
     virtual ~FFCodec();
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
-
+    
     virtual CodecError GetPicture(Picture &picture) override;
 
     virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
@@ -120,7 +164,7 @@ public:
 
     virtual void *GetProperty(PropertyType type) const override;
 
-    virtual CodecError OpenDecoder(CodecInfo &info) override;
+    virtual CodecError SetCodecContext(Anonymous anonymous) override;
 
     CodecError SendAudioFifo();
 
@@ -151,7 +195,7 @@ public:
     {
 		return !!handle;
     }
-
+    
 protected:
     CodecError RescaleAudioSamples(int numOutSamples, uint8_t *const *out, int outSampleRate, int numInSamples, const uint8_t *const *in, int inSampleRate, int dataSize);
 
@@ -191,7 +235,7 @@ protected:
     uint8_t **rescaledSamples = {};
 
     ColorSpace colorSpace = ColorSpace::BT709;
-
+	
     ColorTransferCharacteristic transferCharacteristic = ColorTransferCharacteristic::Unspecified;
 
     int numRescaledSamples = 0;

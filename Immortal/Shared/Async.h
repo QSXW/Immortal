@@ -70,12 +70,11 @@ public:
 		cond_.notify_one();
 	}
 
-	bool enqueue(T &&item)
+	void enqueue(T &&item)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
 		queue_.push(std::move(item));
 		cond_.notify_one();
-		return true;
 	}
 
 	template <typename... Args>
@@ -300,8 +299,9 @@ public:
 	{
 		auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
 		{
-			Task t = [=]() -> void { (*wrapper)(); };
-            if (tasks.enqueue(std::move(t)))
+            if (tasks.enqueue([=]() -> void {
+                (*wrapper)();
+                }))
             {
 				size++;
 				size.notify_one();

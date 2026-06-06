@@ -12,7 +12,7 @@ struct PushConstant
 PushConstant push_constant;
 
 [numthreads(8, 8, 1)]
-void main(uint3 DTid : SV_DispatchThreadID, uint3 GroupId : SV_GroupID)
+void GenerateMipMapsCube(uint3 DTid : SV_DispatchThreadID, uint3 GroupId : SV_GroupID)
 {
 	float2 uv = push_constant.ratio * (DTid.xy + 0.5);
 	// float4 color = Src.SampleLevel(Sampler, float3(uv, DTid.z), 0);

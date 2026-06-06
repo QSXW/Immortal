@@ -11,20 +11,14 @@
 namespace Immortal
 {
 
-enum class WSliderType
-{
-    RangeEditor,
-};
-
 class IMMORTAL_API WSlider : public Widget
 {
 public:
     WIDGET_SET_PROPERTIES(WSlider)
     WIDGET_PROPERTY_COLOR
-	WIDGET_SET_PROPERTY(Type,             type,             WSliderType)
-	WIDGET_SET_PROPERTY(BackgroundColor,  backgroundColor,  uint32_t, 0xffffffcc)
-	WIDGET_SET_PROPERTY(GrabColor,        grabColor,        uint32_t, 0xffffffcc)
-	WIDGET_SET_PROPERTY(GrabHoveredColor, grabHoveredColor, uint32_t, 0xffffffcc)
+	WIDGET_SET_PROPERTY(BackgroundColor,  backgroundColor,  uint32_t, 0xffffffdd)
+	WIDGET_SET_PROPERTY(GrabColor,        grabColor,        uint32_t, 0xffffffdd)
+	WIDGET_SET_PROPERTY(GrabHoveredColor, grabHoveredColor, uint32_t, 0xffffffdd)
     WIDGET_SET_PROPERTY(Rounding,         rounding,         float               )
     WIDGET_SET_PROPERTY(Progress,         progress,         float               )
     WIDGET_SET_PROPERTY(Radius,           radius,           float,    10.0f     )
@@ -138,32 +132,20 @@ public:
             ImGui::MarkItemEdited(id);
         }
 
-		auto center = outGrab.GetCenter();
+        outGrab.Min.x -= 2;
+		outGrab.Max.x -= 2;
+
+        auto center = outGrab.GetCenter();
 		center.x = IM_ROUND(center.x);
 		center.y = IM_ROUND(center.y);
         if (outGrab.Max.x > outGrab.Min.x)
         {
-            if (type == WSliderType::RangeEditor)
-            {
-				ImVec2 bbMin = {outGrab.Min.x - 1.5f, bbFrame.Min.y};
-				ImVec2 bbMax = {outGrab.Min.x + 1.5f, bbFrame.Max.y};
-				window->DrawList->AddRectFilled(bbMin, bbMax, grabColor, 0.0f);
-            }
-            else
-			{
-				outGrab.Min.x -= 2;
-				outGrab.Max.x -= 2;
-
-				window->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(g.ActiveId == grabId ? grabHoveredColor : grabColor), 16);
-				bbGrab = ImRect({center.x - radius, center.y - radius}, {center.x + radius, center.y + radius});
-            }
+            window->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(g.ActiveId == grabId ? grabHoveredColor : grabColor), 16);
+            bbGrab = ImRect({ center.x - radius, center.y - radius }, { center.x + radius, center.y + radius });
         }
 
-        if (type != WSliderType::RangeEditor)
-		{
-			ImRect hightlightRect(bbRect.Min, {center.x, bbRect.Max.y});
-			DrawRect(window, hightlightRect, Color());
-		}
+        ImRect hightlightRect(bbRect.Min, {center.x, bbRect.Max.y});
+		DrawRect(window, hightlightRect, Color());
 
         return true;
     }

@@ -44,10 +44,10 @@ IVFDemuxer::IVFDemuxer() :
 
 }
 
-CodecError IVFDemuxer::Open(const String &filepath)
+CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec, VideoCodec *subtitleCodec)
 {
     uint8_t data[32];
-	URef<Animator> animator = new Animator;
+    auto animator = codec->GetAddress<Animator>();
 
     stream.Open(filepath);
     if (!stream.Readable())

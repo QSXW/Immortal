@@ -22,7 +22,7 @@ public:
 public:
     IVFDemuxer();
 
-    virtual CodecError Open(const String &filepath) override;
+    virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr, VideoCodec *subtitleCodec = nullptr) override;
 
     virtual CodecError Read(CodedFrame *codedFrame) override;
 

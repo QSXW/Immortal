@@ -133,7 +133,7 @@ static bool LoadCube(Device *device, const String &path, Ref<Buffer> &stagingLut
                             }
                         } while (ret == ParseResult::Text);
 
-                        Vector3 *rgb = &data[i * size2d + j * size + k];
+                        Vector3 *rgb = &data[i * size2d + j * size + k];				
                         if (sscanf(line, "%f %f %f", &rgb->r, &rgb->g, &rgb->b) != 3)
                         {
                             return false;
@@ -153,7 +153,12 @@ Lut3DFilter::Lut3DFilter(Device *device, const String &filepath, Type type) :
     device{ device },
     type{ type },
     lutSize{}
-{
+{	
+    if (!LoadCube(device, filepath, stagingLut, lutSize))
+    {
+		return;
+    }
+
 	auto entryPoint = GetEntryPoint(type);
 	if (!entryPoint)
 	{
@@ -182,11 +187,6 @@ Lut3DFilter::Lut3DFilter(Device *device, const String &filepath, Type type) :
         pipeline = device->CreateComputePipeline(shader);
     }
     descriptorSet = device->CreateDescriptorSet(pipeline);
-
-    if (!LoadCube(device, filepath, stagingLut, lutSize))
-	{
-		return;
-	}
 }
 
 Lut3DFilter::~Lut3DFilter()
@@ -206,9 +206,9 @@ void Lut3DFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 		return;
     }
 
-    auto width  = input[0]->GetWidth();
+    auto width  = input[0]->GetWidth(); 
     auto height = input[0]->GetHeight();
-	if (output.empty() ||
+	if (output.empty() || 
         output[0]->GetWidth() != input[0]->GetWidth() ||
 	    output[0]->GetHeight() != input[0]->GetHeight())
 	{

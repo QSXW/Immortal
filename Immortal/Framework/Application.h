@@ -45,14 +45,19 @@ public:
 
     virtual Layer *PushOverlay(Layer *overlay);
 
+    //virtual GuiLayer *GetGuiLayer() const
+    //{
+    //    return gui;
+    //}
+
+    //virtual Window *GetWindow() const
+    //{
+    //    return window;
+    //}
+
     CommandBuffer *GetCurrentCommandBuffer() const;
 
 public:
-    virtual GuiLayer *GetGuiLayer() const
-    {
-        return gui;
-    }
-
     static uint32_t GetWidth()
     {
 		return This->window->GetWidth();

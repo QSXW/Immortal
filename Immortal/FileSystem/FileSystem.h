@@ -92,7 +92,6 @@ enum class FileFormat : uint64_t
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
 
     /** Audio formats */
-	AAC  = MakeIdentifier('A', 'A', 'C'     ),
     WAV  = MakeIdentifier('W', 'A', 'V'     ),
     FLAC = MakeIdentifier('F', 'L', 'A', 'C'),
     MP3  = MakeIdentifier('M', 'P', '3'     ),
@@ -119,7 +118,6 @@ enum class FileFormat : uint64_t
     WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
     HEIC  = MakeIdentifier('H', 'E', 'I', 'C'),
     TIFF  = MakeIdentifier('T', 'I', 'F', 'F'),
-    DNG   = MakeIdentifier('D', 'N', 'G'     ),
 
     /** Video file format extensions */
     AVI   = MakeIdentifier('A', 'V', 'I'    ),
@@ -171,10 +169,7 @@ namespace FileSystem
 static uint64_t MakeIdentifier(const std::string &path)
 {
     uint64_t id = 0;
-    if (path.empty())
-    {
-		return 0;
-    }
+
     int64_t i = path.size() - 1;
 
     id |= std::toupper(path[i--]);
@@ -228,8 +223,7 @@ static inline bool IsRawImage(FileFormat id)
            IsFormat<FileFormat::FFF>(id)  ||
 	       IsFormat<FileFormat::_3FR>(id) ||
            IsFormat<FileFormat::RAF>(id)  ||
-           IsFormat<FileFormat::RW2>(id)  ||
-           IsFormat<FileFormat::DNG>(id);
+           IsFormat<FileFormat::RW2>(id);
 }
 
 static inline bool IsImage(FileFormat id)
@@ -287,9 +281,7 @@ static inline bool IsVideo(uint64_t format)
 
 static inline bool IsAudio(FileFormat id)
 {
-	return IsFormat<FileFormat::AAC>(id)  ||
-	       IsFormat<FileFormat::MP3>(id)  ||
-           IsFormat<FileFormat::FLAC>(id) ||
+	return IsFormat<FileFormat::FLAC>(id) ||
 	       IsFormat<FileFormat::WAV>(id);
 }
 

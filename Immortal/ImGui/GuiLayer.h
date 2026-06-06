@@ -144,25 +144,6 @@ public:
     int size;
 };
 
-struct CursorStack
-{
-    CursorStack(const ImVec2 &cursor) :
-	    backup{}
-    {
-		auto window = ImGui::GetCurrentWindow();
-		backup = window->DC.CursorPos;
-		window->DC.CursorPos = cursor;
-    }
-
-    ~CursorStack()
-    {
-		auto window = ImGui::GetCurrentWindow();
-		window->DC.CursorPos = backup;
-    }
-
-    ImVec2 backup;
-};
-
 struct WindowCursorSwitcher
 {
 	WindowCursorSwitcher(const ImVec2 &pos)
@@ -228,7 +209,7 @@ public:
 	{
 
 	}
-
+    
 	FontStack fontStack;
 };
 
@@ -301,11 +282,6 @@ public:
         return NotoSans.Bold;
     }
 
-    void SetScrollEnergy(const ImVec2 &energy)
-    {
-		scrollEnergy = energy;
-    }
-
     void UpdateTheme();
 
     static void Inject2Dockspace(Widget *widget)
@@ -318,7 +294,7 @@ public:
     {
 		return This->language == lang;
     }
-
+    
     static void SaveWindowLayout(const String &path = {});
 
 protected:
@@ -366,8 +342,6 @@ protected:
     ImVector<ImWchar> fontRanges;
 
 	ImVec2 scrollEnergy = ImVec2(0.0f, 0.0f);
-
-    FileSystem::DirectoryEntry dragDropSources;
 };
 
 using SuperGuiLayer = GuiLayer;
