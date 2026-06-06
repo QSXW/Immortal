@@ -11,27 +11,17 @@ namespace Immortal
 class EditorCamera : public Camera
 {
 public:
-    EditorCamera()
-	{
-		SetClipPlanes(0.1f, 1000.0f);
-	}
-
-    EditorCamera(float fov, float width, float height, float zNear, float zFar);
+    EditorCamera() = default;
 
     EditorCamera(const Matrix4 &projection);
 
     void Focus(const Vector3 &focusPoint);
 	
     virtual void OnUpdate(const float &deltaTime = Time::DeltaTime) override;
-
-    virtual void OnEvent(Event &e) override;
+    
+    void OnEvent(Event &e);
 
     void SetViewportSize(Vector2 size);
-
-	/** Read/write editor orbit for scene persistence (optional JSON block). */
-	void ExportOrbitSnapshot(Vector3 &outFocal, float &outDist, float &outPitchDeg, float &outYawDeg, float &outFovDeg) const;
-
-	void ImportOrbitSnapshot(const Vector3 &focal, float dist, float pitchDeg, float yawDeg, float fovDeg, float zNear, float zFar);
 
     Vector3 UpDirection();
     Vector3 RightDirection();
@@ -66,8 +56,6 @@ private:
     }
 
     void UpdateView();
-    bool OnMouseMoved(MouseMoveEvent &e);
-    bool OnMouseButtonPressed(MouseButtonPressedEvent &e);
     bool OnMouseScroll(MouseScrolledEvent &e);
 
     void MousePan(const Vector::Vector2 &delta);
@@ -86,11 +74,9 @@ private:
     Vector3 rotation     = { 0.0f, 0.0f, 0.0f };
     Vector3 focalPoint   = { 0.0f, 0.0f, 0.0f };
 
-    Vector2 targetPanDelta     = { 0.0f, 0.0f };
-    Vector2 targetRotateDelta   = { 0.0f, 0.0f };
-    float   targetZoomDelta     = 0.0f;
-    Vector2 lastMouseForOrbit   = { 0.0f, 0.0f };
-    bool    hasLastMouseForOrbit = false;
+    Vector2 initialPosition   = { 0.0f, 0.0f };
+    Vector3 initialFocalPoint = { 0.0f, 0.0f, 0.0f };
+    Vector3 initialRotation   = { 0.0f, 0.0f, 0.0f };
 
     float FOV               = 45.0f;
     float distance          = 8.0f;

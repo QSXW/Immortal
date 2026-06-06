@@ -5,16 +5,8 @@
 #include "Algorithm/LightVector.h"
 #include "Helper/Platform.h"
 
-#include <cerrno>
-#include <cstdio>
 #include <list>
 #include <cmath>
-#include <limits>
-#include <new>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #if HAVE_FFMPEG
 extern "C" {
@@ -22,9 +14,7 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
-#include <libavutil/dict.h>
 #include <libavutil/display.h>
-#include <libavutil/pixfmt.h>
 }
 #endif
 
@@ -36,105 +26,6 @@ namespace Vision
 #if HAVE_FFMPEG
 
 #define AVERR_STR(ret) av_make_error_string(err, 64, ret)
-
-#ifdef _WIN32
-struct Win32AVIOOpaque
-{
-	HANDLE file = INVALID_HANDLE_VALUE;
-	String path;
-	int64_t fileSize = -1;
-	int readErrorLogs = 0;
-	int seekErrorLogs = 0;
-};
-
-static bool IsWin32FilePath(const String &path)
-{
-	const char *text = path.c_str();
-	const size_t size = path.size();
-	if (size >= 2 && text[0] == '\\' && text[1] == '\\')
-	{
-		return true;
-	}
-	if (size >= 3 && ((text[0] >= 'A' && text[0] <= 'Z') || (text[0] >= 'a' && text[0] <= 'z')) && text[1] == ':' && (text[2] == '\\' || text[2] == '/'))
-	{
-		return true;
-	}
-	return false;
-}
-
-static int Win32AVIORead(void *opaque, uint8_t *buffer, int bufferSize)
-{
-	auto *context = static_cast<Win32AVIOOpaque *>(opaque);
-	if (!context || context->file == INVALID_HANDLE_VALUE)
-	{
-		return AVERROR(EIO);
-	}
-
-	DWORD bytesRead = 0;
-	if (!ReadFile(context->file, buffer, static_cast<DWORD>(bufferSize), &bytesRead, nullptr))
-	{
-		DWORD error = GetLastError();
-		if (error == ERROR_HANDLE_EOF)
-		{
-			return AVERROR_EOF;
-		}
-		context->readErrorLogs++;
-		return AVERROR(EIO);
-	}
-	if (bytesRead == 0)
-	{
-		return AVERROR_EOF;
-	}
-	return static_cast<int>(bytesRead);
-}
-
-static int64_t Win32AVIOSeek(void *opaque, int64_t offset, int whence)
-{
-	auto *context = static_cast<Win32AVIOOpaque *>(opaque);
-	if (!context || context->file == INVALID_HANDLE_VALUE)
-	{
-		return AVERROR(EIO);
-	}
-
-	if ((whence & ~AVSEEK_FORCE) == AVSEEK_SIZE)
-	{
-		if (context->fileSize >= 0)
-		{
-			return context->fileSize;
-		}
-		return AVERROR(ENOSYS);
-	}
-
-	DWORD moveMethod = FILE_BEGIN;
-	switch (whence & ~AVSEEK_FORCE)
-	{
-	case SEEK_SET:
-		moveMethod = FILE_BEGIN;
-		break;
-
-	case SEEK_CUR:
-		moveMethod = FILE_CURRENT;
-		break;
-
-	case SEEK_END:
-		moveMethod = FILE_END;
-		break;
-
-	default:
-		return AVERROR(EINVAL);
-	}
-
-	LARGE_INTEGER distance{};
-	distance.QuadPart = offset;
-	LARGE_INTEGER position{};
-	if (!SetFilePointerEx(context->file, distance, &position, moveMethod))
-	{
-		context->seekErrorLogs++;
-		return AVERROR(EIO);
-	}
-	return position.QuadPart;
-}
-#endif
 
 static CodecId CAST(AVCodecID codecId)
 {
@@ -218,17 +109,8 @@ static AVDictionary **GenerateStreamInfo(AVFormatContext *handle)
 	return options;
 }
 
-static void SetDefaultInputOpenOptions(AVDictionary **options)
-{
-	// ffplay-style probing budget for MP4/MOV files with late SPS/PPS or sparse indexes.
-	av_dict_set(options, "probesize", "67108864", 0);
-	av_dict_set(options, "analyzeduration", "10000000", 0);
-}
-
 FFFormat::FFFormat() :
     handle{},
-    customIO{},
-    customIOOpaque{},
     streamIndex{-1,-1,-1,-1},
     animators{}
 {
@@ -237,121 +119,10 @@ FFFormat::FFFormat() :
 
 FFFormat::~FFFormat()
 {
-	if (handle || customIO || customIOOpaque)
+	if (handle)
 	{
 		Close();
 	}
-}
-
-void FFFormat::CloseCustomIO()
-{
-#ifdef _WIN32
-	if (handle && handle->pb == customIO)
-	{
-		handle->pb = nullptr;
-	}
-
-	if (customIO)
-	{
-		avio_context_free(&customIO);
-	}
-
-	auto *context = static_cast<Win32AVIOOpaque *>(customIOOpaque);
-	if (context)
-	{
-		if (context->file != INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(context->file);
-			context->file = INVALID_HANDLE_VALUE;
-		}
-		delete context;
-		customIOOpaque = nullptr;
-	}
-#else
-	customIO = nullptr;
-	customIOOpaque = nullptr;
-#endif
-}
-
-int FFFormat::OpenWithWin32FileIO(const AVInputFormat *inputFormat, AVDictionary **options)
-{
-#ifdef _WIN32
-	if (!IsWin32FilePath(filepath))
-	{
-		return AVERROR(EINVAL);
-	}
-
-	auto *context = new (std::nothrow) Win32AVIOOpaque{};
-	if (!context)
-	{
-		return AVERROR(ENOMEM);
-	}
-
-	std::wstring path = filepath.GetWString();
-	context->path = filepath;
-	context->file = CreateFileW(
-		path.c_str(),
-		GENERIC_READ,
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-		nullptr,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		nullptr
-	);
-	if (context->file == INVALID_HANDLE_VALUE)
-	{
-		DWORD error = GetLastError();
-		if (error == ERROR_FILE_TOO_LARGE)
-		{
-			CLOG_ERROR("Windows WebDAV refused {} because the file exceeds the WebClient FileSizeLimitInBytes limit. Use an HTTP/WebDAV URL or a non-WebClient mount for large files.", filepath);
-		}
-		else
-		{
-			CLOG_WARN("Win32AVIO CreateFileW failed for {} - Win32 error {}", filepath, error);
-		}
-		delete context;
-		return AVERROR(EIO);
-	}
-
-	LARGE_INTEGER fileSize{};
-	if (GetFileSizeEx(context->file, &fileSize))
-	{
-		context->fileSize = fileSize.QuadPart;
-	}
-	else
-	{
-		CLOG_WARN("Win32AVIO GetFileSizeEx failed for {} - Win32 error {}. Continuing with unknown size.", filepath, GetLastError());
-	}
-
-	constexpr int kBufferSize = 64 * 1024;
-	auto *buffer = static_cast<unsigned char *>(av_malloc(kBufferSize));
-	if (!buffer)
-	{
-		CloseHandle(context->file);
-		delete context;
-		return AVERROR(ENOMEM);
-	}
-
-	customIO = avio_alloc_context(buffer, kBufferSize, 0, context, Win32AVIORead, nullptr, Win32AVIOSeek);
-	if (!customIO)
-	{
-		av_free(buffer);
-		CloseHandle(context->file);
-		delete context;
-		return AVERROR(ENOMEM);
-	}
-
-	customIO->seekable = AVIO_SEEKABLE_NORMAL;
-	customIOOpaque = context;
-	handle->pb = customIO;
-	handle->flags |= AVFMT_FLAG_CUSTOM_IO;
-
-	return avformat_open_input(&handle, filepath.c_str(), inputFormat, options);
-#else
-	(void)inputFormat;
-	(void)options;
-	return AVERROR(ENOSYS);
-#endif
 }
 
 void FFFormat::SetAnimator()
@@ -410,44 +181,10 @@ CodecError FFFormat::Open(const String &_filepath)
 		avdevice_register_all();
 		inputFormat = av_find_input_format("dshow");
 	}
-
-	AVDictionary *openOpts = nullptr;
-	SetDefaultInputOpenOptions(&openOpts);
-
-	int ret = avformat_open_input(&handle, filepath.c_str(), inputFormat, &openOpts);
-	av_dict_free(&openOpts);
-#ifdef _WIN32
-	if (ret < 0 && IsWin32FilePath(filepath))
-	{
-		CLOG_WARN("FFmpeg direct open failed for {} - {}. Retrying with Win32 file IO.", filepath, AVERR_STR(ret));
-		if (handle)
-		{
-			avformat_free_context(handle);
-			handle = nullptr;
-		}
-
-		handle = avformat_alloc_context();
-		if (!handle)
-		{
-			CLOG_ERROR("Failed to allocated memory for AVFormatContext");
-			return CodecError::OutOfMemory;
-		}
-
-		openOpts = nullptr;
-		SetDefaultInputOpenOptions(&openOpts);
-		ret = OpenWithWin32FileIO(inputFormat, &openOpts);
-		av_dict_free(&openOpts);
-	}
-#endif
+	int ret = avformat_open_input(&handle, filepath.c_str(), inputFormat, nullptr);
 	if (ret < 0)
 	{
 		CLOG_ERROR("Failed to open {} - {}", filepath, AVERR_STR(ret));
-		CloseCustomIO();
-		if (handle)
-		{
-			avformat_free_context(handle);
-			handle = nullptr;
-		}
 		return CodecError::ExternalFailed;
 	}
 
@@ -485,7 +222,6 @@ static AVCodecID CAST(const CodecId id)
 		return AV_CODEC_ID_HEVC;
 
     case CodecId::AV1:
-    case CodecId::AVIF:
 	case CodecId::AV1_NVENC:
 	case CodecId::AV1_QSV:
 		return AV_CODEC_ID_AV1;
@@ -535,11 +271,6 @@ CodecError FFFormat::Open(const String &_filepath, Codec **pCodec, const CodecIn
 		if (pCodec[i]->GetMediaType() == MediaType::Video)
 		{
 			stream->avg_frame_rate = codec->framerate;
-			if (codec->codec_id == AV_CODEC_ID_VP9 &&
-			    (codec->pix_fmt == AV_PIX_FMT_YUVA420P || stream->codecpar->format == AV_PIX_FMT_YUVA420P))
-			{
-				av_dict_set(&stream->metadata, "alpha_mode", "1", 0);
-			}
 
             auto &displayOrientation = encodeInfos[i].displayOrientation;
             if (displayOrientation.hflip != 0 || displayOrientation.anticlockwiseRotation != 0)
@@ -605,7 +336,6 @@ void FFFormat::Close()
 
     if (!handle)
     {
-		CloseCustomIO();
 		return;
     }
 
@@ -628,7 +358,6 @@ void FFFormat::Close()
 	else
 	{
 		avformat_close_input(&handle);
-		CloseCustomIO();
 	}
 }
 
@@ -670,18 +399,6 @@ CodecError FFFormat::Read(CodedFrame *pCodedFrame)
     }
 
 	auto stream = handle->streams[index];
-
-	// Own a detached copy: demux + async decode can otherwise race with buffer lifetime (av_read_frame /
-	// avcodec_send_packet may unref data the CodedFrame still points at via cached packet->data).
-	AVPacket *owned = av_packet_clone(packet);
-	if (!owned)
-	{
-		av_packet_free(&packet);
-		return CodecError::OutOfMemory;
-	}
-	av_packet_free(&packet);
-	packet = owned;
-
 	CodedFrame codedFrame{ packet->data, (size_t)packet->size };
 	codedFrame.SetAnonymous(packet);
 
@@ -689,9 +406,9 @@ CodecError FFFormat::Read(CodedFrame *pCodedFrame)
 	codedFrame.SetType((MediaType) stream->codecpar->codec_type);
 	packet->time_base = stream->time_base;
 
-	codedFrame.SetRelease([p = packet](void *) {
-		AVPacket *pkt = p;
-		av_packet_free(&pkt);
+	codedFrame.SetRelease([packet](void *data) {
+		//AVPacket *packet = (AVPacket *) (data);
+		av_packet_free((AVPacket **)&packet);
 	});
 
 	*pCodedFrame = codedFrame;
@@ -725,11 +442,7 @@ CodecError FFFormat::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 	}
 
 	auto stream = handle->streams[index];
-	int64_t startTime = stream->start_time == AV_NOPTS_VALUE ? 0 : stream->start_time;
-	int64_t seekPts = pts + startTime;
-	int64_t seekMin = min == std::numeric_limits<int64_t>::min() ? min : min + startTime;
-	int64_t seekMax = max == std::numeric_limits<int64_t>::max() ? max : max + startTime;
-	if (avformat_seek_file(handle, index, seekMin, seekPts, seekMax, AVSEEK_FLAG_BACKWARD) < 0)
+	if (avformat_seek_file(handle, index, min, pts + stream->start_time, max, AVSEEK_FLAG_BACKWARD) < 0)
 	{
 		return CodecError::ExternalFailed;
 	}
@@ -758,7 +471,6 @@ CodecError FFFormat::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
 		.gopSize   = 0,
 		.framerate = { codecpar->framerate.num, codecpar->framerate.den },
 		.timeBase  = { stream->time_base.num, stream->time_base.den },
-		.sampleAspectRatio = { codecpar->sample_aspect_ratio.num, codecpar->sample_aspect_ratio.den },
 		.displayOrientation = {}
 	};
 
@@ -808,15 +520,6 @@ Animator &FFFormat::GetAnimator(MediaType mediaType)
 	}
 
 	return empty;
-}
-
-double FFFormat::GetMaxFrameDurationForSync() const
-{
-	if (handle && handle->iformat && (handle->iformat->flags & AVFMT_TS_DISCONT))
-	{
-		return 10.0;
-	}
-	return 3600.0;
 }
 
 #endif

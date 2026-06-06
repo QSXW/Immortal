@@ -23,8 +23,6 @@ public:
 
 	virtual void Composite(CommandBuffer *commandBuffer, const SceneParameters &params) override;
 
-	void OnFrameGraphDebugGui() override;
-
 	void SetGBufferRenderTarget(const Ref<RenderTarget> &target);
 
 	const Ref<RenderTarget> &GetGBufferRenderTarget() const
@@ -32,12 +30,12 @@ public:
 		return gbuffer;
 	}
 
-	/** SceneLightingModel index (Unlit, Phong, PBR, NPR) — selects fullscreen resolve pipeline. */
-	void SetResolveLightingMode(uint32_t mode);
+	/** When true, deferred lighting uses Cook-Torrance GGX + metallic/roughness from G-buffer (requires depth + inv VP). */
+	void SetUsePBR(bool enable);
 
-	uint32_t GetResolveLightingMode() const
+	bool GetUsePBR() const
 	{
-		return resolveLightingMode;
+		return usePBR;
 	}
 
 	/** Optional: PBR resolve uses IBLTask outputs (t6–t8). When null, shader falls back to flat ambient. */
@@ -46,62 +44,23 @@ public:
 		iblTask = task;
 	}
 
-	/** Directional shadow: one depth (`d0`) for single-map; `d0`–`d3` for four cascades (CSM). */
-	void SetShadowMapForResolve(
-	    Texture *d0,
-	    Texture *d1,
-	    Texture *d2,
-	    Texture *d3,
-	    const Matrix4 &lightViewProjection,
-	    const Matrix4 *cascadeViewProjection,
-	    const float *cascadeSplits,
-	    uint32_t cascadeCount,
-	    bool enabled,
-	    float bias,
-	    float strength,
-	    uint32_t casterLightIndex = 0);
-
-	struct NPRParams
-	{
-		Vector3 shadowColor{ 0.55f, 0.35f, 0.45f };
-		float shadowThreshold = 0.15f;
-		float shadowSoftness  = 0.04f;
-		float litIntensity    = 1.0f;
-		float rimPower        = 4.0f;
-		float rimIntensity    = 0.35f;
-		float edgeDepthThreshold  = 0.008f;
-		float edgeNormalThreshold = 0.8f;
-		float edgeIntensity       = 0.5f;
-	};
-
-	NPRParams &GetNPRParams() { return nprParams; }
-	const NPRParams &GetNPRParams() const { return nprParams; }
-
 protected:
-	static constexpr uint32_t kResolvePipelineCount = 4;
+	Ref<GraphicsPipeline> pipeline;
 
-	Ref<GraphicsPipeline> resolvePipelines[kResolvePipelineCount];
+	Ref<GraphicsPipeline> pipelinePBR;
 
-	Ref<DescriptorSet> resolveDescriptorSets[kResolvePipelineCount];
+	Ref<DescriptorSet> descriptorSet;
+
+	Ref<DescriptorSet> descriptorSetPBR;
 
 	Ref<Sampler> sampler;
-
-	/** Depth comparisons must not use linear filtering on the shadow map. */
-	Ref<Sampler> samplerShadowPoint;
 
 	/** PBR resolve: cbuffer at register(b4), updated each Composite. */
 	Ref<Buffer> pbrFrameBuffer;
 
-	Ref<Buffer> nprFrameBuffer;
-
-	/** Simple deferred resolve: cbuffer register(b4). */
-	Ref<Buffer> simpleFrameBuffer;
-
 	Ref<RenderTarget> gbuffer;
 
-	uint32_t resolveLightingMode = 0;
-
-	NPRParams nprParams;
+	bool usePBR = false;
 
 	IBLTask *iblTask = nullptr;
 
@@ -111,26 +70,6 @@ protected:
 	Ref<Texture> fallbackRadianceCube;
 
 	Ref<Texture> fallbackBRDF;
-
-	Texture *shadowResolveDepths[4]{};
-
-	Matrix4 shadowResolveLightVP{};
-
-	Matrix4 shadowResolveCascadeVP[SceneParameters::MaxShadowCascades]{};
-
-	float shadowResolveCascadeSplits[SceneParameters::MaxShadowCascades]{};
-
-	uint32_t shadowResolveCascadeCount = 0;
-
-	bool shadowResolveEnabled = false;
-
-	float shadowResolveBias = 0.0025f;
-
-	float shadowResolveStrength = 1.0f;
-
-	uint32_t shadowResolveCasterLightIndex = 0;
-
-	Ref<RenderTarget> fallbackShadowDepthRT;
 };
 
 }

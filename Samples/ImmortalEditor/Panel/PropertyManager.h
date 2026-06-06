@@ -88,6 +88,8 @@ public:
                     DrawComponent(
                         Translator::Translate("Transform"),
                         [&]() -> void {
+                            // ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing() - 8.0f);
+
                             auto &transform = object.GetComponent<TransformComponent>();
                             Vector3 rotation = transform.Rotation.Degrees();
 
@@ -166,33 +168,8 @@ public:
                         Translator::Translate("Light"),
                         [&]() -> void {
                             auto &light = object.GetComponent<LightComponent>();
-                            UI::DrawColumn(Translator::Translate("Enabled"), [&]() -> bool { return ImGui::Checkbox("##Enabled", &light.Enabled); });
-
-                            static const char *lightTypeNames[] = { "Directional", "Point", "Spot" };
-                            int currentType = (int)light.LightType;
-                            UI::DrawColumn(Translator::Translate("Type"), [&]() -> bool {
-                                bool changed = ImGui::Combo("##LightType", &currentType, lightTypeNames, IM_ARRAYSIZE(lightTypeNames));
-                                if (changed)
-                                {
-                                    light.LightType = (LightComponent::Type)currentType;
-                                }
-                                return changed;
-                            });
-
-                            UI::DrawColumn(Translator::Translate("Color"), [&]() -> bool { return ImGui::ColorEdit4("##Color", (float *) &light.Radiance); });
-                            UI::DrawColumn(Translator::Translate("Intensity"), [&]() -> bool {
-                                return ImGui::DragFloat("##LightIntensity", &light.Intensity, 0.05f, 0.0f, 256.0f, "%.2f");
-                            });
-
-                            if (light.LightType == LightComponent::Type::Point || light.LightType == LightComponent::Type::Spot)
-                            {
-                                UI::DrawColumn(Translator::Translate("Range"), [&]() -> bool { return ImGui::DragFloat("##Range", &light.Range, 0.1f, 0.01f, 1000.0f); });
-                            }
-                            if (light.LightType == LightComponent::Type::Spot)
-                            {
-                                UI::DrawColumn(Translator::Translate("Inner Angle"), [&]() -> bool { return ImGui::DragFloat("##InnerAngle", &light.InnerConeAngle, 0.5f, 0.0f, light.OuterConeAngle); });
-                                UI::DrawColumn(Translator::Translate("Outer Angle"), [&]() -> bool { return ImGui::DragFloat("##OuterAngle", &light.OuterConeAngle, 0.5f, light.InnerConeAngle, 90.0f); });
-                            }
+                            UI::DrawColumn(Translator::Translate("Enabled"), [&]() -> bool { return ImGui::Checkbox("##C", &light.Enabled); });
+                            UI::DrawColumn(Translator::Translate("Color"), [&]() -> bool { return ImGui::ColorEdit4("##C", (float *) &light.Radiance); });
                         });
                 }
 
@@ -259,16 +236,11 @@ public:
 
                             UI::DrawColumn(Translator::Translate("Color"), [&]() -> bool { return ImGui::ColorEdit4("###", (float *) &ref.AlbedoColor); });
 
+                            float smoothness = 1.0f - ref.Roughness;
                             DrawFloat(Translator::Translate("Metallic"), &ref.Metallic, 0.001, 0, 1.0f);
-						    DrawFloat(Translator::Translate("Roughness"), &ref.Roughness, 0.001, 0, 1.0f);
+                            DrawFloat(Translator::Translate("Smoothness"), &smoothness, 0.001, 0, 1.0f);
+                            ref.Roughness = 1.0f - smoothness;
 
-                            UI::DrawColumn(Translator::Translate("Emissive"), [&]() -> bool {
-                                ImGui::SetNextItemWidth(-1);
-                                bool c = ImGui::DragFloat3("##EmissiveHdr", (float *)&ref.Emissive.x, 0.05f, 0.0f, 200.0f, "%.2f");
-                                ref.Emissive.w = 1.0f;
-                                return c;
-                            });
-   
                             ImGui::Columns(1);
                             auto &textures = ref.Textures;
                             ImVec2 size = {64.0f, 64.0f};
@@ -424,22 +396,42 @@ public:
     }
 
     template <class F>
-    void DrawComponent(const std::string &name, F process)
+    static void DrawComponent(const std::string &name, F process)
     {
-		auto it = headers.find(name);
-        if (it == headers.end())
+        ImGui::PushID(name.c_str());
+        ImGui::AlignTextToFramePadding();
+        auto [x, y] = ImGui::GetContentRegionAvail();
+
+        // ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+
+        float lineHeight = ImGui::GetFrameHeight();
+
+        bool isOpen = ImGui::TreeNodeEx("##Undefined", TreeNodeFlags, "%s", name.c_str());
+        bool isRightClicked = ImGui::IsItemClicked(ImGuiMouseButton_Right);
+
+        // ImGui::PopStyleVar();
+        ImGui::SameLine(x - lineHeight * 0.5f);
+
+        if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }) || isRightClicked)
         {
-			WCollapsingHeader h{};
-			h.Text(name);
-			h.Flags(ImGuiTreeNodeFlags_DefaultOpen);
-			headers[name] = h;
+            ImGui::OpenPopup("Conf");
         }
 
-        WCollapsingHeader &h = headers[name];
-		h.Draw([this, &process] {
-			process();
-		});
-		ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 1.1f);
+        if (ImGui::BeginPopup("Conf"))
+        {
+            if (ImGui::MenuItem(Translator::Translate("Remove")))
+            {
+
+            }
+            ImGui::EndPopup();
+        }
+
+        if (isOpen)
+        {
+            process();
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
     }
 
     void OnUpdate(Object other)
@@ -454,8 +446,6 @@ public:
 
 private:
 	Object object;
-
-    std::unordered_map<std::string, WCollapsingHeader> headers;
 };
 
 }

@@ -1,15 +1,9 @@
 #include "FrameGraph.h"
 
-#include "Scene/Component.h"
-
-#include <imgui.h>
-#include <unordered_set>
-
 namespace Immortal
 {
 
-FrameGraph::FrameGraph() :
-	ICLASS
+FrameGraph::FrameGraph()
 {
 
 }
@@ -19,206 +13,123 @@ FrameGraph::~FrameGraph()
 
 }
 
-RenderPass &FrameGraph::AddPass(const std::string &name)
+void FrameGraph::Build(AsyncComputeThread *asyncComputeThread)
 {
-	passes.push_back({});
-	auto &p = passes.back();
-	p.name = name;
-	return p;
+    //asyncComputeThread->Execute(AsyncTaskType::BeginRecording);
+    for (auto &task : tasks)
+    {
+        task->Build(asyncComputeThread);
+    }
+    //asyncComputeThread->Execute(AsyncTaskType::EndRecording);
+    //asyncComputeThread->Execute(AsyncTaskType::Submiting);
+    asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
+        hasBuild = true;
+    });
 }
 
-RenderPass *FrameGraph::FindPass(const std::string &name)
+Ref<RenderTask> FrameGraph::FindTask(const std::string &taskName) const
 {
-	for (auto &p : passes)
+	for (const auto &task : tasks)
 	{
-		if (p.name == name)
+		if (task->GetName() == taskName)
 		{
-			return &p;
+			return task;
 		}
 	}
 	return nullptr;
 }
 
-void FrameGraph::Clear()
+void FrameGraph::AddTask(const Ref<RenderTask> &task, const std::string &dependency)
 {
-	for (auto &[name, target] : targets)
-	{
-		Graphics::ReleaseResource(target->renderTarget);
-		target->renderTarget = {};
-	}
-	targets.clear();
+    if (tasks.empty())
+    {
+        tasks.emplace_back(task);
+    }
+    else if (dependency.empty())
+    {
+        task->SetDependency(tasks.back());
+        tasks.emplace_back(task);
+    }
+    else
+    {
+        size_t i = 0;
+        for (size_t i = 0; i < tasks.size(); i++)
+        {
+            if (tasks[i]->GetName() == dependency)
+            {
+                break;
+            }
+        }
 
-	passes.clear();
-	hasBuild = false;
+        if (i == tasks.size())
+        {
+            throw std::runtime_error("Dependency not matched!");
+        }
+
+        task->SetDependency(tasks[i]);
+        tasks.emplace_back(task);
+    }
 }
 
-void FrameGraph::ClearPasses()
+void FrameGraph::Execute(CommandBuffer *commandBuffer, const SceneParameters &params)
 {
-	passes.clear();
-	hasBuild = false;
+    if (!hasBuild)
+    {
+        return;
+    }
+
+	std::string label = "Execute";
+	commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+    for (const auto &task : tasks)
+    {
+        auto &name = task->GetName();
+        commandBuffer->BeginEvent(name.c_str(), name.size() + 1);
+        task->Execute(commandBuffer, params);
+        commandBuffer->EndEvent();
+    }
+	commandBuffer->EndEvent();
+
+    hasRecorded = true;
 }
 
-void FrameGraph::Build(AsyncComputeThread *asyncComputeThread)
+void FrameGraph::Composite(CommandBuffer *commandBuffer, const SceneParameters &params)
 {
-	asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
-		hasBuild = true;
-	});
+    if (!hasBuild)
+    {
+        return;
+    }
+	std::string label = "Composite";
+	commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+    for (const auto &task : tasks)
+    {
+        auto &name = task->GetName();
+        commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+        task->Composite(commandBuffer, params);
+        commandBuffer->EndEvent();
+    }
+	commandBuffer->EndEvent();
 }
 
-void FrameGraph::Run(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry)
+void FrameGraph::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry)
 {
-	if (!hasBuild)
+	std::string label = "DrawMesh";
+	commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+	for (const auto &task : tasks)
 	{
-		return;
-	}
-
-	RenderTarget *currentRT = nullptr;
-
-	for (size_t i = 0; i < passes.size(); i++)
-	{
-		auto &pass = passes[i];
-		if (!pass.task)
+		auto &name = task->GetName();
+		commandBuffer->BeginEvent(label.c_str(), label.size() + 1);
+		auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
+		for (auto object : view)
 		{
-			continue;
-		}
-
-		RenderTarget *wantRT = pass.renderTarget.Get();
-		if (pass.endRenderPassBeforeExecute && currentRT)
-		{
-			commandBuffer->EndRenderTarget();
-			currentRT = nullptr;
-		}
-		else if (wantRT && wantRT != currentRT)
-		{
-			if (currentRT)
+			auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
+			if (mesh.Mesh)
 			{
-				commandBuffer->EndRenderTarget();
-			}
-			commandBuffer->BeginRenderTarget(pass.renderTarget, pass.clearValues.empty() ? nullptr : pass.clearValues.data());
-			currentRT = wantRT;
+				task->DrawMesh(commandBuffer, params, (uint32_t)object, transform, mesh, material);
+            }
 		}
-
-		if (pass.useDepthBias)
-		{
-			commandBuffer->SetDepthBias(pass.depthBiasConstant, pass.depthBiasClamp, pass.depthBiasSlope);
-		}
-
-		commandBuffer->BeginEvent(pass.name);
-		switch (pass.phase)
-		{
-		case RenderPassPhase::Execute:
-			pass.task->Execute(commandBuffer, params);
-			break;
-
-		case RenderPassPhase::Composite:
-			pass.task->Composite(commandBuffer, params);
-			break;
-
-		case RenderPassPhase::DrawMesh:
-		{
-			pass.task->Execute(commandBuffer, params);
-			auto view = registry.view<TagComponent, TransformComponent, MeshComponent, MaterialComponent>();
-			for (auto object : view)
-			{
-				auto [tag, transform, mesh, material] = view.get<TagComponent, TransformComponent, MeshComponent, MaterialComponent>(object);
-				if (mesh.Mesh)
-				{
-					commandBuffer->BeginEvent(tag.Tag);
-					pass.task->DrawMesh(commandBuffer, params, (uint32_t)object, transform, mesh, material, &pass);
-					commandBuffer->EndEvent();
-				}
-			}
-
-			break;
-		}
-		}
-
 		commandBuffer->EndEvent();
-
-		if (pass.useDepthBias)
-		{
-			commandBuffer->SetDepthBias(0.0f, 0.0f, 0.0f);
-		}
 	}
-
-	if (currentRT)
-	{
-		commandBuffer->EndRenderTarget();
-	}
-}
-
-Ref<RenderTargetProperty> FrameGraph::QueryRenderTarget(const std::string &name)
-{
-	auto it = targets.find(name);
-	if (it == targets.end())
-	{
-		CLOG_ERROR("Failed to query render target [{}]", name);
-		return {};
-	}
-
-	return it->second;
-}
-
-void FrameGraph::AddRenderTarget(std::initializer_list<RenderTargetCreateInfo> &&infos)
-{
-	Device *device = Graphics::GetDevice();
-	for (auto &info : infos)
-	{
-		Ref<RenderTarget> renderTarget = device->CreateRenderTarget(
-			info.width,
-			info.height,
-			info.colorFormats.data(),
-			info.colorFormats.size(),
-			info.depthFormat,
-			info.clearValues.data(),
-			info.sampleCount
-		);
-
-		renderTarget->SetName(info.name.c_str());
-
-		Ref <RenderTargetProperty> r = new RenderTargetProperty;
-		r->renderTarget = renderTarget;
-		r->clearValues = info.clearValues;
-
-		targets[info.name] = r;
-	}
-}
-
-void FrameGraph::OnFrameGraphDebugGui()
-{
-	if (!hasBuild)
-	{
-		return;
-	}
-	for (size_t i = 0; i < passes.size(); i++)
-	{
-		const auto &pass = passes[i];
-		if (!pass.task)
-		{
-			continue;
-		}
-		ImGui::PushID((int)i);
-
-		const char *phaseLabel = "?";
-		switch (pass.phase)
-		{
-		case RenderPassPhase::Execute:        phaseLabel = "Execute";        break;
-		case RenderPassPhase::DrawMesh:       phaseLabel = "DrawMesh";       break;
-		case RenderPassPhase::Composite:      phaseLabel = "Composite";      break;
-		}
-
-		std::string label = pass.name + " [" + phaseLabel + "]";
-		if (ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-		{
-			if (pass.renderTarget)
-			{
-				ImGui::TextUnformatted("Has render target");
-			}
-			pass.task->OnFrameGraphDebugGui();
-			ImGui::TreePop();
-		}
-		ImGui::PopID();
-	}
+	commandBuffer->EndEvent();
 }
 
 }

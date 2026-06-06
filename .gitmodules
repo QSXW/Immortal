@@ -44,9 +44,3 @@
 [submodule "3rdparty/meshoptimizer"]
 	path = 3rdparty/meshoptimizer
 	url = https://github.com/zeux/meshoptimizer.git
-[submodule "3rdparty/entt"]
-	path = 3rdparty/entt
-	url = https://github.com/skypjack/entt.git
-[submodule "3rdparty/json"]
-	path = 3rdparty/json
-	url = https://github.com/nlohmann/json

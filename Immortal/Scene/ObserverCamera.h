@@ -22,9 +22,6 @@ namespace Immortal
 		{
 			projectionType = ProjectionType::Perspective;
 		}
-
-		Vector3 GetWorldPosition() const override;
-
 		void OnUpdate(float deltaTime);
 
 	private:

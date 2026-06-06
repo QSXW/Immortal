@@ -21,14 +21,6 @@ public:
 
     virtual void Set(uint32_t slot, Texture *texture) = 0;
 
-    /** Optional: bind a single mip slice as storage image (IBL prefilter). Default no-op. */
-    virtual void SetUavMip(uint32_t slot, Texture *texture, uint32_t mipSlice)
-    {
-        (void)slot;
-        (void)texture;
-        (void)mipSlice;
-    }
-
     virtual void Set(uint32_t slot, Sampler *sampler) = 0;
 };
 

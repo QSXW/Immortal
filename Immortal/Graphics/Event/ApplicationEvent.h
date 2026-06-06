@@ -82,24 +82,6 @@ public:
     DEFINE_EVENT_CATEGORY(Category::Application);
 };
 
-class IMMORTAL_API WindowFocusEvent : public Event
-{
-public:
-    WindowFocusEvent() = default;
-
-    DEFINE_EVENT_TYPE(WindowFocus);
-    DEFINE_EVENT_CATEGORY(Category::Application);
-};
-
-class IMMORTAL_API WindowLostFocusEvent : public Event
-{
-public:
-    WindowLostFocusEvent() = default;
-
-    DEFINE_EVENT_TYPE(WindowLostFocus);
-    DEFINE_EVENT_CATEGORY(Category::Application);
-};
-
 class IMMORTAL_API WindowDragDropEvent : public Event
 {
 public:

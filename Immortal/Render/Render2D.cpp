@@ -12,55 +12,62 @@ Render2D::Render2D() :
     rectIndexCount{},
     commandBuffer{}
 {
-    auto device = Graphics::GetDevice();
-	URef<Shader> vertexShader = Graphics::GetShaderByName("render2d_VS", ShaderStage::Vertex, "VSMain");
-	URef<Shader> pixelShader  = Graphics::GetShaderByName("render2d_PS", ShaderStage::Pixel , "PSMain");
-
-    Shader *shaders[] = { vertexShader, pixelShader };
-	pipeline = device->CreateGraphicsPipeline();
-	pipeline->Enable(Pipeline::State::Blend | Pipeline::State::Depth);
-	pipeline->Construct(shaders,
-        SL_ARRAY_LENGTH(shaders),
-        {
-            { Format::VECTOR3,  "POSITION"      },
-            { Format::VECTOR4,  "COLOR"         },
-            { Format::VECTOR2,  "TEXCOORD"      },
-            { Format::FLOAT,    "INDEX"         },
-            { Format::FLOAT,    "TILING_FACTOR" },
-            { Format::R32_UINT, "OBJECT_ID"     }
-        },
-        {
-            Format::RGBA8,
-            Format::R32G32_UINT,
-            Format::Depth24Stencil8
-        }
-    );
-
-	descriptorSet = device->CreateDescriptorSet(pipeline);
-
-	pointSampler  = device->CreateSampler(Filter::Nearest, AddressMode::Clamp);
-	linearSampler = device->CreateSampler(Filter::Nearest, Filter::Linear, Filter::Linear, AddressMode::Clamp, CompareOperation::Never, 0.0f, 0.0f);
-	descriptorSet->Set(0, linearSampler);
-	sampler = linearSampler;
-
-    vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(RectVertex) * MaxVertices);
-    indexBuffer  = device->CreateBuffer(BufferType::Index,  sizeof(uint32_t)   * MaxIndices );
-
-    uint32_t *ptr = {};
-	indexBuffer->Map((void **)&ptr, indexBuffer->GetSize(), 0);
-    for (uint32_t i = 0, offset = 0; i < MaxIndices; i += 6)
+	Stream stream = { "Assets/Shaders/hlsl/Render2D.hlsl", StreamMode::Read };
+    if (stream.Readable())
     {
-        ptr[i + 0] = offset + 0;
-        ptr[i + 1] = offset + 1;
-        ptr[i + 2] = offset + 2;
+		std::string source;
+		stream.Read(source);
 
-        ptr[i + 3] = offset + 2;
-        ptr[i + 4] = offset + 3;
-        ptr[i + 5] = offset + 0;
+        auto device = Graphics::GetDevice();
+		URef<Shader> vertexShader = device->CreateShader("Render2DVertex", ShaderStage::Vertex, source, "VSMain");
+		URef<Shader> pixelShader  = device->CreateShader("Render2DPixel",  ShaderStage::Pixel,  source, "PSMain");
 
-        offset += 4;
+        Shader *shaders[] = { vertexShader, pixelShader };
+		pipeline = device->CreateGraphicsPipeline();
+		pipeline->Enable(Pipeline::State::Blend);
+		pipeline->Construct(shaders,
+            SL_ARRAY_LENGTH(shaders),
+            {
+                { Format::VECTOR3,  "POSITION"      },
+                { Format::VECTOR4,  "COLOR"         },
+                { Format::VECTOR2,  "TEXCOORD"      },
+                { Format::FLOAT,    "INDEX"         },
+                { Format::FLOAT,    "TILING_FACTOR" },
+                { Format::R32_UINT, "OBJECT_ID"     }
+            },
+            {
+                Format::RGBA8,
+                Format::R32G32_UINT,
+                Format::Depth24Stencil8
+            }
+        );
+
+		descriptorSet = device->CreateDescriptorSet(pipeline);
+
+		pointSampler  = device->CreateSampler(Filter::Nearest, AddressMode::Repeat);
+		linearSampler = device->CreateSampler(Filter::Linear, AddressMode::Repeat);
+		descriptorSet->Set(0, linearSampler);
+		sampler = linearSampler;
+
+        vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(RectVertex) * MaxVertices);
+        indexBuffer  = device->CreateBuffer(BufferType::Index,  sizeof(uint32_t)   * MaxIndices );
+
+        uint32_t *ptr = {};
+		indexBuffer->Map((void **)&ptr, indexBuffer->GetSize(), 0);
+        for (uint32_t i = 0, offset = 0; i < MaxIndices; i += 6)
+        {
+            ptr[i + 0] = offset + 0;
+            ptr[i + 1] = offset + 1;
+            ptr[i + 2] = offset + 2;
+
+            ptr[i + 3] = offset + 2;
+            ptr[i + 4] = offset + 3;
+            ptr[i + 5] = offset + 0;
+
+            offset += 4;
+        }
+		indexBuffer->Unmap();
     }
-	indexBuffer->Unmap();
 }
 
 Render2D::~Render2D()

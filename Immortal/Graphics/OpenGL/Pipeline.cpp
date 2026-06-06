@@ -41,18 +41,6 @@ void Pipeline::SetState()
     if (flags & State::Depth)
     {
         glEnable(GL_DEPTH_TEST);
-		if (flags & State::ShadowPass)
-		{
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
-			glEnable(GL_POLYGON_OFFSET_FILL);
-			glPolygonOffset(1.75f, 1.25f);
-		}
-		else
-		{
-			glDisable(GL_POLYGON_OFFSET_FILL);
-			glDisable(GL_CULL_FACE);
-		}
     }
     else
     {

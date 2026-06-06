@@ -5,8 +5,6 @@
 #include "Image.h"
 #include "ImageView.h"
 
-#include <vector>
-
 namespace Immortal
 {
 namespace Vulkan
@@ -45,9 +43,6 @@ public:
             .imageLayout = layout,
         };
     }
-
-	/** Single-mip cube/array view for storage (IBL prefilter UAV). Lazily cached. */
-	VkDescriptorImageInfo GetStorageDescriptorInfo(uint32_t mipLevel) const;
 
     uint32_t GetArrayLayers() const
 	{
@@ -88,15 +83,12 @@ public:
 		std::swap(_arrayLayers, other._arrayLayers);
 		std::swap( view,        other.view        );
 		std::swap( layout,      other.layout      );
-		std::swap(storageMipViews, other.storageMipViews);
 	}
 
 protected:
     ImageView view;
 
     VkImageLayout layout{ VK_IMAGE_LAYOUT_UNDEFINED };
-
-	mutable std::vector<VkImageView> storageMipViews;
 };
 
 }

@@ -70,6 +70,8 @@ static inline bool Begin(const std::string &name, bool *p_open = NULL, ImGuiWind
     return Begin(name.c_str(), p_open, flags);
 }
 
+DEFINE_CPP_STRING_API(CollapsingHeader)
+
 }
 
 namespace UI
@@ -259,8 +261,6 @@ public:
 
 	void AddChild(Widget *widget);
 
-    void AddPreDockspaceChild(Widget *widget);
-
     void SetTheme();
 
     bool LoadTheme();
@@ -284,11 +284,6 @@ public:
         return NotoSans.Bold;
     }
 
-    BackendAPI GetBackendAPI() const
-    {
-		return device ? device->GetBackendAPI() : BackendAPI::D3D12;
-    }
-
     void SetScrollEnergy(const ImVec2 &energy)
     {
 		scrollEnergy = energy;
@@ -300,12 +295,6 @@ public:
 	{
 		SLASSERT(This && "ImGui is not initialized yet!");
 		This->AddChild(widget);
-	}
-
-    static void InjectBeforeDockspace(Widget *widget)
-	{
-		SLASSERT(This && "ImGui is not initialized yet!");
-		This->AddPreDockspaceChild(widget);
 	}
 
     static bool IsLanguage(Language lang)
@@ -346,8 +335,6 @@ protected:
     } platformSpecficWindow;
 
     Ref<WDockerSpace> dockspace;
-
-    std::vector<Widget *> preDockspaceChildren;
 
     bool blockEvents = true;
 

@@ -22,9 +22,8 @@ FilterGraphComponent::FilterGraphComponent(Device *device) :
 FilterGraphComponent::FilterGraphComponent(const FilterGraphComponent &other) :
     device{ other.device },
     nodes{ other.nodes },
-    transferNode{ other.transferNode },
-    maxNodeLength{ other.maxNodeLength },
-    output{ other.output }
+    transferNode{},
+    maxNodeLength{ other.maxNodeLength }
 {
 
 }
@@ -80,7 +79,7 @@ void FilterGraphComponent::Execute(const std::vector<Ref<Texture>> &input, Async
 				{
 					if (out->GetMipLevels() > 1)
 					{
-						asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
+						asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
 							commandBuffer->GenerateMipMaps(out, Filter::Linear);
 						});
 					}

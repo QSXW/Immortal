@@ -46,8 +46,6 @@ public:
 
 	virtual void SetBlendFactor(const float factor[4]) override;
 
-	virtual void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor) override;
-
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
 
 	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const ClearValue *pClearValue) override;

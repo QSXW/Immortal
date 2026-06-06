@@ -19,10 +19,6 @@
 #include <chrono>			// For the notifications timed dissmiss
 #include <functional>		// For storing the code, which executest on the button click in the notification
 
-#ifdef _WIN32
-extern "C" __declspec(dllimport) int __stdcall MessageBeep(unsigned int uType);
-#endif
-
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -250,7 +246,7 @@ public:
      * 
      * @return ImGuiToastType The type of the toast notification.
      */
-    inline ImGuiToastType getType() const
+    inline ImGuiToastType getType()
     {
         return this->type;
     };
@@ -468,35 +464,6 @@ public:
 namespace ImGui
 {
     inline std::vector<ImGuiToast> notifications;
-    inline ImFont* notificationIconFont = nullptr;
-
-    inline void SetNotificationIconFont(ImFont* font)
-    {
-        notificationIconFont = font;
-    }
-
-    inline void PlayToastNotificationSound(const ImGuiToast& toast)
-    {
-#ifdef _WIN32
-        if (toast.getType() != ImGuiToastType::Error)
-        {
-            return;
-        }
-
-        static auto lastErrorBeep = std::chrono::steady_clock::time_point{};
-        const auto now = std::chrono::steady_clock::now();
-        if (lastErrorBeep.time_since_epoch().count() != 0 &&
-            now - lastErrorBeep < std::chrono::milliseconds{ 300 })
-        {
-            return;
-        }
-
-        lastErrorBeep = now;
-        ::MessageBeep(0x00000010U);
-#else
-        (void)toast;
-#endif
-    }
 
     /**
      * Inserts a new notification into the notification queue.
@@ -504,7 +471,6 @@ namespace ImGui
      */
     inline void InsertNotification(const ImGuiToast& toast)
     {
-        PlayToastNotificationSound(toast);
         notifications.push_back(toast);
     }
 
@@ -607,15 +573,8 @@ namespace ImGui
                 // If an icon is set
                 if (!NOTIFY_NULL_OR_EMPTY(icon))
                 {
-                    if (notificationIconFont)
-                    {
-                        PushFont(notificationIconFont);
-                    }
+                    //Text(icon); // Render icon text
                     TextColored(textColor, "%s", icon);
-                    if (notificationIconFont)
-                    {
-                        PopFont();
-                    }
                     wasTitleRendered = true;
                 }
 
@@ -659,17 +618,7 @@ namespace ImGui
                     SetCursorPosX(GetCursorPosX() + (GetWindowSize().x - GetCursorPosX()) * scale);
 
                     // If the button is pressed, we want to remove the notification
-                    if (notificationIconFont)
-                    {
-                        PushFont(notificationIconFont);
-                    }
-                    const bool dismissPressed = Button(ICON_FA_XMARK);
-                    if (notificationIconFont)
-                    {
-                        PopFont();
-                    }
-
-                    if (dismissPressed)
+                    if (Button(ICON_FA_XMARK))
                     {
                         RemoveNotification(i);
                     }

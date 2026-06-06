@@ -16,11 +16,6 @@ public:
 
     virtual ~RenderTarget() = default;
          
-    virtual void SetName(const char *name)
-	{
-
-	}
-
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 
     virtual Texture *GetColorAttachment(uint32_t index) = 0;

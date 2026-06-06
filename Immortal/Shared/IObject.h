@@ -20,11 +20,6 @@ public:
 		return name;
 	}
 
-    void SetName(const char *value)
-    {
-		name = value;
-    }
-
 private:
 	const char *name;
 };
@@ -208,13 +203,6 @@ public:
     {
 		Ref(nullptr).Swap(*this);
 		_obj = (T *)obj;
-    }
-
-    T *Detach()
-    {
-        T *p = _obj;
-        _obj = nullptr;
-        return p;
     }
 
 protected:

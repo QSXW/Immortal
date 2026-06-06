@@ -46,7 +46,7 @@ struct ShaderByteCode : public D3D12_SHADER_BYTECODE
     }
 };
 
-class Shader : public SuperShader, public IClass
+class Shader : public SuperShader
 {
 public:
     using Super = SuperShader;

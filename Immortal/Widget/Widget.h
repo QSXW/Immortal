@@ -8,10 +8,7 @@
 
 #include <string>
 #include <functional>
-#include <initializer_list>
 #include <unordered_map>
-#include <utility>
-#include <vector>
 
 #include <tweeny.h>
 
@@ -340,7 +337,7 @@ protected:                           \
 #define WIDGET_SET_KCSTR(U, ...) WIDGET_SET_CSTR(U, k##U, __VA_ARGS__)
 #define WIDGET_SET_KCSTR_ID(U, ...) \
     WIDGET_SET_CSTR(U, k##U, Translator::Translate(__VA_ARGS__)) \
-    WIDGET_SET_CSTR(ID##U, id##U, k##U + "###" __VA_ARGS__)
+    WIDGET_SET_CSTR(ID##U, id##U, k##U + "##" __VA_ARGS__)
 
 #define WIDGET_PROPERTY_VAR_COLOR(U, L, ...)                  \
     WIDGET_SET_PROPERTY(U, L, uint32_t, 0xff000000)
@@ -689,7 +686,6 @@ public:
     WIDGET_SET_PROPERTIES(WFrame)
 	WIDGET_PROPERTY_TEXT
 	WIDGET_PROPERTY_COLOR
-	WIDGET_SET_PROPERTY(WindowId, windowId, String)
 	WIDGET_SET_PROPERTY(Flags,   flags,   ImGuiWindowFlags, 0   )
 	WIDGET_SET_PROPERTY(Visible, visible, bool,             true)
 
@@ -720,8 +716,7 @@ public:
 
     void SetFocus()
     {
-		const String title = BeginTitle();
-		ImGui::SetWindowFocus(title.c_str());
+		ImGui::SetWindowFocus(Text().c_str());
     }
 
     void ResetState()
@@ -739,72 +734,9 @@ public:
 	}
 
 protected:
-    String BeginTitle() const;
-
 	WidgetState state;
 
     ImVec2 scroll;
-};
-
-class PropertyList
-{
-public:
-	static constexpr ImVec2 kPadding = {8.0f, 8.0f};
-
-	PropertyList(const char *name, int count, ImGuiOldColumnFlags flags = ImGuiOldColumnFlags_NoResize) :
-	    w{ImGui::GetContentRegionAvail().x}
-	{
-		ImGui::BeginColumns(name, count, flags);
-	}
-
-	~PropertyList()
-	{
-		ImGui::EndColumns();
-	}
-
-	void SetWidthScale(std::initializer_list<float> &&scales)
-	{
-		int i = 0;
-		for (auto &s : scales)
-		{
-			ImGui::SetColumnWidth(i++, s * w);
-		}
-	}
-
-	static void AlignTextRigth(const char *text)
-	{
-		using namespace ImGui;
-		float textWidth = CalcTextSize(text).x;
-		float availWidth = GetContentRegionAvail().x;
-		SetCursorPosX(GetCursorPosX() + availWidth - textWidth - kPadding.x);
-		SetCursorPosY(GetCursorPosY() + 2.0f);
-	}
-
-	template <class T, class... Args>
-	static bool Property(const char *text, T &widget, Args &&...args)
-	{
-		using namespace ImGui;
-		Dummy(kPadding);
-		AlignTextRigth(text);
-		Text(text);
-		NextColumn();
-		Dummy(kPadding);
-		Dummy({kPadding.x, 0});
-		SameLine();
-		SetNextItemWidth(GetContentRegionAvail().x - kPadding.x);
-		bool ret = widget.Draw(std::forward<Args>(args)...);
-		NextColumn();
-		return ret;
-	}
-
-	template <class T, class... Args>
-	static bool Property(const String &text, T &widget, Args &&...args)
-	{
-		return Property(text.c_str(), widget, std::forward<Args>(args)...);
-	}
-
-private:
-	float w;
 };
 
 class IMMORTAL_API WRect : public Widget
@@ -1392,12 +1324,6 @@ public:
 	template <class T>
 	void Draw(T &&callback)
 	{
-        Draw(std::forward<T>(callback), [](const ImRect &) {});
-	}
-
-	template <class T, class HeaderCallback>
-	void Draw(T &&callback, HeaderCallback &&headerCallback)
-	{
         using namespace ImGui;
 
         StyleColorStack<uint32_t> styleColor{
@@ -1426,14 +1352,12 @@ public:
         }
 
 		bool newState = TreeNodeEx(name, flags, "%s", name);
-        const ImRect headerRect{ GetItemRectMin(), GetItemRectMax() };
         {
 			FontSizeStack fontSize{Icon::Font};
-			ImVec2 pos = headerRect.Min;
+			ImVec2 pos = GetItemRectMin();
 			pos.y += GetCenterAlignPosition(GetFrameHeightWithSpacing(), GetTextLineHeight());
 			window->DrawList->AddText(pos, GetColorU32(ImGuiCol_Text), Icon::Arrows[expanded]);
         }
-        std::forward<HeaderCallback>(headerCallback)(headerRect);
 
         if (hasTriggerButton)
         {
@@ -1658,7 +1582,6 @@ public:
 enum WComboFlagBits
 {
 	WComboFlagBit_NoFixedWidth = 1 << 8,
-    WComboFlagBit_PopupAbove   = 1 << 9,
 };
 
 class WCombo
@@ -1819,42 +1742,36 @@ public:
 
         Opened(true);
 
-		char name[16];
+        char name[16];
 		ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.BeginComboDepth);
 		if (ImGuiWindow *popup_window = FindWindowByName(name))
 		{
 			if (popup_window->WasActive)
 			{
 				ImVec2 size_expected = CalcWindowNextAutoFitSize(popup_window);
-				popup_window->AutoPosLastDirection = (flags & WComboFlagBit_PopupAbove) ? ImGuiDir_Up : ImGuiDir_Left; //(flags & ImGuiComboFlags_PopupAlignLeft) ? ImGuiDir_Left : ImGuiDir_Down;;
+				popup_window->AutoPosLastDirection = ImGuiDir_Left; //(flags & ImGuiComboFlags_PopupAlignLeft) ? ImGuiDir_Left : ImGuiDir_Down;;
 				ImRect r_outer = GetPopupAllowedExtentRect(popup_window);
-				ImVec2 pos = FindBestWindowPosForPopupEx(
-				    (flags & WComboFlagBit_PopupAbove) ? bb.GetTL() : bb.GetBL(),
-				    size_expected,
-				    &popup_window->AutoPosLastDirection,
-				    r_outer,
-				    bb,
-				    ImGuiPopupPositionPolicy_ComboBox);
+				ImVec2 pos = FindBestWindowPosForPopupEx(bb.GetBL(), size_expected, &popup_window->AutoPosLastDirection, r_outer, bb, ImGuiPopupPositionPolicy_ComboBox);
 				SetNextWindowPos(pos);
 			}
 		}
 		g.BeginComboDepth++;
 
-		if (!(flags & WComboFlagBit_NoFixedWidth))
+        if (!(flags & WComboFlagBit_NoFixedWidth))
 		{
 			height = ImGui::GetFrameHeight();
 			//height += PaddingY() * 4;
 
 			ImVec2 popupSize = {width, height * std::min(maxVisibleItem, uint32_t(data.size()))};
-			if (popupSize.y != tween.peek(1.0f))
+            if (popupSize.y != tween.peek(1.0f))
             {
 				tween = tweeny::from(0.0f).to(popupSize.y).during(500).via(tweeny::easing::quadraticOut);
             }
 
 			popupSize.y = tween.step(5.0f * Time::DeltaTime);
 			SetNextWindowSize(popupSize);
-			SetNextWindowPos({bb.Min.x, (flags & WComboFlagBit_PopupAbove) ? bb.Min.y - popupSize.y : bb.Max.y});
-		}
+			SetNextWindowPos({bb.Min.x, bb.Max.y});
+        }
 
         {
 			StyleVarStack<float> styleVar{
@@ -1967,9 +1884,7 @@ public:
 	WIDGET_SET_PROPERTY_CSTR(Icon, icon, nullptr)
 	WIDGET_SET_PROPERTY_CSTR(ActiveIcon, activeIcon, nullptr)
 	WIDGET_SET_PROPERTY_CSTR(HoveredIcon, hoveredIcon, nullptr)
-	WIDGET_SET_POINTER(Font, font, ImFont, nullptr)
 	WIDGET_SET_PROPERTY(Active, active, bool, false)
-	WIDGET_SET_PROPERTY(ToggleOnClick, toggleOnClick, bool, true)
 
 public:
 	WIconButton(const char *icon = nullptr, const char *activeIcon = nullptr, const char *hoveredIcon = nullptr)
@@ -1983,17 +1898,8 @@ public:
 	{
 		ImGuiWindow *window = ImGui::GetCurrentWindow();
 		auto visibleIcon = Active() && ActiveIcon() ? ActiveIcon() : Icon();
-		bool pressed = false;
-		if (Font())
-		{
-			FontSizeStack fontSize{ Font() };
-			pressed = IconButton(window->GetID(this), visibleIcon, nullptr, size, HoveredIcon() ? HoveredIcon() : visibleIcon, activeIcon, active);
-		}
-		else
-		{
-			pressed = IconButton(window->GetID(this), visibleIcon, nullptr, size, HoveredIcon() ? HoveredIcon() : visibleIcon, activeIcon, active);
-		}
-		if (pressed && ToggleOnClick())
+		bool pressed = IconButton(window->GetID(this), visibleIcon, nullptr, size, HoveredIcon() ? HoveredIcon() : visibleIcon, activeIcon, active);
+		if (pressed)
 		{
 			Active(!Active());
 		}
@@ -2005,51 +1911,23 @@ public:
 class IMMORTAL_API WRightClickPopup : public Widget
 {
 public:
-    struct Item
-    {
-        String text;
-        std::function<void()> callback;
-        std::vector<Item> children;
-
-        Item() = default;
-
-        Item(const String &value, std::function<void()> valueCallback = {}) :
-            text{ value },
-            callback{ std::move(valueCallback) },
-            children{}
-        {
-
-        }
-
-        Item(const String &value, std::initializer_list<Item> childItems) :
-            text{ value },
-            callback{},
-            children{ childItems }
-        {
-
-        }
-    };
-
 	WIDGET_SET_PROPERTIES(WRightClickPopup)
-    WIDGET_PROPERTY_TEXT
-    WIDGET_PROPERTY_COLOR
-    WIDGET_PROPERTY_BACKGROUND_COLOR
-    WIDGET_SET_PROPERTY(HoveredColor,   hoveredColor,    uint32_t)
-    WIDGET_SET_PROPERTY(ActiveItemId,   activeItemId,    ImGuiID, 0    )
-    WIDGET_SET_PROPERTY(ManualOpen,     manualOpen,      bool,    false)
+	WIDGET_PROPERTY_TEXT
+	WIDGET_PROPERTY_COLOR
+	WIDGET_PROPERTY_BACKGROUND_COLOR
+	WIDGET_SET_PROPERTY(HoveredColor,   hoveredColor,    uint32_t)
+	WIDGET_SET_PROPERTY(IsMouseClicked, isMousedClicked, bool,    false)
+	WIDGET_SET_PROPERTY(ActiveItemId,   activeItemId,    ImGuiID, 0    )
+	WIDGET_SET_PROPERTY(ManualOpen,     manualOpen,      bool,    false)
 
 public:
 	WRightClickPopup(Widget *parent = nullptr);
 
     virtual bool Draw() override;
-    bool DrawForOwner(ImGuiID ownerForGate);
 
 	WidgetType *Items(std::initializer_list<std::pair<const String &, std::function<void()>>> &&list);
-    WidgetType *MenuItems(std::initializer_list<Item> &&list);
 
 	void Open();
-
-	void OpenForItem(ImGuiID itemId);
 
 	WidgetType *Callback(std::function<void()> value)
 	{
@@ -2060,9 +1938,11 @@ public:
     bool IsOpened() const;
 
 protected:
-	std::vector<Item> items;
+	std::vector<std::pair<const String &, std::function<void()>>> items;
 
 	std::function<void()> callback;
+
+	float factor = 0.0f;
 
 	tweeny::tween<float> tween;
 

@@ -2,10 +2,9 @@
 
 #if HAVE_OPENCV
 #include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp> 
 #include <opencv2/imgcodecs/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include <utility>
 #endif
 
 namespace Immortal
@@ -16,56 +15,47 @@ namespace Vision
 #if HAVE_OPENCV
 OpenCVCodec::~OpenCVCodec()
 {
-
+        
 }
 
 CodecError OpenCVCodec::Decode(const CodedFrame &codedFrame)
 {
     cv::Mat mat;
 
-    const uint8_t *buf  = codedFrame.GetData();
-	const size_t   size = codedFrame.GetSize();
-	cv::Mat src = cv::imdecode(cv::InputArray{buf, (int)size}, cv::IMREAD_UNCHANGED);
+    const auto &buf = codedFrame.GetBuffer();
+    cv::Mat	src = cv::imdecode(cv::Mat{ buf }, cv::IMREAD_UNCHANGED);
     if (!src.data)
     {
         return CodecError::CorruptedBitstream;
     }
-    switch (src.channels())
+    if (src.data)
     {
-    case 4:
-        cv::cvtColor(src, mat, cv::COLOR_BGRA2RGBA);
-        break;
-    case 3:
-        cv::cvtColor(src, mat, cv::COLOR_BGR2RGBA);
-        break;
-    case 1:
-        cv::cvtColor(src, mat, cv::COLOR_GRAY2RGBA);
-        break;
-    default:
-        return CodecError::CorruptedBitstream;
-    }
-    if (mat.empty())
-    {
-        return CodecError::CorruptedBitstream;
+        if (src.channels() == 4)
+        {
+            cv::cvtColor(src, mat, cv::COLOR_BGRA2RGBA);
+        }
+        else
+        {
+            cv::cvtColor(src, mat, cv::COLOR_BGR2RGBA);
+        }
     }
 
-    Format format = Format::RGBA8;
+    picture = Picture{ mat.cols, mat.rows, Format::RGBA8 };
+
     if (mat.depth() == CV_16U)
     {
-        format = Format::RGBA16;
+		picture.SetFormat(Format::RGBA16);
     }
-    else if (mat.depth() == CV_32F)
+    if (mat.depth() == CV_32FC4)
     {
-        format = Format::R32G32B32A32_SFLOAT;
+        picture.SetFormat(Format::R32G32B32A32_SFLOAT);
     }
 
-    auto ownedMat = new cv::Mat{ std::move(mat) };
-    picture = Picture{ ownedMat->cols, ownedMat->rows, format };
-    picture.SetData(ownedMat->data);
-    picture.SetStride(0, static_cast<uint32_t>(ownedMat->step[0]));
-    picture.SetRelease([ownedMat] (void *) {
-        delete ownedMat;
-    });
+    picture.SetData(mat.data);
+	picture.SetRelease([] (void *data) {
+		delete data;
+	});
+    mat.data = nullptr;
 
     return CodecError::Success;
 }

@@ -6,7 +6,6 @@ namespace Immortal
 SceneCamera::SceneCamera()
 {
     SetProjectionType(ProjectionType::Orthographic);
-	RefreshCameraClipPlanes();
 }
 
 SceneCamera::~SceneCamera()
@@ -18,9 +17,8 @@ void SceneCamera::SetPerspective(float verticalFOV, float nearClip, float farCli
 {
     projectionType = ProjectionType::Perspective;
     perspectiveFOV = Vector::Radians(verticalFOV);
-    perspectiveNear = nearClip;
+    perspectiveFar = nearClip;
     perspectiveFar = farClip;
-	RefreshCameraClipPlanes();
 }
 
 void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
@@ -29,7 +27,6 @@ void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
     orthographicSize = size;
     orthographicNear = nearClip;
     orthographicFar = farClip;
-	RefreshCameraClipPlanes();
 }
 
 void SceneCamera::SetViewportSize(float width, float height)
@@ -45,24 +42,6 @@ void SceneCamera::SetViewportSize(float width, float height)
         float h = orthographicSize;
         projection = Vector::Ortho(-w * 0.5f, w * 0.5f, -h * 0.5f, h * 0.5f, orthographicNear, orthographicFar);
     }
-	RefreshCameraClipPlanes();
-}
-
-bool SceneCamera::OnMouseScrolled(MouseScrolledEvent &e)
-{
-	return false;
-}
-
-void SceneCamera::RefreshCameraClipPlanes()
-{
-	if (projectionType == ProjectionType::Perspective)
-	{
-		SetClipPlanes(perspectiveNear, perspectiveFar);
-	}
-	else
-	{
-		SetClipPlanes(orthographicNear, orthographicFar);
-	}
 }
 
 }

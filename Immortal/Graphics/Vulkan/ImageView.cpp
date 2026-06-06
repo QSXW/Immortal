@@ -55,27 +55,6 @@ ImageView::ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLaye
 	Instantiate(GetViewType(image->GetType(), image->GetFlags(), image->GetArrayLayers()), baseMipLevel, baseArrayLayer, image->GetMipLevels(), image->GetArrayLayers());
 }
 
-ImageView::ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevelCount, uint32_t arrayLayerCount) :
-    Handle{},
-    device{ image->Get<Device>() },
-    image{ image }
-{
-	VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
-	if (image->GetType() == VK_IMAGE_TYPE_2D)
-	{
-		viewType = arrayLayerCount > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
-	}
-	else if (image->GetType() == VK_IMAGE_TYPE_1D)
-	{
-		viewType = arrayLayerCount > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
-	}
-	else
-	{
-		viewType = GetViewType(image->GetType(), image->GetFlags(), image->GetArrayLayers());
-	}
-	Instantiate(viewType, baseMipLevel, baseArrayLayer, mipLevelCount, arrayLayerCount);
-}
-
 ImageView::~ImageView()
 {
     Release();

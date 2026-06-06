@@ -3,6 +3,17 @@
 namespace Immortal
 {
 
+struct StereoVector2
+{
+    float x;
+    float y;
+};
+
+static inline float Seconds2Nanoseconds(float seconds)
+{
+    return seconds * 1000000000;
+}
+
 AudioStream::AudioStream() :
     thread{},
     exited{},
@@ -56,31 +67,28 @@ void AudioStream::Start(const PFN_AudioStreamPlayCallback &value)
 
 int AudioStream::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
 {
-	AudioFormat format = GetFormat();
+	AudioFormat format = GetFormat(); 
 	uint32_t sampleRequested = 0;
-	while (numberSamples > 0)
-	{
-		uint32_t numFramesPadding = GetAvailableFrameCount();
+    while (numberSamples > 0)
+    {
+        uint32_t numFramesPadding = GetAvailableFrameCount();
 
-		sampleRequested = std::min(numberSamples, numFramesPadding);
+        sampleRequested = std::min(numberSamples, numFramesPadding);
 		if (sampleRequested > 0)
-		{
+        {
 			BeginRender(sampleRequested);
 
-			uint32_t bytes = bytePerSample * sampleRequested;
-			WriteBuffer(pSamples, bytes);
-			pSamples += bytes;
+            uint32_t bytes = bytePerSample * sampleRequested;
+            WriteBuffer(pSamples, bytes);
+            pSamples += bytes;
 			numberSamples -= sampleRequested;
 			EndRender(sampleRequested);
-		}
-		else
-		{
-			// Device ring full — do not sleep for "playback time" (that slows everything vs SDL/ffplay).
-			std::this_thread::sleep_for(std::chrono::microseconds(500));
-		}
-	}
+			uint64_t duration = Seconds2Nanoseconds(((float) sampleRequested / format.sampleRate)) / 2;
+			std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
+        }
+    }
 
-	return sampleRequested;
+    return sampleRequested;
 }
 
 void AudioStream::SetDebugName(const std::string &value)

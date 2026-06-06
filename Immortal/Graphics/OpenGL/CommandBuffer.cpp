@@ -127,14 +127,6 @@ void CommandBuffer::SetBlendFactor(const float factor[4])
 
 }
 
-void CommandBuffer::SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
-{
-	Submit([=, this] {
-		glPolygonOffset(depthBiasSlopeFactor, depthBiasConstantFactor);
-		(void)depthBiasClamp;
-	});
-}
-
 void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset)
 {
 	if (!pushConstant || pushConstant->GetSize() < size)

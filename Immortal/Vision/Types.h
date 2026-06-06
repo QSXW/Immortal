@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <atomic>
 
 namespace Immortal
 {
@@ -249,55 +248,27 @@ public:
 
 	void Complete()
 	{
-		completed.store(true);
-	}
-
-	bool IsCompleted() const
-	{
-		return completed.load();
+		completed = true;
 	}
 
 	void Cancel()
 	{
-		canceled.store(true);
-	}
-
-	bool IsCanceled() const
-	{
-		return canceled.load();
+		canceled = true;
 	}
 
 	void Pause()
 	{
-		paused.store(true);
-	}
-
-	void Resume()
-	{
-		paused.store(false);
-	}
-
-	void Reset()
-	{
-		canceled.store(false);
-		paused.store(false);
-		completed.store(false);
-		progress.store(0.0f);
-	}
-
-	bool IsPaused() const
-	{
-		return paused.load();
+		paused = true;
 	}
 
 	float GetProgress() const
 	{
-		return progress.load();
+		return progress;
 	}
 
 	void SetProgress(float value)
 	{
-		progress.store(value);
+		progress = value;
 	}
 
 private:
@@ -307,7 +278,7 @@ private:
 
 	std::atomic<bool> completed;
 
-	std::atomic<float> progress;
+	float progress;
 };
 
 struct ImageEncodeInfo
@@ -340,21 +311,6 @@ enum class CodecId
 	PNG,
 	WEBP,
 	JPEGXL,
-	AVIF,
-	MJPEG,
-	JPEG2000,
-	DPX,
-	TARGA,
-	PCX,
-	EXR,
-	SGI,
-	SUNRASTER,
-	JPEGLS,
-	FITS,
-	IFF_ILBM,
-	XBM_IMAGE,
-	XFACE,
-	QDRAW,
 	MPEG4,
 	RAW,
 	PCM_S16,
@@ -365,33 +321,27 @@ enum class CodecId
 
 struct CodecInfo
 {
-	void *handle = nullptr;
-	MediaType mediaType = MediaType::Video;
-	CodecId codecId = CodecId::None;
+	void *handle;
+	MediaType mediaType;
+	CodecId codecId;
 	union
 	{
-		uint32_t width = 0;
+		uint32_t width;
 		uint32_t sampleRate;
 	};
 
 	union
 	{
-		uint32_t height = 0;
+		uint32_t height;
 		Vision::ChannelLayout channelLayout;
 	};
 
-	Format format = Format::None;
-	int bitRate = 0;
-	int gopSize = 0;
-	Rational framerate{};
-	Rational timeBase{};
-	Rational sampleAspectRatio{};
-	Vision::DisplayOrientation displayOrientation{};
-	std::string encoderPreset;
-	std::string rateControl;
-	int crf = 0;
-	int maxBitRate = 0;
-	int bufferSize = 0;
+	Format format;
+	int bitRate;
+	int gopSize;
+	Rational framerate;
+	Rational timeBase;
+	Vision::DisplayOrientation displayOrientation;
 };
 
 }

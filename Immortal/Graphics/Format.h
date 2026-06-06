@@ -179,10 +179,9 @@ public:
         P016      = BITS(YUV, NV,   _16Bits, YUV420P + 15),
 		P210      = BITS(YUV, NV,   _10Bits, YUV420P + 16),
 		P212      = BITS(YUV, NV,   _12Bits, YUV420P + 17),
-        P216      = BITS(YUV, NV,   _16Bits, YUV420P + 18),
+		P216      = BITS(YUV, NV,   _16Bits, YUV420P + 18),
         Y210      = BITS(YUV, YUYV, _10Bits, YUV420P + 19),
-		Y216      = BITS(YUV, YUYV, _16Bits, YUV420P + 20),
-        YUVA420P  = BITS(YUV,       _420,    YUV420P + 21)
+		Y216      = BITS(YUV, YUYV, _16Bits, YUV420P + 20)
     };
 
     static constexpr ValueType HightBitDepth = ValueType(Format::_10Bits | Format::_12Bits | Format::_16Bits);

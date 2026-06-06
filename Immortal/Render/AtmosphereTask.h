@@ -27,8 +27,6 @@ public:
 
 	virtual void Composite(CommandBuffer *commandBuffer, const SceneParameters &params) override;
 
-	void OnFrameGraphDebugGui() override;
-
 	void SetEnabled(bool value)
 	{
 		enabled = value;

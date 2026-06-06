@@ -46,7 +46,6 @@ static D3D12_SHADER_VISIBILITY CAST(ShaderStage stage)
 
 Shader::Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro) :
     Super{},
-    IClass{ __FUNCTION__ },
     stage{ stage },
     visibility{ CAST(stage) },
     pushConstants{},
@@ -64,7 +63,7 @@ Shader::Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t 
 {
     if (type != ShaderBinaryType::DXIL)
     {
-		CLOG_ERROR("Unknown shader binary type. Only DXIL is supported!");
+		LOG::ERR("Unknown shader binary type. Only DXIL is supported!");
 		return;
     }
 

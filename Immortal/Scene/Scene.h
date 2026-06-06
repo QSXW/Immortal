@@ -3,8 +3,9 @@
 #include "Core.h"
 #include "Math/Vector.h"
 
-#include <entt/entt.hpp>
+#include "entt.hpp"
 
+#include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
 #include "Shared/IObject.h"
 #include "String/IString.h"
@@ -12,6 +13,9 @@
 #include "Component.h"
 #include "Graphics/Event/KeyEvent.h"
 #include "Render/Render2D.h"
+#include "Render/FrameGraph.h"
+#include "Render/MeshletTask.h"
+#include "Render/DeferredTask.h"
 #include <map>
 
 namespace Immortal
@@ -52,15 +56,19 @@ public:
 public:
     Scene(const String &name = "Untitled", bool isEditorScene = false);
 
-    virtual ~Scene();
+    ~Scene();
 
     void OnUpdate();
 
-    virtual void OnGuiRender();
+    void OnGuiRender();
 
     void OnEvent();
 
-    virtual void OnRenderRuntime();
+    void OnRenderRuntime();
+
+    void OnRenderEditor(const Camera &editorCamera);
+
+    void OnRender(const Camera &camera);
 
     void Render2DComponent(const Camera &camera, CommandBuffer *commandBuffer);
 
@@ -72,7 +80,7 @@ public:
 
     Object Query(const std::string &name);
 
-    virtual void SetViewportSize(const Vector2 &size);
+    void SetViewportSize(const Vector2 &size);
 
     const Vector2 &GetViewportSize() const;
 
@@ -85,6 +93,20 @@ public:
     bool Deserialize(const std::string &path);
 
     void OnKeyPressed(KeyPressedEvent &e);
+
+    void SetFrameGraph(const Ref<FrameGraph> &frameGraph);
+
+	/** When enabled, mesh geometry renders to an internal G-buffer; DeferredLighting task composites over the scene RT. */
+	void ConfigureDeferredPipeline(bool useDeferred, const Ref<MeshletTask> &meshlet, const Ref<DeferredTask> &deferred);
+
+	bool IsDeferredPipelineEnabled() const
+	{
+		return useDeferredPipeline;
+	}
+
+	void SetDeferredPBRResolve(bool enable);
+
+	bool IsDeferredPBRResolveEnabled() const;
 
     auto &Registry()
     {
@@ -106,17 +128,22 @@ public:
         return primaryCamera;
     }
 
-    virtual Ref<RenderTarget> GetRenderTarget() const
+    Ref<RenderTarget> GetRenderTarget() const
     {
-		return renderTarget;
+        return renderTarget;
     }
 
-	bool IsEditorScene() const { return isEditorScene; }
+	/** Object-id buffer for picking: forward path uses main RT attachment 1; deferred uses G-buffer attachment 2. */
+	Ref<Texture> GetObjectIdPickTexture() const;
 
-    const ClearValue *GetRenderTargetClearValues() const { return renderTargetClearValues.data(); }
-
-protected:
+private:
     void Init();
+
+    void LoadEnvironment();
+
+    void ReloadSkyBoxCube();
+
+    void Equirect2Cube();
 
 protected:
     String name;
@@ -130,15 +157,12 @@ protected:
         uint32_t environmentResolution = 2048;
         float exposure = 4.5f;
         float gamma    = 2.2f;
+        int kernalSize = 3;
+        float sigma = 1.5;
         bool changed   = true;
     } settings;
 
     Ref<RenderTarget> renderTarget;
-
-    std::vector<ClearValue> renderTargetClearValues = {
-        { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 0.0f } } },
-        { .depthStencil = { .depth = 1.0f, .stencil = 0 } },
-    };
 
     Vector2 viewportSize{ 0.0f, 0.0f };
 
@@ -146,8 +170,17 @@ protected:
 
     URef<Render2D> render2d;
 
-	bool isEditorScene = false;
+    Ref<FrameGraph> frameGraph;
 
+	bool useDeferredPipeline = false;
+
+	Ref<MeshletTask> meshletTask;
+
+	Ref<DeferredTask> deferredTask;
+
+	Ref<RenderTarget> gbufferTarget;
+
+private:
     SceneCamera *primaryCamera = nullptr;
 
     ObserverCamera observerCamera;

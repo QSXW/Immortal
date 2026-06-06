@@ -135,6 +135,7 @@ void Pipeline::ConstructRootParameter(Shader *shader, std::vector<RootParameter>
 					descriptorRangeType[k] = range.RangeType;
                 }
 
+				descriptorRangeType.emplace_back(range.RangeType);
 				ranges.emplace_back(range);
             }
 		}
@@ -281,12 +282,6 @@ UINT GraphicsPipeline::ConstructRenderTargetFormats(const std::vector<Format> &o
     {
 		depthDesc.DepthEnable = false;
     }
-    else if (!(flags & Pipeline::State::Depth))
-    {
-		depthDesc.DepthEnable    = TRUE;
-		depthDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-		depthDesc.DepthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
-    }
 
     if (flags & Pipeline::State::Blend)
 	{
@@ -340,34 +335,21 @@ void GraphicsPipeline::ConstructGraphicsPipeline(SuperShader **ppShader, size_t 
 
 void GraphicsPipeline::ConstructMeshPipeline(SuperShader **ppShader, size_t shaderCount, const InputElementDescription &description, const std::vector<Format> &outputDescription)
 {
-	DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN;
-	D3D12_DEPTH_STENCIL_DESC depthDesc = DepthStencilDescription{};
-	D3D12_BLEND_DESC blendDesc = BlendDescription{};
-	D3D12_RT_FORMAT_ARRAY rtvFormats{};
-	rtvFormats.NumRenderTargets = ConstructRenderTargetFormats(outputDescription, rtvFormats.RTFormats, dsvFormat, depthDesc, blendDesc);
-
-	RasterizerDescription rasterDesc{};
-	if (flags & Pipeline::State::ShadowPass)
-	{
-		rasterDesc.CullMode             = D3D12_CULL_MODE_NONE;
-		rasterDesc.DepthBias            = 4;
-		rasterDesc.DepthBiasClamp       = 0.0f;
-		rasterDesc.SlopeScaledDepthBias = 2.0f;
-		rasterDesc.DepthClipEnable      = FALSE;
-	}
-
 	PipelineMeshStateStream desc{
 	    .PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
-	    .BlendState            = BlendDescription{ blendDesc },
-	    .DepthStencilState     = DepthStencilDescription{ depthDesc },
-	    .DSVFormat             = PipelineStateValue<DXGI_FORMAT>{ dsvFormat },
-	    .RasterizerState       = rasterDesc,
-	    .RTVFormats            = rtvFormats,
-	    .SampleDesc            = DXGI_SAMPLE_DESC{ .Count = 1, .Quality = 0 },
-	    .SampleMask            = PipelineStateValue<UINT>{ UINT_MAX },
+	    .BlendState            = BlendDescription{},
+	    .DepthStencilState     = DepthStencilDescription{},
+	    .RasterizerState       = RasterizerDescription{},
+	    .SampleDesc            = DXGI_SAMPLE_DESC{
+            .Count   = 1,
+            .Quality = 0
+        }
     };
 
+    desc.SampleMask = UINT_MAX;
+
 	ConstructByteCodes(desc, ppShader, shaderCount);
+	desc.RTVFormats.NumRenderTargets = ConstructRenderTargetFormats(outputDescription, desc.RTVFormats.RTFormats, desc.DSVFormat, desc.DepthStencilState, desc.BlendState);
 
     desc.pRootSignature = (ID3D12RootSignature *)*rootSignature;
 	D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{

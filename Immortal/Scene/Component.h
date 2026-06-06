@@ -25,7 +25,6 @@
 namespace Immortal
 {
 
-class Camera;
 class Scene;
 struct Component
 {
@@ -183,12 +182,9 @@ struct MaterialComponent : public Component
         Reference() :
 		    Name{"Untitled"},
             AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
-			Specular{ 0.0f, 0.0f, 0.0f, 1.0f },
-			Ambient{ 0.0f, 0.0f, 0.0f, 1.0f },
-		    Emissive{ 0.0f, 0.0f, 0.0f, 1.0f },
-            Metallic{ 0.0f },
+            Metallic{ 1.0f },
             Roughness{ 1.0f },
-		    Opacity{ 1.0f }
+		    Opacity{1.0f}
         {
             Textures.Albedo    = Graphics::Preset()->Textures.White;
 			Textures.Normal    = Graphics::Preset()->Textures.Normal;
@@ -234,30 +230,8 @@ struct LightComponent : public Component
 {
     DEFINE_COMPONENT_TYPE(Light)
 
-    enum class Type : uint32_t
-    {
-        Directional = 0,
-        Point       = 1,
-        Spot        = 2,
-    };
-
-    Type LightType = Type::Directional;
-    /** Linear sRGB color from UI (typically 0–1 per channel); final brightness uses `Intensity`. */
     Vector4 Radiance{ 1.0f };
-    /** Multiplier on `Radiance.rgb` when building scene light buffers (HDR-friendly). */
-    float Intensity = 1.0f;
-    float Range = 10.0f;
-    float InnerConeAngle = 30.0f;
-    float OuterConeAngle = 45.0f;
     bool Enabled = true;
-    /** When true (directional only), scene renders a depth shadow map for deferred resolve. */
-    bool CastShadows = true;
-
-    /** World-space unit toward the light (N·L). Directional + Spot use the same -R*Forward axis (cone axis for spot); Point uses camera→light fallback when degenerate. */
-    Vector3 DirectionWorld(const Camera &camera, const TransformComponent &transform) const;
-
-    /** Matches Scene / MeshletTask Phong fallback when no lights exist. */
-    static Vector3 DefaultDirectionalLightDirection();
 };
 
 struct SceneComponent : public Component

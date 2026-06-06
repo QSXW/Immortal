@@ -157,7 +157,6 @@ static inline FormatElement FormatElementTable[] = {
     { Format::P216,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
     { Format::Y210,                VK_FORMAT_R16G16B16A16_UNORM,            DXF(DXGI_FORMAT_R16G16B16A16_UNORM ), MTLF(MTL::PixelFormatRGBA16Unorm          ), GL_FORMAT_RGB16,               FS_C(uint64_t, 1)  },
     { Format::Y216,                VK_FORMAT_R16G16B16A16_UNORM,            DXF(DXGI_FORMAT_R16G16B16A16_UNORM ), MTLF(MTL::PixelFormatRGBA816norm          ), GL_FORMAT_RGB16,               FS_C(uint64_t, 1)  },
-    { Format::YUVA420P,            VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
 };
 
 static const FormatElement &GetFormatElement(const Format &format)

@@ -8,52 +8,23 @@ function(target_link_runtime target_name project_binary_directory)
 endfunction()
 
 function(immortal_target_link_runtime_dependency target_name)
-	set(_dll_copy_cmds "")
-	set(_runtime_path_entries "")
-	foreach(_rt ${IMMORTAL_RUNTIME})
-		list(APPEND _dll_copy_cmds
-			COMMAND ${CMAKE_COMMAND}
-				"-DSRC=${_rt}"
-				"-DDST=$<TARGET_FILE_DIR:${target_name}>"
-				-P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/copy_if_exists.cmake")
-		if(_rt MATCHES "^\\$<\\$<CONFIG:([^>]+)>:(.+)>$")
-			set(_rt_config "${CMAKE_MATCH_1}")
-			set(_rt_path "${CMAKE_MATCH_2}")
-			get_filename_component(_rt_dir "${_rt_path}" DIRECTORY)
-			list(APPEND _runtime_path_entries "$<$<CONFIG:${_rt_config}>:${_rt_dir}>")
-		elseif(NOT _rt STREQUAL "")
-			get_filename_component(_rt_dir "${_rt}" DIRECTORY)
-			list(APPEND _runtime_path_entries "${_rt_dir}")
-		endif()
-	endforeach()
-	set(_runtime_copy_cmds
-		${_dll_copy_cmds}
-		COMMAND ${CMAKE_COMMAND} -E
-			copy_directory ${IMMORTAL_ASSET_DIR} $<TARGET_FILE_DIR:${target_name}>/Assets)
-	if(AgilitySDK_SHARED)
-		file(GLOB _agility_runtime_files "${AgilitySDK_SHARED}/*")
-		foreach(_agility_rt ${_agility_runtime_files})
-			list(APPEND _runtime_copy_cmds
-				COMMAND ${CMAKE_COMMAND}
-					"-DSRC=${_agility_rt}"
-					"-DDST=$<TARGET_FILE_DIR:${target_name}>/D3D12"
-					-P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/copy_if_exists.cmake")
-		endforeach()
-		list(APPEND _runtime_path_entries "${AgilitySDK_SHARED}")
-	endif()
 	add_custom_command(TARGET ${target_name} PRE_BUILD
-		${_runtime_copy_cmds})
-	add_custom_command(TARGET ${target_name} POST_BUILD
-		${_runtime_copy_cmds})
-	if(_runtime_path_entries)
-		list(REMOVE_DUPLICATES _runtime_path_entries)
-		string(JOIN "\\;" _runtime_path "${_runtime_path_entries}")
-		set_property(TARGET ${target_name} PROPERTY VS_DEBUGGER_ENVIRONMENT "PATH=${_runtime_path};%PATH%")
-	endif()
+	COMMAND ${CMAKE_COMMAND} -E
+		copy ${IMMORTAL_RUNTIME} $<TARGET_FILE_DIR:${target_name}>
+	COMMAND ${CMAKE_COMMAND} -E
+		copy_directory ${IMMORTAL_ASSET_DIR} $<TARGET_FILE_DIR:${target_name}>/Assets
+	COMMAND ${CMAKE_COMMAND} -E
+		copy_directory ${AgilitySDK_SHARED} $<TARGET_FILE_DIR:${target_name}>/D3D12)
 endfunction()
 
+# Output naming:
+#   COMPUTE  -> <basename>.dxil                    (no extra suffix)
+#   GRAPHICS -> <basename>_VS.dxil, <basename>_PS.dxil
+#
+# Copies all HLSL/*.hlsl to ${CMAKE_BINARY_DIR}/$<CONFIG>/Assets/Shaders/hlsl before dxc.
+# Usage: add_shader_library(<target> HLSL_DIR <path> OUTPUT_DIR <path> COMPUTE "..." GRAPHICS "...")
 function(add_shader_library TARGET)
-    cmake_parse_arguments(ARG "" "HLSL_DIR;OUTPUT_DIR" "COMPUTE;GRAPHICS;GRAPHICS_MESH" ${ARGN})
+    cmake_parse_arguments(ARG "" "HLSL_DIR;OUTPUT_DIR" "COMPUTE;GRAPHICS" ${ARGN})
     if(NOT ARG_HLSL_DIR)
         message(FATAL_ERROR "add_shader_library(${TARGET}): missing HLSL_DIR <directory with *.hlsl>")
     endif()
@@ -66,25 +37,8 @@ function(add_shader_library TARGET)
     if(NOT DEFINED ARG_GRAPHICS)
         set(ARG_GRAPHICS "")
     endif()
-    if(NOT DEFINED ARG_GRAPHICS_MESH)
-        set(ARG_GRAPHICS_MESH "")
-    endif()
     add_library(${TARGET} INTERFACE)
-    # Prefer a resolved dxc so CMake actually emits .dxil (PATH may omit Vulkan SDK / Windows Kit).
-    find_program(
-        IMMORTAL_DXC_EXECUTABLE
-        NAMES dxc dxc.exe
-        HINTS
-            "$ENV{VULKAN_SDK}/Bin"
-            "$ENV{VULKAN_SDK}/Bin32"
-    )
-    if(IMMORTAL_DXC_EXECUTABLE)
-        set(DXC_EXE "${IMMORTAL_DXC_EXECUTABLE}")
-        message(STATUS "${TARGET}: HLSL -> DXIL using `${DXC_EXE}`")
-    else()
-        set(DXC_EXE "dxc")
-        message(WARNING "${TARGET}: `dxc` not found via CMAKE_PROGRAM_PATH/VULKAN_SDK; falling back to `dxc` on PATH. Install Vulkan SDK or add dxc to PATH to generate .dxil.")
-    endif()
+    set(DXC_EXE "dxc")
     get_filename_component(_hlsl_src_norm "${ARG_HLSL_DIR}" ABSOLUTE)
     set(_copy_tgt "${TARGET}_copy_hlsl_sources")
     file(GLOB _hlsl_glob "${_hlsl_src_norm}/*.hlsl")
@@ -121,109 +75,23 @@ function(add_shader_library TARGET)
         add_dependencies(compile_${FILE_NAME}_hlsl ${_copy_tgt})
         set_property(TARGET compile_${FILE_NAME}_hlsl PROPERTY FOLDER "${TARGET}")
     endforeach()
-    set(_gfx_vs_built "")
-    foreach(_gfx_item ${ARG_GRAPHICS})
-        string(REPLACE "|" ";" _gfx_seg "${_gfx_item}")
-        list(LENGTH _gfx_seg _gfx_seg_len)
-        if(_gfx_seg_len GREATER 1)
-            list(GET _gfx_seg 0 HLSL_FILE)
-            list(GET _gfx_seg 1 _ps_entry)
-        else()
-            set(HLSL_FILE "${_gfx_item}")
-            set(_ps_entry "PSMain")
-        endif()
-        set(_gfx_dxc_def_flags "")
-        if(_gfx_seg_len GREATER 2)
-            list(GET _gfx_seg 2 _gfx_dxc_define_pair)
-            list(APPEND _gfx_dxc_def_flags "-D${_gfx_dxc_define_pair}")
-        endif()
-        get_filename_component(_gfx_hlsl_abs "${HLSL_FILE}" ABSOLUTE)
-        get_filename_component(FILE_NAME "${_gfx_hlsl_abs}" NAME_WE)
+    foreach(HLSL_FILE ${ARG_GRAPHICS})
+        get_filename_component(FILE_NAME "${HLSL_FILE}" NAME_WE)
         set(VS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_VS.dxil")
-        if(_ps_entry STREQUAL "PSMain")
-            set(PS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_PS.dxil")
-        else()
-            set(PS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_${_ps_entry}.dxil")
-        endif()
-        string(MAKE_C_IDENTIFIER "${_ps_entry}" _ps_id)
-        set(_gfx_vs_target "compile_${FILE_NAME}_gfx_vs_hlsl")
-        list(FIND _gfx_vs_built "${_gfx_hlsl_abs}" _gfx_vs_idx)
-        if(_gfx_vs_idx LESS 0)
-            list(APPEND _gfx_vs_built "${_gfx_hlsl_abs}")
-            add_custom_target(
-                ${_gfx_vs_target}
-                COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} ${FILE_NAME}.hlsl -> VS dxil (vs_6_0 VSMain)"
-                COMMAND "${DXC_EXE}" "-Wignored-attributes" ${_gfx_dxc_def_flags} "-T" "vs_6_0" "-E" "VSMain" "-Fo" "${VS_OUT}" "${_gfx_hlsl_abs}"
-                DEPENDS "${_gfx_hlsl_abs}"
-                COMMENT "Compile ${FILE_NAME}.hlsl (vs_6_0 VSMain) -> ${VS_OUT}"
-            )
-            list(APPEND _shader_agg_deps ${_gfx_vs_target})
-            add_dependencies(${_gfx_vs_target} ${_copy_tgt})
-            set_property(TARGET ${_gfx_vs_target} PROPERTY FOLDER "${TARGET}")
-        endif()
+        set(PS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_PS.dxil")
+
         add_custom_target(
-            compile_${FILE_NAME}_gfx_${_ps_id}_hlsl
-            COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} ${FILE_NAME}.hlsl -> PS dxil (ps_6_0 ${_ps_entry})"
-            COMMAND "${DXC_EXE}" "-Wignored-attributes" ${_gfx_dxc_def_flags} "-T" "ps_6_0" "-E" "${_ps_entry}" "-Fo" "${PS_OUT}" "${_gfx_hlsl_abs}"
-            DEPENDS "${_gfx_hlsl_abs}"
-            COMMENT "Compile ${FILE_NAME}.hlsl (ps_6_0 ${_ps_entry}) -> ${PS_OUT}"
+            compile_${FILE_NAME}_gfx_hlsl
+            COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} ${FILE_NAME}.hlsl -> VS/PS dxil"
+            COMMAND "${DXC_EXE}" "-Wignored-attributes" "-T" "vs_6_0" "-E" "VSMain" "-Fo" "${VS_OUT}" "${HLSL_FILE}"
+            COMMAND "${DXC_EXE}" "-Wignored-attributes" "-T" "ps_6_0" "-E" "PSMain" "-Fo" "${PS_OUT}" "${HLSL_FILE}"
+            DEPENDS "${HLSL_FILE}"
+            COMMENT "Compile ${FILE_NAME}.hlsl (vs_6_0 VSMain, ps_6_0 PSMain)"
         )
-        list(APPEND _shader_agg_deps compile_${FILE_NAME}_gfx_${_ps_id}_hlsl)
-        add_dependencies(compile_${FILE_NAME}_gfx_${_ps_id}_hlsl ${_copy_tgt})
-        add_dependencies(compile_${FILE_NAME}_gfx_${_ps_id}_hlsl ${_gfx_vs_target})
-        set_property(TARGET compile_${FILE_NAME}_gfx_${_ps_id}_hlsl PROPERTY FOLDER "${TARGET}")
+        list(APPEND _shader_agg_deps compile_${FILE_NAME}_gfx_hlsl)
+        add_dependencies(compile_${FILE_NAME}_gfx_hlsl ${_copy_tgt})
+        set_property(TARGET compile_${FILE_NAME}_gfx_hlsl PROPERTY FOLDER "${TARGET}")
     endforeach()
-
-    # Mesh + pixel (same source file; MS compiled once per file, PS per GRAPHICS_MESH line).
-    set(_mesh_ms_built "")
-    foreach(_mesh_item ${ARG_GRAPHICS_MESH})
-        string(REPLACE "|" ";" _mesh_seg "${_mesh_item}")
-        list(LENGTH _mesh_seg _mesh_seg_len)
-        if(_mesh_seg_len GREATER 1)
-            list(GET _mesh_seg 0 HLSL_FILE)
-            list(GET _mesh_seg 1 _ps_entry)
-        else()
-            set(HLSL_FILE "${_mesh_item}")
-            set(_ps_entry "PSMain")
-        endif()
-        get_filename_component(_mesh_hlsl_abs "${HLSL_FILE}" ABSOLUTE)
-        get_filename_component(FILE_NAME "${_mesh_hlsl_abs}" NAME_WE)
-        set(MS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_MS.dxil")
-        if(_ps_entry STREQUAL "PSMain")
-            set(PS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_PS.dxil")
-        else()
-            set(PS_OUT "${ARG_OUTPUT_DIR}/${FILE_NAME}_${_ps_entry}.dxil")
-        endif()
-
-        list(FIND _mesh_ms_built "${_mesh_hlsl_abs}" _ms_idx)
-        if(_ms_idx LESS 0)
-            list(APPEND _mesh_ms_built "${_mesh_hlsl_abs}")
-            add_custom_target(
-                compile_${FILE_NAME}_mesh_ms_hlsl
-                COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} ${FILE_NAME}.hlsl -> MS dxil (ms_6_5 MSMain)"
-                COMMAND "${DXC_EXE}" "-Wignored-attributes" "-T" "ms_6_5" "-E" "MSMain" "-Fo" "${MS_OUT}" "${_mesh_hlsl_abs}"
-                DEPENDS "${_mesh_hlsl_abs}"
-                COMMENT "Compile ${FILE_NAME}.hlsl (ms_6_5 MSMain) -> ${MS_OUT}"
-            )
-            list(APPEND _shader_agg_deps compile_${FILE_NAME}_mesh_ms_hlsl)
-            add_dependencies(compile_${FILE_NAME}_mesh_ms_hlsl ${_copy_tgt})
-            set_property(TARGET compile_${FILE_NAME}_mesh_ms_hlsl PROPERTY FOLDER "${TARGET}")
-        endif()
-
-        string(MAKE_C_IDENTIFIER "${_ps_entry}" _ps_id)
-        add_custom_target(
-            compile_${FILE_NAME}_mesh_ps_${_ps_id}_hlsl
-            COMMAND ${CMAKE_COMMAND} -E echo "${DXC_EXE} ${FILE_NAME}.hlsl -> PS dxil (ps_6_1 ${_ps_entry})"
-            COMMAND "${DXC_EXE}" "-Wignored-attributes" "-T" "ps_6_1" "-E" "${_ps_entry}" "-Fo" "${PS_OUT}" "${_mesh_hlsl_abs}"
-            DEPENDS "${_mesh_hlsl_abs}"
-            COMMENT "Compile ${FILE_NAME}.hlsl (ps_6_1 ${_ps_entry}) -> ${PS_OUT}"
-        )
-        list(APPEND _shader_agg_deps compile_${FILE_NAME}_mesh_ps_${_ps_id}_hlsl)
-        add_dependencies(compile_${FILE_NAME}_mesh_ps_${_ps_id}_hlsl ${_copy_tgt})
-        add_dependencies(compile_${FILE_NAME}_mesh_ps_${_ps_id}_hlsl compile_${FILE_NAME}_mesh_ms_hlsl)
-        set_property(TARGET compile_${FILE_NAME}_mesh_ps_${_ps_id}_hlsl PROPERTY FOLDER "${TARGET}")
-    endforeach()
-
     add_custom_target(
         ${TARGET}_build_shaders
         DEPENDS ${_shader_agg_deps}

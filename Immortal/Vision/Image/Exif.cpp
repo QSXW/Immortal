@@ -136,10 +136,6 @@ void IFDEntry::ReadValues(ByteStream &bs, bool be)
 			valid = ReadValue<uint64_t>(bs, be);
 			break;
 
-		case IFDType::IFD:
-			valid = ReadValue<uint32_t>(bs, be);
-			break;
-
 		default:
 			break;
 	}
@@ -152,7 +148,7 @@ void IFDEntry::ReadValues(ByteStream &bs, bool be)
 
 ExifReader::ExifReader() :
     IFD{},
-    flags{},
+    flags{flags},
     be{}
 {
 
@@ -161,8 +157,6 @@ ExifReader::ExifReader() :
 ExifReader::ExifReader(const uint8_t *data, size_t size, ExifFlags flags) :
     ExifReader{}
 {
-	this->flags = flags;
-
 	//for (int i = 0; i < SL_ARRAY_LENGTH(IFD); i++)
 	//{
 	//	IFD[i] = std::pmr::unordered_map<uint16_t, IFDEntry>{allocator};
@@ -188,25 +182,10 @@ ExifReader::ExifReader(const uint8_t *data, size_t size, ExifFlags flags) :
 			auto it = IFD[i].find(0x014a);
 			if (it != IFD[i].end())
 			{
-				auto &entry = it->second;
-				size_t count = entry.GetLength();
-				if (count == 0)
+				offsetToFirstIDF = it->second.GetValue<uint32_t>();
+				if (ParseIFD(bs, SubIFD0 + i, offsetToFirstIDF) != CodecError::Success)
 				{
-					count = 1;
-				}
-
-				const uint32_t *offsets = entry.values.empty() ? &entry.offset : (const uint32_t *)entry.values.data();
-				for (size_t j = 0; j < count && SubIFD0 + j <= SubIFD3; j++)
-				{
-					offsetToFirstIDF = offsets[j];
-					if (!offsetToFirstIDF)
-					{
-						continue;
-					}
-					if (ParseIFD(bs, SubIFD0 + j, offsetToFirstIDF) != CodecError::Success)
-					{
-						return;
-					}
+					return;
 				}
 			}
 		}
@@ -359,7 +338,6 @@ CodecError ExifReader::ParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNex
 		{
 			entry = {bs, be};
 		}
-		else
 		{
 			entry = {bs};
 		}
@@ -371,8 +349,11 @@ CodecError ExifReader::ParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNex
 			return CodecError::CorruptedBitstream;
 		}
 
-		int targetIndex = GetIndexByTag(tag);
-		bool isIFD = type == IFDType::IFD || targetIndex >= 0;
+		bool isIFD = type == IFDType::IFD || 
+			         tag  == EXIF_IFD ||
+			         tag  == GPS_IFD  ||
+			         tag  == INTEROPERABILITY_IFD ||
+		             tag  == MAKERNOTE_TAG;
 		if (isIFD && !entry.offset)
 		{
 			return CodecError::CorruptedBitstream;
@@ -396,14 +377,9 @@ CodecError ExifReader::ParseIFD(ByteStream &bs, int index, uint32_t *offsetOfNex
 		if (isIFD)
 		{
 			entry.type = IFDType::IFD;
-			if (targetIndex >= 0 && !(flags & ExifFlags::DisabledRecursive))
+			if (!(flags & ExifFlags::DisabledRecursive))
 			{
-				uint32_t childNextIFD = 0;
-				ParseIFD(_bs, targetIndex, &childNextIFD);
-			}
-			else if (targetIndex < 0)
-			{
-				entry.ReadValues(_bs, be);
+				ParseIFD(_bs, GetIndexByTag(tag), offsetOfNextIFD);
 			}
 		}
 		else

@@ -5,19 +5,19 @@
 
 namespace Immortal
 {
-
-Vector3 ObserverCamera::GetWorldPosition() const
-{
-	return position;
-}
-
 void ObserverCamera::UpdateViewMatrix()
 {
     Matrix4 rotationMatrix    = Vector::Rotate(rotation);
     Matrix4 translationMatrix = Vector::Translate(position);
 
-	/* World-from-camera = T * R, view = inverse (matches EditorCamera / SceneCamera entity convention). */
-	Camera::view = Vector::Inverse(translationMatrix * rotationMatrix);
+    if (type == Type::FirstPerson)
+    {
+        Camera::view = rotationMatrix * translationMatrix;
+    }
+    else
+    {
+        Camera::view = translationMatrix * rotationMatrix;
+    }
 
     updated = true;
 }

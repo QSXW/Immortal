@@ -65,14 +65,6 @@ public:
 
 	virtual void SetBlendFactor(const float factor[4]) = 0;
 
-	/** Vulkan: vkCmdSetDepthBias. D3D12/Metal/OpenGL: optional no-op (bias may be baked in PSO). */
-	virtual void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
-	{
-		(void)depthBiasConstantFactor;
-		(void)depthBiasClamp;
-		(void)depthBiasSlopeFactor;
-	}
-
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) = 0;
 
 	virtual void BeginRenderTarget(RenderTarget *renderTarget, const ClearValue *pClearValues) = 0;
@@ -133,32 +125,6 @@ public:
 	virtual void ResolveImage(Texture *dst, Texture *src)
 	{
 
-	}
-
-	/** Full-subresource color copy; textures must match in format, size, mips, and layers. */
-	virtual void CopyTexture(Texture *dst, Texture *src)
-	{
-		(void)dst;
-		(void)src;
-	}
-
-	/**
-	 * @brief Insert a UAV (unordered-access) memory barrier so subsequent
-	 *        dispatches/draws see the writes from previous dispatches.
-	 *
-	 * Required between successive compute dispatches that write the same
-	 * UAV resource (e.g. a multi-pass post-processing chain or a per-layer
-	 * compositor). Backends that already serialize compute work (D3D11,
-	 * single-queue OpenGL) can leave the default no-op.
-	 */
-	virtual void MemoryBarrier(Texture *texture)
-	{
-		(void)texture;
-	}
-
-	void BeginEvent(const std::string &event)
-	{
-		BeginEvent(event.c_str(), event.size() + 1);
 	}
 };
 

@@ -75,7 +75,6 @@ protected:
 	std::atomic_bool waiting;
 
 	std::condition_variable condition;
-	std::mutex conditionMutex;
 
 	Timer timer;
 
@@ -124,20 +123,7 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 		{
 			case MediaType::Video:
 				videoEncodeInfo = encodeInfo;
-				if (image)
-				{
-					videoEncoder = Vision::SelectSuitableCodec(filepath, false, imageEncodeInfo);
-				}
-				else
-				{
-					Ref<Codec> encoder = new Vision::FFCodec{encodeInfo};
-					auto ffCodec = encoder.InterpretAs<Vision::FFCodec>();
-					if (!ffCodec || !*ffCodec)
-					{
-						return;
-					}
-					videoEncoder = encoder;
-				}
+				videoEncoder = image ? Vision::SelectSuitableCodec(filepath, false, imageEncodeInfo) : new Vision::FFCodec{encodeInfo};
 				codecs[i] = videoEncoder.Get();
 				streamIndex[int(MediaType::Video)] = i;
 				break;
@@ -145,13 +131,7 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 			case MediaType::Audio:
 				if (!image)
 				{
-					Ref<Codec> encoder = new Vision::FFCodec{encodeInfo};
-					auto ffCodec = encoder.InterpretAs<Vision::FFCodec>();
-					if (!ffCodec || !*ffCodec)
-					{
-						return;
-					}
-					audioEncoder = encoder;
+					audioEncoder = new Vision::FFCodec{encodeInfo};
 					codecs[i] = audioEncoder.Get();
 					streamIndex[int(MediaType::Audio)] = i;
 				}
@@ -200,7 +180,6 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 		CodedFrame audioFrame;
 		while (true)
 		{
-			bool didWork = false;
 			bool video = (!audioEncoder ||
 			             (CompareTimestamp(pts, videoTimebase, audioSamples, audioTimebase) <= 0) || audioQueue.empty());
 			if (frameInQueue && videoEncoder && video)
@@ -220,7 +199,6 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 					}
 #endif
 					frameInQueue--;
-					didWork = true;
 				}
 			}
 			else
@@ -229,7 +207,6 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 				{
 					audioSamples = audioFrame.GetTimestamp();
 					muxer->Write(audioFrame, streamIndex[(int)MediaType::Audio]);
-					didWork = true;
 				}
 			}
 			if ((!videoEncoder || (videoFinished && videoQueue.empty() && videoEncodeThread.TaskSize() == 0)) &&
@@ -240,16 +217,6 @@ VideoOutput::VideoOutput(const String &filepath, const CodecInfo *pEncodeInfo, u
 				LOG::INFO("Encoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
 #endif
 				break;
-			}
-			if (!didWork)
-			{
-				std::unique_lock lock{ conditionMutex };
-				condition.wait_for(lock, std::chrono::milliseconds(3), [this] {
-					return frameInQueue.load() > 0 ||
-					       !audioQueue.empty() ||
-					       (!videoEncoder || videoFinished.load()) ||
-					       (!audioEncoder || audioFinished.load());
-				});
 			}
 		}
 		muxer->Close();
@@ -285,10 +252,8 @@ void VideoOutput::EnqueueVideoFrame(Picture &&_picture)
 			{
 				frameInQueue++;
 				videoQueue.enqueue(std::move(codedFrame));
-				condition.notify_one();
 			}
 			videoFinished = true;
-			condition.notify_one();
 			return;
 		}
 
@@ -306,13 +271,11 @@ void VideoOutput::EnqueueVideoFrame(Picture &&_picture)
 		{
 			frameInQueue++;
 			videoQueue.enqueue(std::move(codedFrame));
-			condition.notify_one();
 		}
 		while (codedFrame = videoEncoder->GetCodedFrame())
 		{
 			frameInQueue++;
 			videoQueue.enqueue(std::move(codedFrame));
-			condition.notify_one();
 		}
 	});
 
@@ -340,10 +303,8 @@ void VideoOutput::EnqueueAudioFrame(Picture &&_picture)
 			while (codedFrame = audioEncoder->GetCodedFrame())
 			{
 				audioQueue.enqueue(std::move(codedFrame));
-				condition.notify_one();
 			}
 			audioFinished = true;
-			condition.notify_one();
 			return;
 		}
 
@@ -360,7 +321,6 @@ void VideoOutput::EnqueueAudioFrame(Picture &&_picture)
 		while (codedFrame = audioEncoder->GetCodedFrame())
 		{
 			audioQueue.enqueue(std::move(codedFrame));
-			condition.notify_one();
 		}
 	});
 }

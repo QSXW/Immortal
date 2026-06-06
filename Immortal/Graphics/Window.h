@@ -55,20 +55,7 @@ public:
 
     virtual void Show() = 0;
 
-    virtual void SetFullscreen(bool value) = 0;
-
-    virtual bool IsFullscreen() const = 0;
-
-	virtual void SetIcon(const std::string &filepath) = 0;
-
-	/** Win32 自定义标题栏按钮：最小化 / 最大化↔还原（无边框时可带客户端过渡动画） */
-	virtual void CaptionButtonMinimize()
-	{
-	}
-
-	virtual void CaptionButtonMaximizeOrRestore()
-	{
-	}
+    virtual void SetIcon(const std::string &filepath) = 0;
 
 public:
     Type GetType() const
@@ -82,7 +69,7 @@ protected:
 public:
 	static Window *CreateInstance(Anonymous handle, WindowType type);
 
-	static Window *CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type = WindowType::None, bool borderlessWindow = false);
+	static Window *CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type = WindowType::None);
 };
 
 }

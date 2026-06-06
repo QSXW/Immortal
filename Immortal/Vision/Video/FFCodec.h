@@ -157,8 +157,6 @@ public:
 
     CodecError InitializeDecoder(int codecId, const AVStream *stream = nullptr);
 
-    CodecError ReopenDecoderAsSoftware();
-
     Rational GetFramerate() const;
 
     Rational GetTimebase() const;
@@ -211,8 +209,6 @@ protected:
 
     DisplayOrientation displayOrientation;
 
-    Rational sampleAspectRatio;
-
     DecodingPreference preference;
 
     AudioFifo fifo;
@@ -228,14 +224,6 @@ protected:
     int numRescaledSamples = 0;
 
     bool isEncoder = false;
-
-    int64_t audioNextPtsSync  = INT64_MIN;
-    int64_t audioNextPtsTbNum = 0;
-    int64_t audioNextPtsTbDen = 1;
-
-    const AVStream *decoderStream = nullptr;
-    int decoderCodecId = 0;
-    bool hardwareFallbackAttempted = false;
 #endif // HAVE_FFMPEG
 };
 
@@ -268,26 +256,10 @@ public:
     }
 };
 
-using FFTiffCodec      = TFFImageCodec<CodecId::TIFF>;
-using FFPngCodec       = TFFImageCodec<CodecId::PNG>;
-using FFWebpCodec      = TFFImageCodec<CodecId::WEBP>;
-using FFJpegxlCodec    = TFFImageCodec<CodecId::JPEGXL>;
-using FFAvifCodec      = TFFImageCodec<CodecId::AVIF>;
-using AVIFCodec        = FFAvifCodec;
-using FFMjpegCodec     = TFFImageCodec<CodecId::MJPEG>;
-using FFJpeg2000Codec  = TFFImageCodec<CodecId::JPEG2000>;
-using FFDPXCodec       = TFFImageCodec<CodecId::DPX>;
-using FFTargaCodec     = TFFImageCodec<CodecId::TARGA>;
-using FFPCXCodec       = TFFImageCodec<CodecId::PCX>;
-using FFExrCodec       = TFFImageCodec<CodecId::EXR>;
-using FFSgiCodec       = TFFImageCodec<CodecId::SGI>;
-using FFSunRasterCodec = TFFImageCodec<CodecId::SUNRASTER>;
-using FFJpegLsCodec    = TFFImageCodec<CodecId::JPEGLS>;
-using FFFitsCodec      = TFFImageCodec<CodecId::FITS>;
-using FFIffIlbmCodec   = TFFImageCodec<CodecId::IFF_ILBM>;
-using FFXbmCodec       = TFFImageCodec<CodecId::XBM_IMAGE>;
-using FFXfaceCodec     = TFFImageCodec<CodecId::XFACE>;
-using FFQdrawCodec     = TFFImageCodec<CodecId::QDRAW>;
+using FFTiffCodec   = TFFImageCodec<CodecId::TIFF>;
+using FFPngCodec    = TFFImageCodec<CodecId::PNG>;
+using FFWebpCodec   = TFFImageCodec<CodecId::WEBP>;
+using FFJpegxlCodec = TFFImageCodec<CodecId::JPEGXL>;
 
 }
 }

@@ -23,8 +23,7 @@ DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
     descriptorHeaps{},
     descriptors{},
     descriptorCount{},
-    indexMap{},
-    pipeline{ pipeline }
+    indexMap{}
 {
 	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorHeaps); i++)
 	{
@@ -103,21 +102,6 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
 
 	auto &rangeType = rangeTypes[slot];
 	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = rangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV ? texture->GetUAVDescriptor(0) : texture->GetDescriptor();
-	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptorHandle, type);
-}
-
-void DescriptorSet::SetUavMip(uint32_t slot, SuperTexture *_texture, uint32_t mipSlice)
-{
-	Texture *texture = InterpretAs<Texture>(_texture);
-	constexpr auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	auto &rangeType = rangeTypes[slot];
-	if (rangeType != D3D12_DESCRIPTOR_RANGE_TYPE_UAV)
-	{
-		return;
-	}
-	const uint32_t maxMip = texture->GetMipLevels() > 0u ? (uint32_t)texture->GetMipLevels() - 1u : 0u;
-	const uint32_t mip = mipSlice > maxMip ? maxMip : mipSlice;
-	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = texture->GetUAVDescriptor(mip);
 	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptorHandle, type);
 }
 

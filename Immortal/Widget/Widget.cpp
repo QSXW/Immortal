@@ -26,164 +26,6 @@ void SetWidgetArrows(ImFont *font, const char *left, const char *right, const ch
 	Icon::Arrows[1] = down;
 }
 
-namespace
-{
-
-constexpr float kRightClickMenuRounding = 6.f;
-constexpr float kRightClickItemRounding = 6.f;
-constexpr float kRightClickPad = 8.f;
-constexpr float kRightClickTextIndent = 36.f;
-constexpr float kRightClickItemWidth = 304.f;
-constexpr float kRightClickItemHeight = 34.f;
-constexpr ImU32 kRightClickSepCol = IM_COL32(226, 226, 230, 255);
-constexpr ImU32 kRightClickBorderCol = IM_COL32(198, 198, 204, 110);
-
-float RightClickPopupContentHeight(const std::vector<WRightClickPopup::Item> &items)
-{
-	const float sepBlockH = kRightClickPad + ImGui::GetStyle().SeparatorSize + kRightClickPad;
-	float contentH = 0.f;
-	for (const auto &entry : items)
-	{
-		contentH += entry.text.empty() ? sepBlockH : kRightClickItemHeight;
-	}
-	return contentH;
-}
-
-ImVec2 RightClickPopupWindowSize(const std::vector<WRightClickPopup::Item> &items)
-{
-	return { kRightClickItemWidth + kRightClickPad * 2.f, RightClickPopupContentHeight(items) + kRightClickPad * 2.f };
-}
-
-ImVec2 ClampRightClickSubmenuPos(const ImRect &rowBb, const ImVec2 &size)
-{
-	ImVec2 pos{ rowBb.Max.x + 2.f, rowBb.Min.y - kRightClickPad };
-	const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-	if (pos.x + size.x > displaySize.x)
-	{
-		pos.x = ImMax(0.f, rowBb.Min.x - size.x - 2.f);
-	}
-	if (pos.y + size.y > displaySize.y)
-	{
-		pos.y = ImMax(0.f, displaySize.y - size.y);
-	}
-	return pos;
-}
-
-WRightClickPopup::Item TranslateRightClickPopupItem(const WRightClickPopup::Item &item)
-{
-	WRightClickPopup::Item translated;
-	translated.text = item.text.empty() ? item.text : Translator::Translate(item.text);
-	translated.callback = item.callback;
-	translated.children.reserve(item.children.size());
-	for (const auto &child : item.children)
-	{
-		translated.children.emplace_back(TranslateRightClickPopupItem(child));
-	}
-	return translated;
-}
-
-bool DrawRightClickPopupItems(const std::vector<WRightClickPopup::Item> &items, ImU32 textF, ImU32 hoverF, ImGuiWindowFlags windowFlags)
-{
-	bool activated = false;
-	const float lineHeight = ImGui::GetTextLineHeight();
-	for (const auto &item : items)
-	{
-		ImGuiWindow *window = ImGui::GetCurrentWindow();
-		if (window->SkipItems)
-		{
-			break;
-		}
-
-		if (item.text.empty())
-		{
-			ImGui::Dummy(ImVec2(kRightClickItemWidth, kRightClickPad));
-			ImGui::Separator();
-			ImGui::Dummy(ImVec2(kRightClickItemWidth, kRightClickPad));
-			continue;
-		}
-
-		ImGui::PushID(&item);
-		const ImGuiID rowId = window->GetID("##row");
-		const bool hasChildren = !item.children.empty();
-		const ImGuiID submenuId = hasChildren ? window->GetID("##submenu") : 0;
-		const bool submenuOpen = hasChildren && ImGui::IsPopupOpen(submenuId, 0);
-		const ImVec2 pos = window->DC.CursorPos;
-		const ImVec2 size = ImVec2(kRightClickItemWidth, kRightClickItemHeight);
-		const ImRect bb(pos, pos + size);
-
-		ImGui::ItemSize(size, 0.f);
-		if (!ImGui::ItemAdd(bb, rowId))
-		{
-			ImGui::PopID();
-			continue;
-		}
-
-		bool held = false;
-		bool buttonHovered = false;
-		const bool buttonPressed = ImGui::ButtonBehavior(bb, rowId, &buttonHovered, &held);
-		const bool hovered = buttonHovered ||
-			(ImGui::IsMouseHoveringRect(bb.Min, bb.Max, false) &&
-			 ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
-		const bool pressed = buttonPressed || (hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left));
-		const bool rowActive = hovered || submenuOpen;
-		window->DrawList->AddRectFilled(bb.Min, bb.Max, rowActive ? hoverF : IM_COL32(0, 0, 0, 0), kRightClickItemRounding);
-
-		const float textY = bb.Min.y + ImMax(0.f, (kRightClickItemHeight - lineHeight) * 0.5f);
-		window->DrawList->PushClipRect(bb.Min, bb.Max, true);
-		window->DrawList->AddText(ImVec2(bb.Min.x + kRightClickTextIndent, textY), textF, item.text.c_str());
-		if (hasChildren)
-		{
-			const char *arrow = ">";
-			const ImVec2 arrowSize = ImGui::CalcTextSize(arrow);
-			window->DrawList->AddText(ImVec2(bb.Max.x - kRightClickPad - arrowSize.x, textY), textF, arrow);
-		}
-		window->DrawList->PopClipRect();
-
-		if (hasChildren)
-		{
-			if (hovered || pressed)
-			{
-				ImGui::OpenPopupEx(submenuId);
-			}
-			if (hovered || submenuOpen)
-			{
-				const ImVec2 submenuSize = RightClickPopupWindowSize(item.children);
-				ImGui::SetNextWindowPos(ClampRightClickSubmenuPos(bb, submenuSize), ImGuiCond_Always);
-				ImGui::SetNextWindowSize(submenuSize);
-			}
-			if (ImGui::BeginPopupEx(submenuId, windowFlags))
-			{
-				if (DrawRightClickPopupItems(item.children, textF, hoverF, windowFlags))
-				{
-					activated = true;
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
-		}
-		else
-		{
-			if (hovered && ImGui::GetCurrentContext()->OpenPopupStack.Size > ImGui::GetCurrentContext()->BeginPopupStack.Size)
-			{
-				ImGui::ClosePopupToLevel(ImGui::GetCurrentContext()->BeginPopupStack.Size, true);
-			}
-			if (pressed)
-			{
-				if (item.callback)
-				{
-					item.callback();
-				}
-				activated = true;
-			}
-		}
-
-		ImGui::PopID();
-	}
-	return activated;
-}
-
-}
-
 std::unordered_map<std::string, Widget *> Widget::Identify2WidgetTracker;
 std::unordered_map<Widget *, std::string> Widget::Widget2IdentifyTracker;
 
@@ -275,19 +117,6 @@ WFrame::WFrame(Widget *parent) :
 
 }
 
-String WFrame::BeginTitle() const
-{
-	if (windowId.empty())
-	{
-		return text;
-	}
-
-	std::string title{ text.c_str(), text.size() };
-	title += "###";
-	title += windowId.c_str();
-	return String{ title, StringEncoding::UTF8 };
-}
-
 bool WFrame::Draw()
 {
 	if (!visible)
@@ -305,8 +134,7 @@ bool WFrame::Draw()
 		{ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom}}
 	};
 
-	const String beginTitle = BeginTitle();
-	const char *str = beginTitle.c_str();
+	const char *str = text.c_str();
 	ImVec2 windowPos;
 	ImVec2 windowSize;
 	float titleBarHeight = 0;
@@ -364,43 +192,52 @@ WRightClickPopup::WRightClickPopup(Widget *parent) :
 	using tweeny::easing;
 	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::quadraticInOut);
 
-	Color(IM_COL32(42, 42, 44, 255));
-	BackgroundColor(IM_COL32(252, 252, 254, 247));
-	HoveredColor(IM_COL32(218, 218, 221, 255));
+	Color(0xff020202);
+	BackgroundColor(0xffffffff);
+	HoveredColor(0x55d89624);
 }
 
 bool WRightClickPopup::Draw()
 {
 	using namespace ImGui;
+	constexpr float kItemWidth  = 240.0f;
+	constexpr float kItemHeight = 28.0f;
+	constexpr float kPadding    = 5.0f;
+
 	if (IsMouseReleased(ImGuiMouseButton_Right) && IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
 	{
 		mousePos = ImGui::GetMousePos();
 		Open();
 	}
-	return DrawForOwner(ImGui::GetItemID());
-}
 
-bool WRightClickPopup::DrawForOwner(ImGuiID ownerForGate)
-{
-	using namespace ImGui;
-	const ImGuiID compareId = ownerForGate ? ownerForGate : ImGui::GetItemID();
-	if (activeItemId != compareId && !ManualOpen())
+	auto itemId = ImGui::GetItemID();
+	if (activeItemId != itemId)
 	{
 		return false;
 	}
 
-	ImGuiContext &g = *GImGui;
-	ImGuiWindow *window = g.CurrentWindow;
+	StyleColorStack<uint32_t> styleColorStack{
+		{ImGuiCol_PopupBg, backgroundColor},
+		{ImGuiCol_Separator, color},
+	};
+
+	StyleVarStack<float> styleVarStack{
+		{ImGuiStyleVar_PopupRounding, 4.0f},
+		{ImGuiStyleVar_PopupBorderSize, 0.0f},
+		{ImGuiStyleVar_WindowShadowSize, 4.0f}};
+
+	ImGuiContext &g      = *GImGui;
+	ImGuiWindow  *window = g.CurrentWindow;
 	if (window->SkipItems)
 	{
 		return false;
 	}
 
-	WidgetLock lock{ this };
+	WidgetLock lock{this};
 	id = window->GetID(this);
 	if (ManualOpen())
 	{
-		ImGui::OpenPopupEx(id, ImGuiPopupFlags_MouseButtonRight);
+		ImGui::OpenPopupEx(id, 1);
 		ManualOpen(false);
 	}
 
@@ -412,65 +249,87 @@ bool WRightClickPopup::DrawForOwner(ImGuiID ownerForGate)
 		return false;
 	}
 
-	const float fade = ImClamp(tween.step(7.f * Time::DeltaTime), 0.f, 1.f);
-	auto mulAlpha = [](ImU32 col, float f) -> ImU32 {
-		ImVec4 v = ImGui::ColorConvertU32ToFloat4(col);
-		v.w *= f;
-		return ImGui::ColorConvertFloat4ToU32(v);
-	};
-	const ImU32 popupBgF = mulAlpha(backgroundColor, fade);
-	const ImU32 borderF = mulAlpha(kRightClickBorderCol, fade);
-	const ImU32 sepF = mulAlpha(kRightClickSepCol, fade);
-	const ImU32 textF = mulAlpha(color, fade);
-	const ImU32 hoverF = mulAlpha(hoveredColor, fade);
-
-	StyleColorStack<uint32_t> styleColorStack{
-	    { ImGuiCol_PopupBg, popupBgF },
-	    { ImGuiCol_Border, borderF },
-	    { ImGuiCol_Separator, sepF },
-	};
-
-	StyleVarStack<float> styleVarStack{
-	    { ImGuiStyleVar_PopupRounding, kRightClickMenuRounding },
-	    { ImGuiStyleVar_PopupBorderSize, 1.0f },
-	    { ImGuiStyleVar_WindowShadowSize, 2.0f },
-	};
-
-	ImVec2 windowSize = RightClickPopupWindowSize(items);
+	ImVec2 windowSize = {kItemWidth + kPadding * 2, kItemHeight * std::max(items.size(), size_t(1)) + kPadding * 2};
 	if (mousePos.x != 0 && mousePos.y != 0 && mousePos.y + windowSize.y > g.IO.DisplaySize.y)
 	{
-		ImGui::SetNextWindowPos({ mousePos.x, mousePos.y - windowSize.y }, ImGuiCond_Always);
+		ImGui::SetNextWindowPos({mousePos.x, mousePos.y - windowSize.y}, ImGuiCond_Always);
 		mousePos = {};
 	}
 
+	float factor = tween.step(7 * Time::DeltaTime);
+	windowSize.x *= factor;
+	windowSize.y *= factor;
 	ImGui::SetNextWindowSize(windowSize);
 
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar;
-	/* Push before BeginPopupEx: Begin() copies style.WindowPadding into window->WindowPadding. */
+	if (BeginPopupEx(id, windowFlags))
 	{
-		StyleVarStack<ImVec2> menuPaddingStack{
-		    { ImGuiStyleVar_WindowPadding, ImVec2{ kRightClickPad, kRightClickPad } },
-		    { ImGuiStyleVar_ItemSpacing, ImVec2{ 0.f, 0.f } },
-		};
-		if (BeginPopupEx(id, windowFlags))
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 		{
-			if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && !IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
-			{
-				CloseCurrentPopup();
-			}
+			IsMouseClicked(true);
+		}
+		if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) /*|| IsMouseClicked(ImGuiMouseButton_Right)*/) && !IsWindowHovered())
+		{
+			CloseCurrentPopup();
+		}
 
-			if (callback)
+		if (callback)
+		{
+			callback();
+		}
+
+		StyleVarStack<ImVec2> styleVarStack{
+			{ImGuiStyleVar_WindowPadding, ImVec2{padding.right, padding.bottom}}};
+
+		EXPORT_WINDOW
+		MOVEPOS(0, kPadding);
+
+		ImVec2 itemSize = {kItemWidth, kItemHeight};
+
+		float lineHeight = ImGui::GetTextLineHeight();
+		float textAlignment = (kItemHeight - lineHeight) * 0.5;
+		for (auto &[s, callback] : items)
+		{
+			if (s.empty())
+			{
+				ImGui::Separator();
+				continue;
+			}
+			WidgetLock lock{&s};
+
+			auto window = ImGui::GetCurrentWindow();
+			if (window->SkipItems)
+				break;
+
+			MOVEPOS(kPadding, 0);
+			ImGuiContext &g = *GImGui;
+			const ImGuiStyle &style = g.Style;
+
+			const char *label = "###";
+			const ImGuiID id = window->GetID(&s);
+			const ImVec2 labelSize = ImGui::CalcTextSize(label, NULL, true);
+
+			ImVec2 pos = window->DC.CursorPos;
+			ImVec2 size = ImGui::CalcItemSize(itemSize, labelSize.x + style.FramePadding.x * 2.0f, labelSize.y + style.FramePadding.y * 2.0f);
+
+			const ImRect bb(pos, pos + size);
+			ImGui::ItemSize(size, style.FramePadding.y);
+			if (!ImGui::ItemAdd(bb, id))
+				break;
+
+			bool helded = 0;
+			bool hovered = 0;
+			bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &helded);
+			if (pressed)
 			{
 				callback();
+				ImGui::CloseCurrentPopup();
 			}
-
-			if (DrawRightClickPopupItems(items, textF, hoverF, windowFlags))
-			{
-				CloseCurrentPopup();
-			}
-			EndPopup();
+			window->DrawList->AddRectFilled(bb.Min, bb.Max, hovered ? hoveredColor : ImGui::GetColorU32(backgroundColor), 0.0f);
+			window->DrawList->AddText({bb.Min.x + 36, bb.Min.y + textAlignment}, ImGui::GetColorU32(color), s.c_str());
 		}
 	}
+	EndPopup();
 
 	return true;
 }
@@ -485,16 +344,6 @@ WRightClickPopup *WRightClickPopup::Items(std::initializer_list<std::pair<const 
 	return this;
 }
 
-WRightClickPopup *WRightClickPopup::MenuItems(std::initializer_list<Item> &&list)
-{
-	for (const auto &item : list)
-	{
-		items.emplace_back(TranslateRightClickPopupItem(item));
-	}
-
-	return this;
-}
-
 bool WRightClickPopup::IsOpened() const
 {
 	return ImGui::IsPopupOpen(id, 0);
@@ -503,13 +352,6 @@ bool WRightClickPopup::IsOpened() const
 void WRightClickPopup::Open()
 {
 	ActiveItemId(ImGui::GetItemID());
-	ManualOpen(true);
-}
-
-void WRightClickPopup::OpenForItem(ImGuiID itemId)
-{
-	ActiveItemId(itemId);
-	mousePos = ImGui::GetMousePos();
 	ManualOpen(true);
 }
 

@@ -34,25 +34,23 @@
 #include "Helper/json.h"
 
 #include "Render/Graphics.h"
-#include "Render/GObject.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"
 #include "Render/Mesh.h"
 
 #include "Sync/Semaphore.h"
 
-#include "Scene/EditorCamera.h"
+#include "Editor/EditorCamera.h"
 
 #include "Script/ScriptEngine.h"
 
 #include "Scene/Object.h"
 #include "Scene/Scene.h"
-#include "Scene/GameScene.h"
 #include "Scene/Component.h"
 #include "Scene/GameObject.h"
 #include "Scene/ObserverCamera.h"
 
-#include "Scene/SceneSerializer.h"
+#include "Serializer/SceneSerializer.h"
 
 #include "String/LanguageSettings.h"
 

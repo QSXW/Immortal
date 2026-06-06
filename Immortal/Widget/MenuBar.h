@@ -54,28 +54,18 @@ public:
 	WIDGET_SET_PROPERTIES(WMenuBar)
 	WIDGET_PROPERTY_COLOR
 	WIDGET_PROPERTY_BACKGROUND_COLOR
-	WIDGET_SET_PROPERTY(PopupBackgroundColor, popupBackgroundColor, uint32_t, IM_COL32(252, 252, 254, 247))
-	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t, IM_COL32(218, 218, 221, 255))
+	WIDGET_SET_PROPERTY(PopupBackgroundColor, popupBackgroundColor,   uint32_t, 0xffffffff)
+	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t, 0xfff0f0f0)
 	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
 	WIDGET_SET_PROPERTY(OnEvent, onEvent, std::function<void(Event &)>)
-	WIDGET_SET_PROPERTY(OnRightSideDraw, onRightSideDraw, std::function<void(float &, float)>)
 
 public:
 	WMenuBar(Widget *parent = nullptr);
 
 	virtual bool Draw() override;
 
-	/** Win32 无边框窗口：在菜单栏右侧绘制系统风格的最小化 / 最大化 / 关闭（需自行开启）。 */
-	WMenuBar *ShowCaptionButtons(bool value)
-	{
-		showCaptionButtons = value;
-		return this;
-	}
-
 protected:
 	ImVec2 spacing;
-
-	bool showCaptionButtons = false;
 };
 
 struct WItem

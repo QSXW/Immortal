@@ -53,7 +53,6 @@ protected:
 	PictureFlags                 flags;
     int64_t                      timestamp;
 	Rational                     timebase;
-	Rational                     sampleAspectRatio;
     PictureMemoryType            memoryType;
 	ColorSpace                   colorSpace;
 	ColorTransferCharacteristic  trc;
@@ -219,35 +218,6 @@ public:
     void SetTimebase(Rational value)
     {
         shared->timebase = value;
-    }
-
-    const Rational &GetSampleAspectRatio() const
-    {
-        return shared->sampleAspectRatio;
-    }
-
-    void SetSampleAspectRatio(Rational value)
-    {
-        shared->sampleAspectRatio = value;
-    }
-
-    float GetPixelAspectRatio() const
-    {
-        const Rational &sar = GetSampleAspectRatio();
-        if (sar.numerator <= 0 || sar.denominator <= 0)
-        {
-            return 1.0f;
-        }
-        return (float)sar.Normalize();
-    }
-
-    float GetDisplayAspectRatio() const
-    {
-        if (GetHeight() == 0)
-        {
-            return 1.0f;
-        }
-        return (float)((double)GetWidth() * (double)GetPixelAspectRatio() / (double)GetHeight());
     }
 
     IObject *GetIObject() const

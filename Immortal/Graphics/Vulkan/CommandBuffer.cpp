@@ -6,7 +6,6 @@
 #include "RenderTarget.h"
 #include "Pipeline.h"
 #include "DescriptorSet.h"
-#include "Texture.h"
 
 namespace Immortal
 {
@@ -317,28 +316,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
 
     auto &colorAttachments = renderTarget->GetColorAttachments();
 	auto &depthAttachment  = renderTarget->InternalGetDepthAttachment();
-
-	uint32_t width = 1;
-	uint32_t height = 1;
-	uint32_t renderLayerCount = 1;
-	if (!colorAttachments.empty())
-	{
-		const VkExtent3D &e = colorAttachments[0].GetExtent();
-		width  = e.width;
-		height = e.height;
-		renderLayerCount = colorAttachments[0].GetArrayLayers();
-	}
-	else if (depthAttachment)
-	{
-		const VkExtent3D &e = depthAttachment.GetExtent();
-		width  = e.width;
-		height = e.height;
-		renderLayerCount = depthAttachment.GetArrayLayers();
-	}
-	else
-	{
-		return;
-	}
+    auto &[width, height, depth] = colorAttachments[0].GetExtent();
 
     if (true /*dynamic rendering*/)
     {
@@ -384,21 +362,16 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
         if (depthAttachment)
         {
 			auto &clearValue = pClearValues[colorAttachments.size()];
-			const bool depthOnlyFmt = IsDepthOnlyFormat(depthAttachment.GetFormat());
-			const VkImageLayout depthRtLayout = depthOnlyFmt ? VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-			                                                 : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 		    depthAttachmentInfo = VkRenderingAttachmentInfo{
                 .sType              = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
                 .pNext              = nullptr,
 			    .imageView          = depthAttachment.GetImageView(),
-			    .imageLayout        = depthRtLayout,
+			    .imageLayout        = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                 .resolveMode        = {},
 			    .resolveImageView   = {},
 			    .resolveImageLayout = {},
                 .loadOp             = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                /* MUST store depth if the attachment is sampled later (shadow map, G-buffer depth). */
-                .storeOp            = VK_ATTACHMENT_STORE_OP_STORE,
+                .storeOp            = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                 .clearValue         = {
 					.depthStencil = {
 			            .depth   = clearValue.depthStencil.depth,
@@ -408,8 +381,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
             };
 
             VkImageSubresourceRange subresourceRange{
-                .aspectMask     = depthOnlyFmt ? VK_IMAGE_ASPECT_DEPTH_BIT
-				                               : VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT),
+                .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
                 .baseMipLevel   = 0,
 			    .levelCount     = depthAttachment.GetMipLevels(),
                 .baseArrayLayer = 0,
@@ -420,12 +392,19 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
 			    depthAttachment,
 			    subresourceRange,
 			    depthAttachment.GetLayout(),
-			    depthRtLayout,
+			    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
 			    VK_ACCESS_NONE,
 			    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			});
 
             auto &barrier = depthImageBarriers[0];
+
+            bool isDepthOnly = IsDepthOnlyFormat(depthAttachment.GetFormat());
+			if (!isDepthOnly)
+			{
+				barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+				barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			}
 
             PipelineImageBarrier(
 			    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
@@ -442,30 +421,27 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
             }
         };
 
-        if (!colorImageBarriers.empty())
-        {
-            PipelineImageBarrier(
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                colorImageBarriers.data(),
-                uint32_t(colorImageBarriers.size())
-            );
+        PipelineImageBarrier(
+		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		    colorImageBarriers.data(),
+		    uint32_t(colorImageBarriers.size())
+        );
 
-            for (size_t i = 0; i < colorImageBarriers.size(); i++)
+        for (size_t i = 0; i < colorImageBarriers.size(); i++)
+		{
+			auto &barrier = colorImageBarriers[i];
+			barrier.Swap();
+            if (colorAttachments[i].GetLayout() == VK_IMAGE_LAYOUT_UNDEFINED)
             {
-                auto &barrier = colorImageBarriers[i];
-                barrier.Swap();
-                if (colorAttachments[i].GetLayout() == VK_IMAGE_LAYOUT_UNDEFINED)
-                {
-                    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-                    colorAttachments[i].SetLayout(barrier.newLayout);
-                }
+				barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+				colorAttachments[i].SetLayout(barrier.newLayout);
             }
-            if (renderTarget->IsSwapchainTarget())
-            {
-                colorImageBarriers[0].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                colorAttachments[0].SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-            }
+        }
+        if (renderTarget->IsSwapchainTarget())
+        {
+			colorImageBarriers[0].newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			colorAttachments[0].SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
         }
 
 	    VkRenderingInfo renderingInfo = {
@@ -476,7 +452,7 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
 	            .offset = {},
                 .extent = { width, height }
             },
-	        .layerCount           = renderLayerCount,
+	        .layerCount           = colorAttachments[0].GetArrayLayers(),
 	        .viewMask             = {},
 	        .colorAttachmentCount = uint32_t(colorAttachmentInfos.size()),
 	        .pColorAttachments    = colorAttachmentInfos.data(),
@@ -525,15 +501,12 @@ void CommandBuffer::EndRenderTarget()
 	if (true /*dynamic rendering*/)
     {
 		vkCmdEndRenderingKHR(handle);
-        if (!colorImageBarriers.empty())
-        {
-            PipelineImageBarrier(
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                colorImageBarriers[0].newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR ? VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT : VK_PIPELINE_STAGE_TRANSFER_BIT,
-                colorImageBarriers.data(),
-                uint32_t(colorImageBarriers.size())
-            );
-        }
+        PipelineImageBarrier(
+		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		    colorImageBarriers[0].newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR ? VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT : VK_PIPELINE_STAGE_TRANSFER_BIT,
+		    colorImageBarriers.data(),
+		    uint32_t(colorImageBarriers.size())
+        );
 
         if (!depthImageBarriers.empty())
         {
@@ -917,23 +890,6 @@ void CommandBuffer::Dispatch(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroup
 	_Dispatch(nGroupX, nGroupY, nGroupZ);
 }
 
-void CommandBuffer::MemoryBarrier(SuperTexture *texture)
-{
-	(void)texture;
-	// Per-resource UAV barrier expressed as a global memory barrier between
-	// compute stages. Cheap enough for the compositor's per-layer use; if
-	// we ever need finer-grained control we can switch to an image memory
-	// barrier with a known layout.
-	VkMemoryBarrier barrier{
-		.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-		.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-		.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-	};
-	PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-	                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-	                0, 1, &barrier, 0, nullptr, 0, nullptr);
-}
-
 void CommandBuffer::DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ)
 {
 	DrawMeshTasksEXT(nGroupX, nGroupY, nGroupZ);
@@ -955,11 +911,6 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
     VkImageLayout oldLayout = texture->GetLayout();
 	VkImageLayout newLayout = CAST(layout);
 
-	if (oldLayout == newLayout)
-	{
-		return;
-	}
-
 	texture->SetLayout(newLayout);
 	VkImageMemoryBarrier barrier = {
 		.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -973,7 +924,7 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
 		    .aspectMask     = texture->GetAspectMask(),
 			.baseMipLevel   = pSubresourceRange->baseMipLevel,
 			.levelCount     = pSubresourceRange->levelCount > 0 ? pSubresourceRange->levelCount : texture->GetMipLevels(),
-			.baseArrayLayer = pSubresourceRange->baseArrayLayer,
+			.baseArrayLayer = pSubresourceRange->baseMipLevel,
 			.layerCount     = pSubresourceRange->layerCount > 0 ? pSubresourceRange->layerCount : texture->GetArrayLayers()
 		}
 	};
@@ -1011,11 +962,6 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
 		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
 			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 			break;
-
-		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-			barrier.srcAccessMask = 0;
-			break;
-
 		default:
 			break;
 	}
@@ -1049,11 +995,6 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
 			}
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 			break;
-
-		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-			barrier.dstAccessMask = 0;
-			break;
-
 		default:
 			break;
 	}
@@ -1065,42 +1006,6 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
 	    0, nullptr,
 	    0, nullptr,
 	    1, &barrier);
-}
-
-void CommandBuffer::CopyTexture(SuperTexture *_dst, SuperTexture *_src)
-{
-	Texture *dst = InterpretAs<Texture>(_dst);
-	Texture *src = InterpretAs<Texture>(_src);
-	if (!dst || !src || dst->GetWidth() != src->GetWidth() || dst->GetHeight() != src->GetHeight())
-	{
-		return;
-	}
-
-	SetImageLayout(src, ImageLayout::TransferSource, PipelineStage::All, PipelineStage::Transfer, &kAllSubresources);
-	SetImageLayout(dst, ImageLayout::TransferDestination, PipelineStage::All, PipelineStage::Transfer, &kAllSubresources);
-
-	VkImageCopy region{
-	    .srcSubresource = {
-	        .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-	        .mipLevel       = 0,
-	        .baseArrayLayer = 0,
-	        .layerCount     = 1,
-	    },
-	    .srcOffset      = {},
-	    .dstSubresource = {
-	        .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-	        .mipLevel       = 0,
-	        .baseArrayLayer = 0,
-	        .layerCount     = 1,
-	    },
-	    .dstOffset = {},
-	    .extent    = { dst->GetWidth(), dst->GetHeight(), 1 },
-	};
-
-	CopyImage(*src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, *dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-	SetImageLayout(src, ImageLayout::General, PipelineStage::Transfer, PipelineStage::All, &kAllSubresources);
-	SetImageLayout(dst, ImageLayout::Present, PipelineStage::Transfer, PipelineStage::All, &kAllSubresources);
 }
 
 }

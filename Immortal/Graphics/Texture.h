@@ -12,7 +12,7 @@ class GPUEvent;
 class IMMORTAL_API Texture : public IObject
 {
 public:
-    template <class T, int kMinWidth = 128, int kMinHeight = 128>
+    template<class T, int kMinWidth = 64, int kMinHeight = 64>
     requires std::is_integral_v<T>
     static constexpr T CalculateMipmapLevels(T width, T height)
     {

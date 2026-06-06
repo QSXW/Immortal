@@ -5,6 +5,7 @@
 #include "Core.h"
 #include "Stream.h"
 #include "String/IString.h"
+#include "String/LanguageSettings.h"
 #include "Shared/Log.h"
 
 namespace Immortal
@@ -91,48 +92,11 @@ enum class FileFormat : uint64_t
     OBJ   = MakeIdentifier('O', 'B', 'J'          ),
 
     /** Audio formats */
-    AAC    = MakeIdentifier('A', 'A', 'C'          ),
-    WAV    = MakeIdentifier('W', 'A', 'V'          ),
-    FLAC   = MakeIdentifier('F', 'L', 'A', 'C'     ),
-    MP3    = MakeIdentifier('M', 'P', '3'          ),
-    OPUS   = MakeIdentifier('O', 'P', 'U', 'S'     ),
-    AC3    = MakeIdentifier('A', 'C', '3'          ),
-    ADTS   = MakeIdentifier('A', 'D', 'T', 'S'     ),
-    AEA    = MakeIdentifier('A', 'E', 'A'          ),
-    AMR    = MakeIdentifier('A', 'M', 'R'          ),
-    APE    = MakeIdentifier('A', 'P', 'E'          ),
-    APM    = MakeIdentifier('A', 'P', 'M'          ),
-    AWB    = MakeIdentifier('A', 'W', 'B'          ),
-    CAF    = MakeIdentifier('C', 'A', 'F'          ),
-    DFF    = MakeIdentifier('D', 'F', 'F'          ),
-    DTS    = MakeIdentifier('D', 'T', 'S'          ),
-    DTSHD  = MakeIdentifier('D', 'T', 'S', 'H', 'D'),
-    EAC3   = MakeIdentifier('E', 'A', 'C', '3'     ),
-    F32    = MakeIdentifier('F', '3', '2'          ),
-    G722   = MakeIdentifier('G', '7', '2', '2'     ),
-    IAMF   = MakeIdentifier('I', 'A', 'M', 'F'     ),
-    M4A    = MakeIdentifier('M', '4', 'A'          ),
-    MLP    = MakeIdentifier('M', 'L', 'P'          ),
-    MPC    = MakeIdentifier('M', 'P', 'C'          ),
-    NIST   = MakeIdentifier('N', 'I', 'S', 'T'     ),
-    OMA    = MakeIdentifier('O', 'M', 'A'          ),
-    PCM    = MakeIdentifier('P', 'C', 'M'          ),
-    QCP    = MakeIdentifier('Q', 'C', 'P'          ),
-    QOA    = MakeIdentifier('Q', 'O', 'A'          ),
-    RCV    = MakeIdentifier('R', 'C', 'V'          ),
-    SHN    = MakeIdentifier('S', 'H', 'N'          ),
-    TAK    = MakeIdentifier('T', 'A', 'K'          ),
-    TCO    = MakeIdentifier('T', 'C', 'O'          ),
-    THD    = MakeIdentifier('T', 'H', 'D'          ),
-    TTA    = MakeIdentifier('T', 'T', 'A'          ),
-    TUN    = MakeIdentifier('T', 'U', 'N'          ),
-    VOC    = MakeIdentifier('V', 'O', 'C'          ),
-    VQF    = MakeIdentifier('V', 'Q', 'F'          ),
-    W64    = MakeIdentifier('W', '6', '4'          ),
-    WMA    = MakeIdentifier('W', 'M', 'A'          ),
-    WV     = MakeIdentifier('W', 'V'               ),
-    WVE    = MakeIdentifier('W', 'V', 'E'          ),
-    XWMA   = MakeIdentifier('X', 'W', 'M', 'A'     ),
+	AAC  = MakeIdentifier('A', 'A', 'C'     ),
+    WAV  = MakeIdentifier('W', 'A', 'V'     ),
+    FLAC = MakeIdentifier('F', 'L', 'A', 'C'),
+    MP3  = MakeIdentifier('M', 'P', '3'     ),
+	OPUS = MakeIdentifier('O', 'P', 'U', 'S'),
 
     /** Still Image formats */
     BMP   = MakeIdentifier('B', 'M', 'P'     ),
@@ -213,162 +177,6 @@ enum class FileFormat : uint64_t
     TXT   = MakeIdentifier('T', 'X', 'T'     ),
     XML   = MakeIdentifier('X', 'M', 'L'     ),
     ZIP   = MakeIdentifier('Z', 'I', 'P'     ),
-
-    /** FFmpeg fate-suite (sample extensions) */
-    _11C   = MakeIdentifier('1', '1', 'C'          ),
-    _264   = MakeIdentifier('2', '6', '4'          ),
-    _26L   = MakeIdentifier('2', '6', 'L'          ),
-    _302   = MakeIdentifier('3', '0', '2'          ),
-    _44C   = MakeIdentifier('4', '4', 'C'          ),
-    _4XM   = MakeIdentifier('4', 'X', 'M'          ),
-    _5C    = MakeIdentifier('5', 'C'               ),
-    AA     = MakeIdentifier('A', 'A'               ),
-    AA3    = MakeIdentifier('A', 'A', '3'          ),
-    ACT    = MakeIdentifier('A', 'C', 'T'          ),
-    ADP    = MakeIdentifier('A', 'D', 'P'          ),
-    ANM    = MakeIdentifier('A', 'N', 'M'          ),
-    ANS    = MakeIdentifier('A', 'N', 'S'          ),
-    APC    = MakeIdentifier('A', 'P', 'C'          ),
-    APV    = MakeIdentifier('A', 'P', 'V'          ),
-    AQT    = MakeIdentifier('A', 'Q', 'T'          ),
-    ASS    = MakeIdentifier('A', 'S', 'S'          ),
-    AST    = MakeIdentifier('A', 'S', 'T'          ),
-    AUD    = MakeIdentifier('A', 'U', 'D'          ),
-    AVC    = MakeIdentifier('A', 'V', 'C'          ),
-    AVS    = MakeIdentifier('A', 'V', 'S'          ),
-    BCSTM  = MakeIdentifier('B', 'C', 'S', 'T', 'M'),
-    BFI    = MakeIdentifier('B', 'F', 'I'          ),
-    BFSTM  = MakeIdentifier('B', 'F', 'S', 'T', 'M'),
-    BIK    = MakeIdentifier('B', 'I', 'K'          ),
-    BITS   = MakeIdentifier('B', 'I', 'T', 'S'     ),
-    BMV    = MakeIdentifier('B', 'M', 'V'          ),
-    BRSTM  = MakeIdentifier('B', 'R', 'S', 'T', 'M'),
-    BS     = MakeIdentifier('B', 'S'               ),
-    C93    = MakeIdentifier('C', '9', '3'          ),
-    CAK    = MakeIdentifier('C', 'A', 'K'          ),
-    CAM    = MakeIdentifier('C', 'A', 'M'          ),
-    CDATA  = MakeIdentifier('C', 'D', 'A', 'T', 'A'),
-    CDG    = MakeIdentifier('C', 'D', 'G'          ),
-    CDXL   = MakeIdentifier('C', 'D', 'X', 'L'     ),
-    CIN    = MakeIdentifier('C', 'I', 'N'          ),
-    CINE   = MakeIdentifier('C', 'I', 'N', 'E'     ),
-    CMV    = MakeIdentifier('C', 'M', 'V'          ),
-    CPK    = MakeIdentifier('C', 'P', 'K'          ),
-    DCT    = MakeIdentifier('D', 'C', 'T'          ),
-    DDS    = MakeIdentifier('D', 'D', 'S'          ),
-    DEC    = MakeIdentifier('D', 'E', 'C'          ),
-    DEE    = MakeIdentifier('D', 'E', 'E'          ),
-    DFA    = MakeIdentifier('D', 'F', 'A'          ),
-    DIVX   = MakeIdentifier('D', 'I', 'V', 'X'     ),
-    DNXHR  = MakeIdentifier('D', 'N', 'X', 'H', 'R'),
-    DPX    = MakeIdentifier('D', 'P', 'X'          ),
-    DRC    = MakeIdentifier('D', 'R', 'C'          ),
-    DSS    = MakeIdentifier('D', 'S', 'S'          ),
-    DUK    = MakeIdentifier('D', 'U', 'K'          ),
-    DXA    = MakeIdentifier('D', 'X', 'A'          ),
-    EVC    = MakeIdentifier('E', 'V', 'C'          ),
-    FIT    = MakeIdentifier('F', 'I', 'T'          ),
-    FITS   = MakeIdentifier('F', 'I', 'T', 'S'     ),
-    FLI    = MakeIdentifier('F', 'L', 'I'          ),
-    FMV    = MakeIdentifier('F', 'M', 'V'          ),
-    GDV    = MakeIdentifier('G', 'D', 'V'          ),
-    H263   = MakeIdentifier('H', '2', '6', '3'     ),
-    HEVC   = MakeIdentifier('H', 'E', 'V', 'C'     ),
-    IDX    = MakeIdentifier('I', 'D', 'X'          ),
-    IFF    = MakeIdentifier('I', 'F', 'F'          ),
-    ILBM   = MakeIdentifier('I', 'L', 'B', 'M'     ),
-    ISM    = MakeIdentifier('I', 'S', 'M'          ),
-    ISS    = MakeIdentifier('I', 'S', 'S'          ),
-    J2K    = MakeIdentifier('J', '2', 'K'          ),
-    JLS    = MakeIdentifier('J', 'L', 'S'          ),
-    JSS    = MakeIdentifier('J', 'S', 'S'          ),
-    JSV    = MakeIdentifier('J', 'S', 'V'          ),
-    JV     = MakeIdentifier('J', 'V'               ),
-    JVT    = MakeIdentifier('J', 'V', 'T'          ),
-    LBM    = MakeIdentifier('L', 'B', 'M'          ),
-    LRC    = MakeIdentifier('L', 'R', 'C'          ),
-    M2V    = MakeIdentifier('M', '2', 'V'          ),
-    MAD    = MakeIdentifier('M', 'A', 'D'          ),
-    MJPG   = MakeIdentifier('M', 'J', 'P', 'G'     ),
-    MKA    = MakeIdentifier('M', 'K', 'A'          ),
-    MKS    = MakeIdentifier('M', 'K', 'S'          ),
-    MLV    = MakeIdentifier('M', 'L', 'V'          ),
-    MM     = MakeIdentifier('M', 'M'               ),
-    MODEL  = MakeIdentifier('M', 'O', 'D', 'E', 'L'),
-    MOVIE  = MakeIdentifier('M', 'O', 'V', 'I', 'E'),
-    MTV    = MakeIdentifier('M', 'T', 'V'          ),
-    MV     = MakeIdentifier('M', 'V'               ),
-    MVE    = MakeIdentifier('M', 'V', 'E'          ),
-    MVI    = MakeIdentifier('M', 'V', 'I'          ),
-    MXG    = MakeIdentifier('M', 'X', 'G'          ),
-    NAL    = MakeIdentifier('N', 'A', 'L'          ),
-    NSV    = MakeIdentifier('N', 'S', 'V'          ),
-    NUV    = MakeIdentifier('N', 'U', 'V'          ),
-    OLD    = MakeIdentifier('O', 'L', 'D'          ),
-    OSQ    = MakeIdentifier('O', 'S', 'Q'          ),
-    PAF    = MakeIdentifier('P', 'A', 'F'          ),
-    PCT    = MakeIdentifier('P', 'C', 'T'          ),
-    PGM    = MakeIdentifier('P', 'G', 'M'          ),
-    PIC    = MakeIdentifier('P', 'I', 'C'          ),
-    PIX    = MakeIdentifier('P', 'I', 'X'          ),
-    PJS    = MakeIdentifier('P', 'J', 'S'          ),
-    PMP    = MakeIdentifier('P', 'M', 'P'          ),
-    PNM    = MakeIdentifier('P', 'N', 'M'          ),
-    PTX    = MakeIdentifier('P', 'T', 'X'          ),
-    PVA    = MakeIdentifier('P', 'V', 'A'          ),
-    R3D    = MakeIdentifier('R', '3', 'D'          ),
-    RA     = MakeIdentifier('R', 'A'               ),
-    RAS    = MakeIdentifier('R', 'A', 'S'          ),
-    RAW    = MakeIdentifier('R', 'A', 'W'          ),
-    RKA    = MakeIdentifier('R', 'K', 'A'          ),
-    RL2    = MakeIdentifier('R', 'L', '2'          ),
-    RM     = MakeIdentifier('R', 'M'               ),
-    RMHD   = MakeIdentifier('R', 'M', 'H', 'D'     ),
-    ROQ    = MakeIdentifier('R', 'O', 'Q'          ),
-    RPL    = MakeIdentifier('R', 'P', 'L'          ),
-    RSD    = MakeIdentifier('R', 'S', 'D'          ),
-    RT     = MakeIdentifier('R', 'T'               ),
-    S16    = MakeIdentifier('S', '1', '6'          ),
-    SCC    = MakeIdentifier('S', 'C', 'C'          ),
-    SDR    = MakeIdentifier('S', 'D', 'R'          ),
-    SEQ    = MakeIdentifier('S', 'E', 'Q'          ),
-    SGI    = MakeIdentifier('S', 'G', 'I'          ),
-    SHQ2   = MakeIdentifier('S', 'H', 'Q', '2'     ),
-    SMI    = MakeIdentifier('S', 'M', 'I'          ),
-    SMK    = MakeIdentifier('S', 'M', 'K'          ),
-    SMV    = MakeIdentifier('S', 'M', 'V'          ),
-    SOL    = MakeIdentifier('S', 'O', 'L'          ),
-    SRT    = MakeIdentifier('S', 'R', 'T'          ),
-    SSA    = MakeIdentifier('S', 'S', 'A'          ),
-    STL    = MakeIdentifier('S', 'T', 'L'          ),
-    STR    = MakeIdentifier('S', 'T', 'R'          ),
-    SUB    = MakeIdentifier('S', 'U', 'B'          ),
-    SUN    = MakeIdentifier('S', 'U', 'N'          ),
-    SUP    = MakeIdentifier('S', 'U', 'P'          ),
-    SW     = MakeIdentifier('S', 'W'               ),
-    TGA    = MakeIdentifier('T', 'G', 'A'          ),
-    TGQ    = MakeIdentifier('T', 'G', 'Q'          ),
-    TGV    = MakeIdentifier('T', 'G', 'V'          ),
-    THP    = MakeIdentifier('T', 'H', 'P'          ),
-    TMV    = MakeIdentifier('T', 'M', 'V'          ),
-    TREC   = MakeIdentifier('T', 'R', 'E', 'C'     ),
-    TXD    = MakeIdentifier('T', 'X', 'D'          ),
-    VAG    = MakeIdentifier('V', 'A', 'G'          ),
-    VB     = MakeIdentifier('V', 'B'               ),
-    VID    = MakeIdentifier('V', 'I', 'D'          ),
-    VMD    = MakeIdentifier('V', 'M', 'D'          ),
-    VOB    = MakeIdentifier('V', 'O', 'B'          ),
-    VP6    = MakeIdentifier('V', 'P', '6'          ),
-    VP7    = MakeIdentifier('V', 'P', '7'          ),
-    VQA    = MakeIdentifier('V', 'Q', 'A'          ),
-    VTT    = MakeIdentifier('V', 'T', 'T'          ),
-    WTV    = MakeIdentifier('W', 'T', 'V'          ),
-    XA     = MakeIdentifier('X', 'A'               ),
-    XBM    = MakeIdentifier('X', 'B', 'M'          ),
-    XESC   = MakeIdentifier('X', 'E', 'S', 'C'     ),
-    XFACE  = MakeIdentifier('X', 'F', 'A', 'C', 'E'),
-    YOP    = MakeIdentifier('Y', 'O', 'P'          ),
-    ZNM    = MakeIdentifier('Z', 'N', 'M'          ),
 };
 
 namespace FileSystem
@@ -376,24 +184,20 @@ namespace FileSystem
 
 static uint64_t MakeIdentifier(const std::string &path)
 {
+    uint64_t id = 0;
     if (path.empty())
     {
-        return 0;
+		return 0;
     }
+    int64_t i = path.size() - 1;
 
-    const size_t dot = path.find_last_of('.');
-    if (dot == std::string::npos || dot == 0 || dot + 1 >= path.size())
+    id |= std::toupper(path[i--]);
+    while (i && path[i] != '.')
     {
-        return 0;
+        id = (id << 8) | std::toupper(path[i--]);
     }
 
-    uint64_t id = 0;
-    for (auto it = path.rbegin(); it != path.rend() && it.base() > path.begin() + (ptrdiff_t)dot + 1; ++it)
-    {
-        id = (id << 8) | (uint8_t)std::toupper((unsigned char)*it);
-    }
-
-    return id;
+    return path[i] == '.' ? id : 0;
 }
 
 static inline FileFormat DumpFileId(const std::string &path)
@@ -433,7 +237,6 @@ static inline bool Is3DModel(const std::string &path)
 static inline bool IsRawImage(FileFormat id)
 {
     return IsFormat<FileFormat::CR2>(id)  ||
-	       IsFormat<FileFormat::_3FR>(id) ||
            IsFormat<FileFormat::ARW>(id)  ||
            IsFormat<FileFormat::NEF>(id)  ||
            IsFormat<FileFormat::FFF>(id)  ||
@@ -445,44 +248,19 @@ static inline bool IsRawImage(FileFormat id)
 
 static inline bool IsImage(FileFormat id)
 {
-    return IsFormat<FileFormat::BMP>(id) ||
+    return IsFormat<FileFormat::BMP>(id)  ||
            IsFormat<FileFormat::JPEG>(id) ||
-           IsFormat<FileFormat::JPG>(id) ||
-           IsFormat<FileFormat::JXL>(id) ||
-           IsFormat<FileFormat::PNG>(id) ||
-           IsFormat<FileFormat::PPM>(id) ||
-           IsFormat<FileFormat::HDR>(id) ||
+           IsFormat<FileFormat::JPG>(id)  ||
+	       IsFormat<FileFormat::JXL>(id) ||
+           IsFormat<FileFormat::PNG>(id)  ||
+           IsFormat<FileFormat::PPM>(id)  ||
+           IsFormat<FileFormat::HDR>(id)  ||
            IsFormat<FileFormat::JFIF>(id) ||
-           IsFormat<FileFormat::WEBP>(id) ||
-           IsFormat<FileFormat::TIFF>(id) ||
-           IsFormat<FileFormat::TIF>(id) ||
-           IsFormat<FileFormat::HEIC>(id) ||
-           IsFormat<FileFormat::AVIF>(id) ||
-           IsFormat<FileFormat::GIF>(id) ||
-           IsFormat<FileFormat::CIN>(id) ||
-           IsFormat<FileFormat::CINE>(id) ||
-           IsFormat<FileFormat::DDS>(id) ||
-           IsFormat<FileFormat::DPX>(id) ||
-           IsFormat<FileFormat::EXR>(id) ||
-           IsFormat<FileFormat::FIT>(id) ||
-           IsFormat<FileFormat::FITS>(id) ||
-           IsFormat<FileFormat::ILBM>(id) ||
-           IsFormat<FileFormat::J2K>(id) ||
-           IsFormat<FileFormat::MJPG>(id) ||
-           IsFormat<FileFormat::PCT>(id) ||
-           IsFormat<FileFormat::PGM>(id) ||
-           IsFormat<FileFormat::PIC>(id) ||
-           IsFormat<FileFormat::PIX>(id) ||
-           IsFormat<FileFormat::PNM>(id) ||
-           IsFormat<FileFormat::PSD>(id) ||
-           IsFormat<FileFormat::RAS>(id) ||
-           IsFormat<FileFormat::SGI>(id) ||
-           IsFormat<FileFormat::SUN>(id) ||
-           IsFormat<FileFormat::TGA>(id) ||
-           IsFormat<FileFormat::XBM>(id) ||
-           IsFormat<FileFormat::XFACE>(id) ||
+	       IsFormat<FileFormat::WEBP>(id) ||
+	       IsFormat<FileFormat::TIFF>(id) ||
            IsRawImage(id);
 }
+
 static inline bool IsImage(uint64_t format)
 {
     return IsImage((FileFormat)format);
@@ -496,122 +274,39 @@ static inline bool IsImage(const std::string &path)
 
 static inline bool IsVideo(FileFormat id)
 {
-    return IsFormat<FileFormat::IVF>(id) ||
-           IsFormat<FileFormat::OBU>(id) ||
-           IsFormat<FileFormat::MP4>(id) ||
-           IsFormat<FileFormat::VVC>(id) ||
+    return IsFormat<FileFormat::IVF>(id)  ||
+	       IsFormat<FileFormat::OBU>(id)  ||
+           IsFormat<FileFormat::MP4>(id)  ||
+           IsFormat<FileFormat::VVC>(id)  ||
            IsFormat<FileFormat::H264>(id) ||
            IsFormat<FileFormat::H265>(id) ||
            IsFormat<FileFormat::H266>(id) ||
            IsFormat<FileFormat::_266>(id) ||
-           IsFormat<FileFormat::MKV>(id) ||
+           IsFormat<FileFormat::MKV>(id)  ||
            IsFormat<FileFormat::M2TS>(id) ||
-           IsFormat<FileFormat::TS>(id) ||
-           IsFormat<FileFormat::MOV>(id) ||
+           IsFormat<FileFormat::TS>(id)   ||
+           IsFormat<FileFormat::MOV>(id)  ||
+           IsFormat<FileFormat::M2TS>(id) ||
            IsFormat<FileFormat::WEBM>(id) ||
-           IsFormat<FileFormat::BIT>(id) ||
-           IsFormat<FileFormat::MXF>(id) ||
-           IsFormat<FileFormat::OGV>(id) ||
-           IsFormat<FileFormat::OGG>(id) ||
-           IsFormat<FileFormat::VC1>(id) ||
-           IsFormat<FileFormat::MNG>(id) ||
-           IsFormat<FileFormat::QT>(id) ||
-           IsFormat<FileFormat::WMV>(id) ||
-           IsFormat<FileFormat::RMVB>(id) ||
-           IsFormat<FileFormat::ASF>(id) ||
-           IsFormat<FileFormat::AMV>(id) ||
-           IsFormat<FileFormat::M4V>(id) ||
-           IsFormat<FileFormat::MPG>(id) ||
-           IsFormat<FileFormat::_3GP>(id) ||
-           IsFormat<FileFormat::FLV>(id) ||
-           IsFormat<FileFormat::AVI>(id) ||
-           IsFormat<FileFormat::_11C>(id) ||
-           IsFormat<FileFormat::_264>(id) ||
-           IsFormat<FileFormat::_26L>(id) ||
-           IsFormat<FileFormat::_302>(id) ||
-           IsFormat<FileFormat::_44C>(id) ||
-           IsFormat<FileFormat::_4XM>(id) ||
-           IsFormat<FileFormat::_5C>(id) ||
-           IsFormat<FileFormat::AA3>(id) ||
-           IsFormat<FileFormat::ANM>(id) ||
-           IsFormat<FileFormat::APC>(id) ||
-           IsFormat<FileFormat::AVC>(id) ||
-           IsFormat<FileFormat::AVS>(id) ||
-           IsFormat<FileFormat::BCSTM>(id) ||
-           IsFormat<FileFormat::BFI>(id) ||
-           IsFormat<FileFormat::BFSTM>(id) ||
-           IsFormat<FileFormat::BIK>(id) ||
-           IsFormat<FileFormat::BMV>(id) ||
-           IsFormat<FileFormat::BRSTM>(id) ||
-           IsFormat<FileFormat::BS>(id) ||
-           IsFormat<FileFormat::C93>(id) ||
-           IsFormat<FileFormat::CDXL>(id) ||
-           IsFormat<FileFormat::CMV>(id) ||
-           IsFormat<FileFormat::CPK>(id) ||
-           IsFormat<FileFormat::DCT>(id) ||
-           IsFormat<FileFormat::DIVX>(id) ||
-           IsFormat<FileFormat::DNXHR>(id) ||
-           IsFormat<FileFormat::DRC>(id) ||
-           IsFormat<FileFormat::DSS>(id) ||
-           IsFormat<FileFormat::DXA>(id) ||
-           IsFormat<FileFormat::EVC>(id) ||
-           IsFormat<FileFormat::FLI>(id) ||
-           IsFormat<FileFormat::FMV>(id) ||
-           IsFormat<FileFormat::GDV>(id) ||
-           IsFormat<FileFormat::H263>(id) ||
-           IsFormat<FileFormat::HEVC>(id) ||
-           IsFormat<FileFormat::IFF>(id) ||
-           IsFormat<FileFormat::JLS>(id) ||
-           IsFormat<FileFormat::LBM>(id) ||
-           IsFormat<FileFormat::M2V>(id) ||
-           IsFormat<FileFormat::MKA>(id) ||
-           IsFormat<FileFormat::MKS>(id) ||
-           IsFormat<FileFormat::MLV>(id) ||
-           IsFormat<FileFormat::MOVIE>(id) ||
-           IsFormat<FileFormat::MTV>(id) ||
-           IsFormat<FileFormat::MV>(id) ||
-           IsFormat<FileFormat::MVE>(id) ||
-           IsFormat<FileFormat::MVI>(id) ||
-           IsFormat<FileFormat::MXG>(id) ||
-           IsFormat<FileFormat::NSV>(id) ||
-           IsFormat<FileFormat::NUV>(id) ||
-           IsFormat<FileFormat::PAF>(id) ||
-           IsFormat<FileFormat::PMP>(id) ||
-           IsFormat<FileFormat::PTX>(id) ||
-           IsFormat<FileFormat::PVA>(id) ||
-           IsFormat<FileFormat::R3D>(id) ||
-           IsFormat<FileFormat::RA>(id) ||
-           IsFormat<FileFormat::RAW>(id) ||
-           IsFormat<FileFormat::RKA>(id) ||
-           IsFormat<FileFormat::RL2>(id) ||
-           IsFormat<FileFormat::RM>(id) ||
-           IsFormat<FileFormat::RMHD>(id) ||
-           IsFormat<FileFormat::ROQ>(id) ||
-           IsFormat<FileFormat::RPL>(id) ||
-           IsFormat<FileFormat::RSD>(id) ||
-           IsFormat<FileFormat::S16>(id) ||
-           IsFormat<FileFormat::SEQ>(id) ||
-           IsFormat<FileFormat::SHQ2>(id) ||
-           IsFormat<FileFormat::SMK>(id) ||
-           IsFormat<FileFormat::SMV>(id) ||
-           IsFormat<FileFormat::SOL>(id) ||
-           IsFormat<FileFormat::STR>(id) ||
-           IsFormat<FileFormat::TGQ>(id) ||
-           IsFormat<FileFormat::TGV>(id) ||
-           IsFormat<FileFormat::THP>(id) ||
-           IsFormat<FileFormat::TMV>(id) ||
-           IsFormat<FileFormat::VAG>(id) ||
-           IsFormat<FileFormat::VB>(id) ||
-           IsFormat<FileFormat::VID>(id) ||
-           IsFormat<FileFormat::VMD>(id) ||
-           IsFormat<FileFormat::VOB>(id) ||
-           IsFormat<FileFormat::VP6>(id) ||
-           IsFormat<FileFormat::VP7>(id) ||
-           IsFormat<FileFormat::VQA>(id) ||
-           IsFormat<FileFormat::WTV>(id) ||
-           IsFormat<FileFormat::XA>(id) ||
-           IsFormat<FileFormat::YOP>(id);
+           IsFormat<FileFormat::AVIF>(id) ||
+           IsFormat<FileFormat::BIT>(id)  ||
+           IsFormat<FileFormat::GIF>(id)  ||
+	       IsFormat<FileFormat::MXF>(id)  ||
+           IsFormat<FileFormat::HEIC>(id) ||
+	       IsFormat<FileFormat::OGV>(id)  ||
+	       IsFormat<FileFormat::OGG>(id)  ||
+	       IsFormat<FileFormat::VC1>(id)  ||
+	       IsFormat<FileFormat::MNG>(id)  ||
+	       IsFormat<FileFormat::QT>(id)   ||
+	       IsFormat<FileFormat::WMV>(id)  ||
+	       IsFormat<FileFormat::RMVB>(id) ||
+	       IsFormat<FileFormat::ASF>(id)  ||
+	       IsFormat<FileFormat::AMV>(id)  ||
+	       IsFormat<FileFormat::M4V>(id)  ||
+	       IsFormat<FileFormat::MPG>(id)  ||
+	       IsFormat<FileFormat::_3GP>(id);
 }
+
 static inline bool IsVideo(uint64_t format)
 {
 	return IsVideo((FileFormat) format);
@@ -619,50 +314,13 @@ static inline bool IsVideo(uint64_t format)
 
 static inline bool IsAudio(FileFormat id)
 {
-	return IsFormat<FileFormat::AAC>(id) ||
-	       IsFormat<FileFormat::MP3>(id) ||
-	       IsFormat<FileFormat::FLAC>(id) ||
-	       IsFormat<FileFormat::WAV>(id) ||
-	       IsFormat<FileFormat::OPUS>(id) ||
-	       IsFormat<FileFormat::AC3>(id) ||
-	       IsFormat<FileFormat::ADTS>(id) ||
-	       IsFormat<FileFormat::AEA>(id) ||
-	       IsFormat<FileFormat::AMR>(id) ||
-	       IsFormat<FileFormat::APE>(id) ||
-	       IsFormat<FileFormat::APM>(id) ||
-	       IsFormat<FileFormat::AWB>(id) ||
-	       IsFormat<FileFormat::CAF>(id) ||
-	       IsFormat<FileFormat::DFF>(id) ||
-	       IsFormat<FileFormat::DTS>(id) ||
-	       IsFormat<FileFormat::DTSHD>(id) ||
-	       IsFormat<FileFormat::EAC3>(id) ||
-	       IsFormat<FileFormat::F32>(id) ||
-	       IsFormat<FileFormat::G722>(id) ||
-	       IsFormat<FileFormat::IAMF>(id) ||
-	       IsFormat<FileFormat::M4A>(id) ||
-	       IsFormat<FileFormat::MLP>(id) ||
-	       IsFormat<FileFormat::MPC>(id) ||
-	       IsFormat<FileFormat::NIST>(id) ||
-	       IsFormat<FileFormat::OGG>(id) ||
-	       IsFormat<FileFormat::OMA>(id) ||
-	       IsFormat<FileFormat::PCM>(id) ||
-	       IsFormat<FileFormat::QCP>(id) ||
-	       IsFormat<FileFormat::QOA>(id) ||
-	       IsFormat<FileFormat::RCV>(id) ||
-	       IsFormat<FileFormat::SHN>(id) ||
-	       IsFormat<FileFormat::TAK>(id) ||
-	       IsFormat<FileFormat::TCO>(id) ||
-	       IsFormat<FileFormat::THD>(id) ||
-	       IsFormat<FileFormat::TTA>(id) ||
-	       IsFormat<FileFormat::TUN>(id) ||
-	       IsFormat<FileFormat::VOC>(id) ||
-	       IsFormat<FileFormat::VQF>(id) ||
-	       IsFormat<FileFormat::W64>(id) ||
-	       IsFormat<FileFormat::WMA>(id) ||
-	       IsFormat<FileFormat::WV>(id) ||
-	       IsFormat<FileFormat::WVE>(id) ||
-	       IsFormat<FileFormat::XWMA>(id);
+	return IsFormat<FileFormat::AAC>(id)  ||
+	       IsFormat<FileFormat::MP3>(id)  ||
+           IsFormat<FileFormat::FLAC>(id) ||
+	       IsFormat<FileFormat::WAV>(id)  ||
+           IsFormat<FileFormat::OPUS>(id);
 }
+
 static inline bool IsAudio(uint64_t format)
 {
 	return IsAudio((FileFormat) format);
@@ -842,7 +500,7 @@ struct FileAttribute
         }
         else
         {
-			attribute.size = std::to_string(size) + String(" ") + "Byte(s)";
+			attribute.size = std::to_string(size) + String(" ") + Translator::Translate("Byte(s)");
         }
 
 		attribute.hasData = true;
@@ -976,18 +634,9 @@ struct DirectoryEntry
 
     int star;
 
-    int color;
-
     uint32_t id;
 
     bool isEmpty;
-
-    /** Seconds since Unix epoch (local interpretation for UI buckets). 0 = unknown. */
-    int64_t creationUnixSec;
-
-    int64_t lastWriteUnixSec;
-
-    uint64_t fileSize;
 
     DirectoryEntry(String &&_path, FileType type) :
 	    path{std::move(_path)},
@@ -995,12 +644,8 @@ struct DirectoryEntry
 	    fileName{ParseFileName(path)},
 	    subdirectories{},
 	    star{},
-        color{},
 	    id{},
 	    isEmpty{true},
-	    creationUnixSec{},
-	    lastWriteUnixSec{},
-	    fileSize{},
 	    flags{}
 	{
 
@@ -1012,12 +657,8 @@ struct DirectoryEntry
         fileName{ ParseFileName(path) },
 	    subdirectories{},
 	    star{},
-        color{},
 	    id{},
         isEmpty{ true },
-	    creationUnixSec{},
-	    lastWriteUnixSec{},
-	    fileSize{},
         flags{}
     {
 
@@ -1029,12 +670,8 @@ struct DirectoryEntry
 	    fileName{path.c_str()},
 	    subdirectories{},
 	    star{},
-        color{},
 	    id{},
         isEmpty{},
-	    creationUnixSec{},
-	    lastWriteUnixSec{},
-	    fileSize{},
         flags{}
     {
 
@@ -1046,12 +683,8 @@ struct DirectoryEntry
 	    fileName{path.c_str() + path.size() - other.fileName.size()},
 	    subdirectories{other.subdirectories},
 	    star{ other.star },
-	    color{ other.color },
 	    id{other.id},
         isEmpty{ other.isEmpty },
-	    creationUnixSec{ other.creationUnixSec },
-	    lastWriteUnixSec{ other.lastWriteUnixSec },
-	    fileSize{ other.fileSize },
         flags{other.flags}
     {
 
@@ -1087,9 +720,7 @@ struct DirectoryEntry
 
     bool IsDirectory() const
     {
-        return type == FileType::Directory ||
-               type == FileType::Volumn    ||
-               type == FileType::Desktop;
+        return type == FileType::Directory;
     }
 
     bool IsRegularFile() const
@@ -1116,15 +747,11 @@ struct DirectoryEntry
         int rSize = other.path.size() - rPos;
 
         path.Swap(other.path);
-		std::swap(type,           other.type          );
+        std::swap(type,           other.type          );
 		std::swap(subdirectories, other.subdirectories);
 		std::swap(star,           other.star          );
-        std::swap(color,          other.color         );
 		std::swap(id,             other.id            );
-		std::swap(isEmpty,        other.isEmpty       );
-		std::swap(creationUnixSec, other.creationUnixSec);
-		std::swap(lastWriteUnixSec, other.lastWriteUnixSec);
-		std::swap(fileSize,       other.fileSize      );
+        std::swap(isEmpty,        other.isEmpty       );
         std::swap(flags,          other.flags         );
 
         fileName = {path.c_str() + rPos, size_t(rSize)};

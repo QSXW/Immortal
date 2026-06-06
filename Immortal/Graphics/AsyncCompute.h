@@ -4,12 +4,6 @@
 #include "Queue.h"
 #include "LightGraphics.h"
 
-#define IMMORTAL_ASYNC_COMPUTE_STACK_TRACE 0
-
-#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
-#include <stacktrace>
-#endif
-
 namespace Immortal
 {
 
@@ -29,10 +23,7 @@ class AsyncTask
 {
 public:
 	AsyncTask(AsyncTaskType type) :
-	    type{type}
-#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
-	    , stacktrace{std::stacktrace::current()}
-#endif
+        type{ type }
     {
 
     }
@@ -54,9 +45,6 @@ public:
 
 protected:
 	AsyncTaskType type;
-#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
-	std::stacktrace stacktrace;
-#endif
 };
 
 class SetQueueTask : public AsyncTask
@@ -90,8 +78,8 @@ public:
     RecordingTask(T callback) :
 	    AsyncTask{ AsyncTaskType::Recording }
     {
-		callbackWarpper = [=](CommandBuffer *commandBuffer) -> void {
-			callback(commandBuffer);
+		callbackWarpper = [=](uint64_t sync, CommandBuffer *commandBuffer) -> void {
+			callback(sync, commandBuffer);
 		};
     }
 
@@ -100,13 +88,13 @@ public:
 
     }
 
-    void Recording(CommandBuffer *commandBuffer)
+    void Recording(uint64_t sync, CommandBuffer *commandBuffer)
     {
-		callbackWarpper(commandBuffer);
+		callbackWarpper(sync, commandBuffer);
     }
 
 protected:
-    std::function<void(CommandBuffer *)> callbackWarpper;
+    std::function<void(uint64_t, CommandBuffer *)> callbackWarpper;
 };
 
 class QueueTask : public AsyncTask
@@ -142,7 +130,7 @@ public:
     ExecutionCompletedTask(T &&callback) :
         AsyncTask{ AsyncTaskType::ExecutionCompleted }
     {
-        callbackWarpper = [=]() mutable -> void {
+        callbackWarpper = [=]() -> void {
             callback();
         };
     }

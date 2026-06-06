@@ -378,7 +378,7 @@ struct std::hash<Immortal::String>
 {
 	std::size_t operator()(const Immortal::String &s) const noexcept
 	{
-		return std::hash<std::string>{}(std::string{ s.c_str(), s.size() });
+		return std::hash<std::string>{}((const std::string &)s);
 	}
 };
 

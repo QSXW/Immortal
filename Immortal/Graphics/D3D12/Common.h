@@ -318,11 +318,6 @@ struct DepthStencilDescription : public D3D12_DEPTH_STENCIL_DESC
         Primitive::FrontFace        = DefaultStencilOp;
         Primitive::BackFace         = DefaultStencilOp;
     }
-
-    explicit DepthStencilDescription(const Primitive &o) noexcept :
-        Primitive{ o }
-    {
-    }
 };
 
 struct ViewInstancingDescription : public D3D12_VIEW_INSTANCING_DESC

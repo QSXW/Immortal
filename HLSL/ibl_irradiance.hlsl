@@ -1,22 +1,19 @@
-// Diffuse irradiance: Sascha Willems irradiancecube.frag (phi/theta grid on hemisphere).
+// Diffuse irradiance: cosine-weighted hemisphere integration of radiance cubemap (one mip).
 
 struct IBLIrradiancePC
 {
-	float DeltaPhi;
-	float DeltaTheta;
-	uint OutputSize;
-	uint _pad;
+	uint FaceSize;
+	uint SampleCount;
+	uint2 _pad;
 };
 
-/* Variable must be named `push_constant` so D3D12 reflection matches root constants (see Shader.cpp). */
-[[vk::push_constant]]
-IBLIrradiancePC push_constant;
+[[vk::push_constant]] IBLIrradiancePC pc;
 
 TextureCube<float4> EnvironmentMap : register(t0);
 SamplerState LinearClamp : register(s1);
 RWTexture2DArray<float4> IrradianceOut : register(u2);
 
-static const float PI = 3.14159265358979323846f;
+static const float PI = 3.14159265358979323846;
 
 float3 FaceUVToDirection(uint face, float2 uv)
 {
@@ -34,12 +31,17 @@ float3 FaceUVToDirection(uint face, float2 uv)
 	return normalize(float3(-st.x, -st.y, -1.0f));
 }
 
+void BuildBasis(float3 N, out float3 T, out float3 B)
+{
+	float3 up = abs(N.z) < 0.999f ? float3(0.0f, 0.0f, 1.0f) : float3(1.0f, 0.0f, 0.0f);
+	T = normalize(cross(up, N));
+	B = cross(N, T);
+}
+
 [numthreads(16, 16, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
-	uint w = push_constant.OutputSize;
-	uint h = push_constant.OutputSize;
-	if (DTid.x >= w || DTid.y >= h)
+	if (DTid.x >= pc.FaceSize || DTid.y >= pc.FaceSize)
 	{
 		return;
 	}
@@ -49,31 +51,29 @@ void main(uint3 DTid : SV_DispatchThreadID)
 		return;
 	}
 
-	float2 uv = (float2(DTid.xy) + 0.5f) / float2(w, h);
+	float2 uv = (float2(DTid.xy) + 0.5f) / float(pc.FaceSize);
 	float3 N = FaceUVToDirection(face, uv);
 
-	float3 up = float3(0.0f, 1.0f, 0.0f);
-	float3 right = normalize(cross(up, N));
-	up = cross(N, right);
+	float3 T, B;
+	BuildBasis(N, T, B);
 
-	const float TWO_PI = PI * 2.0f;
-	const float HALF_PI = PI * 0.5f;
-
-	/* Hemisphere integral: E = ∫∫ L(w) cos θ dω = ∫_φ ∫_θ L(θ,φ) cos θ sin θ dθ dφ (Sascha irradiancecube). */
-	float3 color = float3(0.0f, 0.0f, 0.0f);
-	float dPhi = max(push_constant.DeltaPhi, 1e-6f);
-	float dTheta = max(push_constant.DeltaTheta, 1e-6f);
-	for (float phi = 0.0f; phi < TWO_PI; phi += dPhi)
+	uint sampleCount = max(pc.SampleCount, 1u);
+	float3 acc = 0.0f;
+	for (uint i = 0u; i < sampleCount; i++)
 	{
-		for (float theta = 0.0f; theta < HALF_PI; theta += dTheta)
-		{
-			float3 tempVec = cos(phi) * right + sin(phi) * up;
-			float3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-			color += EnvironmentMap.SampleLevel(LinearClamp, sampleVector, 0.0f).rgb * cos(theta) * sin(theta) * dPhi * dTheta;
-		}
+		float a = float(i + 1u) * 0.6180339887f;
+		float b = float(i + 1u) * 0.3819660113f;
+		float u = frac(a);
+		float v = frac(b);
+		float phi = 2.0f * PI * u;
+		float cosTheta = sqrt(1.0f - v);
+		float sinTheta = sqrt(v);
+		float3 Lloc = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+		float3 L = normalize(T * Lloc.x + B * Lloc.y + N * Lloc.z);
+		float3 radiance = EnvironmentMap.SampleLevel(LinearClamp, L, 0.0f).rgb;
+		acc += radiance;
 	}
 
-	/* Lambert diffuse uses kD * albedo * (E / π); screen G-buffer path multiplies by albedo without extra /π. */
-	float3 irradiance = color / PI;
+	float3 irradiance = acc / float(sampleCount);
 	IrradianceOut[DTid] = float4(irradiance, 1.0f);
 }

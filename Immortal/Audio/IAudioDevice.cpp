@@ -6,9 +6,7 @@
 
 #include "IAudioDevice.h"
 
-#if defined(IMMORTAL_AUDIO_USE_SDL2)
-#include "SDLDevice.h"
-#elif defined(_WIN32)
+#ifdef _WIN32
 #include "WASAPI.h"
 #elif defined(__linux__)
 #include "ALSA.h"
@@ -21,17 +19,19 @@ namespace Immortal
 
 IAudioDevice *IAudioDevice::CreateInstance()
 {
-#if defined(IMMORTAL_AUDIO_USE_SDL2)
-	return new SDLAudio::Device;
-#elif defined(WASAPI_CONTEXT_H_)
-	return new WASAPI::Device;
-#elif defined(ALSA_CONTEXT_H_)
-	return new ALSAContext;
-#elif defined(COREAUDIO_CONTEXT_H_)
-	return new CoreAudio::Device;
-#else
-	return nullptr;
+#ifdef WASAPI_CONTEXT_H_
+    return new WASAPI::Device;
 #endif
+
+#ifdef ALSA_CONTEXT_H_
+    return new ALSAContext;
+#endif
+
+#ifdef COREAUDIO_CONTEXT_H_
+    return new CoreAudio::Device;
+#endif
+
+    return nullptr;
 }
 
 }

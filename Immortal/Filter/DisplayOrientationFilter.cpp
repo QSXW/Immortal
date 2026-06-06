@@ -84,7 +84,7 @@ void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, Async
 		descriptorSets[i]->Set(0, input[i]);
 	}
 
-	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
+	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
 		for (size_t i = 0; i < input.size(); i++)
 		{
 			uint32_t nThreadX = SLALIGN(output[i]->GetWidth()  / 32, 32);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 #include "Immortal.h"
@@ -38,11 +37,6 @@ public:
 
     }
 
-	void SetLoadSceneHandler(std::function<void()> fn)
-	{
-		loadSceneHandler = std::move(fn);
-	}
-
     virtual bool Draw() override
     {
         if (!scene)
@@ -57,7 +51,7 @@ public:
 		ImGui::SetNextItemWidth(-FLT_MIN);
 		filter.Draw(Translator::Translate("Filter (inc,-exc)").c_str());
 
-		//ImGui::Checkbox(Translator::Translate("Use Clipper").c_str(), &useClipper);
+		ImGui::Checkbox(Translator::Translate("Use Clipper").c_str(), &useClipper);
 
 		Object pendingDestroy{};
 
@@ -114,36 +108,6 @@ public:
 			ImGui::EndTable();
 		}
 
-		if (ImGui::BeginPopupContextWindow("##hierarchy_context", ImGuiPopupFlags_NoOpenOverItems | ImGuiPopupFlags_MouseButtonRight))
-		{
-			if (ImGui::MenuItem(Translator::Translate("Create Empty Object").c_str()))
-			{
-				selectedObject = scene->CreateObject("Object");
-			}
-			if (ImGui::BeginMenu(Translator::Translate("Create Primitive").c_str()))
-			{
-				CreatePrimitiveMenu();
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu(Translator::Translate("Create Light").c_str()))
-			{
-				CreateLightMenu();
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu(Translator::Translate("Load Scene").c_str()))
-			{
-				if (ImGui::MenuItem(Translator::Translate("From File").c_str()))
-				{
-					if (loadSceneHandler)
-					{
-						loadSceneHandler();
-					}
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndPopup();
-		}
-
 		if (pendingDestroy)
 		{
 			scene->DestroyObject(pendingDestroy);
@@ -174,70 +138,6 @@ public:
     }
 
 private:
-	void CreatePrimitiveObject(const char *name, Ref<Mesh> mesh)
-	{
-		Object object = scene->CreateObject(name);
-		object.AddComponent<MeshComponent>(mesh);
-		object.AddComponent<MaterialComponent>();
-		selectedObject = object;
-	}
-
-	void CreatePrimitiveMenu()
-	{
-		if (ImGui::MenuItem(Translator::Translate("Plane").c_str()))
-		{
-			CreatePrimitiveObject("Plane", Mesh::CreatePlane());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Cube").c_str()))
-		{
-			CreatePrimitiveObject("Cube", Mesh::CreateCube());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Sphere").c_str()))
-		{
-			CreatePrimitiveObject("Sphere", Mesh::CreateSphere());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Cylinder").c_str()))
-		{
-			CreatePrimitiveObject("Cylinder", Mesh::CreateCylinder());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Capsule").c_str()))
-		{
-			CreatePrimitiveObject("Capsule", Mesh::CreateCapsule());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Cone").c_str()))
-		{
-			CreatePrimitiveObject("Cone", Mesh::CreateCone());
-		}
-		if (ImGui::MenuItem(Translator::Translate("Torus").c_str()))
-		{
-			CreatePrimitiveObject("Torus", Mesh::CreateTorus());
-		}
-	}
-
-	void CreateLightObject(const char *name, LightComponent::Type type)
-	{
-		Object object = scene->CreateObject(name);
-		auto &light = object.AddComponent<LightComponent>();
-		light.LightType = type;
-		selectedObject = object;
-	}
-
-	void CreateLightMenu()
-	{
-		if (ImGui::MenuItem(Translator::Translate("Directional Light").c_str()))
-		{
-			CreateLightObject("Directional Light", LightComponent::Type::Directional);
-		}
-		if (ImGui::MenuItem(Translator::Translate("Point Light").c_str()))
-		{
-			CreateLightObject("Point Light", LightComponent::Type::Point);
-		}
-		if (ImGui::MenuItem(Translator::Translate("Spot Light").c_str()))
-		{
-			CreateLightObject("Spot Light", LightComponent::Type::Spot);
-		}
-	}
-
 	void DrawBoneMeshSelectables(Object sceneObject, MeshComponent &meshComp, Ref<Mesh> mesh, BoneNode *node, bool bulletEachRow = false)
 	{
 		auto &nodeList = mesh->NodeList();
@@ -309,16 +209,16 @@ private:
 		/* No child bones: leaf — use bullet (circle), not an expandable tree row. */
 		if (!hasChildren && hasMeshes)
 		{
-			//if (!node->Name.empty())
-			//{
-			//	ImGui::Bullet();
-			//	ImGui::SameLine();
-			//	ImGui::TextUnformatted(displayName);
-			//	ImGui::Indent();
-			//	DrawBoneMeshSelectables(sceneObject, meshComp, mesh, node, false);
-			//	ImGui::Unindent();
-			//}
-			//else
+			if (!node->Name.empty())
+			{
+				ImGui::Bullet();
+				ImGui::SameLine();
+				ImGui::TextUnformatted(displayName);
+				ImGui::Indent();
+				DrawBoneMeshSelectables(sceneObject, meshComp, mesh, node, false);
+				ImGui::Unindent();
+			}
+			else
 			{
 				DrawBoneMeshSelectables(sceneObject, meshComp, mesh, node, true);
 			}
@@ -428,12 +328,9 @@ private:
 
     Object selectedObject;
 
-	bool useClipper = true;
+	bool useClipper = false;
 
     std::function<void(Object)> callback;
-
-	/** Optional: replaces editor scene from disk (see RenderLayer::LoadScene). */
-	std::function<void()> loadSceneHandler;
 };
 
 }

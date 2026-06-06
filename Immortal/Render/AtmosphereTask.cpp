@@ -1,7 +1,5 @@
 #include "AtmosphereTask.h"
 
-#include <imgui.h>
-
 namespace Immortal
 {
 
@@ -30,7 +28,7 @@ void AtmosphereTask::SetSunDirection(const Vector3 &direction)
 
 void AtmosphereTask::Build(AsyncComputeThread *asyncComputeThread)
 {
-	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
+	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
 		skybox = Mesh::CreateCube(asyncComputeThread, commandBuffer, 1.0f, true);
 
 		auto device = Graphics::GetDevice();
@@ -114,12 +112,6 @@ void AtmosphereTask::Composite(CommandBuffer *commandBuffer, const SceneParamete
 	commandBuffer->SetVertexBuffers(0, 1, vertexBuffers, sizeof(Mesh::SimpleVertex));
 	commandBuffer->SetIndexBuffer(nodes[0].Index, Format::UINT32);
 	commandBuffer->DrawIndexedInstance(nodes[0].Index->GetSize() / sizeof(uint32_t), 1, 0, 0, 0);
-}
-
-void AtmosphereTask::OnFrameGraphDebugGui()
-{
-	ImGui::Text("Enabled: %s", enabled ? "yes" : "no");
-	ImGui::BulletText("Procedural sky drawn in Composite; no off-screen debug texture.");
 }
 
 }

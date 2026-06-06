@@ -157,11 +157,9 @@ public:
 public:
     RenderTarget(Device *device = nullptr);
 
-    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 0);
+    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount = 0);
 
     ~RenderTarget();
-
-    virtual void SetName(const char *name) override;
 
     virtual void Resize(uint32_t width, uint32_t height) override;
 
@@ -199,20 +197,12 @@ public:
 
     uint32_t GetWidth() const
     {
-		if (!colorBuffers.empty())
-		{
-			return colorBuffers[0]->GetWidth();
-		}
-		return depth->GetWidth();
+		return colorBuffers[0]->GetWidth();
     }
 
     uint32_t GetHeight() const
     {
-		if (!colorBuffers.empty())
-		{
-			return colorBuffers[0]->GetHeight();
-		}
-		return depth->GetHeight();
+		return colorBuffers[0]->GetHeight();
     }
 
 protected:

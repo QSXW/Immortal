@@ -88,7 +88,7 @@ void GaussianBlurFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComput
         descriptorSets[input.size() + i]->Set(3, sampler);
     }
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
         commandBuffer->MemoryCopy(kernal[kHorizontal], 0, stagingKernalBuffer[kHorizontal], 0, stagingKernalBuffer[kHorizontal]->GetSize());
         if (kernal[kVertical] != kernal[kHorizontal])
         {
