@@ -168,8 +168,6 @@ public:
 
     void Join();
 
-    void SetDescription(const std::string &description);
-
 public:
     template <class T, class ... Args>
 	void Execute(Args &&...args)

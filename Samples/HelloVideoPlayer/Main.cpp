@@ -41,6 +41,7 @@ int main(int, char **)
     // For more details about the rendering, please check HelloTriangleExample and HelloImGuiExample
     BackendAPI backendAPI = BackendAPI::D3D12;
 
+
 	URef<Window> window = Window::CreateInstance("Hello Video Player(d3d12va) - Immortal Graphics Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
 	window->SetEventCallback(OnEvent);
 
@@ -105,13 +106,13 @@ int main(int, char **)
 
 	Timer timer;
     URef<VideoPlayerComponent> videoPlayerComponent;
-	URef<FilterGraphComponent> filterGraphComponent;
+	URef<SpriteRendererComponent> sprite;
 	Ref<Texture> texture;
 
     Ref<AudioDevice> audioDevice;
 	float progress = 0.0f;
 
-    String filepath = "Video Player Window";
+    std::string filepath = "Video Player Window";
 	while (!applicationExit)
     {
 		auto deltaTime = timer.tick<Timer::Seconds>();
@@ -149,7 +150,7 @@ int main(int, char **)
 				Ref<Demuxer>    demuxer = new Vision::FFDemuxer;
 				demuxer->Open(filepath, codec, audioCodec);
 				videoPlayerComponent = new VideoPlayerComponent{ demuxer, codec, audioCodec };
-				filterGraphComponent.Reset();
+				sprite = new SpriteRendererComponent;
 
                 if (isPaused)
                 {
@@ -179,17 +180,10 @@ int main(int, char **)
 				Picture picture = videoPlayerComponent->GetPicture();
 				if (picture)
 				{
-                    if (!filterGraphComponent)
-                    {
-						auto &format = picture.GetFormat();
-						filterGraphComponent = new FilterGraphComponent;
-						filterGraphComponent->Insert<ScaleFilter>(0, picture.GetFormat(), format.IsType(Format::HightBitDepth) ? Format::RGBA16 : Format::RGBA8, picture.GetWidth(), picture.GetHeight());
-                    }
-
 					videoPlayerComponent->PopPicture();
-					filterGraphComponent->Run({ picture });
+					sprite->UpdateSprite(picture);
 
-					texture = filterGraphComponent->QueryOutput(0);
+					texture = sprite->Sprite;
 
 					auto current = picture.GetTimestamp();
 					progress = (float) current / animator->TotalFrames();
@@ -289,7 +283,7 @@ int main(int, char **)
     queue->WaitIdle();
 
 	videoPlayerComponent.Reset();
-	filterGraphComponent.Reset();
+	sprite.Reset();
 	audioDevice.Reset();
 	Graphics::Release();
 

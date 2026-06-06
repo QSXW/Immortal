@@ -30,16 +30,12 @@ public:
 
     void SetScale(int numerator, int denominator);
 
-    void SetQuality(int value);
-
 protected:
 	bool isOutputYUV;
 
     int numerator;
 
     int denominator;
-
-    int quality;
 };
 
 }

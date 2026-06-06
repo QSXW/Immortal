@@ -26,7 +26,7 @@ public:
 			}
 
 			ImGui::PushFont(GuiLayer::NotoSans.Bold);
-			ImGui::Begin(Translator::Translate("Navigator"));
+			ImGui::Begin(WordsMap::Get("Navigator"));
 
 			{
 				if (object)
@@ -34,7 +34,7 @@ public:
 					std::string &tag = object.GetComponent<TagComponent>().Tag;
 					char buf[4096] = {0};
 					strcat(buf, tag.c_str());
-					if (ImGui::InputText(Translator::Translate("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
+					if (ImGui::InputText(WordsMap::Get("Object Name").c_str(), buf, SL_ARRAY_LENGTH(buf)))
 					{
 						tag = std::string{buf};
 					}
@@ -65,31 +65,31 @@ public:
 				ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
 				ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4{1.0f, 1.0f, 1.0f, 0.2f});
 
-				if (ImGui::CollapsingHeader(Translator::Translate("Meta")))
+				if (ImGui::CollapsingHeader(WordsMap::Get("Meta")))
 				{
 					const auto width = sprite->GetWidth();
 					const auto height = sprite->GetHeight();
-					UI::DrawColumn(Translator::Translate("Width"), [&]() -> bool { ImGui::Text("%d", width);  return false ; });
-					UI::DrawColumn(Translator::Translate("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
+					UI::DrawColumn(WordsMap::Get("Width"), [&]() -> bool { ImGui::Text("%d", width);  return false ; });
+					UI::DrawColumn(WordsMap::Get("Height"), [&]() -> bool { ImGui::Text("%d", height); return false; });
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(Translator::Translate("Preset")))
+				if (ImGui::CollapsingHeader(WordsMap::Get("Preset")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(Translator::Translate("Snapshot")))
+				if (ImGui::CollapsingHeader(WordsMap::Get("Snapshot")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(Translator::Translate("History")))
+				if (ImGui::CollapsingHeader(WordsMap::Get("History")))
 				{
 				}
 				ImGui::Separator();
 
-				if (ImGui::CollapsingHeader(Translator::Translate("Favorite")))
+				if (ImGui::CollapsingHeader(WordsMap::Get("Favorite")))
 				{
 				}
 				ImGui::Separator();

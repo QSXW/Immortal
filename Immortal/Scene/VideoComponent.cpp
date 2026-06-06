@@ -1,10 +1,10 @@
 /**
- * Copyright (C) 2022-2024, by Wu Jianhua (toqsxw@outlook.com)
+ * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
  *
  * This library is distributed under the Apache-2.0 license.
  */
 
-#include "VideoPlayerComponent.h"
+#include "Component.h"
 #include <shared_mutex>
 
 namespace Immortal
@@ -13,7 +13,7 @@ namespace Immortal
 struct VideoPlayerContext
 {
 public:
-	VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, int cacheSize = 3);
+    VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
 
     ~VideoPlayerContext();
 
@@ -30,12 +30,6 @@ public:
     void PopPicture();
 
     void PopAudioFrame();
-
-public:
-    const Vision::DisplayOrientation *GetDisplayOrientation() const
-    {
-		return decoder->GetProperty<Vision::DisplayOrientation>();
-    }
 
     const String &GetSource() const
     {
@@ -70,8 +64,6 @@ public:
 
     std::queue<Picture> audioFrames;
 
-    const int kCacheSize;
-
     struct State
     {
         bool playing = false;
@@ -90,22 +82,21 @@ Vision::Picture AsyncDecode(const Vision::CodedFrame &codedFrame, Vision::Interf
     return Vision::Picture{};
 }
 
-VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder, int cacheSize) :
+VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
     demuxerThread{},
     videoThreadPool{ new ThreadPool{1} },
     audioThreadPool{ new ThreadPool{1} },
     decoder{decoder},
     audioDecoder{ audioDecoder },
     demuxer{demuxer},
-    state{},
-    kCacheSize{cacheSize}
+    state{}
 {
     demuxerThread = new Thread{[=, this]() {
         while (true)
         {
             std::unique_lock lock{ mutex.demux };
             condition.wait(lock, [this] {
-				return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < kCacheSize);
+                return state.exited || ((pictures.size() + videoThreadPool->TaskSize()) < 7);
             });
 
             if (state.exited)
@@ -191,20 +182,8 @@ VideoPlayerContext::~VideoPlayerContext()
 
 Picture VideoPlayerContext::GetPicture()
 {
-	Picture picture{}; 
-    {
-		std::shared_lock lock{mutex.video};
-		if (!pictures.empty())
-        {
-			picture = pictures.front();
-        }
-	}
-    if (!picture)
-    {
-		condition.notify_one();
-    }
-
-	return picture;
+    std::shared_lock lock{ mutex.video };
+    return pictures.empty() ? Vision::Picture{} : pictures.front();
 }
 
 Picture VideoPlayerContext::GetAudioFrame()
@@ -215,10 +194,9 @@ Picture VideoPlayerContext::GetAudioFrame()
 
 void VideoPlayerContext::PopPicture()
 {
-    {
-		std::unique_lock lock{mutex.video};
-		pictures.pop();
-    }
+    std::unique_lock lock{ mutex.video };
+    Picture picture = std::move(pictures.front());
+    pictures.pop();
     condition.notify_one();
 }
 
@@ -235,18 +213,6 @@ VideoPlayerComponent::VideoPlayerComponent() :
     player{}
 {
 
-}
-
-VideoPlayerComponent::VideoPlayerComponent(const String &path) :
-    player{}
-{
-	Ref<Demuxer>    demuxer       = new Vision::FFDemuxer;
-	Ref<VideoCodec> decoder       = new Vision::FFCodec;
-	Ref<VideoCodec> audiodDecoder = new Vision::FFCodec;
-	if (demuxer->Open(path, decoder, audiodDecoder) != CodecError::Success)
-    {
-		return;
-    }
 }
 
 VideoPlayerComponent::VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder) :
@@ -298,11 +264,6 @@ Animator *VideoPlayerComponent::GetAnimator() const
 const String &VideoPlayerComponent::GetSource() const
 {
     return player->GetSource();
-}
-
-const Vision::DisplayOrientation *VideoPlayerComponent::GetDisplayOrientation() const
-{
-	return player->GetDisplayOrientation();
 }
 
 }

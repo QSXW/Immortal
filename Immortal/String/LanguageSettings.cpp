@@ -3,6 +3,6 @@
 namespace Immortal
 {
 
-Translator Translator::This{"Assets/Json/default_language.json"};
+WordsMap WordsMap::That{ "Assets/json/default_language.json" };
 
 }

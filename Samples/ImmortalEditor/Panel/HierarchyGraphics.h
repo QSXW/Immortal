@@ -7,15 +7,15 @@ namespace Immortal
 
 static inline void AddComponents(Scene *scene, Object &object)
 {
-    if (ImGui::MenuItem(Translator::Translate("Script Component")))
+    if (ImGui::MenuItem(WordsMap::Get("Script Component")))
     {
         object.AddComponent<ScriptComponent>();
     }
-    if (ImGui::MenuItem(Translator::Translate("Light Component")))
+    if (ImGui::MenuItem(WordsMap::Get("Light Component")))
     {
         object.AddComponent<LightComponent>();
     }
-    if (ImGui::MenuItem(Translator::Translate("Camera Component")))
+    if (ImGui::MenuItem(WordsMap::Get("Camera Component")))
     {
         object.AddComponent<CameraComponent>();
     }
@@ -48,12 +48,12 @@ public:
 
         if (ImGui::BeginPopupContextItem())
         {
-            if (ImGui::BeginMenu(Translator::Translate("Add Component")))
+            if (ImGui::BeginMenu(WordsMap::Get("Add Component")))
             {
                 AddComponents(scene, object);
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem(Translator::Translate("Delete")))
+            if (ImGui::MenuItem(WordsMap::Get("Delete")))
             {
                 isDeleted = true;
             }
@@ -84,7 +84,7 @@ public:
     {
 		Connect([=, this] {
 			ImGui::PushFont(GuiLayer::NotoSans.Bold);
-			ImGui::Begin(Translator::Translate("Project"));
+			ImGui::Begin(WordsMap::Get("Project"));
 
 			scene->Registry().each([&](auto id) {
 				Object object{id, scene};

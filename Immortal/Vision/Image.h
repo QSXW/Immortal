@@ -7,7 +7,7 @@ namespace Immortal
 namespace Vision
 {
 
-Picture Read(const String &path);
+Picture Read(const std::string &path);
 
 }
 }

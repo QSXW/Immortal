@@ -32,7 +32,7 @@ public:
 
     void GetCurve(float *curve);
 
-    void GetDisplayOrientation(int &hflip, int &vflip, int &anticlockwiseRotation);
+    int GetFlipType();
 
 protected:
     Format format;

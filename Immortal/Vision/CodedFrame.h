@@ -18,7 +18,7 @@ public:
 	friend CodedFrame;
 
 public:
-	  SharedCodedFrameData() :
+	SharedCodedFrameData() :
 	    buffer{},
 	    type{},
 	    release{}
@@ -44,13 +44,6 @@ public:
     {
         buffer.resize(sizeof(T *));
         memcpy(buffer.data(), &ptr, sizeof(T *));
-    }
-
-    template <class T>
-	void Assign(const T *ptr, size_t size)
-    {
-		buffer.resize(size);
-		memcpy(buffer.data(), ptr, size);
     }
 
     template <class T>
@@ -97,13 +90,6 @@ public:
     {
 		_shared->RefTo(data);
     }
-
-    template <class T>
-	CodedFrame(const T *data, size_t size) :
-	    _shared{new SharedCodedFrameData}
-	{
-		_shared->Assign(data, size);
-	}
 
 	CodedFrame(std::vector<uint8_t> &&data) :
 	    _shared{new SharedCodedFrameData}
@@ -157,28 +143,6 @@ public:
     {
 		_shared->SetRelease(std::move(func));
     }
-
-    size_t GetSize() const
-    {
-        if (!_shared)
-        {
-			return 0;
-        }
-
-		auto &buffer = _shared->GetBuffer();
-	    return buffer.size();
-    }
-
-    const uint8_t *GetData() const
-	{
-		if (!_shared)
-		{
-			return nullptr;
-		}
-
-		auto &buffer = _shared->GetBuffer();
-	    return buffer.data();
-	}
 
 public:
 	Ref<SharedCodedFrameData> _shared;

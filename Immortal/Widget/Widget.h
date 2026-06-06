@@ -157,7 +157,7 @@ struct WidgetState
 template <class T>
 struct WidgetLock
 {
-    WidgetLock(T id)
+    WidgetLock(T *id)
     {
         ImGui::PushID(id);
     }
@@ -311,7 +311,7 @@ public:                                                  \
     {                                                    \
 	    if (!GuiLayer::IsLanguage(Language::English))    \
 	    {                                                \
-		    text = Translator::Translate(_text);         \
+		    text = WordsMap::Get(_text);                 \
 	    }                                                \
 	    else                                             \
 	    {                                                \
@@ -711,11 +711,6 @@ public:
     void SetFocus()
     {
 		ImGui::SetWindowFocus(Text().c_str());
-    }
-
-    void ResetState()
-    {
-		state = {};
     }
 
 protected:

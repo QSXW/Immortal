@@ -107,15 +107,21 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     if (!executionCompletedTasks.empty())
                     {
 						auto onCompletedTasks = std::make_shared <std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
+						//Async::Execute([=, this] {
+						//	gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
+						//	for (auto &[sync, executionCompleted] : *onCompletedTasks)
+						//	{
+						//		executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
+						//	}
+						//});
+
                         Coroutine h = [=, this]() -> Coroutine
 						{
-							Async::Execute([=, this] {
-								gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
-								for (auto &[sync, executionCompleted] : *onCompletedTasks)
-								{
-									executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
-								}
-							});
+						    gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
+						    for (auto &[sync, executionCompleted] : *onCompletedTasks)
+						    {
+							    executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
+						    }
 							co_return;
 						}();
 						h.resume();
@@ -137,7 +143,6 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                 case AsyncTaskType::Terminate:
                 {
-					queue->WaitIdle();
                     if (commandBuffer)
                     {
                         delete commandBuffer;
@@ -151,6 +156,8 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 						commandBuffers.pop();
                     }
 
+                    //std::unique_lock lock{ mutex };
+                    //tasks = {};
                     return;
                 }
 
@@ -183,11 +190,6 @@ void AsyncComputeThread::WaitIdle()
 void AsyncComputeThread::Join()
 {
 	thread.Join();
-}
-
-void AsyncComputeThread::SetDescription(const std::string &description)
-{
-	thread.SetDebugDescription(description);
 }
 
 }

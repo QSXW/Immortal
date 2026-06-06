@@ -5,7 +5,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project("ImmortalVision")
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(VISION_CORE_FILES
@@ -101,9 +101,7 @@ list(TRANSFORM VULKAN_VIDEO_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Video/Vul
 
 set(PROCESSING_FILES
     ColorSpace.cpp
-    ColorSpace.h
-    Scale.cpp
-    Scale.h)
+    ColorSpace.h)
 list(TRANSFORM PROCESSING_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Processing/")
 
 set(EXTERNAL_FILES

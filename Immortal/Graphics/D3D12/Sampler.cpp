@@ -9,13 +9,13 @@ static inline D3D12_FILTER CAST(Filter filter)
 {
 	switch (filter)
 	{
-		case Filter::Linear:
-		case Filter::Bilinear:
+		case Immortal::Filter::Linear:
+		case Immortal::Filter::Bilinear:
 			return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		case Filter::Anisotropic:
+		case Immortal::Filter::Anisotropic:
 			return D3D12_FILTER_MINIMUM_ANISOTROPIC;
-	    case Filter::None:
-		case Filter::Nearest:
+	    case Immortal::Filter::None:
+		case Immortal::Filter::Nearest:
 		default:
 			return D3D12_FILTER_MIN_MAG_MIP_POINT;
 	}

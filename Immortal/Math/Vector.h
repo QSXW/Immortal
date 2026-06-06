@@ -10,7 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include <imgui.h>
 
 namespace Immortal
 {
@@ -73,17 +72,6 @@ struct Vector2 : public glm::vec2
     {
         return glm::normalize(*this);
     }
-
-	constexpr Vector2(const ImVec2 &f)
-       : Primitive{ f.x, f.y }
-	{
-    
-    }
-
-	operator ImVec2() const
-	{
-		return { x, y };
-	}
 };
 
 struct Vector4;

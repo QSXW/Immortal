@@ -44,13 +44,13 @@ static D3D12_SHADER_VISIBILITY CAST(ShaderStage stage)
     }
 }
 
-Shader::Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro) :
+Shader::Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint) :
     Super{},
     visibility{ CAST(stage) },
     pushConstants{},
     pushConstantIndex{}
 {
-	LoadByteCodes(source, name, stage, entryPoint, pMacro, numMacro);
+    LoadByteCodes(source, name, stage, entryPoint);
 }
 
 Shader::Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t size) :
@@ -86,7 +86,7 @@ Shader::~Shader()
 
 }
 
-void Shader::LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
+void Shader::LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint)
 {
     {
 		DirectXShaderCompiler directXShaderCompiler;
@@ -100,9 +100,7 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
                 source.c_str(),
                 entryPoint,
                 dxil,
-                error,
-                pMacro,
-                numMacro))
+                error))
             )
         {
 		    LOG::ERR("Shader compiling failing: \n\n{}", error);
@@ -122,14 +120,12 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
     compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-    std::vector<D3D_SHADER_MACRO> defines;
-	defines.reserve(2 + numMacro);
-	defines.emplace_back(D3D_SHADER_MACRO{ "__D3D12__", NULL });
-    for (uint32_t i = 0; i < numMacro; i++)
-    {
-		defines.emplace_back(D3D_SHADER_MACRO{ pMacro[i].name, pMacro[i].definition });
-    }
-	defines.emplace_back(D3D_SHADER_MACRO{ NULL, NULL });
+    D3D_SHADER_MACRO defines[] = {
+        {.Name = "__D3D12__",
+         .Definition = NULL},
+        {.Name = NULL,
+         .Definition = NULL},
+    };
 
     ComPtr<ID3DBlob> error;
 	ComPtr<ID3DBlob> byteCodesBlob;
@@ -137,7 +133,7 @@ void Shader::LoadByteCodes(const std::string &source, const std::string &name, S
               source.c_str(),
               source.size(),
               name.c_str(),
-              defines.data(),
+              defines,
               nullptr,
               entryPoint.c_str(),
               GetShaderTarget(stage),
@@ -216,11 +212,6 @@ void Shader::SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflecti
             case D3D_SIT_UAV_RWTYPED:
 				rangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 				break;
-
-            case D3D_SIT_UAV_RWSTRUCTURED:
-				rangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-				break;
-
 			default:
 				break;
 		}

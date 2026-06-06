@@ -52,13 +52,13 @@ public:
     using Super = SuperShader;
 
 public:
-	Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0);
+    Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint);
 
     Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t size);
 
     virtual ~Shader() override;
 
-    void LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0);
+    void LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint);
 
 public:
     D3D12_SHADER_BYTECODE GetByteCodes() const

@@ -1,71 +1,51 @@
-/**
- * Copyright (C) 2024, by Wu Jianhua (toqsxw@outlook.com)
- *
- * This library is distributed under the Apache-2.0 license.
- */
-
-#include "FilterGraphComponent.h"
-#include "Vision/Common/SamplingFactor.h"
+#include "Component.h"
 
 namespace Immortal
 {
 
-FilterGraphComponent::FilterGraphComponent(Device *device) :
-	device{ device },
-    nodes{},
-	transferNode{},
-    maxNodeLength{}
+TransferNode::TransferNode(int nextIndex, Type type) :
+    FilterNode{ nextIndex },
+	type{ type }
+{
+
+}
+
+void TransferNode::Run(const std::vector<Ref<Texture>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread)
 {
 
 }
 
 FilterGraphComponent::~FilterGraphComponent()
 {
-	nodes = {};
-}
-
-void FilterGraphComponent::Run(const std::vector<Picture> &input, AsyncComputeThread *asyncComputeThread)
-{
-	std::vector<Ref<Texture>> nextInputs;
-	for (auto &picture : input)
+	for (auto &nodes : nodeGroups)
 	{
-		transferNode.Upload(picture, asyncComputeThread);
-		nextInputs.insert(nextInputs.end(), transferNode.GetOutput().begin(), transferNode.GetOutput().end());
-	}
-
-	Run(nextInputs, asyncComputeThread);
-}
-
-void FilterGraphComponent::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
-{
-	std::vector<Ref<Texture>> nextInputs = input;
-
-	for (size_t i = 0; i < nodes.size(); i++)
-	{
-		auto &node = nodes[i];
-		std::vector<Ref<Texture>> output;
-		node->Preprocess();
-		node->Run(nextInputs, asyncComputeThread);
-		node->PostProcess();
-		
-		for (auto &out : node->GetOutput())
+		for (auto &node : nodes)
 		{
-			if (out->GetMipLevels() > 1)
+			if (node)
 			{
-				asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
-					commandBuffer->GenerateMipMaps(out, Filter::Linear);
-				});
+				delete node;
+				node = nullptr;
 			}
 		}
-		nextInputs = node->GetOutput();
 	}
-
-	output = nextInputs;
 }
 
-const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t filterNodeInstance) const
+void FilterGraphComponent::Run(const std::vector<std::vector<Ref<Texture>>> &input, std::vector<Ref<Texture>> &output, AsyncComputeThread *asyncComputeThread)
 {
-	return output[filterNodeInstance];
+	std::vector<std::vector<Ref<Texture>>> nextInputs = input;
+
+	for (auto &nodes : nodeGroups)
+	{
+		for (size_t i = 0; i < nodes.size(); i++)
+		{
+			auto &node = nodes[i];
+			std::vector<Ref<Texture>> output;
+			node->Preprocess();
+			node->Run(nextInputs[i], output, asyncComputeThread);
+			node->PostProcess();
+			nextInputs[i] = std::move(output);
+		}
+	}
 }
 
 }

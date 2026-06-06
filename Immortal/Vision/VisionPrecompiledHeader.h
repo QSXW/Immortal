@@ -53,7 +53,6 @@
 #include "LookupTable/LookupTable.h"
 
 #include "Processing/ColorSpace.h"
-#include "Processing/Scale.h"
 
 #include "Video/DAV1DCodec.h"
 #include "Video/FFCodec.h"
