@@ -139,7 +139,7 @@ public:
 
     const std::vector<Chunk> &Read()
     {
-        buffer.resize(stream.GetSize());
+        buffer.resize(stream.Size());
         stream.Read(buffer.data(), buffer.size());
 
         return Parse(buffer);

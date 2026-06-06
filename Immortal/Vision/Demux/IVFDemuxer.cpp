@@ -128,7 +128,7 @@ IVFDemuxer::Header IVFDemuxer::ReadHeader()
     Header header{};
 
     uint8_t data[8];
-    header.offset = stream.Tell();
+    header.offset = stream.Pos();
     if (stream.Read(data, 4, 1) == 1)
     {
         header.size = (uint32_t)DoubleWord{ data };
