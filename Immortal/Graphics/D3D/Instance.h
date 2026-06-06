@@ -36,8 +36,6 @@ public:
 protected:
 	HMODULE dxgiLibrary;
 
-	HMODULE dxgiDebugLibrary;
-
 	std::vector<URef<PhysicalDevice>> physicalDevices;
 };
 
