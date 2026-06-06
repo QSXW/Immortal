@@ -97,7 +97,7 @@ public:
             id = frameId;
         }
 
-        const bool clicked = hovered && ImGui::IsMouseClicked(0, 0, id);
+        const bool clicked = hovered && ImGui::IsMouseClicked(0, id);
         const bool isActive = clicked || g.NavActivateId == id;
         if (isActive && clicked)
         {

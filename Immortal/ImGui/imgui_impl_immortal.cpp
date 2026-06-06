@@ -67,7 +67,7 @@ public:
 
     URef<Buffer> indexBuffer;
     URef<Buffer> vertexBuffer;
-	URef<Buffer> uploadBuffer;
+
     void RefreshDescriptorSet()
     {
         uint32_t rest = freeDescriptorSets.size() - allocated;
@@ -425,95 +425,6 @@ float stretch(float low, float high, float x)
     }
 }
 
-void ImGui_ImplImmortal_DestroyTexture(ImTextureData *tex)
-{
-	Texture *backend_tex = (Texture *) tex->BackendUserData;
-	if (backend_tex == nullptr)
-		return;
-
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
-	delete backend_tex;
-
-	tex->SetTexID(ImTextureID_Invalid);
-	tex->SetStatus(ImTextureStatus_Destroyed);
-	tex->BackendUserData = nullptr;
-}
-
-bool ImGui_ImplImmortal_UpdateTexture(ImTextureData *tex, ImGui_ImplImmortal_FrameContext *fr, CommandBuffer *commandBuffer)
-{
-	ImGuiIO &io = ImGui::GetIO();
-	ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
-
-    auto &texture = (Texture * &)tex->BackendUserData;
-	if (tex->Status == ImTextureStatus_WantCreate)
-	{
-		texture = bd->device->CreateTexture(Format::RGBA8, tex->Width, tex->Height, 1, 1, TextureType::TransferDestination);
-		tex->SetTexID(WIMAGE(texture));
-	}
-
-	if (tex->Status == ImTextureStatus_WantCreate || tex->Status == ImTextureStatus_WantUpdates)
-	{
-		IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);
-
-		const int x = (tex->Status == ImTextureStatus_WantCreate) ? 0 : tex->UpdateRect.x;
-		const int y = (tex->Status == ImTextureStatus_WantCreate) ? 0 : tex->UpdateRect.y;
-		const int w = (tex->Status == ImTextureStatus_WantCreate) ? tex->Width : tex->UpdateRect.w;
-		const int h = (tex->Status == ImTextureStatus_WantCreate) ? tex->Height : tex->UpdateRect.h;
-
-		UINT srcPitch = w * tex->BytesPerPixel;
-		UINT dstPitch = SLALIGN(srcPitch, TextureAlignment);
-		UINT uploadSize = dstPitch * h;
-
-		auto &buffer = fr->uploadBuffer;
-		if (!buffer || uploadSize > buffer->GetSize())
-		{
-			buffer = bd->device->CreateBuffer(BufferType::TransferSource, uploadSize);
-		}
-
-		void *mapped = nullptr;
-		buffer->Map(&mapped, uploadSize, 0);
-
-		for (int i = 0; i < h; i++)
-		{
-			memcpy((void *) ((uintptr_t)mapped + i * dstPitch), tex->GetPixelsAt(x, y + i), srcPitch);
-		}
-		buffer->Unmap();
-
-		//if (!commandBuffer)
-		{
-			URef<CommandBuffer> commandBuffer = bd->device->CreateCommandBuffer(QueueType::Transfer);
-			URef<Queue> queue = bd->device->CreateQueue(QueueType::Transfer);
-
-			commandBuffer->Begin();
-			commandBuffer->CopyTextureRegion(texture, 0, w, h, x, y, 0, buffer, dstPitch, 0);
-			commandBuffer->End();
-
-			URef<GPUEvent> pEvent = bd->device->CreateGPUEvent("UploadBufferEvent");
-			GPUEvent *submitEvents[] = {pEvent};
-
-			CommandBuffer *commandBuffers[] = {commandBuffer};
-			queue->Submit(commandBuffers, 1, submitEvents, 1);
-			pEvent->Wait(0xffffffff);
-
-			bd->descriptorSet = bd->device->CreateDescriptorSet(bd->pipeline);
-			bd->descriptorSet->Set(0, texture);
-			bd->descriptorSet->Set(1, bd->fontSampler);
-		}
-		//else
-		//{
-		//	commandBuffer->CopyTextureRegion(texture, 0, w, h, x, y, 0, buffer, dstPitch, 0);
-		//}
-		tex->SetStatus(ImTextureStatus_OK);
-	}
-
-	if (tex->Status == ImTextureStatus_WantDestroy && tex->UnusedFrames >= (int) bd->swapchainBufferCount)
-	{
-		ImGui_ImplImmortal_DestroyTexture(tex);
-	}
-
-	return true;
-}
-
 IMGUI_IMPL_API bool ImGui_ImplImmortal_Init(Device *device, Window *window, Queue *queue, Swapchain *swapchain, uint32_t swapchainBufferCount, ImGuiBackendFlags flags)
 {
     ImGuiIO &io = ImGui::GetIO();
@@ -525,14 +436,9 @@ IMGUI_IMPL_API bool ImGui_ImplImmortal_Init(Device *device, Window *window, Queu
     io.BackendRendererName = "imgui_impl_immortal";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports; // We can create multi-viewports on the Renderer side (optional)
-
-#ifdef IMGUI_ENABLE_MSDFGEN
 	io.BackendFlags |= (flags & ImGuiBackendFlags_SignedDistanceFonts);
 	io.BackendFlags |= (flags & ImGuiBackendFlags_SignedDistanceShapes);
-#endif
-
 	io.BackendFlags |= ImGuiBackendFlags_ProvocingVertexFirst;
-	io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
 
     bd->device    = device;
     bd->queue     = queue;
@@ -569,15 +475,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_Shutdown()
     bd->fontTexture.Reset();
     bd->pipeline.Reset();
 
-    for (ImTextureData *tex : ImGui::GetPlatformIO().Textures)
-	{
-		if (tex->RefCount == 1)
-		{
-			ImGui_ImplImmortal_DestroyTexture(tex);
-		}
-	}
-    
-    // Manually delete main viewport render data in-case we haven't initialized for viewports
+        // Manually delete main viewport render data in-case we haven't initialized for viewports
     ImGuiViewport *main_viewport = ImGui::GetMainViewport();
     if (ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)main_viewport->RendererUserData)
         IM_DELETE(vd);
@@ -586,7 +484,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_Shutdown()
     auto &io = ImGui::GetIO();
     io.BackendRendererName = nullptr;
     io.BackendRendererUserData = nullptr;
-	io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasTextures | ImGuiBackendFlags_RendererHasViewports);
+    io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasViewports);
     IM_DELETE(bd);
 }
 
@@ -611,20 +509,14 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
     }
 
     ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+	if (!bd->fontTexture)
+	{
+		ImGui_ImplImmortal_CreateFontsTexture();
+	}
+
     ImGui_ImplImmortal_ViewportData *vd = (ImGui_ImplImmortal_ViewportData *)drawData->OwnerViewport->RendererUserData;
     vd->FrameIndex++;
     ImGui_ImplImmortal_FrameContext *fr = &vd->frameCtx[vd->FrameIndex % bd->swapchainBufferCount];
-
-    if (drawData->Textures != nullptr)
-	{
-		for (ImTextureData *tex : *drawData->Textures)
-		{
-			if (tex->Status != ImTextureStatus_OK)
-			{
-				ImGui_ImplImmortal_UpdateTexture(tex, fr, commandBuffer);
-			}
-		}
-	}
 
     if (drawData->TotalIdxCount <= 0)
     {
@@ -802,6 +694,56 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
 
     Rect2D scissor = {0, 0, (uint32_t) width, (uint32_t) height};
     commandBuffer->SetScissors(1, &scissor);
+}
+
+IMGUI_IMPL_API bool ImGui_ImplImmortal_CreateFontsTexture()
+{
+    // Build texture atlas
+    ImGuiIO &io = ImGui::GetIO();
+    ImGui_ImplImmortal_Data *bd = ImGui_ImplImmortal_GetBackendData();
+
+    unsigned char *pixels;
+    int width, height;
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+
+    Format format = Format::RGBA8;
+    bd->fontTexture = bd->device->CreateTexture(Format::RGBA8, width, height, 1, 1, TextureType::TransferDestination);
+
+    uint32_t uploadPitch = SLALIGN(width * 4, TextureAlignment);
+    uint32_t uploadSize = height * uploadPitch;
+
+    URef<Buffer> buffer = bd->device->CreateBuffer(BufferType::TransferSource, uploadSize);
+
+    void *mapped = nullptr;
+    buffer->Map(&mapped, uploadSize, 0);
+    for (int y = 0; y < height; y++)
+    {
+        memcpy((void *) ((uintptr_t) mapped + y * uploadPitch), pixels + y * width * 4, width * 4);
+    }
+    buffer->Unmap();
+
+	URef<CommandBuffer> commandBuffer = bd->device->CreateCommandBuffer(QueueType::Transfer);
+	URef<Queue> queue = bd->device->CreateQueue(QueueType::Transfer);
+
+	commandBuffer->Begin();
+	commandBuffer->CopyBufferToImage(bd->fontTexture, 0, buffer, uploadPitch);
+	commandBuffer->End();
+
+	URef<GPUEvent> pEvent = bd->device->CreateGPUEvent("UploadBufferEvent");
+	GPUEvent *submitEvents[] = {pEvent};
+
+	CommandBuffer *commandBuffers[] = {commandBuffer};
+	queue->Submit(commandBuffers, 1, submitEvents, 1);
+	pEvent->Wait(0xffffffff);
+
+    static_assert(sizeof(ImTextureID) >= sizeof(bd->fontTexture), "Can't pack descriptor handle into TexID, 32-bit not supported yet.");
+    io.Fonts->SetTexID((ImTextureID)(void *)bd->fontTexture);
+
+    bd->descriptorSet = bd->device->CreateDescriptorSet(bd->pipeline);
+    bd->descriptorSet->Set(0, bd->fontTexture);
+    bd->descriptorSet->Set(1, bd->fontSampler);
+
+    return true;
 }
 
 static void ImGui_ImplImmortal_CreateWindow(ImGuiViewport *viewport)

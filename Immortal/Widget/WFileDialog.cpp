@@ -188,11 +188,11 @@ void WFileDialog::DrawTreeNodes(const std::vector<FileSystem::DirectoryEntry> &e
             auto itemSize = ImGui::GetItemRectSize();
             if (isVolume)
             {
-				ImGui::ImageButton("###", WIMAGE(volumeIcon), {13, 13});
+				ImGui::ImageButton(WIMAGE(volumeIcon), {13, 13});
             }
             else
             {
-				ImGui::ImageButton("###", WIMAGE(dirIcon), {13, 13});
+				ImGui::ImageButton(WIMAGE(dirIcon), {13, 13});
             }
 			ImGui::SameLine();
 
@@ -348,7 +348,7 @@ void WFileDialog::DrawDirectories()
 
             FileSystem::DirectoryEntry *entry = { &file };
 			ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
-			ImGui::ImageButton("###", WIMAGE(icon), {64, 64}, uv0, uv1);
+            ImGui::ImageButton(WIMAGE(icon), {64, 64}, uv0, uv1);
             ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 64);
             ImGui::Text("%s", dir.path.c_str() + offset);
             ImGui::PopTextWrapPos();
@@ -435,7 +435,7 @@ void WFileDialog::DrawImageDirectories()
             {
                 FileSystem::DirectoryEntry *entry = { &dir };
 				ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
-				ImGui::ImageButton("###", WIMAGE(icon), {height, height}, uv0, uv1);
+                ImGui::ImageButton(WIMAGE(icon), {height, height}, uv0, uv1);
                 ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + height);
                 ImGui::Text("%s", dir.path.c_str() + offset);
                 ImGui::PopTextWrapPos();

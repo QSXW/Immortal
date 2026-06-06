@@ -65,11 +65,12 @@ public:
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  activeColor);
 
             auto resource = imageResources[status];
-			if (ImGui::ImageButton("###",
+            if (ImGui::ImageButton(
                 WIMAGE(resource.image),
                 { renderWidth, renderHeight },
                 resource.uv._0,
-                resource.uv._1
+                resource.uv._1,
+                0
             ))
             {
                 if (callback)

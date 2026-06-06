@@ -82,7 +82,7 @@ static bool DrawVec3Control(const std::string &label, Vector3 &values, float spe
     ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
 
-    float lineHeight = ImGui::GetFrameHeight();
+    float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y  *2.0f;
     ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
 
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f });

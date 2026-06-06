@@ -752,7 +752,6 @@ struct DirectoryEntry
 		std::swap(star,           other.star          );
 		std::swap(id,             other.id            );
         std::swap(isEmpty,        other.isEmpty       );
-        std::swap(flags,          other.flags         );
 
         fileName = {path.c_str() + rPos, size_t(rSize)};
 		other.fileName = {other.path.c_str() + lPos, size_t(lSize)};

@@ -60,8 +60,6 @@ public:
 
 	virtual void GenerateMipMaps(SuperTexture *texture, Filter filter) override;
 
-	virtual void CopyTextureRegion(SuperTexture *texture, uint32_t subresource, uint32_t width, uint32_t height, uint32_t x, uint32_t y, uint32_t z, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0);
-
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
 
 	virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) override;

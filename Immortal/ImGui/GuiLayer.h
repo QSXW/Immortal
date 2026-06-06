@@ -188,29 +188,48 @@ struct WindowCursorSwitcher
 	ImVec2 _size;
 };
 
+struct FontStack
+{
+public:
+    FontStack(ImFont *font, float scale = 1.0f) :
+	    font{font},
+	    lastScale{ font->Scale }
+    {
+		font->Scale = scale;
+		ImGui::PushFont(font);
+    }
+
+    ~FontStack()
+    {
+		ImGui::PopFont();
+		font->Scale = lastScale;
+		ImGui::SetCurrentFont(font);
+    }
+
+    ImFont *font;
+	float lastScale;
+};
+
 struct FontSizeStack
 {
 public:
-	FontSizeStack(ImFont *font, float fontSize = ImGui::GetFontSize()) :
-	    font{font},
-	    fontSize{fontSize}
+	FontSizeStack(ImFont *font, float fontSize) :
+	    fontStack{ font, fontSize / font->FontSize }
 	{
-		ImGui::PushFont(font, fontSize);
 	}
 
     FontSizeStack(float fontSize) :
-	    FontSizeStack{ nullptr, fontSize }
+	    FontSizeStack{ ImGui::GetFont(), fontSize }
     {
 
     }
 
 	~FontSizeStack()
 	{
-		ImGui::PopFont();
+
 	}
 
-	ImFont *font;
-	float fontSize;
+	FontStack fontStack;
 };
 
 struct DisabledWhen
@@ -266,8 +285,6 @@ public:
     bool LoadTheme();
 
     bool SaveTheme();
-
-    static ImFont *AddFont(const std::string &path, float fontSize, const ImWchar *ranges, float glyphMinAdvanceX = 0.0f, bool mergeMode = false);
 
     void BlockEvent(bool block)
 	{

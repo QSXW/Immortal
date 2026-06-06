@@ -45,11 +45,9 @@ namespace Icon
 extern WidgetIcon Icons;
 
 extern const char *Arrows[];
-
-extern ImFont *Font;
 }
 
-void SetWidgetArrows(ImFont *font, const char *left, const char *right, const char *down, const char *up);
+void SetWidgetArrows(const char *left, const char *right, const char *down, const char *up);
 
 inline float GetCenterAlignPosition(float avilableWidth, float itemWidth)
 {
@@ -1360,13 +1358,7 @@ public:
 			flags |= ImGuiTreeNodeFlags_SpanFullWidth;
         }
 
-		bool newState = TreeNodeEx(name, flags, "%s", name);
-        {
-			FontSizeStack fontSize{Icon::Font};
-			ImVec2 pos = GetItemRectMin();
-			pos.y += GetCenterAlignPosition(GetFrameHeightWithSpacing(), GetTextLineHeight());
-			window->DrawList->AddText(pos, GetColorU32(ImGuiCol_Text), Icon::Arrows[expanded]);
-        }
+		bool newState = TreeNodeEx(name, flags, "%s%s", Icon::Arrows[expanded], name);
 
         if (hasTriggerButton)
         {
@@ -1567,7 +1559,7 @@ public:
    //             }
 			//}
 
-            if (pressed && (window->Flags & ImGuiWindowFlags_Popup) && !(flags & ImGuiSelectableFlags_DontClosePopups) && !(g.LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups))
+            if (pressed && (window->Flags & ImGuiWindowFlags_Popup) && !(flags & ImGuiSelectableFlags_DontClosePopups) && !(g.LastItemData.InFlags & ImGuiItemFlags_SelectableDontClosePopup))
             {
                 CloseCurrentPopup();
             }
@@ -1713,11 +1705,7 @@ public:
             bool hovered;
             bool held;
             pressed |= ButtonBehavior(bbIcon, iconId, &hovered, &held);
-            {
-				FontSizeStack font{Icon::Font};
-				window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, Icon::Icons.KeyboardArrowDown);
-            }
-
+			window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, Icon::Icons.KeyboardArrowDown);
         }
 
         if (hovered)

@@ -17,6 +17,7 @@ IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Im
 IMGUI_IMPL_API void         ImGui_ImplImmortal_Shutdown();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_NewFrame();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Immortal::CommandBuffer *commandBuffer);
+IMGUI_IMPL_API bool         ImGui_ImplImmortal_CreateFontsTexture();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_InitPlatformInterface();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_ShutdownPlatformInterface();
 #endif /* #ifndef IMGUI_DISABLE */
