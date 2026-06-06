@@ -49,14 +49,16 @@ float3 Uncharted2Tonemap(float3 color)
 
 struct PSOutput
 {
-	float4 color : SV_TARGET0;
-	uint2 pick : SV_TARGET1;
+    float4 color : SV_TARGET;
+    uint objectID : COLOR;
 };
 
-PSOutput PSMain(PSInput input)
+PSOutput PSMain(PSInput input) : SV_TARGET
 {
 	PSOutput output;
 	float3 color = Texture.Sample(Sampler, input.UVW).rgb;
+	// float3 color = input.Pos.xyz;
+	// float3 color = input.UVW;
 
 	// Tone mapping
 	color = Uncharted2Tonemap(color * pushConstant.exposure);
@@ -65,6 +67,6 @@ PSOutput PSMain(PSInput input)
 	color = pow(color, (1.0f / pushConstant.gamma).xxx);
 
 	output.color = float4(color, 1.0f);
-	output.pick = uint2(0, 0);
+	output.objectID = 0;
 	return output;
 }

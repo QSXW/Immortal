@@ -83,7 +83,7 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
             inputElements,
             {
                 Format::R8G8B8A8_UNORM,
-                Format::R32G32_UINT,
+                Format::R32_UINT,
             }
         );
 
@@ -112,7 +112,7 @@ void SkyboxTask::Execute(CommandBuffer *commandBuffer, const SceneParameters &pa
     commandBuffer->SetDescriptorSet(descriptorSet);
 	commandBuffer->PushConstants(ShaderStage::Compute, &cubemapSize, sizeof(cubemapSize), 0);
 	commandBuffer->Dispatch(SLALIGN(cubemapSize/16, 16), SLALIGN(cubemapSize/16, 16), 6);
-	commandBuffer->GenerateMipMaps(textureCube, Filter::Linear);
+	// commandBuffer->GenerateMipMaps(textureCube, Filter::Linear);
 	commandBuffer->SetImageLayout(textureCube, ImageLayout::ShaderResource, PipelineStage::All, PipelineStage::All);
 }
 

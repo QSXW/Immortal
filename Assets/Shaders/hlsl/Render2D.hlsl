@@ -20,8 +20,8 @@ struct PSInput
 
 struct PSOutput
 {
-    float4 color : SV_TARGET0;
-    uint2 pick : SV_TARGET1;
+    float4 color : SV_TARGET;
+    uint objectID : COLOR;
 };
 
 struct PushConstant
@@ -48,7 +48,7 @@ PSInput VSMain(VSInput input)
     return result;
 }
 
-PSOutput PSMain(PSInput input)
+PSOutput PSMain(PSInput input) : SV_TARGET
 {
     PSOutput output;
 
@@ -89,8 +89,8 @@ PSOutput PSMain(PSInput input)
         case 31: result = g_textures[31].Sample(g_sampler, input.uv * input.tilingFactor); break;
     }
 
-    output.color = result * input.color;
-    output.pick  = uint2(input.id, 0);
+    output.color    = result * input.color;
+    output.objectID = input.id;
 
     return output;
 }

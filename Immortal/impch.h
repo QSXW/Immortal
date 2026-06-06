@@ -74,7 +74,6 @@
 #include "Render/Render2D.h"
 #include "Render/RenderTask.h"
 #include "Render/SkyboxTask.h"
-#include "Render/AtmosphereTask.h"
 
 #include "Scene/Component.h"
 #include "Scene/entt.hpp"

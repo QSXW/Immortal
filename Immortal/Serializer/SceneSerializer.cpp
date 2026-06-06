@@ -220,7 +220,6 @@ bool SceneSerializer::Deserialize(Scene *scene, const std::string &filepath)
             auto &meshComponent = object.GetComponent<MeshComponent>();
             auto &material = object.AddComponent<MaterialComponent>();
             material.References.resize(meshComponent.Mesh->Size());
-            meshComponent.Mesh->PopulateMaterialComponent(material);
 
             auto LoadTexture = [&](Ref<Texture> &texture, const std::string &path) {
                 if (!path.empty())

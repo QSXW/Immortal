@@ -267,7 +267,7 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 	else
 	{
 		if (stage & ShaderStage::Vertex)
-		{
+		{				
 			commandList.PushGraphicsConstant(size, pData, offset, pipeline->GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY_VERTEX));
 		}
 		if (stage & ShaderStage::Pixel)
@@ -367,18 +367,8 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 		return;
 	}
 
-	if (arrayLayer > 1 && arrayLayer != 6)
-	{
-		return;
-	}
-
 	Sampler *sampler = device->GetSampler(filter);
-	Pipeline *pipeline = device->GetPipeline(arrayLayer == 1 ? "GenerateMipMaps" : "GenerateMipMapsCube");
-
-	if (!pipeline)
-	{
-		return;
-	}
+	Pipeline *pipeline = device->GetPipeline(arrayLayer > 1 ? "GenerateMipMapsCube" : "GenerateMipMaps");
 
 	descriptorSets.reserve(descriptorSets.size() + mipLevels);
 	Barrier<BarrierType::Transition> barrier{ *texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS };
@@ -595,7 +585,7 @@ void CommandBuffer::Memset(SuperBuffer *_buffer, const ClearValue *pClearValue, 
 
 	auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	URef<DescriptorSet> descriptorSet = new DescriptorSet{device, 1, type};
-
+	
 	auto srcDescriptor = buffer->GetDescriptor();
 	auto dstDescriptor = descriptorSet->GetDescriptors(type);
 	device->CopyDescriptors(1, dstDescriptor.descriptor, srcDescriptor, type);
@@ -752,15 +742,15 @@ void CommandBuffer::ResolveImage(SuperTexture *_dst, SuperTexture *_src)
 	Texture *src = InterpretAs<Texture>(_src);
 
 	Barrier<BarrierType::Transition> barriers[2] = {};
-	barriers[0].Transition(*src,
-		D3D12_RESOURCE_STATE_COMMON,
+	barriers[0].Transition(*src, 
+		D3D12_RESOURCE_STATE_COMMON, 
 		D3D12_RESOURCE_STATE_RESOLVE_SOURCE
 	);
-	barriers[1].Transition(*dst,
-		D3D12_RESOURCE_STATE_COMMON,
+	barriers[1].Transition(*dst, 
+		D3D12_RESOURCE_STATE_COMMON, 
 		D3D12_RESOURCE_STATE_RESOLVE_DEST
 	);
-
+	
 	commandList.Handle()->ResourceBarrier(SL_ARRAY_LENGTH(barriers), barriers);
 	commandList.Handle()->ResolveSubresource(*dst, 0, *src, 0, dst->GetFormat());
 

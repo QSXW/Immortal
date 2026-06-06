@@ -462,6 +462,13 @@ public:
 		return position;
     }
 
+    template <class F>
+    Widget *Connect(F f)
+    {
+        render = f;
+        return this;
+    }
+
     template <class T>
     requires std::is_base_of_v<Widget, T>
     T *Query(const std::string &id)
@@ -623,6 +630,8 @@ public:
     Widget *parent;
 
     std::vector<Widget *> children;
+
+    std::function<void()> render;
 
 	ImVec2 position    = { 0, 0 };
 
@@ -1099,7 +1108,7 @@ public:
         for (auto &child : children)
         {
             window->DC.CursorPos = child->position;
-            child->Draw();
+            child->render();
         }
 		POP_WINDOW_POS
 

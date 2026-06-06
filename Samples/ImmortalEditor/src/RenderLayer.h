@@ -1,12 +1,6 @@
 #pragma once
 
 #include <Immortal.h>
-#include "Framework/Timer.h"
-#include "Render/AtmosphereTask.h"
-#include "Render/DeferredTask.h"
-#include "Render/IBLTask.h"
-#include "Render/MeshletTask.h"
-#include "Render/SkyboxTask.h"
 #include "Panel/Navigator.h"
 #include "Panel/HierarchyGraphics.h"
 #include "Panel/PropertyManager.h"
@@ -18,88 +12,10 @@ namespace Immortal
 class WImGuizmo : public Widget
 {
 public:
-	using WidgetType = WImGuizmo;
-	WIDGET_SET_PROPERTY(Type, type, ImGuizmo::OPERATION, ImGuizmo::OPERATION::INVALID)
-	WIDGET_SET_PROPERTY(SelectedObject, selectedObject, Object)
-	WIDGET_SET_POINTER(PrimaryCamera, primaryCamera, const Camera)
-
-public:
     WImGuizmo(Widget *parent = nullptr) :
         Widget { parent }
     {
 
-    }
-
-    virtual bool Draw() override
-    {
-		if (selectedObject && type != ImGuizmo::OPERATION::INVALID)
-		{
-			auto [x, y] = ImGui::GetWindowPos();
-			auto [w, h] = ImGui::GetWindowSize();
-
-			ImGuizmo::SetOrthographic(primaryCamera->IsOrthographic());
-			ImGuizmo::SetDrawlist();
-			ImGuizmo::SetRect(x, y, w, h);
-
-			TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
-			const Matrix4 parent = transform.Transform();
-
-			bool submeshGizmo = false;
-			MeshComponent *meshComp = nullptr;
-			uint32_t subIdx = 0;
-			if (selectedObject.HasComponent<MeshComponent>())
-			{
-				meshComp = &selectedObject.GetComponent<MeshComponent>();
-				if (meshComp->Mesh && meshComp->Mesh->Size() > 1 && meshComp->SelectedDrawNodeIndex != UINT32_MAX)
-				{
-					meshComp->EnsureSubmeshLocalCount(meshComp->Mesh->Size());
-					submeshGizmo = true;
-					subIdx = meshComp->SelectedDrawNodeIndex;
-				}
-			}
-
-			Matrix4 manipulatedTransform = parent;
-			if (submeshGizmo && meshComp)
-			{
-				manipulatedTransform = parent * meshComp->SubmeshLocalTransform[subIdx];
-			}
-
-			Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
-			Matrix4 cameraViewMatrix = primaryCamera->View();
-
-			bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
-			float snapValues[][3] = {
-			    {0.5f, 0.5f, 0.5f},
-			    {45.0f, 45.0f, 45.0f},
-			    {0.5f, 0.5f, 0.5f}};
-
-			ImGuizmo::Manipulate(
-			    &cameraViewMatrix[0].x,
-			    &cameraProjectionMatrix[0].x,
-			    type,
-			    ImGuizmo::LOCAL,
-			    &manipulatedTransform[0].x,
-			    nullptr,
-			    snap ? snapValues[type] : nullptr);
-
-			if (ImGuizmo::IsUsing())
-			{
-				if (submeshGizmo && meshComp)
-				{
-					meshComp->SubmeshLocalTransform[subIdx] = Vector::Inverse(parent) * manipulatedTransform;
-				}
-				else
-				{
-					Vector3 rotation;
-					Vector::DecomposeTransform(manipulatedTransform, transform.Position, rotation, transform.Scale);
-
-					Vector3 deltaRotation = rotation - transform.Rotation;
-					transform.Rotation += deltaRotation;
-				}
-			}
-		}
-
-        return false;
     }
 };
 
@@ -130,7 +46,7 @@ public:
         window->Wrap({ menuBar, viewport, panels.tools, panels.navigator, panels.propertyManager, panels.hierarchyGraphics});
 
         asyncComputeThread = new AsyncComputeThread(Graphics::GetDevice());
-		asyncComputeThread->Execute<SetQueueTask>(Graphics::GetDevice()->CreateQueue(QueueType::Compute));
+		asyncComputeThread->Execute<SetQueueTask>(Graphics::GetDevice()->CreateQueue(QueueType::Transfer));
 
         menus[0] = new WMenu;
         menus[0]
@@ -152,56 +68,17 @@ public:
 
         Ref<FrameGraph> frameGraph = new FrameGraph{};
 
-        static constexpr bool kUseAtmosphereSky = false;
-        iblTask = new IBLTask;
-        if constexpr (kUseAtmosphereSky)
-        {
-            atmosphereSky = new AtmosphereTask;
-            atmosphereSky->SetQuality(AtmosphereQuality::High);
-            atmosphereSky->SetSunIntensity(20);
-            frameGraph->AddTask(atmosphereSky);
-        }
-        else
-        {
-            skyboxTask = new SkyboxTask;
-            skyboxTask->SetFilePath("skybox.hdr");
-            frameGraph->AddTask(skyboxTask);
-        }
+         Ref<SkyboxTask> skybox = new SkyboxTask;
+		 skybox->SetFilePath("skybox.hdr");
+		 frameGraph->AddTask(skybox);
 
-        frameGraph->AddTask(iblTask, kUseAtmosphereSky ? "Atmosphere" : "Skybox");
-
-        meshletTask = new MeshletTask;
-		frameGraph->AddTask(meshletTask);
-
-		// Deferred: G-buffer pass in MeshletTask + fullscreen lighting in DeferredLighting (depends on Meshlet in graph order).
-		static constexpr bool kUseDeferredMeshlet = true;
-		if constexpr (kUseDeferredMeshlet)
-		{
-			deferredTask = new DeferredTask;
-			frameGraph->AddTask(deferredTask, "Meshlet");
-		}
-
+        Ref<MeshletTask> meshlet = new MeshletTask;
+		frameGraph->AddTask(meshlet);
 		frameGraph->Build();
 		scene->SetFrameGraph(frameGraph);
-		if (skyboxTask)
-		{
-			iblTask->LinkSkybox(skyboxTask.Get());
-		}
-		if (deferredTask)
-		{
-			deferredTask->SetIBLTask(iblTask.Get());
-		}
-		scene->ConfigureDeferredPipeline(kUseDeferredMeshlet, meshletTask, deferredTask);
-		scene->SetDeferredPBRResolve(deferredPBRResolve);
-		menus[0]->Item({ "Toggle Deferred PBR", "", [this] {
-			deferredPBRResolve = !deferredPBRResolve;
-			scene->SetDeferredPBRResolve(deferredPBRResolve);
-		}});
 
-        uint64_t nullPick = 0;
-		selectedBuffer = Graphics::CreateBuffer(BufferType::TransferDestination, sizeof(uint64_t), &nullPick);
-
-		GuiLayer::AddFont("Assets/Fonts/NotoSansCJKsc-Regular.otf", 18, nullptr);
+        uint32_t nullObject = 0;
+		selectedBuffer = Graphics::CreateBuffer(BufferType::TransferDestination, sizeof(uint32_t), &nullObject);
 
         viewport
             ->Text("Offline Render")
@@ -220,7 +97,7 @@ public:
                     ->Height(260.0f)
                     ->Text("Right Click Menu")
                     ->Color(0xff262626)
-                    ->Wrap({
+                    ->Wrap({ 
                   //  objectEditorText
                   //      ->Text("Object Editor")
 		                //->Height(10)
@@ -247,7 +124,7 @@ public:
                         ->Item({ "Copy",            [this] { CopyObject(); }})
                         ->Item({ "Paste",           [this] {               }})
                         ->Item({ "Duplicate",       [this] { panels.hierarchyGraphics->Select(CopyObject()); }})
-                        ->Item({ "Delete",          [this] {
+                        ->Item({ "Delete",          [this] { 
                             if (selectedObject)
                             {
                                 panels.navigator
@@ -262,7 +139,58 @@ public:
                         }}),
                     separator
                     }),
-		           imguizmoWidget
+
+                imguizmoWidget->Connect([&]() {
+                    if (selectedObject && guizmoType != ImGuizmo::OPERATION::INVALID)
+                    {
+                        auto [x, y] = ImGui::GetWindowPos();
+                        auto [w, h] = ImGui::GetWindowSize();
+
+                        const Camera *primaryCamera = nullptr;
+                        if (panels.tools->IsControlActive(WTools::Start))
+                        {
+                            primaryCamera = scene->GetCamera();
+                        }
+                        else
+                        {
+                            primaryCamera = camera.primary;
+                        }
+                        ImGuizmo::SetOrthographic(primaryCamera->IsOrthographic());
+                        ImGuizmo::SetDrawlist();
+                        ImGuizmo::SetRect(x, y, w, h);
+
+                        TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
+                        Matrix4 manipulatedTransform = transform.Transform();
+
+                        Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
+                        Matrix4 cameraViewMatrix = primaryCamera->View();
+
+                        bool snap = Input::IsKeyPressed(KeyCode::LeftControl);
+                        float snapValues[][3] = {
+                            {  0.5f,  0.5f,  0.5f },
+                            { 45.0f, 45.0f, 45.0f },
+                            {  0.5f,  0.5f,  0.5f }
+                        };
+
+                        ImGuizmo::Manipulate(
+                            &cameraViewMatrix[0].x,
+                            &cameraProjectionMatrix[0].x,
+                            guizmoType,
+                            ImGuizmo::LOCAL,
+				            &manipulatedTransform[0].x,
+                            nullptr,
+                            snap ? snapValues[guizmoType] : nullptr);
+
+                        if (ImGuizmo::IsUsing())
+                        {
+                            Vector3 rotation;
+					        Vector::DecomposeTransform(manipulatedTransform, transform.Position, rotation, transform.Scale);
+
+                            Vector3 deltaRotation = rotation - transform.Rotation;
+                            transform.Rotation += deltaRotation;
+                        }
+                    }
+                })
                 })
             );
 
@@ -289,19 +217,6 @@ public:
             }
 
             scene->Select(&selectedObject);
-            if (atmosphereSky)
-            {
-                atmosphereDayTime += Time::DeltaTime;
-                // Full day cycle (sun can dip); slow azimuth + slight wobble for visible motion.
-                float a = atmosphereDayTime * 0.052f;
-                float el = 0.38f + 0.52f * sinf(a);
-                el += 0.035f * sinf(atmosphereDayTime * 0.28f);
-                el = fmaxf(-0.22f, fminf(0.92f, el));
-                float xz = sqrtf(fmaxf(0.f, 1.f - el * el));
-                Vector3 sunDir{ xz * cosf(a), el, xz * sinf(a) };
-                atmosphereSky->SetSunDirection(sunDir.Normalize());
-                atmosphereSky->SetDayPhase(atmosphereDayTime);
-            }
             if (panels.tools->IsControlActive(WTools::Start))
             {
                 scene->OnRenderRuntime();
@@ -316,7 +231,7 @@ public:
             }
         }
 
-        UpdateEditableArea();
+        UpdateEditableArea();    
         UpdateRightClickMenu();
 
         panels
@@ -335,24 +250,21 @@ public:
             .tools
             ->OnUpdate(selectedObject);
 
-        imguizmoWidget->SelectedObject(selectedObject);
-        imguizmoWidget->PrimaryCamera(panels.tools->IsControlActive(WTools::Start) ? scene->GetCamera() : camera.primary);
-
         if (panels.tools->IsToolActive(WTools::Move))
         {
-			imguizmoWidget->Type(ImGuizmo::OPERATION::TRANSLATE);
+            guizmoType = ImGuizmo::OPERATION::TRANSLATE;
         }
         else if (panels.tools->IsToolActive(WTools::Rotate))
         {
-			imguizmoWidget->Type(ImGuizmo::OPERATION::ROTATE);
+            guizmoType = ImGuizmo::OPERATION::ROTATE;
         }
         else if (panels.tools->IsToolActive(WTools::Scale))
         {
-			imguizmoWidget->Type(ImGuizmo::OPERATION::SCALE);
+            guizmoType = ImGuizmo::OPERATION::SCALE;
         }
         else
         {
-			imguizmoWidget->Type(ImGuizmo::OPERATION::INVALID);
+            guizmoType = ImGuizmo::OPERATION::INVALID;
         }
 
         //Application::This->Getgui()->BlockEvent(false);
@@ -413,11 +325,7 @@ public:
         auto asyncComputeThread = Graphics::GetAsyncComputeThread();
         asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
         asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
-			auto texture = scene->GetObjectIdPickTexture();
-			if (!texture)
-			{
-				return;
-			}
+			auto texture = scene->GetRenderTarget()->GetColorAttachment(1);
             Rect2D rect = {
                 .left   = (uint32_t)x,
                 .top    = (uint32_t)y,
@@ -426,53 +334,14 @@ public:
             };
 			commandBuffer->CopyImageToBuffer(selectedBuffer, texture, 0, SLALIGN(texture->GetWidth() * texture->GetFormat().GetTexelSize(), TextureAlignment), &rect);
 		});
-		asyncComputeThread->Execute<ExecutionCompletedTask>([this] {
+		asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
 			uint32_t *map = nullptr;
-			selectedBuffer->Map((void **)&map, sizeof(uint64_t), 0);
+			selectedBuffer->Map((void **)&map, sizeof(uint32_t), 0);
             if (map)
             {
-				const uint32_t entityRaw = map[0];
-				const uint32_t subPick = map[1];
-				if (entityRaw == 0)
-				{
-					panels.hierarchyGraphics->Select(Object{});
-					return;
-				}
-				Object o = Object{ (int)entityRaw, scene };
-				if (!o)
-				{
-					panels.hierarchyGraphics->Select(Object{});
-					return;
-				}
-				bool samePick = (o == selectedObject);
-				if (samePick && o.HasComponent<MeshComponent>() && o.GetComponent<MeshComponent>().Mesh)
-				{
-					auto &mc = o.GetComponent<MeshComponent>();
-					const size_t n = mc.Mesh->NodeList().size();
-					if (n > 1)
-					{
-						samePick = (mc.SelectedDrawNodeIndex == subPick);
-					}
-				}
-				if (samePick)
-				{
-					panels.hierarchyGraphics->Select(Object{});
-					return;
-				}
-				panels.hierarchyGraphics->Select(o);
-				if (o.HasComponent<MeshComponent>())
-				{
-					auto &mc = o.GetComponent<MeshComponent>();
-					const size_t nodeCount = mc.Mesh ? mc.Mesh->NodeList().size() : 0;
-					if (nodeCount > 1)
-					{
-						mc.SelectedDrawNodeIndex = subPick < nodeCount ? subPick : (uint32_t)(nodeCount - 1);
-					}
-					else
-					{
-						mc.SelectedDrawNodeIndex = UINT32_MAX;
-					}
-				}
+				uint32_t pixel = *map;
+				Object o = Object{(int) pixel, scene};
+				panels.hierarchyGraphics->Select(pixel == 0 || o == selectedObject ? Object{} : o);
             }
             });
 		asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
@@ -494,16 +363,18 @@ public:
                 auto meshComponent = &object.Add<MeshComponent>();
 				auto material      = &object.Add<MaterialComponent>();
 
-				asyncComputeThread->Begin();
-		        meshLoading = new Mesh{asyncComputeThread, nullptr, res.value()};
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+                asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
+					meshLoading = new Mesh{asyncComputeThread, commandBuffer, res.value()};
+				});
 
 				asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
 					meshComponent->Mesh = meshLoading;
-					meshComponent->Mesh->PopulateMaterialComponent(*material);
+					material->References.resize(meshComponent->Mesh->NodeList().size());
 				});
 
-				asyncComputeThread->End();
-				asyncComputeThread->Submit();
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
+				asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::Submiting);
             }
             else if (FileSystem::IsVideo(filepath))
             {
@@ -630,11 +501,11 @@ public:
 
         case KeyCode::Q:
             panels.tools->Activate(WTools::Hand);
-			imguizmoWidget->Type(ImGuizmo::OPERATION::INVALID);
+            guizmoType = ImGuizmo::OPERATION::INVALID;
             break;
 
         case KeyCode::W:
-			imguizmoWidget->Type(ImGuizmo::OPERATION::TRANSLATE);
+            guizmoType = ImGuizmo::OPERATION::TRANSLATE;
             panels.tools->Activate(WTools::Move);
             //if (control || shift)
             //{
@@ -644,12 +515,12 @@ public:
 
         case KeyCode::E:
             panels.tools->Activate(WTools::Rotate);
-			imguizmoWidget->Type(ImGuizmo::OPERATION::ROTATE);
+            guizmoType = ImGuizmo::OPERATION::ROTATE;
             break;
 
         case KeyCode::R:
             panels.tools->Activate(WTools::Scale);
-			imguizmoWidget->Type(ImGuizmo::OPERATION::SCALE);
+            guizmoType = ImGuizmo::OPERATION::SCALE;
             break;
 
         case KeyCode::N:
@@ -664,8 +535,7 @@ public:
     {
 		if (viewport->IsHovered() && !ImGuizmo::IsOver())
         {
-			/* Ctrl+LMB: pick entity + submesh (RT pick = uint2). Skip Alt+LMB (camera orbit). */
-            if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::LeftAlt))
+            if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control))
             {
                 auto [x, y] = ImGui::GetMousePos();
                 SelectObject(x, y);
@@ -740,7 +610,7 @@ private:
     URef<WTextRectangle> objectEditorText;
 
     URef<WMenuBar> menuBar;
-    std::array<URef<WMenu>, 6> menus;
+    std::array<URef<WMenu>, 6> menus; 
 
     Vector2 selectedPosition;
 
@@ -758,19 +628,9 @@ private:
 
     Ref<Scene> scene{ new Scene{ "RenderLayer", true }};
 
-    Ref<AtmosphereTask> atmosphereSky;
-
-    Ref<SkyboxTask> skyboxTask;
-
-    Ref<IBLTask> iblTask;
-
-    Ref<MeshletTask> meshletTask;
-
-    Ref<DeferredTask> deferredTask;
-
-    float atmosphereDayTime = 0.0f;
-
     Object triangle;
+
+    ImGuizmo::OPERATION guizmoType = ImGuizmo::OPERATION::INVALID;
 
     Ref<WImGuizmo> imguizmoWidget;
 
@@ -779,9 +639,6 @@ private:
     URef<AsyncComputeThread> asyncComputeThread;
 
     Ref<Buffer> selectedBuffer;
-
-	/** When deferred is enabled, use Cook-Torrance resolve instead of simple N·L (Menu → Toggle Deferred PBR). */
-	bool deferredPBRResolve = true;
 };
 
 }

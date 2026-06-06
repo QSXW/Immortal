@@ -4,24 +4,8 @@
 namespace Immortal
 {
 
-namespace
-{
-
-struct MeshletPushConstants
-{
-	Matrix4 MVP;
-	Matrix4 Model;
-	uint32_t objectId;
-	uint32_t submeshIndex;
-	float roughness;
-	float metallic;
-	uint32_t pad0;
-};
-
-}
-
 MeshletTask::MeshletTask() :
-    RenderTask{ "Meshlet" }
+    RenderTask{"Meshlet"}
 {
 }
 
@@ -40,37 +24,20 @@ void MeshletTask::Build(AsyncComputeThread *asyncComputeThread)
 	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
 
 		auto device = Graphics::GetDevice();
+		//auto source = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "meshshader.hlsl"/*"meshlet.hlsl"*/);
 		auto source = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "meshlet.hlsl");
-		URef<Shader> meshShader = device->CreateShader("Meshlet", ShaderStage::Mesh, source, "MSMain");
-		URef<Shader> pixelForward = device->CreateShader("MeshletPixel", ShaderStage::Pixel, source, "PSMain");
-		URef<Shader> pixelGBuffer = device->CreateShader("MeshletPixelGBuffer", ShaderStage::Pixel, source, "PSMainGBuffer");
-		Shader *forwardShaders[] = {
-			meshShader,
-			pixelForward
+		URef<Shader> meshShader  = device->CreateShader("Meshlet",      ShaderStage::Mesh,  source, "MSMain");
+		URef<Shader> pixelShader = device->CreateShader("MeshletPixel", ShaderStage::Pixel, source, "PSMain");
+		Shader *shaders[] = {
+		    meshShader, pixelShader
 		};
-		Shader *deferredShaders[] = {
-			meshShader,
-			pixelGBuffer
-		};
-
-		pipelineForward = device->CreateGraphicsPipeline();
-		pipelineForward->Enable(Pipeline::State::Depth);
-		pipelineForward->Construct(forwardShaders, 2, {},
+		pipeline = device->CreateGraphicsPipeline();
+		pipeline->Enable(Pipeline::State::Depth);
+		pipeline->Construct(shaders, 2, {},
 			{
-			    Format::R8G8B8A8_UNORM,
-			    Format::R32G32_UINT,
-			    Format::Depth24Stencil8
-			}
-		);
-
-		pipelineDeferred = device->CreateGraphicsPipeline();
-		pipelineDeferred->Enable(Pipeline::State::Depth);
-		pipelineDeferred->Construct(deferredShaders, 2, {},
-			{
-			    Format::R8G8B8A8_UNORM,
-			    Format::R8G8B8A8_UNORM,
-			    Format::R32G32_UINT,
-			    Format::Depth24Stencil8
+				Format::R8G8B8A8_UNORM,
+				Format::R32_UINT,
+				Format::Depth24Stencil8
 			}
 		);
 
@@ -90,6 +57,14 @@ void MeshletTask::Execute(CommandBuffer *commandBuffer, const SceneParameters &p
 		.DrawMeshlets  = 1
 	};
 
+	//UBO ubo = {
+	//    .viewProjection = params.viewProjection,
+	//    .model = glm::identity<glm::mat4x4>(),
+	//};
+
+	//stagingBuffer->Fill(&ubo, sizeof(ubo), 0);
+	//commandBuffer->MemoryCopy(constantBuffer, 0, stagingBuffer, 0, sizeof(UBO));
+
 	stagingBuffer->Fill(&constantBufferData, sizeof(constantBufferData), 0);
 	commandBuffer->MemoryCopy(constantBuffer, 0, stagingBuffer, 0, sizeof(SceneConstantBuffer));
 }
@@ -99,50 +74,43 @@ void MeshletTask::Composite(CommandBuffer *commandBuffer, const SceneParameters 
 
 }
 
-void MeshletTask::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, MeshComponent &meshComponent, const MaterialComponent &materialComponent)
+void MeshletTask::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, const Ref<Mesh> &mesh, const MaterialComponent &materialComponent)
 {
-	Ref<GraphicsPipeline> activePipeline = (renderPath == MeshletRenderPath::Deferred) ? pipelineDeferred : pipelineForward;
-	if (!activePipeline)
+ 	MeshInfo meshInfo{
+		.Model         = transform,
+	    .IndexBytes    = 4,
+	    .MeshletOffset = 0,
+	};
+
+	UBO ubo = {
+	    .viewProjection = params.viewProjection,
+	    .model = glm::identity<glm::mat4x4>(),
+	};
+
+	//Matrix4 mvp = params.viewProjection * transform.Transform();
+	//stagingBuffer->Fill(&mvp, sizeof(mvp), 0);
+	//commandBuffer->MemoryCopy(constantBuffer, 0, stagingBuffer, 0, sizeof(mvp));
+
+	commandBuffer->SetPipeline(pipeline);
+	//commandBuffer->PushConstants(ShaderStage::Mesh, &meshInfo, sizeof(meshInfo), 0);
+
+	Matrix4 mvp = params.viewProjection * transform.Transform();
+	commandBuffer->PushConstants(ShaderStage::Mesh|ShaderStage::Pixel, &mvp, sizeof(mvp), 0);
+	commandBuffer->PushConstants(ShaderStage::Mesh|ShaderStage::Pixel, &objectId, sizeof(objectId), sizeof(mvp));
+
+	for (auto &node : mesh->NodeList())
 	{
-		return;
-	}
-
-	const Ref<Mesh> &mesh = meshComponent.Mesh;
-	if (!mesh)
-	{
-		return;
-	}
-
-	Matrix4 baseModel = transform.Transform();
-	meshComponent.EnsureSubmeshLocalCount(mesh->NodeList().size());
-
-	MeshletPushConstants pc{};
-	pc.objectId = objectId;
-	pc.submeshIndex = 0;
-	pc.pad0 = 0;
-
-	commandBuffer->SetPipeline(activePipeline);
-
-	auto &nodes = mesh->NodeList();
-	for (size_t ni = 0; ni < nodes.size(); ni++)
-	{
-		auto &node = nodes[ni];
-		if (ni >= materialComponent.References.size())
-		{
-			continue;
-		}
-
-		Matrix4 local = ni < meshComponent.SubmeshLocalTransform.size() ? meshComponent.SubmeshLocalTransform[ni] : Matrix4(1.0f);
-		Matrix4 model = baseModel * local;
-		pc.MVP = params.viewProjection * model;
-		pc.Model = model;
-		pc.submeshIndex = (uint32_t)ni;
-
 		auto &descriptorSet = node.descriptorSet;
 		if (!descriptorSet)
 		{
 			auto device = Graphics::GetDevice();
-			descriptorSet = device->CreateDescriptorSet(activePipeline);
+			descriptorSet = device->CreateDescriptorSet(pipeline);
+
+			//descriptorSet->Set(0, constantBuffer          );
+			//descriptorSet->Set(1, node.Vertex             );
+			//descriptorSet->Set(2, node.Meshlets           );
+			//descriptorSet->Set(3, node.UniqueVertexIndices);
+			//descriptorSet->Set(4, node.PrimitiveIndices   );
 
 			descriptorSet->Set(0, node.Vertex);
 			descriptorSet->Set(1, node.Meshlets);
@@ -150,12 +118,9 @@ void MeshletTask::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &
 			descriptorSet->Set(3, node.PrimitiveIndices);
 			descriptorSet->Set(5, sampler);
 		}
-		const auto &mat = materialComponent.References[ni];
-		pc.roughness = mat.Roughness;
-		pc.metallic = mat.Metallic;
-		commandBuffer->PushConstants(ShaderStage::Mesh | ShaderStage::Pixel, &pc, sizeof(pc), 0);
-		descriptorSet->Set(4, mat.Textures.Albedo);
-		commandBuffer->SetDescriptorSet(descriptorSet);
+		descriptorSet->Set(4, materialComponent.References[0].Textures.Albedo);
+		commandBuffer->SetDescriptorSet(descriptorSet );
+		// commandBuffer->PushConstants(ShaderStage::Mesh, &meshInfo.MeshletOffset, sizeof(meshInfo.MeshletOffset), sizeof(meshInfo.Model) + sizeof(meshInfo.IndexBytes));
 		commandBuffer->DispatchMeshTasks(node.MeshletSubsetCount, 1, 1);
 	}
 }

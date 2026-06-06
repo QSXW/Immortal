@@ -17,12 +17,8 @@ struct SceneParameters
 		Vector4 direction;
 		Vector4 radiance;
 	} lights[4];
-	/** Filled lights in `lights[0 .. lightCount-1]` (from scene LightComponent). */
-	uint32_t lightCount = 0;
 	Matrix4 view;
 	Matrix4 viewProjection;
-	Matrix4 invViewProjection;
-	Vector4 cameraWorld;
 	Matrix4 skyboxProjection;
 	float exposure;
 	float gamma;
@@ -41,7 +37,7 @@ public:
 
     virtual void Composite(CommandBuffer *commandBuffer, const SceneParameters &params) = 0;
 
-	virtual void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, MeshComponent &meshComponent, const MaterialComponent &materialComponent)
+	virtual void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, uint32_t objectId, const TransformComponent &transform, const Ref<Mesh> &mesh, const MaterialComponent &materialComponent)
 	{
 
 	}

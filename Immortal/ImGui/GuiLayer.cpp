@@ -48,6 +48,10 @@ GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swap
     This = this;
 
     themeEditor = new WWindow;
+    themeEditor
+        ->Connect([this] {
+            //UpdateTheme();
+        });
 }
 
 GuiLayer::~GuiLayer()

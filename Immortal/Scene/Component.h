@@ -19,8 +19,6 @@
 #include "MediaFormat.h"
 #include "Render/Material.h"
 #include <map>
-#include <vector>
-#include <cstdint>
 
 namespace Immortal
 {
@@ -140,32 +138,10 @@ struct MeshComponent : public Component
     MeshComponent &operator=(const MeshComponent &other)
     {
         Mesh = other.Mesh;
-        SelectedDrawNodeIndex = other.SelectedDrawNodeIndex;
-        SubmeshLocalTransform = other.SubmeshLocalTransform;
         return *this;
     }
 
-    /** Per draw-node transform relative to entity transform (`Transform * SubmeshLocalTransform[ni]`). Grows with `EnsureSubmeshLocalCount`. */
-    void EnsureSubmeshLocalCount(size_t n)
-    {
-        if (SubmeshLocalTransform.size() == n)
-        {
-            return;
-        }
-        const size_t old = SubmeshLocalTransform.size();
-        SubmeshLocalTransform.resize(n);
-        for (size_t i = old; i < n; i++)
-        {
-            SubmeshLocalTransform[i] = Matrix4(1.0f);
-        }
-    }
-
     Ref<Immortal::Mesh> Mesh;
-
-    /** `NodeList()` index for material / hierarchy; `UINT32_MAX` = whole object (root gizmo, not a specific submesh). */
-    uint32_t SelectedDrawNodeIndex = UINT32_MAX;
-
-    std::vector<Matrix4> SubmeshLocalTransform;
 };
 
 struct MaterialComponent : public Component

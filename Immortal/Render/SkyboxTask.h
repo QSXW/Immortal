@@ -24,11 +24,6 @@ public:
 
     void SetFilePath(const String &value);
 
-	const Ref<Texture> &GetRadianceCubemap() const
-	{
-		return textureCube;
-	}
-
 protected:
 	String filepath;
 

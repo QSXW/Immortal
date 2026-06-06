@@ -37,7 +37,7 @@ Render2D::Render2D() :
             },
             {
                 Format::RGBA8,
-                Format::R32G32_UINT,
+                Format::R32_UINT,
                 Format::Depth24Stencil8
             }
         );

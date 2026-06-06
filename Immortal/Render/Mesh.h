@@ -21,8 +21,6 @@ struct aiNode;
 namespace Immortal
 {
 
-struct MaterialComponent;
-
 struct SkeletonVertex
 {
     Vector3  Position;
@@ -358,18 +356,10 @@ public:
         return rootNode;
     }
 
-    const BoneNode *GetRootNode() const
-    {
-        return rootNode.Get();
-    }
-
     size_t Size() const
     {
         return nodes.size();
     }
-
-	/** Fills `material.References` from embedded Assimp materials using each node's MaterialIndex. */
-	void PopulateMaterialComponent(MaterialComponent &material) const;
 
     std::vector<Animation> &GetAnimation()
     {

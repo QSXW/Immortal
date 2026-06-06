@@ -27,18 +27,6 @@ void FrameGraph::Build(AsyncComputeThread *asyncComputeThread)
     });
 }
 
-Ref<RenderTask> FrameGraph::FindTask(const std::string &taskName) const
-{
-	for (const auto &task : tasks)
-	{
-		if (task->GetName() == taskName)
-		{
-			return task;
-		}
-	}
-	return nullptr;
-}
-
 void FrameGraph::AddTask(const Ref<RenderTask> &task, const std::string &dependency)
 {
     if (tasks.empty())
@@ -124,7 +112,7 @@ void FrameGraph::DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &p
 			auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
 			if (mesh.Mesh)
 			{
-				task->DrawMesh(commandBuffer, params, (uint32_t)object, transform, mesh, material);
+				task->DrawMesh(commandBuffer, params, (uint32_t)object, transform, mesh.Mesh, material);
             }
 		}
 		commandBuffer->EndEvent();

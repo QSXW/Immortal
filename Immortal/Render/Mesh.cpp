@@ -4,7 +4,6 @@
 #include "Math/Math.h"
 #include "FileSystem/FileSystem.h"
 #include "MeshletGenerator.h"
-#include "Scene/Component.h"
 
 #if HAVE_ASSIMP
 #include <assimp/scene.h>
@@ -15,10 +14,6 @@
 #endif
 
 #include "DirectXCollision.h"
-
-#include <algorithm>
-#include <cctype>
-#include <cstring>
 
 namespace Immortal
 {
@@ -166,172 +161,18 @@ static inline std::string ExtractModelFileWorkspace(const std::string &modelpath
     return path.parent_path().string();
 }
 
-#if HAVE_ASSIMP
-namespace
-{
-
-/** Assimp returns paths as in the file (often relative to the model, e.g. ../textures/a.png). */
-static std::string ResolveTexturePathRelativeToModel(const std::string &modelFilepath, const char *fromAssimp)
-{
-	if (!fromAssimp || !fromAssimp[0])
-	{
-		return {};
-	}
-	namespace fs = std::filesystem;
-	fs::path raw{ std::string(fromAssimp) };
-	if (raw.is_absolute())
-	{
-		std::error_code ec;
-		if (fs::exists(raw))
-		{
-			fs::path c = fs::weakly_canonical(raw, ec);
-			return ec ? raw.string() : c.string();
-		}
-		return raw.string();
-	}
-
-	fs::path base = fs::path(modelFilepath).parent_path();
-	fs::path combined = (base / raw).lexically_normal();
-	std::error_code ec;
-	if (fs::exists(combined))
-	{
-		fs::path c = fs::weakly_canonical(combined, ec);
-		return ec ? combined.string() : c.string();
-	}
-	return combined.string();
-}
-
-static void TryLoadMaterialTexture(Ref<Texture> &out, const std::string &resolvedPath, AsyncComputeThread *asyncComputeThread)
-{
-	if (resolvedPath.empty())
-	{
-		return;
-	}
-	namespace fs = std::filesystem;
-	if (!fs::exists(fs::path(resolvedPath)))
-	{
-		LOG::WARN("Mesh: texture not found (skipped): {0}", resolvedPath);
-		return;
-	}
-	Ref<Texture> tex = Graphics::CreateTexture(String(resolvedPath), asyncComputeThread);
-	if (tex)
-	{
-		out = tex;
-	}
-}
-
-/** Many exporters put standalone roughness maps in UNKNOWN (e.g. UE-style T_Name_0_R.png). */
-static bool FilenameLooksLikeRoughnessMap(const char *path)
-{
-	if (!path || !path[0])
-	{
-		return false;
-	}
-	std::string s(path);
-	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return (char)std::tolower(c); });
-	if (s.find("roughness") != std::string::npos || s.find("_rough") != std::string::npos)
-	{
-		return true;
-	}
-	static const char *suffixes[] = {
-	    "_r.png", "_r.jpg", "_r.jpeg", "_r.tga", "_r.tif", "_r.tiff", "_r.bmp", "_r.dds"
-	};
-	for (const char *suf : suffixes)
-	{
-		const size_t len = std::strlen(suf);
-		if (s.size() >= len && s.compare(s.size() - len, len, suf) == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * Roughness: DIFFUSE_ROUGHNESS (all slots), then UNKNOWN filenames like *_R.png (before packed MR),
- * then glTF metallic-roughness, shininess, Maya specular roughness.
- * Enum values 25 / 27 are stable in Assimp 5.x (MAYA_SPECULAR_ROUGHNESS / GLTF_METALLIC_ROUGHNESS).
- */
-static void TryLoadRoughnessMaps(aiMaterial *aiMaterial, const std::string &filepath, Material &material, AsyncComputeThread *asyncComputeThread)
-{
-	aiString texturePath;
-
-	for (unsigned ti = 0; ti < aiMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS); ti++)
-	{
-		if (aiMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, ti, &texturePath) == AI_SUCCESS)
-		{
-			std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-			material.Pathes.Roughness = String(resolved);
-			TryLoadMaterialTexture(material.Textures.Roughness, resolved, asyncComputeThread);
-			return;
-		}
-	}
-
-	// Dedicated roughness files are often aiTextureType_UNKNOWN (e.g. *_R.png); prefer before packed MR.
-	for (unsigned ti = 0; ti < aiMaterial->GetTextureCount(aiTextureType_UNKNOWN); ti++)
-	{
-		if (aiMaterial->GetTexture(aiTextureType_UNKNOWN, ti, &texturePath) != AI_SUCCESS)
-		{
-			continue;
-		}
-		if (!FilenameLooksLikeRoughnessMap(texturePath.C_Str()))
-		{
-			continue;
-		}
-		std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-		material.Pathes.Roughness = String(resolved);
-		TryLoadMaterialTexture(material.Textures.Roughness, resolved, asyncComputeThread);
-		return;
-	}
-
-	const auto kGltfMetallicRoughness = (aiTextureType)27;
-	if (aiMaterial->GetTextureCount(kGltfMetallicRoughness) > 0 &&
-	    aiMaterial->GetTexture(kGltfMetallicRoughness, 0, &texturePath) == AI_SUCCESS)
-	{
-		std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-		material.Pathes.Roughness = String(resolved);
-		TryLoadMaterialTexture(material.Textures.Roughness, resolved, asyncComputeThread);
-		return;
-	}
-
-	if (aiMaterial->GetTexture(aiTextureType_SHININESS, 0, &texturePath) == AI_SUCCESS)
-	{
-		std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-		material.Pathes.Roughness = String(resolved);
-		TryLoadMaterialTexture(material.Textures.Roughness, resolved, asyncComputeThread);
-		return;
-	}
-
-	const auto kMayaSpecularRoughness = (aiTextureType)25;
-	if (aiMaterial->GetTextureCount(kMayaSpecularRoughness) > 0 &&
-	    aiMaterial->GetTexture(kMayaSpecularRoughness, 0, &texturePath) == AI_SUCCESS)
-	{
-		std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-		material.Pathes.Roughness = String(resolved);
-		TryLoadMaterialTexture(material.Textures.Roughness, resolved, asyncComputeThread);
-		return;
-	}
-}
-
-}
-#endif
-
 void Mesh::LoadPrimitives()
 {
 
 }
 
-static Ref<Buffer> CreateStagingBuffer(const void *data, size_t size)
+static Ref<Buffer> TransferBuffer2Device(CommandBuffer *commandBuffer, Ref<Buffer> &buffer, const void *data, size_t size)
 {
 	Ref<Buffer> stagingBuffer = Graphics::GetCachedBuffer(BufferType::TransferSource, size);
 	stagingBuffer->Fill(data, size, 0);
+	commandBuffer->MemoryCopy(buffer, 0, stagingBuffer, 0, size);
 
 	return stagingBuffer;
-}
-
-static void TransferBuffer2Device(CommandBuffer *commandBuffer, Ref<Buffer> &buffer, const Ref<Buffer> &stagingBuffer, const void *data, size_t size)
-{
-	commandBuffer->MemoryCopy(buffer, 0, stagingBuffer, 0, size);
 }
 
 template <typename T>
@@ -835,19 +676,12 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 		node.UniqueVertexIndices->SetDebugName("UniqueVertexIndices");
 
 		node.PrimitiveIndices->SetDebugName("PrimitiveIndices");
-		
-		Ref<Buffer> stagingVertex              = CreateStagingBuffer(m.Vertices[0].data(),         vertexBufferSize);            
-		Ref<Buffer> stagingIndex               = CreateStagingBuffer(m.Indices.data(),             indexBufferSize);             
-		Ref<Buffer> stagingMeshlet             = CreateStagingBuffer(m.Meshlets.data(),            meshletBufferSize);           
-		Ref<Buffer> stagingUniqueVertexIndices = CreateStagingBuffer(m.UniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
-		Ref<Buffer> stagingPrimitiveIndices    = CreateStagingBuffer(m.PrimitiveIndices.data(),    primitiveIndicesBufferSize);
-		asyncComputeThread->Execute<RecordingTask>([&, this] (uint64_t, CommandBuffer *commandBuffer) {
-			TransferBuffer2Device(commandBuffer, node.Vertex,              stagingVertex,              m.Vertices[0].data(),         vertexBufferSize);
-			TransferBuffer2Device(commandBuffer, node.Index,               stagingIndex,               m.Indices.data(),             indexBufferSize);
-			TransferBuffer2Device(commandBuffer, node.Meshlets,            stagingMeshlet,             m.Meshlets.data(),            meshletBufferSize);
-			TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, stagingUniqueVertexIndices, m.UniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
-			TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    stagingPrimitiveIndices,    m.PrimitiveIndices.data(),    primitiveIndicesBufferSize);
-		});
+
+		Ref<Buffer> stagingVertex              = TransferBuffer2Device(commandBuffer, node.Vertex,              m.Vertices[0].data(),         vertexBufferSize             );
+		Ref<Buffer> stagingIndex               = TransferBuffer2Device(commandBuffer, node.Index,               m.Indices.data(),             indexBufferSize              );
+		Ref<Buffer> stagingMeshlet             = TransferBuffer2Device(commandBuffer, node.Meshlets,            m.Meshlets.data(),            meshletBufferSize            );
+		Ref<Buffer> stagingUniqueVertexIndices = TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, m.UniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
+		Ref<Buffer> stagingPrimitiveIndices    = TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    m.PrimitiveIndices.data(),    primitiveIndicesBufferSize   );
 
 		asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
 			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
@@ -920,20 +754,11 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 		node.UniqueVertexIndices = device->CreateBuffer(BufferType::Storage, uniqueVertexIndicesBufferSize, MemoryType::Device, sizeof(uniqueVertexIndices[0]));
 		node.PrimitiveIndices    = device->CreateBuffer(BufferType::Storage, primitiveIndicesBufferSize,    MemoryType::Device, sizeof(primitiveIndices[0])   );
 
-		Ref<Buffer> stagingVertex              = CreateStagingBuffer(pVertex,                    vertexBufferSize             );
-		Ref<Buffer> stagingIndex               = CreateStagingBuffer(faces.data(),               indexBufferSize              );
-		Ref<Buffer> stagingMeshlet             = CreateStagingBuffer(meshlets.data(),            meshletBufferSize            );
-		Ref<Buffer> stagingUniqueVertexIndices = CreateStagingBuffer(uniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
-		Ref<Buffer> stagingPrimitiveIndices    = CreateStagingBuffer(primitiveIndices.data(),    primitiveIndicesBufferSize   );
-
-		asyncComputeThread->Execute<RecordingTask>([=, this] (uint64_t, CommandBuffer *commandBuffer) {
-			auto &node = nodes[i];
-			TransferBuffer2Device(commandBuffer, node.Vertex,              stagingVertex,              pVertex,                    vertexBufferSize             );
-			TransferBuffer2Device(commandBuffer, node.Index,               stagingIndex,               faces.data(),               indexBufferSize              );
-			TransferBuffer2Device(commandBuffer, node.Meshlets,            stagingMeshlet,             meshlets.data(),            meshletBufferSize            );
-			TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, stagingUniqueVertexIndices, uniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
-			TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    stagingPrimitiveIndices,    primitiveIndices.data(),    primitiveIndicesBufferSize   );
-		});
+		Ref<Buffer> stagingVertex              = TransferBuffer2Device(commandBuffer, node.Vertex,              pVertex,                    vertexBufferSize             );
+		Ref<Buffer> stagingIndex               = TransferBuffer2Device(commandBuffer, node.Index,               faces.data(),               indexBufferSize              );
+		Ref<Buffer> stagingMeshlet             = TransferBuffer2Device(commandBuffer, node.Meshlets,            meshlets.data(),            meshletBufferSize            );
+		Ref<Buffer> stagingUniqueVertexIndices = TransferBuffer2Device(commandBuffer, node.UniqueVertexIndices, uniqueVertexIndices.data(), uniqueVertexIndicesBufferSize);
+		Ref<Buffer> stagingPrimitiveIndices    = TransferBuffer2Device(commandBuffer, node.PrimitiveIndices,    primitiveIndices.data(),    primitiveIndicesBufferSize   );
 
 		asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
 			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
@@ -942,7 +767,6 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingUniqueVertexIndices);
 			Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingPrimitiveIndices);
 		});
-
     }
 
     if (scene->HasMaterials())
@@ -963,37 +787,29 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 			if (aiMaterial->GetTexture(aiTextureType_BASE_COLOR, 0, &texturePath) == AI_SUCCESS ||
 				aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
             {
-				std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-				material.Pathes.Diffuse = String(resolved);
-				TryLoadMaterialTexture(material.Textures.Albedo, resolved, asyncComputeThread);
+				material.Pathes.Diffuse = texturePath.C_Str();
             }
 			if (aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &texturePath) == AI_SUCCESS)
 			{
-				std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-				material.Pathes.Specular = String(resolved);
-				TryLoadMaterialTexture(material.Textures.Specular, resolved, asyncComputeThread);
+				material.Pathes.Specular = texturePath.C_Str();
 			}
-			if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS ||
-			    aiMaterial->GetTexture(aiTextureType_HEIGHT, 0, &texturePath) == AI_SUCCESS)
+			if (aiMaterial->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
 			{
-				std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-				material.Pathes.Normal = String(resolved);
-				TryLoadMaterialTexture(material.Textures.Normal, resolved, asyncComputeThread);
+				material.Pathes.Normal = texturePath.C_Str();
 			}
 			if (aiMaterial->GetTexture(aiTextureType_LIGHTMAP, 0, &texturePath) == AI_SUCCESS ||
 			    aiMaterial->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &texturePath) == AI_SUCCESS)
 			{
-				std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-				material.Pathes.AmbientOcclusion = String(resolved);
-				TryLoadMaterialTexture(material.Textures.AmbientOcclusion, resolved, asyncComputeThread);
+				material.Pathes.AmbientOcclusion = texturePath.C_Str();
 			}
 			if (aiMaterial->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS)
 			{
-				std::string resolved = ResolveTexturePathRelativeToModel(filepath, texturePath.C_Str());
-				material.Pathes.Metallic = String(resolved);
-				TryLoadMaterialTexture(material.Textures.Metallic, resolved, asyncComputeThread);
+				material.Pathes.Metallic = texturePath.C_Str();
 			}
-			TryLoadRoughnessMaps(aiMaterial, filepath, material, asyncComputeThread);
+			if (aiMaterial->GetTexture(aiTextureType_DIFFUSE_ROUGHNESS, 0, &texturePath) == AI_SUCCESS)
+			{
+				material.Pathes.Roughness = texturePath.C_Str();
+			}
         }
     }
 #endif
@@ -1029,22 +845,15 @@ Mesh::Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer,
 	head.Vertex = Graphics::CreateBuffer(Buffer::Type::Vertex, vertexBufferSize, MemoryType::Device);
 	head.Index  = Graphics::CreateBuffer(Buffer::Type::Index,   indexBufferSize,  MemoryType::Device);
 
-	Ref<Buffer> stagingVertex = CreateStagingBuffer(pVertex, vertexBufferSize);
-	Ref<Buffer> stagingIndex  = CreateStagingBuffer(pIndex, indexBufferSize);
+    Ref<Buffer> stagingVertex = TransferBuffer2Device(commandBuffer, head.Vertex, pVertex, vertexBufferSize);
+	Ref<Buffer> stagingIndex  = TransferBuffer2Device(commandBuffer, head.Index,  pIndex,  indexBufferSize );
 
-	nodes.emplace_back(head);
-
-	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t, CommandBuffer *commandBuffer) {
-		auto &h = nodes.back();
-		TransferBuffer2Device(commandBuffer, h.Vertex, stagingVertex, pVertex, vertexBufferSize);
-		TransferBuffer2Device(commandBuffer, h.Index,  stagingIndex, pIndex, indexBufferSize);
-	});
     asyncComputeThread->Execute<ExecutionCompletedTask>([=] {
 		Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingVertex);
 		Graphics::ReleaseCachedBuffer(BufferType::TransferSource, stagingIndex);
 	});
 
-
+	nodes.emplace_back(head);
 }
 
 void Mesh::ReadHierarchyBoneNode(float animationTime, const BoneNode *node, const Matrix4 &parentTransform)
@@ -1366,58 +1175,6 @@ Ref<Mesh> Mesh::CreateCube(AsyncComputeThread *asyncComputeThread, CommandBuffer
 	}
 
 	return new Mesh(asyncComputeThread, commandBuffer, (void *) vertices.data(), vertices.size(), indices.data(), indices.size(), VertexType::Simple, "Cube");
-}
-
-namespace
-{
-
-static void CopyMaterialToReference(const Material &src, MaterialComponent::Reference &dst)
-{
-	dst.Name = src.Name;
-	dst.AlbedoColor = src.AlbedoColor;
-	dst.Specular = src.Specular;
-	dst.Ambient = src.Ambient;
-	dst.Emissive = src.Emissive;
-	dst.Metallic = src.Metallic;
-	dst.Roughness = src.Roughness;
-	dst.Opacity = src.Opacity;
-	dst.Textures.Albedo = src.Textures.Albedo;
-	dst.Textures.Normal = src.Textures.Normal;
-	dst.Textures.Specular = src.Textures.Specular;
-	dst.Textures.Metallic = src.Textures.Metallic;
-	dst.Textures.Roughness = src.Textures.Roughness;
-	dst.Textures.AmbientOcclusion = src.Textures.AmbientOcclusion;
-	dst.Pathes.Diffuse = src.Pathes.Diffuse;
-	dst.Pathes.Normal = src.Pathes.Normal;
-	dst.Pathes.Specular = src.Pathes.Specular;
-	dst.Pathes.Metallic = src.Pathes.Metallic;
-	dst.Pathes.Roughness = src.Pathes.Roughness;
-	dst.Pathes.AmbientOcclusion = src.Pathes.AmbientOcclusion;
-}
-
-}
-
-void Mesh::PopulateMaterialComponent(MaterialComponent &material) const
-{
-	if (nodes.empty())
-	{
-		material.References.clear();
-		return;
-	}
-	material.References.resize(nodes.size());
-	if (materials.empty())
-	{
-		return;
-	}
-	for (size_t i = 0; i < nodes.size(); i++)
-	{
-		uint32_t mi = nodes[i].MaterialIndex;
-		if (mi >= materials.size())
-		{
-			mi = 0;
-		}
-		CopyMaterialToReference(materials[mi], material.References[i]);
-	}
 }
 
 void Mesh::SwitchToAnimation(uint32_t index)

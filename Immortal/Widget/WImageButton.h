@@ -54,47 +54,41 @@ public:
     WImageButton(Widget* v = nullptr) :
         Widget{ v }
     {
+        Connect([&]() {
+            WidgetLock lock{ this };
 
-    }
+            ImGuiWindow* window = ImGui::GetCurrentWindow();
+            window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
+            ImGui::PushStyleColor(ImGuiCol_Button,        color);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  activeColor);
 
-    virtual bool Draw() override
-    {
-        WidgetLock lock{ this };
-
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
-        ImGui::PushStyleColor(ImGuiCol_Button,        color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  activeColor);
-
-        auto resource = imageResources[status];
-		
-        bool ret = false;
-		if ((ret = ImGui::ImageButton("###",
-            WIMAGE(resource.image),
-            { renderWidth, renderHeight },
-            resource.uv._0,
-            resource.uv._1
-        )))
-        {
-            if (callback)
+            auto resource = imageResources[status];
+			if (ImGui::ImageButton("###",
+                WIMAGE(resource.image),
+                { renderWidth, renderHeight },
+                resource.uv._0,
+                resource.uv._1
+            ))
             {
-                callback((Status)status);
+                if (callback)
+                {
+                    callback((Status)status);
+                }
             }
-        }
 
-        if (ImGui::IsItemClicked())
-        {
-            Toggle();
-        }
+            if (ImGui::IsItemClicked())
+            {
+                Toggle();
+            }
             
-        ImGui::PopStyleColor(3);
-        ImGui::PopStyleVar();
+            ImGui::PopStyleColor(3);
+            ImGui::PopStyleVar();
             
-        __RelativeTrampoline();
+            __RelativeTrampoline();
 
-        return ret;
+            });
     }
 
     void Toggle()

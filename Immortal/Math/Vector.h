@@ -132,22 +132,6 @@ struct Vector3 : public glm::vec3
         return *this;
     }
 
-    template <class T>
-    Vector3 &operator-=(T v)
-    {
-        Primitive &p = *this;
-
-        if constexpr (std::is_same_v<T, Vector3>)
-        {
-            p -= Primitive{ v };
-        }
-        else
-        {
-            p -= v;
-        }
-        return *this;
-    }
-
     float Length() const
     {
         return glm::length(Primitive{ *this });

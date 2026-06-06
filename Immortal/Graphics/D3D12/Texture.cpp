@@ -109,16 +109,9 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         &resource
         ));
 
-    if (resourceDesc.SampleDesc.Count == 1)
+    if (!(type & TextureType::DepthStencilAttachment) && resourceDesc.SampleDesc.Count == 1)
     {
-        if (type & TextureType::DepthStencilAttachment)
-        {
-            ConstructDepthShaderResourceView();
-        }
-        else
-        {
-		    ConstructShaderResourceView();
-        }
+		ConstructShaderResourceView();
     }
 
 #ifdef _DEBUG
@@ -159,68 +152,6 @@ Texture::~Texture()
 	resource.Reset();
 }
 
-void Texture::ConstructDepthShaderResourceView()
-{
-	DXGI_FORMAT srvFormat = DXGI_FORMAT_UNKNOWN;
-	switch (format)
-	{
-	case DXGI_FORMAT_D32_FLOAT:
-		srvFormat = DXGI_FORMAT_R32_FLOAT;
-		break;
-	case DXGI_FORMAT_D24_UNORM_S8_UINT:
-		srvFormat = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-		break;
-	case DXGI_FORMAT_D16_UNORM:
-		srvFormat = DXGI_FORMAT_R16_UNORM;
-		break;
-	default:
-		srvFormat = format;
-		break;
-	}
-
-	auto mipLevels = GetMipLevels();
-	uint32_t arrayLayers = GetArrayLayers();
-	descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &descriptorHeap, mipLevels);
-	for (uint32_t i = 0; i < mipLevels; i++)
-	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
-		    .Format                  = srvFormat,
-		    .ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
-		    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
-		    .Texture2D               = {
-		        .MostDetailedMip     = i,
-		        .MipLevels           = mipLevels - i,
-		        .PlaneSlice          = 0,
-		        .ResourceMinLODClamp = 0,
-		    },
-		};
-
-		if (arrayLayers == 6)
-		{
-			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-			desc.TextureCube   = {
-			    .MostDetailedMip     = i,
-			    .MipLevels           = mipLevels - i,
-			    .ResourceMinLODClamp = 0,
-			};
-		}
-		else if (arrayLayers > 1)
-		{
-			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-			desc.Texture2DArray = {
-			    .MostDetailedMip     = i,
-			    .MipLevels           = mipLevels - i,
-			    .FirstArraySlice     = 0,
-			    .ArraySize           = arrayLayers,
-			    .PlaneSlice          = 0,
-			    .ResourceMinLODClamp = 0,
-			};
-		}
-
-		device->CreateShaderResourceView(*this, &desc, descriptor[i]);
-	}
-}
-
 void Texture::ConstructShaderResourceView()
 {
 	auto mipLevels = GetMipLevels();
@@ -243,28 +174,20 @@ void Texture::ConstructShaderResourceView()
         if (arrayLayers == 6)
         {
             desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-            desc.TextureCube   = {
-                .MostDetailedMip     = i,
-                .MipLevels           = mipLevels - i,
-                .ResourceMinLODClamp = 0,
-            };
         }
         else if (arrayLayers > 1)
         {
 			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
             desc.Texture2DArray = {
-			    .MostDetailedMip     = i,
-			    .MipLevels           = mipLevels - i,
 			    .FirstArraySlice     = 0,
 			    .ArraySize           = arrayLayers,
 			    .PlaneSlice          = 0,
-			    .ResourceMinLODClamp = 0,
+			    .ResourceMinLODClamp = 0
             };
         }
 
 		device->CreateShaderResourceView(*this, &desc, descriptor[i]);
     }
-
 	if (mipLevels > 1 || (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
     {
 		uav = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &uavDescriptorHeap, mipLevels);

@@ -19,6 +19,9 @@
 namespace Immortal
 {
 
+namespace UniformBuffer
+{
+
 struct Transform
 {
     Matrix4 ViewProjection;
@@ -47,22 +50,240 @@ struct Model
     int     ObjectID;
 };
 
+}
+
+void Scene::RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material)
+{
+    uint32_t baseRegister = 0;
+
+    UniformBuffer::Model model;
+
+    auto &animation = mesh.Mesh->GetAnimation()[mesh.Mesh->GetAnimationState()];
+    animation.Ticks(Time::DeltaTime);
+    mesh.Mesh->CalculatedBoneTransform(transform);
+
+    auto transforms = mesh.Mesh->GetTransforms();
+
+    auto &nodeList = mesh.Mesh->NodeList();
+    for (auto &node : nodeList)
+    {
+        auto &ref = material.References[node.MaterialIndex];
+
+        //pipeline->AllocateDescriptorSet(((uint64_t)object << 32) | (uint64_t)&node);
+        //pipeline->Set(node.Vertex);
+        //pipeline->Set(node.Index);
+        //pipeline->Bind(transforms, 7);
+        //pipeline->Bind(uniforms.transform, 0);
+        //pipeline->Bind(uniforms.shading, 1);
+        //pipeline->Bind(ref.Textures.Albedo,    baseRegister + 0);
+        //pipeline->Bind(ref.Textures.Normal,    baseRegister + 1);
+        //pipeline->Bind(ref.Textures.Metallic,  baseRegister + 2);
+        //pipeline->Bind(ref.Textures.Roughness, baseRegister + 3);
+        //pipeline->Bind(ref.Textures.AO,        baseRegister + 4);
+
+        model.Transform = transform;
+        model.Color = ref.AlbedoColor;
+        model.Roughness = ref.Roughness;
+        model.Metallic = ref.Metallic;
+        model.ObjectID = (int)object;
+
+        //Render::PushConstant(pipeline, Shader::Stage::Vertex, sizeof(model), &model, 0);
+        //Render::Draw(pipeline);
+    }
+}
+
+void Scene::RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material)
+{
+    uint32_t baseRegister = 0;
+
+    UniformBuffer::Model model;
+
+    auto &nodeList = mesh.Mesh->NodeList();
+    for (auto &node : nodeList)
+    {
+        auto &ref = material.References[node.MaterialIndex];
+
+        //pipeline->AllocateDescriptorSet(((uint64_t)object << 32) | (uint64_t)&node);
+        //pipeline->Set(node.Vertex);
+        //pipeline->Set(node.Index);
+        //pipeline->Bind(uniforms.transform, 0);
+        //pipeline->Bind(uniforms.shading,   1);
+        //pipeline->Bind(ref.Textures.Albedo,    baseRegister + 0);
+        //pipeline->Bind(ref.Textures.Normal,    baseRegister + 1);
+        //pipeline->Bind(ref.Textures.Metallic,  baseRegister + 2);
+        //pipeline->Bind(ref.Textures.Roughness, baseRegister + 3);
+        //pipeline->Bind(ref.Textures.AO,        baseRegister + 4);
+
+        model.Transform = transform;
+        model.Color     = ref.AlbedoColor;
+        model.Roughness = ref.Roughness;
+        model.Metallic  = ref.Metallic;
+        model.ObjectID  = (int)object;
+
+        //Render::PushConstant(pipeline, Shader::Stage::Vertex, sizeof(model), &model, 0);
+        //Render::Draw(pipeline);
+    }
+}
+
+void Scene::ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma, int kernalSize)
+{
+    struct {
+        float blurDirection;
+        float kernalSize;
+    } properties{
+        1,
+        static_cast<float>(kernalSize)
+    };
+
+    auto width  = input->GetWidth();
+    auto height = input->GetHeight();
+    //Ref<Image> tmp = Render::Create<Image>(width, height, nullptr, Image::Description{Format::RGBA8, Wrap::Repeat, Filter::Bilinear});
+
+    //std::vector<float> kernal;
+    //kernal.resize(properties.kernalSize);
+    //Math::GenerateGaussianKernal(kernal, sigma);
+    //uniforms.gaussianKernal->Update(kernal);
+
+    //pipelines.horizontalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
+    //pipelines.horizontalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
+    //pipelines.horizontalGaussianBlur->Bind(input, 0);
+    //pipelines.horizontalGaussianBlur->Bind(tmp, 1);
+    //Render::PushConstant(pipelines.horizontalGaussianBlur, sizeof(properties), &properties);
+    //Render::Dispatch(pipelines.horizontalGaussianBlur, SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+
+    //properties.blurDirection = 0;
+    //pipelines.verticalGaussianBlur->AllocateDescriptorSet((uint64_t)&input);
+    //pipelines.verticalGaussianBlur->Bind(uniforms.gaussianKernal, 2);
+    //pipelines.verticalGaussianBlur->Bind(tmp, 0);
+    //pipelines.verticalGaussianBlur->Bind(output, 1);
+    //Render::PushConstant(pipelines.verticalGaussianBlur, sizeof(properties), &properties);
+    //Render::Dispatch(pipelines.verticalGaussianBlur, SLALIGN(width / 16, 16), SLALIGN(height / 16, 16), 1);
+}
+
+void Scene::Init()
+{
+    auto self = registry.create();
+}
+
+void Scene::ReloadSkyBoxCube()
+{
+    //textures.skyboxCube = Render::Create<TextureCube>(settings.environmentResolution, settings.environmentResolution, Texture::Description{ Format::RGBA16F, Wrap::Clamp, Filter::Bilinear, false });
+}
+
+void Scene::LoadEnvironment()
+{
+    //meshes.skybox.reset(new Mesh{ "Assets/Meshes/Skybox.obj" });
+
+    //float black[] = {
+    //    0.0f, 0.0f, 0.0f, 1.0f,
+    //    0.0f, 0.0f, 0.0f, 1.0f,
+    //};
+    //textures.skybox = Render::Create<Texture>(2, 1, black, Texture::Description{ Format::RGBA32F, Wrap::Clamp, Filter::Bilinear, false });
+
+    ReloadSkyBoxCube();
+    Equirect2Cube();
+}
+
+void Scene::Equirect2Cube()
+{
+    //if (Render::API == Render::Type::Vulkan)
+    //{
+    //    pipelines.equirect2Cube->AllocateDescriptorSet((uint64_t) textures.skybox.Get());
+    //    pipelines.equirect2Cube->Bind(textures.skybox, 0);
+    //    pipelines.equirect2Cube->Bind(textures.skyboxCube, 1);
+    //    Render::Dispatch(pipelines.equirect2Cube, SLALIGN(textures.skyboxCube->Width() / 32, 32), SLALIGN(textures.skyboxCube->Height() / 32, 32), 6);
+    //}
+}
+
 Scene::Scene(const String &name, bool isEditorScene) :
     name{ name },
     viewportSize{},
     frameGraph{}
 {
     Init();
+
+    //uniforms.host = Render::Create<Buffer>(sizeof(UniformBuffer::Transform) + sizeof(UniformBuffer::Shading), 0);
+
+    //Buffer::BindInfo bindInfo{};
+    //bindInfo.type   = Buffer::Type::Uniform;
+
+    //bindInfo.size   = sizeof(UniformBuffer::Transform);
+    //bindInfo.offset = 0;
+    //uniforms.transform = uniforms.host->Bind(bindInfo);
+
+    //bindInfo.offset += bindInfo.size;
+    //bindInfo.size = sizeof(UniformBuffer::Shading);
+    //uniforms.shading = uniforms.host->Bind(bindInfo);
+
+    //renderTarget = Render::CreateRenderTarget({
+    //    Resolutions::FHD.Width, Resolutions::FHD.Height,
+    //    {
+    //        { Format::RGBA8    },
+    //        { Format::R32      },
+    //        { Format::Depth32F }
+    //    }
+    //});
+
+    //constexpr size_t stride = sizeof(SkeletonVertex);
+    //InputElementDescription inputElementDescription = {
+    //    { Format::VECTOR3, "POSITION" },
+    //    { Format::VECTOR3, "NORMAL"   },
+    //    { Format::VECTOR3, "TANGENT"  },
+    //    { Format::VECTOR2, "TEXCOORD" },
+    //};
+    //inputElementDescription.SetStride(stride);
+
+    //pipelines.animatedBasic = Render::Create<Pipeline::Graphics>(Render::GetShader("AnimatedBasic3D"));
+    //pipelines.animatedBasic->Set({
+    //    { Format::VECTOR3,  "POSITION"  },
+    //    { Format::VECTOR3,  "NORMAL"    },
+    //    { Format::VECTOR3,  "BITANGENT" },
+    //    { Format::VECTOR2,  "TEXCOORD"  },
+    //    { Format::IVECTOR4, "BONE_ID"   },
+    //    { Format::VECTOR4,  "WEIGHT"    }
+    //    });
+    //pipelines.animatedBasic->Create(renderTarget);
+
+    //pipelines.tonemap = nullptr;
+    //pipelines.pbr = Render::Create<Pipeline::Graphics>(Render::GetShader(Render::API == Render::Type::Vulkan ? "PhysicalBasedRendering" : "Basic3D"));
+    //pipelines.pbr->Set(inputElementDescription);
+    //pipelines.pbr->Create(renderTarget);
+
+    //pipelines.basic = Render::Create<Pipeline::Graphics>(Render::GetShader("Basic3D"));
+    //pipelines.basic->Set(inputElementDescription);
+    //pipelines.basic->Create(renderTarget);
+
+    //InputElementDescription outlineDesc = {
+    //    { Format::VECTOR3, "POSITION" }
+    //};
+    //outlineDesc.SetStride(stride);
+
+    //pipelines.outline = Render::Create<Pipeline::Graphics>(Render::GetShader("Outline"));
+    //pipelines.outline->Set(outlineDesc);
+    //pipelines.outline->Disable(Pipeline::State::Depth);
+    //pipelines.outline->Create(renderTarget);
+
+    //InputElementDescription skyboxDesc = {
+    //    { Format::VECTOR3, "POSITION" }
+    //};
+    //skyboxDesc.SetStride(stride);
+    //pipelines.skybox = Render::Create<Pipeline::Graphics>(Render::GetShader("Skybox"));
+    //pipelines.skybox->Set(skyboxDesc);
+    //pipelines.skybox->Create(renderTarget);
+
+    //pipelines.colorMixing = Render::Create<Pipeline::Compute>(Render::GetShader("ColorMixing"));
+    //pipelines.horizontalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur"));
+    //pipelines.verticalGaussianBlur = Render::Create<Pipeline::Compute>(Render::GetShader("GaussianBlur"));
+    //pipelines.equirect2Cube = Render::Create<Pipeline::Compute>(Render::GetShader("Equirect2Cube"));
+
+    //uniforms.gaussianKernal = Render::CreateBuffer(Limit::MaxGaussianKernalSize * sizeof(float), Buffer::Type{ Buffer::Type::Storage });
+
+    LoadEnvironment();
 }
 
 Scene::~Scene()
 {
     registry.clear();
-}
-
-void Scene::Init()
-{
-	auto self = registry.create();
 }
 
 void Scene::OnUpdate()
@@ -85,6 +306,8 @@ void Scene::OnGuiRender()
     if (ImGui::Combo(Translator::Translate("Resolution").c_str(), &item, "64\000128\000256\000512\0001024\0002048\0004096\000"))
     {
         settings.environmentResolution = resolutions[item];
+        ReloadSkyBoxCube();
+        Equirect2Cube();
     }
 
     ImGui::End();
@@ -119,9 +342,11 @@ void Scene::OnRenderRuntime()
         }
     }
 
+    // Only render when we have a primary Camera
     if (!sceneCamera)
     {
         primaryCamera = dynamic_cast<SceneCamera*>(&observerCamera);
+        observerCamera.OnUpdate(Time::DeltaTime);
     }
     else
     {
@@ -129,12 +354,6 @@ void Scene::OnRenderRuntime()
     }
 
     primaryCamera->SetViewportSize(viewportSize);
-
-    /* Observer needs viewport before OnUpdate (RMB look warps cursor to center of render area). */
-    if (!sceneCamera)
-    {
-        observerCamera.OnUpdate(Time::DeltaTime);
-    }
     OnRender(*primaryCamera);
 }
 
@@ -157,60 +376,10 @@ void Scene::OnRender(const Camera &camera)
     SceneParameters params{};
 	params.view             = camera.View();
     params.viewProjection   = camera.ViewProjection();
-	params.invViewProjection = Vector::Inverse(camera.ViewProjection());
-	params.cameraWorld       = Vector4{ Vector::Inverse(camera.View())[3] };
 	params.skyboxProjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
 	params.exposure         = settings.exposure;
 	params.gamma            = settings.gamma;
-
-	{
-		size_t li = 0;
-		auto lightView = registry.view<TransformComponent, LightComponent>();
-		for (auto entity : lightView)
-		{
-			if (li >= SL_ARRAY_LENGTH(params.lights))
-			{
-				break;
-			}
-			auto &transform = lightView.get<TransformComponent>(entity);
-			auto &light = lightView.get<LightComponent>(entity);
-			if (!light.Enabled)
-			{
-				continue;
-			}
-			Matrix3 r3 = Matrix3(Vector::Rotate(transform.Rotation));
-			Vector3 fwd = Vector3(r3 * TransformComponent::Forward);
-			Vector3 toLight = -Vector::Normalize(fwd);
-			// Identity rotation leaves local -Z as (0,0,-1) → toLight = (0,0,1): purely horizontal in Y-up
-			// scenes, so N·L is 0 on flat ground and the scene looks unlit. Match the deferred fallback
-			// direction used when there are no lights so new / unrotated lights still read as a "sun".
-			if (transform.Rotation.Length() < 1e-3f)
-			{
-				toLight = Vector::Normalize(Vector3{ 0.35f, 0.85f, 0.25f });
-			}
-			params.lights[li].direction = Vector4{ toLight, 0.0f };
-			params.lights[li].radiance = light.Radiance;
-			li++;
-		}
-		params.lightCount = (uint32_t)li;
-	}
-
 	frameGraph->Execute(commandBuffer, params);
-
-	if (useDeferredPipeline && gbufferTarget && meshletTask && deferredTask)
-	{
-		meshletTask->SetRenderPath(MeshletRenderPath::Deferred);
-		ClearValue gbufferClear[4] = {
-		    { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 0.0f } } },
-		    { .color = { .float32 = { 0.5f, 0.5f, 1.0f, 1.0f } } },
-		    { .color = { .uint32 = { 0u, 0u, 0u, 0u } } },
-		    { .depthStencil = { .depth = 1.0f, .stencil = 0 } }
-		};
-		commandBuffer->BeginRenderTarget(gbufferTarget, gbufferClear);
-		frameGraph->DrawMesh(commandBuffer, params, registry);
-		commandBuffer->EndRenderTarget();
-		meshletTask->SetRenderPath(MeshletRenderPath::Forward);
-	}
 
     ClearValue clearValues[3] = {
 	    { .color = { 0.0f, 0.0, 0.0, 0.0f }},
@@ -237,11 +406,142 @@ void Scene::OnRender(const Camera &camera)
             }
         }
     }
+
+    auto group = registry.group<TransformComponent>(entt::get<SpriteRendererComponent, ColorMixingComponent>);
+    {
+        for (auto object : group)
+        {
+            auto [transform, sprite, color] = group.get<TransformComponent, SpriteRendererComponent, ColorMixingComponent>(object);
+
+            if (!sprite.Sprite)
+            {
+                continue;
+            }
+
+            auto width = sprite.Result->GetWidth();
+            auto height = sprite.Result->GetHeight();
+
+            if (color.Modified || !color.Initialized)
+            {
+                //pipelines.colorMixing->AllocateDescriptorSet((uint64_t)object);
+                //pipelines.colorMixing->Bind(sprite.Sprite, 0);
+                //pipelines.colorMixing->Bind(sprite.Result, 1);
+                //Render::PushConstant(pipelines.colorMixing, ColorMixingComponent::Length, &color.RGBA);
+                //Render::Dispatch(pipelines.colorMixing, SLALIGN(width, 16) >> 4, SLALIGN(height, 16) >> 4, 1);
+                //Render::Blit(sprite.Result);
+                color.Initialized = true;
+            }
+
+            //if (settings.changed && Render::API == Render::Type::Vulkan)
+            //{
+            //    ApplyGaussianBlur(sprite.Sprite, sprite.Result, settings.sigma, settings.kernalSize);
+            //    settings.changed = false;
+            //}
+        }
+    }
+
+    //Render::Begin(renderTarget);
+    //{
+    //    struct {
+    //        UniformBuffer::Transform transform;
+    //        UniformBuffer::Shading shading;
+    //    } buffers;
+
+    //    auto transform = &buffers.transform;
+    //    transform->ViewProjection = camera.ViewProjection();
+    //    transform->SkyboxPorjection = camera.Projection() * Matrix4(Vector::Matrix3(camera.View()));
+    //    transform->SceneRotation = Matrix4{ Matrix3{ camera.View() } };
+
+    //    auto shading = &buffers.shading;
+
+    //    size_t i = 0;
+    //    auto lightObjects = registry.view<TransformComponent, LightComponent>();
+    //    for (auto &lightObject : lightObjects)
+    //    {
+    //        if (i >= SL_ARRAY_LENGTH(UniformBuffer::Shading::lights))
+    //        {
+    //            break;
+    //        }
+    //        auto [transform, light] = lightObjects.get<TransformComponent, LightComponent>(lightObject);
+    //        shading->lights[i].direction = Vector4{ transform.Position, 1.0f };
+
+    //        if (light.Enabled)
+    //        {
+    //            shading->lights[i].radiance = light.Radiance;
+    //        }
+    //        i++;
+    //    }
+    //    shading->CameraPosition = Vector4{ camera.View()[3] };
+    //    shading->Exposure = settings.exposure;
+    //    shading->Gamma    = settings.gamma;
+
+    //    uniforms.host->Update(sizeof(buffers), &buffers);
+    //}
+
+    //{
+    //    /* Update Skybox */
+    //    if (Render::API == Render::Type::Vulkan)
+    //    {
+    //        auto &nodeList = meshes.skybox->NodeList();
+    //        for (auto &node : nodeList)
+    //        {
+    //            pipelines.skybox->AllocateDescriptorSet((uint64_t) &node);
+    //            pipelines.skybox->Set(node.Vertex);
+    //            pipelines.skybox->Set(node.Index);
+    //            pipelines.skybox->Bind(uniforms.transform, 0);
+    //            pipelines.skybox->Bind(textures.skyboxCube, 1);
+    //            pipelines.skybox->Bind(uniforms.shading, 2);
+    //            Render::Draw(pipelines.skybox);
+    //        }
+    //    }
+    //}
+
+    //{
+    //    if (selectedObject && *selectedObject && selectedObject->HasComponent<MeshComponent>() && Render::API == Render::Type::Vulkan)
+    //    {
+    //        auto &mesh = selectedObject->GetComponent<MeshComponent>();
+    //        auto &transform = selectedObject->GetComponent<TransformComponent>();
+
+    //        TransformComponent outlineTransform = transform;
+    //        outlineTransform.Scale *= 1.02f;
+    //        struct {
+    //            Matrix4 transform;
+    //            Vector4 color;
+    //            int id;
+    //        } pushConstants{
+    //            outlineTransform,
+    //            Vector4{ 1.0f, 0.0f, 0.0f, 1.0f },
+    //            *selectedObject
+    //        };
+
+    //        auto &nodeList = mesh.Mesh->NodeList();
+    //        for (auto &node : nodeList)
+    //        {
+    //            pipelines.outline->AllocateDescriptorSet(((uint64_t)selectedObject << 32) | (uint64_t)&node);
+    //            pipelines.outline->Set(node.Vertex);
+    //            pipelines.outline->Set(node.Index);
+    //            pipelines.outline->Bind("Transform", uniforms.transform);
+    //            Render::PushConstant(pipelines.outline, Shader::Stage::Vertex, sizeof(pushConstants), &pushConstants, 0);
+    //            Render::Draw(pipelines.outline);
+    //        }
+    //    }
+    //}
+
+    //auto view = registry.view<TransformComponent, MeshComponent, MaterialComponent>();
+    //for (auto object : view)
+    //{
+    //    auto [transform, mesh, material] = view.get<TransformComponent, MeshComponent, MaterialComponent>(object);
+    //    if (Render::API != Render::Type::D3D12 && mesh.Mesh->IsAnimated())
+    //    {
+    //        RenderAnimatedObject(pipelines.animatedBasic, object, transform, mesh, material);
+    //    }
+    //    else
+    //    {
+    //        RenderObject(pipelines.basic, object, transform, mesh, material);
+    //    }
+    //}
         
-	if (!useDeferredPipeline)
-	{
-		frameGraph->DrawMesh(commandBuffer, params, registry);
-	}
+    frameGraph->DrawMesh(commandBuffer, params, registry);
     Render2DComponent(camera, commandBuffer);
 
 	commandBuffer->EndRenderTarget();
@@ -328,30 +628,6 @@ Object Scene::Query(const std::string &name)
     return it != objects.end() ? Object{ it->second, this } : Object{};
 }
 
-void Scene::ConfigureDeferredPipeline(bool useDeferred, const Ref<MeshletTask> &meshlet, const Ref<DeferredTask> &deferred)
-{
-	useDeferredPipeline = useDeferred;
-	meshletTask = meshlet;
-	deferredTask = deferred;
-	if (viewportSize.x > 0.0f && viewportSize.y > 0.0f)
-	{
-		SetViewportSize(viewportSize);
-	}
-}
-
-void Scene::SetDeferredPBRResolve(bool enable)
-{
-	if (deferredTask)
-	{
-		deferredTask->SetUsePBR(enable);
-	}
-}
-
-bool Scene::IsDeferredPBRResolveEnabled() const
-{
-	return deferredTask && deferredTask->GetUsePBR();
-}
-
 void Scene::SetViewportSize(const Vector2 &size)
 {
     viewportSize = size;
@@ -362,42 +638,13 @@ void Scene::SetViewportSize(const Vector2 &size)
     }
 
     auto device = Graphics::GetDevice();
-	Format colorFormats[] = { Format::RGBA8, Format::R32G32_UINT };
+	Format colorFormats[] = {Format::RGBA8, Format::R32_UINT};
 	renderTarget = device->CreateRenderTarget(size.x, size.y, colorFormats, SL_ARRAY_LENGTH(colorFormats), Format::Depth24Stencil8);
-
-	if (gbufferTarget)
-	{
-		Graphics::ReleaseResource(gbufferTarget);
-		gbufferTarget = {};
-	}
-	if (useDeferredPipeline && deferredTask && meshletTask && size.x > 0.0f && size.y > 0.0f)
-	{
-		Format gbufferFormats[] = { Format::RGBA8, Format::RGBA8, Format::R32G32_UINT };
-		gbufferTarget = device->CreateRenderTarget((uint32_t)size.x, (uint32_t)size.y, gbufferFormats, SL_ARRAY_LENGTH(gbufferFormats), Format::Depth24Stencil8);
-		deferredTask->SetGBufferRenderTarget(gbufferTarget);
-	}
-	else if (deferredTask)
-	{
-		deferredTask->SetGBufferRenderTarget({});
-	}
 }
 
 const Vector2 &Scene::GetViewportSize() const
 {
 	return viewportSize;
-}
-
-Ref<Texture> Scene::GetObjectIdPickTexture() const
-{
-	if (useDeferredPipeline && gbufferTarget)
-	{
-		return gbufferTarget->GetColorAttachment(2);
-	}
-	if (renderTarget)
-	{
-		return renderTarget->GetColorAttachment(1);
-	}
-	return {};
 }
 
 Object Scene::PrimaryCameraObject()

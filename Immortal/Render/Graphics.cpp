@@ -4,8 +4,6 @@
 #include "Framework/Timer.h"
 #include "FileSystem/Stream.h"
 
-#include <filesystem>
-
 namespace Immortal
 {
 
@@ -441,8 +439,6 @@ Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
         { "color_space_yuvp2rgba", { "Assets/Shaders/hlsl/color_space_yuvp2rgba.hlsl", ShaderStage::Compute, "main" } },
         { "color_space_y2102rgba", { "Assets/Shaders/hlsl/color_space_y2102rgba.hlsl", ShaderStage::Compute, "main" } },
 	    { "equirect2cube",         { "Assets/Shaders/hlsl/equirect2cube.hlsl",         ShaderStage::Compute, "main" } },
-	    { "ibl_irradiance",        { "Assets/Shaders/hlsl/ibl_irradiance.hlsl",        ShaderStage::Compute, "main" } },
-	    { "brdf_lut",              { "Assets/Shaders/hlsl/brdf_lut.hlsl",              ShaderStage::Compute, "main" } },
     };
 
     auto it = This->pipelines.find(name);
@@ -520,7 +516,7 @@ std::string Graphics::ReadShaderSource(const String &filepath)
     return source;
 }
 
-Shader *Graphics::CreateShaderFromDXIL(Device *device, const Path &path, ShaderStage stage)
+Shader *Graphics::CreateShaderFromDXIL(Device *device, const Path &path)
 {
 	Stream stream{path, Stream::Mode::Read};
 	if (!stream.Readable())
@@ -530,63 +526,25 @@ Shader *Graphics::CreateShaderFromDXIL(Device *device, const Path &path, ShaderS
 
 	std::vector<uint8_t> dxil;
 	stream.Read(dxil);
-	return device->CreateShader(stage, ShaderBinaryType::DXIL, dxil.data(), (uint32_t)dxil.size());
-}
-
-static FileSystem::Path ResolveShaderHlslPath(const std::string &name)
-{
-	const FileSystem::Path &assetRoot = Graphics::GetShaderAssetPath();
-	FileSystem::Path direct = assetRoot / (name + ".hlsl");
-	if (std::filesystem::exists(direct))
-	{
-		return direct;
-	}
-
-	const auto pos = name.rfind('_');
-	if (pos != std::string::npos && pos + 1 < name.size())
-	{
-		const std::string suffix = name.substr(pos + 1);
-		if (suffix == "VS" || suffix == "PS" || suffix == "HS" || suffix == "DS" || suffix == "GS")
-		{
-			FileSystem::Path stemPath = assetRoot / (name.substr(0, pos) + ".hlsl");
-			if (std::filesystem::exists(stemPath))
-			{
-				return stemPath;
-			}
-		}
-	}
-
-	return {};
-}
-
-Shader *Graphics::GetShaderByName(const std::string &name, ShaderStage stage, const std::string &entryPoint)
-{
-	auto *device = Graphics::GetDevice();
-	const FileSystem::Path dxilPath = Graphics::GetShaderAssetPath() / (name + ".dxil");
-	if (std::filesystem::exists(dxilPath))
-	{
-		return Graphics::CreateShaderFromDXIL(device, dxilPath, stage);
-	}
-
-	FileSystem::Path hlslPath = ResolveShaderHlslPath(name);
-	if (hlslPath.empty())
-	{
-		LOG::ERR("GetShaderByName: no dxil or hlsl for `{}`", name.c_str());
-		return nullptr;
-	}
-
-	std::string source = Graphics::ReadShaderSource(hlslPath.string());
-	if (source.empty())
-	{
-		return nullptr;
-	}
-
-	return device->CreateShader(name, stage, source, entryPoint);
+	return device->CreateShader(ShaderStage::Compute, ShaderBinaryType::DXIL, dxil.data(), dxil.size());
 }
 
 Shader *Graphics::CreateShaderByName(const std::string &name, const std::string &entryPoint)
 {
-	return Graphics::GetShaderByName(name, ShaderStage::Compute, entryPoint);
+    auto device = Graphics::GetDevice();
+	auto path = Graphics::GetShaderAssetPath() / (name + ".dxil");
+	if (!std::filesystem::exists(path))
+	{
+		std::string source = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / (name + ".hlsl"));
+		if (source.empty())
+		{
+			return nullptr;
+		}
+
+		return device->CreateShader(name, ShaderStage::Compute, source, entryPoint);
+	}
+
+	return Graphics::CreateShaderFromDXIL(device, path);
 }
 
 }
