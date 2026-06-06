@@ -52,13 +52,6 @@ void Pipeline::Destroy()
 
 void Pipeline::ConstructPipelineLayout(const std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, const std::vector<VkPushConstantRange> &pushConstantRanges)
 {
-	bindDescriptorTypes.resize(descriptorSetLayoutBindings.size());
-	for (size_t i = 0; i < descriptorSetLayoutBindings.size(); i++)
-	{
-		auto &descriptorSetLayout = descriptorSetLayoutBindings[i];
-		bindDescriptorTypes[descriptorSetLayout.binding] = descriptorSetLayout.descriptorType;
-    }
-
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
         .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext        = nullptr,
@@ -189,14 +182,8 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .lineWidth               = 1.0f,
     };
 
-	size_t colorBlendSize = outputDescription.size();
-	if (outputDescription.back().IsDepth())
-    {
-		colorBlendSize--;
-    }
-
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
-	colorBlendAttachmentStates.resize(colorBlendSize);
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
+	colorBlendAttachmentStates.resize(outputDescription.size());
 	for (size_t i = 0; i < colorBlendAttachmentStates.size(); i++)
     {
 		auto &colorBlendAttachmentState = colorBlendAttachmentStates[i];
@@ -234,7 +221,7 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .pNext                 = nullptr,
 	    .flags                 = {},
         .depthTestEnable       = flags & Pipeline::State::Depth ? VK_TRUE : VK_FALSE,
-	    .depthWriteEnable      = depthStencilStateCreateInfo.depthTestEnable,
+        .depthWriteEnable      = VK_TRUE,
         .depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL,
         .depthBoundsTestEnable = VK_FALSE,
         .stencilTestEnable     = VK_FALSE,
@@ -251,7 +238,6 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .minDepthBounds  = 0,
         .maxDepthBounds  = 0,
 	};
-
 
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {
         .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,

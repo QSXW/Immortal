@@ -26,15 +26,6 @@ static D3D12_PRIMITIVE_TOPOLOGY_TYPE ConvertPrimitiveTopologyType(const Pipeline
     }
 }
 
-static inline bool IsBlendingSupport(const DXGI_FORMAT &format)
-{
-    return format == DXGI_FORMAT_R8G8B8A8_UNORM     || 
-           format == DXGI_FORMAT_B8G8R8A8_UNORM     || 
-           format == DXGI_FORMAT_R16G16B16A16_FLOAT ||
-           format == DXGI_FORMAT_R32G32B32A32_FLOAT ||
-           format == DXGI_FORMAT_R10G10B10A2_UNORM;
-}
-
 Pipeline::Pipeline(Device *device, Type type) :
     NonDispatchableHandle{ device },
     type{ type }
@@ -70,26 +61,16 @@ void Pipeline::ConstructRootParameter(Shader *shader, std::vector<RootParameter>
 	{
 		auto &range = descriptorRanges[i];
 		D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-        auto registerSize = range.BaseShaderRegister + range.NumDescriptors;
 		if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
 		{
 			heapType = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		}
-        else
-        {
-			descriptorRangeType.resize(registerSize);
-        }
 
+        auto registerSize = range.BaseShaderRegister + range.NumDescriptors;
 		descriptorIndexMap[heapType].resize(registerSize);
-
 		for (int j = 0; j < range.NumDescriptors; j++)
 		{
 			descriptorIndexMap[heapType][range.BaseShaderRegister + j] = descriptorCount[heapType] + j;
-			if (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-			{
-				descriptorRangeType[range.BaseShaderRegister + j] = range.RangeType;
-			}
         }
 		descriptorCount[heapType] += range.NumDescriptors;
 
@@ -135,7 +116,7 @@ void Pipeline::ConstructRootSignature(Shader **ppShader, size_t shaderCount)
         THROWIF(true, msg);
     }
 
-    DX_CHECK(device->Create(signature.Get(), rootSignature->AddressOf()));
+    Check(device->Create(signature.Get(), rootSignature->AddressOf()));
 #ifdef _DEBUG
     rootSignature->SetName("Pipeline::RootSignature");
 #endif
@@ -201,30 +182,6 @@ void GraphicsPipeline::Construct(SuperShader **ppShader, size_t shaderCount, con
 		desc.DepthStencilState.DepthEnable = false;
     }
 
-    if (flags & Pipeline::State::Blend)
-	{
-        for (size_t i = 0; i < desc.NumRenderTargets; i++)
-        {
-			auto &blendState = desc.BlendState;
-            if (!IsBlendingSupport(desc.RTVFormats[i]))
-            {
-				blendState.IndependentBlendEnable = true;
-				blendState.RenderTarget[i] = {};
-				continue;
-            }
-
-			blendState.AlphaToCoverageEnable                 = false;
-			blendState.RenderTarget[i].BlendEnable           = true;
-			blendState.RenderTarget[i].SrcBlend              = D3D12_BLEND_SRC_ALPHA;
-			blendState.RenderTarget[i].DestBlend             = D3D12_BLEND_INV_SRC_ALPHA;
-			blendState.RenderTarget[i].BlendOp               = D3D12_BLEND_OP_ADD;
-			blendState.RenderTarget[i].SrcBlendAlpha         = D3D12_BLEND_ONE;
-			blendState.RenderTarget[i].DestBlendAlpha        = D3D12_BLEND_INV_SRC_ALPHA;
-			blendState.RenderTarget[i].BlendOpAlpha          = D3D12_BLEND_OP_ADD;
-			blendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-        }
-	}
-
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescriptions;
     SetInputElementDescription(inputElementDescriptions, description);
 
@@ -234,7 +191,7 @@ void GraphicsPipeline::Construct(SuperShader **ppShader, size_t shaderCount, con
         .NumElements = uint32_t(inputElementDescriptions.size())
     };
 
-    DX_CHECK(device->Create(&desc, &handle));
+    Check(device->Create(&desc, &handle));
 }
 
 void GraphicsPipeline::SetInputElementDescription(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputElementDescriptions, const InputElementDescription &description)
@@ -243,7 +200,7 @@ void GraphicsPipeline::SetInputElementDescription(std::vector<D3D12_INPUT_ELEMEN
     for (size_t i = 0; i < description.Size(); i++)
     {
         inputElementDescriptions[i].SemanticName         = description[i].GetSemanticsName().c_str();
-        inputElementDescriptions[i].SemanticIndex        = description[i].GetSemanticIndex();
+        inputElementDescriptions[i].SemanticIndex        = 0;
         inputElementDescriptions[i].Format               = description[i].GetFormat();
         inputElementDescriptions[i].InputSlot            = 0;
         inputElementDescriptions[i].AlignedByteOffset    = description[i].GetOffset();
@@ -262,7 +219,7 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipeline::ConstructDescription()
         .DS                    = nullptr,
         .HS                    = nullptr,
         .GS                    = nullptr,
-        .StreamOutput          = {
+        .StreamOutput          = { 
             .pSODeclaration   = nullptr,
             .NumEntries       = 0,
             .pBufferStrides   = nullptr,
@@ -297,6 +254,20 @@ D3D12_GRAPHICS_PIPELINE_STATE_DESC GraphicsPipeline::ConstructDescription()
         depth.BackFace                = depth.FrontFace;
     }
 
+    if (flags & Pipeline::State::Blend)
+    {
+        auto &blend = pipelineStateDesc.BlendState;
+        blend.AlphaToCoverageEnable                 = false;
+        blend.RenderTarget[0].BlendEnable           = true;
+        blend.RenderTarget[0].SrcBlend              = D3D12_BLEND_SRC_ALPHA;
+        blend.RenderTarget[0].DestBlend             = D3D12_BLEND_INV_SRC_ALPHA;
+        blend.RenderTarget[0].BlendOp               = D3D12_BLEND_OP_ADD;
+        blend.RenderTarget[0].SrcBlendAlpha         = D3D12_BLEND_ONE;
+        blend.RenderTarget[0].DestBlendAlpha        = D3D12_BLEND_INV_SRC_ALPHA;
+        blend.RenderTarget[0].BlendOpAlpha          = D3D12_BLEND_OP_ADD;
+        blend.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    }
+
     return pipelineStateDesc;
 }
 
@@ -321,7 +292,7 @@ ComputePipeline::ComputePipeline(Device *device, Shader *shader) :
         .Flags          = D3D12_PIPELINE_STATE_FLAG_NONE,
     };
 
-    DX_CHECK(device->Create(&desc, &handle));
+    Check(device->Create(&desc, &handle));
 }
 
 ComputePipeline::~ComputePipeline()

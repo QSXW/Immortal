@@ -6,12 +6,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 project("ImmortalAudio" LANGUAGES CXX)
 
 set(AUDIO_FILES
-    Device.cpp
-    Device.h
     IAudioDevice.cpp
     IAudioDevice.h
-    AudioStream.cpp
-    AudioStream.h)
+    Device.cpp
+    Device.h)
 
 if (WIN32)
     list(APPEND AUDIO_FILES
@@ -33,9 +31,9 @@ source_group("\\" FILES ${AUDIO_FILES})
 
 add_library(${PROJECT_NAME} STATIC ${AUDIO_FILES})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
+target_link_libraries(${PROJECT_NAME} PUBLIC 
     ImmortalShared
-    ImmortalGraphics)
+    ImmortalVision)
 
 if (NOT APPLE)
     target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/AudioPrecompiledHeader.h>)

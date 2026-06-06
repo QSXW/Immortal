@@ -59,7 +59,7 @@ public:
 
     void NextBatch();
 
-    void BeginScene(CommandBuffer *commandBuffer, const Camera &camera);
+    void BeginScene(const Camera &camera);
 
     void EndScene();
 
@@ -119,8 +119,6 @@ public:
     }
 
 public:
-	CommandBuffer *commandBuffer;
-
     Ref<GraphicsPipeline> pipeline;
 
     Matrix4 viewProjection;

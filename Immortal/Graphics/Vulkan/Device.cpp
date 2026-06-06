@@ -419,19 +419,6 @@ void Device::DestroyObjects()
     }
 }
 
-void Device::SetName(VkObjectType objectType, uint64_t handle, const char *name)
-{
-	VkDebugUtilsObjectNameInfoEXT nameInfo{
-	    .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-	    .pNext        = nullptr,
-	    .objectType   = objectType,
-	    .objectHandle = handle,
-        .pObjectName  = name
-    };
-
-    Check(SetDebugUtilsObjectNameEXT(&nameInfo));
-}
-
 VkResult Device::AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)
 {
     return descriptorPool->Allocate(pDescriptorSetLayout, pDescriptorSets);

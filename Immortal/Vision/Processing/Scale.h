@@ -16,7 +16,5 @@ void BicubicConvolutionInterpolate(Picture &dst, const Picture &src);
 
 void ScaleTo8Bits(Picture &dst, const Picture &src);
 
-Picture RGBA8ToYUV420P(const Picture &src);
-
 }
 }

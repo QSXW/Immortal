@@ -142,7 +142,7 @@ protected:
 
     uint32_t syncPoint;
 
-    LightArray<Semaphore, 4> semaphores;
+    std::vector<Semaphore> semaphores;
 };
 
 }

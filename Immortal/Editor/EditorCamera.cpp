@@ -27,7 +27,7 @@ void EditorCamera::Focus(const Vector3 & focusPoint)
     }
 }
 
-void EditorCamera::OnUpdate(const float &deltaTime)
+void EditorCamera::OnUpdate()
 {
     if (Input::IsKeyPressed(KeyCode::LeftAlt))
     {

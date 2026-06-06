@@ -16,202 +16,6 @@ std::unique_ptr<NativeInput> DirectWindow::Input = nullptr;
 
 Window::EventCallbackFunc DirectWindow::EventDispatcher = nullptr;
 
-static bool IsVirtualKeyDown(int virtualKey)
-{
-	return (::GetKeyState(virtualKey) & 0x8000) != 0;
-}
-
-static KeyCode VirtualKey2KeyCode(WPARAM wParam)
-{
-    switch (wParam)
-    {
-        case VK_TAB:
-            return KeyCode::Tab;
-		case VK_LEFT:
-            return KeyCode::Left;
-		case VK_RIGHT:
-			return KeyCode::Right;
-		case VK_UP:
-			return KeyCode::Up;
-		case VK_DOWN:
-			return KeyCode::Down;
-		case VK_PRIOR:
-			return KeyCode::PageUp;
-		case VK_NEXT:
-			return KeyCode::PageDown;
-		case VK_HOME:
-			return KeyCode::Home;
-		case VK_END:
-			return KeyCode::End;
-		case VK_INSERT:
-			return KeyCode::Insert;
-		case VK_DELETE:
-			return KeyCode::Delete;
-		case VK_BACK:
-			return KeyCode::Backspace;
-		case VK_SPACE:
-			return KeyCode::Space;
-		case VK_RETURN:
-			return KeyCode::Enter;
-        case VK_ESCAPE:
-			return KeyCode::Escape;
-		case VK_OEM_7:
-			return KeyCode::SingleQuote;
-		case VK_OEM_COMMA:
-			return KeyCode ::Comma;
-		case VK_OEM_MINUS:
-			return KeyCode::Hyphen;
-		case VK_OEM_PERIOD:
-			return KeyCode::FullStop;
-		case VK_OEM_2:
-			return KeyCode ::Slash;
-		case VK_OEM_1:
-			return KeyCode ::Semicolon;
-		case VK_OEM_PLUS:
-			return KeyCode::Equals;
-		case VK_OEM_4:
-			return KeyCode ::OpeningBracket;
-		case VK_OEM_5:
-			return KeyCode::BackSlash;
-		case VK_OEM_6:
-			return KeyCode::ClosingBraket;
-		case VK_OEM_3:
-			return KeyCode::GraveAccent;
-		case VK_CAPITAL:
-			return KeyCode::CapsLock;
-		case VK_SCROLL:
-			return KeyCode::ScrollLock;
-		case VK_NUMLOCK:
-			return KeyCode::NumLock;
-		case VK_SNAPSHOT:
-			return KeyCode::PrintScreen;
-		case VK_PAUSE:
-			return KeyCode::Pause;
-		case VK_NUMPAD0:
-			return KeyCode::KP0;
-		case VK_NUMPAD1:
-			return KeyCode::KP1;
-		case VK_NUMPAD2:
-			return KeyCode::KP2;
-		case VK_NUMPAD3:
-			return KeyCode::KP3;
-		case VK_NUMPAD4:
-			return KeyCode::KP4;
-		case VK_NUMPAD5:
-			return KeyCode::KP5;
-		case VK_NUMPAD6:
-			return KeyCode::KP6;
-		case VK_NUMPAD7:
-			return KeyCode::KP7;
-		case VK_NUMPAD8:
-			return KeyCode::KP8;
-		case VK_NUMPAD9:
-			return KeyCode::KP9;
-		case VK_DECIMAL:
-			return KeyCode::KPDecimal;
-		case VK_DIVIDE:
-			return KeyCode::KPDivide;
-		case VK_MULTIPLY:
-			return KeyCode::KPMultiply;
-		case VK_SUBTRACT:
-			return KeyCode::KPSubtract;
-		case VK_ADD:
-			return KeyCode::KPAdd;
-		case VK_RETURN + 256:
-			return KeyCode::KPEnter;
-		case VK_LSHIFT:
-			return KeyCode::LeftShift;
-		case VK_LCONTROL:
-			return KeyCode::LeftControl;
-		case VK_LMENU:
-			return KeyCode::LeftAlt;
-		case VK_LWIN:
-			return KeyCode::LeftSuper;
-		case VK_RSHIFT:
-			return KeyCode::RightShift;
-		case VK_RCONTROL:
-			return KeyCode::RightControl;
-		case VK_RMENU:
-			return KeyCode::RightAlt;
-		case VK_RWIN:
-			return KeyCode::RightSuper;
-		case VK_APPS:
-			return KeyCode::Menu;
-        case '0': return KeyCode::D0;
-        case '1': return KeyCode::D1;
-        case '2': return KeyCode::D2;
-        case '3': return KeyCode::D3;
-        case '4': return KeyCode::D4;
-        case '5': return KeyCode::D5;
-        case '6': return KeyCode::D6;
-        case '7': return KeyCode::D7;
-        case '8': return KeyCode::D8;
-        case '9': return KeyCode::D9;
-        case 'A': return KeyCode::A;
-        case 'B': return KeyCode::B;
-        case 'C': return KeyCode::C;
-        case 'D': return KeyCode::D;
-        case 'E': return KeyCode::E;
-        case 'F': return KeyCode::F;
-        case 'G': return KeyCode::G;
-        case 'H': return KeyCode::H;
-        case 'I': return KeyCode::I;
-        case 'J': return KeyCode::J;
-        case 'K': return KeyCode::K;
-        case 'L': return KeyCode::L;
-        case 'M': return KeyCode::M;
-        case 'N': return KeyCode::N;
-        case 'O': return KeyCode::O;
-        case 'P': return KeyCode::P;
-        case 'Q': return KeyCode::Q;
-        case 'R': return KeyCode::R;
-        case 'S': return KeyCode::S;
-        case 'T': return KeyCode::T;
-        case 'U': return KeyCode::U;
-        case 'V': return KeyCode::V;
-        case 'W': return KeyCode::W;
-        case 'X': return KeyCode::X;
-        case 'Y': return KeyCode::Y;
-        case 'Z': return KeyCode::Z;
-        case VK_F1: return KeyCode::F1;
-        case VK_F2: return KeyCode::F2;
-        case VK_F3: return KeyCode::F3;
-        case VK_F4: return KeyCode::F4;
-        case VK_F5: return KeyCode::F5;
-        case VK_F6: return KeyCode::F6;
-        case VK_F7: return KeyCode::F7;
-        case VK_F8: return KeyCode::F8;
-        case VK_F9: return KeyCode::F9;
-        case VK_F10: return KeyCode::F10;
-        case VK_F11: return KeyCode::F11;
-        case VK_F12: return KeyCode::F12;
-        case VK_F13: return KeyCode::F13;
-        case VK_F14: return KeyCode::F14;
-        case VK_F15: return KeyCode::F15;
-        case VK_F16: return KeyCode::F16;
-        case VK_F17: return KeyCode::F17;
-        case VK_F18: return KeyCode::F18;
-        case VK_F19: return KeyCode::F19;
-        case VK_F20: return KeyCode::F20;
-        case VK_F21: return KeyCode::F21;
-        case VK_F22: return KeyCode::F22;
-        case VK_F23: return KeyCode::F23;
-        case VK_F24: return KeyCode::F24;
-		case VK_BROWSER_BACK:
-			return KeyCode::BrowserBack;
-		case VK_BROWSER_FORWARD:
-			return KeyCode::BrowserForward;
-		case VK_VOLUME_UP:
-			return KeyCode::VolumnUp;
-		case VK_VOLUME_DOWN:
-			return KeyCode::VolumnDown;
-		case VK_VOLUME_MUTE:
-			return KeyCode::VolumnMute;
-		default:
-			return KeyCode::Terminator;
-    }
-}
-
 // Win32 message handler
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -242,51 +46,32 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_SYSKEYUP:
         {
             bool down = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
-			KeyCode keyCode = KeyCode::Terminator;
             if (wParam == VK_CONTROL)
             {
-                if (IsVirtualKeyDown(VK_LCONTROL))
-                {
-					keyCode = KeyCode::LeftControl;
-                }
-                if (IsVirtualKeyDown(VK_RCONTROL))
-				{
-					keyCode = KeyCode::RightControl;
-                }
+				DirectWindow::Input->KeysDown[uint32_t(KeyCode::Control)] = down;
             }
             else if (wParam == VK_SHIFT)
             {
-				if (IsVirtualKeyDown(VK_LSHIFT))
-				{
-					keyCode = KeyCode::LeftShift;
-				}
-				if (IsVirtualKeyDown(VK_RSHIFT))
-				{
-					keyCode = KeyCode::RightShift;
-				}
+				DirectWindow::Input->KeysDown[uint32_t(KeyCode::Shift)] = down;
             }
             else if (wParam == VK_MENU)
             {
-				if (IsVirtualKeyDown(VK_LMENU))
-				{
-					keyCode = KeyCode::LeftAlt;
-				}
-				if (IsVirtualKeyDown(VK_RMENU))
-				{
-					keyCode = KeyCode::RightAlt;
-				}
+				DirectWindow::Input->KeysDown[uint32_t(KeyCode::Alt)] = down;
             }
-            else
-			{
-				keyCode = VirtualKey2KeyCode(wParam);
-            }
+            DirectWindow::Input->KeysDown[wParam] = down;
 
-			DirectWindow::Input->KeysDown[(int)keyCode] = down;
-            if (down && keyCode != KeyCode::Terminator)
+            if (down)
             {
                 KeyPressedEvent e{
-				    (int)keyCode,
+                    (int)wParam,
                     msg == WM_KEYDOWN ? (uint16_t)0 : LOWORD(lParam)
+                };
+                DirectWindow::EventDispatcher(e);
+            }
+            else
+            {
+                KeyReleasedEvent e{
+                    (int)wParam
                 };
                 DirectWindow::EventDispatcher(e);
             }
@@ -518,28 +303,20 @@ void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t
 
     auto x = GetSystemMetrics(SM_CXSCREEN);
     auto y = GetSystemMetrics(SM_CYSCREEN);
-	
-    RECT rect = {0, 0, x, y};
-    AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, FALSE, 0);
 
     handle = ::CreateWindowExW(
         0,
         wc.lpszClassName,
         title.c_str(),
         WS_OVERLAPPEDWINDOW,
-	    width  == 0 ? CW_USEDEFAULT : (x - width) / 2,
-	    height == 0 ? CW_USEDEFAULT : (y - height) / 2,
-	    width  == 0 ? CW_USEDEFAULT : width,
-	    height == 0 ? CW_USEDEFAULT : height,
+        (x - width) / 2,
+        (y - height) / 2,
+	    width,
+	    height,
         nullptr,
         nullptr,
         wc.hInstance,
         nullptr);
-
-    if (width == 0 || height == 0)
-    {
-		PostMessageW(handle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
-    }
 
     DragAcceptFiles(handle, TRUE);
 

@@ -32,7 +32,7 @@ Swapchain::Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CH
 
     auto dxgiFactory = device->GetDXGIFactory();
     ComPtr<IDXGISwapChain1> swapchain1;
-    DX_CHECK(dxgiFactory->CreateSwapChainForHwnd(
+    Check(dxgiFactory->CreateSwapChainForHwnd(
         *queue,
         hWnd,
         &desc,
@@ -41,12 +41,12 @@ Swapchain::Swapchain(Device *device, Queue *queue, HWND hWnd, const DXGI_SWAP_CH
         &swapchain1
     ));
 
-    DX_CHECK(swapchain1.As(&handle));
+    Check(swapchain1.As(&handle));
 
     renderTargets.resize(desc.BufferCount);
     CreateRenderTarget();
 
-    DX_CHECK(dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
+    Check(dxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER));
 }
 
 Swapchain::~Swapchain()
@@ -64,13 +64,12 @@ void Swapchain::CreateRenderTarget()
 
 #ifdef _DEBUG
         std::wstring name = L"Swapchain::RenderTarget" + std::to_wstring(i);
-        DX_CHECK(resource->SetName(name.c_str()));
+        Check(resource->SetName(name.c_str()));
 #endif
 
-        Ref<Texture> texture = new Texture{ device, resource, D3D12_RESOURCE_STATE_RENDER_TARGET};
+        Ref<Texture> texture = new Texture{ device, resource.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET};
         renderTargets[i] = new RenderTarget{  device };
         renderTargets[i]->SetColorAttachment(0, texture);
-		renderTargets[i]->BuildRenderTargetView();
     }
 }
 
@@ -82,10 +81,10 @@ void Swapchain::PrepareNextFrame()
 void Swapchain::Resize(uint32_t width, uint32_t height)
 {
     DXGI_SWAP_CHAIN_DESC desc{};
-    DX_CHECK(handle->GetDesc(&desc));
+    Check(handle->GetDesc(&desc));
 
     ClearRenderTarget();
-    DX_CHECK(handle->ResizeBuffers(desc.BufferCount, width, height, DXGI_FORMAT_UNKNOWN, desc.Flags));
+    Check(handle->ResizeBuffers(desc.BufferCount, width, height, DXGI_FORMAT_UNKNOWN, desc.Flags));
     CreateRenderTarget();
 }
 

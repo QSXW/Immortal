@@ -21,7 +21,7 @@ struct PSInput
 struct PSOutput
 {
     float4 color : SV_TARGET;
-    uint objectID : COLOR;
+    int objectID : COLOR;
 };
 
 struct PushConstant

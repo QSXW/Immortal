@@ -29,7 +29,7 @@ class ScriptEngine;
 class IMMORTAL_API Application
 {
 public:
-    Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height);
+    Application(BackendAPI graphicsBackendAPI, const std::string &title, uint32_t width, uint32_t height);
 
     virtual ~Application();
 
@@ -45,17 +45,20 @@ public:
 
     virtual Layer *PushOverlay(Layer *overlay);
 
-    //virtual GuiLayer *GetGuiLayer() const
-    //{
-    //    return gui;
-    //}
+    virtual GuiLayer *GetGuiLayer() const
+    {
+        return gui;
+    }
 
-    //virtual Window *GetWindow() const
-    //{
-    //    return window;
-    //}
+    virtual Window *GetWindow() const
+    {
+        return window;
+    }
 
-    CommandBuffer *GetCurrentCommandBuffer() const;
+    RenderContext *Context()
+    {
+        return nullptr;
+    }
 
 public:
     static uint32_t GetWidth()
@@ -81,11 +84,6 @@ public:
     static void SetTitle(const std::string &title)
     {
 		return This->window->SetTitle(title);
-    }
-
-    static Application &Reference()
-    {
-		return *This;
     }
 
 private:

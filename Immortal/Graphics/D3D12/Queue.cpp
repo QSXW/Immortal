@@ -21,7 +21,7 @@ Queue::Queue(Device *device, QueueType type, QueuePriority priority) :
 		.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE,
 		.NodeMask = 0,
 	};
-    DX_CHECK(device->Create(&desc, &handle));
+    Check(device->Create(&desc, &handle));
     handle->SetName(L"Command Queue");
 }
 

@@ -83,15 +83,10 @@ public:
 		return zoomLevel;
     }
 
-    void SetZoomLevel(float value)
-    {
-		zoomLevelTarget = 0.5f;
-    }
-
 public:
     virtual void SetViewportSize(Vector2 size) override;
 
-    virtual void OnUpdate(const float &deltaTime = Time::DeltaTime) override;
+    virtual void OnUpdate() override;
 
     virtual bool OnMouseScrolled(MouseScrolledEvent &e) override;
 

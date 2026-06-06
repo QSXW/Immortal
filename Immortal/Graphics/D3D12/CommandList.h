@@ -51,6 +51,8 @@ public:
 
     CommandList(Device *device, Type type, CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
 
+    CommandList(ID3D12Device *device, Type type, ID3D12CommandAllocator *pAllocator, ID3D12PipelineState *pInitialState = nullptr);
+
     ~CommandList();
 
     HRESULT Reset(CommandAllocator *pAllocator);
@@ -226,9 +228,9 @@ public:
         handle->SetGraphicsRoot32BitConstants(rootParameterIndex, num32BitValuesToSet, pSrcData, dstOffsetIn32BitValues);
     }
     
-    void PushGraphicsConstant(uint32_t size, const void *data, uint32_t offset, UINT rootParameterIndex = 0)
+    void PushGraphicsConstant(uint32_t size, const void *data, uint32_t offset)
     {
-		SetGraphicsRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
+        SetGraphicsRoot32BitConstants(0, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
     }
 
     void SetComputeRoot32BitConstants(UINT rootParameterIndex, UINT num32BitValuesToSet, const void *pSrcData, UINT dstOffsetIn32BitValues)
@@ -237,9 +239,9 @@ public:
         handle->SetComputeRoot32BitConstants(rootParameterIndex, num32BitValuesToSet, pSrcData, dstOffsetIn32BitValues);
     }
 
-    void PushComputeConstant(uint32_t size, const void *data, uint32_t offset, UINT rootParameterIndex = 0)
+    void PushComputeConstant(uint32_t size, const void *data, uint32_t offset)
     {
-		SetComputeRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
+        SetComputeRoot32BitConstants(0, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
     }
 
     void OMSetBlendFactor(const float *blendFactor)

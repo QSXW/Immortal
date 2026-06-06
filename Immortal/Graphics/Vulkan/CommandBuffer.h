@@ -1223,8 +1223,6 @@ public:
 
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
 
-    virtual void SetImageLayout(SuperTexture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
-
 public:
     void Destroy(CommandPool *commandPool);
 
@@ -1333,9 +1331,7 @@ protected:
 
     Pipeline *pipeline;
 
-    LightArray<ImageBarrier> colorImageBarriers;
-
-    LightArray<ImageBarrier, 1> depthImageBarriers;
+    LightArray<ImageBarrier> dynamicRenderingBarriers;
 };
 
 }

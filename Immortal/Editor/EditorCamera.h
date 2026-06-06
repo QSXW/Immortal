@@ -16,9 +16,7 @@ public:
     EditorCamera(const Matrix4 &projection);
 
     void Focus(const Vector3 &focusPoint);
-	
-    virtual void OnUpdate(const float &deltaTime = Time::DeltaTime) override;
-    
+    void OnUpdate();
     void OnEvent(Event &e);
 
     void SetViewportSize(Vector2 size);

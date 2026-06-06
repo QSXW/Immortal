@@ -20,13 +20,11 @@ public:
     using Super = SuperTexture;
 
 public:
-	Texture(Device *device, const ComPtr<ID3D12Resource> &, D3D12_RESOURCE_STATES state);
+    Texture(Device *device, ID3D12Resource *resource, D3D12_RESOURCE_STATES state);
 
     Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
 
     virtual ~Texture() override;
-
-    virtual void SetName(const char *name) override;
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetDescriptor(uint32_t subresource = 0);
 

@@ -59,7 +59,7 @@ public:
 public:
 	Buffer();
 
-    Buffer(Device *device, Type type, const size_t size, MemoryType memoryType = MemoryType::Host, Format format = Format::None);
+    Buffer(Device *device, Type type, const size_t size, Format format = Format::None, const void *data = nullptr);
 
     virtual ~Buffer() override;
 
@@ -68,8 +68,6 @@ public:
     virtual void Map(void **ppData, size_t size, uint64_t offset) override;
 
 	virtual void Unmap() override;
-
-    virtual void SetName(const char *name) override;
 
     template <class T>
 	HRESULT Map(T **data)
@@ -94,7 +92,7 @@ public:
     }
 
 protected:
-    void Construct(MemoryType memoryType, Format format);
+    void Construct(Format format);
 
 protected:
     Descriptor descriptor;

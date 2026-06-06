@@ -37,7 +37,8 @@ DeviceQueue::~DeviceQueue()
 }
 
 Queue::Queue(DeviceQueue *queue) :
-    queue{ queue }
+    queue{ queue },
+    executionCompleteSemaphores{}
 {
 
 }
@@ -46,13 +47,19 @@ Queue::~Queue()
 {
     if (queue)
     {
+        for (auto &semaphore : executionCompleteSemaphores)
+        {
+            if (semaphore)
+            {
+			    queue->GetDevice()->Release(std::move(semaphore));
+            }
+        }
 		queue->DeOccupy();
     }
 }
 
 void Queue::WaitIdle(uint32_t timeout)
 {
-	std::unique_lock lock{mutex};
 	(void)timeout;
 	Check(queue->WaitIdle());
 }
@@ -60,65 +67,16 @@ void Queue::WaitIdle(uint32_t timeout)
 void Queue::Wait(SuperGPUEvent *_pEvent)
 {
 	GPUEvent *pEvent = InterpretAs<GPUEvent>(_pEvent);
-
-    VkSemaphore semaphore = pEvent->GetSemaphore();
-	uint64_t waitValue    = pEvent->GetValue();
-
-    VkSemaphoreSubmitInfo semaphoreSubmitInfo = {
-        .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .pNext       = nullptr,
-        .semaphore   = semaphore,
-        .value       = waitValue,
-	    .stageMask   = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .deviceIndex = 0
-	};
-
-    VkSubmitInfo2 submitInfo{
-        .sType                    = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .pNext                    = nullptr,
-        .flags                    = 0,
-        .waitSemaphoreInfoCount   = 1,
-        .pWaitSemaphoreInfos      = &semaphoreSubmitInfo,
-        .commandBufferInfoCount   = 0,
-        .pCommandBufferInfos      = nullptr,
-        .signalSemaphoreInfoCount = 0,
-        .pSignalSemaphoreInfos    = nullptr
-	};
-
-    std::unique_lock lock{ mutex };
-	Check(queue->Submit2(1, &submitInfo, VK_NULL_HANDLE));
+    if (!pEvent->IsTimeline())
+    {
+		waitSemaphores.emplace_back(pEvent->GetSemaphore());
+		waitPipelineStageFlags.emplace_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    }
 }
 
-void Queue::Signal(SuperGPUEvent *_pEvent)
+void Queue::Signal(SuperGPUEvent *pEvent)
 {
-	GPUEvent *pEvent = InterpretAs<GPUEvent>(_pEvent);
 
-    VkSemaphore semaphore = pEvent->GetSemaphore();
-	uint64_t signalValue = pEvent->GetIncrement();
-
-    VkSemaphoreSubmitInfo semaphoreSubmitInfo = {
-        .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .pNext       = nullptr,
-        .semaphore   = semaphore,
-        .value       = signalValue,
-        .stageMask   = VK_PIPELINE_STAGE_2_NONE,
-        .deviceIndex = 0
-	};
-
-    VkSubmitInfo2 submitInfo{
-        .sType                    = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .pNext                    = nullptr,
-        .flags                    = 0,
-        .waitSemaphoreInfoCount   = 0,
-        .pWaitSemaphoreInfos      = nullptr,
-        .commandBufferInfoCount   = 0,
-        .pCommandBufferInfos      = nullptr,
-        .signalSemaphoreInfoCount = 1,
-        .pSignalSemaphoreInfos    = &semaphoreSubmitInfo
-	};
-
-    std::unique_lock lock{mutex};
-	Check(queue->Submit2(1, &submitInfo, VK_NULL_HANDLE));
 }
 
 void Queue::Submit(SuperCommandBuffer **_ppCommandBuffer, size_t count, SuperGPUEvent **_ppSignalEvents, uint32_t eventCount, SuperSwapchain *_swapchain)
@@ -173,8 +131,7 @@ void Queue::Submit(SuperCommandBuffer **_ppCommandBuffer, size_t count, SuperGPU
         .pSignalSemaphores    = signalSemaphores.data()
     };
 
-    std::unique_lock lock{mutex};
-	Check(queue->Submit(1, &submitInfo, VK_NULL_HANDLE));
+    Check(queue->Submit(1, &submitInfo, VK_NULL_HANDLE));
 
     waitSemaphores.resize(0);
 	waitPipelineStageFlags.resize(0);
@@ -185,6 +142,12 @@ void Queue::Present(SuperSwapchain *_swapchain, SuperGPUEvent **_ppSignalEvents,
 	Swapchain *swapchain = InterpretAs<Swapchain>(_swapchain);
 
     uint32_t bufferIndex = swapchain->GetCurrentBufferIndex();
+  //  if (executionCompleteSemaphores.size() <= bufferIndex)
+  //  {
+		//Device *device = queue->GetDevice();
+		//executionCompleteSemaphores.resize(bufferIndex + 1);
+		//Check(device->AllocateSemaphore(&executionCompleteSemaphores[bufferIndex]));
+  //  }
 
     uint32_t bufferIndices[] = { bufferIndex };
     VkSwapchainKHR swapchains[] = { *swapchain };
@@ -199,12 +162,11 @@ void Queue::Present(SuperSwapchain *_swapchain, SuperGPUEvent **_ppSignalEvents,
         .pResults           = nullptr,
     };
 
-    std::unique_lock lock{mutex};
-	VkResult result = queue->Present(&presentInfo);
-	if (result != VK_ERROR_OUT_OF_DATE_KHR && result != VK_SUBOPTIMAL_KHR)
-	{
+    VkResult result = queue->Present(&presentInfo);
+    if (result != VK_ERROR_OUT_OF_DATE_KHR)
+    {
 		Check(result);
-	}
+    }
 
     swapchain->OnPresent();
 }

@@ -50,11 +50,6 @@ public:
         return event;
     }
 
-    HRESULT Signal(uint64_t value)
-    {
-		return handle->Signal(value);
-    }
-
 protected:
     HANDLE event = nullptr;
 };

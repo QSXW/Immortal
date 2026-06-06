@@ -40,8 +40,6 @@ public:
 			ImGuiStyle *style = &ImGui::GetStyle();
 
 			{
-				ImGui::Dummy({0, 4.0f});
-				ImGui::Dummy({0, 0});
 				ImGui::SameLine(0.0f, 12.0f);
 				ImVec2 size = {30.0f, 20.0f};
 				int framePadding = 0;

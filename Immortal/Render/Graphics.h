@@ -65,41 +65,23 @@ public:
 
     static void Release();
 
-    static Buffer *CreateBuffer(BufferType type, size_t size, const void *data = nullptr);
+    static Buffer *CreateBuffer(size_t size, BufferType type, const void *data = nullptr);
 
-    static Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, Format format = Format::None);
+    static Texture *CreateTexture(const String &filepath, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
-    static Ref<Buffer> GetCachedBuffer(BufferType bufferType, size_t size, std::set<Ref<Buffer>, BufferCompare> &stagingBuffers);
+    static Texture *CreateTexture(const Picture &picture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
-    static Ref<Buffer> GetCachedBuffer(BufferType bufferType, size_t size);
-
-    static void ReleaseCachedBuffer(BufferType bufferType, const Ref<Buffer> &buffer);
-
-    static Ref<Texture> CreateTexture(const String &filepath, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
-
-    static Ref<Texture> CreateTexture(const Picture &picture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
-
-    static Ref<Texture> CreateTexture(Format format, uint32_t width, uint32_t height, uint32_t stride = 0, const void *data = nullptr, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread(), uint32_t mipLevels = 0);
-
-    static Picture Transfer(const Ref<Texture> &texture, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+    static Texture *CreateTexture(Format format, uint32_t width, uint32_t height, uint32_t stride = 0, const void *data = nullptr, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
     static Shader *CreateShader(const std::string &name, ShaderStage stage, const String &path, const std::string &entryPoint);
-    
-    static void ReleaseResource(const Ref<RenderTarget> &renderTarget, uint64_t offset = 0);
 
-    static void ReleaseResource(const Ref<Texture> &texture, uint64_t offset = 0);
+    static void DiscardTexture(const Ref<Texture> &texture);
 
-    static void ReleaseResource(const Ref<Buffer> &buffer, uint64_t offset = 0);
-
-    static void SetRenderIndex(GPUEvent *gpuEvent, uint64_t index);
-
-    static void SetSyncEvent(Ref<Texture> &texture);
+    static void SetRenderIndex(uint64_t index);
 
     static Ref<Pipeline> GetPipeline(const std::string &name);
 
     static void MemoryCopyImage(uint8_t *dst, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
-
-    static void MemoryCopyImage(Ref<Buffer> &buffer, uint32_t dstStride, const uint8_t *src, uint32_t srcStride, Format format, uint32_t width, uint32_t height);
 
     static std::string ReadShaderSource(const String &filepath);
 
@@ -135,26 +117,14 @@ public:
     std::mutex mutex;
 
     std::set<Ref<Buffer>, BufferCompare> stagingBuffers;
- 
-    std::set<Ref<Buffer>, BufferCompare> readBackBuffers;
 
     uint32_t index = 0;
 
     std::mutex discardedMutex;
 
-    std::unordered_map<uint64_t, std::vector<Ref<RenderTarget>>> expiredRenderTargets;
-    
-    std::unordered_map<uint64_t, std::vector<Ref<Texture>>> expiredTextures;
-
-	std::unordered_map<uint64_t, std::vector<Ref<Buffer>>> expiredBuffers;
+    std::unordered_map<uint64_t, std::vector<Ref<Texture>>> discardedTextures;
 
     std::unordered_map<std::string, Ref<Pipeline>> pipelines; 
-
-    ThreadPool releaseThread;
-
-    GPUEvent *gpuEvent;
-
-    uint64_t syncValue;
 
     static URef<Graphics> This;
 };

@@ -47,8 +47,6 @@
 #include "Image/PPM.h"
 #include "Image/Raw.h"
 #include "Image/STBCodec.h"
-#include "Image/TurboJpegCodec.h"
-#include "Image/Webp.h"
 
 #include "Interface/MFXCodec.h"
 

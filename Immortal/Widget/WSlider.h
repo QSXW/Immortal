@@ -16,64 +16,67 @@ class IMMORTAL_API WSlider : public Widget
 public:
     WIDGET_SET_PROPERTIES(WSlider)
     WIDGET_PROPERTY_COLOR
-	WIDGET_SET_PROPERTY(BackgroundColor,  backgroundColor,  uint32_t, 0xffffffdd)
-	WIDGET_SET_PROPERTY(GrabColor,        grabColor,        uint32_t, 0xffffffdd)
-	WIDGET_SET_PROPERTY(GrabHoveredColor, grabHoveredColor, uint32_t, 0xffffffdd)
-    WIDGET_SET_PROPERTY(Rounding,         rounding,         float               )
-    WIDGET_SET_PROPERTY(Progress,         progress,         float               )
-    WIDGET_SET_PROPERTY(Radius,           radius,           float,    10.0f     )
-    WIDGET_SET_PROPERTY(Min,              min,              float,    0.0f      )
-    WIDGET_SET_PROPERTY(Max,              max,              float,    1.0f      )
-    WIDGET_SET_PROPERTY(Callback,         callback,         std::function<void(float progress)>)
-	WIDGET_SET_PROPERTY(HoveredCallback,  hoveredCallback,  std::function<void(float progress, std::string &tooltip)>)
+    WIDGET_PROPERTY_BACKGROUND_COLOR
+    WIDGET_PROPERTY_VAR_COLOR(GrabColor, grabColor)
+    WIDGET_PROPERTY_VAR_COLOR(GrabHoveredColor, grabHoveredColor)
+    WIDGET_SET_PROPERTY(Rounding, rounding, float)
+    WIDGET_SET_PROPERTY(Progress, progress, float)
+    WIDGET_SET_PROPERTY(Radius,   radius,   float)
+    WIDGET_SET_PROPERTY(Min,      min,      float)
+    WIDGET_SET_PROPERTY(Max,      max,      float)
+    WIDGET_SET_PROPERTY(Callback, callback, std::function<void(float progress)>)
 
 public:
     WSlider(Widget *v = nullptr) :
-        Widget{ v }
+        Widget{ v },
+        radius{ 10 }
     {
+        this->BackgroundColor(0xffffffdd)
+            ->Color(0x007bffff)
+            ->GrabColor(0xffffffdd)
+            ->Min(0.0f)
+            ->Max(1.0f);
+
         bbGrab = ImRect({ radius, radius }, { radius, radius });
         Connect([=, this]() -> void {
-            Draw();
+            WidgetLock lock(this);
+            EXPORT_WINDOW
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
+            MOVEPOS(padding.left, padding.right);
+            Draw({ renderWidth, renderHeight });
+
+            ImGui::PopStyleVar();
         });
     }
 
-    virtual bool Draw() override
+    void Draw(const ImVec2 &size)
     {
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         if (window->SkipItems)
         {
-            return false;
+            return;
         }
 
-        WidgetLock lock(this);
-        __PreCalculateSize();
-
         StyleVarStack<float> styleVar{
-			{ ImGuiStyleVar_GrabMinSize, 1.0f },
+			{ ImGuiStyleVar_GrabMinSize, 1.0f }
         };
-
-        StyleVarStack<ImVec2> paddingVar{
-		    {ImGuiStyleVar_ItemSpacing, {padding.right, padding.bottom}}
-        };
-
-		MOVEPOS(padding.left, padding.top);
 
         ImGuiContext &g = *GImGui;
         const ImGuiStyle &style = g.Style;
         const ImGuiID frameId = window->GetID(this);
 
-        const ImRect bbFrame(window->DC.CursorPos, window->DC.CursorPos + ImVec2(RenderWidth(), radius * 2));
+        const ImRect bbFrame(window->DC.CursorPos, window->DC.CursorPos + ImVec2(renderWidth, radius*2));
         const ImRect bbTotal(bbFrame.Min, bbFrame.Max);
 
         const bool temp_input_allowed = (0 & ImGuiSliderFlags_NoInput) == 0;
-        ImGui::ItemSize(bbTotal, 0);
+        ImGui::ItemSize(bbTotal, style.FramePadding.y);
         if (!ImGui::ItemAdd(bbTotal, frameId, &bbFrame, temp_input_allowed ? ImGuiItemFlags_Inputable : 0))
         {
-            return false;
+            return;
         }
 
         auto grabId = window->GetID(&bbGrab);
-        //ImGui::ItemSize(bbGrab);
+        ImGui::ItemSize(bbGrab);
         if (!ImGui::ItemAdd(bbGrab, grabId))
         {
 
@@ -124,10 +127,7 @@ public:
         {
             if (std::abs(outGrab.GetCenter().x - bbGrab.GetCenter().x) > 1.0f)
             {
-				if (callback)
-				{
-					callback(progress);
-				}
+                callback(progress);
             }
             ImGui::MarkItemEdited(id);
         }
@@ -145,14 +145,12 @@ public:
         }
 
         ImRect hightlightRect(bbRect.Min, {center.x, bbRect.Max.y});
-		DrawRect(window, hightlightRect, Color());
-
-        return true;
+		DrawRect(window, hightlightRect, color);
     }
 
-    void DrawRect(ImGuiWindow *window, const ImRect &bb, const uint32_t &color)
+    void DrawRect(ImGuiWindow *window, const ImRect &bb, const ImVec4 &color)
     {
-        window->DrawList->AddRectFilled(bb.Min, bb.Max, color, Rounding());
+        window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(color), Rounding());
     }
 
 protected:

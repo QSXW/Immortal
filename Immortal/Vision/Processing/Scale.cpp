@@ -40,7 +40,7 @@ float BicubicConvolutionKernal(float x)
 	return weight;
 }
 
-template <class T, size_t offset = 0, size_t elements = 1>
+template <class T>
 void TBicubicConvolutionInterpolate(T *dst, size_t dstStride, T *src, size_t srcStride, uint32_t dstWidth, uint32_t dstHeight, uint32_t srcWidth, uint32_t srcHeight)
 {
 	float x, y;
@@ -91,40 +91,24 @@ void TBicubicConvolutionInterpolate(T *dst, size_t dstStride, T *src, size_t src
 			y2 = y2 >= srcHeight ? y1 : y2;
 			y3 = y3 >= srcHeight ? y2 : y3;
 
-			float sample  = src[(size_t)y0 * srcStride + (x0 * elements + offset)] * cx0 * cy0
-                          + src[(size_t)y1 * srcStride + (x0 * elements + offset)] * cx0 * cy1
-                          + src[(size_t)y2 * srcStride + (x0 * elements + offset)] * cx0 * cy2
-                          + src[(size_t)y3 * srcStride + (x0 * elements + offset)] * cx0 * cy3
-                          + src[(size_t)y0 * srcStride + (x1 * elements + offset)] * cx1 * cy0
-                          + src[(size_t)y1 * srcStride + (x1 * elements + offset)] * cx1 * cy1
-                          + src[(size_t)y2 * srcStride + (x1 * elements + offset)] * cx1 * cy2
-                          + src[(size_t)y3 * srcStride + (x1 * elements + offset)] * cx1 * cy3
-                          + src[(size_t)y0 * srcStride + (x2 * elements + offset)] * cx2 * cy0
-                          + src[(size_t)y1 * srcStride + (x2 * elements + offset)] * cx2 * cy1
-                          + src[(size_t)y2 * srcStride + (x2 * elements + offset)] * cx2 * cy2
-                          + src[(size_t)y3 * srcStride + (x2 * elements + offset)] * cx2 * cy3
-                          + src[(size_t)y0 * srcStride + (x3 * elements + offset)] * cx3 * cy0
-                          + src[(size_t)y1 * srcStride + (x3 * elements + offset)] * cx3 * cy1
-                          + src[(size_t)y2 * srcStride + (x3 * elements + offset)] * cx3 * cy2
-                          + src[(size_t)y3 * srcStride + (x3 * elements + offset)] * cx3 * cy3;
+			float sample  = src[(size_t)y0 * srcStride + x0] * cx0 * cy0
+                          + src[(size_t)y1 * srcStride + x0] * cx0 * cy1
+                          + src[(size_t)y2 * srcStride + x0] * cx0 * cy2
+                          + src[(size_t)y3 * srcStride + x0] * cx0 * cy3
+                          + src[(size_t)y0 * srcStride + x1] * cx1 * cy0
+                          + src[(size_t)y1 * srcStride + x1] * cx1 * cy1
+                          + src[(size_t)y2 * srcStride + x1] * cx1 * cy2
+                          + src[(size_t)y3 * srcStride + x1] * cx1 * cy3
+                          + src[(size_t)y0 * srcStride + x2] * cx2 * cy0
+                          + src[(size_t)y1 * srcStride + x2] * cx2 * cy1
+                          + src[(size_t)y2 * srcStride + x2] * cx2 * cy2
+                          + src[(size_t)y3 * srcStride + x2] * cx2 * cy3
+                          + src[(size_t)y0 * srcStride + x3] * cx3 * cy0
+                          + src[(size_t)y1 * srcStride + x3] * cx3 * cy1
+                          + src[(size_t)y2 * srcStride + x3] * cx3 * cy2
+                          + src[(size_t)y3 * srcStride + x3] * cx3 * cy3;
 
-			data[ix * elements + offset] = (T) std::clamp(sample, 0.0f, (float) std::numeric_limits<T>::max());
-		}
-	}
-}
-
-template <class T>
-void RGBAMaskAlphaChannel(Picture &picture)
-{
-	auto &width  = picture.GetWidth();
-	auto &height = picture.GetHeight();
-
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			T &alpha = (T &)picture.GetData(0)[y * picture.GetStride(0) + (x * 4 + 3) * sizeof(T)];
-			alpha = std::numeric_limits<T>::max();
+			data[ix] = (T)std::clamp(sample, 0.0f, (float)std::numeric_limits<T>::max());
 		}
 	}
 }
@@ -134,56 +118,37 @@ void BicubicConvolutionInterpolate(Picture &dst, const Picture &src)
 	SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
 	GetSamplingFactor(dst.GetFormat(), factors);
 
-	auto &format = src.GetFormat();
-
-	if (format.IsType(Format::YUV))
+	if (src.GetFormat().IsType(Format::HightBitDepth))
 	{
-		if (format.IsType(Format::HightBitDepth))
+		for (size_t i = 0; src.GetData(i); i++)
 		{
-			for (size_t i = 0; src.GetData(i); i++)
-			{
-				uint16_t *pDst = (uint16_t *)dst.GetData(i);
-				uint16_t *pSrc = (uint16_t *)src.GetData(i);
-				TBicubicConvolutionInterpolate<uint16_t>(
-					pDst,
-					dst.GetStride(i),
-					pSrc,
-					src.GetStride(i),
-					dst.GetWidth()  >> factors[i].x,
-					dst.GetHeight() >> factors[i].y,
-					src.GetWidth()  >> factors[i].x,
-					src.GetHeight() >> factors[i].y);
-			}
-		}
-		else
-		{
-			for (size_t i = 0; src.GetData(i); i++)
-			{
-				TBicubicConvolutionInterpolate<uint8_t>(
-					dst.GetData(i),
-					dst.GetStride(i),
-					src.GetData(i),
-					src.GetStride(i),
-					dst.GetWidth()  >> factors[i].x,
-					dst.GetHeight() >> factors[i].y,
-					src.GetWidth()  >> factors[i].x,
-					src.GetHeight() >> factors[i].y);
-			}
+			uint16_t *pDst = (uint16_t *)dst.GetData(i);
+			uint16_t *pSrc = (uint16_t *)src.GetData(i);
+			TBicubicConvolutionInterpolate<uint16_t>(
+				pDst,
+				dst.GetStride(i),
+				pSrc,
+				src.GetStride(i),
+				dst.GetWidth()  >> factors[i].x,
+				dst.GetHeight() >> factors[i].y,
+			    src.GetWidth()  >> factors[i].x,
+			    src.GetHeight() >> factors[i].y);
 		}
 	}
-	else if (format == Format::RGBA8 || format == Format::BGRA8)
+	else
 	{
-		TBicubicConvolutionInterpolate<uint8_t, 0, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint8_t, 1, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint8_t, 2, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint8_t>(dst);
-	}
-	else if (format == Format::RGBA16 || format == Format::R16G16B16A16_UINT)
-	{
-		TBicubicConvolutionInterpolate<uint16_t, 0, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint16_t, 1, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint16_t, 2, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint16_t>(dst);
+		for (size_t i = 0; src.GetData(i); i++)
+		{
+			TBicubicConvolutionInterpolate<uint8_t>(
+				dst.GetData(i),
+				dst.GetStride(i),
+				src.GetData(i),
+				src.GetStride(i),
+				dst.GetWidth()  >> factors[i].x,
+				dst.GetHeight() >> factors[i].y,
+			    src.GetWidth()  >> factors[i].x,
+			    src.GetHeight() >> factors[i].y);
+		}
 	}
 }
 
@@ -230,57 +195,6 @@ void ScaleTo8Bits(Picture &dst, const Picture &src)
 			}
 		}
 	}
-}
-
-Picture RGBA8ToYUV420P(const Picture &picture)
-{
-	if (picture.GetFormat() != Format::RGBA8)
-	{
-		return {};
-	}
-	
-	Picture dst{picture.GetWidth(), picture.GetHeight(), Format::YUV420P, true};
-	uint8_t *src = picture.GetData();
-
-	uint32_t width  = dst.GetWidth()  / 2;
-	uint32_t height = dst.GetHeight() / 2;
-
-	auto texelSize = picture.GetFormat().GetTexelSize();
-	for (size_t y = 0; y < height; y++)
-	{
-		for (size_t x = 0; x < width; x++)
-		{
-			uint8_t *rgba00 = &src[(y * 2    ) * picture.GetStride(0) + (x * 2    ) * texelSize];
-			uint8_t *rgba01 = &src[(y * 2    ) * picture.GetStride(0) + (x * 2 + 1) * texelSize];
-			uint8_t *rgba10 = &src[(y * 2 + 1) * picture.GetStride(0) + (x * 2    ) * texelSize];
-			uint8_t *rgba11 = &src[(y * 2 + 1) * picture.GetStride(0) + (x * 2 + 1) * texelSize];
-			uint8_t &Y00    = dst.GetData(0)[(y * 2    ) * dst.GetStride(0) + x * 2];
-			uint8_t &Y01    = dst.GetData(0)[(y * 2    ) * dst.GetStride(0) + x * 2 + 1];
-			uint8_t &Y10    = dst.GetData(0)[(y * 2 + 1) * dst.GetStride(0) + x * 2];
-			uint8_t &Y11    = dst.GetData(0)[(y * 2 + 1) * dst.GetStride(0) + x * 2 + 1];
-			uint8_t &U      = dst.GetData(1)[y * dst.GetStride(1) + x];
-			uint8_t &V      = dst.GetData(2)[y * dst.GetStride(2) + x];
-
-			int y00 = (0.299f * rgba00[0]) + (0.587f * rgba00[1]) + (0.114f * rgba00[2]);
-			int y01 = (0.299f * rgba01[0]) + (0.587f * rgba01[1]) + (0.114f * rgba01[2]);
-			int y10 = (0.299f * rgba10[0]) + (0.587f * rgba10[1]) + (0.114f * rgba10[2]);
-			int y11 = (0.299f * rgba11[0]) + (0.587f * rgba11[1]) + (0.114f * rgba11[2]);
-
-			Y00 = std::clamp(y00, 0, 255);
-			Y01 = std::clamp(y01, 0, 255);
-			Y10 = std::clamp(y10, 0, 255);
-			Y11 = std::clamp(y11, 0, 255);
-
-			auto r = (rgba00[0] + rgba01[0] + rgba10[0] + rgba11[0]) >> 2;
-			auto g = (rgba00[1] + rgba01[1] + rgba10[1] + rgba11[1]) >> 2;
-			auto b = (rgba00[2] + rgba01[2] + rgba10[2] + rgba11[2]) >> 2;
-			auto y_value = (y00 + y01 + y10 + y11) >> 2;
-			U = std::clamp(int(0.492f * (b - y_value) + 128), 0, 255);
-			V = std::clamp(int(0.877f * (r - y_value) + 128), 0, 255);
-		}
-	}
-
-	return dst;
 }
 
 }

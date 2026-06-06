@@ -6,7 +6,6 @@ namespace Immortal
 {
 
 static constexpr uint32_t TextureAlignment = 256;
-static constexpr uint64_t kMaxTimeOut      = (uint64_t)~0;
 
 enum class BackendAPI
 {
@@ -178,80 +177,6 @@ enum class CompareOperation
     GreaterOrEqual = 6,
     Always         = 7,
 };
-
-enum class ImageLayout
-{
-    Undefined = 0,
-    General,
-    Present,
-    GenericRead,
-    RenderTarget,
-    UnorderedAccess,
-    DepthStencilWrite,
-    DepthStencilRead,
-    ShaderResource,
-    TransferSource,
-    TransferDestination,
-    ResolveSource,
-    ResolveDestination,
-    ShadingRateSource,
-    VideoDecodeRead,
-    VideoDecodeWrite,
-    VideoProcessRead,
-    VideoProcessWrite,
-    VideoEncodeRead,
-    VideoEncodeWrite,
-};
-
-enum class BarrierType
-{
-    Texture,
-    Buffer,
-    Global
-};
-
-enum class PipelineStage
-{
-	None           = 0,
-	All            = BIT(0),
-	Draw           = BIT(1),
-	VertexInput    = BIT(2),
-	VertexShading  = BIT(3),
-    PixelShading   = BIT(4),
-    DepthStencil   = BIT(5),
-    RenderTarget   = BIT(6),
-	ComputeShading = BIT(7),
-    Raytracing     = BIT(8),
-    Transfer       = BIT(9),
-    AllShading     = BIT(10),
-};
-SL_ENABLE_BITWISE_OPERATOR(PipelineStage)
-
-enum class AccessFlag
-{
-
-};
-SL_ENABLE_BITWISE_OPERATOR(AccessFlag)
-
-struct Barrier
-{
-	BarrierType   type;
-	PipelineStage srcStage;
-	PipelineStage dstStage;
-	AccessFlag    srcAccess;
-	AccessFlag    dstAccess;
-    void         *resource;
-};
-
-struct SubresourceRange
-{
-	uint32_t baseMipLevel;
-	uint32_t levelCount;
-	uint32_t baseArrayLayer;
-	uint32_t layerCount;
-};
-
-static SubresourceRange kAllSubresources = {};
 
 struct Rect2D
 {

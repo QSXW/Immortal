@@ -22,14 +22,12 @@ RenderTarget::RenderTarget(Device *device) :
 RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat) :
     RenderTarget{ device }
 {
-	colorBuffers.reserve(colorAttachmentCount);
     for (int i = 0; i < colorAttachmentCount; i++)
     {
 	    Format format = pColorAttachmentFormats[i];
 		Ref<Texture> texture = new Texture{ device, format, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment };
 		SetColorAttachment(i, texture);
     }
-	BuildRenderTargetView();
 
     if (depthAttachmentFormat != Format::None)
     {
@@ -42,7 +40,10 @@ RenderTarget::~RenderTarget()
 {
     if (descriptors)
     {
-		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, renderTargetViewDescriptorHeap, descriptors, colorBuffers.size());
+        for (int i = 0; i < colorBuffers.size(); i++)
+        {
+			device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, renderTargetViewDescriptorHeap, descriptors[i]);
+        }
     }
 
     if (depthDescriptor)
@@ -74,42 +75,30 @@ void RenderTarget::SetColorAttachment(uint32_t index, Ref<Texture> &texture)
     }
 
 	colorBuffers.emplace_back(texture);
-}
+	descriptors[index] = texture->GetDevice()->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, &renderTargetViewDescriptorHeap);
 
-void RenderTarget::BuildRenderTargetView()
-{
-    if (colorBuffers.empty())
-    {
-		return;
-    }
+    D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {
+		.Format        = texture->GetFormat(),
+	    .ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
+        .Texture2D = {
+            .MipSlice   = 0,
+            .PlaneSlice = 0
+        }
+    };
 
-	descriptors = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, &renderTargetViewDescriptorHeap, colorBuffers.size());
-    for (size_t i = 0;i  < colorBuffers.size(); i++)
-    {
-		auto &texture = colorBuffers[i];
-		D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {
-		    .Format = texture->GetFormat(),
-		    .ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
-		    .Texture2D = {
-		        .MipSlice   = 0,
-		        .PlaneSlice = 0
-            }
-        };
+    uint32_t arrayLayers = texture->GetArrayLayers();
+	if (arrayLayers > 1)
+	{
+		viewDesc.ViewDimension  = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+        viewDesc.Texture2DArray = {
+			.MipSlice        = 0,
+			.FirstArraySlice = 0,
+			.ArraySize       = arrayLayers,
+            .PlaneSlice      = 0
+        }; 
+	}
 
-		uint32_t arrayLayers = texture->GetArrayLayers();
-		if (arrayLayers > 1)
-		{
-			viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-			viewDesc.Texture2DArray = {
-			    .MipSlice        = 0,
-			    .FirstArraySlice = 0,
-			    .ArraySize       = arrayLayers,
-			    .PlaneSlice      = 0
-            };
-		}
-
-		device->CreateRenderTargetView(*texture, &viewDesc, descriptors[i]);
-    }
+    device->CreateRenderTargetView(*texture, &viewDesc, descriptors[index]);
 }
 
 void RenderTarget::SetDepthAttachment(Ref<Texture> &texture)

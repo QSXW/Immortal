@@ -63,7 +63,7 @@ public:
 
     virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type, MemoryType memoryType, Format format) override;
+    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type, Format format) override;
 
     virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 
@@ -247,16 +247,8 @@ public:
     bool IsRayTracingSupported() const
     {
         D3D12_FEATURE_DATA_D3D12_OPTIONS5 features{};
-        if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features, sizeof(features))))
-        {
-			return false;
-        }
+        Check(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features, sizeof(features)));
         return features.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
-    }
-
-    HRESULT GetRemovedReason()
-    {
-		return handle->GetDeviceRemovedReason();
     }
 
 protected:

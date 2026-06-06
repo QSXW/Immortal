@@ -77,7 +77,7 @@ public:
 
 public:
 	String() :
-	    _s{},
+        data{},
 	    encoding{ StringEncoding::UTF8 }
     {
 
@@ -100,25 +100,25 @@ public:
 		switch (encoding)
         {
 	    case StringEncoding::UTF8:
-			_s.resize(str.size());
-			memcpy(_s.data(), str.data(), str.size());
+			data.resize(str.size());
+			memcpy(data.data(), str.data(), str.size());
             break;
 
         default:
-			_s = String2U8String(str);
+			data = String2U8String(str);
 			break;
         }
     }
 
     String(const std::string_view &view) :
-	    _s{String2U8String(view)},
+        data{ String2U8String(view) },
 	    encoding{ StringEncoding::UTF8 }
     {
 
     }
 
     String(const std::u8string_view &view) :
-	    _s{view},
+        data{ view },
 	    encoding{ StringEncoding::UTF8 }
     {
 
@@ -131,7 +131,7 @@ public:
     }
 
     String(const std::wstring &str) :
-	    _s{WString2U8String(str)},
+	    data{ WString2U8String(str) },
         encoding{ StringEncoding::UTF8 }
     {
 
@@ -144,14 +144,14 @@ public:
     }
 
     String(const std::filesystem::path &str) :
-	    _s{str.u8string()},
+	    data{ str.u8string() },
 	    encoding{ StringEncoding::UTF8 }
     {
 
     }
 
     String(const String &other) :
-	    _s{other._s},
+	    data{ other.data },
 	    encoding{ other.encoding }
     {
 
@@ -177,52 +177,42 @@ public:
 
     size_t size() const
     {
-        return _s.size();
-    }
-
-    size_t capacity() const
-    {
-		return _s.capacity();
+        return data.size();
     }
 
     void resize(size_t size)
     {
-		_s.resize(size);
+		data.resize(size);
     }
 
     void reserve(size_t size)
     {
-		_s.reserve(size);
+		data.reserve(size);
     }
 
     const char *c_str() const
     {
-        return (const char *)_s.c_str();
-    }
-
-    char *data()
-    {
-		return (char *)_s.data();
+        return (const char *)data.c_str();
     }
 
     bool empty() const
     {
-		return _s.empty();
+		return data.empty();
     }
 
     operator std::string &()
     {
-		return (std::string &) _s;
+        return (std::string &)data;
     }
 
     operator const std::string &() const
     {
-		return (const std::string &) _s;
+        return (const std::string &)data;
     }
 
     bool operator<(const String &other) const
     {
-		return _s < other._s;
+		return data < other.data;
     }
 
     StringEncoding GetStringEncoding() const
@@ -232,85 +222,50 @@ public:
 
     std::string GetString() const
     {
-		return std::filesystem::path(_s).string();
+		return std::filesystem::path(data).string();
     }
 
     std::wstring GetWString() const
     {
-		return std::filesystem::path(_s).wstring();
-    }
-
-    std::u8string GetU8String() const
-    {
-		return _s;
+		return std::filesystem::path(data).wstring();
     }
 
     std::u16string GetU16String() const
     {
-		return std::filesystem::path(_s).u16string();
+		return std::filesystem::path(data).u16string();
     }
 
     String &operator+=(const String &other)
     {
-		_s += other._s;
+		data += other.data;
 		return *this;
     }
 
     operator std::u8string_view() const
     {
-		return std::u8string_view{ (const char8_t *const)_s.c_str(), _s.size() };
+		return std::u8string_view{ (const char8_t *const)data.c_str(), data.size() };
     }
 
-    constexpr size_t ReverseFind(const char c, size_t offset = std::u8string::npos) const
+    size_t FindLastOf(const char c, size_t offset = 0) const
     {
-		return _s.rfind(c, offset);
-    }
-
-    constexpr size_t Find(const String &str, size_t offset = 0) const
-	{
-		return _s.find(str._s, offset);
-	}
-
-    constexpr size_t Find(const char c, size_t offset = 0) const
-    {
-		return _s.find(c, offset);
-    }
-
-    size_t FindLastOf(const char c, size_t offset = std::u8string::npos) const
-    {
-		return _s.find_last_of(c, offset);
-    }
-
-    String Substring(const size_t offset, const size_t count) const
-    {
-		return _s.substr(offset, count);
+		return data.find_last_of(c, offset);
     }
 
     void Swap(String &other)
     {
-		_s.swap(other._s);
+		data.swap(other.data);
 		std::swap(encoding, other.encoding);
     }
 
     bool operator==(const String &other) const
     {
-		return _s == other._s;
-    }
-
-    char &operator[](size_t i)
-    {
-		return (char &)_s[i];
-    }
-
-    std::pair<const char *, const char *> GetTuple() const
-    {
-		return {(const char *)_s.c_str(), (const char *)_s.c_str() + _s.size()};
+		return data == other.data;
     }
 
     friend String operator+(const String &left, const String &right);
 
 protected:
-	std::u8string _s;
+    std::u8string data;
 
     StringEncoding encoding;
 };
@@ -318,7 +273,7 @@ protected:
 static inline String operator+(const String &left, const String &right)
 {
 	String ret;
-	ret._s = left._s + right._s;
+	ret.data = left.data + right.data;
 	return ret;
 }
 

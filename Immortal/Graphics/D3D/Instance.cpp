@@ -28,7 +28,7 @@ Instance::Instance() :
 #endif
 
 	CreateDXGIFactory2 = (PFN_CreateDXGIFactory2)GetProcAddress(dxgiLibrary, "CreateDXGIFactory2");
-	Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&handle)));
+	Check(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&handle)), "Failed to create DXGI Factory");
 }
 
 Instance::~Instance()

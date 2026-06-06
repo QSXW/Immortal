@@ -5,8 +5,6 @@
  */
 
 #include "VideoPlayerComponent.h"
-#include "Audio/Device.h"
-
 #include <shared_mutex>
 
 #define IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC 1
@@ -37,10 +35,6 @@ public:
 
     void StartPlay();
 
-    uint32_t GetAudioData(uint8_t *data, uint32_t samples);
-
-	uint32_t WriteAudioData(void *data, uint32_t samples);
-
 public:
     const Vision::DisplayOrientation *GetDisplayOrientation() const
     {
@@ -57,27 +51,6 @@ public:
 		return eof;
     }
 
-    void SetPause(bool enabled)
-    {
-		pause = enabled;
-        if (audioStream)
-        {
-			audioStream->Stop();
-			audioStream->Reset();
-			audioStream->Start();
-        }
-    }
-
-    void EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks)
-    {
-		demuxer.InterpretAs<Vision::FFDemuxer>()->EnumerateTracks(mediaType, tracks);
-    }
-
-    CodecError SwitchTrack(MediaType mediaType, int index)
-	{
-		return demuxer.InterpretAs<Vision::FFDemuxer>()->SwitchTrack(mediaType, index);
-    }
-
 public:
     URef<Thread> demuxerThread;
 
@@ -92,8 +65,6 @@ public:
     std::unique_ptr<ThreadPool> audioThreadPool;
 
     std::unique_ptr<ThreadPool> subtitleThreadPool;
-
-    URef<AudioStream> audioStream;
 
     struct
     {
@@ -123,8 +94,6 @@ public:
     Picture picture;
 
     Picture audioFrame;
-    
-    Picture outputAudioFrame;
 
     const int kCacheSize;
 
@@ -145,13 +114,9 @@ public:
 
     int eof = false;
 
-    uint32_t unconsumedSamples = 0;
-
     std::atomic_int pictureSize = 0;
 
     VideoDecodeCallbacks callbacks{};
-
-    bool pause = false;
 
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
 	Timer timer;
@@ -203,22 +168,6 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 {
 	if (!callbacks.VideoDecodeFinishSlot)
 	{
-		if (audioDecoder)
-		{
-			AudioDevice *audioDevice = AudioDevice::GetInstance();
-			if (audioDevice)
-			{
-				audioStream = audioDevice->CreateAudioStream([=, this](void *data, uint32_t samples) -> uint32_t {
-					return GetAudioData((uint8_t *)data, samples);
-				});
-				audioDecoder.InterpretAs<Vision::FFCodec>()->SetSampleRate(audioStream->GetFormat().sampleRate);
-			}
-			else
-			{
-				LOG::ERR("No audio device available!");
-			}
-		}
-
         demuxerThread = new Thread{[=, this]() {
         while (true)
         {
@@ -413,9 +362,6 @@ VideoPlayerContext::VideoPlayerContext(Ref<Demuxer> demuxer, Ref<VideoCodec> dec
 
 void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
 {
-	audioStream->Stop();
-	audioStream->Reset();
-
     std::unique_lock lock{ mutex.demux };
     videoThreadPool->RemoveTasks();
     audioThreadPool->RemoveTasks();
@@ -440,19 +386,15 @@ void VideoPlayerContext::Seek(double seconds, int64_t min, int64_t max)
     eof = false;
     demuxer->Seek(MediaType::Video, seconds, min, max);
     condition.notify_all();
-	audioStream->Start();
 }
 
 VideoPlayerContext::~VideoPlayerContext()
 {
-	audioStream.Reset();
-
     state.exited = true;
     condition.notify_all();
 
     videoThreadPool->RemoveTasks();
     audioThreadPool->RemoveTasks();
-
     videoThreadPool->Join();
     audioThreadPool->Join();
 
@@ -497,52 +439,6 @@ void VideoPlayerContext::PopAudioFrame()
 	audioFrame = {};
 }
 
-uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
-{
-	if (pause)
-	{
-		return 0;
-	}
-
-	uint32_t numSamples = 0;
-	//if (audioMutex.try_lock())
-	{
-		numSamples = WriteAudioData(data, samples);
-		while (numSamples != samples)
-		{
-			outputAudioFrame = GetAudioFrame();
-            if (!outputAudioFrame)
-            {
-				break;
-            }
-			PopAudioFrame();
-			unconsumedSamples = outputAudioFrame.GetWidth();
-			numSamples += WriteAudioData(&data[numSamples * sizeof(float) * 2], samples - numSamples);
-		}
-		//audioMutex.unlock();
-	}
-
-	return numSamples;
-}
-
-uint32_t VideoPlayerContext::WriteAudioData(void *data, uint32_t samples)
-{
-	uint32_t numSamples = 0;
-	if (unconsumedSamples > 0)
-	{
-		uint32_t request = std::min(unconsumedSamples, samples);
-
-		size_t sizePerSample = sizeof(float) * 2;
-		auto size = request * sizePerSample;
-		memcpy(data, outputAudioFrame.GetData() + (outputAudioFrame.GetWidth() - unconsumedSamples) * sizePerSample, size);
-
-		numSamples += request;
-		unconsumedSamples -= request;
-	}
-
-	return numSamples;
-}
-
 VideoPlayerComponent::VideoPlayerComponent() :
     player{}
 {
@@ -581,22 +477,6 @@ void VideoPlayerComponent::StartPlay()
 	player->StartPlay();
 }
 
-Picture VideoPlayerComponent::GetLivePicture()
-{
-	Animator *animator = GetAnimator();
-
-    Picture picture = GetPicture();
-    if (picture)
-    {
-		if (animator->TryMoveToNextFrame(Time::DeltaTime))
-		{
-			PopPicture();
-		}
-    }
-
-    return picture;
-}
-
 Picture VideoPlayerComponent::GetPicture()
 {
     return player->GetPicture();
@@ -614,8 +494,6 @@ void VideoPlayerComponent::PopPicture()
 
 void VideoPlayerComponent::PopAudioFrame()
 {
-	Animator *animator = GetAnimator();
-	animator->Accumulator = 0;
     player->PopAudioFrame();
 }
 
@@ -647,26 +525,6 @@ const String &VideoPlayerComponent::GetSource() const
 const Vision::DisplayOrientation *VideoPlayerComponent::GetDisplayOrientation() const
 {
 	return player->GetDisplayOrientation();
-}
-
-void VideoPlayerComponent::OnPause(bool enabled)
-{
-	player->SetPause(enabled);
-}
-
-CodecError VideoPlayerComponent::SwitchTrack(MediaType mediaType, int index)
-{
-	return player->SwitchTrack(mediaType, index);
-}
-
-void VideoPlayerComponent::EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks)
-{
-	player->EnumerateTracks(mediaType, tracks);
-}
-
-bool VideoPlayerComponent::operator!()
-{
-	return !player;
 }
 
 }

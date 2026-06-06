@@ -19,9 +19,9 @@ namespace Immortal
 #define ICON_DIR "\xF3\xB0\x80\x80"
 
 WFileDialog::WFileDialog(Widget *v) :
-    Widget{ v }
+    Widget{ v },
+    color{ 1.0f, 1.0f, 1.0f, 0.0f }
 {
-	Color(0xffffffff);
     auto &io = ImGui::GetIO();
     
     dirIcon    = Graphics::CreateTexture("C:/Users/qsxw/Downloads/directory (2).png");
@@ -347,7 +347,7 @@ void WFileDialog::DrawDirectories()
             };
 
             FileSystem::DirectoryEntry *entry = { &file };
-			ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
+            ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
             ImGui::ImageButton(WIMAGE(icon), {64, 64}, uv0, uv1);
             ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + 64);
             ImGui::Text("%s", dir.path.c_str() + offset);
@@ -434,7 +434,7 @@ void WFileDialog::DrawImageDirectories()
             if (ImGui::BeginDragDropSource())
             {
                 FileSystem::DirectoryEntry *entry = { &dir };
-				ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
+                ImGui::SetDragDropPayload("LOAD_FILE", (void *)&entry, sizeof(&entry));
                 ImGui::ImageButton(WIMAGE(icon), {height, height}, uv0, uv1);
                 ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + height);
                 ImGui::Text("%s", dir.path.c_str() + offset);

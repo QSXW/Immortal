@@ -84,8 +84,6 @@ public:
 
 	virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
 
-	virtual void SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
-
 public:
 	void SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline);
 

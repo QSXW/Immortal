@@ -241,9 +241,9 @@ constexpr inline auto Normalize(T v)
 }
 
 template <class T>
-constexpr inline T Cross(const T &x, const T &y)
+constexpr inline auto Cross(T v1, T v2)
 {
-    return glm::cross(x, y);
+    return glm::cross(v1, v2);
 }
 
 inline auto Radians(float degrees)

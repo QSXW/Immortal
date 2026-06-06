@@ -34,7 +34,7 @@ public:
 
     virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr, VideoCodec *subtitleCodec = nullptr) override;
 
-    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::vector<MediaType> &streams) override;
+    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::initializer_list<MediaType> &&streams) override;
 
     virtual void Close() override;
 
@@ -43,10 +43,6 @@ public:
     virtual CodecError Write(const CodedFrame &codedFrame, int stream = 0) override;
 
     virtual CodecError Seek(MediaType type, double seconds, int64_t min, int64_t max) override;
-
-    virtual void EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks);
-    
-    virtual CodecError SwitchTrack(MediaType mediaType, int index);
 
     void Destroy();
 

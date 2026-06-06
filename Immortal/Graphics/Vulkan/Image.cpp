@@ -132,7 +132,6 @@ void Image::Release()
 {
     if (handle != VK_NULL_HANDLE && memory != VK_NULL_HANDLE && device != nullptr)
     {
-		/*
         struct {
             Device *device = nullptr;
             VmaAllocation memory = nullptr;
@@ -149,8 +148,7 @@ void Image::Release()
                 dpack.memory
             );
             });
-        */
-		device->Destroy(handle, memory);
+
         handle = VK_NULL_HANDLE;
 		device = nullptr;
     }
@@ -165,24 +163,6 @@ void Image::Map(void **ppData)
 void Image::Unmap()
 {
     vmaUnmapMemory(device->MemoryAllocator(), memory);
-}
-
-VkImageAspectFlags Image::GetAspectMask() const
-{
-	VkFormat format = GetFormat();
-	VkImageAspectFlags aspectMask =  VK_IMAGE_ASPECT_COLOR_BIT;
-
-    bool isDepth = IsDepthFormat(format);
-	if (isDepth && !IsDepthOnlyFormat(format))
-	{
-		aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (!IsDepthOnlyFormat(format))
-        {
-			aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        }
-	}
-
-	return aspectMask;
 }
 
 }

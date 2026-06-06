@@ -69,11 +69,6 @@ public:
 		bindPoint = value;
     }
 
-    const VkDescriptorType *GetDescriptorTypes() const
-    {
-		return bindDescriptorTypes.data();
-    }
-
     void Swap(Pipeline &other)
     {
 		Handle::Swap(other);
@@ -82,7 +77,6 @@ public:
 		std::swap(pipelineLayout,      other.pipelineLayout     );
 		std::swap(descriptorSetLayout, other.descriptorSetLayout);
 		std::swap(bindPoint,           other.bindPoint          );
-		std::swap(bindDescriptorTypes, other.bindDescriptorTypes);
     }
 
 protected:
@@ -96,7 +90,20 @@ protected:
 
     VkPipelineBindPoint bindPoint;
 
-    std::vector<VkDescriptorType> bindDescriptorTypes;
+    struct
+    {
+        VkDescriptorSetLayout setLayout;
+
+        VkDescriptorSet set{ VK_NULL_HANDLE };
+
+        DescriptorSetUpdater *setUpdater{ nullptr };
+
+        std::unique_ptr<DescriptorPool> pool;
+
+        std::unordered_map<uint64_t, DescriptorSetPack> packs;
+
+        std::queue<DescriptorSetPack> freePacks;
+    } descriptor;
 };
 
 class GraphicsPipeline : public Pipeline, public SuperGraphicsPipeline

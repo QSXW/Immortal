@@ -298,8 +298,7 @@ SuperDevice *Instance::CreateDevice(int deviceId)
 	    {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,               false },
 #endif                                                    
 	    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,          true  },
-     //   { VK_KHR_RAY_QUERY_EXTENSION_NAME,                       true  },
-	    //{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,            true  },
+	    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,            true  },
 	    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,           true  },
 	    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,        true  },
 	    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,             true  },

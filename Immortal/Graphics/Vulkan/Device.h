@@ -1195,8 +1195,6 @@ public:
 
     void DestroyObjects();
 
-    void SetName(VkObjectType objectType, uint64_t handle, const char *name);
-
 public:
     template <class T>
     void DestroyAsync(T task)

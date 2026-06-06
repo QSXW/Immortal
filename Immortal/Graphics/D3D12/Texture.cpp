@@ -82,7 +82,7 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         .Flags              = flags,
     };
 
-    DX_CHECK(device->CreateCommittedResource(
+    Check(device->CreateCommittedResource(
         &props,
         D3D12_HEAP_FLAG_NONE,
         &resourceDesc,
@@ -102,7 +102,7 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
 #endif
 }
 
-Texture::Texture(Device *device, const ComPtr<ID3D12Resource> &resource, D3D12_RESOURCE_STATES state) :
+Texture::Texture(Device *device, ID3D12Resource *resource, D3D12_RESOURCE_STATES state) :
     Super{},
     Resource{ resource, state },
     NonDispatchableHandle{ device },
@@ -122,21 +122,20 @@ Texture::Texture(Device *device, const ComPtr<ID3D12Resource> &resource, D3D12_R
 Texture::~Texture()
 {
 	uint32_t mipLevels = GetMipLevels();
-	if (descriptor)
-	{
+    if (descriptor)
+    {
 		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeap, descriptor, mipLevels);
-	}
+    }
 	if (uav)
-	{
+    {
 		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, uavDescriptorHeap, uav, mipLevels);
-	}
-	resource.Reset();
+    }
+	device = nullptr;
 }
 
 void Texture::ConstructShaderResourceView()
 {
 	auto mipLevels = GetMipLevels();
-	uint32_t arrayLayers = GetArrayLayers();
 	descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &descriptorHeap, mipLevels);
     for (uint32_t i = 0; i < mipLevels; i++)
     {
@@ -146,26 +145,11 @@ void Texture::ConstructShaderResourceView()
             .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
             .Texture2D               = {
                 .MostDetailedMip     = i,
-                .MipLevels           = mipLevels - i,
+                .MipLevels           = i == 0 ? uint32_t(mipLevels) : 1,
                 .PlaneSlice          = 0,
                 .ResourceMinLODClamp = 0
             },
         };
-
-        if (arrayLayers == 6)
-        {
-            desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-        }
-        else if (arrayLayers > 1)
-        {
-			desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-            desc.Texture2DArray = {
-			    .FirstArraySlice     = 0,
-			    .ArraySize           = arrayLayers,
-			    .PlaneSlice          = 0,
-			    .ResourceMinLODClamp = 0
-            };
-        }
 
 		device->CreateShaderResourceView(*this, &desc, descriptor[i]);
     }
@@ -182,24 +166,10 @@ void Texture::ConstructShaderResourceView()
                     .PlaneSlice = 0
                 }
             };
-			if (arrayLayers > 1)
-			{
-				desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-                desc.Texture2DArray = {
-					.MipSlice        = i,
-				    .FirstArraySlice = 0,
-				    .ArraySize       = arrayLayers,
-				    .PlaneSlice      = 0,
-                };
-			}
+
 			device->CreateUnorderedAccessView(*this, nullptr, &desc, uav[i]);
         }
     }
-}
-
-void Texture::SetName(const char *name)
-{
-	resource->SetName(std::filesystem::path(name).wstring().c_str());
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Texture::GetDescriptor(uint32_t subresource)

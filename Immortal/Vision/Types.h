@@ -54,15 +54,9 @@ public:
 
 enum class PictureFlags
 {
-	Eof = BIT(0),
+	Eof = BIT(0)
 };
 SL_ENABLE_BITWISE_OPERATOR(PictureFlags)
-
-struct TrackInfo
-{
-	std::string name;
-	int streamIndex;
-};
 
 }
 

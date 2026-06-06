@@ -140,11 +140,6 @@ public:
         context->CopyResource(pDstResource, pSrcResource);
     }
 
-    HRESULT GetRemovedReason()
-    {
-		return handle->GetDeviceRemovedReason();
-    }
-
 public:
 	IDXGIFactory4 *GetDXGIFactory() const;
 

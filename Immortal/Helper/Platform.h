@@ -18,10 +18,6 @@ public:
         "Immortal Scene\0*.iml\0"
     };
 
-    static inline char Executable[] = {
-	    "Executable\0*.exe\0"
-    };
-
     static inline char Image[] = {
         "Image File\0*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif\0"
     };
@@ -45,18 +41,6 @@ public:
     static String BrowserFolder();
 };
 
-class FileManagement
-{
-public:
-	static bool Cut(const std::vector<std::filesystem::path> &paths);
-
-	static bool Copy(const std::vector<std::filesystem::path> &paths);
-
-	static bool MoveFileToReclycleBin(const std::vector<std::filesystem::path> &paths);
-
-    static bool RevealInFileExplorer(const std::filesystem::path &path);
-};
-
 class Clipboard
 {
 public:
@@ -66,16 +50,8 @@ public:
         UnicodeText
     };
 
-    enum class SetFileOperation
-    {
-        Copy,
-        Cut
-    };
-
 public:
 	static void SetData(DataType type, const void *data, size_t size);
-
-    static bool SetFilePaths(const std::vector<std::filesystem::path> &paths, SetFileOperation operation = SetFileOperation::Copy);
 };
 
 class System

@@ -9,8 +9,7 @@ namespace Immortal
 {
 
 Render2D::Render2D() :
-    rectIndexCount{},
-    commandBuffer{}
+    rectIndexCount{}
 {
 	Stream stream = { "Assets/Shaders/hlsl/Render2D.hlsl", StreamMode::Read };
     if (stream.Readable())
@@ -19,8 +18,8 @@ Render2D::Render2D() :
 		stream.Read(source);
 
         auto device = Graphics::GetDevice();
-		URef<Shader> vertexShader = device->CreateShader("Render2DVertex", ShaderStage::Vertex, source, "VSMain");
-		URef<Shader> pixelShader  = device->CreateShader("Render2DPixel",  ShaderStage::Pixel,  source, "PSMain");
+		URef<Shader> vertexShader = device->CreateShader("render2d", ShaderStage::Vertex, source, "VSMain");
+		URef<Shader> pixelShader  = device->CreateShader("render2d", ShaderStage::Pixel, source, "PSMain");
 
         Shader *shaders[] = { vertexShader, pixelShader };
 		pipeline = device->CreateGraphicsPipeline();
@@ -37,7 +36,6 @@ Render2D::Render2D() :
             },
             {
                 Format::RGBA8,
-                Format::R32_UINT,
                 Format::Depth24Stencil8
             }
         );
@@ -88,13 +86,15 @@ void Render2D::Flush()
 	}
 
     uint32_t indexCount = rectIndexCount;
-	Buffer *buffers[] = { vertexBuffer };
-	commandBuffer->SetPipeline(pipeline);
-	commandBuffer->SetVertexBuffers(0, 1, buffers, sizeof(RectVertex));
-	commandBuffer->SetIndexBuffer(indexBuffer, Format::R32_UINT);
-	commandBuffer->SetDescriptorSet(descriptorSet);
-	commandBuffer->PushConstants(ShaderStage::Vertex, &viewProjection, sizeof(viewProjection), 0);
-	commandBuffer->DrawIndexedInstance(indexCount, 1, 0, 0, 0);
+	Graphics::Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+		Buffer *buffers[] = { vertexBuffer };
+		commandBuffer->SetPipeline(pipeline);
+		commandBuffer->SetVertexBuffers(0, 1, buffers, sizeof(RectVertex));
+		commandBuffer->SetIndexBuffer(indexBuffer, Format::R32_UINT);
+		commandBuffer->SetDescriptorSet(descriptorSet);
+		commandBuffer->PushConstants(ShaderStage::Vertex, &viewProjection, sizeof(viewProjection), 0);
+		commandBuffer->DrawIndexedInstance(indexCount, 1, 0, 0, 0);
+	});
 }
 
 void Render2D::StartBatch()
@@ -110,9 +110,8 @@ void Render2D::NextBatch()
     StartBatch();
 }
 
-void Render2D::BeginScene(CommandBuffer *_commandBuffer, const Camera &camera)
+void Render2D::BeginScene(const Camera &camera)
 {
-	commandBuffer = _commandBuffer;
 	const OrthographicCamera &orthographicCamera = (const OrthographicCamera &)camera;
     if (orthographicCamera.GetZoomLevel() <= 0.002)
     {
@@ -132,13 +131,12 @@ void Render2D::BeginScene(CommandBuffer *_commandBuffer, const Camera &camera)
     }
 
     viewProjection = camera.ViewProjection();
-	NextBatch();
+    NextBatch();
 }
 
 void Render2D::EndScene()
 {
 	NextBatch();
-	commandBuffer = nullptr;
 }
 
 void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int object)
@@ -148,7 +146,6 @@ void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int obje
 
 void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, float tilingFactor, const Vector4 &tintColor, int object)
 {
-	Graphics::SetSyncEvent((Ref<Texture> &)texture);
     constexpr size_t RectVertexCount = 4;
     static Vector2 textureCoords[] = {
         { 0.0f, 0.0f },

@@ -10,14 +10,13 @@ namespace Immortal
 namespace Vulkan
 {
 
+
 DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
     device{ device },
     descriptorUpdateTemplate{ VK_NULL_HANDLE}
 {
 	VkDescriptorSetLayout descriptorSetLayout = pipeline->GetDescriptorSetLayout();
     Check(device->AllocateDescriptorSet(&descriptorSetLayout, &handle));
-
-    descriptorTypes = pipeline->GetDescriptorTypes();
 }
 
 DescriptorSet::~DescriptorSet()
@@ -34,6 +33,11 @@ void DescriptorSet::Set(uint32_t slot, SuperBuffer *_buffer)
         .range  = buffer->GetSize()
     };
 
+    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    if (buffer->GetUsage() & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+    {
+		descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    }
     VkWriteDescriptorSet writeDescriptorSet{
         .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .pNext            = nullptr,
@@ -41,7 +45,7 @@ void DescriptorSet::Set(uint32_t slot, SuperBuffer *_buffer)
         .dstBinding       = slot,
         .dstArrayElement  = 0,
         .descriptorCount  = 1,
-        .descriptorType   = descriptorTypes[slot],
+        .descriptorType   = descriptorType,
         .pImageInfo       = nullptr,
         .pBufferInfo      = &descriptorBufferInfo,
         .pTexelBufferView = nullptr,
@@ -59,6 +63,11 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
 		.imageLayout = texture->GetLayout()
     };
 
+    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    if (texture->GetUsage() & VK_IMAGE_USAGE_STORAGE_BIT)
+    {
+		descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    }
     VkWriteDescriptorSet writeDescriptorSet{
         .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .pNext            = nullptr,
@@ -66,7 +75,7 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
         .dstBinding       = slot,
         .dstArrayElement  = 0,
         .descriptorCount  = 1,
-        .descriptorType   = descriptorTypes[slot],
+        .descriptorType   = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
         .pImageInfo       = &descriptorImageInfo,
         .pBufferInfo      = nullptr,
         .pTexelBufferView = nullptr,

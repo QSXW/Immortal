@@ -13,22 +13,7 @@ set(HAVE_MONO      ${LIB_NOT_FOUND})
 set(HAVE_FREETYPE  ${LIB_NOT_FOUND})
 set(HAVE_TURBOJPEG ${LIB_NOT_FOUND})
 set(HAVE_NVJPEG    ${LIB_NOT_FOUND})
-set(HAVE_WEBP      ${LIB_NOT_FOUND})
-set(HAVE_JXL       ${LIB_NOT_FOUND})
 set(3RDPARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
-
-if (UNIX)
-    set(LIB_SUFFIX ".a")
-else()
-    set(LIB_SUFFIX ".lib")
-endif()
-
-set(VCPKG_ROOT $ENV{VCPKG_ROOT})
-if (VCPKG_ROOT)
-    set(VCPKG_CMAKE_PATH ${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
-    include(${VCPKG_CMAKE_PATH})
-    message(STATUS "Detected vcpkg - ${VCPKG_CMAKE_PATH}")
-endif()
 
 include(CheckIncludeFileCXX)
 
@@ -48,7 +33,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(ASSIMP_LIB libassimp)
     set(OPENCV_LIB libopencv_core)
 elseif(HAVE_MSVC)
-    set(ASSIMP_LIB assimp-vc143-mt)
+    set(ASSIMP_LIB assimp-vc142-mt)
     set(OPENCV_LIB opencv_world)
 endif()
 
@@ -228,25 +213,12 @@ add_library(imgui STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ImGuizmo/ImGuizmo.h")
 
-set(IMGU_ENABLE_SDF ON)
-if (IMGU_ENABLE_SDF)
-    set(HAVE_FREETYPE OFF)
-endif()
-
-# if (HAVE_FREETYPE)
-#     target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
-#     target_sources(imgui PRIVATE
-#         ${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp
-#         ${IMGUI_DIR}/misc/freetype/imgui_freetype.h)
-#     target_link_libraries(imgui PRIVATE freetype)
-# endif()
-
-set(IMGUI_ENABLE_MSDFGEN ON)
-if (IMGUI_ENABLE_MSDFGEN)
-    target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_MSDFGEN")
+if (HAVE_FREETYPE)
+    target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
     target_sources(imgui PRIVATE
-        ${IMGUI_DIR}/imgui_msdfgen.cpp)
-    target_link_libraries(imgui PRIVATE "C:/SDK/C/imgui/build/cmsdfgen/RelWithDebInfo/cmsdfgen.lib")
+        ${IMGUI_DIR}/misc/freetype/imgui_freetype.cpp
+        ${IMGUI_DIR}/misc/freetype/imgui_freetype.h)
+    target_link_libraries(imgui PRIVATE freetype)
 endif()
 
 target_include_directories(imgui PUBLIC
@@ -397,7 +369,7 @@ else()
 endif()
 
 # FFmpeg
-set(FFMPEG_LIBS avcodec avdevice avformat avutil swresample swscale)
+set(FFMPEG_LIBS avcodec avdevice avformat avutil swresample)
 set(FFMPEG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg" CACHE STRING "Path to FFmpeg directory (default=${CMAKE_CURRENT_SOURCE_DIR}/FFmpeg)")
 set(FFMPEG_LIBRARY_DIR "${FFMPEG_DIR}/lib")
 set(FFMPEG_BINARY_DIR  "${FFMPEG_DIR}/bin")
@@ -411,13 +383,10 @@ if (FFmpeg_FOUND)
     add_library("FFmpeg" INTERFACE)
     target_include_directories("FFmpeg" INTERFACE ${FFMPEG_INCLUDE_DIR})
     target_link_directories("FFmpeg" INTERFACE ${FFMPEG_LIBRARY_DIR})
-
+    target_link_libraries("FFmpeg" INTERFACE ${FFMPEG_LIBS})
     if (WIN32)
         set(FFMPEG_SHARED "${FFMPEG_BINARY_DIR}/" PARENT_SCOPE)
-        list(TRANSFORM FFMPEG_LIBS PREPEND "${FFMPEG_LIBRARY_DIR}/")
-        list(TRANSFORM FFMPEG_LIBS APPEND ".lib")
     endif()
-    target_link_libraries("FFmpeg" INTERFACE ${FFMPEG_LIBS})
 else()
     message(STATUS "Looking for FFmpeg directory - not found")
 endif()
@@ -429,30 +398,8 @@ add_subdirectory(LibRaw-cmake)
 set_property(TARGET raw   PROPERTY FOLDER "3rdparty")
 set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 
-# libwebp
-find_package(WebP QUIET)
-if (WebP_FOUND AND NOT IMMORTAL_DISABLE_LIBWEBP)
-    set(HAVE_WEBP ${LIB_FOUND})
-endif()
-
-# libjxl
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(JXL QUIET libjxl libjxl_threads)
-if (JXL_FOUND AND NOT IMMORTAL_DISABLE_LIBJXL)
-    set(HAVE_JXL ${LIB_FOUND})
-    add_library(LibjxlInterface INTERFACE)
-    include_directories(LibjxlInterface INTERFACE ${JXL_INCLUDE_DIRS})
-    set(_JXL_LIBRARIES ${JXL_LIBRARIES})
-    list(TRANSFORM _JXL_LIBRARIES PREPEND "${JXL_LIBRARY_DIRS}/")
-    list(TRANSFORM _JXL_LIBRARIES APPEND  "${LIB_SUFFIX}"       )
-    target_link_libraries(LibjxlInterface INTERFACE ${_JXL_LIBRARIES})
-endif()
-
 # LightWSL
 add_subdirectory(LightWSI)
-
-# tweeny
-add_subdirectory(tweeny)
 
 add_subdirectory(DirectXShaderCompilerHeaders)
 set(DXC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/DirectXShaderCompilerHeaders/dxc")
@@ -485,7 +432,7 @@ add_library("external" INTERFACE)
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
     Vulkan-Headers imgui spdlog_header_only
-    SPIRV spirv-cross-glsl tweeny
+    SPIRV spirv-cross-glsl
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
     $<$<BOOL:${MONO_FOUND}>:mono>
 )
@@ -498,9 +445,7 @@ target_link_libraries("ExternalVision" INTERFACE
     $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>
     $<$<BOOL:${LIBJPEGTURBO_FOUND}>:turbojpeg>
-    $<$<BOOL:${NVJPEG_FOUND}>:nvJPEG>
-    $<$<BOOL:${HAVE_WEBP}>:WebP::webp WebP::webpdecoder WebP::webpdemux>
-    $<$<BOOL:${HAVE_JXL}>:LibjxlInterface>)
+    $<$<BOOL:${NVJPEG_FOUND}>:nvJPEG>)
 
 message(STATUS "----------------------------------------------------------------------------------")
 message(STATUS "Immortal 3rdparty configuration")
@@ -549,16 +494,6 @@ if (NVJPEG_FOUND)
     message(STATUS "Immortal will be compiled with nvJPEG        ------ Yes")
 else()
     message(STATUS "Immortal will be compiled with nvJPEG        ------ No")
-endif()
-if (HAVE_WEBP)
-    message(STATUS "Immortal will be compiled with libwebp       ------ Yes")
-else()
-    message(STATUS "Immortal will be compiled with libwebp       ------ No")
-endif()
-if (HAVE_JXL)
-    message(STATUS "Immortal will be compiled with libjxl        ------ Yes")
-else()
-    message(STATUS "Immortal will be compiled with libjxl        ------ No")
 endif()
 message(STATUS "----------------------------------------------------------------------------------")
 

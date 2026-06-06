@@ -2,6 +2,9 @@
 
 #include <cstdio>
 
+#include <imgui.h>
+#include <imgui_internal.h>
+
 #include "Audio/Device.h"
 
 #include "Core.h"

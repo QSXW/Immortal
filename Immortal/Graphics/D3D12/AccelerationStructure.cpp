@@ -98,10 +98,8 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
 	    device,
 	    Buffer::Type::TransferSource,
         sizeof(instanceDesc),
-        MemoryType::Device,
-        Format::None);
-
-    instanceDescs->Fill(&instanceDesc, sizeof(instanceDesc), 0);
+        Format::None,
+        &instanceDesc);
 
 #ifdef _DEBUG
     scratchBuffer->SetName("ScratchResource");

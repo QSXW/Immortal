@@ -8,7 +8,7 @@ namespace D3D12
 
 CommandAllocator::CommandAllocator(Device *device, D3D12_COMMAND_LIST_TYPE type)
 {
-	DX_CHECK(device->CreateCommandAllocator(type, &handle));
+	Check(device->CreateCommandAllocator(type, &handle));
 }
 
 CommandAllocator::~CommandAllocator()
@@ -51,12 +51,12 @@ CommandAllocator *CommandAllocatorPool::RequestAllocator(uint64_t CompletedFence
 #ifdef _DEBUG
 		wchar_t name[32];
 		swprintf(name, 32, L"CommandAllocator %zu", pool.size());
-		DX_CHECK(allocator->SetName(name));
+		Check(allocator->SetName(name));
 #endif
 	}
 	else
 	{
-		DX_CHECK(allocator->Reset());
+		Check(allocator->Reset());
 	}
 
 	return allocator;

@@ -29,14 +29,14 @@ WindowCapture::WindowCapture(Device *device) :
 	{
 		return;
 	}
-	DX_CHECK(outputs[0]->QueryInterface(output.GetAddressOf()));
+	Check(outputs[0]->QueryInterface(output.GetAddressOf()));
 
 	DXGI_FORMAT supportedFormats[] = {
 		DXGI_FORMAT_R8G8B8A8_UNORM
 	};
 
 	SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
-	DX_CHECK(output->DuplicateOutput1(*device, 0, SL_ARRAY_LENGTH(supportedFormats), supportedFormats, &outputDuplication));
+	Check(output->DuplicateOutput1(*device, 0, SL_ARRAY_LENGTH(supportedFormats), supportedFormats, &outputDuplication));
 }
 
 WindowCapture::~WindowCapture()
@@ -48,15 +48,15 @@ SuperTexture *WindowCapture::AcquireNextFrame(CaptureFrameInfo *pFrameInfo)
 {
 	DXGI_OUTDUPL_FRAME_INFO outputFrameInfo{};
 	ComPtr<IDXGIResource> resource;
-	DX_CHECK(outputDuplication->AcquireNextFrame(INFINITE, &outputFrameInfo, resource.GetAddressOf()));
+	Check(outputDuplication->AcquireNextFrame(INFINITE, &outputFrameInfo, resource.GetAddressOf()));
 
 	pFrameInfo->accumulatedFrames = outputFrameInfo.AccumulatedFrames;
 
 	ComPtr<ID3D11Texture2D> texture;
-	DX_CHECK(resource->QueryInterface(texture.GetAddressOf()));
+	Check(resource->QueryInterface(texture.GetAddressOf()));
 
 	auto ret = new Texture{ device, texture };
-	DX_CHECK(outputDuplication->ReleaseFrame());
+	Check(outputDuplication->ReleaseFrame());
 
 	return ret;
 }
