@@ -22,7 +22,7 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
     }
 
     CalculateGaussianKernal(device, stagingKernalBuffer[kHorizontal], sigma, kernalSize);
-	kernal[kHorizontal] = device->CreateBuffer(BufferType::ConstantBuffer, stagingKernalBuffer[kHorizontal]->GetSize(), MemoryType::Device, Format::R32_SFLOAT);
+	kernal[kHorizontal] = device->CreateBuffer(stagingKernalBuffer[kHorizontal]->GetSize(), BufferType::ConstantBuffer, MemoryType::Device, Format::R32_SFLOAT);
 
     if (!verticalSigma)
     {
@@ -35,7 +35,7 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
 
     if (verticalSigma != sigma || verticalKernalSize != kernalSize)
     {
-		kernal[kVertical] = device->CreateBuffer(BufferType::ConstantBuffer, stagingKernalBuffer[kVertical]->GetSize(), MemoryType::Device, Format::R32_SFLOAT);
+        kernal[kVertical] = device->CreateBuffer(stagingKernalBuffer[kVertical]->GetSize(), BufferType::ConstantBuffer, MemoryType::Device, Format::R32_SFLOAT);
         CalculateGaussianKernal(device, stagingKernalBuffer[kVertical], verticalKernalSize, verticalKernalSize);
     }
     else
@@ -126,7 +126,7 @@ void GaussianBlurFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComput
 
 void GaussianBlurFilter::CalculateGaussianKernal(Device *device, Ref<Buffer> &buffer, float sigma, int size)
 {
-	buffer = device->CreateBuffer(BufferType::TransferSource, SLALIGN(size * sizeof(float), TextureAlignment));
+    buffer = device->CreateBuffer(SLALIGN(size * sizeof(float), TextureAlignment), BufferType::TransferSource);
 
     float *kernal = nullptr;
     buffer->Map((void **)&kernal, buffer->GetSize(), 0);

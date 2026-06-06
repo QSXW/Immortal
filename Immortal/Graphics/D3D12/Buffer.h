@@ -59,13 +59,11 @@ public:
 public:
 	Buffer();
 
-    Buffer(Device *device, Type type, const size_t size, MemoryType memoryType = MemoryType::Host, uint32_t byteStride = 1);
+    Buffer(Device *device, Type type, const size_t size, MemoryType memoryType = MemoryType::Host, Format format = Format::None);
 
     virtual ~Buffer() override;
 
     virtual Anonymous GetBackendHandle() const override;
-
-    virtual GpuVirtualAddress GetGpuVirtualAddress() override;
 
     virtual void Map(void **ppData, size_t size, uint64_t offset) override;
 
@@ -96,7 +94,7 @@ public:
     }
 
 protected:
-    void Construct(MemoryType memoryType, uint32_t byteStride);
+    void Construct(MemoryType memoryType, Format format);
 
 protected:
     Descriptor descriptor;

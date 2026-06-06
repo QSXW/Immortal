@@ -167,12 +167,8 @@ public:
                         DrawComponent(
                             Translator::Translate("Material"),
                             [&]() -> void {
-							    auto &mesh = object.GetComponent<MeshComponent>();
-                                if (!mesh.Mesh)
-                                {
-								    return;
-                                }
                                 auto &material = object.GetComponent<MaterialComponent>();
+                                auto &mesh = object.GetComponent<MeshComponent>();
                                 auto &nodeList = mesh.Mesh->NodeList();
 
                                 static ImGuiComboFlags flags = 0;
@@ -230,12 +226,7 @@ public:
                                         auto res = FileDialogs::OpenFile(FileFilter::Image);
                                         if (res.has_value())
                                         {
-                                            Ref<Texture> newTexture = Graphics::CreateTexture(res.value());
-                                            if (newTexture)
-                                            {
-											    Graphics::ReleaseResource(texture);
-											    texture = newTexture;
-                                            }
+                                            texture = Graphics::CreateTexture(res.value());
                                         }
                                     }
                                     ImGui::Columns(1);
@@ -256,10 +247,6 @@ public:
                                     "Root Tree",
                                     [&] {
                                         auto rootNode = mesh.Mesh->GetRootNode();
-                                        if (!rootNode)
-                                        {
-									        return;
-                                        }
                                         DrawTreeNode(rootNode);
                                     }};
 

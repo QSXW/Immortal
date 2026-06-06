@@ -138,29 +138,9 @@ void GLFWWindow::Construct(const std::string &title, uint32_t width, uint32_t he
     }
 
     SelectPlatformType();
-    //if (GetType() == Type::Cocoa)
+    if (GetType() == Type::Cocoa)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    }
-
-    if (width == 0 || height == 0)
-    {
-		GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
-		if (!primaryMonitor)
-		{
-			LOG::ERR("Failed to get the primary monitor");
-			return;
-		}
-
-		const GLFWvidmode *videoMode = glfwGetVideoMode(primaryMonitor);
-		if (!videoMode)
-		{
-			LOG::ERR("Failed to get the video mode of the primary monitor");
-			return;
-		}
-
-        width  = videoMode->width;
-		height = videoMode->height;
     }
 
     window = glfwCreateWindow((int)width, (int)height, title.c_str(), nullptr, nullptr);

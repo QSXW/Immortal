@@ -13,10 +13,10 @@
 #include "Graphics/LightGraphics.h"
 
 // Called by user code
-IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Immortal::Window *window, Immortal::Queue *queue, Immortal::Swapchain *swapchain, uint32_t swapchainBufferCount, ImGuiBackendFlags flags = ImGuiBackendFlags_None);
+IMGUI_IMPL_API bool         ImGui_ImplImmortal_Init(Immortal::Device *device, Immortal::Window *window, Immortal::Queue *queue, Immortal::Swapchain *swapchain, uint32_t swapchainBufferCount, ImGuiBackendFlags flags);
 IMGUI_IMPL_API void         ImGui_ImplImmortal_Shutdown();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_NewFrame();
-IMGUI_IMPL_API void         ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Immortal::CommandBuffer *commandBuffer);
+IMGUI_IMPL_API void         ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Immortal::CommandBuffer *commandBuffer, Immortal::GPUEvent *gpuEvent, uint64_t syncValue);
 IMGUI_IMPL_API bool         ImGui_ImplImmortal_CreateFontsTexture();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_InitPlatformInterface();
 IMGUI_IMPL_API void         ImGui_ImplImmortal_ShutdownPlatformInterface();

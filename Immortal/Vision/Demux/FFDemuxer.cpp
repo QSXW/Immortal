@@ -274,7 +274,7 @@ static AVCodecID CAST(const CodecId id)
     }
 }
 
-CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, uint32_t numCodec)
+CodecError FFDemuxer::Open(const String &_filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::vector<MediaType> &mediaTypes)
 {
 	int ret = 0;
 	char err[64] = {};
@@ -287,15 +287,19 @@ CodecError FFDemuxer::Open(const String &_filepath, Codec **pCodec, uint32_t num
 		return CodecError::ExternalFailed;
     }
 
-    if (!pCodec)
+    if (!videoCodec)
     {
 		return CodecError::InvalidArguments;
     }
 
+    codecs[0] = ((FFCodec *)videoCodec)->GetHandle();
+	codecs[1] = audioCodec ? ((FFCodec *) audioCodec)->GetHandle() : nullptr;
+	codecs[3] = subtitleCodec ? ((FFCodec *) subtitleCodec)->GetHandle() : nullptr;
+
     auto fmt = handle->oformat;
-	for (uint32_t i = 0; i < numCodec; i++)
+	for (auto &s : mediaTypes)
     {
-		AVCodecContext *codec = ((FFCodec *)pCodec[i])->GetHandle();
+		AVCodecContext *codec = codecs[int(s)];
 		AVStream *stream  = avformat_new_stream(handle, NULL);
 		stream->id        = handle->nb_streams - 1;
 		stream->time_base = codec->time_base;

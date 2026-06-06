@@ -67,7 +67,7 @@ public:
 
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) = 0;
 
-	virtual void BeginRenderTarget(RenderTarget *renderTarget, const ClearValue *pClearValues) = 0;
+	virtual void BeginRenderTarget(RenderTarget *renderTarget, const float *pClearColor) = 0;
 
 	virtual void EndRenderTarget() = 0;
 
@@ -75,7 +75,7 @@ public:
 
 	virtual void CopyBufferToImage(Texture *texture, uint32_t subresource, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) = 0;
 
-	virtual void CopyImageToBuffer(Buffer *buffer, Texture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) {}
+	virtual void CopyImageToBuffer(Buffer *buffer, Texture *texture, uint32_t subresource, size_t bufferRowLength) {}
 
 	virtual void CopyPlatformSpecificSubresource(Texture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) {}
 
@@ -100,17 +100,7 @@ public:
 
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) = 0;
 
-	virtual void DispatchGraph(const DispatchGraphDescription *pDesc)
-	{
-
-	}
-
 	virtual void SetImageLayout(Texture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange = &kAllSubresources)
-	{
-
-	}
-	
-	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address)
 	{
 
 	}

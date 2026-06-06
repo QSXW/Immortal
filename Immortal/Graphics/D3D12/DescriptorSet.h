@@ -28,7 +28,7 @@ public:
 
 	virtual void Set(uint32_t slot, SuperSampler *sampler) override;
 
-	void Set(uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE descriptor, D3D12_DESCRIPTOR_HEAP_TYPE heapType, D3D12_DESCRIPTOR_RANGE_TYPE rangeType);
+	void Set(uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE descriptor, D3D12_DESCRIPTOR_HEAP_TYPE type);
 
 public:
 	DescriptorHeap *GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const
@@ -46,11 +46,11 @@ protected:
 
     ShaderVisibleDescriptor descriptors[MaxDescrpitorHeapType];
 
-	const uint32_t *indexMap[D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER + 1];
+	const uint32_t *indexMap[MaxDescrpitorHeapType];
 
 	uint32_t descriptorCount[MaxDescrpitorHeapType];
 
-	const D3D12_DESCRIPTOR_RANGE_TYPE *rangeTypes;
+	const D3D12_DESCRIPTOR_RANGE_TYPE *rangeType;
 };
 
 }

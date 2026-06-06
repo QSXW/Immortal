@@ -135,7 +135,7 @@ int main(int, char **)
         { { -0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
     };
 
-    URef<Buffer> vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(triangleVertices));
+    URef<Buffer> vertexBuffer = device->CreateBuffer(sizeof(triangleVertices), BufferType::Vertex);
 
     // copy the vertices data to the vertex buffer
 	void *data = nullptr;
@@ -160,8 +160,8 @@ int main(int, char **)
         // get the rende target from swapchain for that we're going draw the triangle into the Window
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
 
-        const ClearValue clearValue = {}; //{0.0f, 0.2f, 0.4f, 1.0f};
-		commandBuffer->BeginRenderTarget(renderTarget, &clearValue);
+        const float clearColor[4] = {}; //{0.0f, 0.2f, 0.4f, 1.0f};
+		commandBuffer->BeginRenderTarget(renderTarget, clearColor);
 
         commandBuffer->SetPipeline(pipeline);
 		Buffer *vertexBuffers[] = { vertexBuffer };

@@ -8,8 +8,6 @@ namespace Immortal
 static constexpr uint32_t TextureAlignment = 256;
 static constexpr uint64_t kMaxTimeOut      = (uint64_t)~0;
 
-using GpuVirtualAddress = uint64_t;
-
 enum class BackendAPI
 {
     None,
@@ -125,7 +123,6 @@ enum class ShaderStage
     Intersection          = BIT(10),
     Callable              = BIT(11),
     Mesh                  = BIT(12),
-    WorkGraph             = BIT(13),
     Pixel                 = Fragment,
     Unspecified           = BIT(31)
 };
@@ -289,79 +286,6 @@ struct ShaderMacro
 {
 	const char *name;
 	const char *definition;
-};
-
-union ClearColorValue
-{
-	float float32[4];
-	int32_t int32[4];
-	uint32_t uint32[4];
-};
-
-struct ClearDepthStencilValue
-{
-	float depth;
-	uint32_t stencil;
-};
-
-union ClearValue
-{
-	ClearColorValue color;
-	ClearDepthStencilValue depthStencil;
-};
-
-enum class DispatchMode
-{
-	NodeCpuInput      = 0,
-	NodeGpuInput      = 1,
-	MultiNodeCpuInput = 2,
-	MultiNodeGpuInput = 3
-};
-
-struct NodeCpuInput
-{
-	uint32_t entrypointIndex;
-	uint32_t numRecords;
-	const void *pRecords;
-	uint64_t recordStrideInBytes;
-};
-
-struct GpuVirtualAddressAndStride
-{
-	GpuVirtualAddress virtualAddress;
-	uint64_t sizeInBytes;
-};
-
-struct NodeGpuInput
-{
-	uint32_t entrypointIndex;
-	uint32_t numRecords;
-	GpuVirtualAddressAndStride records;
-};
-
- struct MultiNodeCpuInput
-{
-	 uint32_t NumNodeInputs;
-	const NodeCpuInput *pNodeInputs;
-	uint64_t nodeInputStrideInBytes;
-};
-
-struct MultiNodeGpuInput
-{
-	uint32_t numNodeInputs;
-	GpuVirtualAddressAndStride nodeInputs;
-};
-
-struct DispatchGraphDescription
-{
-	DispatchMode mode;
-	union
-	{
-		NodeCpuInput nodeCpuInput;
-		GpuVirtualAddress nodeGpuInput;
-		MultiNodeCpuInput multiNodeCpuInput;
-		GpuVirtualAddress multiNodeGpuInput;
-	};
 };
 
 }

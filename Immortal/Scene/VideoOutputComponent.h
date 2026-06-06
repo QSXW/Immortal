@@ -18,7 +18,7 @@ class VideoOutput;
 class VideoOutputComponent
 {
 public:
-    VideoOutputComponent(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo);
+    VideoOutputComponent(const String &filepath, const EncodeInfo &videoEncodeInfo, const EncodeInfo &audioEncodeInfo, const std::vector<MediaType> &streamInfos);
 
     void EnqueueVideoFrame(Picture &&picture);
 

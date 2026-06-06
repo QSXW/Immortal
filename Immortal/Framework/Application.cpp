@@ -132,9 +132,9 @@ void Application::OnRender()
 	{
 		CommandBuffer *commandBuffer = GetCurrentCommandBuffer();
 
-        ClearValue clearValues = {};
+        const float clearColor[4] = { 0, 0, 0, 0 };
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-		commandBuffer->BeginRenderTarget(renderTarget, &clearValues);
+	    commandBuffer->BeginRenderTarget(renderTarget, clearColor);
 
 		gui->SubmitRenderDrawCommands(commandBuffer, gpuEvent, syncValue);
 	    commandBuffer->EndRenderTarget();

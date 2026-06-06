@@ -54,7 +54,7 @@ public:
 
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
 
-	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const ClearValue *pClearValue) override;
+	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const float *pClearColor) override;
 
 	virtual void EndRenderTarget() override;
 
@@ -62,7 +62,7 @@ public:
 
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
 
-	virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) override;
+	virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength) override;
 
 	virtual void CopyPlatformSpecificSubresource(SuperTexture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) override;
 
@@ -84,11 +84,7 @@ public:
 
 	virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
 
-	virtual void DispatchGraph(const DispatchGraphDescription *pDesc) override;
-
 	virtual void SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
-
-	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address) override;
 
 public:
 	void SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline);

@@ -235,7 +235,7 @@ using Matrix4    = mat4;
 using Quaternion = glm::quat;
 
 template <class T>
-constexpr inline T Normalize(const T &v)
+constexpr inline auto Normalize(T v)
 {
     return glm::normalize(v);
 }
@@ -244,12 +244,6 @@ template <class T>
 constexpr inline T Cross(const T &x, const T &y)
 {
     return glm::cross(x, y);
-}
-
-template <class T>
-constexpr inline float Dot(const T &x, const T &y)
-{
-	return glm::dot((const T::Primitive &)x, (const T::Primitive &)y);
 }
 
 inline auto Radians(float degrees)
@@ -338,45 +332,9 @@ inline auto Epsilon()
 }
 
 template <class T>
-inline auto Length(const T &v)
+inline auto Length(T &q)
 {
-    return glm::length(v);
-}
-
-template <class T>
-inline auto Length2(const T &v)
-{
-	return glm::length2(v);
-}
-
-template <class T>
-inline auto Greater(T &x, T &y)
-{
-	return glm::all(glm::greaterThan(x, y));
-}
-
-template <class T>
-inline auto Min(T &x, T &y)
-{
-	return glm::min(x, y);
-}
-
-template <class T>
-inline auto Max(T &x, T &y)
-{
-	return glm::max(x, y);
-}
-
-template <class T>
-inline auto Clamp(const T &v, const T &min, const T &max)
-{
-	return glm::clamp((const T::Primitive &)v, (const T::Primitive &)min, (const T::Primitive &)max);
-}
-
-template <class T>
-inline auto Log(const T &v)
-{
-	return glm::log(v);
+    return glm::length(q);
 }
 
 namespace Detail = glm::detail;

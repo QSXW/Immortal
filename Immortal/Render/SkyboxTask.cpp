@@ -18,7 +18,7 @@ SkyboxTask::~SkyboxTask()
 void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
 {
 	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
-		skybox = Mesh::CreateCube(asyncComputeThread, commandBuffer, 1.0f, true);
+		skybox = Mesh::CreateCube(asyncComputeThread, commandBuffer, 1.0f, true);        // new Mesh{"Assets/Meshes/Skybox.obj"};
 
         if (filepath.empty())
         {
@@ -59,6 +59,10 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
         descriptorSet->Set(1, textureCube);
         descriptorSet->Set(2, sampler);
 
+        //commandBuffer->SetPipeline(pipeline);
+        //commandBuffer->SetDescriptorSet(descriptorSet);
+        //commandBuffer->Dispatch(SLALIGN(height/8, 8), SLALIGN(height/8, 8), 6);
+        //commandBuffer->GenerateMipMaps(textureCube, Filter::Linear);
         commandBuffer->SetImageLayout(textureCube, ImageLayout::ShaderResource, PipelineStage::All, PipelineStage::All);
 
         std::string shaderSource = Graphics::ReadShaderSource("Assets/Shaders/hlsl/skybox.hlsl");
@@ -70,6 +74,7 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
         };
         graphicsPipeline = device->CreateGraphicsPipeline();
 		graphicsPipeline->Enable(Pipeline::State::Depth);
+		//graphicsPipeline->Enable(Pipeline::State::Blend);
 
         InputElementDescription inputElements = {
 		    {
@@ -84,6 +89,7 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
             {
                 Format::R8G8B8A8_UNORM,
                 Format::R32_UINT,
+                Format::Depth24Stencil8
             }
         );
 
@@ -95,6 +101,7 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
     asyncComputeThread->Execute<ExecutionCompletedTask>([=, this] {
         Graphics::ReleaseCachedBuffer(BufferType::TransferSource, buffer);
         buffer = {};
+        //texture = {};
     });
 }
 
@@ -107,12 +114,12 @@ void SkyboxTask::Execute(CommandBuffer *commandBuffer, const SceneParameters &pa
 
     uint32_t cubemapSize = textureCube->GetWidth();
     commandBuffer->SetImageLayout(textureCube, ImageLayout::General, PipelineStage::All, PipelineStage::All);
-
+	//descriptorSet->Set(0, textureCube);
     commandBuffer->SetPipeline(pipeline);
     commandBuffer->SetDescriptorSet(descriptorSet);
 	commandBuffer->PushConstants(ShaderStage::Compute, &cubemapSize, sizeof(cubemapSize), 0);
 	commandBuffer->Dispatch(SLALIGN(cubemapSize/16, 16), SLALIGN(cubemapSize/16, 16), 6);
-	// commandBuffer->GenerateMipMaps(textureCube, Filter::Linear);
+	commandBuffer->GenerateMipMaps(textureCube, Filter::Linear);
 	commandBuffer->SetImageLayout(textureCube, ImageLayout::ShaderResource, PipelineStage::All, PipelineStage::All);
 }
 
@@ -126,6 +133,11 @@ void SkyboxTask::Composite(CommandBuffer * commandBuffer, const SceneParameters 
     commandBuffer->SetPipeline(graphicsPipeline);
     commandBuffer->SetDescriptorSet(skyboxDescriptorSet);
     commandBuffer->PushConstants(ShaderStage::Vertex | ShaderStage::Pixel, &params.skyboxProjection, sizeof(params.skyboxProjection) + 2 * sizeof(float), 0);
+    //Buffer *vertexBuffers[] = {vertexBuffer};
+    //commandBuffer->SetVertexBuffers(0, 1, vertexBuffers, sizeof(Vector3));
+    //commandBuffer->SetIndexBuffer(indexBuffer, Format::UINT32);
+	// commandBuffer->DrawInstanced(vertexBuffer->GetSize() / sizeof(Vector3), 1, 0, 0);
+	//commandBuffer->DrawIndexedInstance(indexBuffer->GetSize() / sizeof(uint32_t), 1, 0, 0, 0);
 
     auto &nodes = skybox->NodeList();
 	Buffer *vertexBuffers[] = {nodes[0].Vertex};

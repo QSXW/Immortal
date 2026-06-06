@@ -104,7 +104,7 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
 
         if (picture.GetMemoryType() == Vision::PictureMemoryType::System)
         {
-			buffer = device->CreateBuffer(BufferType::TransferSource, totalSize);
+            buffer = device->CreateBuffer(totalSize, BufferType::TransferSource);
         }
     }
 

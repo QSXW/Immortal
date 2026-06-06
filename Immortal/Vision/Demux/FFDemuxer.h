@@ -34,7 +34,7 @@ public:
 
     virtual CodecError Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec = nullptr, VideoCodec *subtitleCodec = nullptr) override;
 
-    virtual CodecError Open(const String &filepath, Codec **pCodec, uint32_t numCodec) override;
+    virtual CodecError Open(const String &filepath, Codec *videoCodec, Codec *audioCodec, Codec *subtitleCodec, const std::vector<MediaType> &streams) override;
 
     virtual void Close() override;
 

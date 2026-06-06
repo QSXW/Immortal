@@ -30,11 +30,6 @@ public:
 	 */
 	virtual Anonymous GetBackendHandle() const = 0;
 
-	virtual GpuVirtualAddress GetGpuVirtualAddress()
-	{
-		return 0;
-	}
-
     virtual void Map(void **ppData, size_t size, uint64_t offset) = 0;
 
     virtual void Unmap() = 0;

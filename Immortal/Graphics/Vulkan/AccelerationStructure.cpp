@@ -180,7 +180,8 @@ AccelerationStructure::AccelerationStructure(Device *device, const Buffer *pVert
         URef<Buffer> instanceBuffer = new Buffer{
             device,
 		    Buffer::Type::AccelerationStructureSource,
-            sizeof(VkAccelerationStructureInstanceKHR)
+            sizeof(VkAccelerationStructureInstanceKHR),
+            &instance,
         };
 
         std::array<VkAccelerationStructureGeometryKHR, 1> geometry = {

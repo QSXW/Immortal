@@ -116,8 +116,8 @@ Lut3DFilter::Lut3DFilter(Device *device, const String &filepath, Type type, uint
             lutSize = size;
 
             size_t lutWidth = size2d * size;
-			stagingLut = device->CreateBuffer(BufferType::TransferSource, SLALIGN(lutWidth * sizeof(Vector3), TextureAlignment));
-            lut        = device->CreateBuffer(BufferType::Storage, SLALIGN(lutWidth * sizeof(Vector3), TextureAlignment), MemoryType::Device, sizeof(Vector3));
+            stagingLut = device->CreateBuffer(SLALIGN(lutWidth * sizeof(Vector3), TextureAlignment), BufferType::TransferSource);
+            lut        = device->CreateBuffer(SLALIGN(lutWidth * sizeof(Vector3), TextureAlignment), BufferType::ConstantBuffer, MemoryType::Device, Format::R32G32B32_SFLOAT);
 
             Vector3 *data;
             stagingLut->Map((void **) &data, stagingLut->GetSize(), 0);

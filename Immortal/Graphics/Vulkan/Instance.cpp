@@ -313,9 +313,7 @@ SuperDevice *Instance::CreateDevice(int deviceId)
 	    { VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,               false },
 	    { VK_KHR_MAINTENANCE1_EXTENSION_NAME,                    false },
         { VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, true  },
-        { VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,        true  },
-	    { VK_EXT_MESH_SHADER_EXTENSION_NAME,                     false },
-        { VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,  false }
+        { VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,        true  }
 	};
 
     return new Device{ physicalDevice, deviceExtensions };

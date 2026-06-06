@@ -17,12 +17,12 @@ class IMMORTAL_API Render2D
 public:
     struct RectVertex
     {
-        Vector3  Position;
-        Vector4  Color;
-        Vector2  TexCoord;
-        float    TexIndex;
-        float    TilingFactor;
-        uint32_t Object;
+        Vector3 Position;
+        Vector4 Color;
+        Vector2 TexCoord;
+        float   TexIndex;
+        float   TilingFactor;
+        int     Object;
     };
 
     struct LineVertex

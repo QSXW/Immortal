@@ -139,9 +139,13 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 	});
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const ClearValue *pClearValue)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
 {
-	auto &[red, green, blue, alpha] = pClearValue[0].color.float32;
+	float red   = pClearColor[0];
+	float green = pClearColor[1];
+	float blue  = pClearColor[2];
+	float alpha = pClearColor[3];
+
 	RenderTarget *renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 
 	Submit([=, this] {

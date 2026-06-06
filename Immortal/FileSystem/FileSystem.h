@@ -243,7 +243,7 @@ static inline bool IsImage(const std::string &path)
     return IsImage(id);
 }
 
-static inline bool IsVideo(FileFormat id)
+static inline bool IsVideo(uint64_t id)
 {
     return IsFormat<FileFormat::IVF>(id)  ||
            IsFormat<FileFormat::MP4>(id)  ||
@@ -263,32 +263,10 @@ static inline bool IsVideo(FileFormat id)
            IsFormat<FileFormat::GIF>(id);
 }
 
-static inline bool IsVideo(uint64_t format)
-{
-	return IsVideo((FileFormat) format);
-}
-
-static inline bool IsAudio(FileFormat id)
-{
-	return IsFormat<FileFormat::FLAC>(id) ||
-	       IsFormat<FileFormat::WAV>(id);
-}
-
-static inline bool IsAudio(uint64_t format)
-{
-	return IsAudio((FileFormat) format);
-}
-
 static inline bool IsVideo(const std::string &path)
 {
     auto id = MakeIdentifier(path);
     return IsVideo(id);
-}
-
-static inline bool IsAudio(const std::string &path)
-{
-	auto id = MakeIdentifier(path);
-	return IsAudio(id);
 }
 
 static FileType GetFileType(const std::string &path)
@@ -514,12 +492,8 @@ struct DirectoryEntry
     FileType type;
 
     std::string_view fileName;
-
-	std::vector<DirectoryEntry> subdirectories;
-
+    
     FileFlagBits flags;
-
-    int star;
 
     bool isEmpty;
 
@@ -527,8 +501,6 @@ struct DirectoryEntry
         path{ _path },
         type{ type },
         fileName{ ParseFileName(path) },
-	    subdirectories{},
-	    star{},
         isEmpty{ true },
         flags{}
     {
@@ -539,8 +511,6 @@ struct DirectoryEntry
         path{},
         type{},
         fileName{},
-	    subdirectories{},
-	    star{},
         isEmpty{},
         flags{}
     {
@@ -551,8 +521,6 @@ struct DirectoryEntry
         path{ other.path },
         type{ other.type },
         fileName{ path.c_str() + path.size() - other.fileName.size() },
-	    subdirectories{other.subdirectories},
-	    star{ other.star },
         isEmpty{ other.isEmpty },
         flags{}
     {
@@ -616,11 +584,9 @@ struct DirectoryEntry
         int rSize = other.path.size() - rPos;
 
         path.Swap(other.path);
-        std::swap(type,           other.type          );
-        std::swap(fileName,       other.fileName      );
-		std::swap(subdirectories, other.subdirectories);
-		std::swap(star,           other.star          );
-        std::swap(isEmpty,        other.isEmpty       );
+        std::swap(type,     other.type    );
+        std::swap(fileName, other.fileName);
+        std::swap(isEmpty,  other.isEmpty );
 
         if (rSize > 0)
         {

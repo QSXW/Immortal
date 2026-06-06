@@ -16,9 +16,7 @@ int CompareTimestamp(int64_t timestampA, Rational timebaseA, int64_t timestampB,
 class VideoOutput : public IObject
 {
 public:
-	VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo);
-
-    ~VideoOutput();
+	VideoOutput(const String &filepath, const EncodeInfo &videoEncodeInfo, const EncodeInfo &audioEncodeInfo, const std::vector<MediaType> &streamInfos);
 
 	void EnqueueVideoFrame(Picture &&picture);
 
@@ -37,8 +35,6 @@ public:
     bool operator!() const;
 
 protected:
-	LightArray<Codec *, 4> codecs;
-
 	URef<Codec> videoEncoder;
 
 	URef<Codec> audioEncoder;
@@ -80,12 +76,11 @@ protected:
     std::atomic<int> frameInQueue;
 };
 
-VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
-    codecs{},
-    videoEncoder{},
+VideoOutput::VideoOutput(const String &filepath, const EncodeInfo &videoEncodeInfo, const EncodeInfo &audioEncodeInfo, const std::vector<MediaType> &streamInfos) :
+    videoEncoder{new Vision::FFCodec{videoEncodeInfo}},
     audioEncoder{},
     muxer{},
-    mediaTypes{},
+    mediaTypes{ streamInfos },
     videoEncodeThread{ 1 },
     audioEncodeThread{ 1 },
     muxThread{},
@@ -97,15 +92,13 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
     frames{},
     frameInQueue{}
 {
-	codecs.resize(numEncodeInfo);
-	for (uint32_t i = 0; i < numEncodeInfo; i++)
-    {
-		auto &encodeInfo = pEncodeInfo[i];
-		codecs[i] = new Vision::FFCodec{encodeInfo};
-    }
+	if (audioEncodeInfo.codecId != CodecId::None)
+	{
+		audioEncoder = new Vision::FFCodec{audioEncodeInfo};
+	}
 
     muxer = new Vision::FFDemuxer;
-	if (muxer->Open(filepath, codecs.data(), numEncodeInfo) != CodecError::Success)
+    if (muxer->Open(filepath, videoEncoder, audioEncoder, nullptr, streamInfos) != CodecError::Success)
     {
 		muxer.Reset();
         return;
@@ -171,15 +164,6 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
 #ifdef IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
     timer.Start();
 #endif
-}
-
-
-VideoOutput::~VideoOutput()
-{
-    for (size_t i = 0; i < codecs.size(); i++)
-    {
-		delete codecs[i];
-    }
 }
 
 void VideoOutput::EnqueueVideoFrame(Picture &&_picture)
@@ -336,8 +320,8 @@ bool VideoOutput::operator !() const
 	return !muxer;
 }
 
-VideoOutputComponent::VideoOutputComponent(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
-    v{new VideoOutput{filepath, pEncodeInfo, numEncodeInfo}}
+VideoOutputComponent::VideoOutputComponent(const String &filepath, const EncodeInfo &videoEncodeInfo, const EncodeInfo &audioEncodeInfo, const std::vector<MediaType> &streamInfos) :
+    v{new VideoOutput{filepath, videoEncodeInfo, audioEncodeInfo, std::move(streamInfos)}}
 {
 
 }

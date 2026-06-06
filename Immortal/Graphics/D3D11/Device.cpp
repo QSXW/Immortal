@@ -97,7 +97,7 @@ SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
 	return new GraphicsPipeline{ this };
 }
 
-SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
+SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
 {
 	return new Buffer{ this, size, type };
 }

@@ -24,7 +24,7 @@ Window *Window::CreateInstance(Anonymous handle, WindowType type)
 Window *Window::CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type)
 {
 #ifdef _WIN32
-	if (type == WindowType::None)
+	if (type != WindowType::GLFW)
     {
         return new DirectWindow{ title, width, height };
     }

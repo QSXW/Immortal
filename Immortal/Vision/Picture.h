@@ -76,11 +76,6 @@ public:
         return !!shared;
     }
 
-    bool operator!=(const Picture &other)
-    {
-		return shared != other.shared;
-    }
-
     void SetRelease(std::function<void(void*)> &&func)
     {
         shared->SetRelease(std::move(func));

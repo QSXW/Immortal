@@ -79,11 +79,6 @@ public:
 		return pushConstants;
     }
 
-    ShaderStage GetStage() const
-    {
-		return stage;
-    }
-
     D3D12_SHADER_VISIBILITY GetVisibility() const
     {
 		return visibility;
@@ -97,13 +92,9 @@ public:
 protected:
     void Reflect();
 
-    void SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflection);
-
-    void SetupDescriptorRanges(ComPtr<ID3D12LibraryReflection> libraryReflection);
+    void SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> reflector);
 
 protected:
-	ShaderStage stage;
-
 	std::vector<uint8_t> dxil;
 
     std::vector<DescriptorRange> descriptorRanges;

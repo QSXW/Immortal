@@ -498,7 +498,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_NewFrame()
     }
 }
 
-IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, CommandBuffer *commandBuffer)
+IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue)
 {
     int width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
     int height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
@@ -529,12 +529,12 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
 
     if (!fr->vertexBuffer || fr->vertexBuffer->GetSize() < totalVertexSize)
     {
-		fr->vertexBuffer = bd->device->CreateBuffer(BufferType::Vertex, totalVertexSize + DEFAULT_VERTEX_SIZE);
+        fr->vertexBuffer = bd->device->CreateBuffer(totalVertexSize + DEFAULT_VERTEX_SIZE, BufferType::Vertex);
     }
 
     if (!fr->indexBuffer || fr->indexBuffer->GetSize() < totalIndexSize)
     {
-		fr->indexBuffer = bd->device->CreateBuffer(BufferType::Index, totalIndexSize + DEFAULT_INDEX_SIZE);
+        fr->indexBuffer = bd->device->CreateBuffer(totalIndexSize + DEFAULT_INDEX_SIZE, BufferType::Index);
     }
 
     if (bd->device->GetBackendAPI() == BackendAPI::OpenGL || bd->device->GetBackendAPI() == BackendAPI::D3D11)
@@ -667,6 +667,7 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
                         {
                             descriptorSet = fr->descriptorSets[texture];
                         }
+						texture->SetEvent(gpuEvent, syncValue);
                     }
                     commandBuffer->SetDescriptorSet(descriptorSet);
                     lastTexture = texture;
@@ -698,7 +699,7 @@ IMGUI_IMPL_API bool ImGui_ImplImmortal_CreateFontsTexture()
     uint32_t uploadPitch = SLALIGN(width * 4, TextureAlignment);
     uint32_t uploadSize = height * uploadPitch;
 
-    URef<Buffer> buffer = bd->device->CreateBuffer(BufferType::TransferSource, uploadSize);
+    URef<Buffer> buffer = bd->device->CreateBuffer(uploadSize, BufferType::TransferSource);
 
     void *mapped = nullptr;
     buffer->Map(&mapped, uploadSize, 0);
@@ -792,12 +793,12 @@ static void ImGui_ImplImmortal_RenderWindow(ImGuiViewport *viewport, void *rende
         vd->gpuEvent->Wait(vd->syncValues[vd->syncPoint], 0xffffff);
         CommandBuffer *commandBuffer = vd->commandBuffers[vd->syncPoint];
 
-        const ClearValue clearValue = {};
+        const float clearColor[4] = {};
         RenderTarget *renderTarget = vd->swapchain->GetCurrentRenderTarget();
 
         commandBuffer->Begin();
-		commandBuffer->BeginRenderTarget(renderTarget, &clearValue);
-		ImGui_ImplImmortal_RenderDrawData(viewport->DrawData, commandBuffer);
+        commandBuffer->BeginRenderTarget(renderTarget, clearColor);
+		ImGui_ImplImmortal_RenderDrawData(viewport->DrawData, commandBuffer, vd->gpuEvent, vd->gpuEvent->GetSyncPoint());
         commandBuffer->EndRenderTarget();
         commandBuffer->End();
 

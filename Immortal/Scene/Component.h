@@ -17,7 +17,6 @@
 #include "SceneCamera.h"
 #include "Codec.h"
 #include "Demuxer.h"
-#include "Render/Material.h"
 #include <map>
 
 namespace Immortal
@@ -124,13 +123,13 @@ struct MeshComponent : public Component
 
     }
 
-    MeshComponent(Ref<Immortal::Mesh> mesh) :
+    MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) :
         Mesh{ mesh }
     {
 
     }
 
-    operator Ref<Immortal::Mesh>()
+    operator std::shared_ptr<Immortal::Mesh>()
     {
         return Mesh;
     }
@@ -141,7 +140,7 @@ struct MeshComponent : public Component
         return *this;
     }
 
-    Ref<Immortal::Mesh> Mesh;
+    std::shared_ptr<Immortal::Mesh> Mesh;
 };
 
 struct MaterialComponent : public Component
@@ -156,47 +155,28 @@ struct MaterialComponent : public Component
     struct Reference
     {
         Reference() :
-		    Name{"Untitled"},
             AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
             Metallic{ 1.0f },
-            Roughness{ 1.0f },
-		    Opacity{1.0f}
+            Roughness{ 1.0f }
         {
-            Textures.Albedo    = Graphics::Preset()->Textures.White;
-			Textures.Normal    = Graphics::Preset()->Textures.Normal;
-            Textures.Specular  = Textures.Albedo;
-            Textures.Metallic  = Textures.Albedo;
+            Textures.Albedo = Graphics::Preset()->Textures.White;
+			Textures.Normal = Graphics::Preset()->Textures.Normal;
+            Textures.Metallic = Textures.Albedo;
             Textures.Roughness = Textures.Albedo;
-			Textures.AmbientOcclusion = Textures.Albedo;
+            Textures.AO = Textures.Albedo;
         }
 
         struct {
             Ref<Texture> Albedo;
             Ref<Texture> Normal;
-            Ref<Texture> Specular;
-			Ref<Texture> Metallic;
+            Ref<Texture> Metallic;
             Ref<Texture> Roughness;
-			Ref<Texture> AmbientOcclusion;
+            Ref<Texture> AO;
         } Textures;
 
-        struct
-		{
-			String Diffuse;
-			String Normal;
-			String Specular;
-			String Metallic;
-			String Roughness;
-			String AmbientOcclusion;
-		} Pathes;
-
-        std::string Name;
         Vector4 AlbedoColor;
-		Vector4 Specular;
-		Vector4 Ambient;
-		Vector4 Emissive;
         float   Metallic;
         float   Roughness;
-        float   Opacity;
     };
 
     std::vector<Reference> References;

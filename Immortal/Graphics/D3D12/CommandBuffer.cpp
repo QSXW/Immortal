@@ -118,20 +118,7 @@ void CommandBuffer::SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline)
 
 void CommandBuffer::SetComputePipeline(ComputePipeline *computePipeline)
 {
-	ID3D12PipelineState *pipelineState = *computePipeline;
-	if (pipelineState)
-	{
-		commandList.SetPipelineState(pipelineState);
-	}
-	else
-	{
-		ComPtr<ID3D12GraphicsCommandList10> commandList10;
-		DX_CHECK(commandList.QueryInterface(commandList10.GetAddressOf()));
-
-		D3D12_SET_PROGRAM_DESC desc = computePipeline->GetSetProgramDesc();
-		commandList10->SetProgram(&desc);
-	}
-
+	commandList.SetPipelineState(*computePipeline);
 	commandList.SetComputeRootSignature(computePipeline->GetRootSignature());
 }
 
@@ -274,14 +261,10 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 		{
 			commandList.PushGraphicsConstant(size, pData, offset, pipeline->GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY_PIXEL));
 		}
-		if (stage & ShaderStage::Mesh)
-		{
-			commandList.PushGraphicsConstant(size, pData, offset, pipeline->GetPushConstantRootParameterIndex(D3D12_SHADER_VISIBILITY_MESH));
-		}
 	}
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const ClearValue *pClearValue)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
 {
 	renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 
@@ -323,14 +306,14 @@ void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const Cl
 	for (size_t i = 0; i < colorBuffers.size(); i++)
 	{
 		rtvDescriptorHandle[i] = rtvDescriptor[i];
-		commandList.ClearRenderTargetView(rtvDescriptorHandle[i], (float *)&pClearValue[i]);
 	}
 
+	commandList.ClearRenderTargetView(rtvDescriptorHandle[0], pClearColor);
 	if (dsvDescriptor.ptr)
 	{
-		auto &clearValue = pClearValue[colorBuffers.size()];
 		dstDescriptorHandle = &dsvDescriptor;
-		commandList.ClearDepthStencilView(*dstDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH, clearValue.depthStencil.depth, clearValue.depthStencil.stencil);
+		commandList.ClearDepthStencilView(*dstDescriptorHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0);
+
 	}
 	commandList.SetRenderTargets(rtvDescriptorHandle, uint32_t(colorBuffers.size()), false, dstDescriptorHandle);
 }
@@ -379,8 +362,8 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 		uint32_t width  = texture->GetWidth() >> i;
 		uint32_t height = texture->GetHeight() >> i;
 		descriptorSet->Set(0, sampler);
-		descriptorSet->Set(0, texture->GetDescriptor(i - 1), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
-		descriptorSet->Set(1, texture->GetUAVDescriptor(i),  D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
+		descriptorSet->Set(0, texture->GetDescriptor(i - 1), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		descriptorSet->Set(1, texture->GetUAVDescriptor(i),  D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		SetPipeline(pipeline);
 		SetDescriptorSet(descriptorSet);
@@ -447,12 +430,11 @@ void CommandBuffer::CopyBufferToImage(SuperTexture *_texture, uint32_t subresour
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 }
 
-void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect)
+void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_texture, uint32_t subresource, size_t bufferRowLength)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
 	Buffer *buffer   = InterpretAs<Buffer>(_buffer);
 
-	Format format = texture->SuperTexture::GetFormat();
 	D3D12_TEXTURE_COPY_LOCATION dstLocation = {
 		.pResource = *buffer,
 		.Type      = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
@@ -487,26 +469,7 @@ void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_textu
 		commandList.ResourceBarrier(&barrier, 1);
 	}
 
-	D3D12_BOX box;
-	D3D12_BOX *pBox = nullptr;
-	if (pRect)
-	{
-		box = D3D12_BOX{
-		    .left   = pRect->left,
-		    .top    = pRect->top,
-		    .front  = 0,
-		    .right  = pRect->right,
-		    .bottom = pRect->bottom,
-		    .back   = 1,
-		};
-
-		auto &footprint = dstLocation.PlacedFootprint.Footprint;
-		footprint.Width  = pRect->right - pRect->left;
-		footprint.Height = pRect->bottom - pRect->top;
-		pBox = &box;
-	}
-
-	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, pBox);
+	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
 	barrier.Swap();
 	commandList.ResourceBarrier(&barrier, 1);
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
@@ -629,18 +592,6 @@ void CommandBuffer::DispatchRays(const DeviceAddressRegion *pRayGenerationShader
 	commandList.DispatchRays(&desc);
 }
 
-void CommandBuffer::DispatchGraph(const DispatchGraphDescription *pDesc)
-{
-	D3D12_DISPATCH_GRAPH_DESC desc = {
-		.Mode         = (D3D12_DISPATCH_MODE) pDesc->mode,
-		.NodeCPUInput = (D3D12_NODE_CPU_INPUT &)pDesc->nodeCpuInput
-	};
-
-	ComPtr<ID3D12GraphicsCommandList10> commandList10;
-	DX_CHECK(commandList.QueryInterface(commandList10.GetAddressOf()));
-	commandList10->DispatchGraph(&desc);
-}
-
 void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
@@ -661,31 +612,6 @@ void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, P
 
 	commandList.ResourceBarrier(&barrier, 1);
 	texture->SetState(newState);
-}
-
-void CommandBuffer::SetShaderResource(uint32_t slot, GpuVirtualAddress address)
-{
-	const D3D12_DESCRIPTOR_RANGE_TYPE *rangeTypes = pipeline->GetDescriptorRangeType();
-	auto &descriptorTables = pipeline->GetDescriptorTables();
-	uint32_t index = descriptorTables[slot].RootParameterIndex;
-
-	switch (rangeTypes[slot])
-	{
-		case D3D12_DESCRIPTOR_RANGE_TYPE_CBV:
-			commandList.Handle()->SetGraphicsRootConstantBufferView(index, address);
-			break;
-
-		case D3D12_DESCRIPTOR_RANGE_TYPE_SRV:
-			commandList.Handle()->SetGraphicsRootShaderResourceView(index, address);
-			break;
-
-		case D3D12_DESCRIPTOR_RANGE_TYPE_UAV:
-			commandList.Handle()->SetGraphicsRootUnorderedAccessView(index, address);
-			break;
-
-		default:
-			break;
-	}
 }
 
 }

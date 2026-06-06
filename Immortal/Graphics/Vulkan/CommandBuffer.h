@@ -1199,7 +1199,7 @@ public:
 
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
 
-	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const ClearValue *pClearValues) override;
+	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const float *pClearColor) override;
 
 	virtual void EndRenderTarget() override;
 
@@ -1207,13 +1207,9 @@ public:
 
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
 
-    virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) override;
-
     virtual void MemoryCopy(SuperBuffer *buffer, uint32_t size, const void *data, uint32_t offset) override;
 
     virtual void MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) override;
-
-    virtual void MemoryCopy(SuperBuffer *dst, uint32_t dstOffset, SuperBuffer *src, uint32_t srcOffset, size_t size) override;
 
 	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
 
@@ -1305,6 +1301,11 @@ public:
     void End(const VkVideoEndCodingInfoKHR *pEndInfo)
     {
         EndVideoCodingKHR(pEndInfo);
+    }
+
+    void PushConstants(VkPipelineLayout pipelineLayout, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
+    {
+        PushConstants(pipelineLayout, (VkShaderStageFlags)stage, offset, size, data);
     }
 
 protected:

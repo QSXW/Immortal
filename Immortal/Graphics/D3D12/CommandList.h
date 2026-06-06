@@ -228,7 +228,7 @@ public:
     
     void PushGraphicsConstant(uint32_t size, const void *data, uint32_t offset, UINT rootParameterIndex = 0)
     {
-		SetGraphicsRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset / 4);
+		SetGraphicsRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
     }
 
     void SetComputeRoot32BitConstants(UINT rootParameterIndex, UINT num32BitValuesToSet, const void *pSrcData, UINT dstOffsetIn32BitValues)
@@ -239,7 +239,7 @@ public:
 
     void PushComputeConstant(uint32_t size, const void *data, uint32_t offset, UINT rootParameterIndex = 0)
     {
-		SetComputeRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset / 4);
+		SetComputeRoot32BitConstants(rootParameterIndex, SLALIGN(size, sizeof(uint32_t)) / 4, data, offset);
     }
 
     void OMSetBlendFactor(const float *blendFactor)

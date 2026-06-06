@@ -75,9 +75,6 @@ class String
 public:
 	static constexpr auto npos = std::string::npos;
 
-    using T    = std::u8string;
-    using View = std::u8string_view;
-
 public:
 	String() :
 	    _s{},
@@ -113,8 +110,8 @@ public:
         }
     }
 
-    String(const std::string_view &view, StringEncoding encoding = StringEncoding::ASCII) :
-	    _s{encoding == StringEncoding::UTF8 ? (const std::u8string_view &)view : String2U8String(view)},
+    String(const std::string_view &view) :
+	    _s{String2U8String(view)},
 	    encoding{ StringEncoding::UTF8 }
     {
 
@@ -243,7 +240,7 @@ public:
 		return std::filesystem::path(_s).wstring();
     }
 
-    const std::u8string &GetU8String() const
+    std::u8string GetU8String() const
     {
 		return _s;
     }
@@ -289,11 +286,6 @@ public:
 		return _s.substr(offset, count);
     }
 
-    const char &Back() const
-    {
-		return _s.back();
-    }
-
     void Swap(String &other)
     {
 		_s.swap(other._s);
@@ -314,37 +306,6 @@ public:
     {
 		return {(const char *)_s.c_str(), (const char *)_s.c_str() + _s.size()};
     }
-
-    std::u8string_view GetFileExtension() const
-    {
-		auto dot = _s.rfind('.', _s.size() - 1);
-        if (dot != npos)
-        {
-			return std::u8string_view{_s.c_str() + dot + 1, _s.c_str() + _s.size()};
-        }
-
-	    return std::u8string_view{};
-    }
-   
-    View GetStem() const
-	{
-		const T::value_type *start = _s.data();
-
-		size_t offset = _s.size() - 1;
-		auto lastDot = _s.rfind('.', offset);
-		if (lastDot != std::u8string::npos)
-        {
-			offset = lastDot;
-        }
-
-        auto lastSlash = _s.find_last_of(u8"/\\", offset);
-		if (lastSlash != T::npos)
-		{
-			start = &_s[lastSlash + 1];
-		}
-
-		return View{start, &_s[offset] };
-	}
 
     friend String operator+(const String &left, const String &right);
 

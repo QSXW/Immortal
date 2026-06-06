@@ -86,15 +86,8 @@ public:
 		return (const T *)GetProperty(T::Type);
     }
 
-    MediaType GetMediaType() const
-    {
-		return mediaType;
-    }
-
 protected:
     Picture picture;
-
-    MediaType mediaType;
 };
 
 class IMMORTAL_API VideoCodec : public Interface::Codec
@@ -158,7 +151,6 @@ enum class CodecId
 
 struct EncodeInfo
 {
-	MediaType mediaType;
 	CodecId codecId;
 	union
 	{
