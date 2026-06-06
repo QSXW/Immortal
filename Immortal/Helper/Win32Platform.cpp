@@ -203,8 +203,13 @@ std::optional<String> FileDialogs::BrowserFolder()
 	return {};
 }
 
-static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT operation, const std::filesystem::path &dest = {})
+static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT operation, const std::filesystem::path &dest = {}, bool showProgress = false)
 {
+	if (paths.empty())
+	{
+		return false;
+	}
+
 	Microsoft::WRL::ComPtr<IFileOperation> pFileOp;
 	HRESULT hr = CoCreateInstance(CLSID_FileOperation, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOp));
 	if (FAILED(hr))
@@ -212,7 +217,13 @@ static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT 
 		return false;
 	}
 
+	pFileOp->SetOwnerWindow(GetActiveWindow());
+
 	DWORD dwFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_RENAMEONCOLLISION;
+	if (showProgress)
+	{
+		dwFlags |= FOF_SIMPLEPROGRESS | FOF_WANTNUKEWARNING;
+	}
 	hr = pFileOp->SetOperationFlags(dwFlags);
 	if (FAILED(hr))
 	{
@@ -267,8 +278,14 @@ static bool FileOperation(const std::vector<std::filesystem::path> &paths, UINT 
 	}
 
 	hr = pFileOp->PerformOperations();
-	
-	return SUCCEEDED(hr);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	BOOL aborted = FALSE;
+	hr = pFileOp->GetAnyOperationsAborted(&aborted);
+	return SUCCEEDED(hr) && !aborted;
 }
 
 bool FileManagement::Cut(const std::vector<std::filesystem::path> &paths)
@@ -296,7 +313,7 @@ bool FileManagement::Paste(const std::filesystem::path &dest, const std::vector<
 
 bool FileManagement::MoveFileToReclycleBin(const std::vector<std::filesystem::path> &paths)
 {
-	return FileOperation(paths, FO_DELETE);
+	return FileOperation(paths, FO_DELETE, {}, true);
 }
 
 bool FileManagement::RevealInFileExplorer(const std::filesystem::path &path)

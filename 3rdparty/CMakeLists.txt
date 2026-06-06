@@ -116,7 +116,7 @@ add_library(glm INTERFACE)
 set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
 target_sources(glm INTERFACE ${GLM_DIR}/glm/glm.hpp)
 target_include_directories(glm INTERFACE ${GLM_DIR})
-
+target_compile_definitions(glm INTERFACE "GLM_FORCE_DEPTH_ZERO_TO_ONE")
 target_compile_definitions(glm INTERFACE
     GLM_FORCE_SWIZZLE
     GLM_FORCE_RADIANS
@@ -128,6 +128,16 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # target_compile_options(glm INTERFACE -std=c++17)
     target_compile_definitions(glm INTERFACE GLM_FORCE_CXX17)
 endif()
+
+# EnTT (header-only; track `master` in submodule — we use INTERFACE to avoid upstream CMake 3.28+)
+set(ENTT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/entt")
+if(NOT EXISTS "${ENTT_ROOT}/src/entt/entt.hpp")
+	message(FATAL_ERROR "EnTT not found at ${ENTT_ROOT}.\nInitialize the submodule:\n  git submodule update --init --recursive 3rdparty/entt\nOr add it:\n  git submodule add https://github.com/skypjack/entt.git 3rdparty/entt")
+endif()
+add_library(EnTT INTERFACE)
+add_library(EnTT::EnTT ALIAS EnTT)
+target_include_directories(EnTT SYSTEM INTERFACE "${ENTT_ROOT}/src")
+target_compile_features(EnTT INTERFACE cxx_std_20)
 
 # spdlog
 if (WIN32)
@@ -403,16 +413,89 @@ else()
 endif(Assimp_FOUND)
 
 # opencv
+set(IMMORTAL_OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/opencv" CACHE PATH "Path to bundled OpenCV directory")
+set(OPENCV_LINK_TARGET "")
+
+if (NOT OpenCV_DIR OR OpenCV_DIR MATCHES "-NOTFOUND$" OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
+    set(OPENCV_CONFIG_CANDIDATES
+        "${IMMORTAL_OPENCV_DIR}/build"
+        "${IMMORTAL_OPENCV_DIR}/opencv/build"
+        "${IMMORTAL_OPENCV_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/OpenCV/build"
+        "${CMAKE_CURRENT_SOURCE_DIR}/OpenCV/opencv/build"
+        "${CMAKE_CURRENT_SOURCE_DIR}/OpenCV")
+
+    foreach(OPENCV_CONFIG_DIR ${OPENCV_CONFIG_CANDIDATES})
+        if (EXISTS "${OPENCV_CONFIG_DIR}/OpenCVConfig.cmake")
+            set(OpenCV_DIR "${OPENCV_CONFIG_DIR}" CACHE PATH "The directory containing OpenCVConfig.cmake" FORCE)
+            break()
+        endif()
+    endforeach()
+endif()
+
 find_package(OpenCV QUIET)
 if (OpenCV_FOUND)
     set(HAVE_OPENCV "${OpenCV_VERSION_MAJOR}")
+
+    add_library(OpenCVImmortal INTERFACE)
+    add_library(OpenCV::Immortal ALIAS OpenCVImmortal)
+    if (OpenCV_INCLUDE_DIRS)
+        target_include_directories(OpenCVImmortal INTERFACE ${OpenCV_INCLUDE_DIRS})
+    endif()
+    if (OpenCV_LIBS)
+        target_link_libraries(OpenCVImmortal INTERFACE ${OpenCV_LIBS})
+    elseif(TARGET opencv_world)
+        target_link_libraries(OpenCVImmortal INTERFACE opencv_world)
+    endif()
+    set(OPENCV_LINK_TARGET OpenCVImmortal)
+
     if (WIN32)
-        set(OPENCV_BIN_DIR "${OpenCV_DIR}/x64/${OpenCV_RUNTIME}/bin")
+        set(OPENCV_BIN_DIR "")
+        set(OPENCV_RUNTIME_CANDIDATES)
+        if (OpenCV_RUNTIME)
+            list(APPEND OPENCV_RUNTIME_CANDIDATES "${OpenCV_RUNTIME}")
+        endif()
+        list(APPEND OPENCV_RUNTIME_CANDIDATES vc17 vc16 vc15 vc14)
+        list(REMOVE_DUPLICATES OPENCV_RUNTIME_CANDIDATES)
+
+        foreach(OPENCV_RUNTIME_NAME ${OPENCV_RUNTIME_CANDIDATES})
+            if (EXISTS "${OpenCV_DIR}/x64/${OPENCV_RUNTIME_NAME}/bin")
+                set(OPENCV_BIN_DIR "${OpenCV_DIR}/x64/${OPENCV_RUNTIME_NAME}/bin")
+                break()
+            endif()
+        endforeach()
+
+        if (NOT OPENCV_BIN_DIR AND EXISTS "${OpenCV_DIR}/bin")
+            set(OPENCV_BIN_DIR "${OpenCV_DIR}/bin")
+        endif()
+
+        if (OPENCV_BIN_DIR)
+            set(OPENCV_LIB_SUFFIX "${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}")
+            foreach(OPENCV_RUNTIME_LIB ${OPENCV_LIB})
+                set(OPENCV_RELEASE_DLL "${OPENCV_BIN_DIR}/${OPENCV_RUNTIME_LIB}${OPENCV_LIB_SUFFIX}.dll")
+                set(OPENCV_DEBUG_DLL "${OPENCV_BIN_DIR}/${OPENCV_RUNTIME_LIB}${OPENCV_LIB_SUFFIX}d.dll")
+
+                if (EXISTS "${OPENCV_DEBUG_DLL}")
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:Debug>:${OPENCV_DEBUG_DLL}>)
+                elseif(EXISTS "${OPENCV_RELEASE_DLL}")
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:Debug>:${OPENCV_RELEASE_DLL}>)
+                endif()
+
+                if (EXISTS "${OPENCV_RELEASE_DLL}")
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:Release>:${OPENCV_RELEASE_DLL}>)
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:RelWithDebInfo>:${OPENCV_RELEASE_DLL}>)
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:MinSizeRel>:${OPENCV_RELEASE_DLL}>)
+                elseif(EXISTS "${OPENCV_DEBUG_DLL}")
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:Release>:${OPENCV_DEBUG_DLL}>)
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:RelWithDebInfo>:${OPENCV_DEBUG_DLL}>)
+                    list(APPEND OPENCV_SHARED $<$<CONFIG:MinSizeRel>:${OPENCV_DEBUG_DLL}>)
+                endif()
+            endforeach()
+
+            list(APPEND IMMORTAL_3RDPARTY_RUNTIME ${OPENCV_SHARED})
+            set(OPENCV_SHARED "${OPENCV_SHARED}" PARENT_SCOPE)
+        endif()
     endif(WIN32)
-    set(OPENCV_LIB_SUFFIX "${OpenCV_VERSION_MAJOR}${OpenCV_VERSION_MINOR}${OpenCV_VERSION_PATCH}${SHARED_SUFFIX}.dll")
-    list(TRANSFORM OPENCV_LIB PREPEND "${OPENCV_BIN_DIR}/")
-    list(TRANSFORM OPENCV_LIB APPEND "${OPENCV_LIB_SUFFIX}")
-    set(OPENCV_SHARED "${OPENCV_LIB}" PARENT_SCOPE)
 endif(OpenCV_FOUND)
 
 # dav1d
@@ -601,10 +684,14 @@ add_subdirectory(concurrentqueue)
 
 add_subdirectory(meshoptimizer)
 
+add_subdirectory(json)
+
 add_library("external" INTERFACE)
 
 target_link_libraries("external" INTERFACE
     glm glad glfw glslang glslang-default-resource-limits
+    EnTT::EnTT
+    nlohmann_json::nlohmann_json
     Vulkan-Headers imgui spdlog_header_only
     SPIRV spirv-cross-glsl tweeny meshoptimizer
     $<$<BOOL:${Assimp_FOUND}>:assimp::assimp>
@@ -616,7 +703,7 @@ target_link_libraries("ExternalVision" INTERFACE
     libraw::libraw
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
-    $<$<BOOL:${OpenCV_FOUND}>:opencv_world>
+    ${OPENCV_LINK_TARGET}
     $<$<BOOL:${FFmpeg_FOUND}>:FFmpeg>
     $<$<BOOL:${LIBJPEGTURBO_FOUND}>:turbojpeg>
     $<$<BOOL:${HAVE_NVJPEG}>:nvJPEG>

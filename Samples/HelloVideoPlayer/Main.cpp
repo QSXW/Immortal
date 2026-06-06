@@ -201,7 +201,7 @@ int main(int, char **)
 				progress = f;
 				Animator *animator = videoPlayerComponent->GetAnimator();
 				audioDevice->OnPauseDown();
-				videoPlayerComponent->Seek(animator->TotalSeconds() * progress, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+				videoPlayerComponent->Seek(MediaType::Video, animator->TotalSeconds() * progress, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
 				audioDevice->Reset();
 				audioDevice->OnPauseRelease();
             }

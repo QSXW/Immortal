@@ -9,7 +9,7 @@ namespace Immortal
 namespace D3D12
 {
 
-Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount) :
+Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount, const ClearValue *pOptimizedClearValue) :
     Super{},
     NonDispatchableHandle{ device },
     descriptor{},
@@ -18,10 +18,10 @@ Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height
     uavDescriptorHeap{}
 {
 	SetMeta(_format, width, height, mipLevels, arrayLayers);
-	Construct(_format, width, height, mipLevels, arrayLayers, type, sampleCount);
+	Construct(_format, width, height, mipLevels, arrayLayers, type, sampleCount, pOptimizedClearValue);
 }
 
-void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount)
+void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount, const ClearValue *pOptimizedClearValue)
 {
 	format = _format;
     D3D12_HEAP_PROPERTIES props = {
@@ -52,15 +52,29 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
     if (type & TextureType::ColorAttachment)
     {
+		if (pOptimizedClearValue)
+		{
+			memcpy(clearValues.Color, pOptimizedClearValue->color.float32, sizeof(clearValues.Color));
+		}
 		pClearValues = &clearValues;
 		flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
     if (type & TextureType::DepthStencilAttachment)
     {
-		clearValues.DepthStencil = {
-			.Depth   = 1.0f,
-            .Stencil = 0
-        };
+		if (pOptimizedClearValue)
+		{
+			clearValues.DepthStencil = {
+			    .Depth   = pOptimizedClearValue->depthStencil.depth,
+			    .Stencil = (UINT8)pOptimizedClearValue->depthStencil.stencil,
+			};
+		}
+		else
+		{
+			clearValues.DepthStencil = {
+			    .Depth   = 1.0f,
+			    .Stencil = 0,
+			};
+		}
 		pClearValues = &clearValues;
 		flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }

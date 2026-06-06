@@ -19,16 +19,14 @@ set(ALGORITHM_FILES
 set(FRAMEWORK_FILES
     Framework/Application.cpp
     Framework/Application.h
+    Framework/UiPresentScale.cpp
+    Framework/UiPresentScale.h
     Framework/Layer.cpp
     Framework/Layer.h
     Framework/LayerStack.cpp
     Framework/LayerStack.h
     Framework/Timer.h
     Framework/Utils.h)
-
-set(EDITOR_FILES
-    Editor/EditorCamera.cpp
-    Editor/EditorCamera.h)
 
 set(GUI_FILES
     GuiLayer.cpp
@@ -84,16 +82,21 @@ set(SCENE_FILES
     Component.cpp
     Component.h
     Object.h
-    entt.hpp
+    EditorCamera.cpp
+    EditorCamera.h
     FilterGraphComponent.cpp
     FilterGraphComponent.h
     GameObject.h
     ObserverCamera.cpp
     ObserverCamera.h
+    GameScene.cpp
+    GameScene.h
     Scene.cpp
     Scene.h
     SceneCamera.cpp
     SceneCamera.h
+    SceneSerializer.cpp
+    SceneSerializer.h
     ScriptComponent.cpp
     SpriteRendererComponent.cpp
     VideoOutputComponent.cpp
@@ -106,10 +109,6 @@ set(SCRIPT_FILES
     Script/ScriptEngine.cpp
     Script/ScriptEngine.h)
 
-set(SERIALIZER_FILES
-    Serializer/SceneSerializer.cpp
-    Serializer/SceneSerializer.h)
-
 set(STRING_FILES
     String/IString.h
     String/LanguageSettings.cpp
@@ -121,6 +120,9 @@ set(RENDER_FILES
     DataSet.h
     FrameGraph.cpp
     FrameGraph.h
+    GObject.cpp
+    GObject.h
+    FrameGraphDebugUi.h
     Graphics.cpp
     Graphics.h
     Material.h
@@ -130,8 +132,18 @@ set(RENDER_FILES
     MeshletGenerator.h
     MeshletTask.cpp
     MeshletTask.h
+    MeshletShadowTask.cpp
+    MeshletShadowTask.h
     DeferredTask.cpp
     DeferredTask.h
+    PostProcessTask.cpp
+    PostProcessTask.h
+    DepthToRgbTask.cpp
+    DepthToRgbTask.h
+    SelectionOutlineTask.cpp
+    SelectionOutlineTask.h
+    EditorGridTask.cpp
+    EditorGridTask.h
     IBLTask.cpp
     IBLTask.h
     OrthographicCamera.cpp
@@ -152,7 +164,6 @@ set(SYNC_FILES
 set(HELPER_FILES
     Arguments.cpp
     Arguments.h
-    nlohmann_json.h
     json.h
     Platform.h)
 
@@ -204,7 +215,6 @@ list(TRANSFORM SYNC_FILES    PREPEND "Sync/"            )
 source_group("\\"                  FILES ${CORE_FILES}      )
 source_group("Algorithm\\"         FILES ${ALGORITHM_FILES} )
 source_group("Framework\\"         FILES ${FRAMEWORK_FILES} )
-source_group("Editor\\"            FILES ${EDITOR_FILES}    )
 source_group("Image\\"             FILES ${IMAGE_FILES}     )
 source_group("ImGui\\"             FILES ${GUI_FILES}       )
 source_group("Math\\"              FILES ${MATH_FILES}      )
@@ -215,7 +225,6 @@ source_group("Physics\\"           FILES ${PHYSICS_FILES}   )
 source_group("Render\\"            FILES ${RENDER_FILES}    )
 source_group("Scene\\"             FILES ${SCENE_FILES}     )
 source_group("Script\\"            FILES ${SCRIPT_FILES}    )
-source_group("Serializer\\"        FILES ${SERIALIZER_FILES})
 source_group("String\\"            FILES ${STRING_FILES}    )
 source_group("Sync\\"              FILES ${SYNC_FILES}      )
 source_group("Helper\\"            FILES ${HELPER_FILES}    )
@@ -226,7 +235,6 @@ set(PROJECT_FILES
     ${CORE_FILES}
     ${ALGORITHM_FILES}
     ${FRAMEWORK_FILES}
-    ${EDITOR_FILES}
     ${FS_FILES}
     ${FILTER_FILES}
     ${IMAGE_FILES}
@@ -239,7 +247,6 @@ set(PROJECT_FILES
     ${RENDER_FILES}
     ${SCENE_FILES}
     ${SCRIPT_FILES}
-    ${SERIALIZER_FILES}
     ${STRING_FILES}
     ${SYNC_FILES}
     ${HELPER_FILES}

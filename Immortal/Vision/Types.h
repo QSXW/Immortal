@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <atomic>
 
 namespace Immortal
 {
@@ -248,27 +249,55 @@ public:
 
 	void Complete()
 	{
-		completed = true;
+		completed.store(true);
+	}
+
+	bool IsCompleted() const
+	{
+		return completed.load();
 	}
 
 	void Cancel()
 	{
-		canceled = true;
+		canceled.store(true);
+	}
+
+	bool IsCanceled() const
+	{
+		return canceled.load();
 	}
 
 	void Pause()
 	{
-		paused = true;
+		paused.store(true);
+	}
+
+	void Resume()
+	{
+		paused.store(false);
+	}
+
+	void Reset()
+	{
+		canceled.store(false);
+		paused.store(false);
+		completed.store(false);
+		progress.store(0.0f);
+	}
+
+	bool IsPaused() const
+	{
+		return paused.load();
 	}
 
 	float GetProgress() const
 	{
-		return progress;
+		return progress.load();
 	}
 
 	void SetProgress(float value)
 	{
-		progress = value;
+		progress.store(value);
 	}
 
 private:
@@ -278,7 +307,7 @@ private:
 
 	std::atomic<bool> completed;
 
-	float progress;
+	std::atomic<float> progress;
 };
 
 struct ImageEncodeInfo
@@ -311,6 +340,21 @@ enum class CodecId
 	PNG,
 	WEBP,
 	JPEGXL,
+	AVIF,
+	MJPEG,
+	JPEG2000,
+	DPX,
+	TARGA,
+	PCX,
+	EXR,
+	SGI,
+	SUNRASTER,
+	JPEGLS,
+	FITS,
+	IFF_ILBM,
+	XBM_IMAGE,
+	XFACE,
+	QDRAW,
 	MPEG4,
 	RAW,
 	PCM_S16,
@@ -321,27 +365,33 @@ enum class CodecId
 
 struct CodecInfo
 {
-	void *handle;
-	MediaType mediaType;
-	CodecId codecId;
+	void *handle = nullptr;
+	MediaType mediaType = MediaType::Video;
+	CodecId codecId = CodecId::None;
 	union
 	{
-		uint32_t width;
+		uint32_t width = 0;
 		uint32_t sampleRate;
 	};
 
 	union
 	{
-		uint32_t height;
+		uint32_t height = 0;
 		Vision::ChannelLayout channelLayout;
 	};
 
-	Format format;
-	int bitRate;
-	int gopSize;
-	Rational framerate;
-	Rational timeBase;
-	Vision::DisplayOrientation displayOrientation;
+	Format format = Format::None;
+	int bitRate = 0;
+	int gopSize = 0;
+	Rational framerate{};
+	Rational timeBase{};
+	Rational sampleAspectRatio{};
+	Vision::DisplayOrientation displayOrientation{};
+	std::string encoderPreset;
+	std::string rateControl;
+	int crf = 0;
+	int maxBitRate = 0;
+	int bufferSize = 0;
 };
 
 }

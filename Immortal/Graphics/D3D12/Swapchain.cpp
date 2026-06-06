@@ -67,7 +67,8 @@ void Swapchain::CreateRenderTarget()
         DX_CHECK(resource->SetName(name.c_str()));
 #endif
 
-        Ref<Texture> texture = new Texture{ device, resource, D3D12_RESOURCE_STATE_RENDER_TARGET};
+        /* Back buffers start in COMMON; BeginRenderTarget emits COMMON -> RENDER_TARGET. */
+        Ref<Texture> texture = new Texture{ device, resource, D3D12_RESOURCE_STATE_COMMON};
         renderTargets[i] = new RenderTarget{  device };
         renderTargets[i]->SetColorAttachment(0, texture);
 		renderTargets[i]->BuildRenderTargetView();

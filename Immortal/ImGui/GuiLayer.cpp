@@ -4,6 +4,8 @@
 #include "ImGuiNotify.hpp"
 #include "imgui_impl_immortal.h"
 
+#include <cstdio>
+
 #include "Framework/Application.h"
 #include "Render/Graphics.h"
 
@@ -15,6 +17,8 @@
 
 #ifdef _WIN32
 #include <backends/imgui_impl_win32.h>
+#include "Graphics/Window/DirectWindow.h"
+#include <imgui_internal.h>
 #endif
 #include <backends/imgui_impl_glfw.h>
 
@@ -207,6 +211,20 @@ void GuiLayer::Begin()
 
 void GuiLayer::End()
 {
+#ifdef _WIN32
+	/** So WM_NCHITTEST can return HTCLIENT on menu items (borderless drag uses HTCAPTION in the menu strip). */
+	if (ImGuiWindow *mb = ImGui::FindWindowByName("##MainMenuBar"))
+	{
+		const ImRect r = mb->Rect();
+		const ImVec2 mp = ImGui::GetIO().MousePos;
+		const bool inMenu = r.Contains(mp);
+		DirectWindow::SetBorderlessCaptionPreferClient(inMenu && ImGui::IsAnyItemHovered());
+	}
+	else
+	{
+		DirectWindow::SetBorderlessCaptionPreferClient(false);
+	}
+#endif
     ImGui::Render();
 }
 
@@ -448,6 +466,14 @@ void GuiLayer::Render()
 		    { ImGuiCol_HeaderActive,         0x33ff8844},
         };
 
+		for (Widget *child : preDockspaceChildren)
+		{
+			if (child)
+			{
+				child->Draw();
+			}
+		}
+
 		dockspace->Render();
 
         StyleVarStack<float> styleVar{
@@ -468,42 +494,9 @@ void GuiLayer::Render()
     }
 
     static char title[128] = { 0 };
+    std::snprintf(title, sizeof(title), "%s", Application::Name());
 
     const auto &io = ImGui::GetIO();
-
-    auto backendAPI = device->GetBackendAPI();
-    const char *apiName = "Unknown";
-    switch (backendAPI)
-    {
-         case BackendAPI::D3D11:
-            apiName = "D3D11";
-            break;
-         case BackendAPI::D3D12:
-            apiName = "D3D12";
-            break;
-         case BackendAPI::Vulkan:
-            apiName = "Vulkan";
-            break;
-         case BackendAPI::Metal:
-            apiName = "Metal";
-            break;
-         case BackendAPI::OpenGL:
-            apiName = "OpenGL";
-            break;
-         default:
-            apiName = "Unknown";
-            break;
-    }
-
-    sprintf(
-        title,
-        "%s (Graphics API: %s) %.3f ms/frame (%.1f FPS)",
-        Application::Name(),
-        apiName,
-        1000.0f / io.Framerate,
-        io.Framerate
-    );
-
     TotalFrame++;
     TotalFrameRate += io.Framerate;
     Application::SetTitle(title);
@@ -512,10 +505,20 @@ void GuiLayer::Render()
 void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue)
 {
     auto &io = ImGui::GetIO();
-
+     
     auto width  = window->GetWidth();
     auto height = window->GetHeight();
     io.DisplaySize = { (float)width, (float)height };
+
+	if (Application::This && Application::This->UsesInternalHiResUi())
+	{
+		const float s = Application::This->GetUiRenderScale();
+		io.DisplayFramebufferScale = ImVec2(s, s);
+	}
+	else
+	{
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+	}
 
     ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
@@ -534,6 +537,14 @@ void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *
 void GuiLayer::AddChild(Widget *widget)
 {
     dockspace->AddChild(widget);
+}
+
+void GuiLayer::AddPreDockspaceChild(Widget *widget)
+{
+    if (widget)
+    {
+        preDockspaceChildren.emplace_back(widget);
+    }
 }
 
 static inline std::string ThemePath = { "Assets/json/theme.json" };

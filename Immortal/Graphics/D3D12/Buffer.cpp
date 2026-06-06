@@ -58,9 +58,15 @@ void Buffer::Construct(MemoryType memoryType, uint32_t byteStride)
         .Flags            = D3D12_RESOURCE_FLAG_NONE,
     };
 
+    const bool uploadHeap =
+        memoryType == MemoryType::Host && !(type & Type::TransferDestination);
+
     if (type & Type::Storage)
     {
-		desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        if (!uploadHeap)
+        {
+            desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+        }
     }
 
     if (isConstantBuffer)
@@ -89,12 +95,12 @@ void Buffer::Construct(MemoryType memoryType, uint32_t byteStride)
 		state = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	}
-    else if (type & Type::AccelerationStructure)
-    {
-        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-        state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-    }
+	else if (type & Type::AccelerationStructure)
+	{
+		heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
 
     DX_CHECK(device->CreateCommittedResource(
         &heapProperties,
@@ -136,18 +142,22 @@ void Buffer::Construct(MemoryType memoryType, uint32_t byteStride)
 
             device->CreateShaderResourceView(*this, &srvDesc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_SRV]);
 
-			D3D12_UNORDERED_ACCESS_VIEW_DESC desc {
-                .Format        = DXGI_FORMAT_UNKNOWN,
-			    .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
-                .Buffer = {
-				    .FirstElement         = 0,
-				    .NumElements          = UINT(GetSize() / byteStride),
-					.StructureByteStride  = UINT(byteStride),
-				    .CounterOffsetInBytes = 0,
-				    .Flags                = D3D12_BUFFER_UAV_FLAG_NONE,
-                }
-            };
-			device->CreateUnorderedAccessView(*this, nullptr, &desc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_UAV]);
+            if (!uploadHeap)
+            {
+                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc{
+                    .Format        = DXGI_FORMAT_UNKNOWN,
+                    .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+                    .Buffer =
+                        {
+                            .FirstElement         = 0,
+                            .NumElements          = UINT(GetSize() / byteStride),
+                            .StructureByteStride  = UINT(byteStride),
+                            .CounterOffsetInBytes = 0,
+                            .Flags                = D3D12_BUFFER_UAV_FLAG_NONE,
+                        },
+                };
+                device->CreateUnorderedAccessView(*this, nullptr, &uavDesc, descriptor[D3D12_DESCRIPTOR_RANGE_TYPE_UAV]);
+            }
 		}
     }
 

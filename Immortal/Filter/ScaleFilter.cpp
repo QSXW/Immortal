@@ -175,46 +175,28 @@ ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uin
     {
 		transform = Vector::Inverse(transform);
     }
-    if (true)
+
+    // Each ScaleFilter owns a private pipeline + descriptor set. We deliberately
+    // skip Graphics::GetPipeline / StorePipeline here: many concurrently active
+    // clips share the same shader name (e.g. "color_space_yuvp2rgba") but with
+    // different src/dst formats, color spaces, transforms and output sizes, and
+    // descriptor sets are bound to a specific pipeline instance. Caching by
+    // shader name would alias unrelated filters together, leak every superseded
+    // pipeline (the global map keeps a Ref alive forever) and risk descriptor /
+    // resource state collisions on the async compute thread.
+    Ref<Shader> shader = Graphics::CreateShaderByName(name);
+    if (!shader)
     {
-		Ref<Shader> shader = Graphics::CreateShaderByName(name);
-        if (!shader)
-        {
-			LOG_ERROR("Failed to create shader!");
-			return;
-        }
-		pipeline = device->CreateComputePipeline(shader);
+		LOG_ERROR("[ScaleFilter] Failed to create shader `{}`", name);
+		return;
     }
-    else
+    pipeline = device->CreateComputePipeline(shader);
+    if (!pipeline)
     {
-		auto path = Graphics::GetShaderAssetPath() / (name + ".hlsl");
-		name = name + "_input_transform";
-		pipeline = Graphics::GetPipeline(name);
-		if (!pipeline)
-        {
-			std::string source = Graphics::ReadShaderSource(path);
-            if (source.empty())
-            {
-			    return;
-            }
-
-            auto device = Graphics::GetDevice();
-
-            ShaderMacro macro = {
-		        .name       = "INPUT_TRANSFORM",
-		        .definition = "1",
-            };
-		    Ref<Shader> shader = device->CreateShader(name, ShaderStage::Compute, source, "main", &macro, 1);
-            if (!shader)
-            {
-			    LOG_ERROR("[ScaleFilter] Error when creating `{}` shader", name);
-			    return;
-            }
-		    pipeline = device->CreateComputePipeline(shader);
-        }
+		LOG_ERROR("[ScaleFilter] Failed to create compute pipeline for `{}`", name);
+		return;
     }
 
-    Graphics::StorePipeline(name, pipeline);
     descriptorSet = device->CreateDescriptorSet(pipeline);
 	sampler = device->CreateSampler(Filter::Linear, AddressMode::Clamp);
 	descriptorSet->Set(4, sampler);
@@ -268,7 +250,7 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 		descriptorSet->Set(slot++, output[i]);
 	}
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
         commandBuffer->SetPipeline(pipeline);
         uint32_t nThreadX = SLALIGN(output[0]->GetWidth()  / 32, 32);
         uint32_t nThreadY = SLALIGN(output[0]->GetHeight() / 32, 32);

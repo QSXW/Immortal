@@ -1,19 +1,23 @@
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+
 #include <Immortal.h>
+#include "Scene/GameScene.h"
 #include "Framework/Timer.h"
-#include "Render/AtmosphereTask.h"
-#include "Render/DeferredTask.h"
-#include "Render/IBLTask.h"
-#include "Render/MeshletTask.h"
-#include "Render/SkyboxTask.h"
-#include "Panel/Navigator.h"
 #include "Panel/HierarchyGraphics.h"
 #include "Panel/PropertyManager.h"
 #include "Panel/Tools.h"
 
 namespace Immortal
 {
+
+enum class SelectionHighlightMode
+{
+	Outline,
+	AABBBox
+};
 
 class WImGuizmo : public Widget
 {
@@ -22,6 +26,7 @@ public:
 	WIDGET_SET_PROPERTY(Type, type, ImGuizmo::OPERATION, ImGuizmo::OPERATION::INVALID)
 	WIDGET_SET_PROPERTY(SelectedObject, selectedObject, Object)
 	WIDGET_SET_POINTER(PrimaryCamera, primaryCamera, const Camera)
+	WIDGET_SET_PROPERTY(HighLightMode, highlightMode, SelectionHighlightMode, SelectionHighlightMode::Outline);
 
 public:
     WImGuizmo(Widget *parent = nullptr) :
@@ -32,6 +37,17 @@ public:
 
     virtual bool Draw() override
     {
+		MeshComponent *meshComp = nullptr;
+		if (selectedObject && selectedObject.HasComponent<MeshComponent>())
+		{
+			meshComp = &selectedObject.GetComponent<MeshComponent>();
+		}
+
+		if (selectedObject && highlightMode == SelectionHighlightMode::AABBBox && meshComp && meshComp->Mesh && primaryCamera)
+		{
+			DrawAABBWireframe(*meshComp);
+		}
+
 		if (selectedObject && type != ImGuizmo::OPERATION::INVALID)
 		{
 			auto [x, y] = ImGui::GetWindowPos();
@@ -42,26 +58,42 @@ public:
 			ImGuizmo::SetRect(x, y, w, h);
 
 			TransformComponent &transform = selectedObject.GetComponent<TransformComponent>();
-			const Matrix4 parent = transform.Transform();
+			const Matrix4 entityMat = transform.Transform();
 
 			bool submeshGizmo = false;
-			MeshComponent *meshComp = nullptr;
 			uint32_t subIdx = 0;
-			if (selectedObject.HasComponent<MeshComponent>())
+			if (meshComp && meshComp->Mesh && meshComp->Mesh->Size() > 1 && meshComp->SelectedDrawNodeIndex != UINT32_MAX)
 			{
-				meshComp = &selectedObject.GetComponent<MeshComponent>();
-				if (meshComp->Mesh && meshComp->Mesh->Size() > 1 && meshComp->SelectedDrawNodeIndex != UINT32_MAX)
-				{
-					meshComp->EnsureSubmeshLocalCount(meshComp->Mesh->Size());
-					submeshGizmo = true;
-					subIdx = meshComp->SelectedDrawNodeIndex;
-				}
+				meshComp->EnsureSubmeshLocalCount(meshComp->Mesh->Size());
+				submeshGizmo = true;
+				subIdx = meshComp->SelectedDrawNodeIndex;
 			}
 
-			Matrix4 manipulatedTransform = parent;
+			Vector3 pivot{ 0.0f, 0.0f, 0.0f };
+			bool hasPivot = false;
+			if (meshComp && meshComp->Mesh)
+			{
+				if (submeshGizmo)
+				{
+					pivot = meshComp->Mesh->NodeList()[subIdx].GetAABBCenter();
+				}
+				else
+				{
+					pivot = meshComp->Mesh->GetAABBCenter();
+				}
+				hasPivot = true;
+			}
+
+			Matrix4 baseMat = entityMat;
 			if (submeshGizmo && meshComp)
 			{
-				manipulatedTransform = parent * meshComp->SubmeshLocalTransform[subIdx];
+				baseMat = entityMat * meshComp->SubmeshLocalTransform[subIdx];
+			}
+
+			Matrix4 manipulatedTransform = baseMat;
+			if (hasPivot)
+			{
+				manipulatedTransform = baseMat * Vector::Translate(pivot);
 			}
 
 			Matrix4 cameraProjectionMatrix = primaryCamera->Projection();
@@ -84,23 +116,242 @@ public:
 
 			if (ImGuizmo::IsUsing())
 			{
+				Matrix4 realMat = hasPivot ? manipulatedTransform * Vector::Translate(-pivot) : manipulatedTransform;
+
 				if (submeshGizmo && meshComp)
 				{
-					meshComp->SubmeshLocalTransform[subIdx] = Vector::Inverse(parent) * manipulatedTransform;
+					meshComp->SubmeshLocalTransform[subIdx] = Vector::Inverse(entityMat) * realMat;
 				}
 				else
 				{
 					Vector3 rotation;
-					Vector::DecomposeTransform(manipulatedTransform, transform.Position, rotation, transform.Scale);
-
+					Vector::DecomposeTransform(realMat, transform.Position, rotation, transform.Scale);
 					Vector3 deltaRotation = rotation - transform.Rotation;
 					transform.Rotation += deltaRotation;
 				}
 			}
 		}
 
+		if (selectedObject && selectedObject.HasComponent<LightComponent>() && selectedObject.HasComponent<TransformComponent>() && primaryCamera)
+		{
+			DrawLightDirectionInViewport();
+		}
+
         return false;
     }
+
+private:
+	Ref<Texture> lightSunIcon;
+	bool lightSunIconLoadTried{};
+
+	void EnsureLightSunIcon()
+	{
+		if (lightSunIconLoadTried)
+		{
+			return;
+		}
+		lightSunIconLoadTried = true;
+		lightSunIcon = Graphics::CreateTexture("Assets/Icon/sun.png");
+	}
+
+	void DrawLightDirectionInViewport()
+	{
+		const LightComponent &light = selectedObject.GetComponent<LightComponent>();
+		const TransformComponent &tc = selectedObject.GetComponent<TransformComponent>();
+		if (light.LightType == LightComponent::Type::Point)
+		{
+			return;
+		}
+
+		const Vector3 origin = tc.Position;
+		const Vector3 dirToLight = light.DirectionWorld(*primaryCamera, tc);
+		Vector3 emitDir = -dirToLight;
+		const float elen2 = emitDir.x * emitDir.x + emitDir.y * emitDir.y + emitDir.z * emitDir.z;
+		if (elen2 < 1e-12f)
+		{
+			return;
+		}
+		emitDir = Vector::Normalize(emitDir);
+
+		const Vector3 camPos = primaryCamera->GetWorldPosition();
+		const float distCam = camPos.Distance(origin);
+		const float arrowLen = (std::max)(1.05f, (std::min)(16.0f, distCam * 0.088f));
+
+		Vector3 worldUp = TransformComponent::Up;
+		if (std::abs(Vector::Dot(emitDir, worldUp)) > 0.92f)
+		{
+			worldUp = TransformComponent::Right;
+		}
+		const Vector3 arrowU = Vector::Normalize(Vector::Cross(emitDir, worldUp));
+		const Vector3 arrowV = Vector::Normalize(Vector::Cross(arrowU, emitDir));
+
+		const Matrix4 vp = primaryCamera->ViewProjection();
+		const auto [wx, wy] = ImGui::GetWindowPos();
+		const auto [ww, wh] = ImGui::GetWindowSize();
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		const ImU32 colArrow = IM_COL32_WHITE;
+		const ImU32 colCube = IM_COL32(255, 200, 95, 220);
+
+		auto project = [&](const Vector3 &p, bool &behind) -> ImVec2 {
+			const Vector4 clip = vp * Vector4{ p, 1.0f };
+			behind = clip.w <= 1e-4f;
+			const float invW = 1.0f / (behind ? 1e-4f : clip.w);
+			const float ndcX = clip.x * invW;
+			const float ndcY = clip.y * invW;
+			return ImVec2(wx + (ndcX * 0.5f + 0.5f) * ww, wy + (-ndcY * 0.5f + 0.5f) * wh);
+		};
+
+		bool b0;
+		const ImVec2 s0 = project(origin, b0);
+
+		{
+			const float cubeHalf = (std::max)(0.28f, (std::min)(5.5f, distCam * 0.055f));
+			const Vector3 mn = origin - Vector3{ cubeHalf, cubeHalf, cubeHalf };
+			const Vector3 mx = origin + Vector3{ cubeHalf, cubeHalf, cubeHalf };
+			const Vector3 corners[8] = {
+			    { mn.x, mn.y, mn.z }, { mx.x, mn.y, mn.z },
+			    { mx.x, mx.y, mn.z }, { mn.x, mx.y, mn.z },
+			    { mn.x, mn.y, mx.z }, { mx.x, mn.y, mx.z },
+			    { mx.x, mx.y, mx.z }, { mn.x, mx.y, mx.z },
+			};
+			ImVec2 scr[8];
+			bool bh[8];
+			for (int i = 0; i < 8; ++i)
+			{
+				scr[i] = project(corners[i], bh[i]);
+			}
+			static const int edges[12][2] = {
+			    {0, 1}, {1, 2}, {2, 3}, {3, 0},
+			    {4, 5}, {5, 6}, {6, 7}, {7, 4},
+			    {0, 4}, {1, 5}, {2, 6}, {3, 7}
+			};
+			for (auto &e : edges)
+			{
+				if (bh[e[0]] || bh[e[1]])
+				{
+					continue;
+				}
+				dl->AddLine(scr[e[0]], scr[e[1]], colCube, 1.65f);
+			}
+		}
+
+		EnsureLightSunIcon();
+		if (lightSunIcon && !b0)
+		{
+			constexpr float kSunBox = 48.0f;
+			const ImVec2 half{ kSunBox * 0.5f, kSunBox * 0.5f };
+			dl->AddImage(
+			    WIMAGE(lightSunIcon),
+			    ImVec2(s0.x - half.x, s0.y - half.y),
+			    ImVec2(s0.x + half.x, s0.y + half.y),
+			    ImVec2(0.0f, 0.0f),
+			    ImVec2(1.0f, 1.0f),
+			    IM_COL32_WHITE);
+		}
+
+		if (!b0)
+		{
+			const Vector3 a = emitDir;
+			const float headL = arrowLen * 0.34f;
+			const float shaftL = (std::max)(arrowLen - headL, arrowLen * 0.2f);
+			const float shaftHalfW = arrowLen * 0.075f;
+			const float headHalfW = arrowLen * 0.2f;
+			constexpr float kArrowLine = 1.03f;
+
+			auto drawSeg3 = [&](const Vector3 &p, const Vector3 &q) {
+				bool bp, bq;
+				const ImVec2 sp = project(p, bp);
+				const ImVec2 sq = project(q, bq);
+				if (!bp && !bq)
+				{
+					dl->AddLine(sp, sq, colArrow, kArrowLine);
+				}
+			};
+
+			auto drawGodotBlockArrowInPlane = [&](const Vector3 &perp) {
+				const Vector3 sbP = origin + perp * shaftHalfW;
+				const Vector3 sbM = origin - perp * shaftHalfW;
+				const Vector3 hb = origin + a * shaftL;
+				const Vector3 hbP = hb + perp * shaftHalfW;
+				const Vector3 hbM = hb - perp * shaftHalfW;
+				const Vector3 hHeadP = hb + perp * headHalfW;
+				const Vector3 hHeadM = hb - perp * headHalfW;
+				const Vector3 apex = origin + a * arrowLen;
+
+				drawSeg3(sbP, hbP);
+				drawSeg3(sbM, hbM);
+				drawSeg3(sbP, sbM);
+				drawSeg3(hbP, hHeadP);
+				drawSeg3(hbM, hHeadM);
+				drawSeg3(hHeadP, apex);
+				drawSeg3(hHeadM, apex);
+				drawSeg3(hHeadP, hHeadM);
+			};
+
+			drawGodotBlockArrowInPlane(arrowU);
+			drawGodotBlockArrowInPlane(arrowV);
+		}
+	}
+
+	void DrawAABBWireframe(MeshComponent &mc)
+	{
+		TransformComponent &tc = selectedObject.GetComponent<TransformComponent>();
+		Matrix4 world = tc.Transform();
+
+		Vector3 mn, mx;
+		if (mc.SelectedDrawNodeIndex != UINT32_MAX && mc.SelectedDrawNodeIndex < mc.Mesh->Size())
+		{
+			auto &node = mc.Mesh->NodeList()[mc.SelectedDrawNodeIndex];
+			mn = node.AABBMin;
+			mx = node.AABBMax;
+			if (mc.SubmeshLocalTransform.size() > mc.SelectedDrawNodeIndex)
+			{
+				world = world * mc.SubmeshLocalTransform[mc.SelectedDrawNodeIndex];
+			}
+		}
+		else
+		{
+			mc.Mesh->GetAABB(mn, mx);
+		}
+
+		Vector3 corners[8] = {
+			{ mn.x, mn.y, mn.z }, { mx.x, mn.y, mn.z },
+			{ mx.x, mx.y, mn.z }, { mn.x, mx.y, mn.z },
+			{ mn.x, mn.y, mx.z }, { mx.x, mn.y, mx.z },
+			{ mx.x, mx.y, mx.z }, { mn.x, mx.y, mx.z },
+		};
+
+		Matrix4 vp = primaryCamera->ViewProjection();
+		auto [wx, wy] = ImGui::GetWindowPos();
+		auto [ww, wh] = ImGui::GetWindowSize();
+
+		ImVec2 screenPts[8];
+		bool behind[8];
+		for (int i = 0; i < 8; i++)
+		{
+			Vector4 clip = vp * (world * Vector4{ corners[i], 1.0f });
+			behind[i] = clip.w <= 0.0001f;
+			float invW = 1.0f / (behind[i] ? 0.0001f : clip.w);
+			float ndcX = clip.x * invW;
+			float ndcY = clip.y * invW;
+			screenPts[i].x = wx + (ndcX * 0.5f + 0.5f) * ww;
+			screenPts[i].y = wy + (-ndcY * 0.5f + 0.5f) * wh;
+		}
+
+		static const int edges[12][2] = {
+			{0,1},{1,2},{2,3},{3,0},
+			{4,5},{5,6},{6,7},{7,4},
+			{0,4},{1,5},{2,6},{3,7}
+		};
+
+		ImDrawList *dl = ImGui::GetWindowDrawList();
+		ImU32 col = IM_COL32(255, 165, 10, 255);
+		for (auto &e : edges)
+		{
+			if (behind[e[0]] || behind[e[1]]) continue;
+			dl->AddLine(screenPts[e[0]], screenPts[e[1]], col, 1.5f);
+		}
+	}
 };
 
 class RenderLayer : public Layer
@@ -124,10 +375,10 @@ public:
         items.secondary = new WItemList;
 
         panels.tools = new WTools;
-        panels.navigator = new WNavigator([this] { OnTextureLoaded(); });
         panels.propertyManager = new WPropertyManager;
         panels.hierarchyGraphics = new WHierarchyGraphics([this](Object object) { selectedObject = object; });
-        window->Wrap({ menuBar, viewport, panels.tools, panels.navigator, panels.propertyManager, panels.hierarchyGraphics});
+        panels.hierarchyGraphics->SetLoadSceneHandler([this]() { LoadScene(); });
+        window->Wrap({ menuBar, viewport, panels.tools, panels.propertyManager, panels.hierarchyGraphics});
 
         asyncComputeThread = new AsyncComputeThread(Graphics::GetDevice());
 		asyncComputeThread->Execute<SetQueueTask>(Graphics::GetDevice()->CreateQueue(QueueType::Compute));
@@ -141,61 +392,19 @@ public:
             ->Text("Menu");
         menuBar->Color(0xff000000)->AddChild(menus[0]);
 
-        camera.primary = &camera.editor;
-        camera.editor = { Vector::PerspectiveFOV(Vector::Radians(90.0f), viewportSize.x, viewportSize.y, 0.1f, 1000.0f) };
-        camera.orthographic.SetViewportSize(viewportSize);
         eventSink.Listen(&RenderLayer::OnKeyPressed,    Event::Type::KeyPressed);
         eventSink.Listen(&RenderLayer::OnMouseDown,     Event::Type::MouseButtonPressed);
         eventSink.Listen(&RenderLayer::OnMouseScrolled, Event::Type::MouseScrolled);
 
-        camera.transform.Position = Vector3{ 0.0f, 0.0, -1.0f };
-
-        Ref<FrameGraph> frameGraph = new FrameGraph{};
-
-        static constexpr bool kUseAtmosphereSky = false;
-        iblTask = new IBLTask;
-        if constexpr (kUseAtmosphereSky)
-        {
-            atmosphereSky = new AtmosphereTask;
-            atmosphereSky->SetQuality(AtmosphereQuality::High);
-            atmosphereSky->SetSunIntensity(20);
-            frameGraph->AddTask(atmosphereSky);
-        }
-        else
-        {
-            skyboxTask = new SkyboxTask;
-            skyboxTask->SetFilePath("skybox.hdr");
-            frameGraph->AddTask(skyboxTask);
-        }
-
-        frameGraph->AddTask(iblTask, kUseAtmosphereSky ? "Atmosphere" : "Skybox");
-
-        meshletTask = new MeshletTask;
-		frameGraph->AddTask(meshletTask);
-
-		// Deferred: G-buffer pass in MeshletTask + fullscreen lighting in DeferredLighting (depends on Meshlet in graph order).
-		static constexpr bool kUseDeferredMeshlet = true;
-		if constexpr (kUseDeferredMeshlet)
-		{
-			deferredTask = new DeferredTask;
-			frameGraph->AddTask(deferredTask, "Meshlet");
-		}
-
-		frameGraph->Build();
-		scene->SetFrameGraph(frameGraph);
-		if (skyboxTask)
-		{
-			iblTask->LinkSkybox(skyboxTask.Get());
-		}
-		if (deferredTask)
-		{
-			deferredTask->SetIBLTask(iblTask.Get());
-		}
-		scene->ConfigureDeferredPipeline(kUseDeferredMeshlet, meshletTask, deferredTask);
-		scene->SetDeferredPBRResolve(deferredPBRResolve);
-		menus[0]->Item({ "Toggle Deferred PBR", "", [this] {
-			deferredPBRResolve = !deferredPBRResolve;
-			scene->SetDeferredPBRResolve(deferredPBRResolve);
+		menus[0]->Item({ "Selection: AABB / Outline", "", [this] {
+			if (imguizmoWidget->HighLightMode() == SelectionHighlightMode::Outline)
+			{
+				imguizmoWidget->HighLightMode(SelectionHighlightMode::AABBBox);
+			}
+			else
+			{
+				imguizmoWidget->HighLightMode(SelectionHighlightMode::Outline);
+			}
 		}});
 
         uint64_t nullPick = 0;
@@ -221,10 +430,6 @@ public:
                     ->Text("Right Click Menu")
                     ->Color(0xff262626)
                     ->Wrap({
-                  //  objectEditorText
-                  //      ->Text("Object Editor")
-		                //->Height(10)
-                  //      ->Color(0xa5ffffff),
                     separator,
                     items.primary
                         ->Color(0xffffffff)
@@ -250,8 +455,6 @@ public:
                         ->Item({ "Delete",          [this] {
                             if (selectedObject)
                             {
-                                panels.navigator
-                                    ->Select(Object{});
                                 panels.propertyManager
                                     ->Select(Object{});
                                 panels.hierarchyGraphics
@@ -284,23 +487,20 @@ public:
                 (size.x != 0 && size.y != 0))
             {
 				scene->SetViewportSize(size);
-				camera.editor.SetViewportSize(size);
-				camera.orthographic.SetViewportSize(size);
             }
 
             scene->Select(&selectedObject);
-            if (atmosphereSky)
+            if (auto *atmos = scene->GetAtmosphereTask())
             {
                 atmosphereDayTime += Time::DeltaTime;
-                // Full day cycle (sun can dip); slow azimuth + slight wobble for visible motion.
                 float a = atmosphereDayTime * 0.052f;
                 float el = 0.38f + 0.52f * sinf(a);
                 el += 0.035f * sinf(atmosphereDayTime * 0.28f);
                 el = fmaxf(-0.22f, fminf(0.92f, el));
                 float xz = sqrtf(fmaxf(0.f, 1.f - el * el));
                 Vector3 sunDir{ xz * cosf(a), el, xz * sinf(a) };
-                atmosphereSky->SetSunDirection(sunDir.Normalize());
-                atmosphereSky->SetDayPhase(atmosphereDayTime);
+                atmos->SetSunDirection(sunDir.Normalize());
+                atmos->SetDayPhase(atmosphereDayTime);
             }
             if (panels.tools->IsControlActive(WTools::Start))
             {
@@ -310,9 +510,12 @@ public:
             {
                 if (viewport->IsHovered())
                 {
-                    camera.primary->OnUpdate();
+                    if (Camera *host = scene->GetEditorPrimaryCamera())
+                    {
+                        host->OnUpdate();
+                    }
                 }
-                scene->OnRenderEditor(*camera.primary);
+                scene->OnRenderEditor();
             }
         }
 
@@ -324,10 +527,6 @@ public:
             ->OnUpdate(scene);
 
         panels
-            .navigator
-            ->OnUpdate(selectedObject);
-
-        panels
             .propertyManager
             ->OnUpdate(selectedObject);
 
@@ -336,7 +535,13 @@ public:
             ->OnUpdate(selectedObject);
 
         imguizmoWidget->SelectedObject(selectedObject);
-        imguizmoWidget->PrimaryCamera(panels.tools->IsControlActive(WTools::Start) ? scene->GetCamera() : camera.primary);
+        imguizmoWidget->PrimaryCamera(
+            panels.tools->IsControlActive(WTools::Start) ? scene->GetCamera() : scene->GetEditorPrimaryCamera());
+
+		if (auto *ot = scene->GetOutlineTask())
+		{
+			ot->SetEnabled(imguizmoWidget->HighLightMode() == SelectionHighlightMode::Outline);
+		}
 
         if (panels.tools->IsToolActive(WTools::Move))
         {
@@ -354,8 +559,6 @@ public:
         {
 			imguizmoWidget->Type(ImGuizmo::OPERATION::INVALID);
         }
-
-        //Application::This->Getgui()->BlockEvent(false);
     }
 
     void UpdateEditableArea()
@@ -412,7 +615,7 @@ public:
 
         auto asyncComputeThread = Graphics::GetAsyncComputeThread();
         asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
-        asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
+        asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 			auto texture = scene->GetObjectIdPickTexture();
 			if (!texture)
 			{
@@ -485,7 +688,9 @@ public:
         if (res.has_value())
         {
             const auto &filepath = res.value();
-            auto object = scene->CreateObject(res.value());
+
+            std::filesystem::path path = res.value().GetWString();
+			auto object = scene->CreateObject((char *)path.stem().u8string().c_str());
 
             panels.hierarchyGraphics->Select(object);
 
@@ -545,10 +750,12 @@ public:
         auto path = FileDialogs::OpenFile(FileFilter::Scene);
         if (path.has_value())
         {
-            scene.Reset(new Scene{ FileSystem::ExtractFileName(path.value()), true });
-            scene->SetViewportSize(editableArea->GetSize());
+            scene.Reset(new GameScene{ FileSystem::ExtractFileName(path.value()), true });
             scene->Deserialize(path.value());
+			scene->SetViewportSize(editableArea->GetSize());
             panels.hierarchyGraphics->OnUpdate(scene);
+            selectedObject = {};
+            panels.hierarchyGraphics->Select({});
         }
     }
 
@@ -582,9 +789,10 @@ public:
         switch (e.GetKeyCode())
         {
         case KeyCode::C:
-            camera.primary = (camera.primary == &camera.editor) ?
-                 (Camera *)(&camera.orthographic) :
-                 (Camera *)(&camera.editor);
+            scene->SetCameraType(
+                scene->GetCameraType() == SceneCameraType::EditorPerspective
+                    ? SceneCameraType::EditorOrthographic
+                    : SceneCameraType::EditorPerspective);
             break;
 
         case KeyCode::L:
@@ -604,27 +812,14 @@ public:
         case KeyCode::S:
             if (control)
             {
-                //scene->Target()->PickPixel(0, 0, 0, Format::RGBA8);
-                //Async::Execute([&]() -> void {
-                //    auto size = editableArea->Size();
-                //    uint32_t width = U32(size.x);
-                //    uint32_t height = U32(size.y);
-
-                //    uint8_t *dataMapped = nullptr;
-                //    scene->Target()->Map(0, &dataMapped);
-
-                //    Vision::BMPCodec bmp{};
-                //    bmp.Write("RenderTarget.bmp", width, height, 4, dataMapped, (SLALIGN(width, 8) - width) * 4);
-
-                //    scene->Target()->Unmap(0);
-                //});
+				SaveScene();
             }
             break;
 
         case KeyCode::F:
-            if (!!selectedObject && camera.primary == &camera.editor)
+            if (!!selectedObject && scene->GetCameraType() == SceneCameraType::EditorPerspective)
             {
-                camera.editor.Focus(selectedObject.GetComponent<TransformComponent>().Position);
+                scene->GetEditorCamera().Focus(selectedObject.GetComponent<TransformComponent>().Position);
             }
             break;
 
@@ -636,10 +831,6 @@ public:
         case KeyCode::W:
 			imguizmoWidget->Type(ImGuizmo::OPERATION::TRANSLATE);
             panels.tools->Activate(WTools::Move);
-            //if (control || shift)
-            //{
-            //    Application::This->Close();
-            //}
             break;
 
         case KeyCode::E:
@@ -664,7 +855,6 @@ public:
     {
 		if (viewport->IsHovered() && !ImGuizmo::IsOver())
         {
-			/* Ctrl+LMB: pick entity + submesh (RT pick = uint2). Skip Alt+LMB (camera orbit). */
             if (e.GetMouseButton() == MouseCode::Left && Input::IsKeyPressed(KeyCode::Control) && !Input::IsKeyPressed(KeyCode::LeftAlt))
             {
                 auto [x, y] = ImGui::GetMousePos();
@@ -678,16 +868,19 @@ public:
 
     bool OnMouseScrolled(MouseScrolledEvent &e)
     {
-		if (viewport->IsHovered())
-        {
-            return camera.primary->OnMouseScrolled(e);
-        }
         return true;
     }
 
     virtual void OnEvent(Event &e) override
     {
         eventSink.Dispatch(e);
+		if (viewport->IsHovered())
+		{
+			if (Camera *host = scene->GetEditorPrimaryCamera())
+			{
+				host->OnEvent(e);
+			}
+		}
     }
 
 private:
@@ -704,17 +897,6 @@ private:
     } pipelines;
 
     struct {
-        Camera *primary;
-
-        EditorCamera editor;
-
-        OrthographicCamera orthographic;
-
-        TransformComponent transform;
-    } camera;
-
-    struct {
-        URef<WNavigator> navigator;
         URef<WHierarchyGraphics> hierarchyGraphics;
         URef<WPropertyManager> propertyManager;
         URef<WTools> tools;
@@ -756,17 +938,7 @@ private:
 
     EventSink<RenderLayer> eventSink;
 
-    Ref<Scene> scene{ new Scene{ "RenderLayer", true }};
-
-    Ref<AtmosphereTask> atmosphereSky;
-
-    Ref<SkyboxTask> skyboxTask;
-
-    Ref<IBLTask> iblTask;
-
-    Ref<MeshletTask> meshletTask;
-
-    Ref<DeferredTask> deferredTask;
+    Ref<GameScene> scene{ new GameScene{ "RenderLayer", true }};
 
     float atmosphereDayTime = 0.0f;
 
@@ -779,9 +951,6 @@ private:
     URef<AsyncComputeThread> asyncComputeThread;
 
     Ref<Buffer> selectedBuffer;
-
-	/** When deferred is enabled, use Cook-Torrance resolve instead of simple N·L (Menu → Toggle Deferred PBR). */
-	bool deferredPBRResolve = true;
 };
 
 }

@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Camera.h"
 #include "Math/Vector.h"
+#include <algorithm>
 
 namespace Immortal
 {
@@ -16,7 +17,7 @@ public:
     OrthographicCamera() :
         Super{ ProjectionType::Orthographic }
     {
-
+		SetClipPlanes(0.01f, 2.0f);
     }
 
     OrthographicCamera(const Vector2 &size) :
@@ -30,12 +31,14 @@ public:
     {
         projectionType = ProjectionType::Orthographic;
         viewProjection = projection * view;
+		SetClipPlanes(0.01f, 2.0f);
     }
 
     void SetProjection(float left, float right, float bottom, float top)
     {
         projection = Vector::Ortho(left, right, bottom, top, -1.0f, 1.0f);
         viewProjection = Super::ViewProjection();
+		SetClipPlanes(0.01f, 2.0f);
     }
 
     void SetProjection(Matrix4 prj)
@@ -83,9 +86,25 @@ public:
 		return zoomLevel;
     }
 
+    float GetZoomLevelTarget() const
+    {
+        return zoomLevelTarget;
+    }
+
+    float CalculateZoomLevelForScroll(float offsetY) const
+    {
+        float step = 8.0f;
+        if (zoomLevelTarget < 0.09f)
+        {
+            step = 1.0f;
+        }
+        return std::max(zoomLevelTarget - offsetY * step * 0.01f, 0.00001f);
+    }
+
     void SetZoomLevel(float value)
     {
-		zoomLevelTarget = 0.5f;
+        const float next = value > 0.0f ? value : 0.5f;
+        zoomLevelTarget = std::max(next, 0.00001f);
     }
 
 public:

@@ -46,18 +46,18 @@ void MessageCallbackFunc(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY
 	switch (severity)
 	{
 		case D3D12_MESSAGE_SEVERITY_WARNING:
-			LOG_WARNING("{}", pDescription);
+			LOG_WARNING("[{}] {}", pContext, pDescription);
 			break;
 
 		case D3D12_MESSAGE_SEVERITY_INFO:
 		case D3D12_MESSAGE_SEVERITY_MESSAGE:
-			LOG_INFO("{}", pDescription);
+			LOG_INFO("[{}] {}", pContext, pDescription);
 			break;
 
 		case D3D12_MESSAGE_SEVERITY_CORRUPTION:
 		case D3D12_MESSAGE_SEVERITY_ERROR:
 		default:
-			LOG_ERROR("{}", pDescription);
+			LOG_ERROR("[{}] {}", pContext, pDescription);
 			break;
 	}
 }
@@ -76,14 +76,25 @@ Device::Device(PhysicalDevice *phsicalDevice) :
 	);
 
 #ifdef _DEBUG
-	HRESULT hr = handle.As(&infoQueue);
-	if (SUCCEEDED(hr) && infoQueue)
 	{
-		DWORD callbackCookie = 0;
-		hr = infoQueue->RegisterMessageCallback(&MessageCallbackFunc, D3D12_MESSAGE_CALLBACK_FLAG_NONE, (void *) this, &callbackCookie);
-		if (FAILED(hr) || !callbackCookie)
+		ComPtr<ID3D12InfoQueue> infoQueue;
+		HRESULT hr = handle.As(&infoQueue);
+		if (SUCCEEDED(hr) && infoQueue)
 		{
-			LOG::ERR("Failed to register message callback!");
+			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR,      TRUE);
+			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+		}
+
+		ComPtr<ID3D12InfoQueue1> infoQueue1;
+		hr = handle.As(&infoQueue1);
+		if (SUCCEEDED(hr) && infoQueue1)
+		{
+			DWORD callbackCookie = 0;
+			hr = infoQueue1->RegisterMessageCallback(&MessageCallbackFunc, D3D12_MESSAGE_CALLBACK_FLAG_NONE, (void *) this, &callbackCookie);
+			if (FAILED(hr) || !callbackCookie)
+			{
+				LOG::ERR("Failed to register message callback!");
+			}
 		}
 	}
 #endif
@@ -119,7 +130,6 @@ Device::~Device()
 		}
 	}
 
-	infoQueue.Reset();
     handle.Reset();
 }
 
@@ -167,7 +177,12 @@ SuperCommandBuffer *Device::CreateCommandBuffer(QueueType type)
 
 SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
 {
-	return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
+	return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
+}
+
+SuperSampler *Device::CreateSampler(Filter mipFilter, Filter minFilter, Filter magFilter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
+{
+	return new Sampler{ this, mipFilter, minFilter, magFilter, addressMode, compareOperation, minLod, maxLod };
 }
 
 SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
@@ -227,9 +242,9 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &name)
 	return new GPUEvent{ this };
 }
 
-SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount)
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues, uint32_t sampleCount)
 {
-	return new RenderTarget{ this, width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat, sampleCount };
+	return new RenderTarget{ this, width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat, pClearValues, sampleCount };
 }
 
 IDXGIAdapter1 *Device::GetAdapter() const

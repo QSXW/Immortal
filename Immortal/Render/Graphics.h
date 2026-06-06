@@ -11,6 +11,33 @@
 namespace Immortal
 {
 
+enum class ObjectType
+{
+    None,
+    AccelerationStructure,
+    RenderTarget,
+    Texture,
+    Buffer,
+    BufferView,
+    CommandBuffer,
+    DescriptorSet,
+    GPUEvent,
+    Pipeline,
+    PipelineCache,
+    Queue,
+    Sampler,
+    Shader,
+    Swapchain,
+    Window,
+    WindowCapture,
+};
+
+struct DeferredObject
+{
+    void *Pointer = nullptr;
+    ObjectType Type = ObjectType::None;
+};
+
 struct BufferCompare
 {
 	bool operator()(const Ref<Buffer> &left, const Ref<Buffer> &right) const
@@ -93,6 +120,12 @@ public:
 
     static void ReleaseResource(const Ref<Buffer> &buffer, uint64_t offset = 0);
 
+    static void ReleaseResource(const Ref<DescriptorSet> &descriptorSet, uint64_t offset = 0);
+
+    static void ReleaseResource(const Ref<Pipeline> &pipeline, uint64_t offset = 0);
+
+    static void Release(void *pointer, ObjectType type, uint64_t offset = 0);
+
     static void SetRenderIndex(GPUEvent *gpuEvent, uint64_t index);
 
     static void SetSyncEvent(Ref<Texture> &texture);
@@ -157,6 +190,12 @@ public:
     std::unordered_map<uint64_t, std::vector<Ref<Texture>>> expiredTextures;
 
 	std::unordered_map<uint64_t, std::vector<Ref<Buffer>>> expiredBuffers;
+
+    std::unordered_map<uint64_t, std::vector<Ref<DescriptorSet>>> expiredDescriptorSets;
+
+    std::unordered_map<uint64_t, std::vector<Ref<Pipeline>>> expiredPipelines;
+
+    std::unordered_map<uint64_t, std::vector<DeferredObject>> expiredObjects;
 
     std::unordered_map<std::string, Ref<Pipeline>> pipelines;
 

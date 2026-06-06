@@ -80,6 +80,8 @@ public:
 
     virtual bool OnDeviceChanged(IAudioDevice *device) override;
 
+	uint32_t FfplayAudioHwBufferBytes() const override;
+
 protected:
 	bool OpenStream();
 

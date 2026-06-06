@@ -1,5 +1,8 @@
 #include "SkyboxTask.h"
+#include "FrameGraphDebugUi.h"
 #include "Vision/Image.h"
+
+#include <imgui.h>
 
 namespace Immortal
 {
@@ -12,14 +15,21 @@ SkyboxTask::SkyboxTask() :
 
 SkyboxTask::~SkyboxTask()
 {
-
+	skybox.Reset();
+	Graphics::ReleaseResource(texture);
+	Graphics::ReleaseResource(textureCube);
+	Graphics::ReleaseResource(descriptorSet);
+	Graphics::ReleaseResource((Ref<Pipeline> &)graphicsPipeline);
 }
 
 void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
 {
-	asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t value, CommandBuffer *commandBuffer) {
-		skybox = Mesh::CreateCube(asyncComputeThread, commandBuffer, 1.0f, true);
+	if (!skybox)
+	{
+		skybox = Mesh::CreateCube(asyncComputeThread, nullptr, 1.0f, true);
+	}
 
+	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
         if (filepath.empty())
         {
             return;
@@ -39,12 +49,12 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
         auto &width = texture->GetWidth();
         auto &height = texture->GetHeight();
 
-        textureCube = device->CreateTexture(Format::R16G16B16A16_SFLOAT, height, height, Texture::CalculateMipmapLevels(height, height), 6, TextureType::Storage);
+        textureCube = device->CreateTexture(Format::R16G16B16A16_SFLOAT, height, height, Texture::CalculateMipmapLevels(height, height), 6, TextureType::Sampled | TextureType::Storage);
 		textureCube->SetName("SkyboxCube");
 
         pipeline = Graphics::GetPipeline("equirect2cube");
         descriptorSet = device->CreateDescriptorSet(pipeline);
-		sampler = device->CreateSampler(Filter::Linear, AddressMode::Clamp);
+		sampler = device->CreateSampler(Filter::Linear, AddressMode::Clamp, CompareOperation::Never, 0.0f, 16.0f);
 
         uint32_t stride = SLALIGN(picture.GetStride(0), TextureAlignment);
         size_t size = stride * picture.GetHeight();
@@ -69,20 +79,13 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
             pixelShader
         };
         graphicsPipeline = device->CreateGraphicsPipeline();
-		graphicsPipeline->Enable(Pipeline::State::Depth);
-
-        InputElementDescription inputElements = {
-		    {
-                { Format::VECTOR3, "POSITION" },
-            }
-        };
-		inputElements.SetStride(sizeof(Mesh::SimpleVertex));
+        InputElementDescription inputElements;
         graphicsPipeline->Construct(
             shaders,
             2,
             inputElements,
             {
-                Format::R8G8B8A8_UNORM,
+                Format::R16G16B16A16_SFLOAT,
                 Format::R32G32_UINT,
             }
         );
@@ -124,14 +127,24 @@ void SkyboxTask::Composite(CommandBuffer * commandBuffer, const SceneParameters 
     }
 
     commandBuffer->SetPipeline(graphicsPipeline);
-    commandBuffer->SetDescriptorSet(skyboxDescriptorSet);
-    commandBuffer->PushConstants(ShaderStage::Vertex | ShaderStage::Pixel, &params.skyboxProjection, sizeof(params.skyboxProjection) + 2 * sizeof(float), 0);
+    commandBuffer->SetDescriptorSet(skyboxDescriptorSet); 
 
-    auto &nodes = skybox->NodeList();
-	Buffer *vertexBuffers[] = {nodes[0].Vertex};
-	commandBuffer->SetVertexBuffers(0, 1, vertexBuffers, sizeof(Mesh::SimpleVertex));
-	commandBuffer->SetIndexBuffer(nodes[0].Index, Format::UINT32);
-	commandBuffer->DrawIndexedInstance(nodes[0].Index->GetSize() / sizeof(uint32_t), 1, 0, 0, 0);
+    Matrix4 invSkyboxVP = Vector::Inverse(params.skyboxProjection);
+    commandBuffer->PushConstants(ShaderStage::Vertex | ShaderStage::Pixel, &invSkyboxVP, sizeof(invSkyboxVP), 0);
+    commandBuffer->DrawInstanced(3, 1, 0, 0);
+}
+
+void SkyboxTask::OnFrameGraphDebugGui()
+{
+	ImGui::TextUnformatted("Execute: equirect→cubemap + mips. Composite: sky draw (expects Execute pass first).");
+	if (textureCube)
+	{
+		FrameGraphDebugTextureThumbnail(textureCube.Get(), "Radiance cubemap");
+	}
+	if (texture)
+	{
+		FrameGraphDebugTextureThumbnail(texture.Get(), "Source HDR (equirect)");
+	}
 }
 
 void SkyboxTask::SetFilePath(const String &value)

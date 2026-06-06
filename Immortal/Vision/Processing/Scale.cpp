@@ -176,14 +176,14 @@ void BicubicConvolutionInterpolate(Picture &dst, const Picture &src)
 		TBicubicConvolutionInterpolate<uint8_t, 0, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TBicubicConvolutionInterpolate<uint8_t, 1, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TBicubicConvolutionInterpolate<uint8_t, 2, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint8_t>(dst);
+		TBicubicConvolutionInterpolate<uint8_t, 3, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 	}
 	else if (format == Format::RGBA16 || format == Format::R16G16B16A16_UINT)
 	{
 		TBicubicConvolutionInterpolate<uint16_t, 0, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TBicubicConvolutionInterpolate<uint16_t, 1, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TBicubicConvolutionInterpolate<uint16_t, 2, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint16_t>(dst);
+		TBicubicConvolutionInterpolate<uint16_t, 3, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 	}
 	else if (format == Format::R8G8B8_UNORM || format == Format::B8G8R8_UNORM)
 	{
@@ -268,14 +268,14 @@ void NearestInterpolate(Picture &dst, const Picture &src)
 		TNearestInterpolate<uint8_t, 0, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 1, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 2, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint8_t>(dst);
+		TNearestInterpolate<uint8_t, 3, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 	}
 	else if (format == Format::RGBA16 || format == Format::R16G16B16A16_UINT)
 	{
 		TNearestInterpolate<uint16_t, 0, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint16_t, 1, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint16_t, 2, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint16_t>(dst);
+		TNearestInterpolate<uint16_t, 3, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 	}
 	else if (format == Format::R8G8B8_UNORM || format == Format::B8G8R8_UNORM)
 	{

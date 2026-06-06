@@ -94,6 +94,21 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
         format == Format::B8G8R8_UNORM ||
         format == Format::ARGB;
     Format formats[SamplingFactor::kMaxSublayer] = {};
+    if (format == Format::R32G32B32A32_SFLOAT)
+    {
+        if (output.empty())
+        {
+            output.resize(1);
+        }
+        output[0] = Graphics::CreateTexture(
+            Format::R32G32B32A32_SFLOAT,
+            picture.GetWidth(),
+            picture.GetHeight(),
+            picture.GetStride(0),
+            picture.GetData(),
+            asyncComputeThread);
+        return;
+    }
 	if (format.IsType(Format::YUV) || isRgb)
     {
         FillComponentFormat(format, formats);
@@ -153,7 +168,7 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
     }
 #endif
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 #ifdef _WIN32
         if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
         {

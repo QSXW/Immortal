@@ -22,6 +22,23 @@ static inline D3D11_TEXTURE_ADDRESS_MODE CAST(AddressMode addressMode)
 	}
 }
 
+static inline D3D11_COMPARISON_FUNC CAST(CompareOperation compareOperation)
+{
+	switch (compareOperation)
+	{
+		case CompareOperation::Never:          return D3D11_COMPARISON_NEVER;
+		case CompareOperation::Less:           return D3D11_COMPARISON_LESS;
+		case CompareOperation::Equal:          return D3D11_COMPARISON_EQUAL;
+		case CompareOperation::LessOrEqual:    return D3D11_COMPARISON_LESS_EQUAL;
+		case CompareOperation::Greater:        return D3D11_COMPARISON_GREATER;
+		case CompareOperation::NotEqual:       return D3D11_COMPARISON_NOT_EQUAL;
+		case CompareOperation::GreaterOrEqual: return D3D11_COMPARISON_GREATER_EQUAL;
+		case CompareOperation::Always:
+		default:
+			return D3D11_COMPARISON_ALWAYS;
+	}
+}
+
 Sampler::Sampler()
 {
 
@@ -36,7 +53,7 @@ Sampler::Sampler(Device *device, Filter filter, AddressMode addressMode, Compare
 		.AddressW       = D3D11_TEXTURE_ADDRESS_BORDER,
 		.MipLODBias     = 0,
 		.MaxAnisotropy  = 1,
-	    .ComparisonFunc = D3D11_COMPARISON_FUNC(compareOperation),
+	    .ComparisonFunc = CAST(compareOperation),
 		.BorderColor    = { 1.0f, 1.0f, 1.0f, 1.0f },
 		.MinLOD         = minLod,
 		.MaxLOD         = maxLod,
@@ -45,6 +62,19 @@ Sampler::Sampler(Device *device, Filter filter, AddressMode addressMode, Compare
 	if (filter == Filter::Nearest)
 	{
 		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	}
+	if (compareOperation != CompareOperation::Never)
+	{
+		switch (desc.Filter)
+		{
+			case D3D11_FILTER_MIN_MAG_MIP_POINT:
+				desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+				break;
+			case D3D11_FILTER_MIN_MAG_MIP_LINEAR:
+			default:
+				desc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+				break;
+		}
 	}
 
 	desc.AddressU = CAST(addressMode);

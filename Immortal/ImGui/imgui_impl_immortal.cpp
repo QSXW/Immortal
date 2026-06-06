@@ -10,6 +10,10 @@
 
 using namespace Immortal;
 
+#ifndef WIMAGE
+#define WIMAGE(x) (ImTextureID)(void *)(x)
+#endif
+
 #define DEFAULT_VERTEX_SIZE  5000
 #define DEFAULT_INDEX_SIZE   10000
 #define MAX_FRAMES_IN_FLIGHT 6
@@ -710,8 +714,8 @@ IMGUI_IMPL_API void ImGui_ImplImmortal_RenderDrawData(ImDrawData *drawData, Comm
     //{
     //    { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
     //    { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
-    //    { 0.0f,         0.0f,           1.0f,       0.0f },  // Éî¶È·¶Î§ [0,1]
-    //    { (R+L)/(L-R),  (T+B)/(B-T),    0.0f,       1.0f },  // Éî¶ÈÆ«ÒÆ 0
+    //    { 0.0f,         0.0f,           1.0f,       0.0f },  // ï¿½ï¿½È·ï¿½Î§ [0,1]
+    //    { (R+L)/(L-R),  (T+B)/(B-T),    0.0f,       1.0f },  // ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ 0
     //};
 
     commandBuffer->PushConstants(Shader::Stage::Vertex, &mvp, sizeof(mvp), 0);

@@ -75,7 +75,22 @@ public:
     /**
      * @brief Create a sampler
      */
-    virtual Sampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = 0.0f, float maxLod = 1.0f) = 0;
+    virtual Sampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = 0.0f, float maxLod = 16.0f)
+    {
+        return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
+    }
+
+    /**
+     * @brief Create a sampler with independent mip/min/mag filters.
+     */
+    virtual Sampler *CreateSampler(
+        Filter mipFilter,
+        Filter minFilter,
+        Filter magFilter,
+        AddressMode addressMode,
+        CompareOperation compareOperation = CompareOperation::Never,
+        float minLod = 0.0f,
+        float maxLod = 16.0f) = 0;
 
     /**
      * @brief Create a shader
@@ -148,7 +163,7 @@ public:
     /**
      * @brief Create a render target
      */
-	virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, uint32_t sampleCount = 1) = 0;
+	virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 1) = 0;
 };
 
 using SuperDevice = Device;

@@ -30,6 +30,8 @@ public:
 
 	virtual void Set(uint32_t slot, SuperTexture *texture) override;
 
+	void SetUavMip(uint32_t slot, SuperTexture *texture, uint32_t mipSlice) override;
+
 	virtual void Set(uint32_t slot, SuperSampler *sampler) override;
 
 	void Set(uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE descriptor, D3D12_DESCRIPTOR_HEAP_TYPE heapType, D3D12_DESCRIPTOR_RANGE_TYPE rangeType);
@@ -46,6 +48,8 @@ public:
 	}
 
 protected:
+	Pipeline *pipeline;
+
 	DescriptorHeap *descriptorHeaps[MaxDescrpitorHeapType];
 
     ShaderVisibleDescriptor descriptors[MaxDescrpitorHeapType];

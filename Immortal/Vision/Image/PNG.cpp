@@ -145,16 +145,21 @@ CodecError PNGCodec::Decode(const CodedFrame &codedFrame)
 		png_set_expand_gray_1_2_4_to_8(png);
 	}
 
-	if (png_get_valid(png, info, PNG_INFO_tRNS))
+	const bool hasTransparentColor = png_get_valid(png, info, PNG_INFO_tRNS);
+	if (hasTransparentColor)
 	{
 		png_set_tRNS_to_alpha(png);
 	}
 
+	const bool hasAlpha = (colorType & PNG_COLOR_MASK_ALPHA) != 0;
 	if (colorType == PNG_COLOR_TYPE_RGB ||
 	    colorType == PNG_COLOR_TYPE_GRAY ||
 	    colorType == PNG_COLOR_TYPE_PALETTE)
 	{
-		png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+		if (!hasTransparentColor && !hasAlpha)
+		{
+			png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+		}
 	}
 
 	if (colorType == PNG_COLOR_TYPE_GRAY ||

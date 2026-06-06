@@ -53,6 +53,15 @@ public:
 
     virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
 
+    virtual SuperSampler *CreateSampler(
+        Filter mipFilter,
+        Filter minFilter,
+        Filter magFilter,
+        AddressMode addressMode,
+        CompareOperation compareOperation,
+        float minLod,
+        float maxLod) override;
+
     virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
     virtual SuperShader *CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size) override;
@@ -73,7 +82,7 @@ public:
 
     virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, uint32_t sampleCount = 1) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 1) override;
 
 public:
 	IDXGIAdapter1 *GetAdapter() const;
@@ -284,8 +293,6 @@ protected:
 
     std::shared_mutex pipelineMutex;
     std::unordered_map<std::string, URef<Pipeline>> pipelines;
-
-    ComPtr<ID3D12InfoQueue1> infoQueue;
 };
 
 }

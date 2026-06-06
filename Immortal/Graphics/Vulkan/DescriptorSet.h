@@ -34,6 +34,8 @@ public:
 
 	virtual void Set(uint32_t slot, SuperTexture *texture) override;
 
+	void SetUavMip(uint32_t slot, SuperTexture *texture, uint32_t mipSlice) override;
+
 	virtual void Set(uint32_t slot, SuperSampler *sampler) override;
 
     void Swap(DescriptorSet &other)

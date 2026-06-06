@@ -338,38 +338,31 @@ CodecError JxlCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 	}
 
 	auto &format = picture.GetFormat();
+	const uint32_t componentCount = (uint32_t)format.GetComponent();
+	const bool hasAlpha = componentCount == 2 || componentCount == 4;
+	const bool isFloat32 =
+	    format == Format::R32_SFLOAT ||
+	    format == Format::R32G32_SFLOAT ||
+	    format == Format::R32G32B32_SFLOAT ||
+	    format == Format::R32G32B32A32_SFLOAT;
+	const uint32_t bitsPerSample = isFloat32 ? 32u : (uint32_t)(format.ElementSize() * 8);
+	const uint32_t exponentBits = isFloat32 ? 8u : 0u;
 	JxlPixelFormat pixelFormat = {
-	    .num_channels = (uint32_t)format.GetComponent(),
+	    .num_channels = componentCount,
 		.endianness   = JXL_NATIVE_ENDIAN,
 		.align        = picture.GetStride(0)
 	};
 
 	info.xsize = picture.GetWidth();
 	info.ysize = picture.GetHeight();
-	info.num_extra_channels = (pixelFormat.num_channels + 1) % 2;
-	info.num_color_channels = pixelFormat.num_channels - info.num_extra_channels;
+	info.num_extra_channels = hasAlpha ? 1 : 0;
+	info.num_color_channels = componentCount == 1 || componentCount == 2 ? 1 : 3;
+	info.bits_per_sample = bitsPerSample;
+	info.alpha_bits = hasAlpha ? bitsPerSample : 0;
 
-	if (format.IsType(Format::_16Bits) || format == Format::RGBA16)
-	{
-		info.bits_per_sample = 16;
-	}
-	else if (format.IsType(Format::_12Bits))
-	{
-		info.bits_per_sample = 12;
-	}
-	else if (format.IsType(Format::_10Bits))
-	{
-		info.bits_per_sample = 10;
-	}
-	else
-	{
-		info.bits_per_sample = 8;
-	}
-	info.alpha_bits = (info.num_extra_channels > 0) * info.bits_per_sample;
-
-	info.exponent_bits_per_sample = 0;
-	info.alpha_exponent_bits      = 0;
-	pixelFormat.data_type = info.bits_per_sample <= 8 ? JXL_TYPE_UINT8 : JXL_TYPE_UINT16;
+	info.exponent_bits_per_sample = exponentBits;
+	info.alpha_exponent_bits      = hasAlpha ? exponentBits : 0;
+	pixelFormat.data_type = isFloat32 ? JXL_TYPE_FLOAT : (bitsPerSample <= 8 ? JXL_TYPE_UINT8 : JXL_TYPE_UINT16);
 	
 	info.uses_original_profile = distance == 0.0 || !false;
 	info.orientation = picture.GetStride(0) >= 0 ? JXL_ORIENT_IDENTITY : JXL_ORIENT_FLIP_VERTICAL;
@@ -380,12 +373,18 @@ CodecError JxlCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 		return CodecError::ExternalFailed;
 	}
 
-	JxlExtraChannelInfo extraChannelInfo{};
-	JxlEncoderInitExtraChannelInfo(JXL_CHANNEL_ALPHA, &extraChannelInfo);
-	if (JxlEncoderSetExtraChannelInfo(encoder.handle, 0, &extraChannelInfo) != JXL_ENC_SUCCESS)
+	if (hasAlpha)
 	{
-		LOG::ERR("Failed to set extra channel info - {}", encoder.GetError());
-		return CodecError::ExternalFailed;
+		JxlExtraChannelInfo extraChannelInfo{};
+		JxlEncoderInitExtraChannelInfo(JXL_CHANNEL_ALPHA, &extraChannelInfo);
+		extraChannelInfo.bits_per_sample = info.alpha_bits;
+		extraChannelInfo.exponent_bits_per_sample = info.alpha_exponent_bits;
+		extraChannelInfo.alpha_premultiplied = JXL_FALSE;
+		if (JxlEncoderSetExtraChannelInfo(encoder.handle, 0, &extraChannelInfo) != JXL_ENC_SUCCESS)
+		{
+			LOG::ERR("Failed to set extra channel info - {}", encoder.GetError());
+			return CodecError::ExternalFailed;
+		}
 	}
 
 	JxlColorEncoding colorEncoding = {

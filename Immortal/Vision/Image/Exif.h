@@ -41,11 +41,12 @@ enum class IFDType : uint16_t
 #define SubIFD0      3
 #define SubIFD1      4
 #define SubIFD2      5
-#define IFD_EXIF     6
-#define IFD_INTEROP  7
-#define IFD_GPS      8
-#define IFD_MAKENOTE 9
-#define IFDPRIVATE   10
+#define SubIFD3      6
+#define IFD_EXIF     7
+#define IFD_INTEROP  8
+#define IFD_GPS      9
+#define IFD_MAKENOTE 10
+#define IFDPRIVATE   11
 
 //enum class IFDTag : uint16_t
 //{
@@ -94,7 +95,34 @@ public:
 		v.ptr = (void *) values.data();
 		if (size <= 4)
 		{
-			memcpy(values.data(), &offset, size);
+			if (be)
+			{
+				const uint8_t raw[4] = {
+					(uint8_t)(offset >> 24),
+					(uint8_t)(offset >> 16),
+					(uint8_t)(offset >> 8),
+					(uint8_t)offset,
+				};
+				if constexpr (sizeof(T) == 1)
+				{
+					memcpy(values.data(), raw, size);
+				}
+				else
+				{
+					for (size_t i = 0; i < count; i++)
+					{
+						uint8_t *dst = values.data() + i * sizeof(T);
+						for (size_t j = 0; j < sizeof(T); j++)
+						{
+							dst[j] = raw[i * sizeof(T) + sizeof(T) - j - 1];
+						}
+					}
+				}
+			}
+			else
+			{
+				memcpy(values.data(), &offset, size);
+			}
 		}
 		else if (size > bs.get_bytes_left())
 		{
@@ -110,7 +138,7 @@ public:
 			{
 				for (size_t i = 0; i < count; i++)
 				{
-					*(T *)v.ptr = bs.get_be<T>();
+					((T *)v.ptr)[i] = bs.get_be<T>();
 				}
 			}
 			else

@@ -80,7 +80,7 @@ public:
         vkCmdSetLineWidth(handle, lineWidth);
     }
 
-    void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+    virtual void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor) override
     {
         __Record();
         vkCmdSetDepthBias(handle, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
@@ -1228,6 +1228,10 @@ public:
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
 
     virtual void SetImageLayout(SuperTexture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
+
+	virtual void CopyTexture(SuperTexture *dst, SuperTexture *src) override;
+
+	virtual void MemoryBarrier(SuperTexture *texture) override;
 
 public:
     void Destroy(CommandPool *commandPool);

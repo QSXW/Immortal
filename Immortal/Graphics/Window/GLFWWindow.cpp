@@ -31,7 +31,12 @@ GLFWWindow::GLFWWindow(Anonymous handle) :
     parent{},
     childWindow{},
     input{},
-    owned{}
+    owned{},
+    fullscreen{ false },
+    windowedX{ 0 },
+    windowedY{ 0 },
+    windowedWidth{ 0 },
+    windowedHeight{ 0 }
 {
 	type = Type::GLFW;
 }
@@ -42,7 +47,12 @@ GLFWWindow::GLFWWindow(const std::string &title, uint32_t width, uint32_t height
     parent{ (GLFWWindow *)parent },
     childWindow{},
     input{},
-    owned{ true }
+    owned{ true },
+    fullscreen{ false },
+    windowedX{ 0 },
+    windowedY{ 0 },
+    windowedWidth{ 0 },
+    windowedHeight{ 0 }
 {
 	if (parent)
 	{
@@ -190,6 +200,21 @@ void GLFWWindow::Construct(const std::string &title, uint32_t width, uint32_t he
         This->eventCallback(event);
     });
 
+    glfwSetWindowFocusCallback(window, [](GLFWwindow *window, int focused)
+    {
+        GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
+        if (focused)
+        {
+            WindowFocusEvent event;
+            This->eventCallback(event);
+        }
+        else
+        {
+            WindowLostFocusEvent event;
+            This->eventCallback(event);
+        }
+    });
+
     glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode, int action, int modes)
     {
         GLFWWindow *This = (GLFWWindow *)(glfwGetWindowUserPointer(window));
@@ -256,6 +281,8 @@ void GLFWWindow::Construct(const std::string &title, uint32_t width, uint32_t he
     });
 
     input.reset(new GLFWInput{ this });
+    glfwGetWindowPos(window, &windowedX, &windowedY);
+    glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
 }
 
 void GLFWWindow::Shutdown()
@@ -288,7 +315,47 @@ Anonymous GLFWWindow::GetPlatformSpecificHandle() const
 
 void GLFWWindow::Show()
 {
+    glfwShowWindow(window);
+}
 
+void GLFWWindow::SetFullscreen(bool value)
+{
+    if (!window || fullscreen == value)
+    {
+        return;
+    }
+
+    if (value)
+    {
+        glfwGetWindowPos(window, &windowedX, &windowedY);
+        glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
+
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        if (!monitor)
+        {
+            return;
+        }
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        if (!mode)
+        {
+            return;
+        }
+
+        glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        fullscreen = true;
+    }
+    else
+    {
+        const int width  = windowedWidth  > 0 ? windowedWidth  : 1280;
+        const int height = windowedHeight > 0 ? windowedHeight : 720;
+        glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, width, height, GLFW_DONT_CARE);
+        fullscreen = false;
+    }
+}
+
+bool GLFWWindow::IsFullscreen() const
+{
+    return fullscreen;
 }
 
 void GLFWWindow::ProcessEvents()

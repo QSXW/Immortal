@@ -1,16 +1,174 @@
 #include "DirectWindow.h"
 
+#include <algorithm>
+#include <cmath>
 #include <string>
+#include <vector>
 #include <locale>
 #include <codecvt>
 #include <shellapi.h>
+#include <windowsx.h>
+#include <wincodec.h>
 
+#include "Framework/Utils.h"
 #include "Event/ApplicationEvent.h"
+
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "ole32.lib")
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 
 namespace Immortal
 {
+
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+#define DWMWA_WINDOW_CORNER_PREFERENCE 33
+#endif
+
+static constexpr double kRgnPi = 3.14159265358979323846;
+
+static HRGN CreateRoundedWindowRgnPoly(int w, int h, int radiusLogical, int segmentsPerCorner)
+{
+	if (w <= 1 || h <= 1)
+	{
+		return nullptr;
+	}
+	int r = radiusLogical;
+	r = (std::min)(r, (std::max)(1, w / 2 - 1));
+	r = (std::min)(r, (std::max)(1, h / 2 - 1));
+	r = (std::max)(r, 1);
+
+	const int n = (std::max)(6, segmentsPerCorner);
+	std::vector<POINT> pt;
+	pt.reserve((size_t)(8 + n * 4));
+
+	const double hpi = kRgnPi * 0.5;
+
+	pt.push_back({ r, 0 });
+	pt.push_back({ w - r, 0 });
+
+	for (int i = 1; i <= n; ++i)
+	{
+		const double t = hpi * (double)i / (double)n;
+		pt.push_back({
+		    (LONG)std::lround((double)(w - r) + (double)r * std::sin(t)),
+		    (LONG)std::lround((double)r - (double)r * std::cos(t)),
+		});
+	}
+
+	pt.push_back({ w, h - r });
+
+	for (int i = 1; i <= n; ++i)
+	{
+		const double t = hpi * (double)i / (double)n;
+		pt.push_back({
+		    (LONG)std::lround((double)(w - r) + (double)r * std::cos(t)),
+		    (LONG)std::lround((double)(h - r) + (double)r * std::sin(t)),
+		});
+	}
+
+	pt.push_back({ r, h });
+
+	for (int i = 1; i <= n; ++i)
+	{
+		const double t = hpi * (double)i / (double)n;
+		pt.push_back({
+		    (LONG)std::lround((double)r - (double)r * std::sin(t)),
+		    (LONG)std::lround((double)(h - r) + (double)r * std::cos(t)),
+		});
+	}
+
+	pt.push_back({ 0, r });
+
+	for (int i = 1; i <= n; ++i)
+	{
+		const double t = hpi * (double)i / (double)n;
+		pt.push_back({
+		    (LONG)std::lround((double)r - (double)r * std::sin(t)),
+		    (LONG)std::lround((double)r - (double)r * std::cos(t)),
+		});
+	}
+
+	return ::CreatePolygonRgn(pt.data(), (int)pt.size(), WINDING);
+}
+
+static HRESULT SetDwmCornerPreference(HWND hwnd, DWORD pref)
+{
+	if (!hwnd)
+	{
+		return E_INVALIDARG;
+	}
+	typedef HRESULT(WINAPI *PFN_DwmSetWindowAttribute)(HWND, DWORD, LPCVOID, DWORD);
+	static HMODULE dwmDll = ::LoadLibraryW(L"dwmapi.dll");
+	if (!dwmDll)
+	{
+		return E_FAIL;
+	}
+	auto fn = (PFN_DwmSetWindowAttribute)::GetProcAddress(dwmDll, "DwmSetWindowAttribute");
+	if (!fn)
+	{
+		return E_FAIL;
+	}
+
+	return fn(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &pref, sizeof(pref));
+}
+
+static void ApplyImmortalWindowRounding(HWND hwnd, bool borderless, bool exclusiveFullscreen)
+{
+	if (!hwnd)
+	{
+		return;
+	}
+
+	if (exclusiveFullscreen)
+	{
+		(void)SetDwmCornerPreference(hwnd, 1u);
+		::SetWindowRgn(hwnd, nullptr, TRUE);
+		return;
+	}
+
+	const HRESULT hrRound = SetDwmCornerPreference(hwnd, 2u);
+
+	if (!borderless)
+	{
+		return;
+	}
+
+	if (::IsZoomed(hwnd))
+	{
+		::SetWindowRgn(hwnd, nullptr, TRUE);
+		return;
+	}
+
+	if (SUCCEEDED(hrRound))
+	{
+		::SetWindowRgn(hwnd, nullptr, TRUE);
+		return;
+	}
+
+	RECT wr{};
+	::GetWindowRect(hwnd, &wr);
+	const int w = (int)(wr.right - wr.left);
+	const int h = (int)(wr.bottom - wr.top);
+	if (w <= 1 || h <= 1)
+	{
+		return;
+	}
+	const UINT dpi = ::GetDpiForWindow(hwnd);
+	/** 小圆角（约 4px@96DPI）；角上用多段折线减轻 CreateRoundRectRgn 的锯齿感 */
+	const int radius = (std::max)(2, ::MulDiv(4, (int)dpi, USER_DEFAULT_SCREEN_DPI));
+	const int segs = (std::min)(24, (std::max)(10, radius + 8));
+	HRGN rgn = CreateRoundedWindowRgnPoly(w, h, radius, segs);
+	if (!rgn)
+	{
+		const int ell = (std::max)(radius * 2, 2);
+		rgn = ::CreateRoundRectRgn(0, 0, w, h, ell, ell);
+	}
+	if (rgn)
+	{
+		::SetWindowRgn(hwnd, rgn, TRUE);
+	}
+}
 
 std::unique_ptr<NativeInput> DirectWindow::Input = nullptr;
 
@@ -20,6 +178,235 @@ void EmptyEventCallback(Event &event)
 }
 
 Window::EventCallbackFunc DirectWindow::EventDispatcher = &EmptyEventCallback;
+
+namespace
+{
+
+bool g_BorderlessCaptionPreferClient = false;
+
+/** WM_NCHITTEST for WS_POPUP borderless: edge resize + menu strip behaves like caption (drag / dbl-click maximize). */
+LRESULT HitTestBorderlessFrame(HWND hWnd, LPARAM lParam)
+{
+	POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+	::ScreenToClient(hWnd, &pt);
+	RECT rc{};
+	::GetClientRect(hWnd, &rc);
+	const int cw = rc.right - rc.left;
+	const int ch = rc.bottom - rc.top;
+
+	UINT dpi = ::GetDpiForWindow(hWnd);
+	const int border = (std::max)(MulDiv(8, (int)dpi, USER_DEFAULT_SCREEN_DPI),
+		MulDiv(GetSystemMetrics(SM_CXSIZEFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER), (int)dpi, USER_DEFAULT_SCREEN_DPI));
+
+	if (!::IsZoomed(hWnd))
+	{
+		const bool left = pt.x < border;
+		const bool right = pt.x >= cw - border;
+		const bool top = pt.y < border;
+		const bool bottom = pt.y >= ch - border;
+		if (top && left)
+		{
+			return HTTOPLEFT;
+		}
+		if (top && right)
+		{
+			return HTTOPRIGHT;
+		}
+		if (bottom && left)
+		{
+			return HTBOTTOMLEFT;
+		}
+		if (bottom && right)
+		{
+			return HTBOTTOMRIGHT;
+		}
+		if (top)
+		{
+			return HTTOP;
+		}
+		if (bottom)
+		{
+			return HTBOTTOM;
+		}
+		if (left)
+		{
+			return HTLEFT;
+		}
+		if (right)
+		{
+			return HTRIGHT;
+		}
+	}
+
+	const int menuStripH = MulDiv(28, (int)dpi, USER_DEFAULT_SCREEN_DPI);
+	const int captionBottom = border + menuStripH;
+	if (pt.x >= border && pt.x < cw - border && pt.y >= border && pt.y < captionBottom)
+	{
+		if (g_BorderlessCaptionPreferClient)
+		{
+			return HTCLIENT;
+		}
+		return HTCAPTION;
+	}
+	return HTCLIENT;
+}
+
+static RECT MaximizeAreaForBorderless(const MONITORINFO &mi)
+{
+	RECT area = mi.rcWork;
+	if (mi.rcWork.bottom < mi.rcMonitor.bottom && mi.rcWork.top <= mi.rcMonitor.top + 1)
+	{
+		area.left = mi.rcMonitor.left;
+		area.top = mi.rcMonitor.top;
+		area.right = mi.rcMonitor.right;
+	}
+	return area;
+}
+
+static bool LoadPngResizeToSquare(const std::wstring &path, UINT targetSize, std::vector<uint8_t> &bgra, UINT &outW, UINT &outH)
+{
+	IWICImagingFactory *factory = nullptr;
+	if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, (void **)&factory)))
+	{
+		return false;
+	}
+
+	IWICBitmapDecoder *decoder = nullptr;
+	if (FAILED(factory->CreateDecoderFromFilename(path.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder)))
+	{
+		factory->Release();
+		return false;
+	}
+
+	IWICBitmapFrameDecode *frame = nullptr;
+	if (FAILED(decoder->GetFrame(0, &frame)))
+	{
+		decoder->Release();
+		factory->Release();
+		return false;
+	}
+
+	IWICFormatConverter *converter = nullptr;
+	if (FAILED(factory->CreateFormatConverter(&converter)))
+	{
+		frame->Release();
+		decoder->Release();
+		factory->Release();
+		return false;
+	}
+
+	if (FAILED(converter->Initialize(frame, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0.f, WICBitmapPaletteTypeMedianCut)))
+	{
+		converter->Release();
+		frame->Release();
+		decoder->Release();
+		factory->Release();
+		return false;
+	}
+	frame->Release();
+
+	IWICBitmapScaler *scaler = nullptr;
+	if (FAILED(factory->CreateBitmapScaler(&scaler)))
+	{
+		converter->Release();
+		decoder->Release();
+		factory->Release();
+		return false;
+	}
+
+	if (FAILED(scaler->Initialize(converter, targetSize, targetSize, WICBitmapInterpolationModeFant)))
+	{
+		scaler->Release();
+		converter->Release();
+		decoder->Release();
+		factory->Release();
+		return false;
+	}
+	converter->Release();
+	decoder->Release();
+
+	UINT w = 0;
+	UINT h = 0;
+	scaler->GetSize(&w, &h);
+	outW = w;
+	outH = h;
+	const UINT stride = w * 4;
+	const UINT bufSize = stride * h;
+	bgra.resize(bufSize);
+	const HRESULT hr = scaler->CopyPixels(nullptr, stride, bufSize, bgra.data());
+	scaler->Release();
+	factory->Release();
+	return SUCCEEDED(hr);
+}
+
+static HICON CreateIconFrom32bppPBGRA(int w, int h, const uint8_t *bgraTopDown)
+{
+	const int maskRowBytes = ((w + 31) / 32) * 4;
+	std::vector<uint8_t> maskBits((size_t)maskRowBytes * (size_t)h, 0);
+	std::vector<uint32_t> colorPixelsBottomUp((size_t)w * (size_t)h);
+
+	for (int y = 0; y < h; ++y)
+	{
+		const uint8_t *srcRow = bgraTopDown + (size_t)y * (size_t)w * 4;
+		uint32_t *dstRow = &colorPixelsBottomUp[(size_t)(h - 1 - y) * (size_t)w];
+		uint8_t *maskRow = &maskBits[(size_t)(h - 1 - y) * (size_t)maskRowBytes];
+		for (int x = 0; x < w; ++x)
+		{
+			const uint8_t *p = srcRow + (size_t)x * 4;
+			const uint32_t bgra = (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+			dstRow[x] = bgra;
+			const bool opaque = p[3] > 128;
+			const int bitIndex = x;
+			const int byteIndex = bitIndex >> 3;
+			const int bitOffset = 7 - (bitIndex & 7);
+			if (opaque)
+			{
+				maskRow[byteIndex] = (uint8_t)(maskRow[byteIndex] | (1 << bitOffset));
+			}
+		}
+	}
+
+	BITMAPINFOHEADER bih = {};
+	bih.biSize = sizeof(bih);
+	bih.biWidth = w;
+	bih.biHeight = h;
+	bih.biPlanes = 1;
+	bih.biBitCount = 32;
+	bih.biCompression = BI_RGB;
+
+	void *dibBits = nullptr;
+	HDC hdc = ::GetDC(nullptr);
+	HBITMAP hbmColor = ::CreateDIBSection(hdc, (BITMAPINFO *)&bih, DIB_RGB_COLORS, &dibBits, nullptr, 0);
+	if (!hbmColor)
+	{
+		::ReleaseDC(nullptr, hdc);
+		return nullptr;
+	}
+	memcpy(dibBits, colorPixelsBottomUp.data(), (size_t)w * (size_t)h * 4u);
+
+	HBITMAP hbmMask = ::CreateBitmap(w, h, 1, 1, maskBits.data());
+	if (!hbmMask)
+	{
+		::DeleteObject(hbmColor);
+		::ReleaseDC(nullptr, hdc);
+		return nullptr;
+	}
+	::ReleaseDC(nullptr, hdc);
+
+	ICONINFO ii = {};
+	ii.fIcon = TRUE;
+	ii.xHotspot = (DWORD)(w / 2);
+	ii.yHotspot = (DWORD)(h / 2);
+	ii.hbmMask = hbmMask;
+	ii.hbmColor = hbmColor;
+
+	HICON icon = ::CreateIconIndirect(&ii);
+	::DeleteObject(hbmMask);
+	::DeleteObject(hbmColor);
+	return icon;
+}
+
+}
 
 static bool IsVirtualKeyDown(int virtualKey)
 {
@@ -222,8 +609,57 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
+        case WM_NCHITTEST:
+        {
+            DirectWindow *dw = (DirectWindow *)::GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            if (dw && dw->IsBorderless())
+            {
+                return HitTestBorderlessFrame(hWnd, lParam);
+            }
+            return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+        }
+
+        case WM_GETMINMAXINFO:
+        {
+            DirectWindow *dw = (DirectWindow *)::GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            if (dw && dw->IsBorderless())
+            {
+                MINMAXINFO *mmi = (MINMAXINFO *)lParam;
+                HMONITOR mon = ::MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO mi{};
+                mi.cbSize = sizeof(mi);
+                if (::GetMonitorInfoW(mon, &mi))
+                {
+                    RECT area = MaximizeAreaForBorderless(mi);
+                    mmi->ptMaxPosition.x = area.left;
+                    mmi->ptMaxPosition.y = area.top;
+                    mmi->ptMaxSize.x = area.right - area.left;
+                    mmi->ptMaxSize.y = area.bottom - area.top;
+                }
+                return 0;
+            }
+            break;
+        }
+
+        case WM_NCCALCSIZE:
+        {
+            DirectWindow *dw = (DirectWindow *)::GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            if (dw && dw->IsBorderless() && wParam == TRUE && ::IsZoomed(hWnd))
+            {
+                NCCALCSIZE_PARAMS *p = (NCCALCSIZE_PARAMS *)lParam;
+                p->rgrc[2] = p->rgrc[0];
+                return 0;
+            }
+            break;
+        }
+
         case WM_SIZE:
         {
+            DirectWindow *dw = (DirectWindow *)::GetWindowLongPtrW(hWnd, GWLP_USERDATA);
+            if (dw)
+            {
+                ApplyImmortalWindowRounding(hWnd, dw->IsBorderless(), dw->IsFullscreen());
+            }
             WindowResizeEvent resizeEvent{
                 (UINT)LOWORD(lParam),
                 (UINT)HIWORD(lParam)
@@ -361,6 +797,15 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
 
+        case WM_MOUSEMOVE:
+        {
+            const float x = (float)(short)LOWORD(lParam);
+            const float y = (float)(short)HIWORD(lParam);
+            MouseMoveEvent e{ x, y };
+            DirectWindow::EventDispatcher(e);
+            break;
+        }
+
         case WM_MOUSEWHEEL:
         {
             MouseScrolledEvent e{
@@ -389,6 +834,16 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			{
 				DirectWindow::Input->Clear();
 			}
+            if (msg == WM_SETFOCUS)
+            {
+                WindowFocusEvent e;
+                DirectWindow::EventDispatcher(e);
+            }
+            else
+            {
+                WindowLostFocusEvent e;
+                DirectWindow::EventDispatcher(e);
+            }
 			break;
         }
 
@@ -430,7 +885,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
 
         default:
-			return ::DefWindowProc(hWnd, msg, wParam, lParam); 
+			return ::DefWindowProc(hWnd, msg, wParam, lParam);
     }
 
     return 0;
@@ -440,18 +895,37 @@ DirectWindow::DirectWindow(Anonymous handle) :
     Window{},
     wc{},
     handle{ (HWND)handle },
-    owned{}
+    owned{},
+    fullscreen{ false },
+    zoomedBeforeExclusiveFullscreen{ false },
+    windowedStyle{ 0 },
+    windowedExStyle{ 0 },
+    windowedPlacement{},
+    borderless{ false }
 {
 	type = Type::Win32;
+    CacheWindowedState();
+	ApplyImmortalWindowRounding(this->handle, false, false);
 }
 
-DirectWindow::DirectWindow(const std::string &title, uint32_t width, uint32_t height) :
+DirectWindow::DirectWindow(const std::string &title, uint32_t width, uint32_t height, bool borderlessWindow) :
     Window{},
     wc{},
     handle{},
-    owned{ true }
+    owned{ true },
+    fullscreen{ false },
+    zoomedBeforeExclusiveFullscreen{ false },
+    windowedStyle{ 0 },
+    windowedExStyle{ 0 },
+    windowedPlacement{},
+    borderless{ borderlessWindow }
 {
 	Construct(title, width, height);
+}
+
+void DirectWindow::SetBorderlessCaptionPreferClient(bool preferClientArea)
+{
+	g_BorderlessCaptionPreferClient = preferClientArea;
 }
 
 DirectWindow::~DirectWindow()
@@ -476,6 +950,117 @@ void DirectWindow::Show()
 {
     ::ShowWindow(handle, SW_SHOWDEFAULT);
     ::UpdateWindow(handle);
+	ApplyImmortalWindowRounding(handle, borderless, IsFullscreen());
+}
+
+void DirectWindow::CaptionButtonMinimize()
+{
+	if (!handle || fullscreen)
+	{
+		return;
+	}
+	::SendMessageW(handle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+}
+
+void DirectWindow::CaptionButtonMaximizeOrRestore()
+{
+	if (!handle || fullscreen)
+	{
+		return;
+	}
+	const BOOL z = ::IsZoomed(handle);
+	::SendMessageW(handle, WM_SYSCOMMAND, z ? SC_RESTORE : SC_MAXIMIZE, 0);
+}
+
+void DirectWindow::SetFullscreen(bool value)
+{
+    if (!handle || fullscreen == value)
+    {
+        return;
+    }
+
+    if (value)
+    {
+        zoomedBeforeExclusiveFullscreen = (::IsZoomed(handle) != FALSE);
+        CacheWindowedState();
+
+        HMONITOR monitor = ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO monitorInfo{};
+        monitorInfo.cbSize = sizeof(monitorInfo);
+        if (!::GetMonitorInfoW(monitor, &monitorInfo))
+        {
+            return;
+        }
+
+        LONG_PTR style = ::GetWindowLongPtrW(handle, GWL_STYLE);
+        LONG_PTR exStyle = ::GetWindowLongPtrW(handle, GWL_EXSTYLE);
+        style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
+        exStyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+
+        ::SetWindowLongPtrW(handle, GWL_STYLE, style | WS_POPUP);
+        ::SetWindowLongPtrW(handle, GWL_EXSTYLE, exStyle);
+        ::SetWindowPos(
+            handle,
+            HWND_TOPMOST,
+            monitorInfo.rcMonitor.left,
+            monitorInfo.rcMonitor.top,
+            monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+            monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+            SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        fullscreen = true;
+		ApplyImmortalWindowRounding(handle, borderless, true);
+    }
+    else
+    {
+        const bool restoreZoomed = zoomedBeforeExclusiveFullscreen;
+        zoomedBeforeExclusiveFullscreen = false;
+
+        ::SetWindowLongPtrW(handle, GWL_STYLE, windowedStyle);
+        ::SetWindowLongPtrW(handle, GWL_EXSTYLE, windowedExStyle);
+        ::SetWindowPlacement(handle, &windowedPlacement);
+        ::SetWindowPos(
+            handle,
+            HWND_NOTOPMOST,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOOWNERZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+        if (restoreZoomed)
+        {
+            ::ShowWindow(handle, SW_SHOWMAXIMIZED);
+            if (borderless)
+            {
+                HMONITOR mon = ::MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO mi{};
+                mi.cbSize = sizeof(mi);
+                if (::GetMonitorInfoW(mon, &mi))
+                {
+                    RECT wr{};
+                    ::GetWindowRect(handle, &wr);
+                    const bool spansMonitor =
+                        wr.left <= mi.rcMonitor.left + 1 && wr.top <= mi.rcMonitor.top + 1 &&
+                        wr.right >= mi.rcMonitor.right - 1 && wr.bottom >= mi.rcMonitor.bottom - 1;
+                    const bool workSmallerThanMonitor =
+                        (mi.rcWork.right - mi.rcWork.left) < (mi.rcMonitor.right - mi.rcMonitor.left) ||
+                        (mi.rcWork.bottom - mi.rcWork.top) < (mi.rcMonitor.bottom - mi.rcMonitor.top);
+                    if (spansMonitor && workSmallerThanMonitor)
+                    {
+                        ::ShowWindow(handle, SW_RESTORE);
+                        ::ShowWindow(handle, SW_SHOWMAXIMIZED);
+                    }
+                }
+            }
+        }
+        fullscreen = false;
+		ApplyImmortalWindowRounding(handle, borderless, false);
+    }
+}
+
+bool DirectWindow::IsFullscreen() const
+{
+    return fullscreen;
 }
 
 void DirectWindow::ProcessEvents()
@@ -493,9 +1078,47 @@ void DirectWindow::SetTitle(const std::string &title)
     SetWindowTextA(handle, title.c_str());
 }
 
+void DirectWindow::ReleaseWindowIcon()
+{
+	if (windowIcon)
+	{
+		::DestroyIcon(windowIcon);
+		windowIcon = nullptr;
+	}
+}
+
 void DirectWindow::SetIcon(const std::string &filepath)
 {
+	if (!handle || filepath.empty())
+	{
+		return;
+	}
+	ReleaseWindowIcon();
 
+	const HRESULT hrCom = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+	const bool coinitCleanup = (hrCom == S_OK);
+
+	std::vector<uint8_t> bgra;
+	UINT iw = 0;
+	UINT ih = 0;
+	const bool ok = LoadPngResizeToSquare(ToWString(filepath), 32, bgra, iw, ih);
+
+	if (coinitCleanup)
+	{
+		CoUninitialize();
+	}
+
+	if (!ok || iw == 0 || ih == 0)
+	{
+		return;
+	}
+
+	windowIcon = CreateIconFrom32bppPBGRA((int)iw, (int)ih, bgra.data());
+	if (windowIcon)
+	{
+		::SendMessageW(handle, WM_SETICON, ICON_BIG, (LPARAM)windowIcon);
+		::SendMessageW(handle, WM_SETICON, ICON_SMALL, (LPARAM)windowIcon);
+	}
 }
 
 void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t height)
@@ -522,32 +1145,82 @@ void DirectWindow::Construct(const std::string &_title, uint32_t width, uint32_t
 
     ::RegisterClassExW(&wc);
 
-    auto x = GetSystemMetrics(SM_CXSCREEN);
-    auto y = GetSystemMetrics(SM_CYSCREEN);
-	
-    RECT rect = {0, 0, x, y};
-    AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, FALSE, 0);
+    const auto screenW = GetSystemMetrics(SM_CXSCREEN);
+    const auto screenH = GetSystemMetrics(SM_CYSCREEN);
+
+    const DWORD styleBorderless = WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    const DWORD style = borderless ? styleBorderless : (DWORD)WS_OVERLAPPEDWINDOW;
+
+    uint32_t clientW = width;
+    uint32_t clientH = height;
+    if (borderless && (clientW == 0 || clientH == 0))
+    {
+        RECT work{};
+        ::SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
+        const int aw = work.right - work.left;
+        const int ah = work.bottom - work.top;
+        if (clientW == 0)
+        {
+            clientW = (uint32_t)::MulDiv(aw, 85, 100);
+        }
+        if (clientH == 0)
+        {
+            clientH = (uint32_t)::MulDiv(ah, 85, 100);
+        }
+    }
+
+    int posX;
+    int posY;
+    int winW;
+    int winH;
+
+    if (borderless)
+    {
+        RECT cr = { 0, 0, (LONG)clientW, (LONG)clientH };
+        AdjustWindowRectEx(&cr, style, FALSE, 0);
+        winW = cr.right - cr.left;
+        winH = cr.bottom - cr.top;
+        posX = (int)((screenW - winW) / 2);
+        posY = (int)((screenH - winH) / 2);
+    }
+    else
+    {
+        posX = width == 0 ? CW_USEDEFAULT : (int)((screenW - (LONG)width) / 2);
+        posY = height == 0 ? CW_USEDEFAULT : (int)((screenH - (LONG)height) / 2);
+        winW = width == 0 ? CW_USEDEFAULT : (int)width;
+        winH = height == 0 ? CW_USEDEFAULT : (int)height;
+    }
 
     handle = ::CreateWindowExW(
         0,
         wc.lpszClassName,
         title.c_str(),
-	    WS_OVERLAPPEDWINDOW,
-	    width  == 0 ? CW_USEDEFAULT : (x - width) / 2,
-	    height == 0 ? CW_USEDEFAULT : (y - height) / 2,
-	    width  == 0 ? CW_USEDEFAULT : width,
-	    height == 0 ? CW_USEDEFAULT : height,
+	    style,
+	    posX,
+	    posY,
+	    winW,
+	    winH,
         nullptr,
         nullptr,
         wc.hInstance,
         nullptr);
 
+    if (!handle)
+    {
+        LOG::ERR("DirectWindow: CreateWindowExW failed");
+        return;
+    }
+
+    ::SetWindowLongPtrW(handle, GWLP_USERDATA, (LONG_PTR)this);
+
     if (width == 0 || height == 0)
     {
-		PostMessageW(handle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+        PostMessageW(handle, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
     }
 
     DragAcceptFiles(handle, TRUE);
+    CacheWindowedState();
+	ApplyImmortalWindowRounding(handle, borderless, false);
 }
 
 uint32_t DirectWindow::GetWidth() const
@@ -571,8 +1244,23 @@ void DirectWindow::SetEventCallback(const EventCallbackFunc &callback)
 
 void DirectWindow::Shutdown()
 {
+	ReleaseWindowIcon();
     ::DestroyWindow(handle);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+}
+
+void DirectWindow::CacheWindowedState()
+{
+    if (!handle)
+    {
+        return;
+    }
+
+    windowedStyle = (DWORD)::GetWindowLongPtrW(handle, GWL_STYLE);
+    windowedExStyle = (DWORD)::GetWindowLongPtrW(handle, GWL_EXSTYLE);
+    windowedPlacement = {};
+    windowedPlacement.length = sizeof(windowedPlacement);
+    ::GetWindowPlacement(handle, &windowedPlacement);
 }
 
 }

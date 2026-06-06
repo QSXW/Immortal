@@ -74,13 +74,7 @@ void OrthographicCamera::OnUpdate(const float &deltaTime)
 
 bool OrthographicCamera::OnMouseScrolled(MouseScrolledEvent & e)
 {
-	float step = 8.0f;
-    if (zoomLevelTarget < 0.09f)
-    {
-		step = 1.0f;
-    }
-	zoomLevelTarget -= e.GetOffsetY() * step * 0.01f;
-	zoomLevelTarget = std::max(zoomLevelTarget, 0.00001f);
+    SetZoomLevel(CalculateZoomLevelForScroll(e.GetOffsetY()));
     return false;
 }
 

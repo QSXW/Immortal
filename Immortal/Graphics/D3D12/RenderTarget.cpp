@@ -2,6 +2,8 @@
 #include "Device.h"
 #include "Texture.h"
 
+#include <algorithm>
+
 namespace Immortal
 {
 namespace D3D12
@@ -19,25 +21,27 @@ RenderTarget::RenderTarget(Device *device) :
 
 }
 
-RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount) :
+RenderTarget::RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues, uint32_t sampleCount) :
     RenderTarget{ device }
 {
 	colorBuffers.reserve(colorAttachmentCount);
     for (int i = 0; i < colorAttachmentCount; i++)
     {
 	    Format format = pColorAttachmentFormats[i];
-		Ref<Texture> texture = new Texture{ device, format, width, height, (uint16_t)Texture::CalculateMipmapLevels(width, height), 1, TextureType::ColorAttachment, sampleCount };
+		const ClearValue *pColorClear = pClearValues ? &pClearValues[i] : nullptr;
+		Ref<Texture> texture = new Texture{ device, format, width, height, 1/*(uint16_t)Texture::CalculateMipmapLevels(width, height)*/, 1, TextureType::ColorAttachment, sampleCount, pColorClear };
 		SetColorAttachment(i, texture);
     }
 	BuildRenderTargetView(sampleCount);
 
     if (depthAttachmentFormat != Format::None)
     {
-		Ref<Texture> texture = new Texture{device, depthAttachmentFormat, width, height, (uint16_t) Texture::CalculateMipmapLevels(width, height), 1, TextureType::DepthStencilAttachment, sampleCount};
+		const ClearValue *pDepthClear = pClearValues ? &pClearValues[colorAttachmentCount] : nullptr;
+		Ref<Texture> texture = new Texture{device, depthAttachmentFormat, width, height, 1/*(uint16_t) Texture::CalculateMipmapLevels(width, height)*/, 1, TextureType::DepthStencilAttachment, sampleCount, pDepthClear};
 		SetDepthAttachment(texture);
     }
 }
-
+ 
 RenderTarget::~RenderTarget()
 {
     if (descriptors)
@@ -47,7 +51,20 @@ RenderTarget::~RenderTarget()
 
     if (depthDescriptor)
     {
-		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, depthViewDescriptorHeap, depthDescriptor);
+		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, depthViewDescriptorHeap, depthDescriptor, 1);
+    }
+}
+
+void RenderTarget::SetName(const char *s)
+{
+	std::string name = "RenderTarget::" + std::string(s);
+    for (auto &c : colorBuffers)
+    {
+		c->SetName(name.c_str());
+    }
+    if (depth)
+    {
+		depth->SetName(name.c_str());
     }
 }
 
@@ -119,25 +136,12 @@ void RenderTarget::BuildRenderTargetView(uint32_t sampleCount)
 void RenderTarget::SetDepthAttachment(Ref<Texture> &texture)
 {
 	depth = texture;
-	D3D12_DEPTH_STENCIL_VIEW_DESC desc{
-	    .ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
-        .Texture2D = {
-            .MipSlice = 0
-        }
-    };
+	depthDescriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, &depthViewDescriptorHeap, 1);
 
-    uint32_t arrayLayers = texture->GetArrayLayers();
-    if (arrayLayers > 1)
-    {
-		desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY,
-        desc.Texture2DArray = {
-            .MipSlice        = 0,
-            .FirstArraySlice = 0,
-			.ArraySize       = arrayLayers
-        };
-    }
-
-    depthDescriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, &depthViewDescriptorHeap);
+	D3D12_DEPTH_STENCIL_VIEW_DESC desc{};
+	desc.Flags = D3D12_DSV_FLAG_NONE;
+	desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	desc.Texture2D     = { .MipSlice = 0 };
 	device->CreateDepthStencilView(*texture, &desc, depthDescriptor);
 }
 
