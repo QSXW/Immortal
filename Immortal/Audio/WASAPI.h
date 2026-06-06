@@ -9,7 +9,7 @@
 #ifndef WASAPI_CONTEXT_H_
 #define WASAPI_CONTEXT_H_
 
-#include "IAudioDevice.h"
+#include "AudioRenderContext.h"
 
 #include <mutex>
 #include <audioclient.h>
@@ -18,19 +18,17 @@
 
 namespace Immortal
 {
-namespace WASAPI
-{
 
 using Microsoft::WRL::ComPtr;
-class Device : public IAudioDevice
+class WASAPIContext : public AudioRenderContext
 {
 public:
-    using Super = IAudioDevice;
+    using Super = AudioRenderContext;
 
 public:
-    Device();
+    WASAPIContext();
 
-    virtual ~Device();
+    virtual ~WASAPIContext();
 
     virtual void OpenDevice() override;
 
@@ -42,17 +40,9 @@ public:
 
     virtual void Pause(bool enable) override;
 
+    virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
+
     virtual double GetPostion() override;
-
-    virtual void BeginRender(uint32_t frames) override;
-
-    virtual void WriteBuffer(const uint8_t *buffer, size_t size) override;
-
-	virtual void EndRender(uint32_t frames) override;
-
-	virtual uint32_t GetAvailableFrameCount() override;
-
-    virtual AudioFormat GetFormat() override;
 
     void Release();
 
@@ -67,16 +57,11 @@ protected:
 
     ComPtr<IAudioClock> clock;
 
-    uint32_t bufferSize;
-
     std::mutex mutex;
 
     WAVEFORMATEX *waveFormat;
-
-    uint8_t *data;
 };
 
-}
 }
 
 #endif

@@ -8,8 +8,6 @@
 
 namespace Immortal
 {
-namespace WASAPI
-{
 
 static inline void Check(HRESULT hr)
 {
@@ -19,20 +17,19 @@ static inline void Check(HRESULT hr)
     }
 }
 
-Device::Device() :
+WASAPIContext::WASAPIContext() :
     Super{},
-    waveFormat{},
-    bufferSize{}
+    waveFormat{}
 {
     OpenDevice();
 }
 
-Device::~Device()
+WASAPIContext::~WASAPIContext()
 {
     Release();
 }
 
-void Device::OpenDevice()
+void WASAPIContext::OpenDevice()
 {
     Release();
 
@@ -52,25 +49,28 @@ void Device::OpenDevice()
 
     Check(audioClient->GetService(IID_PPV_ARGS(&clock)));
 
-    Check(audioClient->GetBufferSize(&bufferSize));
+    Check(audioClient->GetBufferSize(&bufferFrameCount));
+
+    format.Channels = waveFormat->nChannels;
+    format.SampleRate = waveFormat->nSamplesPerSec;
 }
 
-void Device::Begin()
+void WASAPIContext::Begin()
 {
     Check(audioClient->Start());
 }
 
-void Device::End()
+void WASAPIContext::End()
 {
     Check(audioClient->Stop());
 }
 
-void Device::Reset()
+void WASAPIContext::Reset()
 {
     Check(audioClient->Reset());
 }
 
-void Device::Pause(bool enable)
+void WASAPIContext::Pause(bool enable)
 {
     if (enable)
     {
@@ -82,7 +82,32 @@ void Device::Pause(bool enable)
     }
 }
 
-double Device::GetPostion()
+int WASAPIContext::PlaySamples(uint32_t numberSamples, const uint8_t *pSamples)
+{
+    uint32_t frameRequested = 0;
+    while (numberSamples > 0)
+    {
+        uint8_t *pData;
+
+        uint32_t numFramesPadding;
+        Check(audioClient->GetCurrentPadding(&numFramesPadding));
+
+        frameRequested = std::min(numberSamples, bufferFrameCount - numFramesPadding);
+
+        Check(renderClient->GetBuffer(frameRequested, &pData));
+
+        uint32_t bytes = frameRequested << 3;
+        memcpy(pData, pSamples, bytes);
+        pSamples += bytes;
+        numberSamples -= frameRequested;
+
+        Check(renderClient->ReleaseBuffer(frameRequested, 0));
+    }
+
+    return frameRequested;
+}
+
+double WASAPIContext::GetPostion()
 {
     uint64_t position;
     Check(clock->GetPosition(&position, nullptr));
@@ -93,44 +118,7 @@ double Device::GetPostion()
     return (double)position / (double)frequency;
 }
 
-void Device::BeginRender(uint32_t frames)
-{
-	Check(renderClient->GetBuffer(frames, &data));
-}
-
-void Device::WriteBuffer(const uint8_t *buffer, size_t size)
-{
-	SLASSERT(data != nullptr && "BeginRender is not called yet!");
-	memcpy(data, buffer, size);
-}
-
-void Device::EndRender(uint32_t frames)
-{
-	Check(renderClient->ReleaseBuffer(frames, 0));
-	data = nullptr;
-}
-
-uint32_t Device::GetAvailableFrameCount()
-{
-	uint32_t padding = 0;
-	Check(audioClient->GetCurrentPadding(&padding));
-
-    return bufferSize - padding;
-}
-
-AudioFormat Device::GetFormat()
-{
-    AudioFormat format = {
-        .format     = Format::VECTOR2,
-	    .channels   = (uint8_t)waveFormat->nChannels,
-        .silence    = 0,
-	    .sampleRate = waveFormat->nSamplesPerSec,
-    };
-
-    return format;
-}
-
-void Device::Release()
+void WASAPIContext::Release()
 {
     if (waveFormat)
     {
@@ -139,5 +127,4 @@ void Device::Release()
     }
 }
 
-}
 }
