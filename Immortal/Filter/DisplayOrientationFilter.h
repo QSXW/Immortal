@@ -14,7 +14,9 @@ namespace Immortal
 class DisplayOrientationFilter : public FilterNode
 {
 public:
-    DisplayOrientationFilter(Device *device, int hflip, int vflip, int anticlockwiseRotation);
+    DisplayOrientationFilter(Device *device, bool hflip, bool vflip, int anticlockwiseRotation);
+
+    DisplayOrientationFilter(Device *device, int exifOrientaiton);
 
     void Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread()) override;
 

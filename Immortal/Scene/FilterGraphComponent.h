@@ -23,16 +23,14 @@ public:
 
 	FilterGraphComponent(Device *device = Graphics::GetDevice());
 
-	FilterGraphComponent(const FilterGraphComponent &other);
-
 	~FilterGraphComponent();
 
 	template <class T, class... Args>
-	Ref<FilterNode> &Insert(int index, Args &&...args)
+	void Insert(int index, Args &&...args)
 	{
 		FilterNode *node = new T{device, std::forward<Args>(args)...};
-		nodes.insert(nodes.begin() + index, std::move(node));
-		return nodes[index];
+		nodes.resize(index + 1);
+		nodes[index] = std::move(node);
 	}
 
 	template <class T, class... Args>
@@ -43,25 +41,10 @@ public:
 		return nodes.back();
 	}
 
-	Ref<FilterNode> GetNode(size_t index)
-	{
-		return nodes[index];
-	}
-
 	template <class T>
 	void EmplaceBack(Ref<T> &node)
 	{
 		nodes.emplace_back(node);
-	}
-
-	void Merge(FilterGraphComponent &other)
-	{
-		nodes.insert(nodes.end(), other.nodes.begin(), other.nodes.end());
-	}
-
-	size_t GetNodeSize() const
-	{
-		return nodes.size();
 	}
 
     void Execute(AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
@@ -73,8 +56,6 @@ public:
 	void Execute(FilterGraphComponent &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
 	const Ref<Texture> &QueryOutput(size_t filterNodeInstance = 0) const;
-
-	const std::vector<Ref<Texture>> &QueryOutputs() const;
 
 public:
 	Device *device;

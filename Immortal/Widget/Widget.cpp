@@ -6,24 +6,6 @@ namespace Immortal
 
 using namespace ImGui;
 
-namespace Icon
-{
-WidgetIcon Icons;
-const char *Arrows[2];
-}
-
-void SetWidgetArrows(const char *left, const char *right, const char *down, const char *up)
-{
-	Icon::Icons = {
-		down,
-		left,
-		right,
-		up
-	};
-	Icon::Arrows[0] = right;
-	Icon::Arrows[1] = down;
-}
-
 std::unordered_map<std::string, Widget *> Widget::Identify2WidgetTracker;
 std::unordered_map<Widget *, std::string> Widget::Widget2IdentifyTracker;
 
@@ -184,8 +166,7 @@ WCollapsingHeader::WCollapsingHeader(bool defaultOpen) :
 
 WRightClickPopup::WRightClickPopup(Widget *parent) :
     Widget{parent},
-    callback{},
-    id{}
+    callback{}
 {
 	using tweeny::easing;
 	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::quadraticInOut);
@@ -193,6 +174,8 @@ WRightClickPopup::WRightClickPopup(Widget *parent) :
 	Color(0xff020202);
 	BackgroundColor(0xffffffff);
 	HoveredColor(0x55d89624);
+
+	static ImGuiID activeItemId = 0;
 }
 
 bool WRightClickPopup::Draw()
@@ -205,7 +188,6 @@ bool WRightClickPopup::Draw()
 	int mouseButton = (ImGuiMouseButton_Right & ImGuiPopupFlags_MouseButtonMask_);
 	if (IsMouseReleased(mouseButton) && IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
 	{
-		mousePos = ImGui::GetMousePos();
 		Open();
 	}
 
@@ -233,7 +215,7 @@ bool WRightClickPopup::Draw()
 	}
 
 	WidgetLock lock{this};
-	id = window->GetID(this);
+	ImGuiID id = window->GetID(this);
 	if (ManualOpen())
 	{
 		ImGui::OpenPopupEx(id, 1);
@@ -249,12 +231,6 @@ bool WRightClickPopup::Draw()
 	}
 
 	ImVec2 windowSize = {kItemWidth + kPadding * 2, kItemHeight * std::max(items.size(), size_t(10)) + kPadding * 2};
-	if (mousePos.x != 0 && mousePos.y != 0 && mousePos.y + windowSize.y > g.IO.DisplaySize.y)
-	{
-		ImGui::SetNextWindowPos({mousePos.x, mousePos.y - windowSize.y}, ImGuiCond_Always);
-		mousePos = {};
-	}
-
 	float factor = tween.step(7 * Time::DeltaTime);
 	windowSize.x *= factor;
 	windowSize.y *= factor;
@@ -343,11 +319,6 @@ WRightClickPopup *WRightClickPopup::Items(std::initializer_list<std::pair<const 
 	return this;
 }
 
-bool WRightClickPopup::IsOpened() const
-{
-	return ImGui::IsPopupOpen(id, 0);
-}
-
 void WRightClickPopup::Open()
 {
 	ActiveItemId(ImGui::GetItemID());
@@ -375,17 +346,13 @@ bool InputText(int id, const char *hint, char *buf, size_t size, float width, fl
 
 static int InputTextCallback(ImGuiInputTextCallbackData *data)
 {
-	String *text = (String *) data->UserData;
 	if (data->BufTextLen >= data->BufSize - 1)
 	{
+		String *text = (String *)data->UserData;
 		text->reserve(data->BufSize + 1);
 		text->resize(data->BufTextLen);
 		data->BufSize = text->capacity();
 		data->Buf     = text->data();
-	}
-	else
-	{
-		text->resize(data->BufTextLen);
 	}
 
 	return 0;

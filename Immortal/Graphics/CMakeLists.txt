@@ -63,8 +63,6 @@ set(D3D12_FILES
     AccelerationStructure.h
     Buffer.cpp
     Buffer.h
-    BufferView.cpp
-    BufferView.h
     CommandAllocator.cpp
     CommandAllocator.h
     CommandBuffer.cpp
@@ -271,7 +269,6 @@ set(GRAPHICS_FILES
     AsyncCompute.h
     Buffer.cpp
     Buffer.h
-    BufferView.h
     CommandBuffer.h
     Descriptor.h
     DescriptorSet.h

@@ -10,7 +10,7 @@ namespace Immortal
 namespace Vision
 {
 
-class TurboJpegCodec : public Interface::Codec, public IClass
+class TurboJpegCodec : public Interface::Codec
 {
 public:
     using Super = Interface::Codec;
@@ -18,8 +18,6 @@ public:
 #if HAVE_TURBOJPEG
 public:
 	TurboJpegCodec(bool isOutputYUV = false);
-
-    TurboJpegCodec(const ImageEncodeInfo &info);
 
     virtual ~TurboJpegCodec() override;
 
@@ -36,15 +34,14 @@ public:
 
     void SetDesireSize(int value);
 
-public:
-	ImageEncodeInfo info;
-
 protected:
 	bool isOutputYUV;
 
     int numerator;
 
     int denominator;
+
+    int quality;
 
     int desireSize;
 };

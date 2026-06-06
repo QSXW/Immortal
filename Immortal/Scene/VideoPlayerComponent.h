@@ -18,13 +18,6 @@ struct VideoDecodeCallbacks
     std::function<void(Picture &&)> AudioDecodeFinishSlot;
 };
 
-enum class VideoPlayerMode
-{
-    Playing,
-    Transcoding,
-    MetaReading,
-};
-
 class VideoPlayerContext;
 struct VideoPlayerComponent : public IObject, public Component
 {
@@ -34,7 +27,7 @@ struct VideoPlayerComponent : public IObject, public Component
 
     VideoPlayerComponent();
 
-    VideoPlayerComponent(const String &path, int cacheSize = 3, const Vision::DecodingPreference &preference = Vision::DecodingPreference::Auto, VideoPlayerMode mode = VideoPlayerMode::Playing);
+    VideoPlayerComponent(const String &path, int cacheSize = 3, const Vision::DecodingPreference &preference = Vision::DecodingPreference::Auto, const VideoDecodeCallbacks &callbacks = {});
 
     VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr, Ref<VideoCodec> subtitleDecoder = nullptr);
 
@@ -71,12 +64,6 @@ struct VideoPlayerComponent : public IObject, public Component
     CodecError SwitchTrack(MediaType mediaType, int index);
 
     bool HasStream(MediaType type) const;
-
-    CodecError GetStreamInfo(MediaType type, EncodeInfo &streamInfo);
-
-    void SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph, Format format);
-
-    void SetCallbacks(const VideoDecodeCallbacks &callbacks);
 
     bool operator !();
 

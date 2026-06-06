@@ -20,9 +20,7 @@ public:
 
 public:
 	SharedCodedFrameData() :
-        data{},
-        size{},
-	    anonymous{},
+	    buffer{},
 	    type{},
 	    timestamp{},
         flags{},
@@ -39,42 +37,39 @@ public:
         }
     }
 
-    void UpdateAnonymous()
+    void Assign(std::vector<uint8_t> &&other)
     {
-		data = anonymous.data();
-		size = anonymous.size();
+        buffer = std::move(other);
     }
 
     template <class T>
     void RefTo(const T *ptr)
     {
-		anonymous.resize(sizeof(T *));
-		memcpy(anonymous.data(), &ptr, sizeof(T *));
+        buffer.resize(sizeof(T *));
+        memcpy(buffer.data(), &ptr, sizeof(T *));
     }
-
-    void Assign(std::vector<uint8_t> &&other)
-	{
-		anonymous = std::move(other);
-		UpdateAnonymous();
-	}
 
     template <class T>
 	void Assign(const T *ptr, size_t size)
     {
-		anonymous.resize(size);
-		memcpy(anonymous.data(), ptr, size);
-		UpdateAnonymous();
+		buffer.resize(size);
+		memcpy(buffer.data(), ptr, size);
     }
 
     template <class T>
 	T *InterpretAs() const
 	{
-		return *(T **)anonymous.data();
+		return *(T **)buffer.data();
 	}
 
     operator bool() const
     {
-        return !!data;
+        return !buffer.empty();
+    }
+
+    const std::vector<uint8_t> &GetBuffer() const
+    {
+		return buffer;
     }
 
     void SetRelease(std::function<void(void *)> &&func)
@@ -93,11 +88,7 @@ public:
     }
 
 protected:
-	uint8_t *data;
-
-    size_t size;
-
-	std::vector<uint8_t> anonymous;
+	std::vector<uint8_t> buffer;
 
 	MediaType type;
 
@@ -128,8 +119,7 @@ public:
 	CodedFrame(const T *data, size_t size) :
 	    _shared{new SharedCodedFrameData}
 	{
-		_shared->data = (uint8_t *)data;
-		_shared->size = size;
+		_shared->Assign(data, size);
 	}
 
 	CodedFrame(std::vector<uint8_t> &&data) :
@@ -141,12 +131,6 @@ public:
     ~CodedFrame()
     {
 
-    }
-
-    template <class T>
-    void SetAnonymous(T *obj)
-    {
-		_shared->RefTo(obj);
     }
 
     void SetType(MediaType value)
@@ -178,7 +162,12 @@ public:
 
     operator bool() const
     {
-		return _shared && *_shared;
+		return _shared && !_shared->GetBuffer().empty();
+    }
+
+    const std::vector<uint8_t> &GetBuffer() const
+    {
+		return _shared->GetBuffer();
     }
 
     void SetRelease(std::function<void(void *)> &&func)
@@ -193,7 +182,8 @@ public:
 			return 0;
         }
 
-        return _shared->size;
+		auto &buffer = _shared->GetBuffer();
+	    return buffer.size();
     }
 
     const uint8_t *GetData() const
@@ -203,7 +193,8 @@ public:
 			return nullptr;
 		}
 
-		return _shared->data;
+		auto &buffer = _shared->GetBuffer();
+	    return buffer.data();
 	}
 
     const int64_t &GetTimestamp() const

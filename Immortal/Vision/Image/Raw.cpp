@@ -45,13 +45,12 @@ RawCodec::~RawCodec()
 
 CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 {
-	auto data = codedFrame.GetData();
-	auto size = codedFrame.GetSize();
+    const auto &buffer = codedFrame.GetBuffer();
 
     processor = std::make_shared<LibRaw>();
-	if (processor->open_buffer(data, size) != LIBRAW_SUCCESS)
+	if (processor->open_buffer(buffer.data(), buffer.size()) != LIBRAW_SUCCESS)
 	{
-		LOG::ERR("Failed to open buffer(0x{}) - size({})", (void *) data, size);
+		LOG::ERR("Failed to open buffer(0x{}) - size({})", (void *)buffer.data(), buffer.size());
 		return CodecError::ExternalFailed;
 	}
 
@@ -118,35 +117,6 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 	}
 
     return CodecError::Success;
-}
-
-CodecError RawCodec::DecodeHeader(CodedFrame &codedFrame, EncodeInfo &Info)
-{
-	auto data = codedFrame.GetData();
-	auto size = codedFrame.GetSize();
-
-	LibRaw processor{};
-	if (processor.open_buffer(data, size) != LIBRAW_SUCCESS)
-	{
-		LOG::ERR("Failed to open buffer(0x{}) - size({})", (void *) data, size);
-		return CodecError::ExternalFailed;
-	}
-
-	auto &img = processor.imgdata;
-	Info =  EncodeInfo{
-		.mediaType = MediaType::Video,
-		.codecId   = CodecId::RAW,
-        .width     = uint32_t(img.sizes.width),
-		.height    = uint32_t(img.sizes.height),
-        .format    = Format::BayerLayerRGGB,
-		.bitRate   = 0,
-		.gopSize   = 0,
-		.framerate = { 0, 1 },
-		.timeBase  = { 0, 1},
-		.displayOrientation = {}
-	};
-
-	return CodecError::Success;
 }
 
 void RawCodec::GetParams(RawParams *pParams)
@@ -372,11 +342,10 @@ DisplayOrientation RawCodec::GetDisplayOrientation()
 
 Picture RawCodec::DecodeThumbnail(const CodedFrame &codedFrame)
 {
-	auto data = codedFrame.GetData();
-	auto size = codedFrame.GetSize();
+	const auto &buffer = codedFrame.GetBuffer();
 	processor = std::make_shared<LibRaw>();
 	
-	if (processor->open_buffer(data, size) != LIBRAW_SUCCESS)
+	if (processor->open_buffer(buffer.data(), buffer.size()) != LIBRAW_SUCCESS)
 	{
 		LOG_ERROR("[LibRaw] Error when open buffer!");
 		return {};

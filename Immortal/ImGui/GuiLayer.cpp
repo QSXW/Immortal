@@ -102,6 +102,7 @@ void GuiLayer::OnAttach()
     }
 
     ImGuiIO& io = ImGui::GetIO();
+
     //io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;

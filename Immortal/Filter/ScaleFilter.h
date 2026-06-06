@@ -7,7 +7,6 @@
 #pragma once
 
 #include "Filter.h"
-#include "Math/Vector.h"
 
 namespace Immortal
 {
@@ -15,18 +14,13 @@ namespace Immortal
 class ScaleFilter : public FilterNode
 {
 public:
-	ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uint32_t width, uint32_t height, ColorSpace colorSpace = ColorSpace::BT709, bool fullRange = false);
+	ScaleFilter(Device *device, Format dstFormat, Format srcFormat, uint32_t width, uint32_t height, ColorSpace colorSpace = ColorSpace::BT709, bool fullRange = false);
 
     virtual ~ScaleFilter() override;
 
     virtual void Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread()) override;
 
 protected:
-	void CreateOutputs(uint32_t width, uint32_t height);
-
-protected:
-	Device *device;
-
 	Ref<DescriptorSet> descriptorSet;
 
 	Ref<Pipeline> pipeline;
@@ -35,13 +29,13 @@ protected:
 
     Format srcFormat;
 
-    Format dstFormat;
-
     ColorSpace colorSpace;
 
-    Matrix4 transform;
-
     int transformIndex;
+
+    Ref<Buffer> stagingLut;
+
+    Ref<Buffer> lut;
 };
 
 }

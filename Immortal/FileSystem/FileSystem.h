@@ -72,7 +72,6 @@ enum class FileType
     ZIP,
     WEBP,
     JXL,
-    TIFF,
     Num
 };
 SL_ENABLE_BITWISE_OPERATOR(FileType)
@@ -117,7 +116,6 @@ enum class FileFormat : uint64_t
     RW2   = MakeIdentifier('R', 'W', '2'     ),
     WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
     HEIC  = MakeIdentifier('H', 'E', 'I', 'C'),
-    TIFF  = MakeIdentifier('T', 'I', 'F', 'F'),
 
     /** Video file format extensions */
     AVI   = MakeIdentifier('A', 'V', 'I'    ),
@@ -142,7 +140,7 @@ enum class FileFormat : uint64_t
 
     /** Immortal Scene */
     IML   = MakeIdentifier('I', 'M', 'L'     ),
-
+                                             
     CPP   = MakeIdentifier('C', 'P', 'P'     ),
     EXE   = MakeIdentifier('E', 'X', 'E'     ),
     JSON  = MakeIdentifier('J', 'S', 'O', 'N'),
@@ -237,7 +235,6 @@ static inline bool IsImage(FileFormat id)
            IsFormat<FileFormat::HDR>(id)  ||
            IsFormat<FileFormat::JFIF>(id) ||
 	       IsFormat<FileFormat::WEBP>(id) ||
-	       IsFormat<FileFormat::TIFF>(id) ||
            IsRawImage(id);
 }
 
@@ -334,8 +331,8 @@ static FileType GetFileType(const std::string &path)
     case FileFormat::WEBM:
         return FileType::Video;
 
-    CASE(CPP )
-    CASE(EXE )
+    CASE(CPP )     
+    CASE(EXE )      
     CASE(BIN )
     CASE(MP4 )
     CASE(MOV )
@@ -360,7 +357,6 @@ static FileType GetFileType(const std::string &path)
     CASE(ZIP )
 	CASE(WEBP)
 	CASE(JXL )
-	CASE(TIFF)
     default:
         return FileType::RegularFile;
     }
@@ -509,7 +505,7 @@ public:
     {
 
     }
-
+    
     Path(const wchar_t *path) :
         Super{ path }
     {
@@ -612,7 +608,7 @@ struct DirectoryEntry
 	    isEmpty{true},
 	    flags{}
 	{
-
+    
     }
 
     DirectoryEntry(const String &_path, FileType type) :

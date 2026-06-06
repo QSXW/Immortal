@@ -19,21 +19,8 @@ FilterGraphComponent::FilterGraphComponent(Device *device) :
 
 }
 
-FilterGraphComponent::FilterGraphComponent(const FilterGraphComponent &other) :
-    device{ other.device },
-    nodes{ other.nodes },
-    transferNode{},
-    maxNodeLength{ other.maxNodeLength }
-{
-
-}
-
 FilterGraphComponent::~FilterGraphComponent()
 {
-	for (auto &o : output)
-	{
-		Graphics::ReleaseResource(o);
-	}
 	nodes = {};
 }
 
@@ -58,7 +45,6 @@ void FilterGraphComponent::Execute(const std::vector<Picture> &input, AsyncCompu
 
 void FilterGraphComponent::Execute(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
 {
-	transferNode.SetOutput(input);
 	std::vector<Ref<Texture>> nextInputs = input;
 
 	for (size_t i = 0; i < nodes.size(); i++)
@@ -100,11 +86,6 @@ void FilterGraphComponent::Execute(FilterGraphComponent &input, AsyncComputeThre
 const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t filterNodeInstance) const
 {
 	return output[filterNodeInstance];
-}
-
-const std::vector<Ref<Texture>> &FilterGraphComponent::QueryOutputs() const
-{
-	return output;
 }
 
 }

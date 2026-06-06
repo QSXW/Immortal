@@ -185,137 +185,38 @@ void BicubicConvolutionInterpolate(Picture &dst, const Picture &src)
 		TBicubicConvolutionInterpolate<uint16_t, 2, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		RGBAMaskAlphaChannel<uint16_t>(dst);
 	}
-	else if (format == Format::R8G8B8_UNORM || format == Format::B8G8R8_UNORM)
-	{
-		TBicubicConvolutionInterpolate<uint8_t, 0, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint8_t, 1, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TBicubicConvolutionInterpolate<uint8_t, 2, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-	}
-}
-
-template <class T, size_t offset = 0, size_t elements = 1>
-void TNearestInterpolate(T *dst, size_t dstStride, T *src, size_t srcStride, uint32_t dstWidth, uint32_t dstHeight, uint32_t srcWidth, uint32_t srcHeight)
-{
-	float widthRatio  = (float)srcWidth  / dstWidth;
-	float heightRatio = (float)srcHeight / dstHeight;
-
-	if constexpr (std::is_same_v<T, uint16_t>)
-	{
-		srcStride >>= 1;
-		dstStride >>= 1;
-	}
-
-	for (uint32_t iy = 0; iy < dstHeight; iy++)
-	{
-		T *data = &dst[iy * dstStride];
-		for (uint32_t ix = 0; ix < dstWidth; ix++)
-		{
-			uint32_t srcX = (uint32_t)(ix * widthRatio + 0.5f);
-			uint32_t srcY = (uint32_t)(iy * heightRatio + 0.5f);
-
-			srcX = srcX >= srcWidth  ? srcWidth  - 1 : srcX;
-			srcY = srcY >= srcHeight ? srcHeight - 1 : srcY;
-
-			data[ix * elements + offset] = src[srcY * srcStride + srcX * elements + offset];
-		}
-	}
-}
-
-void NearestInterpolate(Picture &dst, const Picture &src)
-{
-	SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
-	GetSamplingFactor(dst.GetFormat(), factors);
-
-	auto &format = src.GetFormat();
-
-	if (format.IsType(Format::YUV))
-	{
-		if (format.IsType(Format::HightBitDepth))
-		{
-			for (size_t i = 0; src.GetData(i); i++)
-			{
-				uint16_t *pDst = (uint16_t *) dst.GetData(i);
-				uint16_t *pSrc = (uint16_t *) src.GetData(i);
-				TNearestInterpolate<uint16_t>(
-				    pDst,
-				    dst.GetStride(i),
-				    pSrc,
-				    src.GetStride(i),
-				    dst.GetWidth() >> factors[i].x,
-				    dst.GetHeight() >> factors[i].y,
-				    src.GetWidth() >> factors[i].x,
-				    src.GetHeight() >> factors[i].y);
-			}
-		}
-		else
-		{
-			for (size_t i = 0; src.GetData(i); i++)
-			{
-				TNearestInterpolate<uint8_t>(
-				    dst.GetData(i),
-				    dst.GetStride(i),
-				    src.GetData(i),
-				    src.GetStride(i),
-				    dst.GetWidth() >> factors[i].x,
-				    dst.GetHeight() >> factors[i].y,
-				    src.GetWidth() >> factors[i].x,
-				    src.GetHeight() >> factors[i].y);
-			}
-		}
-	}
-	else if (format == Format::RGBA8 || format == Format::BGRA8)
-	{
-		TNearestInterpolate<uint8_t, 0, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint8_t, 1, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint8_t, 2, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint8_t>(dst);
-	}
-	else if (format == Format::RGBA16 || format == Format::R16G16B16A16_UINT)
-	{
-		TNearestInterpolate<uint16_t, 0, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint16_t, 1, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint16_t, 2, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		RGBAMaskAlphaChannel<uint16_t>(dst);
-	}
-	else if (format == Format::R8G8B8_UNORM || format == Format::B8G8R8_UNORM)
-	{
-		TNearestInterpolate<uint8_t, 0, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint8_t, 1, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-		TNearestInterpolate<uint8_t, 2, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
-	}
 }
 
 void ScaleTo8Bits(Picture &dst, const Picture &src)
 {
 	auto &format = src.GetFormat();
-	if (!format.IsType(Format::HightBitDepth) && format != Format::R16G16B16A16_UNORM)
+	if (!format.IsType(Format::HightBitDepth))
 	{
 		return;
 	}
 
-	int shift = 8;
+	float scale = 1.0f;
 	if (format.IsType(Format::_10Bits))
 	{
-		shift = 2;
+		scale = 1.0f / 1023.0f;
 	}
 	else if (format.IsType(Format::_12Bits))
 	{
-		shift = 4;
+		scale = 1.0f / 4095.0f;
 	}
 	else if (format.IsType(Format::_16Bits))
 	{
-		shift = 8;
+		scale = 1.0f / 65535.0f;
 	}
-
-	SamplingFactor factors[SamplingFactor::kMaxSublayer];
-	GetSamplingFactor(format, factors);
+	scale *= 255.0f;
 
 	for (size_t i = 0; src.GetData(i); i++)
 	{
+		SamplingFactor factors[SamplingFactor::kMaxSublayer];
+		GetSamplingFactor(format, factors);
+
 		auto width  = src.GetWidth()  >> factors[i].x;
 		auto height = src.GetHeight() >> factors[i].y;
-	
-		width *= format.GetComponent();
 		for (size_t y = 0; y < height; y++)
 		{
 			auto dstStride = dst.GetStride(i);
@@ -325,7 +226,7 @@ void ScaleTo8Bits(Picture &dst, const Picture &src)
 			uint16_t *pSrc = (uint16_t *)(&(src.GetData(i)[y * srcStride]));
 			for (size_t x = 0; x < width; x++)
 			{
-				pDst[x] = pSrc[x] >> shift;
+				pDst[x] = (uint8_t)std::clamp(pSrc[x] * scale, 0.0f, 255.0f);
 			}
 		}
 	}

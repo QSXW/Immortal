@@ -2,7 +2,6 @@
 #include "CommandBuffer.h"
 #include "PhysicalDevice.h"
 #include "Buffer.h"
-#include "BufferView.h"
 #include "Sampler.h"
 #include "Event.h"
 #include "DescriptorPool.h"
@@ -174,11 +173,6 @@ SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, co
 	return new Shader{ name, stage, source, entryPoint, pMacro, numMacro };
 }
 
-SuperShader *Device::CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size)
-{
-	return new Shader{stage, type, binary, size};
-}
-
 SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
 {
 	return new GraphicsPipeline{ this };
@@ -202,17 +196,6 @@ SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
 SuperBuffer *Device::CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride)
 {
 	return new Buffer{ this, type, size, memoryType, byteStride };
-}
-
-SuperBufferView *Device::CreateBufferView(SuperBuffer *_buffer, Format format, uint32_t byteStride)
-{
-	Buffer *buffer = InterpretAs<Buffer>(_buffer);
-	if (format != Format::None)
-	{
-		return new BufferView{ this, buffer, format };
-	}
-
-	return new BufferView{ this, buffer, byteStride };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
@@ -284,8 +267,8 @@ Pipeline *Device::GetPipeline(const std::string &name)
 	};
 
 	static const std::unordered_map<std::string, PipelineCreateInfo> pipelineCreateInfos = {
-		{ "GenerateMipMaps",     { "Assets/Shaders/hlsl/generatemipmaps",     ShaderStage::Compute,  "GenerateMipMaps"    } },
-		{ "GenerateMipMapsCube", { "Assets/Shaders/hlsl/generatemipmaps_cube", ShaderStage::Compute, "GenerateMipMapsCube"} }
+		{ "GenerateMipMaps",     { "Assets/Shaders/hlsl/generatemipmaps.hlsl",     ShaderStage::Compute, "GenerateMipMaps"    } },
+		{ "GenerateMipMapsCube", {"Assets/Shaders/hlsl/generatemipmaps_cube.hlsl", ShaderStage::Compute, "GenerateMipMapsCube"} }
 	};
 
 	{
@@ -305,37 +288,21 @@ Pipeline *Device::GetPipeline(const std::string &name)
 
 	const auto &[shaderName, pipelineCreateInfo] = *pipelineCreateInfoIt;
 
-	bool dxil = true;
-	Ref<Shader> shader;
-	std::filesystem::path path = pipelineCreateInfo.path + std::string{".dxil"};
 	std::ifstream stream;
-	stream.open(path, std::ios::binary);
+	stream.open(pipelineCreateInfo.path, std::ios::binary);
 	if (!stream.is_open())
 	{
-		dxil = false;
-		path = pipelineCreateInfo.path + std::string{".hlsl"};
-		stream.open(path);
-		if (!stream.is_open())
-		{
-			return {};
-		}
+		return nullptr;
 	}
 
-	uint32_t size = std::filesystem::file_size(path);
+	size_t size = std::filesystem::file_size(pipelineCreateInfo.path);
 	std::string shaderSource;
 	shaderSource.resize(size);
-	stream.read((char *)shaderSource.data(), size);
 
-	if (dxil)
-	{
-		shader = new Shader{ShaderStage::Compute, ShaderBinaryType::DXIL, shaderSource.data(), size};
-	}
-	else
-	{
-		shader = new Shader{shaderName, pipelineCreateInfo.stage, shaderSource, "main"};
-	}
+	stream.read(shaderSource.data(), size);
 
-	URef<Pipeline> pipeline = new ComputePipeline{ this, shader };
+	Shader shader{ shaderName, pipelineCreateInfo.stage, shaderSource, pipelineCreateInfo.enryPoint };
+	URef<Pipeline> pipeline = new ComputePipeline{ this, &shader };
 
 	std::unique_lock lock{ pipelineMutex };
 	pipelines[name] = std::move(pipeline);

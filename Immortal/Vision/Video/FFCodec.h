@@ -144,9 +144,7 @@ class IMMORTAL_API FFCodec : public VideoCodec
 {
 #if HAVE_FFMPEG
 public:
-	FFCodec(const char *name = "FFmpegDecoder");
-
-    FFCodec(CodecId codecId);
+	FFCodec(int sampleRate = 0, const char *name = "FFmpegDecoder");
 
     FFCodec(const EncodeInfo &encodeInfo);
 
@@ -191,9 +189,14 @@ public:
         return handle;
     }
 
-    operator bool() const
+    int GetSampleRate() const
     {
-		return !!handle;
+		return sampleRate;
+    }
+
+    void SetSampleRate(int value)
+    {
+		sampleRate = value;
     }
     
 protected:
@@ -218,9 +221,13 @@ protected:
 
     PictureMemoryType type;
 
+    MediaType mediaType;
+
     URef<MemoryResource> memoryResource;
 
     int hwaccelType;
+
+    int sampleRate;
 
     int64_t pts;
 
@@ -235,48 +242,12 @@ protected:
     uint8_t **rescaledSamples = {};
 
     ColorSpace colorSpace = ColorSpace::BT709;
-	
-    ColorTransferCharacteristic transferCharacteristic = ColorTransferCharacteristic::Unspecified;
 
     int numRescaledSamples = 0;
 
     bool isEncoder = false;
 #endif // HAVE_FFMPEG
 };
-
-class FFImageCodec : public Interface::Codec
-{
-public:
-	using Super = Interface::Codec;
-
-public:
-	FFImageCodec(CodecId codecId);
-
-	virtual ~FFImageCodec() override;
-
-	virtual CodecError Decode(const CodedFrame &codedFrame) override;
-
-	virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
-
-private:
-    CodecId codecId;
-};
-
-template <CodecId C>
-class TFFImageCodec : public FFImageCodec
-{
-public:
-    TFFImageCodec() :
-        FFImageCodec{ C }
-    {
-
-    }
-};
-
-using FFTiffCodec   = TFFImageCodec<CodecId::TIFF>;
-using FFPngCodec    = TFFImageCodec<CodecId::PNG>;
-using FFWebpCodec   = TFFImageCodec<CodecId::WEBP>;
-using FFJpegxlCodec = TFFImageCodec<CodecId::JPEGXL>;
 
 }
 }

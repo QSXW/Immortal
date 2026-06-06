@@ -32,22 +32,13 @@
 namespace Immortal
 {
 
-struct WidgetIcon
-{
-	const char *KeyboardArrowDown;
-	const char *KeyboardArrowLeft;
-	const char *KeyboardArrowRight;
-	const char *KeyboardArrowUp;
-};
-
 namespace Icon
 {
-extern WidgetIcon Icons;
-
-extern const char *Arrows[];
-}
-
-void SetWidgetArrows(const char *left, const char *right, const char *down, const char *up);
+	static const char *Arrows[] = {
+        kKeyboardArrowRight,
+        kKeyboardArrowDown,
+    };
+};
 
 inline float GetCenterAlignPosition(float avilableWidth, float itemWidth)
 {
@@ -852,7 +843,7 @@ public:
         window->DC.CursorPos = window->DC.CursorPos + ImVec2{renderPadding.left, renderPadding.top};
     
         ImTextureID id = (ImTextureID)(uint64_t)image.Get();
-		ImVec2 size = { renderWidth,renderHeight};
+		ImVec2 size = { renderWidth, renderHeight };
 		ImVec2 cursor = GetCursorScreenPos();
 
         if (rotation != 0)
@@ -921,16 +912,14 @@ public:
         }
 
         float half = (renderHeight - y) * 0.5f;
-		renderPadding.top    = padding.top + half;
+		renderPadding.top = padding.top + half;
 		renderPadding.bottom = padding.bottom + half;
 
         half = (renderWidth - x) * 0.5f;
-		renderPadding.left  = padding.left + half;
+		renderPadding.left = padding.left + half;
 		renderPadding.right = padding.right + half;
 
-		x -= padding.left + padding.right;
-		y -= padding.top  + padding.bottom;
-        renderWidth  = x;
+        renderWidth = x;
         renderHeight = y;
     }
 
@@ -1225,7 +1214,7 @@ protected:
     std::function<void(const T *)> callback;
 };
 
-constexpr float kAlignPaddingY = 3.0f;
+constexpr float kAlignPaddingY = 2.0f;
 constexpr float CalculateCircleCheckboxWidth(float height)
 {
     height -= kAlignPaddingY * 2;
@@ -1336,12 +1325,11 @@ public:
         {
 			flags |= ImGuiTreeNodeFlags_SpanFullWidth;
         }
-
 		bool newState = TreeNodeEx(name, flags, "%s%s", Icon::Arrows[expanded], name);
 
         if (hasTriggerButton)
         {
-			auto width = region.x;
+			auto width = ImGui::GetWindowWidth();
 			float height = ImGui::GetFrameHeightWithSpacing();
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - height);
 			width = width - CalculateCircleCheckboxWidth(height) - 10;
@@ -1396,10 +1384,7 @@ public:
 					        {ImGuiStyleVar_IndentSpacing, indentSpacing }};
 
 						float padding = bodyHeigth > 0 ? ContentPaddingY() : 0;
-						if (padding > 0)
-						{
-							Dummy({0, padding});
-						}
+					    Dummy({ 0, padding });
 					    auto startY = window->DC.CursorPos.y;
 					    callback();
 
@@ -1409,10 +1394,7 @@ public:
 							sizeChanged = true;
                         }
 						BodyHeigth(newBodyHeight);
-						if (padding > 0)
-						{
-					        Dummy({ 0, padding });
-                        }
+					    Dummy({ 0, padding });
 						Unindent();
 				    }
 				    EndChild();
@@ -1665,7 +1647,7 @@ public:
             bool hovered;
             bool held;
             pressed |= ButtonBehavior(bbIcon, iconId, &hovered, &held);
-			window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, Icon::Icons.KeyboardArrowDown);
+			window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, kKeyboardArrowDown);
         }
 
         if (hovered)
@@ -1905,8 +1887,6 @@ public:
 		return this;
 	}
 
-    bool IsOpened() const;
-
 protected:
 	std::vector<std::pair<const String &, std::function<void()>>> items;
 
@@ -1915,10 +1895,6 @@ protected:
 	float factor = 0.0f;
 
 	tweeny::tween<float> tween;
-
-    ImVec2 mousePos = {};
-
-    ImGuiID id;
 };
 
 class WInputText : public Widget

@@ -36,7 +36,7 @@ public:                                \
     Primitive **AddressOf()            \
     {                                  \
         return handle.GetAddressOf();  \
-    }
+    }                                  
 
 #define D3D_OPERATOR_HANDLE() D3D_OPERATOR_PRIMITIVE(handle)
 
@@ -63,7 +63,8 @@ static std::string GetErrorString(HRESULT hr)
 #endif
 }
 
-#define DX_CHECK(result)                                                                      \
+//static inline void Check(HRESULT result, const char *message = "")
+#define DX_CHECK(result)                                                                        \
 {                                                                                               \
     if (FAILED(result))                                                                         \
     {                                                                                           \
@@ -133,7 +134,7 @@ static inline const char *TypeString(DXGI_FORMAT format)
 #define CASE(x) case x: return #x;
     switch (format)
     {
-        CASE(DXGI_FORMAT_UNKNOWN                                )
+        CASE(DXGI_FORMAT_UNKNOWN                                )        
         CASE(DXGI_FORMAT_R32G32B32A32_TYPELESS					)
         CASE(DXGI_FORMAT_R32G32B32A32_FLOAT						)
         CASE(DXGI_FORMAT_R32G32B32A32_UINT						)

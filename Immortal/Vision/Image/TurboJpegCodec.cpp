@@ -4,7 +4,6 @@
 #include <turbojpeg.h>
 #include <jpeglib.h>
 #endif
-#include "ICC.h"
 
 namespace Immortal
 {
@@ -35,83 +34,24 @@ static inline TJSAMP GetSampling(const Format &format)
 		case Format::YUV444P16:
 			return TJSAMP_444;
 
+		case Format::R8_UNORM:
+		case Format::RGBA8:
+			return TJSAMP_420;
+
 		default:
 			return TJSAMP_UNKNOWN;
 	}
 }
 
-static inline TJPF GetPixelFormat(Format format)
-{
-	if (format == Format::R8G8B8A8_UNORM)
-	{
-		return TJPF_RGBX;
-	}
-	else if (format == Format::B8G8R8A8_UNORM)
-	{
-		return TJPF_BGRX;
-	}
-	else if (format == Format::R8G8B8_UNORM)
-	{
-		return TJPF_RGB;
-	}
-	else if (format == Format::B8G8R8_UNORM)
-	{
-		return TJPF_BGR;
-	}
-	if (format == Format::R8_UNORM || format == Format::R16_UNORM)
-	{
-		return TJPF_GRAY;
-	}
-
-	return TJPF_UNKNOWN;
-}
-
-struct ProgressManager
-{
-	struct jpeg_progress_mgr pub;
-	TurboJpegCodec *_this;
-	float last_percent = 0;
-};
-
-METHODDEF(void)
-progress_monitor(j_common_ptr cinfo)
-{
-	auto progress = (ProgressManager *) cinfo->progress;
-
-	int percent;
-	if (progress->pub.total_passes > 1)
-	{
-		percent = (progress->pub.completed_passes + (float) progress->pub.pass_counter / progress->pub.pass_limit) /
-		                 progress->pub.total_passes;
-	}
-	else
-	{
-		percent = progress->pub.pass_counter / progress->pub.pass_limit;
-	}
-
-	if (percent != progress->last_percent)
-	{
-		progress->_this->info.listener->SetProgress(percent);
-		progress->last_percent = percent;
-	}
-}
-
 TurboJpegCodec::TurboJpegCodec(bool isOutputYUV) :
     Super{},
-	ICLASS,
     numerator{ 1 },
 	denominator{ 1 },
     isOutputYUV{ isOutputYUV },
-    desireSize{},
-    info{}
+    quality{ 90 },
+    desireSize{}
 {
 
-}
-
-TurboJpegCodec::TurboJpegCodec(const ImageEncodeInfo &_info) :
-    TurboJpegCodec{}
-{
-	info = _info;
 }
 
 TurboJpegCodec::~TurboJpegCodec()
@@ -121,89 +61,78 @@ TurboJpegCodec::~TurboJpegCodec()
 
 CodecError TurboJpegCodec::Decode(const CodedFrame &codedFrame)
 {
-    return Decode(codedFrame.GetData(), codedFrame.GetSize());
+    const auto &buffer = codedFrame.GetBuffer();
+
+    return Decode(buffer.data(), buffer.size());
 }
 
 CodecError TurboJpegCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 {
-	auto &format = picture.GetFormat();
-
-	TJPF pixelFormat;
-	TJSAMP sampling;
-	if (format.IsType(Format::YUV))
+	auto sampling = GetSampling(picture.GetFormat());
+	if (sampling == TJSAMP_UNKNOWN)
 	{
-		sampling = GetSampling(format);
-		if (sampling == TJSAMP_UNKNOWN)
-		{
-			CLOG_ERROR("Unknown sampling!");
-			return CodecError::InvalidArguments;
-		}
-	}
-	else
-	{
-		pixelFormat = GetPixelFormat(format);
-		if (pixelFormat == TJPF_UNKNOWN)
-		{
-			CLOG_ERROR("Unknown format!");
-			return CodecError::InvalidArguments;
-		}
+		LOG::ERR("Unsupported format");
+		return CodecError::InvalidArguments;
 	}
 
 	tjhandle handle = tjInitCompress();
 	if (!handle)
 	{
-		CLOG_ERROR("Failed to initialize turbo jpeg compress handle!");
+		LOG::ERR("Failed to initialize turbo jpeg compress handle!");
 		return CodecError::ExternalFailed;
 	}
 
-	ProgressManager progress = {
-	    .pub = {
-	        .progress_monitor = progress_monitor,
-		},
-	    ._this = this,
-		.last_percent = 0,
+	struct CompressedRef
+	{
+		CompressedRef() :
+			data{},
+			size{}
+		{
+
+		}
+
+		~CompressedRef()
+		{
+			if (data)
+			{
+				tjFree(data);
+				data = nullptr;
+			}
+		}
+
+		uint8_t *data;
+		unsigned long size;
 	};
 
-	jpeg_compress_struct *cinfo = (jpeg_compress_struct *)handle;
-	if (info.listener)
-	{
-		jpeg_simple_progression(cinfo);
-		cinfo->progress = &progress.pub;
-	}
-
-	auto icc = picture.GetProperty<ICCProfileProperty>();
-	if (icc)
-	{
-		auto &profile = icc->profile;
-		tj3SetICCProfile(handle, profile.data(), profile.size());
-	}
+	CompressedRef compressedRef{};
 
 	uint32_t width  = picture.GetWidth();
 	uint32_t height = picture.GetHeight();
 
-	uint8_t *data = nullptr;
-	unsigned long size = 0;
+	Format format = picture.GetFormat();
 	if (format.IsType(Format::YUV))
-	{
-		tjCompressFromYUVPlanes(handle, (const unsigned char **) &picture.GetData(), width, (const int *) &picture.GetStride(), height, sampling, &data, &size, info.quality, 0);
+	{	
+		int strides[4] = {};
+		uint8_t *planes[4] = {};
+		for (size_t i = 0; picture.GetData(i); i++)
+		{
+			strides[i] = picture.GetStride(i);
+			planes[i]  = picture.GetData(i);
+		}
+
+		tjCompressFromYUVPlanes(handle, (const unsigned char **)planes, width, strides, height, sampling, &compressedRef.data, &compressedRef.size, quality, 0);
 	}
 	else
 	{
-		tjCompress2(handle, picture.GetData(0), width, picture.GetStride(0), height, pixelFormat, &data, &size, TJSAMP_420, info.quality, 0);
+		int pixelFormat = TJPF_RGBX;
+		if (format == Format::R8_UNORM || format == Format::R16_UNORM)
+		{
+			pixelFormat = TJPF_GRAY;
+		}
+		tjCompress2(handle, picture.GetData(0), width, picture.GetStride(0), height, pixelFormat, &compressedRef.data, &compressedRef.size, sampling, quality, 0);
 	}
 
-	if (info.listener)
-	{
-		info.listener->Complete();
-		info.listener->SetProgress(1.0f);
-	}
-
-	codedFrame = CodedFrame{data, size};
-	codedFrame.SetAnonymous(data);
-
-	codedFrame.SetRelease([] (void *ptr) {
-		tjFree((unsigned char *)ptr);
-	});
+	codedFrame = CodedFrame{compressedRef.data, compressedRef.size};
 
 	tjDestroy(handle);
     return CodecError::Success;
@@ -218,7 +147,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
     handle = tjInitDecompress();
     if (!handle)
     {
-        CLOG_ERROR("Failed to initialize turbo jpeg decompress handle!");
+        LOG::ERR("Failed to initialize turbo jpeg decompress handle!");
         return CodecError::ExternalFailed;
     }
 
@@ -227,7 +156,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
 	int result = tjDecompressHeader3(handle, data, size, &width, &height, &subsample, &colorSpace);
 	if (result != 0)
 	{
-		CLOG_ERROR("Failed to decompress JPEG header: {}", tjGetErrorStr2(handle));
+		LOG::ERR("Failed to decompress JPEG header: {}", tjGetErrorStr2(handle));
 		tjDestroy(handle);
 		return CodecError::ExternalFailed;
 	}
@@ -254,7 +183,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
     result = tj3SetScalingFactor(handle, scalingFactor);
     if (result != 0)
     {
-        CLOG_ERROR("Failed to set scaling factor: {}", tjGetErrorStr2(handle));
+        LOG::ERR("Failed to set scaling factor: {}", tjGetErrorStr2(handle));
         tjDestroy(handle);
         return CodecError::ExternalFailed;
     }
@@ -280,7 +209,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
 
     if (isOutputYUV)
     {
-		result = tjDecompressToYUVPlanes(handle, data, size, &picture.GetData(), width, (int *)&picture.GetStride(), height, 0);
+        result = tjDecompressToYUV2(handle, data, size, picture.GetData(), width, 8, height, 0);
     }
     else
     {
@@ -290,7 +219,7 @@ CodecError TurboJpegCodec::Decode(const uint8_t *data, size_t size)
 
     if (result != 0)
     {
-        CLOG_ERROR("Failed to decompress JPEG data: {}", tjGetErrorStr2(handle));
+        LOG::ERR("Failed to decompress JPEG data: {}", tjGetErrorStr2(handle));
         tjDestroy(handle);
         return CodecError::ExternalFailed;
     }
@@ -312,7 +241,7 @@ void TurboJpegCodec::SetScale(int _numerator, int _denominator)
 
 void TurboJpegCodec::SetQuality(int value)
 {
-	info.quality = value;
+	quality = value;
 }
 
 void TurboJpegCodec::SetDesireSize(int value)

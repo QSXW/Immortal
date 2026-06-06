@@ -16,7 +16,7 @@
 #include <ctime>
 #include <mutex>
 
-//#define IMMORTRAL_ENABLE_MEMORY_PROFILE
+// #define IMMORTRAL_ENABLE_MEMORY_PROFILE
 #ifdef IMMORTRAL_ENABLE_MEMORY_PROFILE
 #include <stacktrace>
 #endif

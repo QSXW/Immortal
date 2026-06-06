@@ -42,7 +42,6 @@ ThreadPool::ThreadPool(uint32_t numThreads) :
 				}
             }
             });
-		threads[i].SetDebugDescription("ThreadPool#" + std::to_string(i));
     }
 }
 

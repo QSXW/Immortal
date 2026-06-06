@@ -40,11 +40,6 @@ constexpr uint32_t BITS(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
     return a | b | c | d;
 }
 
-constexpr uint32_t BITS(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e)
-{
-	return a | b | c | d | e;
-}
-
 /**
  * @brief: FLOAT here represents 32-bits floating points
  *         INT represents 32-bits signed integers
@@ -56,13 +51,9 @@ public:
     {
         YUV     = BIT(16),
         NV      = BIT(17),
-        YUYV    = BIT(18),
-        _10Bits = BIT(19),
-		_12Bits = BIT(20),
-        _16Bits = BIT(21),
-        _420    = BIT(22),
-        _422    = BIT(23),
-        _444    = BIT(24),
+        _10Bits = BIT(18),
+		_12Bits = BIT(19),
+        _16Bits = BIT(20),
 
         None = 0,
         R8_UNORM,
@@ -141,8 +132,7 @@ public:
         DOUBLEP,
         R64_SINT,
         R64_SINTP,
-        ARGB,
-
+        
         R8        = R8_UNORM,
         RG8       = R8G8_UNORM,
         RGBA8     = R8G8B8A8_UNORM,
@@ -161,27 +151,24 @@ public:
         VECTOR3   = R32G32B32_SFLOAT,
         VECTOR4   = R32G32B32A32_SFLOAT,
  
-        YUV420P   = BITS(YUV,                R64_SINTP + 1),
-        YUV422P   = BITS(YUV,                YUV420P + 1 ),
-        YUV444P   = BITS(YUV,                YUV420P + 2 ),
-        YUV420P10 = BITS(YUV,       _10Bits, YUV420P + 3 ),
-        YUV422P10 = BITS(YUV,       _10Bits, YUV420P + 4 ),
-        YUV444P10 = BITS(YUV,       _10Bits, YUV420P + 5 ),
-		YUV420P12 = BITS(YUV,       _12Bits, YUV420P + 6 ),
-		YUV422P12 = BITS(YUV,       _12Bits, YUV420P + 7 ),
-		YUV444P12 = BITS(YUV,       _12Bits, YUV420P + 8 ),
-        YUV420P16 = BITS(YUV,       _16Bits, YUV420P + 9 ),
-		YUV422P16 = BITS(YUV,       _16Bits, YUV420P + 10),
-		YUV444P16 = BITS(YUV,       _16Bits, YUV420P + 11),
-        NV12      = BITS(YUV, NV,            YUV420P + 12),
-        P010      = BITS(YUV, NV,   _10Bits, YUV420P + 13),
-		P012      = BITS(YUV, NV,   _12Bits, YUV420P + 14),
-        P016      = BITS(YUV, NV,   _16Bits, YUV420P + 15),
-		P210      = BITS(YUV, NV,   _10Bits, YUV420P + 16),
-		P212      = BITS(YUV, NV,   _12Bits, YUV420P + 17),
-		P216      = BITS(YUV, NV,   _16Bits, YUV420P + 18),
-        Y210      = BITS(YUV, YUYV, _10Bits, YUV420P + 19),
-		Y216      = BITS(YUV, YUYV, _16Bits, YUV420P + 20)
+        YUV420P   = BITS(YUV,              BayerLayerRGGB + 1),
+        YUV422P   = BITS(YUV,              YUV420P + 1 ),
+        YUV444P   = BITS(YUV,              YUV420P + 2 ),
+        YUV420P10 = BITS(YUV,     _10Bits, YUV420P + 3 ),
+        YUV422P10 = BITS(YUV,     _10Bits, YUV420P + 4 ),
+        YUV444P10 = BITS(YUV,     _10Bits, YUV420P + 5 ),
+		YUV420P12 = BITS(YUV,     _12Bits, YUV420P + 6 ),
+		YUV422P12 = BITS(YUV,     _12Bits, YUV420P + 7 ),
+		YUV444P12 = BITS(YUV,     _12Bits, YUV420P + 8 ),
+        YUV420P16 = BITS(YUV,     _16Bits, YUV420P + 9 ),
+		YUV422P16 = BITS(YUV,     _16Bits, YUV420P + 10),
+		YUV444P16 = BITS(YUV,     _16Bits, YUV420P + 11),
+        NV12      = BITS(YUV, NV,          YUV420P + 12),
+        P010      = BITS(YUV, NV, _10Bits, YUV420P + 13),
+		P012      = BITS(YUV, NV, _12Bits, YUV420P + 14),
+        P016      = BITS(YUV,     _16Bits, YUV420P + 15),
+        Y210      = BITS(YUV,     _10Bits, YUV420P + 16),
+		Y216      = BITS(YUV,     _16Bits, YUV420P + 17)
     };
 
     static constexpr ValueType HightBitDepth = ValueType(Format::_10Bits | Format::_12Bits | Format::_16Bits);

@@ -4,22 +4,6 @@
 namespace Immortal
 {
 
-const char *GetTaskTypeStr(AsyncTaskType type)
-{
-	switch (type)
-    {
-        case AsyncTaskType::Recording:         return "Recording";
-        case AsyncTaskType::Submiting:         return "Submiting";
-        case AsyncTaskType::SetQueue:          return "SetQueue";
-        case AsyncTaskType::QueueOperation:    return "QueueOperation";
-        case AsyncTaskType::BeginRecording:    return "BeginRecording";
-        case AsyncTaskType::EndRecording:      return "EndRecording";
-        case AsyncTaskType::ExecutionCompleted:return "ExecutionCompleted";
-        case AsyncTaskType::Terminate:         return "Terminate";
-        default:                               return "Unknown";
-	}
-}
-
 AsyncComputeThread::AsyncComputeThread(Device *device) :
     ICLASS,
     thread{}
@@ -44,7 +28,6 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                 }
             }
 
-            //LOG_INFO("AsyncComputeThread: Execute Task Type: {}", GetTaskTypeStr(task->GetType()));
             switch (task->GetType())
             {
                 case AsyncTaskType::SetQueue:
@@ -107,12 +90,7 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                 case AsyncTaskType::Submiting:
                 {
                     if (!recording)
-					{
-						auto onCompletedTasks = std::make_shared<std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
-						for (auto &[sync, executionCompleted] : *onCompletedTasks)
-						{
-							(*executionCompleted.InterpretAs<ExecutionCompletedTask>())();
-						}
+                    {
                         break;
                     }
                     recording = 0;
@@ -138,22 +116,10 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 						//h.destroy();
                     }
 
-                    if (commandBuffers.size() < 4)
-					{
-						commandBuffers.push({gpuEvent, commandBuffer});
-					    commandBuffer = nullptr;
-                        gpuEvent      = nullptr;
-                    }
-                    else
-					{
-						executionCompletedThread.Enqueue([gpuEvent, commandBuffer] {
-							gpuEvent->Wait(kMaxTimeOut);
-							delete gpuEvent;
-							delete commandBuffer;
-						});
-						commandBuffer = nullptr;
-						gpuEvent = nullptr;
-                    }
+                    commandBuffers.push({ gpuEvent, commandBuffer });
+					commandBuffer = nullptr;
+                    gpuEvent      = nullptr;
+
                     break;
                 }
 
@@ -200,8 +166,7 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
 AsyncComputeThread::~AsyncComputeThread()
 {
-	Execute<AsyncTask>(AsyncTaskType::Terminate);
-	thread.Join();
+
 }
 
 bool AsyncComputeThread::IsExecutionCompleted(uint64_t value)

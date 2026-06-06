@@ -22,9 +22,10 @@ WebpCodec::~WebpCodec()
 CodecError WebpCodec::Decode(const CodedFrame &codedFrame)
 {
     int width, height, depth;
+    const auto &buffer = codedFrame.GetBuffer();
 
     Format format = Format::RGBA8;
-	uint8_t *data = WebPDecodeRGBA(codedFrame.GetData(), codedFrame.GetSize(), &width, &height);
+	uint8_t *data = WebPDecodeRGBA(buffer.data(), buffer.size(), &width, &height);
     if (!data)
     {
         return CodecError::CorruptedBitstream;

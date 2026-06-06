@@ -1,5 +1,4 @@
 #include "VideoOutputComponent.h"
-#include "Vision/Mux/ImageMuxer.h"
 
 namespace Immortal
 {
@@ -8,10 +7,10 @@ namespace Immortal
 
 int CompareTimestamp(int64_t timestampA, Rational timebaseA, int64_t timestampB, Rational timebaseB)
 {
-	int64_t a = timebaseA.numerator * (int64_t) timebaseB.denominator;
-	int64_t b = timebaseB.numerator * (int64_t) timebaseA.denominator;
+    int64_t a = timebaseA.numerator * (int64_t)timebaseB.denominator;
+    int64_t b = timebaseB.numerator * (int64_t)timebaseA.denominator;
 
-	return (timestampA * a > timestampB * b) - (timestampA * a < timestampB * b);
+    return (timestampA * a > timestampB * b) - (timestampA * a < timestampB * b);
 }
 
 class VideoOutput : public IObject
@@ -19,13 +18,13 @@ class VideoOutput : public IObject
 public:
 	VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo);
 
-	~VideoOutput();
+    ~VideoOutput();
 
 	void EnqueueVideoFrame(Picture &&picture);
 
 	void EnqueueAudioFrame(Picture &&picture);
 
-	CodecError Send(const Picture &picture, int stream);
+    CodecError Send(const Picture &picture, int stream);
 
 	CodecError Write(const CodedFrame &codedFrame, int stream);
 
@@ -35,20 +34,14 @@ public:
 
 	bool Blocking() const;
 
-	bool operator!() const;
-
-public:
-	void SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph)
-	{
-		filterGraph = graph;
-	}
+    bool operator!() const;
 
 protected:
 	LightArray<Codec *, 4> codecs;
 
-	Ref<Codec> videoEncoder;
+	URef<Codec> videoEncoder;
 
-	Ref<Codec> audioEncoder;
+	URef<Codec> audioEncoder;
 
 	std::vector<MediaType> mediaTypes;
 
@@ -84,9 +77,7 @@ protected:
 
 	VideoEncodeCallbacks callbacks;
 
-	std::atomic<int> frameInQueue;
-
-	std::shared_ptr<FilterGraphComponent> filterGraph;
+    std::atomic<int> frameInQueue;
 };
 
 VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
@@ -95,8 +86,8 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
     audioEncoder{},
     muxer{},
     mediaTypes{},
-    videoEncodeThread{1},
-    audioEncodeThread{1},
+    videoEncodeThread{ 1 },
+    audioEncodeThread{ 1 },
     muxThread{},
     timestamp{},
     audioTimestamp{},
@@ -107,181 +98,151 @@ VideoOutput::VideoOutput(const String &filepath, const EncodeInfo *pEncodeInfo, 
     frameInQueue{}
 {
 	codecs.resize(numEncodeInfo);
-
-	bool image = FileSystem::IsImage(filepath);
-	ImageEncodeInfo imageEncodeInfo = {
-	    .quality = 100
-	};
-
-	EncodeInfo videoEncodeInfo = {};
 	for (uint32_t i = 0; i < numEncodeInfo; i++)
-	{
+    {
 		auto &encodeInfo = pEncodeInfo[i];
-		switch (encodeInfo.mediaType)
-		{
+		codecs[i] = new Vision::FFCodec{encodeInfo};
+
+        switch (encodeInfo.mediaType)
+        {
 			case MediaType::Video:
-				videoEncodeInfo = encodeInfo;
-				videoEncoder = image ? Vision::SelectSuitableCodec(filepath, false, imageEncodeInfo) : new Vision::FFCodec{encodeInfo};
-				codecs[i] = videoEncoder.Get();
+				videoEncoder = codecs[i];
 				break;
 
-			case MediaType::Audio:
-				if (!image)
-				{
-					audioEncoder = new Vision::FFCodec{encodeInfo};
-					codecs[i] = audioEncoder.Get();
-				}
+            case MediaType::Audio:
+				audioEncoder = codecs[i];
 				break;
 			default:
 				break;
-		}
-	}
+        }
+    }
 
-	if (image)
-	{
-		muxer = new Vision::ImageMuxer;
-	}
-	else
-	{
-		muxer = new Vision::FFDemuxer;
-	}
-
-	if (muxer->Open(filepath, codecs.data(), pEncodeInfo, numEncodeInfo) != CodecError::Success)
-	{
+    muxer = new Vision::FFDemuxer;
+	if (muxer->Open(filepath, codecs.data(), numEncodeInfo) != CodecError::Success)
+    {
 		muxer.Reset();
-		return;
-	}
+        return;
+    }
 
-	muxThread = std::move(Thread{[=, this] {
-		int64_t pts = 0;
-		int64_t audioSamples = 0;
+    muxThread = std::move(Thread{ [=, this] {
+        int64_t pts = 0;
+        int64_t audioSamples = 0;
 
-		Rational videoTimebase;
+        Rational videoTimebase;
 		Rational framerate;
-		Rational timebase;
-		if (videoEncoder)
-		{
-			videoTimebase = videoEncodeInfo.timeBase;
-			framerate     = videoEncodeInfo.framerate;
+        Rational timebase;
+        if (videoEncoder)
+        {
+			videoTimebase = videoEncoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
+			framerate     = videoEncoder.InterpretAs<Vision::FFCodec>()->GetFramerate();
 			timebase      = videoTimebase * framerate;
-		}
+        }
 
-		Rational audioTimebase{};
-		if (audioEncoder)
-		{
-			audioTimebase = audioEncoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
-		}
+        Rational audioTimebase{};
+        if (audioEncoder)
+        {
+            audioTimebase = audioEncoder.InterpretAs<Vision::FFCodec>()->GetTimebase();
+        }
 
-		CodedFrame videoFrame;
-		CodedFrame audioFrame;
-		while (true)
-		{
-			bool video = (!audioEncoder ||
-			             (CompareTimestamp(pts, videoTimebase, audioSamples, audioTimebase) <= 0) || audioQueue.empty());
-			if (frameInQueue && videoEncoder && video)
-			{
-				if (videoQueue.try_dequeue(videoFrame))
-				{
-					pts = videoFrame.GetTimestamp();
-					muxer->Write(videoFrame, 0);
+        CodedFrame videoFrame;
+        CodedFrame audioFrame;
+        while (true)
+        {
+            if (videoEncoder && (!audioEncoder ||
+                (CompareTimestamp(pts, videoTimebase, audioSamples, audioTimebase) <= 0)))
+            {
+                if (videoQueue.try_dequeue(videoFrame))
+                {
+                    pts = videoFrame.GetTimestamp();
+                    muxer->Write(videoFrame, 0);
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-					//              if (callbacks.progressListener)
-					//              {
-					// callbacks.progressListener->SetProgress(frames / double(duration));
-					//              }
-					if (callbacks.ReportProgress)
-					{
-						callbacks.ReportProgress(frames, pts, timebase);
-					}
+                    if (callbacks.ReportProgress)
+                    {
+                        callbacks.ReportProgress(frames, pts, timebase);
+                    }
 #endif
-					frameInQueue--;
-				}
-			}
-			else
-			{
-				if (audioQueue.try_dequeue(audioFrame))
-				{
-					audioSamples = audioFrame.GetTimestamp();
-					muxer->Write(audioFrame, 1);
-				}
-			}
-			if ((!videoEncoder || (videoFinished && videoQueue.empty() && videoEncodeThread.TaskSize() == 0)) &&
-			    (!audioEncoder || (audioFinished && audioQueue.empty() && audioEncodeThread.TaskSize() == 0)))
-			{
+                }
+            }
+            else
+            {
+                if (audioQueue.try_dequeue(audioFrame))
+                {
+                    audioSamples = audioFrame.GetTimestamp();
+                    muxer->Write(audioFrame, 1);
+                }
+            }
+			if ((!videoEncoder || (videoFinished && videoEncodeThread.TaskSize() == 0)) &&
+                (!audioEncoder || (audioFinished && audioEncodeThread.TaskSize() == 0)))
+            {
 #ifdef IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-				auto time = timer.Duration();
-				LOG::INFO("Encoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
+                auto time = timer.Duration();
+                LOG::INFO("Encoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
 #endif
-				break;
-			}
-		}
-		muxer->Close();
-	}});
+                break;
+            }
+        }
+        muxer->Close();
+    } });
 
-	muxThread.SetDescription("Mux");
+    muxThread.SetDescription("Mux");
 
 #ifdef IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-	timer.Start();
+    timer.Start();
 #endif
 }
 
+
 VideoOutput::~VideoOutput()
 {
-	muxThread.Join();
+    for (size_t i = 0; i < codecs.size(); i++)
+    {
+		delete codecs[i];
+    }
 }
 
 void VideoOutput::EnqueueVideoFrame(Picture &&_picture)
 {
-	if (Blocking())
-	{
-		blocked = true;
-		blocked.wait(true);
-	}
+    if (Blocking())
+    {
+        blocked = true;
+        blocked.wait(true);
+    }
 
-	videoEncodeThread.Enqueue([=, this, picture = std::move(_picture)] {
-		picture.SetTimestamp(timestamp++);
-		if (picture.GetFlags() & Vision::PictureFlags::Eof)
-		{
-			videoEncoder->Flush();
-			CodedFrame codedFrame{};
-			while (codedFrame = videoEncoder->GetCodedFrame())
-			{
-				frameInQueue++;
-				videoQueue.enqueue(std::move(codedFrame));
-			}
-			videoFinished = true;
-			return;
-		}
+    videoEncodeThread.Enqueue([=, this, picture = std::move(_picture)] {
+        picture.SetTimestamp(timestamp++);
+        if (picture.GetFlags() & Vision::PictureFlags::Eof)
+        {
+            videoEncoder->Flush();
+            CodedFrame codedFrame{};
+            while (codedFrame = videoEncoder->GetCodedFrame())
+            {
+                videoQueue.enqueue(std::move(codedFrame));
+            }
+            videoFinished = true;
+            return;
+        }
 
-		CodedFrame codedFrame{};
-		CodecError ret = videoEncoder->Encode(picture, codedFrame);
+        CodedFrame codedFrame{};
+        CodecError ret = videoEncoder->Encode(picture, codedFrame);
 #if IMMORTAL_HAVE_VIDEO_PLAYER_STATISTIC
-		frames++;
+        frames++;
 #endif
-		if (ret != CodecError::Success)
-		{
-			LOG::ERR("Failed to encode video frame!");
-			videoFinished = true;
-		}
-		if (codedFrame)
-		{
-			frameInQueue++;
-			videoQueue.enqueue(std::move(codedFrame));
-		}
-		while (codedFrame = videoEncoder->GetCodedFrame())
-		{
-			frameInQueue++;
-			videoQueue.enqueue(std::move(codedFrame));
-		}
-	});
+        if (ret != CodecError::Success)
+        {
+            LOG::ERR("Failed to encode video frame!");
+            videoFinished = true;
+        }
 
-	videoEncodeThread.OnNotify([=, this] {
-		if (!Blocking())
+        while (codedFrame = videoEncoder->GetCodedFrame())
 		{
-			blocked = false;
-			blocked.notify_one();
-		}
-	});
+            videoQueue.enqueue(std::move(codedFrame));
+        }
+    });
+
+    videoEncodeThread.OnNotify([=, this] {
+        blocked = false;
+		blocked.notify_one();
+    });
 }
 
 void VideoOutput::EnqueueAudioFrame(Picture &&_picture)
@@ -291,90 +252,91 @@ void VideoOutput::EnqueueAudioFrame(Picture &&_picture)
 		return;
 	}
 
-	audioEncodeThread.Enqueue([=, this, picture = std::move(_picture)] {
-		if (picture.GetFlags() & Vision::PictureFlags::Eof)
-		{
-			audioEncoder->Flush();
-			CodedFrame codedFrame{};
-			while (codedFrame = audioEncoder->GetCodedFrame())
-			{
-				audioQueue.enqueue(std::move(codedFrame));
-			}
-			audioFinished = true;
-			return;
-		}
+    audioEncodeThread.Enqueue([=, this, picture = std::move(_picture)] {
+        if (picture.GetFlags() & Vision::PictureFlags::Eof)
+        {
+            audioEncoder->Flush();
+            CodedFrame codedFrame{};
+            while (codedFrame = audioEncoder->GetCodedFrame())
+            {
+                audioQueue.enqueue(std::move(codedFrame));
+            }
+            audioFinished = true;
+            return;
+        }
 
-		picture.SetTimestamp(audioTimestamp);
-		audioTimestamp += picture.GetWidth();
+        picture.SetTimestamp(audioTimestamp);
+        audioTimestamp += picture.GetWidth();
 
-		CodedFrame codedFrame{};
-		if (audioEncoder->Encode(picture, codedFrame) != CodecError::Success)
-		{
-			LOG::ERR("Failed to encode audio frame!");
-			audioFinished = true;
-		}
+        CodedFrame codedFrame{};
+        if (audioEncoder->Encode(picture, codedFrame) != CodecError::Success)
+        {
+            LOG::ERR("Failed to encode audio frame!");
+            audioFinished = true;
+        }
 
-		while (codedFrame = audioEncoder->GetCodedFrame())
-		{
-			audioQueue.enqueue(std::move(codedFrame));
-		}
-	});
+        while (codedFrame = audioEncoder->GetCodedFrame())
+        {
+            audioQueue.enqueue(std::move(codedFrame));
+        }
+    });
 }
 
 CodecError VideoOutput::Send(const Picture &picture, int stream)
 {
-	CodecError ret = CodecError::Success;
+    CodecError ret = CodecError::Success;
 
-	switch (mediaTypes[stream])
-	{
-		case MediaType::Video: {
-			if (videoEncodeThread.TaskSize() > 7)
-			{
-				return CodecError::Again;
-			}
-			videoEncodeThread.Enqueue([=, this] {
-				picture.SetTimestamp(timestamp++);
-				CodedFrame encodedFrame;
-				if (videoEncoder->Encode(picture, encodedFrame) == CodecError::Success)
-				{
-					videoQueue.enqueue(encodedFrame);
-				}
-			});
-			break;
-		}
-		case MediaType::Audio: {
-			audioEncodeThread.Enqueue([=, this] {
-				picture.SetTimestamp(audioTimestamp);
-				audioTimestamp += picture.GetWidth();
-				CodedFrame encodedFrame;
-				if (audioEncoder->Encode(picture, encodedFrame) == CodecError::Success)
-				{
-					audioQueue.enqueue(encodedFrame);
-				}
-			});
-			break;
-		}
-		case MediaType::Subtitle: {
-			break;
-		}
+    switch (mediaTypes[stream])
+    {
+    case MediaType::Video:
+    {
+        if (videoEncodeThread.TaskSize() > 7)
+        {
+            return CodecError::Again;
+        }
+        videoEncodeThread.Enqueue([=, this] {
+            picture.SetTimestamp(timestamp++);
+            CodedFrame encodedFrame;
+            if (videoEncoder->Encode(picture, encodedFrame) == CodecError::Success)
+            {
+                videoQueue.enqueue(encodedFrame);
+            }
+            });
+        break;
+    }
+    case MediaType::Audio:
+    {
+        audioEncodeThread.Enqueue([=, this] {
+            picture.SetTimestamp(audioTimestamp);
+            audioTimestamp += picture.GetWidth();
+            CodedFrame encodedFrame;
+            if (audioEncoder->Encode(picture, encodedFrame) == CodecError::Success)
+            {
+                audioQueue.enqueue(encodedFrame);
+            }
+            });
+        break;
+    }
+    case MediaType::Subtitle:
+    {
+        break;
+    }
 
-		default:
-			break;
-	}
+    default:
+        break;
+    }
 
-	return ret;
+    return ret;
 }
 
 CodecError VideoOutput::Write(const CodedFrame &codedFrame, int stream)
 {
-	return muxer->Write(codedFrame, stream);
+    return muxer->Write(codedFrame, stream);
 }
 
 void VideoOutput::Close()
 {
-	videoEncodeThread.Join();
-	audioEncodeThread.Join();
-	muxThread.Join();
+    muxThread.Join();
 }
 
 void VideoOutput::Bind(const VideoEncodeCallbacks &value)
@@ -387,26 +349,15 @@ bool VideoOutput::Blocking() const
 	return videoEncodeThread.TaskSize() > 3;
 }
 
-bool VideoOutput::operator!() const
+bool VideoOutput::operator !() const
 {
 	return !muxer;
-}
-
-VideoOutputComponent::VideoOutputComponent() :
-    v{}
-{
-
 }
 
 VideoOutputComponent::VideoOutputComponent(const String &filepath, const EncodeInfo *pEncodeInfo, uint32_t numEncodeInfo) :
     v{new VideoOutput{filepath, pEncodeInfo, numEncodeInfo}}
 {
 
-}
-
-VideoOutputComponent::~VideoOutputComponent()
-{
-	v.Reset();
 }
 
 void VideoOutputComponent::EnqueueVideoFrame(Picture &&picture)
@@ -422,11 +373,6 @@ void VideoOutputComponent::EnqueueAudioFrame(Picture &&picture)
 CodecError VideoOutputComponent::Write(const CodedFrame &codedFrame, int stream)
 {
 	return v->Write(codedFrame, stream);
-}
-
-void VideoOutputComponent::SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph)
-{
-	v->SetFilterGraph(graph);
 }
 
 void VideoOutputComponent::Join()
@@ -452,11 +398,6 @@ bool VideoOutputComponent::Blocking() const
 VideoOutputComponent::operator bool() const
 {
 	return !!(*v);
-}
-
-void VideoOutputComponent::Swap(VideoOutputComponent &other)
-{
-	v.Swap(other.v);
 }
 
 }

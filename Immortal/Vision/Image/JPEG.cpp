@@ -296,7 +296,7 @@ std::pair<uint32_t, uint32_t> JpegCodec::ParseExifOffset(const uint8_t *data, si
 
 CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
 {
-	ParseHeader(codedFrame.GetData(), codedFrame.GetSize());
+	ParseHeader(codedFrame.GetBuffer().data(), codedFrame.GetBuffer().size());
     InitDecodedPlaneBuffer();
     if (!isProgressive)
     {

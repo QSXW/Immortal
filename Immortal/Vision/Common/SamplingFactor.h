@@ -66,9 +66,6 @@ static inline void GetSamplingFactor(Format::ValueType format, SamplingFactor *f
 		case Format::YUV422P10:
 		case Format::YUV422P12:
 		case Format::YUV422P16:
-		case Format::P210:
-		case Format::P212:
-		case Format::P216:
 			factors[0] = {};
 			factors[1] = { 1, 0 };
 			factors[2] = { 1, 0 };

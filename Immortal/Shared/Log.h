@@ -84,39 +84,33 @@ requires std::derived_from<T, IClass>
 //	}
 //}
 
-#define CLOG_LEVEL(L)                                                                              \
-template <class T, class... Args>                                                                  \
-requires(std::is_base_of_v<IClass, T>)                                                             \
-inline void Clog##L(spdlog::format_string_t<const char *, Args...> s, T * _this, Args && ...args)  \
-{                                                                                                  \
-	LOG::L(s, _this->GetName(), std::forward<Args>(args)...);                                      \
-}                                                                                                  \
-                                                                                                   \
-template <class T, class... Args>                                                                  \
-requires(!std::is_base_of_v<IClass, T>)                                                            \
-inline void Clog##L(spdlog::format_string_t<Args...> s, T * _this, Args && ...args)                \
-{                                                                                                  \
-	LOG::L(s, std::forward<Args>(args)...);                                                        \
-}                                                                                                  \
+template <class T, class... Args>
+requires std::derived_from<T, IClass>
+inline void ClogLevel(spdlog::format_string_t<const char *, Args...> s, T *_this, Args &&...args)
+{
+	LOG::INFO(s, _this->GetName(), std::forward<Args>(args)...);
+}
 
-CLOG_LEVEL(INFO )
-CLOG_LEVEL(ERR  )
-CLOG_LEVEL(WARN )
-CLOG_LEVEL(DEBUG)
+template <class T, class... Args>
+requires(!std::derived_from<T, IClass>)
+inline void ClogLevel(spdlog::format_string_t<Args...> s, T *_this, Args &&...args)
+{
+	LOG::INFO(s, std::forward<Args>(args)...);
+}
 
 #define CLOG_LEVEL(L, S, ...)                                                       \
-	if constexpr (std::is_base_of_v<IClass, std::remove_pointer_t<decltype(this)>>) \
+	if constexpr (std::derived_from<std::remove_pointer_t<decltype(this)>, IClass>) \
 	{                                                                               \
-		Clog##L("[{}] " S, this, ##__VA_ARGS__);                                    \
+		ClogLevel("[{}] " S, this, __VA_ARGS__);                                    \
 	}                                                                               \
 	else                                                                            \
 	{                                                                               \
-		Clog##L(" " S, this, ##__VA_ARGS__);                                        \
+		ClogLevel(" " S, this, __VA_ARGS__);                                        \
 	}
 
-#define CLOG_INFO(S, ...)    CLOG_LEVEL(INFO,    S, ##__VA_ARGS__)
-#define CLOG_ERROR(S, ...)   CLOG_LEVEL(ERR,     S, ##__VA_ARGS__)
-#define CLOG_WARN(S, ...)    CLOG_LEVEL(WARN,    S, ##__VA_ARGS__)
-#define CLOG_DEBUG(S, ...)   CLOG_LEVEL(DEBUG,   S, ##__VA_ARGS__)
+#define CLOG_INFO(S, ...)    CLOG_LEVEL(INFO,    S, __VA_ARGS__)
+#define CLOG_ERROR(S, ...)   CLOG_LEVEL(ERR,     S, __VA_ARGS__)
+#define CLOG_WARN(S, ...)    CLOG_LEVEL(WARN,    S, __VA_ARGS__)
+#define CLOG_DEBUG(S, ...)   CLOG_LEVEL(DEBUG,   S, __VA_ARGS__)
 
 }

@@ -16,10 +16,11 @@ namespace Vision
 namespace Interface
 {
 
-class IMMORTAL_API Codec : public IObject
+class IMMORTAL_API Codec : public IClass, public IObject
 {
 public:
 	Codec(const char *name = {}) :
+	    IClass{name},
 	    mediaType{MediaType::Video},
 	    picture{}
     {
@@ -57,11 +58,6 @@ public:
     virtual Picture GetPicture() const
     {
         return picture;
-    }
-
-    virtual CodecError DecodeHeader(CodedFrame &codedFrame, EncodeInfo &info)
-    {
-		return CodecError::FailedToCallDecoder;
     }
 
     virtual void Flush()
@@ -122,7 +118,63 @@ protected:
 };
 
 }
+
+enum class DecodingPreference
+{
+	Auto,
+	Software,
+	Hardware,
+};
+
 }
+
+enum class CodecId
+{
+    None,
+    AVC,
+    HEVC,
+    VVC,
+    VP9,
+    AV1,
+	H264_D3D12ENCODE,
+	H264_NVENC,
+	H264_QSV,
+    HEVC_D3D12ENCODE,
+    HEVC_NVENC,
+    HEVC_QSV,
+    VVC_QSV,
+	VP9_QSV,
+	AV1_NVENC,
+    AV1_QSV,
+    AAC,
+    FLAC,
+    H264 = AVC,
+    H265 = HEVC,
+    H266 = VVC,
+};
+
+struct EncodeInfo
+{
+	MediaType mediaType;
+	CodecId codecId;
+	union
+	{
+		uint32_t width;
+		uint32_t sampleRate;
+	};
+
+    union
+    {
+		uint32_t height;
+		uint32_t channels;
+    };
+
+	Format format;
+	int bitRate;
+	int gopSize;
+	Rational framerate;
+	Rational timeBase;
+};
 
 using Codec      = Vision::Interface::Codec;
 using VideoCodec = Vision::Interface::VideoCodec;

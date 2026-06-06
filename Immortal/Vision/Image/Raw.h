@@ -26,8 +26,6 @@ public:
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-    virtual CodecError DecodeHeader(CodedFrame &codedFrame, EncodeInfo &Info) override;
-
     void GetParams(RawParams *pParams);
 
     void GetProjectionMatrix(float matrix[4][4]);

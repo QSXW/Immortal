@@ -28,8 +28,6 @@ list(TRANSFORM VISION_AUDIO_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Audio/")
 
 set(COMMON_FILES
     Animator.h
-    BitStream.h
-    ByteStream.h
     BitTracker.h
     Checksum.cpp
     Checksum.h
@@ -44,11 +42,6 @@ set(DEMUX_FILES
     IVFDemuxer.cpp
     IVFDemuxer.h)
 list(TRANSFORM DEMUX_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Demux/")
-
-set(MUX_FILES
-    ImageMuxer.cpp
-    ImageMuxer.h)
-list(TRANSFORM MUX_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Mux/")
 
 set(VISION_INTERFACE_FILES
     MFXCodec.cpp
@@ -66,8 +59,6 @@ set(IMAGE_CODEC_FILES
     Exif.cpp
     Exif.h
     Helper.h
-    ICC.cpp
-    ICC.h
     ImageCodec.h
     JPEG.cpp
     JPEG.h
@@ -86,12 +77,8 @@ set(IMAGE_CODEC_FILES
     RawSpeed.h
     ShellItemImage.cpp
     ShellItemImage.h
-    TIFF.cpp
-    TIFF.h
     OpenCVCodec.cpp
     OpenCVCodec.h
-    PNG.cpp
-    PNG.h
     TurboJpegCodec.cpp
     TurboJpegCodec.h
     Webp.cpp
@@ -134,7 +121,6 @@ source_group("\\"                FILES ${VISION_CORE_FILES}      )
 source_group("\\Audio\\"         FILES ${VISION_AUDIO_FILES}    )
 source_group("\\Common\\"        FILES ${COMMON_FILES}          )
 source_group("\\Demux\\"         FILES ${DEMUX_FILES}           )
-source_group("\\Mux\\"           FILES ${MUX_FILES}             )
 source_group("\\Interface\\"     FILES ${VISION_INTERFACE_FILES})
 source_group("\\LookupTable\\"   FILES ${LOOKUP_TABLE_FILE}     )
 source_group("\\Image\\"         FILES ${IMAGE_CODEC_FILES}     )
@@ -149,7 +135,6 @@ set(VISION_FILES
     ${VISION_AUDIO_FILES}
     ${COMMON_FILES}
     ${DEMUX_FILES}
-    ${MUX_FILES}
     ${EXTERNAL_FILES}
     ${VISION_INTERFACE_FILES}
     ${LOOKUP_TABLE_FILE}
