@@ -4,7 +4,6 @@
 /3rdparty/libmfx*
 /3rdparty/mono*
 /3rdparty/FFmpeg*
-/3rdparty/freetype*
 
 Config.h
 *.spirv
