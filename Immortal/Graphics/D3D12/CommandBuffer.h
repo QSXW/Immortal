@@ -96,6 +96,10 @@ public:
 
 	virtual void ResolveImage(SuperTexture *dst, SuperTexture *src) override;
 
+	virtual void CopyTexture(SuperTexture *dst, SuperTexture *src) override;
+
+	virtual void MemoryBarrier(SuperTexture *texture) override;
+
 public:
 	void SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline);
 

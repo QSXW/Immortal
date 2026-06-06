@@ -22,7 +22,7 @@ public:
 public:
 	Texture(Device *device, const ComPtr<ID3D12Resource> &, D3D12_RESOURCE_STATES state);
 
-    Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount = 1);
+    Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount = 1, const ClearValue *pOptimizedClearValue = nullptr);
 
     virtual ~Texture() override;
 
@@ -39,7 +39,7 @@ public:
     }
 
 protected:
-	void Construct(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount);
+	void Construct(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount, const ClearValue *pOptimizedClearValue = nullptr);
 
     void ConstructShaderResourceView();
 

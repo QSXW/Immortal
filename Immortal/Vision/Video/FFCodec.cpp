@@ -6,7 +6,10 @@
 #include "Shared/Log.h"
 #include "Vision/Image/ICC.h"
 
+#include <algorithm>
+#include <cstring>
 #include <list>
+#include <string_view>
 
 #if HAVE_FFMPEG
 extern "C" {
@@ -15,7 +18,10 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libavutil/avutil.h>
+#include <libavutil/mathematics.h>
 #include <libavutil/display.h>
+#include <libavutil/dict.h>
+#include <libavutil/pixdesc.h>
 #include <libavutil/channel_layout.h>
 #include <libswresample/swresample.h>
 #include <libavutil/audio_fifo.h>
@@ -42,6 +48,38 @@ int64_t RationalRescaleRound(int64_t a, int64_t b, int64_t c, int rnd)
 	return av_rescale_rnd(a, b, c, (AVRounding)rnd);
 }
 
+static inline Rational ToRational(const AVRational &value)
+{
+	return { value.num, value.den };
+}
+
+static inline bool IsValidSampleAspectRatio(const Rational &value)
+{
+	return value.numerator > 0 && value.denominator > 0;
+}
+
+static inline Rational ResolveSampleAspectRatio(const AVFrame *frame, const AVCodecContext *context, const Rational &streamValue)
+{
+	Rational value{};
+	if (frame)
+	{
+		value = ToRational(frame->sample_aspect_ratio);
+	}
+	if (!IsValidSampleAspectRatio(value) && context)
+	{
+		value = ToRational(context->sample_aspect_ratio);
+	}
+	if (!IsValidSampleAspectRatio(value))
+	{
+		value = streamValue;
+	}
+	if (!IsValidSampleAspectRatio(value))
+	{
+		value = { 1, 1 };
+	}
+	return value;
+}
+
 static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 {
     switch (v)
@@ -62,6 +100,7 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 
 #define FORMAT_MAPPING                                 \
     CASE(Format::YUV420P,      AV_PIX_FMT_YUV420P  ) \
+    CASE(Format::YUVA420P,     AV_PIX_FMT_YUVA420P ) \
     CASE(Format::YUV422P,      AV_PIX_FMT_YUV422P  ) \
     CASE(Format::YUV444P,      AV_PIX_FMT_YUV444P  ) \
     CASE(Format::YUV420P10,    AV_PIX_FMT_YUV420P10) \
@@ -87,7 +126,8 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 	CASE(Format::RGBA8,        AV_PIX_FMT_RGBA     ) \
 	CASE(Format::BGRA8,        AV_PIX_FMT_BGRA     ) \
 	CASE(Format::ARGB,         AV_PIX_FMT_ARGB     ) \
-    CASE(Format::RGBA16,       AV_PIX_FMT_RGBA64   )
+    CASE(Format::RGBA16,       AV_PIX_FMT_RGBA64   ) \
+    CASE(Format::R32G32B32A32_SFLOAT, AV_PIX_FMT_RGBAF32)
 
 Format CAST(AVPixelFormat v)
 {
@@ -97,13 +137,137 @@ Format CAST(AVPixelFormat v)
 		FORMAT_MAPPING
 		case AV_PIX_FMT_YUVJ420P:
 			return Format::YUV420P;
-		case AV_PIX_FMT_YUVA420P:
-			return Format::YUV420P;
 
         default:
             return Format::None;
     }
 #undef CASE
+}
+
+static bool IsHostBigEndian()
+{
+    const uint16_t value = 0x0102;
+    return *(const uint8_t *)&value == 0x01;
+}
+
+static uint32_t ByteSwap32(uint32_t value)
+{
+    return ((value & 0x000000ffu) << 24) |
+        ((value & 0x0000ff00u) << 8) |
+        ((value & 0x00ff0000u) >> 8) |
+        ((value & 0xff000000u) >> 24);
+}
+
+static float ReadFloat32PixelComponent(const uint8_t *data, bool byteSwap)
+{
+    uint32_t bits = 0;
+    memcpy(&bits, data, sizeof(bits));
+    if (byteSwap)
+    {
+        bits = ByteSwap32(bits);
+    }
+
+    float value = 0.0f;
+    memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+static bool IsBigEndianFloat32RgbFormat(AVPixelFormat format)
+{
+    return format == AV_PIX_FMT_RGBAF32BE ||
+        format == AV_PIX_FMT_RGBF32BE ||
+        format == AV_PIX_FMT_GBRPF32BE ||
+        format == AV_PIX_FMT_GBRAPF32BE;
+}
+
+static bool IsLittleEndianFloat32RgbFormat(AVPixelFormat format)
+{
+    return format == AV_PIX_FMT_RGBAF32LE ||
+        format == AV_PIX_FMT_RGBF32LE ||
+        format == AV_PIX_FMT_GBRPF32LE ||
+        format == AV_PIX_FMT_GBRAPF32LE;
+}
+
+static bool Float32RgbFormatNeedsByteSwap(AVPixelFormat format)
+{
+    if (IsBigEndianFloat32RgbFormat(format))
+    {
+        return !IsHostBigEndian();
+    }
+    if (IsLittleEndianFloat32RgbFormat(format))
+    {
+        return IsHostBigEndian();
+    }
+    return false;
+}
+
+static Picture CopyFloat32RgbFrameToRgba32F(const AVFrame *frame)
+{
+    if (!frame || frame->width <= 0 || frame->height <= 0)
+    {
+        return {};
+    }
+
+    const AVPixelFormat pixelFormat = (AVPixelFormat)frame->format;
+    const bool packedRgba =
+        pixelFormat == AV_PIX_FMT_RGBAF32BE ||
+        pixelFormat == AV_PIX_FMT_RGBAF32LE;
+    const bool packedRgb =
+        pixelFormat == AV_PIX_FMT_RGBF32BE ||
+        pixelFormat == AV_PIX_FMT_RGBF32LE;
+    const bool planarGbr =
+        pixelFormat == AV_PIX_FMT_GBRPF32BE ||
+        pixelFormat == AV_PIX_FMT_GBRPF32LE;
+    const bool planarGbra =
+        pixelFormat == AV_PIX_FMT_GBRAPF32BE ||
+        pixelFormat == AV_PIX_FMT_GBRAPF32LE;
+    if (!packedRgba && !packedRgb && !planarGbr && !planarGbra)
+    {
+        return {};
+    }
+    if ((packedRgba || packedRgb) && !frame->data[0])
+    {
+        return {};
+    }
+    if ((planarGbr || planarGbra) && (!frame->data[0] || !frame->data[1] || !frame->data[2] || (planarGbra && !frame->data[3])))
+    {
+        return {};
+    }
+
+    Picture picture{ (uint32_t)frame->width, (uint32_t)frame->height, Format::R32G32B32A32_SFLOAT, true };
+    const bool byteSwap = Float32RgbFormatNeedsByteSwap(pixelFormat);
+    for (int y = 0; y < frame->height; ++y)
+    {
+        float *dst = (float *)(picture.GetData() + y * picture.GetStride());
+        if (packedRgba || packedRgb)
+        {
+            const uint8_t *src = frame->data[0] + y * frame->linesize[0];
+            const size_t srcPixelSize = sizeof(float) * (packedRgba ? 4 : 3);
+            for (int x = 0; x < frame->width; ++x)
+            {
+                const uint8_t *px = src + x * srcPixelSize;
+                dst[x * 4 + 0] = ReadFloat32PixelComponent(px + sizeof(float) * 0, byteSwap);
+                dst[x * 4 + 1] = ReadFloat32PixelComponent(px + sizeof(float) * 1, byteSwap);
+                dst[x * 4 + 2] = ReadFloat32PixelComponent(px + sizeof(float) * 2, byteSwap);
+                dst[x * 4 + 3] = packedRgba ? ReadFloat32PixelComponent(px + sizeof(float) * 3, byteSwap) : 1.0f;
+            }
+            continue;
+        }
+
+        const uint8_t *g = frame->data[0] + y * frame->linesize[0];
+        const uint8_t *b = frame->data[1] + y * frame->linesize[1];
+        const uint8_t *r = frame->data[2] + y * frame->linesize[2];
+        const uint8_t *a = planarGbra ? frame->data[3] + y * frame->linesize[3] : nullptr;
+        for (int x = 0; x < frame->width; ++x)
+        {
+            dst[x * 4 + 0] = ReadFloat32PixelComponent(r + x * sizeof(float), byteSwap);
+            dst[x * 4 + 1] = ReadFloat32PixelComponent(g + x * sizeof(float), byteSwap);
+            dst[x * 4 + 2] = ReadFloat32PixelComponent(b + x * sizeof(float), byteSwap);
+            dst[x * 4 + 3] = a ? ReadFloat32PixelComponent(a + x * sizeof(float), byteSwap) : 1.0f;
+        }
+    }
+
+    return picture;
 }
 
 AVPixelFormat CAST(Format format)
@@ -262,10 +426,10 @@ double GetDisplayRotation(const int32_t *displaymatrix)
 
 static AVCodecID Cast(CodecId id)
 {
-    switch (id)
+	switch (id)
     {
 		case CodecId::AVC:
-			return AV_CODEC_ID_AAC;
+			return AV_CODEC_ID_H264;
 		case CodecId::HEVC:
 			return AV_CODEC_ID_HEVC;
 		case CodecId::VVC:
@@ -273,6 +437,7 @@ static AVCodecID Cast(CodecId id)
 		case CodecId::VP9:
 			return AV_CODEC_ID_VP9;
 		case CodecId::AV1:
+		case CodecId::AVIF:
 			return AV_CODEC_ID_AV1;
 		case CodecId::AAC:
 			return AV_CODEC_ID_AAC;
@@ -286,10 +451,42 @@ static AVCodecID Cast(CodecId id)
 			return AV_CODEC_ID_WEBP;
 		case CodecId::JPEGXL:
 			return AV_CODEC_ID_JPEGXL;
+		case CodecId::MJPEG:
+			return AV_CODEC_ID_MJPEG;
+		case CodecId::JPEG2000:
+			return AV_CODEC_ID_JPEG2000;
+		case CodecId::DPX:
+			return AV_CODEC_ID_DPX;
+		case CodecId::TARGA:
+			return AV_CODEC_ID_TARGA;
+		case CodecId::PCX:
+			return AV_CODEC_ID_PCX;
+		case CodecId::EXR:
+			return AV_CODEC_ID_EXR;
+		case CodecId::SGI:
+			return AV_CODEC_ID_SGI;
+		case CodecId::SUNRASTER:
+			return AV_CODEC_ID_SUNRAST;
+		case CodecId::JPEGLS:
+			return AV_CODEC_ID_JPEGLS;
+		case CodecId::FITS:
+			return AV_CODEC_ID_FITS;
+		case CodecId::IFF_ILBM:
+			return AV_CODEC_ID_IFF_ILBM;
+		case CodecId::XBM_IMAGE:
+			return AV_CODEC_ID_XBM;
+		case CodecId::XFACE:
+			return AV_CODEC_ID_XFACE;
+		case CodecId::QDRAW:
+			return AV_CODEC_ID_QDRAW;
 		case CodecId::MPEG4:
 			return AV_CODEC_ID_MPEG4;
 		case CodecId::PCM_S16:
 			return AV_CODEC_ID_PCM_S16LE;
+		case CodecId::None:
+			return AV_CODEC_ID_NONE;
+		default:
+			return AV_CODEC_ID_NONE;
     }
 }
 
@@ -331,6 +528,7 @@ static const char *QueryEncodecById(const CodecId id)
 		return "vvc_qsv";
 
     case CodecId::AV1:
+	case CodecId::AVIF:
 		return "librav1e";
 
 	case CodecId::AV1_NVENC:
@@ -357,6 +555,48 @@ static const char *QueryEncodecById(const CodecId id)
 	case CodecId::JPEGXL:
 		return "libjxl";
 
+	case CodecId::MJPEG:
+		return "mjpeg";
+
+	case CodecId::JPEG2000:
+		return "jpeg2000";
+
+	case CodecId::DPX:
+		return "dpx";
+
+	case CodecId::TARGA:
+		return "targa";
+
+	case CodecId::PCX:
+		return "pcx";
+
+	case CodecId::EXR:
+		return "exr";
+
+	case CodecId::SGI:
+		return "sgi";
+
+	case CodecId::SUNRASTER:
+		return "sunras";
+
+	case CodecId::JPEGLS:
+		return "jpegls";
+
+	case CodecId::FITS:
+		return "fits";
+
+	case CodecId::IFF_ILBM:
+		return "iff_ilbm";
+
+	case CodecId::XBM_IMAGE:
+		return "xbm";
+
+	case CodecId::XFACE:
+		return "xface";
+
+	case CodecId::QDRAW:
+		return "qdraw";
+
 	case CodecId::MPEG4:
 		return "mpeg4";
 
@@ -368,6 +608,247 @@ static const char *QueryEncodecById(const CodecId id)
     }
 }
 
+static bool EncoderNameContains(const char *encoderName, std::string_view needle)
+{
+	if (!encoderName)
+	{
+		return false;
+	}
+	return std::string_view{ encoderName }.find(needle) != std::string_view::npos;
+}
+
+static int PresetRank(const std::string &preset)
+{
+	if (preset == "veryslow")
+	{
+		return 0;
+	}
+	if (preset == "slower")
+	{
+		return 1;
+	}
+	if (preset == "slow")
+	{
+		return 2;
+	}
+	if (preset == "medium" || preset.empty())
+	{
+		return 3;
+	}
+	if (preset == "faster")
+	{
+		return 4;
+	}
+	if (preset == "veryfast")
+	{
+		return 5;
+	}
+	if (preset == "superfast")
+	{
+		return 6;
+	}
+	if (preset == "ultrafast")
+	{
+		return 7;
+	}
+	return 3;
+}
+
+static const char *NvencPresetFromRank(int rank)
+{
+	static constexpr const char *presets[] = { "p7", "p6", "p5", "p4", "p3", "p2", "p1", "p1" };
+	return presets[std::clamp(rank, 0, 7)];
+}
+
+static const char *QsvPresetFromRank(int rank)
+{
+	static constexpr const char *presets[] = { "veryslow", "slower", "slow", "medium", "faster", "veryfast", "veryfast", "veryfast" };
+	return presets[std::clamp(rank, 0, 7)];
+}
+
+static int VpxCpuUsedFromRank(int rank)
+{
+	static constexpr int values[] = { 0, 1, 2, 4, 5, 6, 7, 8 };
+	return values[std::clamp(rank, 0, 7)];
+}
+
+static int Rav1eSpeedFromRank(int rank)
+{
+	static constexpr int values[] = { 0, 2, 3, 5, 7, 8, 9, 10 };
+	return values[std::clamp(rank, 0, 7)];
+}
+
+static void SetEncoderOption(AVDictionary **options, const char *key, const std::string &value)
+{
+	if (!value.empty())
+	{
+		av_dict_set(options, key, value.c_str(), 0);
+	}
+}
+
+static void SetEncoderOption(AVDictionary **options, const char *key, const char *value)
+{
+	if (value && value[0])
+	{
+		av_dict_set(options, key, value, 0);
+	}
+}
+
+static void SetEncoderOption(AVDictionary **options, const char *key, int value)
+{
+	av_dict_set(options, key, std::to_string(value).c_str(), 0);
+}
+
+static const char *PixelFormatName(AVPixelFormat format)
+{
+	const char *name = av_get_pix_fmt_name(format);
+	return name ? name : "none";
+}
+
+static bool PixelFormatHasAlpha(AVPixelFormat format)
+{
+	const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format);
+	return desc && (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
+}
+
+static bool CodecSupportsPixelFormat(const AVCodec *codec, AVPixelFormat format)
+{
+	if (!codec || !codec->pix_fmts || format == AV_PIX_FMT_NONE)
+	{
+		return false;
+	}
+	for (const AVPixelFormat *p = codec->pix_fmts; *p != AV_PIX_FMT_NONE; p++)
+	{
+		if (*p == format)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static AVPixelFormat SelectEncoderPixelFormat(const AVCodec *codec, const CodecInfo &encodeInfo, const char *encoderName)
+{
+	const AVPixelFormat requested = CAST(encodeInfo.format);
+	if (CodecSupportsPixelFormat(codec, requested))
+	{
+		return requested;
+	}
+
+	if (requested == AV_PIX_FMT_YUVA420P && EncoderNameContains(encoderName, "libvpx-vp9"))
+	{
+		// Some FFmpeg builds do not advertise alpha-capable VP9 cleanly. Try the exact
+		// requested format so alpha output fails loudly instead of silently dropping to yuv420p.
+		return AV_PIX_FMT_YUVA420P;
+	}
+
+	if (PixelFormatHasAlpha(requested))
+	{
+		LOG_ERROR("Encoder '{}' does not support requested alpha pixel format '{}'.", encoderName, PixelFormatName(requested));
+		return AV_PIX_FMT_NONE;
+	}
+
+	return codec && codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_NONE;
+}
+
+static void ApplyVideoEncoderOptions(AVCodecContext *handle, AVDictionary **options, const char *encoderName, const CodecInfo &encodeInfo)
+{
+	if (!handle || handle->codec_type != AVMEDIA_TYPE_VIDEO)
+	{
+		return;
+	}
+
+	const int presetRank = PresetRank(encodeInfo.encoderPreset);
+	if (!encodeInfo.encoderPreset.empty())
+	{
+		if (EncoderNameContains(encoderName, "_nvenc"))
+		{
+			SetEncoderOption(options, "preset", NvencPresetFromRank(presetRank));
+		}
+		else if (EncoderNameContains(encoderName, "_qsv"))
+		{
+			SetEncoderOption(options, "preset", QsvPresetFromRank(presetRank));
+		}
+		else if (EncoderNameContains(encoderName, "libvpx"))
+		{
+			SetEncoderOption(options, "cpu-used", VpxCpuUsedFromRank(presetRank));
+		}
+		else if (EncoderNameContains(encoderName, "librav1e"))
+		{
+			SetEncoderOption(options, "speed", Rav1eSpeedFromRank(presetRank));
+		}
+		else
+		{
+			SetEncoderOption(options, "preset", encodeInfo.encoderPreset);
+		}
+	}
+
+	const std::string &rateControl = encodeInfo.rateControl;
+	if (rateControl == "cbr")
+	{
+		handle->bit_rate       = encodeInfo.bitRate;
+		handle->rc_min_rate    = encodeInfo.bitRate;
+		handle->rc_max_rate    = encodeInfo.maxBitRate > 0 ? encodeInfo.maxBitRate : encodeInfo.bitRate;
+		handle->rc_buffer_size = encodeInfo.bufferSize > 0 ? encodeInfo.bufferSize : encodeInfo.bitRate * 2;
+		if (EncoderNameContains(encoderName, "_nvenc"))
+		{
+			SetEncoderOption(options, "rc", "cbr");
+		}
+		else if (EncoderNameContains(encoderName, "_qsv"))
+		{
+			SetEncoderOption(options, "rate_control", "cbr");
+		}
+	}
+	else if (rateControl == "vbr")
+	{
+		handle->bit_rate       = encodeInfo.bitRate;
+		handle->rc_min_rate    = 0;
+		handle->rc_max_rate    = encodeInfo.maxBitRate > 0 ? encodeInfo.maxBitRate : encodeInfo.bitRate * 2;
+		handle->rc_buffer_size = encodeInfo.bufferSize > 0 ? encodeInfo.bufferSize : handle->rc_max_rate * 2;
+		if (EncoderNameContains(encoderName, "_nvenc"))
+		{
+			SetEncoderOption(options, "rc", "vbr");
+		}
+		else if (EncoderNameContains(encoderName, "_qsv"))
+		{
+			SetEncoderOption(options, "rate_control", "vbr");
+		}
+	}
+	else if (rateControl == "crf")
+	{
+		const int quality = std::clamp(encodeInfo.crf > 0 ? encodeInfo.crf : 23, 0, 63);
+		handle->bit_rate = 0;
+		handle->rc_min_rate = 0;
+		handle->rc_max_rate = 0;
+		handle->rc_buffer_size = 0;
+		if (EncoderNameContains(encoderName, "_nvenc"))
+		{
+			SetEncoderOption(options, "rc", "vbr");
+			SetEncoderOption(options, "cq", quality);
+		}
+		else if (EncoderNameContains(encoderName, "_qsv"))
+		{
+			SetEncoderOption(options, "global_quality", quality);
+		}
+		else if (EncoderNameContains(encoderName, "librav1e"))
+		{
+			SetEncoderOption(options, "qp", quality);
+		}
+		else
+		{
+			SetEncoderOption(options, "crf", quality);
+		}
+	}
+	else
+	{
+		handle->bit_rate = encodeInfo.bitRate;
+	}
+
+	if (EncoderNameContains(encoderName, "libvpx") && handle->pix_fmt == AV_PIX_FMT_YUVA420P)
+	{
+		SetEncoderOption(options, "auto-alt-ref", "0");
+	}
+}
 
 #define IS_LAYOUT(L) ((&(layout = AV_CHANNEL_LAYOUT_##L)) && (av_channel_layout_compare(&channelLayout, &layout) == 0))
 static ChannelLayout CAST(AVChannelLayout &channelLayout)
@@ -689,6 +1170,20 @@ bool SampleConverter::SetOptions(const AudioFormatSpec &_outputFormat, const Aud
 	outputFormat = _outputFormat;
     inputFormat  = _inputFormat;
 
+	// Reject obviously bogus specs up front. swr_alloc_set_opts2 will happily
+	// allocate a context for `sampleRate == 0`, but the subsequent swr_init
+	// will fail and leave us with an allocated-but-uninitialized handle. Any
+	// later Convert() call would then trip FFmpeg's "Context has not been
+	// initialized" assertion, which is the exact symptom we want to avoid.
+	if (inputFormat.sampleRate <= 0 || outputFormat.sampleRate <= 0 ||
+	    inputFormat.numChannel <= 0 || outputFormat.numChannel <= 0)
+	{
+		CLOG_ERROR("Invalid SampleConverter spec: input {}Hz/{}ch -> output {}Hz/{}ch",
+		           inputFormat.sampleRate, inputFormat.numChannel,
+		           outputFormat.sampleRate, outputFormat.numChannel);
+		return false;
+	}
+
 	AVChannelLayout outChannelLayout;
     if (!GetChannelLayout(outChannelLayout, outputFormat))
     {
@@ -715,7 +1210,14 @@ bool SampleConverter::SetOptions(const AudioFormatSpec &_outputFormat, const Aud
 
     if (ret < 0 || swr_init(handle) < 0)
     {
-		CLOG_ERROR("Error when init swr context");
+		CLOG_ERROR("Error when init swr context (input {}Hz/{}ch fmt={} -> output {}Hz/{}ch fmt={})",
+		           inputFormat.sampleRate, inputFormat.numChannel, (uint32_t)Format::ValueType(inputFormat.format),
+		           outputFormat.sampleRate, outputFormat.numChannel, (uint32_t)Format::ValueType(outputFormat.format));
+		// The allocator may have produced a handle even though swr_init failed.
+		// Tear it down so `operator bool()` (which only checks `handle`) cannot
+		// claim the converter is usable, and so Convert() never runs against an
+		// uninitialized SwrContext.
+		Release();
 		return false;
     }
 
@@ -851,6 +1353,7 @@ FFCodec::FFCodec(const char *name) :
     type{PictureMemoryType::System},
     startTimestamp{},
     displayOrientation{},
+    sampleAspectRatio{},
     preference{},
     pts{},
     subtitle{}
@@ -893,6 +1396,7 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
 		return;
 	}
 
+	AVDictionary *codecOptions = nullptr;
     switch (handle->codec_type)
     {
 		case AVMEDIA_TYPE_AUDIO:
@@ -910,6 +1414,7 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
             if (handle->sample_fmt != sampleFormat)
             {
 				CLOG_ERROR("Unsupported sample format - {}", (int)sampleFormat);
+				avcodec_free_context(&handle);
 			    return;
             }
 
@@ -932,6 +1437,7 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
             if (handle->sample_rate != encodeInfo.sampleRate)
 		    {
 			    CLOG_ERROR("Unsupported sample rate - {}", encodeInfo.sampleRate);
+				avcodec_free_context(&handle);
 			    return;
 		    }
 
@@ -944,6 +1450,7 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
 			if (!GetChannelLayout(handle->ch_layout, spec))
 			{
 				CLOG_ERROR("Failed to get channel layout");
+				avcodec_free_context(&handle);
 				return;
 			}
 	    }
@@ -954,22 +1461,15 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
             if (!codec->pix_fmts)
 			{
 				CLOG_ERROR("No pixel formats available for this codec.");
+				avcodec_free_context(&handle);
 				return;
 			}
 
-            AVPixelFormat pixelFormat = AV_PIX_FMT_NONE;
-            for (const AVPixelFormat *p = codec->pix_fmts; *p != AV_PIX_FMT_NONE; p++)
-			{
-				if (*p == CAST(encodeInfo.format))
-                {
-					pixelFormat = *p;
-					break;
-                }
-			}
-
+            AVPixelFormat pixelFormat = SelectEncoderPixelFormat(codec, encodeInfo, name);
             if (pixelFormat == AV_PIX_FMT_NONE)
             {
-				pixelFormat = codec->pix_fmts[0];
+				avcodec_free_context(&handle);
+				return;
             }
 
 			mediaType = MediaType::Video;
@@ -982,22 +1482,52 @@ FFCodec::FFCodec(const CodecInfo &encodeInfo) :
             handle->gop_size     = encodeInfo.gopSize;
             handle->time_base    = AVRational{ (int)encodeInfo.timeBase.numerator, (int)encodeInfo.timeBase.denominator };
             handle->framerate    = AVRational{ (int)encodeInfo.framerate.numerator, (int)encodeInfo.framerate.denominator };
+            if (IsValidSampleAspectRatio(encodeInfo.sampleAspectRatio))
+            {
+				handle->sample_aspect_ratio = AVRational{ (int)encodeInfo.sampleAspectRatio.numerator, (int)encodeInfo.sampleAspectRatio.denominator };
+            }
 	        handle->max_b_frames = 1;
 			handle->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 			handle->hwaccel_flags |= AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH;
 			handle->strict_std_compliance |= FF_COMPLIANCE_EXPERIMENTAL;
 			displayOrientation   = encodeInfo.displayOrientation;
+			ApplyVideoEncoderOptions(handle, &codecOptions, name, encodeInfo);
+			CLOG_DEBUG("Opening video encoder '{}' pixel_format='{}' requested_format={} preset='{}' rate_control='{}' bitrate={} maxrate={} bufsize={} crf={}",
+				name,
+				PixelFormatName(handle->pix_fmt),
+				(uint32_t)(Format::ValueType)encodeInfo.format,
+				encodeInfo.encoderPreset.c_str(),
+				encodeInfo.rateControl.c_str(),
+				handle->bit_rate,
+				handle->rc_max_rate,
+				handle->rc_buffer_size,
+				encodeInfo.crf);
         }
 		break;
 
         default:
-			break;
+			avcodec_free_context(&handle);
+			return;
     }
 
-    int ret = avcodec_open2(handle, codec, nullptr);
+    int ret = avcodec_open2(handle, codec, &codecOptions);
+	if (codecOptions)
+	{
+		av_dict_free(&codecOptions);
+	}
 	if (ret < 0)
 	{
 		CLOG_ERROR("Could not open codec: {}", AVERR_STR(ret));
+		avcodec_free_context(&handle);
+		return;
+	}
+	if (handle->codec_type == AVMEDIA_TYPE_VIDEO && PixelFormatHasAlpha(CAST(encodeInfo.format)) && !PixelFormatHasAlpha(handle->pix_fmt))
+	{
+		CLOG_ERROR("Encoder '{}' opened with non-alpha pixel format '{}' for requested alpha format '{}'.",
+			name,
+			PixelFormatName(handle->pix_fmt),
+			PixelFormatName(CAST(encodeInfo.format)));
+		avcodec_free_context(&handle);
 		return;
 	}
 
@@ -1019,10 +1549,17 @@ FFCodec::~FFCodec()
         {
             av_freep(&handle->extradata);
         }
-        av_frame_free(&frame);
         avcodec_free_context(&handle);
     }
-	if (!swrContext)
+	if (frame)
+	{
+		av_frame_free(&frame);
+	}
+	// Note: previously this was `if (!swrContext)` which is logically inverted —
+	// it would only free a *null* handle and would leak any real SwrContext that
+	// SetOptions had allocated (a real source of audio resampler leaks during
+	// long playback).
+	if (swrContext)
 	{
 		swr_free(&swrContext);
 	}
@@ -1055,10 +1592,32 @@ CodecError FFCodec::Decode(const CodedFrame &codedFrame)
     else
     {
 		ret = avcodec_send_packet(handle, packet);
-		if (ret < 0 && ret != AVERROR(EAGAIN))
+		if (ret == AVERROR(EAGAIN))
 		{
-			if (ret != AVERROR(EOF))
+			// libavcodec: input buffer full — must drain avcodec_receive_frame first, then resend this packet.
+			// (Same contract as ffplay decoder_decode_frame when send_packet returns EAGAIN.)
+			return CodecError::Again;
+		}
+		if (ret < 0)
+		{
+			if (ret != AVERROR_EOF)
 			{
+				if (device && ReopenDecoderAsSoftware() == CodecError::Success)
+				{
+					ret = avcodec_send_packet(handle, packet);
+					if (ret == AVERROR(EAGAIN))
+					{
+						return CodecError::Again;
+					}
+					if (ret >= 0 || ret == AVERROR_EOF)
+					{
+						if (packet)
+						{
+							handle->time_base = packet->time_base;
+						}
+						return CodecError::Success;
+					}
+				}
 				CLOG_ERROR("Failed to decode frame - {}", AVERR_STR(ret));
 				return CodecError::ExternalFailed;
 			}
@@ -1082,6 +1641,14 @@ CodecError FFCodec::GetPicture(Picture &picture)
         {
             return CodecError::Again;
         }
+        if (ret == AVERROR_EOF)
+        {
+            return CodecError::EndOfFile;
+        }
+		if (device && ReopenDecoderAsSoftware() == CodecError::Success)
+		{
+			return CodecError::Again;
+		}
         return CodecError::ExternalFailed;
     }
 
@@ -1111,6 +1678,10 @@ CodecError FFCodec::GetPicture(Picture &picture)
                 av_frame_free(&ref);
                 av_frame_unref(frame);
 
+				if (device && ReopenDecoderAsSoftware() == CodecError::Success)
+				{
+					return CodecError::Again;
+				}
                 return CodecError::ExternalFailed;
             }
         }
@@ -1150,7 +1721,30 @@ CodecError FFCodec::GetPicture(Picture &picture)
             format = CAST(pixelFormat);
         }
 
-		if (format == Format::None)
+        const AVPixelFormat framePixelFormat = (AVPixelFormat)ref->format;
+        const bool directFloat32Rgb =
+            IsBigEndianFloat32RgbFormat(framePixelFormat) ||
+            IsLittleEndianFloat32RgbFormat(framePixelFormat);
+
+		if (format == Format::None && directFloat32Rgb)
+		{
+			picture = CopyFloat32RgbFrameToRgba32F(ref);
+            if (!picture)
+            {
+                av_frame_unref(ref);
+                av_frame_free(&ref);
+                av_frame_unref(frame);
+                return CodecError::ExternalFailed;
+            }
+            picture.SetColorSpace(colorSpace);
+            if (ref->color_range == AVCOL_RANGE_JPEG)
+            {
+                picture.SetFlags(PictureFlags::FullRange);
+            }
+			av_frame_unref(ref);
+			av_frame_free(&ref);
+		}
+		else if (format == Format::None)
 		{
 			picture = ScaleToSupportFormat(ref);
 			av_frame_unref(ref);
@@ -1162,6 +1756,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 			picture.SetStride(0, ref->linesize[0]);
 			picture.SetStride(1, ref->linesize[1]);
 			picture.SetStride(2, ref->linesize[2]);
+			picture.SetStride(3, ref->linesize[3]);
 			picture.SetColorSpace(colorSpace);
 			if (ref->color_range == AVCOL_RANGE_JPEG)
 			{
@@ -1186,6 +1781,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 				picture[0] = (uint8_t *) ref->data[0];
 				picture[1] = (uint8_t *) ref->data[1];
 				picture[2] = (uint8_t *) ref->data[2];
+				picture[3] = (uint8_t *) ref->data[3];
 			}
 
 			picture.SetRelease([ref](void *) {
@@ -1194,6 +1790,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 			});
 		}
 
+		picture.SetSampleAspectRatio(ResolveSampleAspectRatio(frame, handle, sampleAspectRatio));
         picture.SetTimestamp(NAN);
 		if (frame->pts != AV_NOPTS_VALUE)
 		{
@@ -1204,10 +1801,27 @@ CodecError FFCodec::GetPicture(Picture &picture)
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-		AVRational &tb = handle->time_base;
+		AVRational tb = handle->time_base;
+		AVRational sampleTb = { 1, frame->sample_rate };
+
+		if (frame->pts != AV_NOPTS_VALUE)
+		{
+			frame->pts = av_rescale_q(frame->pts - startTimestamp, tb, sampleTb);
+		}
+		else if (audioNextPtsSync != AV_NOPTS_VALUE)
+		{
+			frame->pts = av_rescale_q(audioNextPtsSync, { (int)audioNextPtsTbNum, (int)audioNextPtsTbDen }, sampleTb);
+		}
+		if (frame->pts != AV_NOPTS_VALUE)
+		{
+			audioNextPtsSync  = frame->pts + frame->nb_samples;
+			audioNextPtsTbNum = sampleTb.num;
+			audioNextPtsTbDen = sampleTb.den;
+		}
+
 		AVFrame *ref = av_frame_clone(frame);
         picture = Picture{ frame->nb_samples, frame->ch_layout.nb_channels, CAST(handle->sample_fmt) };
-		picture.SetSampleRate(handle->sample_rate);
+		picture.SetSampleRate(frame->sample_rate);
 
         for (int i = 0; i < frame->ch_layout.nb_channels; i++)
         {
@@ -1220,7 +1834,7 @@ CodecError FFCodec::GetPicture(Picture &picture)
 			av_frame_free((AVFrame **)&ref);
 		});
 
-		picture.SetTimebase({tb.num, tb.den});
+		picture.SetTimebase({sampleTb.num, sampleTb.den});
         picture.SetTimestamp(frame->pts);
     }
 
@@ -1466,6 +2080,10 @@ CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 		frame->format = handle->pix_fmt;
 		frame->width  = ref.GetWidth();
 		frame->height = ref.GetHeight();
+        if (IsValidSampleAspectRatio(picture.GetSampleAspectRatio()))
+        {
+			frame->sample_aspect_ratio = AVRational{ (int)picture.GetSampleAspectRatio().numerator, (int)picture.GetSampleAspectRatio().denominator };
+        }
 		frame->pts    = av_rescale_q(frame->pts, av_inv_q(handle->framerate), handle->time_base);
 
 		auto icc = picture.GetProperty<ICCProfileProperty>();
@@ -1650,7 +2268,7 @@ void FFCodec::Flush()
 	{
         if (isEncoder)
         {
-			if (handle->codec->type == AVMEDIA_TYPE_AUDIO && swrContext)
+			if (handle->codec_type == AVMEDIA_TYPE_AUDIO && swrContext)
             {
 				FlushAudioFifo();
             }
@@ -1659,6 +2277,12 @@ void FFCodec::Flush()
         else
         {
 			avcodec_flush_buffers(handle);
+			if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
+			{
+				audioNextPtsSync     = AV_NOPTS_VALUE;
+				audioNextPtsTbNum    = 0;
+				audioNextPtsTbDen    = 1;
+			}
 			//avcodec_send_packet(handle, nullptr);
         }
 	}
@@ -1833,9 +2457,48 @@ CodecError FFCodec::CreateHardwareAccelerateDevice(const AVCodec *codec)
     return CodecError::Success;
 }
 
+CodecError FFCodec::ReopenDecoderAsSoftware()
+{
+	if (hardwareFallbackAttempted || !decoderStream || !handle || handle->codec_type != AVMEDIA_TYPE_VIDEO)
+	{
+		return CodecError::ExternalFailed;
+	}
+
+	hardwareFallbackAttempted = true;
+	CLOG_WARN("Hardware decoding failed; reopening decoder in software.");
+
+	if (handle)
+	{
+		if (handle->extradata)
+		{
+			av_freep(&handle->extradata);
+		}
+		avcodec_free_context(&handle);
+	}
+	if (device)
+	{
+		av_buffer_unref(&device);
+	}
+	if (frame)
+	{
+		av_frame_unref(frame);
+	}
+
+	type = PictureMemoryType::System;
+	format = Format::None;
+	hwaccelType = AV_HWDEVICE_TYPE_NONE;
+	colorSpace = ColorSpace::BT709;
+	transferCharacteristic = ColorTransferCharacteristic::Unspecified;
+	preference = DecodingPreference::Software;
+
+	return InitializeDecoder(decoderCodecId, decoderStream);
+}
+
 CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
 {
     AVCodecID codecId = (AVCodecID)_codecId;
+	decoderCodecId = _codecId;
+	decoderStream = stream;
     const AVCodec *codec = avcodec_find_decoder(codecId);
 
 	if (codecId == AV_CODEC_ID_PNG)
@@ -1942,6 +2605,7 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
             CLOG_ERROR("FFCodec::Failed to fill AVCodecContext parameters");
         }
 
+        sampleAspectRatio = ToRational(stream->codecpar->sample_aspect_ratio);
         handle->pkt_timebase = stream->time_base;
     }
 
@@ -1954,6 +2618,8 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         CLOG_ERROR("FFCodec::Failed to open AVCodecContext");
+		av_dict_free(opts);
+		return CodecError::ExternalFailed;
     }
 
     av_dict_free(opts);
@@ -1970,7 +2636,14 @@ CodecError FFCodec::OpenDecoder(CodecInfo &info)
 	{
 		startTimestamp = stream->start_time;
 	}
-    return InitializeDecoder(stream->codecpar->codec_id, stream);
+	const CodecError r = InitializeDecoder(stream->codecpar->codec_id, stream);
+	if (r == CodecError::Success && handle && handle->codec_type == AVMEDIA_TYPE_AUDIO)
+	{
+		audioNextPtsSync  = AV_NOPTS_VALUE;
+		audioNextPtsTbNum = 0;
+		audioNextPtsTbDen = 1;
+	}
+	return r;
 }
 
 Rational FFCodec::GetFramerate() const
@@ -2032,6 +2705,10 @@ CodecError FFImageCodec::Decode(const CodedFrame &codedFrame)
 	FFCodec codec{codecId};
 
 	AVPacket *packet = av_packet_alloc();
+	if (!packet)
+	{
+		return CodecError::OutOfMemory;
+	}
 	packet->data = (uint8_t *) codedFrame.GetData();
 	packet->size = codedFrame.GetSize();
 	packet->pts = 0;
@@ -2039,11 +2716,14 @@ CodecError FFImageCodec::Decode(const CodedFrame &codedFrame)
 	CodedFrame f{packet};
 
 	CodecError err = codec.Decode(f);
+	// Always free the packet — previously the early-return-on-error path
+	// leaked the AVPacket (and is hot during JPEG thumbnail decode of large
+	// asset libraries).
+	av_packet_free(&packet);
 	if (err != CodecError::Success)
 	{
 		return err;
 	}
-	av_packet_free(&packet);
 	avcodec_send_packet(codec.GetHandle(), nullptr);
 
 	return codec.GetPicture(picture);

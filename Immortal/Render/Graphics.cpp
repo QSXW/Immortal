@@ -11,6 +11,72 @@ namespace Immortal
 
 URef<Graphics> Graphics::This;
 
+static void DestroyObject(const DeferredObject &object)
+{
+    switch (object.Type)
+    {
+    case ObjectType::AccelerationStructure:
+        delete static_cast<AccelerationStructure *>(object.Pointer);
+        break;
+    case ObjectType::RenderTarget:
+        delete static_cast<RenderTarget *>(object.Pointer);
+        break;
+    case ObjectType::Texture:
+        delete static_cast<Texture *>(object.Pointer);
+        break;
+    case ObjectType::Buffer:
+        delete static_cast<Buffer *>(object.Pointer);
+        break;
+    case ObjectType::BufferView:
+        delete static_cast<BufferView *>(object.Pointer);
+        break;
+    case ObjectType::CommandBuffer:
+        delete static_cast<CommandBuffer *>(object.Pointer);
+        break;
+    case ObjectType::DescriptorSet:
+        delete static_cast<DescriptorSet *>(object.Pointer);
+        break;
+    case ObjectType::GPUEvent:
+        delete static_cast<GPUEvent *>(object.Pointer);
+        break;
+    case ObjectType::Pipeline:
+        delete static_cast<Pipeline *>(object.Pointer);
+        break;
+    case ObjectType::PipelineCache:
+        delete static_cast<PipelineCache *>(object.Pointer);
+        break;
+    case ObjectType::Queue:
+        delete static_cast<Queue *>(object.Pointer);
+        break;
+    case ObjectType::Sampler:
+        delete static_cast<Sampler *>(object.Pointer);
+        break;
+    case ObjectType::Shader:
+        delete static_cast<Shader *>(object.Pointer);
+        break;
+    case ObjectType::Swapchain:
+        delete static_cast<Swapchain *>(object.Pointer);
+        break;
+    case ObjectType::Window:
+        delete static_cast<Window *>(object.Pointer);
+        break;
+    case ObjectType::WindowCapture:
+        delete static_cast<WindowCapture *>(object.Pointer);
+        break;
+    default:
+        break;
+    }
+}
+
+static void DestroyObjects(std::vector<DeferredObject> &objects)
+{
+    for (auto &object : objects)
+    {
+        DestroyObject(object);
+    }
+    objects.clear();
+}
+
 Graphics::Graphics(Instance *instance, Device *device) :
     instance{instance},
     device{device},
@@ -73,6 +139,14 @@ Graphics::~Graphics()
 
     thread.Execute<AsyncTask>(AsyncTaskType::Terminate);
     thread.Join();
+    releaseThread.Join();
+
+    for (auto &[index, objects] : expiredObjects)
+    {
+        DestroyObjects(objects);
+    }
+    expiredObjects.clear();
+
     expiredRenderTargets.clear();
 	expiredTextures.clear();
 	expiredBuffers.clear();
@@ -149,7 +223,7 @@ Ref<Texture> Graphics::CreateTexture(Format format, uint32_t width, uint32_t hei
     Ref<Buffer> buffer = GetCachedBuffer(BufferType::TransferSource, uploadSize, This->stagingBuffers);
     MemoryCopyImage(buffer, uploadPitch, (uint8_t *) data, stride, format, width, height);
 
-    asyncComputeThread->Execute<RecordingTask>([=](uint64_t sync, CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([=](CommandBuffer *commandBuffer) {
         commandBuffer->CopyBufferToImage(texture, 0, buffer, uploadPitch);
         if (mipLevels > 1)
         {
@@ -246,7 +320,7 @@ Picture Graphics::Transfer(const Ref<Texture> &texture, AsyncComputeThread *asyn
         uint32_t stride = picture.GetStride(0);
         size_t size = stride * heigth;
         Ref<Buffer> buffer = GetCachedBuffer(BufferType::TransferDestination, size, This->readBackBuffers);
-        asyncComputeThread->Execute<RecordingTask>([=](uint64_t sync, CommandBuffer *commandBuffer) {
+        asyncComputeThread->Execute<RecordingTask>([=](CommandBuffer *commandBuffer) {
             commandBuffer->CopyImageToBuffer(buffer, texture, i, stride);
         });
 
@@ -328,7 +402,7 @@ void Graphics::Transfer(Picture &picture, const std::vector<Ref<Texture>> &textu
 		bufs[i] = GetCachedBuffer(BufferType::TransferDestination, stride * height);
 	}
 
-	asyncComputeThread->Execute<RecordingTask>([=](uint64_t sync, CommandBuffer *commandBuffer) {
+	asyncComputeThread->Execute<RecordingTask>([=](CommandBuffer *commandBuffer) {
         for (size_t i = 0; i < size; i++)
 		{
 			commandBuffer->CopyImageToBuffer(bufs[i], textures[data[i].index], data[i].subresource, data[i].stride);
@@ -386,6 +460,33 @@ void Graphics::ReleaseResource(const Ref<Buffer> &buffer, uint64_t offset)
 	ExpireResource(This->discardedMutex, This->index, This->expiredBuffers, buffer, offset);
 }
 
+void Graphics::ReleaseResource(const Ref<DescriptorSet> &descriptorSet, uint64_t offset)
+{
+	ExpireResource(This->discardedMutex, This->index, This->expiredDescriptorSets, descriptorSet, offset);
+}
+
+void Graphics::ReleaseResource(const Ref<Pipeline> &pipeline, uint64_t offset)
+{
+	ExpireResource(This->discardedMutex, This->index, This->expiredPipelines, pipeline, offset);
+}
+
+void Graphics::Release(void *pointer, ObjectType type, uint64_t offset)
+{
+    if (!pointer)
+    {
+        return;
+    }
+
+    if (!This)
+    {
+        DestroyObject({ pointer, type });
+        return;
+    }
+
+    std::lock_guard lock{ This->discardedMutex };
+    This->expiredObjects[This->index + offset].push_back({ pointer, type });
+}
+
 template <class T>
 void ReleaseResources(ThreadPool &thread, std::unordered_map<uint64_t, std::vector<Ref<T>>> &expiredResources, uint64_t index)
 {
@@ -409,15 +510,81 @@ void ReleaseResources(ThreadPool &thread, std::unordered_map<uint64_t, std::vect
     }
 }
 
+template <class T>
+void ReleaseResourcesOnCurrentThread(std::unordered_map<uint64_t, std::vector<Ref<T>>> &expiredResources, uint64_t index)
+{
+	if (!expiredResources.empty())
+    {
+		for (auto it = expiredResources.begin(); it != expiredResources.end();)
+        {
+			auto &[renderIndex, resources] = *it;
+			if (index - renderIndex >= 3)
+			{
+				std::vector<Ref<T>> releasedResources = std::move(resources);
+				it = expiredResources.erase(it);
+                releasedResources.clear();
+				break;
+			}
+			else
+			{
+				it++;
+			}
+        }
+    }
+}
+
+void ReleaseObjects(ThreadPool &thread, std::unordered_map<uint64_t, std::vector<DeferredObject>> &expiredObjects, uint64_t index)
+{
+	if (!expiredObjects.empty())
+    {
+		for (auto it = expiredObjects.begin(); it != expiredObjects.end();)
+        {
+			auto &[renderIndex, objects] = *it;
+			if (index - renderIndex >= 3)
+			{
+				auto releasedObjects = std::move(objects);
+				it = expiredObjects.erase(it);
+                std::vector<DeferredObject> threadedObjects;
+                for (auto &object : releasedObjects)
+                {
+                    if (object.Type == ObjectType::Texture)
+                    {
+                        DestroyObject(object);
+                    }
+                    else
+                    {
+                        threadedObjects.emplace_back(object);
+                    }
+                }
+                if (!threadedObjects.empty())
+                {
+				    thread.Enqueue([objects = std::move(threadedObjects)]() mutable {
+                        DestroyObjects(objects);
+                    });
+                }
+				break;
+			}
+			else
+			{
+				it++;
+			}
+        }
+    }
+}
+
 void Graphics::SetRenderIndex(GPUEvent *gpuEvent, uint64_t index)
 {
 	This->gpuEvent  = gpuEvent;
 	This->syncValue = index;
     std::lock_guard lock{This->discardedMutex};
 
-    ReleaseResources(This->releaseThread, This->expiredTextures,      index);
-	ReleaseResources(This->releaseThread, This->expiredBuffers,       index);
-	ReleaseResources(This->releaseThread, This->expiredRenderTargets, index);
+    // ImGui uses Texture* as ImTextureID, so the final texture unref must stay on the render thread.
+    ReleaseResourcesOnCurrentThread(This->expiredTextures,             index);
+	ReleaseResources(This->releaseThread, This->expiredBuffers,        index);
+	ReleaseResources(This->releaseThread, This->expiredRenderTargets,  index);
+	ReleaseResources(This->releaseThread, This->expiredDescriptorSets, index);
+	ReleaseResources(This->releaseThread, This->expiredPipelines,      index);
+	ReleaseObjects(This->releaseThread, This->expiredObjects,          index);
 
     This->index = index;
 }
@@ -442,6 +609,7 @@ Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
         { "color_space_y2102rgba", { "Assets/Shaders/hlsl/color_space_y2102rgba.hlsl", ShaderStage::Compute, "main" } },
 	    { "equirect2cube",         { "Assets/Shaders/hlsl/equirect2cube.hlsl",         ShaderStage::Compute, "main" } },
 	    { "ibl_irradiance",        { "Assets/Shaders/hlsl/ibl_irradiance.hlsl",        ShaderStage::Compute, "main" } },
+	    { "ibl_prefilter",         { "Assets/Shaders/hlsl/ibl_prefilter.hlsl",         ShaderStage::Compute, "main" } },
 	    { "brdf_lut",              { "Assets/Shaders/hlsl/brdf_lut.hlsl",              ShaderStage::Compute, "main" } },
     };
 
@@ -542,17 +710,32 @@ static FileSystem::Path ResolveShaderHlslPath(const std::string &name)
 		return direct;
 	}
 
+	if (name.rfind("MeshletTask_", 0) == 0)
+	{
+		FileSystem::Path p = assetRoot / "MeshletTask.hlsl";
+		if (std::filesystem::exists(p))
+		{
+			return p;
+		}
+	}
+
 	const auto pos = name.rfind('_');
 	if (pos != std::string::npos && pos + 1 < name.size())
 	{
 		const std::string suffix = name.substr(pos + 1);
-		if (suffix == "VS" || suffix == "PS" || suffix == "HS" || suffix == "DS" || suffix == "GS")
+		if (suffix == "VS" || suffix == "PS" || suffix == "HS" || suffix == "DS" || suffix == "GS" || suffix == "MS")
 		{
 			FileSystem::Path stemPath = assetRoot / (name.substr(0, pos) + ".hlsl");
 			if (std::filesystem::exists(stemPath))
 			{
 				return stemPath;
 			}
+		}
+		/* e.g. MeshletTask_PSMainPhong -> MeshletTask.hlsl */
+		FileSystem::Path stemPath2 = assetRoot / (name.substr(0, pos) + ".hlsl");
+		if (std::filesystem::exists(stemPath2))
+		{
+			return stemPath2;
 		}
 	}
 

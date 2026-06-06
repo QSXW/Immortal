@@ -12,9 +12,10 @@ struct Material
 	Material() :
 		Name{"Untitled"},
         AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
-        Metallic{ 1.0f },
+        Metallic{ 0.0f },
         Roughness{ 1.0f },
-		Opacity{1.0f}
+		Opacity{1.0f},
+		Emissive{ 0.0f, 0.0f, 0.0f, 1.0f }
     {
         Textures.Albedo    = Graphics::Preset()->Textures.White;
 		Textures.Normal    = Graphics::Preset()->Textures.Normal;
@@ -22,6 +23,16 @@ struct Material
         Textures.Metallic  = Textures.Albedo;
         Textures.Roughness = Textures.Albedo;
 		Textures.AmbientOcclusion = Textures.Albedo;
+    }
+
+    ~Material()
+    {
+		Graphics::ReleaseResource(Textures.Albedo          );
+		Graphics::ReleaseResource(Textures.Normal 		   );
+		Graphics::ReleaseResource(Textures.Specular		   );
+		Graphics::ReleaseResource(Textures.Metallic		   );
+		Graphics::ReleaseResource(Textures.Roughness	   );
+		Graphics::ReleaseResource(Textures.AmbientOcclusion);
     }
 
     struct {

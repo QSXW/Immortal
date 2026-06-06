@@ -1,4 +1,5 @@
 #include "FileSystem.h"
+#include <chrono>
 #include <filesystem>
 
 namespace Immortal
@@ -8,6 +9,35 @@ namespace FileSystem
 {
 
 namespace fs = std::filesystem;
+
+#ifdef _WIN32
+static int64_t FileTimeToUnixSeconds(const FILETIME &ft)
+{
+	ULARGE_INTEGER uli;
+	uli.LowPart = ft.dwLowDateTime;
+	uli.HighPart = ft.dwHighDateTime;
+	if (uli.QuadPart == 0ull)
+	{
+		return 0;
+	}
+	constexpr uint64_t WINDOWS_TICK_PER_SEC = 10000000ULL;
+	constexpr uint64_t UNIX_EPOCH_DIFF_100NS = 116444736000000000ULL;
+	return (int64_t)((uli.QuadPart - UNIX_EPOCH_DIFF_100NS) / WINDOWS_TICK_PER_SEC);
+}
+#else
+static int64_t FileLastWriteToUnixSeconds(const fs::path &p)
+{
+	std::error_code ec;
+	auto lwt = fs::last_write_time(p, ec);
+	if (ec)
+	{
+		return 0;
+	}
+	auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+	    lwt - fs::file_time_type::clock::now() + std::chrono::system_clock::now());
+	return (int64_t)std::chrono::duration_cast<std::chrono::seconds>(sctp.time_since_epoch()).count();
+}
+#endif
 bool HasSubdirectory(const Path &path)
 {
 	try
@@ -57,7 +87,13 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 		if (fileData.cFileName[0] != '.' &&
 			fileData.cFileName[0] != '$')
 		{
-			DirectoryEntry entry = { (_path / fileData.cFileName).u8string(), type};
+			DirectoryEntry entry = { (_path / fileData.cFileName).u8string(), type };
+			entry.creationUnixSec   = FileTimeToUnixSeconds(fileData.ftCreationTime);
+			entry.lastWriteUnixSec  = FileTimeToUnixSeconds(fileData.ftLastWriteTime);
+			if (type == FileType::RegularFile)
+			{
+				entry.fileSize = (uint64_t(fileData.nFileSizeHigh) << 32) | uint64_t(fileData.nFileSizeLow);
+			}
 			directories.emplace_back(std::move(entry));
 		}
 	} while (FindNextFileW(hFind, &fileData) != 0);
@@ -80,6 +116,12 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 
 			const std::filesystem::path &path = directory.path();
 			DirectoryEntry entry = { path.u8string(), type };
+			entry.lastWriteUnixSec = FileLastWriteToUnixSeconds(path);
+			entry.creationUnixSec  = entry.lastWriteUnixSec;
+			if (type == FileType::RegularFile)
+			{
+				entry.fileSize = directory.file_size();
+			}
 			if (entry.GetFileName()[0] == '$' || entry.GetFileName()[0] == '.' ||
 				!strcmp(entry.GetFileName(), "System Volume Information"))
 			{

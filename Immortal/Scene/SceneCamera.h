@@ -19,6 +19,8 @@ public:
 
     virtual void SetViewportSize(float width, float height);
 
+    bool OnMouseScrolled(MouseScrolledEvent &e);
+
     void SetViewportSize(const Vector2 &size)
     {
         SetViewportSize(size.x, size.y);
@@ -44,6 +46,11 @@ public:
         return perspectiveNear;
     }
 
+    float PerspectiveNearClip() const
+	{
+		return perspectiveNear;
+	}
+
     void SetPerspectiveFarClip(float farClip)
     {
         perspectiveFar = farClip;
@@ -53,6 +60,11 @@ public:
     {
         return perspectiveFar;
     }
+
+    float PerspectiveFarClip() const
+	{
+		return perspectiveFar;
+	}
 
     void SetOrthographicSize(float size)
     {
@@ -79,6 +91,11 @@ public:
         return orthographicNear;
     }
 
+    float OrthographicNearClip() const
+	{
+		return orthographicNear;
+	}
+
     void SetOrthographicFarClip(float farClip)
     {
         orthographicFar = farClip;
@@ -89,6 +106,11 @@ public:
         return orthographicFar;
     }
 
+    float OrthographicFarClip() const
+	{
+		return orthographicFar;
+	}
+
     void SetProjectionType(ProjectionType type)
     {
         projectionType = type;
@@ -98,6 +120,9 @@ public:
     {
         return projectionType;
     }
+
+	/** Copies current perspective / orthographic clip distances to Camera::SetClipPlanes (shadow fitting). */
+	void RefreshCameraClipPlanes();
 
     void SetTransform(const Matrix4 &transform)
     {

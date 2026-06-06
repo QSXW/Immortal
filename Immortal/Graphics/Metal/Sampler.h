@@ -19,7 +19,7 @@ public:
 public:
 	Sampler();
 
-	Sampler(Device *device, Filter filter, AddressMode addressMode, CompareOperation compareOperation = {}, float minLod = 0.0f, float maxLod = 1.0f);
+	Sampler(Device *device, Filter filter, AddressMode addressMode, CompareOperation compareOperation = {}, float minLod = 0.0f, float maxLod = 16.0f);
 
 	virtual ~Sampler() override;
 

@@ -214,6 +214,16 @@ AudioFormat AudioStream::GetFormat()
     return format;
 }
 
+uint32_t AudioStream::FfplayAudioHwBufferBytes() const
+{
+	const uint32_t framesPerBuffer = bufferSize;
+	if (!framesPerBuffer || !bytePerSample)
+	{
+		return 0;
+	}
+	return (framesPerBuffer * uint32_t(bytePerSample)) / 2u;
+}
+
 bool AudioStream::OnDeviceChanged(IAudioDevice *_device)
 {
 	std::lock_guard lock{ mutex };

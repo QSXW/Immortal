@@ -3,9 +3,11 @@
 namespace Immortal
 {
 
-RenderTask::RenderTask(const std::string &name) :
+RenderTask::RenderTask(const std::string &name, const Flags &flags) :
+    IClass{name.c_str()},
     name{name},
-    dependency{}
+    dependency{},
+    flags{flags}
 {
 
 }

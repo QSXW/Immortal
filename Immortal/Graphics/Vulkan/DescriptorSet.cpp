@@ -75,6 +75,33 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
     device->UpdateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
 }
 
+void DescriptorSet::SetUavMip(uint32_t slot, SuperTexture *_texture, uint32_t mipSlice)
+{
+	Texture *texture = InterpretAs<Texture>(_texture);
+	if (descriptorTypes[slot] != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+	{
+		return;
+	}
+	const uint32_t maxMip = texture->GetMipLevels() > 0u ? (uint32_t)texture->GetMipLevels() - 1u : 0u;
+	const uint32_t mip = mipSlice > maxMip ? maxMip : mipSlice;
+	VkDescriptorImageInfo imageInfo = texture->GetStorageDescriptorInfo(mip);
+
+	VkWriteDescriptorSet writeDescriptorSet{
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.pNext = nullptr,
+		.dstSet = handle,
+		.dstBinding = slot,
+		.dstArrayElement = 0,
+		.descriptorCount = 1,
+		.descriptorType = descriptorTypes[slot],
+		.pImageInfo = &imageInfo,
+		.pBufferInfo = nullptr,
+		.pTexelBufferView = nullptr,
+	};
+
+	device->UpdateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
+}
+
 void DescriptorSet::Set(uint32_t slot, SuperSampler *_sampler)
 {
 	Sampler *sampler = InterpretAs<Sampler>(_sampler);

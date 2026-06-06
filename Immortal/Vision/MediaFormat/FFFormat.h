@@ -9,6 +9,8 @@
 struct AVCodec;
 struct AVStream;
 struct AVPacket;
+struct AVDictionary;
+struct AVInputFormat;
 struct AVFormatContext;
 struct AVIOContext;
 struct AVCodecContext;
@@ -51,11 +53,21 @@ public:
 
     virtual Animator &GetAnimator(MediaType mediaType);
 
+    double GetMaxFrameDurationForSync() const;
+
 private:
 	void SetAnimator();
 
+    int OpenWithWin32FileIO(const AVInputFormat *inputFormat, AVDictionary **options);
+
+    void CloseCustomIO();
+
 private:
     AVFormatContext *handle;
+
+    AVIOContext *customIO;
+
+    void *customIOOpaque;
 
     int streamIndex[4];
 

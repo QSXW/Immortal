@@ -2,6 +2,8 @@
 
 #include "Core.h"
 
+#include "Framework/UiPresentScale.h"
+
 #include "Timer.h"
 #include "Input.h"
 #include "Window.h"
@@ -29,7 +31,7 @@ class ScriptEngine;
 class IMMORTAL_API Application
 {
 public:
-    Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height);
+    Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height, bool borderlessWindow = false);
 
     virtual ~Application();
 
@@ -46,6 +48,10 @@ public:
     virtual Layer *PushOverlay(Layer *overlay);
 
     CommandBuffer *GetCurrentCommandBuffer() const;
+
+    void SetWindowFullscreen(bool value);
+
+    bool IsWindowFullscreen() const;
 
 public:
     virtual GuiLayer *GetGuiLayer() const
@@ -83,12 +89,32 @@ public:
 		return *This;
     }
 
+	static Window *GetMainWindow()
+	{
+		return This ? This->window.Get() : nullptr;
+	}
+
+	void SetUiRenderScale(float scale);
+
+	float GetUiRenderScale() const
+	{
+		return uiRenderScale;
+	}
+
+	/** True when UI is rendered off-screen at GetUiRenderScale() × window resolution and composited with compute. */
+	bool UsesInternalHiResUi() const;
+
+	/** Recreate internal UI targets and the swapchain MSAA buffer after resize or after SetUiRenderScale. */
+	void RefreshUiCompositeTargets();
+
 private:
     bool OnWindowClosed(WindowCloseEvent &e);
 
-    bool OnWindowResize(WindowResizeEvent &e);
+	bool OnWindowResize(WindowResizeEvent &e);
 
-    bool OnWindowMove(WindowMoveEvent &e);
+	bool OnWindowMove(WindowMoveEvent &e);
+
+	void RebuildUiCompositeTargets(uint32_t swapWidth, uint32_t swapHeight);
 
 private:
 	URef<Window> window;
@@ -133,6 +159,17 @@ private:
 
     Ref<RenderTarget> MSAARenderTarget;
 
+	/** Off-screen UI at uiRenderScale × swapchain size (Vulkan/D3D12 + compute composite). Same role as {@link MSAARenderTarget} for the swapchain path. */
+	Ref<RenderTarget> highResolutionRenderTarget;
+
+	Ref<RenderTarget> uiInternalColorRT;
+
+	Ref<RenderTarget> uiInternalMsaaRT;
+
+	UiPresentScale uiPresentScale;
+
+	float uiRenderScale = 1.0f;
+
     uint32_t sampleCount = 1;
 
     enum class AntiAliasingMode
@@ -142,6 +179,19 @@ private:
 		SMAA
 	};
 	AntiAliasingMode aaMode = AntiAliasingMode::MSAA;
+
+    bool windowShown = false;
+
+    bool rendering = false;
+
+    bool windowModeTransition = false;
+    bool pendingWindowFullscreen = false;
+    bool pendingWindowFullscreenState = false;
+    bool fullscreenTransitionNeedsClear = false;
+
+    bool pendingWindowResize = false;
+    uint32_t pendingWindowResizeWidth = 0;
+    uint32_t pendingWindowResizeHeight = 0;
 
 public:
 	static Application *This;

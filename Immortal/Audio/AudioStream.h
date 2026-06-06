@@ -43,11 +43,15 @@ public:
 
 	virtual bool OnDeviceChanged(IAudioDevice *device) = 0;
 
-	void Start(const PFN_AudioStreamPlayCallback &callback);
+	/// Default: worker thread + PlaySamples (WASAPI/ALSA/CoreAudio). SDL overrides to use SDL_AudioCallback only.
+	virtual void Start(const PFN_AudioStreamPlayCallback &callback);
 
 	int PlaySamples(uint32_t numberSamples, const uint8_t *pSamples);
 
 	void SetDebugName(const std::string &name);
+
+	/// One SDL-sized hardware period in bytes (ffplay `audio_hw_buf_size`); 0 if unknown.
+	virtual uint32_t FfplayAudioHwBufferBytes() const { return 0; }
 
 protected:
 	void Destroy();

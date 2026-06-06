@@ -3,6 +3,9 @@
 #include "RenderTarget.h"
 #include "Texture.h"
 
+#include <algorithm>
+#include <vector>
+
 namespace Immortal
 {
 namespace Vulkan
@@ -12,7 +15,6 @@ VkPrimitiveTopology CAST(GraphicsPipeline::PrimitiveType type)
 {
     switch (type)
     {
-
     case GraphicsPipeline::PrimitiveType::Point:
         return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     case GraphicsPipeline::PrimitiveType::Line:
@@ -52,7 +54,12 @@ void Pipeline::Destroy()
 
 void Pipeline::ConstructPipelineLayout(const std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, const std::vector<VkPushConstantRange> &pushConstantRanges)
 {
-	bindDescriptorTypes.resize(descriptorSetLayoutBindings.size());
+	uint32_t maxBindingExclusive = 0;
+	for (const auto &b : descriptorSetLayoutBindings)
+	{
+		maxBindingExclusive = (std::max)(maxBindingExclusive, b.binding + 1u);
+	}
+	bindDescriptorTypes.assign(maxBindingExclusive, VkDescriptorType{});
 	for (size_t i = 0; i < descriptorSetLayoutBindings.size(); i++)
 	{
 		auto &descriptorSetLayout = descriptorSetLayoutBindings[i];
@@ -205,6 +212,11 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .depthBiasSlopeFactor    = 0,
         .lineWidth               = 1.0f,
     };
+	if (flags & Pipeline::State::ShadowPass)
+	{
+		rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
+		rasterizationStateCreateInfo.depthBiasEnable = VK_TRUE;
+	}
 
 	size_t colorBlendSize = outputDescription.size();
 	if (outputDescription.back().IsDepth())
@@ -292,18 +304,22 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .alphaToOneEnable      = {},
 	};
 
-    const VkDynamicState dynamicState[] = {
+    std::vector<VkDynamicState> dynamicStates = {
 	    VK_DYNAMIC_STATE_VIEWPORT,
 	    VK_DYNAMIC_STATE_SCISSOR,
 	    VK_DYNAMIC_STATE_BLEND_CONSTANTS,
     };
+	if (flags & Pipeline::State::ShadowPass)
+	{
+		dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+	}
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {
         .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext             = nullptr,
         .flags             = 0,
-		.dynamicStateCount = SL_ARRAY_LENGTH(dynamicState),
-        .pDynamicStates    = dynamicState,
+		.dynamicStateCount = uint32_t(dynamicStates.size()),
+        .pDynamicStates    = dynamicStates.data(),
     };
 
     VkFormat depthAttachmentFormat   = VK_FORMAT_UNDEFINED;

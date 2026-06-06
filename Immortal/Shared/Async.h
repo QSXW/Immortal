@@ -260,13 +260,13 @@ public:
 	TaskThread() :
 	    size{},
 	    thread{},
-	    exited{}
+	    exited{false}
     {
 		thread = std::move(std::thread{[=, this]() {
             while (true)
             {
 				size.wait(0);
-				if (exited)
+				if (exited.load(std::memory_order_acquire))
 				{
 					break;
 				}
@@ -289,16 +289,18 @@ public:
 
     ~TaskThread()
     {
-		exited = true;
-		size = 0xffffffff;
-		size.notify_one();
-		Join();
+		Stop();
     }
 
 	template <class T>
 	auto Enqueue(T task) -> std::future<decltype(task())>
 	{
 		auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
+		auto future = wrapper->get_future();
+		if (exited.load(std::memory_order_acquire))
+		{
+			return future;
+		}
 		{
 			Task t = [=]() -> void { (*wrapper)(); };
             if (tasks.enqueue(std::move(t)))
@@ -307,7 +309,7 @@ public:
 				size.notify_one();
             }
 		}
-		return wrapper->get_future();
+		return future;
 	}
 
     const std::atomic<uint32_t> &TaskSize() const
@@ -321,6 +323,15 @@ public:
 		ConcurrentQueue<Task> empty;
 		tasks.swap(empty);
     }
+
+	void Stop()
+	{
+		exited.store(true, std::memory_order_release);
+		RemoveTasks();
+		size = 0xffffffff;
+		size.notify_one();
+		Join();
+	}
 
     void Join()
     {
@@ -337,7 +348,7 @@ protected:
 
 	std::thread thread;
 
-    bool exited;
+    std::atomic_bool exited;
 };
 
 class ThreadPool

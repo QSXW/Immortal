@@ -21,6 +21,22 @@ namespace Immortal
 namespace Vulkan
 {
 
+namespace
+{
+static Filter MergeFilters(Filter mipFilter, Filter minFilter, Filter magFilter)
+{
+	if (mipFilter == Filter::Anisotropic || minFilter == Filter::Anisotropic || magFilter == Filter::Anisotropic)
+	{
+		return Filter::Anisotropic;
+	}
+	if (mipFilter == Filter::Nearest && minFilter == Filter::Nearest && magFilter == Filter::Nearest)
+	{
+		return Filter::Nearest;
+	}
+	return Filter::Linear;
+}
+}
+
 Device::Device() :
     handle{},
     physicalDevice{},
@@ -337,7 +353,12 @@ SuperSwapchain *Device::CreateSwapchain(SuperQueue *_queue, Window *window, Form
 
 SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
 {
-    return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
+    return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
+}
+
+SuperSampler *Device::CreateSampler(Filter mipFilter, Filter minFilter, Filter magFilter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
+{
+    return new Sampler{ this, MergeFilters(mipFilter, minFilter, magFilter), addressMode, compareOperation, minLod, maxLod };
 }
 
 SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
@@ -380,7 +401,7 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &name)
     return new GPUEvent{ this };
 }
 
-SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, uint32_t sampleCount)
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues, uint32_t sampleCount)
 {
 	return new RenderTarget{ this, width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat };
 }

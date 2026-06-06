@@ -39,8 +39,11 @@ SharedPictureData::SharedPictureData(Format format, uint32_t width, uint32_t hei
     format{ format },
     width{ width },
     height{ height },
+    sampleRate{},
     flags{},
     timestamp{},
+    timebase{},
+    sampleAspectRatio{ 1, 1 },
     memoryType{},
     colorSpace{},
     trc{},
@@ -148,6 +151,10 @@ void SharedPictureData::Swap(SharedPictureData &other)
 	std::swap(format,         other.format        );
 	std::swap(width,          other.width         );
 	std::swap(height,         other.height        );
+	std::swap(sampleRate,     other.sampleRate    );
+	std::swap(timestamp,      other.timestamp     );
+	std::swap(timebase,       other.timebase      );
+	std::swap(sampleAspectRatio, other.sampleAspectRatio);
     std::swap(memoryType,     other.memoryType    );
 	std::swap(release,        other.release       );
 	std::swap(memoryResource, other.memoryResource);

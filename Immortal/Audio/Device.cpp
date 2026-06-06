@@ -64,6 +64,11 @@ AudioDevice::AudioDevice() :
 
 AudioDevice::~AudioDevice()
 {
+    if (instance == this)
+    {
+        instance = nullptr;
+    }
+
 	status = false;
 	status.notify_one();
 
@@ -107,7 +112,10 @@ IAudioStream *AudioDevice::CreateAudioStream(const PFN_AudioStreamPlayCallback &
 	IAudioStream *stream = handle->CreateStream();
     if (stream)
     {
-		streams.emplace_back(stream);
+        {
+            std::lock_guard lock{ mutex };
+            streams.emplace_back(stream);
+        }
 		stream->Start(callback);
     }
 
@@ -116,16 +124,27 @@ IAudioStream *AudioDevice::CreateAudioStream(const PFN_AudioStreamPlayCallback &
 
 void AudioDevice::DestroyAudioStream(IAudioStream **ppStream)
 {
-	IAudioStream *stream = *ppStream;
-    for (auto it = streams.begin(); it != streams.end(); it++)
+    if (!ppStream || !*ppStream)
     {
-        if (stream == (it)->Get())
+        return;
+    }
+
+	IAudioStream *stream = *ppStream;
+    *ppStream = nullptr;
+
+    URef<IAudioStream> removed;
+    {
+        std::lock_guard lock{ mutex };
+        for (auto it = streams.begin(); it != streams.end(); it++)
         {
-			streams.erase(it);
-			break;
+            if (stream == it->Get())
+            {
+                removed.Swap(*it);
+                streams.erase(it);
+                break;
+            }
         }
     }
-	*ppStream = nullptr;
 }
 
 int AudioDevice::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice)

@@ -235,7 +235,7 @@ void Lut3DFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 		stagingLut = {};
     }
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](uint64_t sync, CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
         if (ref)
         {
 			commandBuffer->MemoryCopy(lut, 0, ref, 0, ref->GetSize());

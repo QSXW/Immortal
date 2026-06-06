@@ -13,6 +13,7 @@ namespace Immortal
 
 enum class WSliderType
 {
+    Default,
     RangeEditor,
 };
 
@@ -32,6 +33,8 @@ public:
     WIDGET_SET_PROPERTY(Max,              max,              float,    1.0f      )
     WIDGET_SET_PROPERTY(Callback,         callback,         std::function<void(float progress)>)
 	WIDGET_SET_PROPERTY(HoveredCallback,  hoveredCallback,  std::function<void(float progress, std::string &tooltip)>)
+    WIDGET_SET_PROPERTY(DragBegin,        dragBegin,        std::function<void ()>)
+    WIDGET_SET_PROPERTY(DragEnd,          dragEnd,          std::function<void ()>)
 
 public:
     WSlider(Widget *v = nullptr) :
@@ -123,7 +126,7 @@ public:
         }
 
         ImRect outGrab;
-		if (ImGui::SliderBehavior(bbFrame, id, ImGuiDataType_Float, &progress, &min, &max, "", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_NoInput, &outGrab))
+		if (ImGui::SliderBehavior(bbFrame, frameId, ImGuiDataType_Float, &progress, &min, &max, "", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_NoInput, &outGrab))
         {
             if (std::abs(outGrab.GetCenter().x - bbGrab.GetCenter().x) > 1.0f)
             {
@@ -132,7 +135,21 @@ public:
 					callback(progress);
 				}
             }
-            ImGui::MarkItemEdited(id);
+            ImGui::MarkItemEdited(frameId);
+        }
+
+        if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && dragBegin && !dragSession)
+        {
+            dragSession = true;
+            dragBegin();
+        }
+        if (dragSession && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            dragSession = false;
+            if (dragEnd)
+            {
+                dragEnd();
+            }
         }
 
 		auto center = outGrab.GetCenter();
@@ -172,7 +189,8 @@ public:
 
 protected:
     ImRect bbGrab;
-    ImGuiID id;
+    ImGuiID id = 0;
+    bool dragSession = false;
 };
 
 }

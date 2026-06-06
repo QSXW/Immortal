@@ -1172,6 +1172,15 @@ public:
 
 	virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
 
+	virtual SuperSampler *CreateSampler(
+	    Filter mipFilter,
+	    Filter minFilter,
+	    Filter magFilter,
+	    AddressMode addressMode,
+	    CompareOperation compareOperation,
+	    float minLod,
+	    float maxLod) override;
+
 	virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
 	virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
@@ -1188,7 +1197,7 @@ public:
 
 	virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, uint32_t sampleCount = 0) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 0) override;
 
 public:
     uint32_t GetQueueFailyIndex(VkQueueFlagBits queueFlag);

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "nlohmann_json.h"
+#include <nlohmann/json.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 namespace Immortal

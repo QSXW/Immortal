@@ -1,36 +1,64 @@
 #pragma once
 
+#include "RenderPass.h"
 #include "RenderTask.h"
 #include "Graphics/AsyncCompute.h"
 #include "Graphics.h"
-#include "Scene/entt.hpp"
+#include <entt/entt.hpp>
+#include <unordered_map>
 
 namespace Immortal
 {
 
-class FrameGraph : public IObject
+struct RenderTargetProperty : public IObject
+{
+	Ref<RenderTarget> renderTarget;
+	std::vector<ClearValue> clearValues;
+};
+
+struct RenderTargetCreateInfo
+{
+	std::string name;
+
+	uint32_t width;
+	uint32_t height;
+
+	std::vector<Format> colorFormats;
+	Format depthFormat;
+	std::vector<ClearValue> clearValues;
+
+	uint32_t sampleCount = 1;
+};
+
+class FrameGraph : public IObject, public IClass
 {
 public:
     FrameGraph();
 
     ~FrameGraph();
 
+	RenderPass &AddPass(const std::string &name);
+
+	RenderPass *FindPass(const std::string &name);
+
+	void Clear();
+
+	void ClearPasses();
+
 	void Build(AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
-	void AddTask(const Ref<RenderTask> &task, const std::string &dependency = {});
+	void Run(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry);
+	
+	Ref<RenderTargetProperty> QueryRenderTarget(const std::string &name);
 
-	Ref<RenderTask> FindTask(const std::string &taskName) const;
+	void AddRenderTarget(std::initializer_list<RenderTargetCreateInfo> &&infos);
 
-	void Execute(CommandBuffer *commandBuffer, const SceneParameters &params);
-
-    void Composite(CommandBuffer *commandBuffer, const SceneParameters &params);
-
-    void DrawMesh(CommandBuffer *commandBuffer, const SceneParameters &params, entt::registry &registry);
+	void OnFrameGraphDebugGui();
 
 protected:
-	std::vector<Ref<RenderTask>> tasks;
+	std::vector<RenderPass> passes;
 
-    bool hasRecorded = false;
+	std::unordered_map<std::string, Ref<RenderTargetProperty>> targets;
 
     bool hasBuild = false;
 };

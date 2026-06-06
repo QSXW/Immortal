@@ -15,7 +15,9 @@ class IMMORTAL_API Sampler : public SuperSampler, public NonDispatchableHandle
 public:
 	using Primitive = D3D12_CPU_DESCRIPTOR_HANDLE;
 
-	Sampler(Device *device, Filter filter, AddressMode addressMode, CompareOperation compareOperation = {}, float minLod = 0.0f, float maxLod = 1.0f);
+	Sampler(Device *device, Filter filter, AddressMode addressMode, CompareOperation compareOperation = {}, float minLod = 0.0f, float maxLod = 16.0f);
+
+	Sampler(Device *device, Filter mipFilter, Filter minFilter, Filter magFilter, AddressMode addressMode, CompareOperation compareOperation = {}, float minLod = 0.0f, float maxLod = 16.0f);
 
 	virtual ~Sampler() override;
 
