@@ -56,8 +56,6 @@ list(TRANSFORM LOOKUP_TABLE_FILE PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/LookupTabl
 set(IMAGE_CODEC_FILES
     BMP.cpp
     BMP.h
-    Exif.cpp
-    Exif.h
     Helper.h
     ImageCodec.h
     JPEG.cpp
@@ -66,17 +64,13 @@ set(IMAGE_CODEC_FILES
     STBCodec.h
     MFXJpegCodec.cpp
     MFXJpegCodec.h
-    NVJpegCodec.cpp
-    NVJpegCodec.h
     PPM.cpp
     PPM.h
     Raw.cpp
     Raw.h
     RawSpeed.h
     OpenCVCodec.cpp
-    OpenCVCodec.h
-    TurboJpegCodec.cpp
-    TurboJpegCodec.h)
+    OpenCVCodec.h)
 list(TRANSFORM IMAGE_CODEC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Image/")
 
 set(VIDEO_CODEC_FILES

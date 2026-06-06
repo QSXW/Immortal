@@ -352,7 +352,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     PUBLIC
     slapi
     glad
-    concurrentqueue
     Vulkan-Headers GPUOpen::VulkanMemoryAllocator
     $<$<PLATFORM_ID:Darwin>:metal-cpp>
     DirectXShaderCompilerHeaders

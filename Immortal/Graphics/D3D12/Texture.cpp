@@ -13,11 +13,9 @@ Texture::Texture(Device *device, Format _format, uint32_t width, uint32_t height
     Super{},
     NonDispatchableHandle{ device },
     descriptor{},
-    uav{},
-    descriptorHeap{},
-    uavDescriptorHeap{}
+    uav{}
 {
-	SetMeta(_format, width, height, mipLevels, arrayLayers);
+	SetMeta(width, height, mipLevels, arrayLayers);
 	Construct(_format, width, height, mipLevels, arrayLayers, type);
 }
 
@@ -31,12 +29,6 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         .CreationNodeMask     = 0,
         .VisibleNodeMask      = 0,
     };
-
-    D3D12_CLEAR_VALUE clearValues = {
-	    .Format = format,
-	    .Color = {},
-	};
-	D3D12_CLEAR_VALUE *pClearValues = nullptr;
 
     if (type & TextureType::TransferSource)
     {
@@ -52,19 +44,13 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
     D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
     if (type & TextureType::ColorAttachment)
     {
-		pClearValues = &clearValues;
 		flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
     if (type & TextureType::DepthStencilAttachment)
     {
-		clearValues.DepthStencil = {
-			.Depth   = 1.0f,
-            .Stencil = 0
-        };
-		pClearValues = &clearValues;
 		flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     }
-    else if (mipLevels > 1 || type &TextureType::Storage)
+    if (mipLevels > 1 || type &TextureType::Storage)
     {
 		flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     }
@@ -87,14 +73,11 @@ void Texture::Construct(Format _format, uint32_t width, uint32_t height, uint16_
         D3D12_HEAP_FLAG_NONE,
         &resourceDesc,
 	    GetState(),
-	    pClearValues,
+        nullptr,
         &resource
         ));
 
-    if (!(type & TextureType::DepthStencilAttachment))
-    {
-		ConstructShaderResourceView();
-    }
+    ConstructShaderResourceView();
 
 #ifdef _DEBUG
 	std::wstring name = L"Texture_" + std::to_wstring(width) + L"x" + std::to_wstring(height);
@@ -107,36 +90,25 @@ Texture::Texture(Device *device, ID3D12Resource *resource, D3D12_RESOURCE_STATES
     Resource{ resource, state },
     NonDispatchableHandle{ device },
     descriptor{},
-    uav{},
-    descriptorHeap{},
-    uavDescriptorHeap{}
+    uav{}
 {
 	D3D12_RESOURCE_DESC desc = resource->GetDesc();
 
     format = desc.Format;
-    SetMeta(Format::None, desc.Width, desc.Height, desc.MipLevels, desc.DepthOrArraySize);
+    SetMeta(desc.Width, desc.Height, desc.MipLevels, desc.DepthOrArraySize);
 
     ConstructShaderResourceView();
 }
 
 Texture::~Texture()
 {
-	uint32_t mipLevels = GetMipLevels();
-    if (descriptor)
-    {
-		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, descriptorHeap, descriptor, mipLevels);
-    }
-	if (uav)
-    {
-		device->FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, uavDescriptorHeap, uav, mipLevels);
-    }
 	device = nullptr;
 }
 
 void Texture::ConstructShaderResourceView()
 {
 	auto mipLevels = GetMipLevels();
-	descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &descriptorHeap, mipLevels);
+	descriptor = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, mipLevels);
     for (uint32_t i = 0; i < mipLevels; i++)
     {
         D3D12_SHADER_RESOURCE_VIEW_DESC desc = {
@@ -155,7 +127,7 @@ void Texture::ConstructShaderResourceView()
     }
 	if (mipLevels > 1 || (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS))
     {
-		uav = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, &uavDescriptorHeap, mipLevels);
+		uav = device->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, mipLevels);
         for (uint32_t i = 0; i < mipLevels; i++)
         {
             D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {

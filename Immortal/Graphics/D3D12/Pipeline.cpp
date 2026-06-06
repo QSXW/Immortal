@@ -57,22 +57,17 @@ void Pipeline::ConstructRootParameter(Shader *shader, std::vector<RootParameter>
     }
 
     uint32_t offsets[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
-	for (size_t i = 0; i < descriptorRanges.size(); i++)
-	{
-		auto &range = descriptorRanges[i];
-		D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
-		{
-			heapType = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-		}
-
-        auto registerSize = range.BaseShaderRegister + range.NumDescriptors;
-		descriptorIndexMap[heapType].resize(registerSize);
-		for (int j = 0; j < range.NumDescriptors; j++)
-		{
-			descriptorIndexMap[heapType][range.BaseShaderRegister + j] = descriptorCount[heapType] + j;
+    for (size_t i = 0; i < descriptorRanges.size(); i++)
+    {
+        auto &range = descriptorRanges[i];
+        D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        if (range.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
+        {
+            heapType = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
         }
-		descriptorCount[heapType] += range.NumDescriptors;
+
+		descriptorIndexMap[heapType].resize(range.BaseShaderRegister + 1);
+		descriptorIndexMap[heapType][range.BaseShaderRegister] = descriptorCount[heapType]++;
 
         auto &offset = offsets[heapType];
         rootParameter.InitAsDescriptorTable(1, &range, visibility);

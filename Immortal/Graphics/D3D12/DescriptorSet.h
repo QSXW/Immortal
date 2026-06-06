@@ -47,8 +47,6 @@ protected:
     ShaderVisibleDescriptor descriptors[MaxDescrpitorHeapType];
 
 	const uint32_t *indexMap[MaxDescrpitorHeapType];
-
-	uint32_t descriptorCount[MaxDescrpitorHeapType];
 };
 
 }

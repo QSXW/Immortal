@@ -159,7 +159,7 @@ struct WidgetLock
 {
     WidgetLock(T *id)
     {
-        ImGui::PushID(id);
+        ImGui::PushID((void *)id);
     }
 
     ~WidgetLock()
@@ -672,9 +672,7 @@ public:
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { padding.right, padding.bottom });
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { padding.right, padding.bottom });
 
-            const char *str = text.c_str();
-
-			if (ImGui::Begin(str, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
+			if (ImGui::Begin(text.c_str(), nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar))
             {
                 auto [x, y] = ImGui::GetContentRegionAvail();
                 RenderWidth(x);
@@ -683,12 +681,10 @@ public:
                 state.isFocused = ImGui::IsWindowFocused();
                 state.isHovered = ImGui::IsWindowHovered();
 
-                {
-					ImGuiWindow *window = ImGui::GetCurrentWindow();
-					position = window->DC.CursorStartPos;
-					scroll = window->Scroll;
-					__RelativeTrampoline();
-                }
+                ImGuiWindow *window = ImGui::GetCurrentWindow();
+                position = window->DC.CursorStartPos;
+                scroll   = window->Scroll;
+                __RelativeTrampoline();
 
                 ImGui::EndChild();
             }
@@ -706,11 +702,6 @@ public:
     bool IsHovered() const
     {
 		return state.isHovered;
-    }
-
-    void SetFocus()
-    {
-		ImGui::SetWindowFocus(Text().c_str());
     }
 
 protected:
@@ -817,7 +808,6 @@ public:
 
     void __PreClaculateImageSize()
     {
-		size = { renderWidth, renderHeight };
 		if (descriptor || !resource.image)
         {
             return;
@@ -862,11 +852,6 @@ public:
         return bounds.min;
     }
 
-    Vector2 GetSize() const
-    {
-		return size;
-    }
-
     bool IsHovered() const
     {
 		return false;
@@ -878,8 +863,6 @@ public:
         Vector2 min;
         Vector2 max;
     } bounds;
-
-    Vector2 size;
 
     uint64_t descriptor = 0;
 
@@ -1018,29 +1001,6 @@ public:
     }
 };
 
-class IMMORTAL_API WBox : public Widget
-{
-public:
-	WIDGET_SET_PROPERTIES(WBox)
-	WIDGET_SET_PROPERTY(Visible, visible, bool)
-
-public:
-	WBox(Widget *parent = nullptr) :
-	    Widget{ parent },
-	    visible{ true }
-	{
-		Connect([this] {
-            if (visible)
-		    {
-                for (auto &child : children)
-                {
-					child->RealRender();
-                }
-		    }
-        });
-	}
-};
-
 class IMMORTAL_API WText : public Widget
 {
 public:
@@ -1140,7 +1100,7 @@ public:
             static bool isOpen = true;
             static bool optionalPadding = false;
             static bool optionalFullScreen = true;
-			static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
+            static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
             ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 
             if (optionalFullScreen)
@@ -1151,8 +1111,6 @@ public:
                 ImGui::SetNextWindowViewport(viewport->ID);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 4.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);
                 window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
                 window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
             }
@@ -1178,6 +1136,15 @@ public:
             /* Dock place */
             ImGui::Begin("DockSpace Demo", &isOpen, window_flags);
 
+            if (!optionalPadding)
+            {
+                ImGui::PopStyleVar();
+            }
+            if (optionalFullScreen)
+            {
+                ImGui::PopStyleVar(2);
+            }
+
             ImGuiIO &io = ImGui::GetIO();
             ImGuiStyle &style = ImGui::GetStyle();
 
@@ -1188,15 +1155,6 @@ public:
             }
 
             __Trampoline();
-
-            if (!optionalPadding)
-			{
-				ImGui::PopStyleVar();
-			}
-			if (optionalFullScreen)
-			{
-				ImGui::PopStyleVar(4);
-			}
 
             ImGui::End();
             });

@@ -8,12 +8,6 @@
 namespace Immortal
 {
 
-enum class StringEncoding
-{
-    ASCII,
-    UTF8,
-};
-
 static inline std::string Ascii2Unicode8(const std::string &str)
 {
 #ifdef _WIN32
@@ -48,115 +42,56 @@ static inline std::string Unicode82Ascii(const std::string &str)
 #endif
 }
 
-static inline std::string WString2String(const std::wstring &wstr, StringEncoding _encoding)
+static inline std::wstring Ascii2Unicode8(const std::wstring &str)
 {
-#ifdef _WIN32
-	uint32_t encoding = _encoding == StringEncoding::UTF8 ? CP_UTF8 : CP_ACP;
-	std::string str; 
-	str.resize(WideCharToMultiByte(encoding, 0, wstr.c_str(), wstr.size(), NULL, 0, NULL, NULL));
-	WideCharToMultiByte(encoding, 0, wstr.c_str(), wstr.size(), str.data(), str.size(), NULL, NULL);
-	return str;
-#else
-	return str;
-#endif
+	assert(false && "TODO");
+	return std::wstring{};
 }
 
-class String
+static inline std::wstring Unicode82Ascii(const std::wstring &str)
+{
+	assert(false && "TODO");
+	return std::wstring{};
+}
+
+template <class T>
+class BasicString
 {
 public:
-	static constexpr auto npos = std::string::npos;
+    enum class Type
+    {
+        Ascii,
+        Unicode8,
+    };
 
 public:
-	String() :
+	BasicString() :
         data{},
-	    encoding{ StringEncoding::UTF8 }
+        type{Type::Unicode8}
     {
 
     }
 
-    template <class T>
-    requires std::is_same_v<T, std::string> || std::is_same_v<T, std::u8string>
-	String(const T &str, StringEncoding encoding = StringEncoding::ASCII) :
-	    String{}
+    template <class U>
+    BasicString(const U &str, Type type = Type::Ascii) :
+	    BasicString{}
     {
-        if constexpr (std::is_same_v<T, std::u8string>)
+        switch (type)
         {
-			encoding = StringEncoding::UTF8;
-        }
-		switch (encoding)
-        {
-        case StringEncoding::ASCII:
-            if constexpr (std::is_same_v<T, std::string>)
-            {
-				data = Ascii2Unicode8(str);
-            }
+        case Type::Ascii:
+            data = Ascii2Unicode8(str);
             break;
 
-        case StringEncoding::UTF8:
+        case Type::Unicode8:
         default:
-			data.resize(str.size());
-			memcpy(data.data(), str.data(), str.size());
+            data = str;
             break;
         }
     }
-
-    String(const std::string_view &view) :
-        data{ view },
-	    encoding{ StringEncoding::UTF8 }
-    {
-
-    }
-
-    String(const char *str, StringEncoding encoding = StringEncoding::ASCII) :
-	    String{ std::string{ str }, encoding }
-    {
-
-    }
-
-    String(const std::wstring &str, StringEncoding encoding = StringEncoding::UTF8) :
-	    data{ WString2String(str, encoding)}
-    {
-
-    }
-
-    String(const String &other) :
-	    data{ other.data },
-	    encoding{ other.encoding }
-    {
-
-    }
-
-    String(String &&other) :
-	    String{}
-	{
-		other.Swap(*this);
-	}
-
-    String &operator=(const String &other)
-	{
-		String(other).Swap(*this);
-		return *this;
-	}
-
-	String &operator=(String &&other)
-	{
-		other.Swap(*this);
-		return *this;
-	}
 
     size_t size() const
     {
         return data.size();
-    }
-
-    void resize(size_t size)
-    {
-		data.resize(size);
-    }
-
-    void reserve(size_t size)
-    {
-		data.reserve(size);
     }
 
     const char *c_str() const
@@ -164,102 +99,59 @@ public:
         return data.c_str();
     }
 
-    bool empty() const
-    {
-		return data.empty();
-    }
-
-    operator std::string &()
+    operator T &()
     {
         return data;
     }
 
-    operator const std::string &() const
+    operator const T &() const
     {
         return data;
     }
 
-    bool operator<(const String &other) const
+    bool operator<(const BasicString &other) const
     {
 		return data < other.data;
     }
 
-    StringEncoding GetStringEncoding() const
+    Type GetType() const
     {
-		return encoding;
+        return type;
     }
 
     std::string GetAscii() const
     {
-		assert(GetStringEncoding() == StringEncoding::UTF8);
+		assert(GetType() == Type::Unicode8);
 		return Unicode82Ascii(data);
     }
 
-    String &operator+=(const String &other)
-    {
-		data += other.data;
-		return *this;
-    }
-
-    operator std::u8string_view() const
-    {
-		return std::u8string_view{ (const char8_t *const)data.c_str(), data.size() };
-    }
-
-    size_t FindLastOf(const char c, size_t offset = 0) const
-    {
-		return data.find_last_of(c, offset);
-    }
-    
-    void Swap(String &other)
-    {
-		data.swap(other.data);
-		std::swap(encoding, other.encoding);
-    }
-
-    bool operator==(const String &other) const
-    {
-		return data == other.data;
-    }
-
 protected:
-    std::string data;
+    T data;
 
-    StringEncoding encoding;
+    Type type;
 };
+
+using String  = BasicString<std::string>;
+
+using WString = BasicString<std::wstring>;
 
 }
 
-template <>
-struct std::hash<Immortal::String>
-{
-	std::size_t operator()(const Immortal::String &s) const noexcept
-	{
-		return std::hash<std::string>{}((const std::string &)s);
-	}
-};
-
-static inline std::ostream &operator<<(std::ostream &os, const Immortal::String &str)
+template <class T>
+static inline std::ostream &operator<<(std::ostream &os, const Immortal::BasicString<T> &str)
 {
 	return os << str.c_str();
 }
 
 #ifdef _MSC_VER
 #include <format>
-template <>
-struct std::formatter<Immortal::String>
+template <class T, class CharT>
+struct std::formatter<Immortal::BasicString<T>, CharT> : public std::formatter<const char *, CharT>
 {
-	template <class ParseContext>
-	constexpr ParseContext::iterator parse(ParseContext &context)
+	template <class FC>
+	auto format(const Immortal::BasicString<T> &s, FC &fc) const
 	{
-		return context.begin();
-	}
-
-	template <class FormatContext>
-	FormatContext::iterator format(Immortal::String s, FormatContext &context) const
-	{
-		return std::format_to(context.out(), "{}", s.c_str());
+		return std::formatter<const char *, CharT>::format(s.c_str(), fc);
 	}
 };
-
 #endif

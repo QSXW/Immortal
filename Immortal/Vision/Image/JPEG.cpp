@@ -207,17 +207,16 @@ JpegCodec::~JpegCodec()
     }
 }
 
-void JpegCodec::ParseHeader(const uint8_t *buffer, size_t size,  bool queryExif)
+void JpegCodec::ParseHeader(const std::vector<uint8_t> &buffer)
 {
     ThrowIf(buffer[0] != 0xff && buffer[1] != 0xd8, "Not a Jpeg file");
 
-    auto *end = buffer + size;
+    auto *end = buffer.data() + buffer.size();
     for (auto ptr = &buffer[2]; ptr < end; )
     {
         if (*ptr == 0xff)
         {
-            MarkerType type = (MarkerType)*++ptr;
-            switch (type)
+            switch (*++ptr)
             {
             case MarkerType::SOI:
                 LOG::DEBUG("Detected marker type: SOI");
@@ -259,11 +258,7 @@ void JpegCodec::ParseHeader(const uint8_t *buffer, size_t size,  bool queryExif)
             case MarkerType::APPC:
             case MarkerType::APPD:
             case MarkerType::APPE:
-                ParseMarker(&ptr, [&](auto payload) { JpegCodec::ParseAPP(buffer, payload); });
-                if (type > MarkerType::APP0 && queryExif)
-                {
-                    return;
-                }
+                ParseMarker(&ptr, [&](auto payload) { JpegCodec::ParseAPP(payload); });
                 break;
 
             case MarkerType::DRI:
@@ -282,21 +277,9 @@ void JpegCodec::ParseHeader(const uint8_t *buffer, size_t size,  bool queryExif)
     }
 }
 
-std::pair<uint32_t, uint32_t> JpegCodec::ParseExifOffset(const uint8_t *data, size_t size)
-{
-	if (data[0] != 0xff && data[1] != 0xd8)
-    {
-		return {};
-    }
-
-    ParseHeader(data, size);
-
-    return { exifOffset, exifSize };
-}
-
 CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
 {
-	ParseHeader(codedFrame.GetBuffer().data(), codedFrame.GetBuffer().size());
+    ParseHeader(codedFrame.GetBuffer());
     InitDecodedPlaneBuffer();
     if (!isProgressive)
     {
@@ -306,7 +289,7 @@ CodecError JpegCodec::Decode(const CodedFrame &codedFrame)
     return CodecError::Success;
 }
 
-inline void JpegCodec::ParseAPP(const uint8_t *base, const uint8_t *data)
+inline void JpegCodec::ParseAPP(const uint8_t *data)
 {
 #ifndef JPEG_CODEC_MINIMAL
     uint8_t type = data[-3];
@@ -314,12 +297,8 @@ inline void JpegCodec::ParseAPP(const uint8_t *base, const uint8_t *data)
     if (type > MarkerType::APP0 && type <= MarkerType::APPF)
     {
         uint16_t length = Word{ &data[-2] } - 2;
-
-        if (std::equal(data, data + 6, "Exif\0\0"))
-        {
-			exifOffset = data - base + 6;
-			exifSize   = length;
-        }
+        application.external.resize(length);
+        memcpy(application.external.data(), data, length);
     }
     else
     {
@@ -400,8 +379,10 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
     }
 
     bitDepth    = data[0];
-	height = Word{ &data[1] };
-    width  = Word{ &data[3] };
+	uint32_t height = Word{ &data[1] };
+    uint32_t width  = Word{ &data[3] };
+    picture.SetHeight(height);
+	picture.SetWidth(width);
 
     components.resize(data[5]);
     auto ptr = &data[6];
@@ -410,11 +391,6 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
     for (size_t i = 0; i < components.size(); i++, ptr += 3)
     {
         auto index = ptr[0] - 1;
-        if (index == -1)
-        {
-			continue;
-        }
-
         uint8_t samplingFactor = ptr[1];
 
         components[index].sampingFactor.vertical   = (samplingFactor     ) & 0x0f;
@@ -425,7 +401,7 @@ inline void JpegCodec::ParseSOF(const uint8_t *data)
         maxSampingFactor.horizontal = std::max(maxSampingFactor.horizontal, components[index].sampingFactor.horizontal);
     }
 
-    format = SelectFormat(components[0].sampingFactor);
+    picture.SetFormat(SelectFormat(components[0].sampingFactor));
 
     for (size_t i = 0; i < components.size(); i++)
     {
@@ -460,10 +436,6 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
     {
         auto index = ptr[0] - 1;
         auto selector = ptr[1];
-        if (index == -1)
-        {
-			continue;
-        }
         components[index].acIndex = (selector     ) & 0xf;
         components[index].dcIndex = (selector >> 4) & 0xf;
     }
@@ -472,10 +444,6 @@ inline void JpegCodec::ParseSOS(const uint8_t *data)
 void JpegCodec::InitDecodedPlaneBuffer()
 {
     size_t size = 0;
-
-    picture.SetHeight(height);
-	picture.SetWidth(width);
-	picture.SetFormat(format);
 
     auto planes = picture.GetFormat().GetComponent();
     std::array<uint32_t, 4> offsets{ 0 };

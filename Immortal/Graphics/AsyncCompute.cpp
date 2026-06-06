@@ -1,38 +1,46 @@
 #include "AsyncCompute.h"
-#include "Coroutine.h"
 
 namespace Immortal
 {
 
 AsyncComputeThread::AsyncComputeThread(Device *device) :
+    gpuEvent{},
     thread{}
 {
+    gpuEvent = device->CreateGPUEvent();
     thread = std::move(Thread{[=, this] {
         uint64_t recording = 0;
         uint64_t nextSyncValue = 1;
         Queue *queue = nullptr;
         CommandBuffer *commandBuffer = nullptr;
-        GPUEvent *gpuEvent = nullptr;
 
-        std::queue<std::pair<GPUEvent *, CommandBuffer *>> commandBuffers;
+        std::unordered_map<uint64_t, CommandBuffer *> commandBuffers;
 
         while (true)
         {
             URef<AsyncTask> task;
             {
-				semaphore.wait();
-                if (!tasks.try_dequeue(task))
+                std::unique_lock lock{mutex};
+                condition.wait(lock, [=, this] {
+                    return !tasks.empty();
+                });
+
+                task = std::move(tasks.front());
+                tasks.pop();
+            }
+
+            while (!executionCompletedTasks.empty())
+            {
+				auto &front = executionCompletedTasks.front();
+				auto &[sync, executionCompleted] = front;
+
+                if (!IsExecutionCompleted(sync))
                 {
-					continue;
+					break;
                 }
 
-     //           std::unique_lock lock{mutex};
-     //           condition.wait(lock, [=, this] {
-					//return !tasks();
-     //           });
-
-     //           task = std::move(tasks.front());
-     //           tasks.pop();
+                executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
+				executionCompletedTasks.pop();
             }
 
             switch (task->GetType())
@@ -65,21 +73,17 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     {
                         if (!commandBuffers.empty())
                         {
-                            auto &[pGPUEvent, pCommandBuffer] = commandBuffers.front();
-							if (pGPUEvent->GetCompletionValue() >= pGPUEvent->GetSyncPoint())
+                            auto &[value, pCommandBuffer] = *commandBuffers.begin();
+                            if (gpuEvent->GetCompletionValue() >= value)
                             {
                                 commandBuffer = pCommandBuffer;
-                                gpuEvent      = pGPUEvent;
-								commandBuffers.pop();
+                                commandBuffers.erase(value);
                             }
                         }
 
                         if (!commandBuffer)
                         {
-							SLASSERT(queue != nullptr && "The queue must have set before invoke any recording tasks");
-                            commandBuffer = device->CreateCommandBuffer(queue->GetType());
-							gpuEvent = device->CreateGPUEvent();
-							LOG::INFO("Allocate command buffer {}", (void *) commandBuffer);
+                            commandBuffer = device->CreateCommandBuffer();
                         }
                     }
 
@@ -103,41 +107,15 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     recording = 0;
                     SLASSERT(commandBuffer && "CommandBuffer is not able to submit!");
                     queue->Submit(commandBuffer, gpuEvent);
-
-                    if (!executionCompletedTasks.empty())
-                    {
-						auto onCompletedTasks = std::make_shared <std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
-						//Async::Execute([=, this] {
-						//	gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
-						//	for (auto &[sync, executionCompleted] : *onCompletedTasks)
-						//	{
-						//		executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
-						//	}
-						//});
-
-                        Coroutine h = [=, this]() -> Coroutine
-						{
-						    gpuEvent->Wait(std::numeric_limits<uint64_t>::max());
-						    for (auto &[sync, executionCompleted] : *onCompletedTasks)
-						    {
-							    executionCompleted.InterpretAs<ExecutionCompletedTask>()->Invoke();
-						    }
-							co_return;
-						}();
-						h.resume();
-						h.destroy();
-                    }
-
-                    commandBuffers.push({ gpuEvent, commandBuffer });
-					commandBuffer = nullptr;
-                    gpuEvent      = nullptr;
-
+                    commandBuffers[gpuEvent->GetSyncPoint()] = commandBuffer;
+                    nextSyncValue = gpuEvent->GetSyncPoint() + 1;
+                    commandBuffer = nullptr;
                     break;
                 }
 
                 case AsyncTaskType::ExecutionCompleted:
                 {
-					executionCompletedTasks.emplace_back(std::pair{nextSyncValue, std::move(task)});
+					executionCompletedTasks.push(std::pair{nextSyncValue, std::move(task)});
                     break;
                 }
 
@@ -147,17 +125,12 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
                     {
                         delete commandBuffer;
                     }
-
-                    while (!commandBuffers.empty())
+                    for (auto &[value, commandBuffer] : commandBuffers)
                     {
-						auto &[gpuEvent, commandBuffer] = commandBuffers.front();
-						delete gpuEvent;
-						delete commandBuffer;
-						commandBuffers.pop();
+                        delete commandBuffer;
                     }
-
-                    //std::unique_lock lock{ mutex };
-                    //tasks = {};
+                    std::unique_lock lock{ mutex };
+                    tasks = {};
                     return;
                 }
 
@@ -173,18 +146,17 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
 bool AsyncComputeThread::IsExecutionCompleted(uint64_t value)
 {
-    //uint64_t completion = gpuEvent->GetCompletionValue();
-    //return completion >= value;
-	return true;
+    uint64_t completion = gpuEvent->GetCompletionValue();
+    return completion >= value;
 }
 
 void AsyncComputeThread::WaitIdle()
 {
-	//uint64_t completion = gpuEvent->GetCompletionValue();
- //   if (completion < gpuEvent->GetSyncPoint())
- //   {
-	//	gpuEvent->Wait(0xffffffff);
- //   }
+	uint64_t completion = gpuEvent->GetCompletionValue();
+    if (completion < gpuEvent->GetSyncPoint())
+    {
+		gpuEvent->Wait(0xffffffff);
+    }
 }
 
 void AsyncComputeThread::Join()

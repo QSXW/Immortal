@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SRC_FILES
     Async.cpp
     Async.h
-    Coroutine.h
     DLLLoader.cpp
     DLLLoader.h
     IObject.h

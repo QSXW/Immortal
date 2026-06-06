@@ -21,7 +21,7 @@ namespace Immortal
 namespace D3D12
 {
 
-D3D12_COMMAND_LIST_TYPE CAST(QueueType type)
+static D3D12_COMMAND_LIST_TYPE CAST(QueueType type)
 {
 	switch (type)
 	{
@@ -61,9 +61,7 @@ void MessageCallbackFunc(D3D12_MESSAGE_CATEGORY category, D3D12_MESSAGE_SEVERITY
 }
 
 Device::Device(PhysicalDevice *phsicalDevice) :
-    physicalDevice{ phsicalDevice },
-    descriptorPools{},
-    shaderVisibleDescriptorPools{}
+    physicalDevice{ phsicalDevice }
 {
 	Instance *instance = InterpretAs<Instance>(phsicalDevice->GetInstance());
 
@@ -100,24 +98,8 @@ Device::~Device()
 
 	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorPools); i++)
 	{
-		for (size_t j = 0; j < SL_ARRAY_LENGTH(descriptorPools[i]); j++)
-		{
-			if (descriptorPools[i][j])
-			{
-				descriptorPools[i][j].Reset();
-			}
-		}
-	}
-
-	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(shaderVisibleDescriptorPools); i++)
-	{
-		for (size_t j = 0; j < SL_ARRAY_LENGTH(shaderVisibleDescriptorPools[i]); j++)
-		{
-			if (shaderVisibleDescriptorPools[i][j])
-			{
-				descriptorPools[i][j].Reset();
-			}
-		}
+		descriptorPools[i].Reset();
+		shaderVisibleDescriptorPools[i].Reset();
 	}
 
 	infoQueue.Reset();
@@ -158,7 +140,14 @@ SuperSwapchain *Device::CreateSwapchain(SuperQueue *_queue, Window *window, Form
 
 SuperQueue *Device::CreateQueue(QueueType type, QueuePriority priority)
 {
-	return new Queue{ this, type, priority };
+	D3D12_COMMAND_QUEUE_DESC desc{
+		.Type     = CAST(type),
+		.Priority = (INT)priority,
+		.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE,
+		.NodeMask = 0,
+	};
+
+	return new Queue{ this, desc };
 }
 
 SuperCommandBuffer *Device::CreateCommandBuffer(QueueType type)
@@ -209,7 +198,7 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &name)
 
 SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
 {
-	return new RenderTarget{ this, width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat };
+	return nullptr;
 }
 
 IDXGIAdapter1 *Device::GetAdapter() const
@@ -225,6 +214,7 @@ IDXGIFactory4 *Device::GetDXGIFactory() const
 
 void Device::CreateSampler(const D3D12_SAMPLER_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptor)
 {
+	*pDestDescriptor = AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	handle->CreateSampler(pDesc, *pDestDescriptor);
 }
 
@@ -274,7 +264,7 @@ Pipeline *Device::GetPipeline(const std::string &name)
 	Shader shader{ shaderName, pipelineCreateInfo.stage, shaderSource, pipelineCreateInfo.enryPoint };
 	URef<Pipeline> pipeline = new ComputePipeline{ this, &shader };
 
-	std::unique_lock lock{ pipelineMutex };
+	std::shared_lock lock{ pipelineMutex };
 	pipelines[name] = std::move(pipeline);
 
 	return pipelines[name];
@@ -301,84 +291,31 @@ Sampler *Device::GetSampler(Filter filter)
 	return nullptr;
 }
 
-Descriptor Device::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, uint32_t descriptorCount)
+Descriptor Device::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount)
 {
-	if (descriptorCount < SL_ARRAY_LENGTH(descriptorPools[type]))
+	auto &allocator = descriptorPools[type];
+	if (!allocator)
 	{
-		std::lock_guard lock{ descritorHeapMutex };
-		auto &allocator = descriptorPools[type][descriptorCount];
-		if (!allocator)
-		{
-			allocator = new DescriptorPool{
-				this,
-				type,
-				descriptorCount
-			};
-		}
-
-		return allocator->AllocateWithMask(ppHeap, descriptorCount);
+		allocator = new DescriptorPool{
+			this,
+			type
+		};
 	}
-
-	DescriptorHeap *descriptorHeap = new DescriptorHeap{ this, descriptorCount, type, D3D12_DESCRIPTOR_HEAP_FLAG_NONE };
-	Descriptor descriptor = { descriptorHeap->GetCPUDescriptorHandle(), descriptorHeap->GetIncrementSize() };
-	*ppHeap = descriptorHeap;
-
-	return descriptor;
-}
-
-void Device::FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *descriptorHeap, Descriptor descriptor, uint32_t descriptorCount)
-{
-	std::lock_guard lock{ descritorHeapMutex };
-	auto &allocator = descriptorPools[type][descriptorCount];
-	allocator->Free(descriptorHeap, descriptor, descriptorCount);
+	return allocator->Allocate(descriptorCount);
 }
 
 void Device::AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount)
 {
-	if (descriptorCount < SL_ARRAY_LENGTH(shaderVisibleDescriptorPools[type]))
+	auto &allocator = shaderVisibleDescriptorPools[type];
+	if (!allocator)
 	{
-		std::lock_guard lock{shaderVisibleDescriptorMutex};
-		auto &allocator = shaderVisibleDescriptorPools[type][descriptorCount];
-		if (!allocator)
-		{
-			allocator = new DescriptorPool{
-				this,
-				type,
-				descriptorCount,
-				D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
-			};
-		}
-
-		pBaseDescriptor->descriptor = allocator->AllocateWithMask(ppHeap, descriptorCount);
-		pBaseDescriptor->shaderVisibleDescriptor = (*ppHeap)->GetGPUDescriptorHandle();
-
-		uint32_t increment = pBaseDescriptor->descriptor.GetIncrementSize();
-		auto index = (pBaseDescriptor->descriptor.ptr - (*ppHeap)->GetCPUDescriptorHandle().ptr) / increment;
-		pBaseDescriptor->shaderVisibleDescriptor.Offset(index, increment);
-
-		return;
+		allocator = new DescriptorPool{
+			this,
+		    type,
+		    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+		};
 	}
-
-	DescriptorHeap *descriptorHeap = new DescriptorHeap{this, descriptorCount, type, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE};
-	ShaderVisibleDescriptor descriptor = {
-	    .descriptor = {descriptorHeap->GetCPUDescriptorHandle(), descriptorHeap->GetIncrementSize()},
-	    .shaderVisibleDescriptor = descriptorHeap->GetGPUDescriptorHandle()};
-	*pBaseDescriptor = descriptor;
-	*ppHeap = descriptorHeap;
-}
-
-void Device::FreeShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *descriptorHeap, Descriptor descriptor, uint32_t descriptorCount)
-{
-	if (descriptorCount < SL_ARRAY_LENGTH(shaderVisibleDescriptorPools[type]))
-	{
-		std::lock_guard lock{shaderVisibleDescriptorMutex};
-		auto &allocator = shaderVisibleDescriptorPools[type][descriptorCount];
-		allocator->Free(descriptorHeap, descriptor, descriptorCount);
-	}
-	else
-	{
-		delete descriptorHeap;
-	}
+	allocator->Allocate(ppHeap, pBaseDescriptor, descriptorCount);
 }
 
 }

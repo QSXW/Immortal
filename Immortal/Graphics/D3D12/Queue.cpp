@@ -11,18 +11,12 @@ namespace Immortal
 namespace D3D12
 {
 
-Queue::Queue(Device *device, QueueType type, QueuePriority priority) :
-    type{ type },
-    gpuEvent{ new GPUEvent{device} }
+Queue::Queue(Device *device, const D3D12_COMMAND_QUEUE_DESC &desc)
 {
-	D3D12_COMMAND_QUEUE_DESC desc{
-		.Type     = CAST(type),
-		.Priority = (INT)priority,
-		.Flags    = D3D12_COMMAND_QUEUE_FLAG_NONE,
-		.NodeMask = 0,
-	};
     Check(device->Create(&desc, &handle));
     handle->SetName(L"Command Queue");
+
+	gpuEvent = new GPUEvent{ device };
 }
 
 Queue::~Queue()
@@ -33,11 +27,6 @@ Queue::~Queue()
 Anonymous Queue::GetBackendHandle() const
 {
 	return (void *)handle.Get();
-}
-
-QueueType Queue::GetType() const
-{
-	return type;
 }
 
 void Queue::WaitIdle(uint32_t timeout)

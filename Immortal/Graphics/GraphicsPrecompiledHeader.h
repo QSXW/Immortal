@@ -19,7 +19,6 @@
 #include <filesystem>
 #include <fstream>
 
-#include "concurrentqueue.h"
 #include "AccelerationStructure.h"
 #include "AsyncCompute.h"
 #include "Buffer.h"

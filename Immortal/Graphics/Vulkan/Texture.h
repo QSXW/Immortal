@@ -57,11 +57,6 @@ public:
 		return view;
     }
 
-    VkFormat GetFormat() const
-    {
-		return Image::GetFormat();
-    }
-
     VkImageLayout GetLayout() const
     {
 		return layout;

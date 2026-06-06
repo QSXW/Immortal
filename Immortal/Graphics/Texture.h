@@ -30,8 +30,6 @@ public:
      */
     virtual ~Texture() = default;
 
-    const Format &GetFormat() const;
-
     const uint32_t &GetWidth() const;
 
     const uint32_t &GetHeight() const;
@@ -43,11 +41,10 @@ public:
     uint32_t GetRatio() const;
 
 protected:
-	void SetMeta(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers);
+	void SetMeta(uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers);
 
     void Swap(Texture &other)
     {
-		std::swap(_format,      other._format     );
         std::swap(_width,       other._width      );
         std::swap(_height,      other._height     );
         std::swap(_mipLevels,   other._mipLevels  );
@@ -55,8 +52,6 @@ protected:
     }
 
 protected:
-	Format _format;
-
 	uint32_t _width;
 
 	uint32_t _height;

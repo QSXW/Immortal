@@ -157,8 +157,6 @@ public:
 public:
     RenderTarget(Device *device = nullptr);
 
-    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat);
-
     ~RenderTarget();
 
     virtual void Resize(uint32_t width, uint32_t height) override;
@@ -207,10 +205,6 @@ protected:
     Descriptor descriptors[32];
 
     Descriptor depthDescriptor;
-
-    DescriptorHeap *renderTargetViewDescriptorHeap;
-
-	DescriptorHeap *depthViewDescriptorHeap;
 
     std::vector<Ref<Texture>> colorBuffers;
 

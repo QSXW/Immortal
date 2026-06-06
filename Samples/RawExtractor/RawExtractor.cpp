@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 
     Vision::CodedFrame codedFrame = { std::move(buffer) };
     Vision::RawCodec rawCodec;
+    rawCodec.SetBits(Vision::RawBitDepth::_8);
     rawCodec.Decode(codedFrame);
 
     LOG::Release();

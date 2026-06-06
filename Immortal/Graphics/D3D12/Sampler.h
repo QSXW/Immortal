@@ -9,7 +9,6 @@ namespace D3D12
 {
 
 class Device;
-class DescriptorHeap;
 class IMMORTAL_API Sampler : public SuperSampler, public NonDispatchableHandle
 {
 public:
@@ -31,9 +30,7 @@ public:
 	}
 
 protected:
-	Descriptor handle;
-
-	DescriptorHeap *descriptorHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE handle;
 };
 }
 }

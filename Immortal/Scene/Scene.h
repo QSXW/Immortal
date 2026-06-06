@@ -11,7 +11,6 @@
 #include "Graphics/LightGraphics.h"
 #include "Component.h"
 #include "Graphics/Event/KeyEvent.h"
-#include "Render/Render2D.h"
 #include <map>
 
 namespace Immortal
@@ -67,8 +66,6 @@ public:
     void OnRenderEditor(const Camera &editorCamera);
 
     void OnRender(const Camera &camera);
-
-    void OnRender2D(const Camera &camera, RenderTarget *renderTarget);
 
     Object CreateObject(const std::string &name = "");
 
@@ -178,8 +175,6 @@ private:
     Vector2 viewportSize{ 0.0f, 0.0f };
 
     Object *selectedObject{ nullptr };
-
-    URef<Render2D> render2d;
 
 private:
     SceneCamera *primaryCamera = nullptr;

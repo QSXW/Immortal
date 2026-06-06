@@ -17,7 +17,7 @@ public:
 
 #if HAVE_TURBOJPEG
 public:
-	TurboJpegCodec(bool isOutputYUV = false);
+	TurboJpegCodec();
 
     virtual ~TurboJpegCodec() override;
 
@@ -27,15 +27,6 @@ public:
 #endif
 
     CodecError Decode(const uint8_t *data, size_t size);
-
-    void SetScale(int numerator, int denominator);
-
-protected:
-	bool isOutputYUV;
-
-    int numerator;
-
-    int denominator;
 };
 
 }

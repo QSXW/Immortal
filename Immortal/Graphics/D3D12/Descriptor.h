@@ -63,11 +63,6 @@ public:
 	{
 		return (D3D12_GPU_DESCRIPTOR_HANDLE &)this->ptr;
 	}
-
-    bool operator !() const
-    {
-        return !ptr;
-    }
 };
 
 class Descriptor : public DescriptorHandle
@@ -98,7 +93,7 @@ public:
 
     DescriptorHandle operator[](uint32_t index)
     {
-		DescriptorHandle handle{ (D3D12_CPU_DESCRIPTOR_HANDLE &) *this };
+		DescriptorHandle handle{ *this };
 		return handle.Offset(index, incrementSize);
     }
 
@@ -106,11 +101,6 @@ public:
     {
 		return incrementSize;
     }
-
-    operator bool() const
-	{
-		return !!ptr;
-	}
 
 protected:
 	uint32_t incrementSize;
