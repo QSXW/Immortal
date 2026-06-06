@@ -41,8 +41,8 @@ struct Rational
 
     template <class T, class U>
     Rational(T n, U d) :
-        numerator{ (int)n },
-        denominator{ (int)d }
+        numerator{ (int64_t)n },
+        denominator{ (int64_t)d }
     {
         static_assert(std::is_arithmetic_v<T> && std::is_arithmetic_v<U>);
     }
@@ -52,16 +52,8 @@ struct Rational
         return (double)numerator / (double)denominator;
     }
 
-    Rational operator *(const Rational &b)
-    {
-        Rational c;
-		c.numerator   = numerator   * b.numerator;
-		c.denominator = denominator * b.denominator;
-		return c;
-    }
-
-    int numerator;
-    int denominator;
+    int64_t numerator;
+    int64_t denominator;
 };
 
 /** Gaussian Function

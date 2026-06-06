@@ -28,8 +28,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     slapi
-    spdlog_header_only
-    concurrentqueue)
+    spdlog_header_only)
 
 if (NOT APPLE)
     target_precompile_headers(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/SharedPrecompiledHeader.h>)

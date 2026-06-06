@@ -52,12 +52,6 @@ public:
     Format  format;
 };
 
-enum class PictureFlags
-{
-	Eof = BIT(0)
-};
-SL_ENABLE_BITWISE_OPERATOR(PictureFlags)
-
 }
 
 enum class MediaType
@@ -67,7 +61,5 @@ enum class MediaType
     Data     = 2,
     Subtitle = 3
 };
-
-using PictureFlags = Vision::PictureFlags;
 
 }

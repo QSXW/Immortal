@@ -133,12 +133,7 @@ void GuiLayer::OnAttach()
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
 	icons_config.GlyphMinAdvanceX = 17;
-
-    const char *kIconFont = "Assets/Fonts/fa-solid-900.ttf";
-	if (std::filesystem::exists(kIconFont))
-	{
-		io.Fonts->AddFontFromFileTTF(kIconFont, 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
-	}
+	io.Fonts->AddFontFromFileTTF("Assets/Fonts/fa-solid-900.ttf", 17.5 * 2.0 / 3.0, &icons_config, icons_ranges);
 
 #ifdef _WIN32
     SimSun.Regular = io.Fonts->AddFontFromFileTTF(

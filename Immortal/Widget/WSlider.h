@@ -57,15 +57,11 @@ public:
             return;
         }
 
-        StyleVarStack<float> styleVar{
-			{ ImGuiStyleVar_GrabMinSize, 1.0f }
-        };
-
         ImGuiContext &g = *GImGui;
         const ImGuiStyle &style = g.Style;
         const ImGuiID frameId = window->GetID(this);
 
-        const ImRect bbFrame(window->DC.CursorPos, window->DC.CursorPos + ImVec2(renderWidth, radius*2));
+        const ImRect bbFrame(window->DC.CursorPos, window->DC.CursorPos + ImVec2(renderWidth, renderHeight));
         const ImRect bbTotal(bbFrame.Min, bbFrame.Max);
 
         const bool temp_input_allowed = (0 & ImGuiSliderFlags_NoInput) == 0;
@@ -110,20 +106,11 @@ public:
         }
 
         const ImU32 frameColor = ImGui::GetColorU32(g.ActiveId == frameId ? grabHoveredColor : hovered ? grabHoveredColor : backgroundColor);
-
-        ImVec2 frameCenter = bbFrame.GetCenter();
-		float rectHeight = radius / 4.0f;
-
-        ImRect bbRect = {{ bbFrame.Min.x,  frameCenter.y - rectHeight}, { bbFrame.Max.x, frameCenter.y + rectHeight }};
-		//ImGui::RenderNavHighlight(bbRect, frameId);
-		//ImGui::RenderFrame(bbRect.Min, bbRect.Max, frameColor, true, Rounding());
-        //if (g.ActiveId == frameId)
-        {
-			window->DrawList->AddRectFilled(bbRect.Min, bbRect.Max, frameColor, Rounding());
-        }
+        ImGui::RenderNavHighlight(bbFrame, frameId);
+        ImGui::RenderFrame(bbFrame.Min, bbFrame.Max, frameColor, true, g.Style.FrameRounding);
 
         ImRect outGrab;
-		if (ImGui::SliderBehavior(bbFrame, id, ImGuiDataType_Float, &progress, &min, &max, "", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_NoInput, &outGrab))
+        if (ImGui::SliderBehavior(bbFrame, id, ImGuiDataType_Float, &progress, &min, &max, "", ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_NoInput, &outGrab))
         {
             if (std::abs(outGrab.GetCenter().x - bbGrab.GetCenter().x) > 1.0f)
             {
@@ -132,25 +119,28 @@ public:
             ImGui::MarkItemEdited(id);
         }
 
-        outGrab.Min.x -= 2;
-		outGrab.Max.x -= 2;
-
-        auto center = outGrab.GetCenter();
-		center.x = IM_ROUND(center.x);
-		center.y = IM_ROUND(center.y);
         if (outGrab.Max.x > outGrab.Min.x)
         {
+            auto center = outGrab.GetCenter();
+            center.x = IM_ROUND(center.x);
+            center.y = IM_ROUND(center.y);
             window->DrawList->AddCircleFilled(center, radius, ImGui::GetColorU32(g.ActiveId == grabId ? grabHoveredColor : grabColor), 16);
             bbGrab = ImRect({ center.x - radius, center.y - radius }, { center.x + radius, center.y + radius });
         }
 
-        ImRect hightlightRect(bbRect.Min, {center.x, bbRect.Max.y});
-		DrawRect(window, hightlightRect, color);
+        ImRect hightlightRect(bbFrame.Min, { outGrab.Min.x, bbFrame.Max.y });
+        DrawRect(window, hightlightRect, color);
     }
 
     void DrawRect(ImGuiWindow *window, const ImRect &bb, const ImVec4 &color)
     {
-        window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(color), Rounding());
+        ImGui::ItemSize(bb);
+        if (!ImGui::ItemAdd(bb, 0))
+        {
+            return;
+        }
+
+        window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(color), rounding);
     }
 
 protected:

@@ -15,9 +15,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libavutil/avutil.h>
 #include <libavutil/display.h>
-#include <libavutil/channel_layout.h>
 #include <libswresample/swresample.h>
-#include <libavutil/audio_fifo.h>
 #ifdef _WIN32
 #include <libavutil/hwcontext_d3d12va.h>
 #include <d3d12.h>
@@ -30,87 +28,6 @@ namespace Immortal
 {
 namespace Vision
 {
-
-AudioFifo::AudioFifo() :
-    handle{}
-{
-
-}
-
-int AudioFifo::Allocate(AVCodecContext *codecContext, int numSamples)
-{
-	if (!(handle = av_audio_fifo_alloc(codecContext->sample_fmt,
-	                                    codecContext->ch_layout.nb_channels, numSamples)))
-	{
-		LOG::ERR("Could not allocate FIFO");
-		return AVERROR_EXIT;
-	}
-
-    return 0;
-}
-
-AudioFifo::~AudioFifo()
-{
-	if (handle)
-    {
-		av_audio_fifo_free(handle);
-		handle = {};
-    }
-}
-
-int AudioFifo::Enqueue(uint8_t **convertedInputSamples, int frameSize)
-{
-	int ret;
-
-	if ((ret = av_audio_fifo_realloc(handle, av_audio_fifo_size(handle) + frameSize)) < 0)
-	{
-		LOG::ERR("Could not reallocate FIFO");
-		return ret;
-	}
-
-	if (av_audio_fifo_write(handle, (void **) convertedInputSamples,
-	                        frameSize) < frameSize)
-	{
-		LOG::ERR("Could not write data to FIFO");
-		return AVERROR_EXIT;
-	}
-
-	return 0;
-}
-
-int AudioFifo::Read(void *const *data, int numSamples) const
-{
-	return av_audio_fifo_read(handle, data, numSamples);
-}
-
-int AudioFifo::Size() const
-{
-	return av_audio_fifo_size(handle);
-}
-
-#define AVERR_STR(ret) av_make_error_string(err, 64, ret)
-
-static int add_samples_to_fifo(AVAudioFifo *fifo, uint8_t **converted_input_samples, const int frame_size)
-{
-	int error;
-
-	/* Make the FIFO as large as it needs to be to hold both,
-	 * the old and the new samples. */
-	if ((error = av_audio_fifo_realloc(fifo, av_audio_fifo_size(fifo) + frame_size)) < 0)
-	{
-		fprintf(stderr, "Could not reallocate FIFO\n");
-		return error;
-	}
-
-	/* Store the new samples in the FIFO buffer. */
-	if (av_audio_fifo_write(fifo, (void **) converted_input_samples,
-	                        frame_size) < frame_size)
-	{
-		fprintf(stderr, "Could not write data to FIFO\n");
-		return AVERROR_EXIT;
-	}
-	return 0;
-}
 
 static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
 {
@@ -157,90 +74,44 @@ static inline ColorSpace ColorSpaceConverter(AVColorSpace v)
     return ret;
 }
 
-#define FORMAT_MAPPING                            \
-    CASE(Format::YUV420P,   AV_PIX_FMT_YUV420P  ) \
-    CASE(Format::YUV422P,   AV_PIX_FMT_YUV422P  ) \
-    CASE(Format::YUV444P,   AV_PIX_FMT_YUV444P  ) \
-    CASE(Format::YUV420P10, AV_PIX_FMT_YUV420P10) \
-    CASE(Format::YUV422P10, AV_PIX_FMT_YUV422P10) \
-    CASE(Format::YUV444P10, AV_PIX_FMT_YUV444P10) \
-    CASE(Format::YUV420P12, AV_PIX_FMT_YUV420P12) \
-	CASE(Format::YUV422P12, AV_PIX_FMT_YUV422P12) \
-	CASE(Format::YUV444P12, AV_PIX_FMT_YUV444P12) \
-    CASE(Format::YUV420P16, AV_PIX_FMT_YUV420P16) \
-	CASE(Format::YUV422P16, AV_PIX_FMT_YUV422P16) \
-	CASE(Format::YUV444P16, AV_PIX_FMT_YUV444P16) \
-    CASE(Format::NV12,      AV_PIX_FMT_NV12     ) \
-	CASE(Format::P010LE,    AV_PIX_FMT_P010LE   ) \
-	CASE(Format::P012LE,    AV_PIX_FMT_P012LE   ) \
-	CASE(Format::P016LE,    AV_PIX_FMT_P016LE   ) \
-	CASE(Format::Y210,      AV_PIX_FMT_Y210     ) \
-	CASE(Format::RGBA8,     AV_PIX_FMT_RGBA     ) \
-	CASE(Format::BGRA8,     AV_PIX_FMT_BGRA     )
-
 static inline Format CAST(AVPixelFormat v)
 {
-#define CASE(y, x) case x: return y;
     switch (v)
     {
-		FORMAT_MAPPING
 		case AV_PIX_FMT_YUVJ420P:
-			return Format::YUV420P;
+	    case AV_PIX_FMT_YUV420P:
+		    return Format::YUV420P;
+
+        case AV_PIX_FMT_YUV422P:
+			return Format::YUV422P;
+
+        case AV_PIX_FMT_YUV444P:
+			return Format::YUV422P;
+
+        case AV_PIX_FMT_YUV420P10:
+            return Format::YUV420P10;
+
+        case AV_PIX_FMT_YUV422P10:
+            return Format::YUV422P10;
+
+        case AV_PIX_FMT_YUV444P10:
+            return Format::YUV444P10;
+
+        case AV_PIX_FMT_NV12:
+            return Format::NV12;
+
+        case AV_PIX_FMT_P010LE:
+            return Format::P010LE;
+
+        case AV_PIX_FMT_Y210:
+            return Format::Y210;
+
+        case AV_PIX_FMT_BGRA:
+			return Format::BGRA8;
+
         default:
             return Format::None;
     }
-#undef CASE
-}
-
-static inline AVPixelFormat CAST(Format format)
-{
-#define CASE(x, y) case x: return y;
-	switch (Format::ValueType(format))
-	{
-		FORMAT_MAPPING
-		default:
-			return AV_PIX_FMT_NONE;
-	}
-#undef CASE
-}
-
-
-#define FORMAT_MAPPING                            \
-    CASE(Format::R8_UINT,   AV_SAMPLE_FMT_U8    ) \
-    CASE(Format::R16_SINT,  AV_SAMPLE_FMT_S16   ) \
-    CASE(Format::R32_SINT,  AV_SAMPLE_FMT_S32   ) \
-    CASE(Format::FLOAT,     AV_SAMPLE_FMT_FLT   ) \
-    CASE(Format::DOUBLE,    AV_SAMPLE_FMT_DBL   ) \
-    CASE(Format::R8_UINTP,  AV_SAMPLE_FMT_U8P   ) \
-    CASE(Format::R16_SINTP, AV_SAMPLE_FMT_S16P  ) \
-	CASE(Format::R32_SINTP, AV_SAMPLE_FMT_S32P  ) \
-	CASE(Format::FLOATP,    AV_SAMPLE_FMT_FLTP  ) \
-    CASE(Format::DOUBLEP,   AV_SAMPLE_FMT_DBLP  ) \
-	CASE(Format::R64_SINT,  AV_SAMPLE_FMT_S64   ) \
-	CASE(Format::R64_SINTP, AV_SAMPLE_FMT_S64P  )
-
-static inline Format CAST(AVSampleFormat v)
-{
-#define CASE(y, x) case x: return y;
-    switch (v)
-    {
-		FORMAT_MAPPING
-        default:
-            return Format::None;
-    }
-#undef CASE
-}
-
-static inline AVSampleFormat CastSampleFormat(Format format)
-{
-#define CASE(x, y) case x: return y;
-	switch (Format::ValueType(format))
-	{
-		FORMAT_MAPPING
-		default:
-			return AV_SAMPLE_FMT_NONE;
-	}
-#undef CASE
 }
 
 double GetDisplayRotation(const int32_t *displaymatrix)
@@ -260,173 +131,19 @@ double GetDisplayRotation(const int32_t *displaymatrix)
 	return theta;
 }
 
-static const char *QueryEncodecById(const CodecId id)
-{
-    switch (id)
-    {
-	case CodecId::AAC:
-		return "aac";
-
-    case CodecId::FLAC:
-		return "flac";
-
-    case CodecId::H264:
-		return "libx264";
-
-    case CodecId::H264_NVENC:
-		return "h264_nvenc";
-
-    case CodecId::H264_QSV:
-		return "h264_qsv";
-
-    case CodecId::HEVC:
-		return "libx265";
-
-    case CodecId::HEVC_D3D12ENCODE:
-		return "hevc_d3d12va";
-
-    case CodecId::HEVC_NVENC:
-		return "hevc_nvenc";
-
-    case CodecId::HEVC_QSV:
-		return "hevc_qsv";
-
-    case CodecId::AV1:
-		return "libaom-av1";
-
-	case CodecId::AV1_NVENC:
-		return "av1_nvenc";
-
-	case CodecId::AV1_QSV:
-		return "av1_qsv";
-    
-    case CodecId::VP9:
-		return "libvpx-vp9";
-
-    case CodecId::VP9_QSV:
-		return "vp9_qsv";
-
-    default:
-        return nullptr;
-    }
-}
-
 FFCodec::FFCodec(int sampleRate) :
     handle{},
     device{},
-    swrContext{},
-    type{PictureMemoryType::System},
+    type{ PictureMemoryType::System },
     startTimestamp{},
     sampleRate{ sampleRate },
     displayOrientation{},
-    preference{},
-    pts{},
-    subtitle{}
+    preference{}
 {
     frame = av_frame_alloc();
     ThrowIf(!frame, "FFCodec::Failed to allocated memory for frame!")
 
     memoryResource = new MemoryResource(sizeof(SharedPictureData));
-}
-
-FFCodec::FFCodec(const EncodeInfo &encodeInfo) :
-    FFCodec{}
-{
-	char err[64] = {};
-	isEncoder = true;
-
-	auto name = QueryEncodecById(encodeInfo.codecId);
-	if (!name)
-	{
-		LOG::ERR("Failed to query encoder for id - '{}'", (int)encodeInfo.codecId);
-		return;
-	}
-
-	const AVCodec *codec = avcodec_find_encoder_by_name(name);
-	if (!codec)
-	{
-		LOG::ERR("Failed to find encoder by name - '{}'", name);
-		return;
-	}
-
-	if (!(handle = avcodec_alloc_context3(codec)))
-	{
-		LOG::ERR("Failed to alloc context for encoder");
-		return;
-	}
-    
-    switch (handle->codec_type)
-    {
-		case AVMEDIA_TYPE_AUDIO:
-	    {      
-            mediaType = MediaType::Audio;
-		    auto sampleFormat = CastSampleFormat(encodeInfo.format);
-            for (int i = 0; codec->sample_fmts[i] != -1; i++)
-            {
-			    if (sampleFormat == codec->sample_fmts[i])
-                {
-				    handle->sample_fmt = sampleFormat;
-				    break;
-                }
-            }
-            if (handle->sample_fmt != sampleFormat)
-            {
-				LOG::ERR("Unsupported sample format - {}", (int)sampleFormat);
-			    return;
-            }
-
-            if (!codec->supported_samplerates)
-            {
-				handle->sample_rate = encodeInfo.sampleRate;
-            }
-			else 
-            {
-				for (int i = 0; codec->supported_samplerates[i]; i++)
-				{
-					if (encodeInfo.sampleRate == codec->supported_samplerates[i])
-					{
-						handle->sample_rate = encodeInfo.sampleRate;
-						break;
-					}
-				}
-			}
-
-            if (handle->sample_rate != encodeInfo.sampleRate)
-		    {
-			    LOG::ERR("Unsupported sample rate - {}", encodeInfo.sampleRate);
-			    return;
-		    }
-
-		    handle->bit_rate    = encodeInfo.bitRate;
-            handle->time_base   = { 1, handle->sample_rate };
-		    av_channel_layout_default(&handle->ch_layout, !encodeInfo.channels ? encodeInfo.channels : 2);
-	    }
-		break;
-        
-        case AVMEDIA_TYPE_VIDEO:
-        {
-			mediaType = MediaType::Video;
-            handle->width        = encodeInfo.width;
-            handle->height       = encodeInfo.height;
-            handle->pix_fmt      = CAST(encodeInfo.format);
-            handle->bit_rate     = encodeInfo.bitRate;
-            handle->gop_size     = encodeInfo.gopSize;
-            handle->time_base    = AVRational{ (int)encodeInfo.timeBase.numerator, (int)encodeInfo.timeBase.denominator };
-            handle->framerate    = AVRational{ encodeInfo.framerate.numerator, encodeInfo.framerate.denominator };
-	        handle->max_b_frames = 1;
-        }
-		break;
-
-        default:
-			break;
-    }
-
-    int ret = avcodec_open2(handle, codec, nullptr);
-	if (ret < 0)
-	{
-		LOG::ERR("Could not open codec: {}", AVERR_STR(ret));
-		return;
-	}
 }
 
 FFCodec::~FFCodec()
@@ -444,56 +161,26 @@ FFCodec::~FFCodec()
         av_frame_free(&frame);
         avcodec_free_context(&handle);
     }
-	if (!swrContext)
-	{
-		swr_free(&swrContext);
-	}
 
+    Flush();
     memoryResource.Reset();
 }
 
 CodecError FFCodec::Decode(const CodedFrame &codedFrame)
 {
-	char err[64];
     int ret = 0;
     auto packet = codedFrame.InterpretAs<AVPacket>();
 
-    if (codedFrame.GetType() == MediaType::Subtitle)
+    ret = avcodec_send_packet(handle, packet);
+    if (ret < 0 && ret != AVERROR(EAGAIN))
     {
-		int got = 0;
-		AVSubtitle subtitle;
-		ret = avcodec_decode_subtitle2(handle, &subtitle, &got, packet);
-        if (ret < 0)
+        if (ret != AVERROR(EOF))
         {
-			LOG::ERR("Failed to decode subtitle - {}", AVERR_STR(ret));
-			return CodecError::ExternalFailed;
-        }
-
-        if (got)
-        {
-			avsubtitle_free(&subtitle);
+            return CodecError::ExternalFailed;
         }
     }
-    else
-    {
-		ret = avcodec_send_packet(handle, packet);
-		if (ret < 0 && ret != AVERROR(EAGAIN))
-		{
-			if (ret != AVERROR(EOF))
-			{
-				return CodecError::ExternalFailed;
-			}
-		}
 
-		handle->time_base = packet->time_base;
-    }
-
-    return CodecError::Success;
-}
-
-CodecError FFCodec::GetPicture(Picture &picture)
-{
-    int ret = avcodec_receive_frame(handle, frame);
+    ret = avcodec_receive_frame(handle, frame);
     if (ret < 0)
     {
         if (ret == AVERROR(EAGAIN))
@@ -503,7 +190,12 @@ CodecError FFCodec::GetPicture(Picture &picture)
         return CodecError::ExternalFailed;
     }
 
-    AVRational timeBase = handle->time_base;
+    AVRational timeBase = {};
+	if (packet)
+	{
+		timeBase = packet->time_base;
+	}
+
     if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
     {
         AVFrame *ref = NULL;
@@ -594,14 +286,6 @@ CodecError FFCodec::GetPicture(Picture &picture)
                 av_frame_free((AVFrame **)&ref);
                 });
             });
-
-        picture.SetTimestamp(NAN);
-		if (frame->pts != AV_NOPTS_VALUE)
-		{
-			//picture.SetTimestamp((frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond);
-			picture.SetTimestamp(frame->best_effort_timestamp - startTimestamp);
-			picture.SetTimebase({timeBase.num, timeBase.den});
-		}
     }
     else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
     {
@@ -611,83 +295,61 @@ CodecError FFCodec::GetPicture(Picture &picture)
             frame->pts = av_rescale_q(frame->pts - startTimestamp, timeBase, tb);
         }
 
-        if (sampleRate != 0)
+        SwrContext *swrContext = {};
+		AVChannelLayout outChannelLayout = {
+		    .nb_channels = 2
+        };
+
+		ret = swr_alloc_set_opts2(
+		    &swrContext,
+		    &outChannelLayout,
+		    AV_SAMPLE_FMT_FLT,
+		    sampleRate,
+		    &handle->ch_layout,
+            handle->sample_fmt,
+            handle->sample_rate,
+            0,
+            nullptr
+        );
+
+        if (ret < 0)
         {
-			if (!swrContext)
-			{
-                AVChannelLayout outChannelLayout = {
-		            .nb_channels = 2
-                };
-
-		        ret = swr_alloc_set_opts2(
-		            &swrContext,
-		            &outChannelLayout,
-		            AV_SAMPLE_FMT_FLT,
-		            sampleRate,
-		            &handle->ch_layout,
-                    handle->sample_fmt,
-                    handle->sample_rate,
-                    0,
-                    nullptr
-                );
-      
-                if (ret < 0)
-				{
-					LOG::ERR("Failed to allocate SwrContext");
-					return CodecError::ExternalFailed;
-				}
-			}
-
-		    swr_init(swrContext);
-
-            int samples = av_rescale_rnd(
-                swr_get_delay(swrContext, handle->sample_rate) + frame->nb_samples,
-                sampleRate,
-                handle->sample_rate,
-                AV_ROUND_UP
-            );
-
-            Format format = Format::VECTOR2;
-            picture = Picture{ uint32_t(samples), 1,  format, true };
-			picture.SetTimestamp(frame->pts);
-			picture.SetSampleRate(sampleRate);
-
-            int outSamples = swr_convert(swrContext, &picture.GetData(), samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
-            if (outSamples < 0)
-            {
-                LOG::ERR("Failed to rescale audio frame format!");
-            }
-			//picture.SetWidth(outSamples);
-			//pts += outSamples;
-            uint8_t *ptr = picture.GetData() + outSamples * 2 * sizeof(float);
-            if (swr_get_out_samples(swrContext, 0) > 0)
-            {
-                outSamples = swr_convert(swrContext, &ptr, samples - outSamples, nullptr, 0);
-            }
-
-             swr_close(swrContext);
+			LOG::ERR("Failed to allocate SwrContext");
+			return CodecError::ExternalFailed;
         }
-		else
-		{
-			AVFrame *ref = av_frame_clone(frame);
-            picture = Picture{ frame->nb_samples, frame->ch_layout.nb_channels, CAST(handle->sample_fmt) };
-			picture.SetSampleRate(handle->sample_rate);
 
-            for (int i = 0; i < frame->ch_layout.nb_channels; i++)
-            {
-				picture.SetDataAt(i, frame->data[i]);
-				picture.SetStride(i, frame->linesize[i]);
-            }
+        swr_init(swrContext);
 
-			picture.SetRelease([ref](void *) {
-				Async::Execute([ref] {
-					av_frame_unref(ref);
-					av_frame_free((AVFrame **)&ref);
-				});
-			});
-		}
+        int samples = av_rescale_rnd(
+            swr_get_delay(swrContext, handle->sample_rate) + frame->nb_samples,
+            sampleRate,
+            handle->sample_rate,
+            AV_ROUND_UP
+        );
 
-        picture.SetTimestamp(frame->pts);
+        Format format = Format::VECTOR2;
+        picture = Picture{ uint32_t(samples), 1,  format, true };
+        picture.SetTimestamp(frame->pts / frame->nb_samples);
+
+        int outSamples = swr_convert(swrContext, &picture.GetData(), samples, (const uint8_t **)&frame->data[0], frame->nb_samples);
+        if (outSamples < 0)
+        {
+            LOG::ERR("Failed to rescale audio frame format!");
+        }
+
+        uint8_t *ptr = picture.GetData() + outSamples * 2 * sizeof(float);
+        if (swr_get_out_samples(swrContext, 0) > 0)
+        {
+            outSamples = swr_convert(swrContext, &ptr, samples - outSamples, nullptr, 0);
+        }
+
+        swr_free(&swrContext);
+    }
+
+    picture.SetTimestamp(NAN);
+    if (frame->pts != AV_NOPTS_VALUE)
+    {
+        picture.SetTimestamp((frame->best_effort_timestamp - startTimestamp) * av_q2d(timeBase) * animator.FramesPerSecond);
     }
 
     av_frame_unref(frame);
@@ -695,375 +357,14 @@ CodecError FFCodec::GetPicture(Picture &picture)
     return CodecError::Success;
 }
 
-void ReleasePicture(void *opaque, uint8_t *data)
-{        
-    {
-		Ref<IObject> object;
-		object.Attach(data);
-    }
-}
-
-class AVFrameWrapper
+Picture FFCodec::GetPicture() const
 {
-public:
-	AVFrameWrapper() :
-	    frame{}
-	{
-		frame = av_frame_alloc();
-	}
-
-	~AVFrameWrapper()
-	{
-		if (frame)
-		{
-			av_frame_free(&frame);
-			frame = nullptr;
-		}
-	}
-
-    operator AVFrame *() const
-    {
-		return frame;
-    }
-
-	AVFrame *frame;
-};
-
-class AVPacketWrapper
-{
-public:
-	AVPacketWrapper() :
-	    packet{}
-	{
-		packet = av_packet_alloc();
-	}
-
-	~AVPacketWrapper()
-	{
-		if (packet)
-		{
-			av_packet_free(&packet);
-			packet = nullptr;
-		}
-	}
-
-    AVPacket *Detach()
-    {
-		AVPacket *ret = nullptr;
-		std::swap(ret, packet);
-		return ret;
-    }
-
-	operator AVPacket *() const
-	{
-		return packet;
-	}
-
-	AVPacket *packet;
-};
-
-CodecError FFCodec::RescaleAudioSamples(int numOutSamples, uint8_t *const *out, int outSampleRate,int numInSamples, const uint8_t *const *in, int inSampleRate, int dataSize)
-{
-	int outSamples = swr_convert(swrContext, out, numOutSamples, in, numInSamples);
-	if (outSamples < 0)
-	{
-		LOG::ERR("Failed to rescale audio frame format!");
-		return CodecError::ExternalFailed;
-	}
-
-	uint8_t *ptr = out[0] + outSamples * dataSize;
-	//if (swr_get_out_samples(swrContext, 0) > 0)
-	//{
-	//	outSamples = swr_convert(swrContext, &ptr, numOutSamples - outSamples, nullptr, 0);
-	//}
-
-    return CodecError::Success;
-}
-
-
-CodecError FFCodec::EncodeFrame(AVFrame *frame)
-{
-	char err[64] = {};
-    int ret = av_frame_make_writable(frame);
-    if (ret < 0)
-    {
-		LOG::ERR("Error when making frame writable - {}", AVERR_STR(ret));
-		return CodecError::ExternalFailed;
-    }
-
-	ret = avcodec_send_frame(handle, frame);
-	if (ret < 0)
-	{
-		LOG::ERR("Error sending frame to encoder: {}", AVERR_STR(ret));
-		return CodecError::ExternalFailed;
-	}
-
-    return CodecError::Success;
-}
-
-CodecError FFCodec::SendAudioFifo()
-{
-	char err[64] = {};
-    while (fifo.Size() >= handle->frame_size)
-    {
-		AVFrameWrapper wrapper{};
-		AVFrame *frame = wrapper;
-
-		int frameSize = std::min(fifo.Size(), handle->frame_size);
-		frame->nb_samples  = frameSize;
-        frame->format      = handle->sample_fmt;
-		frame->sample_rate = handle->sample_rate;
-		av_channel_layout_copy(&frame->ch_layout, &handle->ch_layout);
-
-        int ret = av_frame_get_buffer(frame, 0);
-		if (ret < 0)
-        {
-			LOG::ERR("Failed to allocate buffer for frame samples - {}", AVERR_STR(ret));
-			return CodecError::OutOfMemory;
-        }
-
-        if (fifo.Read((void **)frame->data, frameSize) < frameSize)
-		{
-			LOG::ERR("Could not read data from FIFO");
-			return CodecError::ExternalFailed;
-		}
-                
-        frame->pts = pts;
-		pts += frame->nb_samples;
-		frame->pts = av_rescale_q(frame->pts, AVRational{ 1, handle->sample_rate }, handle->time_base);
-
-		auto error = EncodeFrame(frame);
-        if (error != CodecError::Success)
-        {
-			return error;
-        }
-    }
-
-    return CodecError::Success;
-}
-
-CodecError FFCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
-{
-	char err[64] = {};
-	int ret;
-
-    if (handle->codec_type == AVMEDIA_TYPE_VIDEO)
-    {
-		auto wrapper = AVFrameWrapper();
-		AVFrame *frame = wrapper;
-		if (!frame)
-		{
-			LOG::ERR("Failed to allocate frame!");
-			return CodecError::OutOfMemory;
-		}
-
-		//auto object = picture.GetIObject();
-		//object->AddRef();
-		//AVBufferRef *bufferRef = av_buffer_create((uint8_t *)object, sizeof(object), ReleasePicture, NULL, 0);
-		//if (!bufferRef)
-		//{
-		//	LOG::ERR("Failed to allocate buffer ref");
-		//	return CodecError::OutOfMemory;
-		//}
-		//frame->buf[0] = bufferRef;
-
-		for (int i = 0; picture.GetData(i); i++)
-		{
-			frame->data[i]      = picture.GetData(i);
-			frame->linesize[i] = picture.GetStride(i);
-		}
-
-		frame->pts    = picture.GetTimestamp();
-		frame->format = handle->pix_fmt;
-		frame->width  = picture.GetWidth();
-		frame->height = picture.GetHeight();
-		frame->pts    = av_rescale_q(frame->pts, av_inv_q(handle->framerate), handle->time_base);
-
-        return EncodeFrame(frame);
-	}
-	else if (handle->codec_type == AVMEDIA_TYPE_AUDIO)
-	{
-        if (!fifo)
-        {
-			if (fifo.Allocate(handle, handle->frame_size) < 0)
-			{
-				return CodecError::OutOfMemory;
-			}
-        }
-        AVSampleFormat sampleFormat = CastSampleFormat(picture.GetFormat());
-        if (sampleFormat != handle->sample_fmt ||
-            picture.GetHeight() != handle->ch_layout.nb_channels ||
-            picture.GetSampleRate() != handle->sample_rate)
-        {
-            if (!swrContext)
-            {
-				AVChannelLayout intputLayout;
-				av_channel_layout_default(&intputLayout, picture.GetHeight());
-				ret = swr_alloc_set_opts2(
-				    &swrContext,
-				    &handle->ch_layout,
-				    handle->sample_fmt,
-				    handle->sample_rate,
-				    &intputLayout,
-				    sampleFormat,
-				    picture.GetSampleRate(),
-				    0,
-				    nullptr);
-
-                                
-			    ret = swr_init(swrContext);
-				if (ret < 0)
-				{
-					LOG::ERR("Failed to init swr - {}", AVERR_STR(ret));
-					return CodecError::ExternalFailed;
-				}
-
-                if (ret < 0)
-				{
-					LOG::ERR("Failed to allocate SwrContext");
-					return CodecError::OutOfMemory;
-				}
-            }
-
-            int intputFrameSize = picture.GetWidth();     
-            int numSamples = av_rescale_rnd(
-			    swr_get_delay(swrContext, picture.GetSampleRate()) + picture.GetWidth(),
-			    handle->sample_rate,
-			    picture.GetSampleRate(),
-			    AV_ROUND_UP);
-
-            ret = 0;
-            if (numSamples >= numRescaledSamples)
-            {
-				numRescaledSamples = numSamples;
-				rescaledSamples = nullptr;
-            }
-
-			if (!rescaledSamples)
-			{
-				ret = av_samples_alloc_array_and_samples(
-				    &rescaledSamples,
-				    nullptr,
-				    handle->ch_layout.nb_channels,
-				    numRescaledSamples,
-				    handle->sample_fmt,
-				    0);
-				if (ret < 0)
-				{
-					LOG::ERR("Failed to allocate array and samples - {}", AVERR_STR(ret));
-					return CodecError::OutOfMemory;
-				}
-			}
-
-			ret = swr_convert(swrContext, rescaledSamples, numRescaledSamples, &picture.GetData(), intputFrameSize);
-            if (ret < 0)
-            {
-				LOG::ERR("Could not convert input samples - {}", AVERR_STR(ret));
-				return CodecError::ExternalFailed;
-            }
-
-            fifo.Enqueue(rescaledSamples, ret);
-        }
-        else
-        {
-			fifo.Enqueue(&picture.GetData(), picture.GetWidth());
-        }
-
-        return SendAudioFifo();
-	}
-
-	return CodecError::InvalidArguments;
-}
-
-CodedFrame FFCodec::GetCodedFrame() const
-{
-	char err[64];
-
-    AVPacketWrapper packetWrapper;
-	AVPacket *packet = packetWrapper;
-	if (!packet)
-	{
-		LOG::ERR("Failed to alloc packet");
-		return {};
-	}
-
-	int ret = avcodec_receive_packet(handle, packet);
-	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-	{
-		return {};
-	}
-	else if (ret < 0)
-	{
-		LOG::ERR("Error encoding a frame: {}", AVERR_STR(ret));
-		return {};
-	}
-
-	packet->time_base = handle->time_base;
-    
-    packet = packetWrapper.Detach();
-	CodedFrame codedFrame = {packet};
-	codedFrame.SetType(mediaType);
-	codedFrame.SetTimestamp(packet->pts);
-	codedFrame.SetRelease([](void *data) {
-		Async::Execute([=] {
-			AVPacket *packet = (AVPacket *)(data);
-			av_packet_free(&packet);
-		});
-	});
-
-    return codedFrame;
-}
-
-void FFCodec::FlushAudioFifo()
-{
-    char err[64]{};
-	int ret = swr_convert(swrContext, rescaledSamples, numRescaledSamples, nullptr, 0);
-	if (ret < 0)
-	{
-		LOG::ERR("Could not convert input samples - {}", AVERR_STR(ret));
-		avcodec_send_frame(handle, nullptr);
-		return;
-	}
-
-	fifo.Enqueue(rescaledSamples, ret);
-	auto size = fifo.Size();
-	ret = swr_inject_silence(swrContext, handle->frame_size - size);
-    if (ret < 0)
-    {
-		LOG::ERR("Could not inject silence - {}", AVERR_STR(ret));
-		avcodec_send_frame(handle, nullptr);
-		return;
-    }
-
-	ret = swr_convert(swrContext, rescaledSamples, numRescaledSamples, nullptr, 0);
-	if (ret < 0)
-	{
-		LOG::ERR("Could not convert input samples - {}", AVERR_STR(ret));
-		avcodec_send_frame(handle, nullptr);
-		return;
-	}
-	fifo.Enqueue(rescaledSamples, ret);
-
-    SendAudioFifo();
+    return picture;
 }
 
 void FFCodec::Flush()
 {
-	if (handle)
-	{
-        if (isEncoder)
-        {
-            if (handle->codec->type == AVMEDIA_TYPE_AUDIO)
-            {
-				FlushAudioFifo();
-            }
-		    avcodec_send_frame(handle, nullptr);
-        }
-        else
-        {
-			avcodec_send_packet(handle, nullptr);
-        }
-	}
+    picture = Picture{};
 }
 
 void *FFCodec::GetProperty(PropertyType type) const
@@ -1341,10 +642,10 @@ CodecError FFCodec::InitializeDecoder(int _codecId, const AVStream *stream)
         handle->pkt_timebase = stream->time_base;
     }
 
+    handle->pkt_timebase = stream->time_base;
+
     AVDictionary **opts = (AVDictionary**)av_calloc(1, sizeof(*opts));
 	av_dict_set(opts, "threads", device ? "1" : "16", 0);
-
-    handle->strict_std_compliance |= FF_COMPLIANCE_EXPERIMENTAL;
     if (avcodec_open2(handle, codec, opts) < 0)
     {
         LOG::ERR("FFCodec::Failed to open AVCodecContext");
@@ -1364,17 +665,6 @@ CodecError FFCodec::SetCodecContext(Anonymous anonymous)
     CodecError ret = InitializeDecoder(stream->codecpar->codec_id, stream);
 
     return CodecError::Success;
-}
-
-
-Rational FFCodec::GetFramerate() const
-{
-	return { handle->framerate.den, handle->framerate.num };
-}
-
-Rational FFCodec::GetTimebase() const
-{
-    return { handle->time_base.num, handle->time_base.den };
 }
 
 }

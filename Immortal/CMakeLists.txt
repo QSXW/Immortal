@@ -95,8 +95,6 @@ set(SCENE_FILES
     SceneCamera.h
     ScriptComponent.cpp
     SpriteRendererComponent.cpp
-    VideoOutputComponent.cpp
-    VideoOutputComponent.h
     VideoPlayerComponent.cpp
     VideoPlayerComponent.h)
 list(TRANSFORM SCENE_FILES PREPEND "Scene/")

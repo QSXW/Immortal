@@ -48,16 +48,14 @@ public:
     }
 
 public:
-    Graphics(Instance *instance, Device *device);
+    Graphics(Device *device);
    
     ~Graphics();
 
 public:
-    static void SetDevice(Instance *instance, Device *device);
+    static void SetDevice(Device *device);
 
     static void ConstructGlobalVariables();
-
-    static Instance *GetInstance();
 
     static Device *GetDevice();
 
@@ -102,8 +100,6 @@ public:
     }
 
 public:
-	Instance *instance;
-
     Device *device;
 
     AsyncComputeThread thread;

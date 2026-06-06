@@ -44,7 +44,7 @@ IVFDemuxer::IVFDemuxer() :
 
 }
 
-CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec, VideoCodec *subtitleCodec)
+CodecError IVFDemuxer::Open(const String &filepath, VideoCodec *codec, VideoCodec *audioCodec)
 {
     uint8_t data[32];
     auto animator = codec->GetAddress<Animator>();

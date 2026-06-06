@@ -93,14 +93,6 @@ public:
         return duration.count();
     }
 
-    template <class T = Seconds>
-	double Duration()
-    {
-		Clock::time_point now = Clock::now();
-		auto duration = std::chrono::duration<double, T>(now - start);
-		return duration.count();
-    }
-
 private:
     bool running{ false };
     bool lapping{ false };

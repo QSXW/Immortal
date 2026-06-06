@@ -141,31 +141,6 @@ public:
     int size;
 };
 
-struct WindowCursorSwitcher
-{
-	WindowCursorSwitcher(const ImVec2 &pos)
-    {
-		_pos = ImGui::GetCursorScreenPos();
-		_size = ImGui::GetWindowSize();
-		ImGui::SetCursorScreenPos(pos);
-    }
-
-    WindowCursorSwitcher(const ImVec2 &pos, const ImVec2 &size) :
-	    WindowCursorSwitcher{ pos }
-    {
-		ImGui::SetWindowSize(size);
-    }
-
-    ~WindowCursorSwitcher()
-    {
-		ImGui::SetCursorScreenPos(_pos);
-		ImGui::SetWindowSize(_size);
-    }
-
-    ImVec2 _pos;
-	ImVec2 _size;
-};
-
 struct FontStack
 {
 public:
@@ -191,20 +166,6 @@ public:
 
     float scale;
 	float lastScale;
-};
-
-struct DisabledWhen
-{
-public:
-	DisabledWhen(bool condition = true)
-	{
-		ImGui::BeginDisabled(condition);
-	}
-
-	~DisabledWhen()
-	{
-		ImGui::EndDisabled();
-	}
 };
 
 class WWindow;

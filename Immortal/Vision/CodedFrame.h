@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Shared/IObject.h"
-#include "Types.h"
 
 #include <cstdint>
 #include <vector>
@@ -19,11 +18,9 @@ public:
 	friend CodedFrame;
 
 public:
-	SharedCodedFrameData() :
+	  SharedCodedFrameData() :
 	    buffer{},
 	    type{},
-	    timestamp{},
-        flags{},
 	    release{}
     {
 
@@ -77,24 +74,10 @@ public:
 		release = func;
     }
 
-    const int64_t &GetTimestamp() const
-    {
-		return timestamp;
-    }
-
-    void SetTimestamp(int64_t value)
-    {
-		timestamp = value;
-    }
-
 protected:
 	std::vector<uint8_t> buffer;
 
 	MediaType type;
-
-    int64_t timestamp;
-
-    PictureFlags flags;
 
 	std::function<void(void *)> release;
 };
@@ -162,7 +145,7 @@ public:
 
     operator bool() const
     {
-		return _shared && !_shared->GetBuffer().empty();
+		return !_shared->GetBuffer().empty();
     }
 
     const std::vector<uint8_t> &GetBuffer() const
@@ -197,32 +180,9 @@ public:
 	    return buffer.data();
 	}
 
-    const int64_t &GetTimestamp() const
-	{
-		return _shared->GetTimestamp();
-	}
-
-	void SetTimestamp(int64_t value)
-	{
-		_shared->SetTimestamp(value);
-	}
-
-    void SetFlags(PictureFlags flags)
-	{
-		_shared->flags |= flags;
-	}
-
-	PictureFlags GetFlags() const
-	{
-		return _shared->flags;
-	}
-
 public:
 	Ref<SharedCodedFrameData> _shared;
 };
 
 }
-
-using CodedFrame = Vision::CodedFrame;
-
 }

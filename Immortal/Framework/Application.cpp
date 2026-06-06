@@ -31,7 +31,7 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
     device = instance->CreateDevice(0);
     queue = device->CreateQueue(QueueType::Graphics);
 
-	Graphics::SetDevice(instance, device);
+	Graphics::SetDevice(device);
 	Graphics::Execute<SetQueueTask>(queue);
 	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
     Graphics::ConstructGlobalVariables();

@@ -6,7 +6,6 @@
 #include "CodedFrame.h"
 #include "Common/Error.h"
 #include "Common/Animator.h"
-#include "Math/Math.h"
 
 namespace Immortal
 {
@@ -47,22 +46,12 @@ public:
         return CodecError::FailedToCallDecoder;
     }
 
-    virtual CodecError GetPicture(Picture &picture)
-    {
-		return CodecError::FailedToCallDecoder;
-    }
-
     /**
      * @brief Encode a picture to the coded data
      */
-	virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame)
+    virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame)
     {
         return CodecError::FailedToCallDecoder;
-    }
-
-    virtual CodedFrame GetCodedFrame() const
-    {
-		return {};
     }
 
     virtual Picture GetPicture() const
@@ -114,61 +103,7 @@ protected:
 };
 
 }
-
-enum class DecodingPreference
-{
-	Auto,
-	Software,
-	Hardware,
-};
-
 }
-
-enum class CodecId
-{
-    None,
-    AVC,
-    HEVC,
-    VVC,
-    VP9,
-    AV1,
-	H264_D3D12ENCODE,
-	H264_NVENC,
-	H264_QSV,
-    HEVC_D3D12ENCODE,
-    HEVC_NVENC,
-    HEVC_QSV,
-	VP9_QSV,
-	AV1_NVENC,
-    AV1_QSV,
-    AAC,
-    FLAC,
-    H264 = AVC,
-    H265 = HEVC,
-    H266 = VVC,
-};
-
-struct EncodeInfo
-{
-	CodecId codecId;
-	union
-	{
-		uint32_t width;
-		uint32_t sampleRate;
-	};
-
-    union
-    {
-		uint32_t height;
-		uint32_t channels;
-    };
-
-	Format format;
-	int bitRate;
-	int gopSize;
-	Rational framerate;
-	Rational timeBase;
-};
 
 using Codec      = Vision::Interface::Codec;
 using VideoCodec = Vision::Interface::VideoCodec;

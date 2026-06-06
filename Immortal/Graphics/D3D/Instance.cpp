@@ -55,39 +55,6 @@ Instance::~Instance()
 #endif
 }
 
-int Instance::EnumeratePhysicalDevice(uint32_t *numPhysicalDevice, SuperPhysicalDevice **ppPhysicalDevice)
-{
-	if (physicalDevices.empty())
-	{
-		for (int adapterIndex = 0;; adapterIndex++)
-		{
-			ComPtr<IDXGIAdapter1> pAdapter = nullptr;
-			if (handle->EnumAdapters1(adapterIndex, &pAdapter) == DXGI_ERROR_NOT_FOUND)
-			{
-				break;
-			}
-
-			physicalDevices.resize(adapterIndex + 1);
-			if (!physicalDevices[adapterIndex])
-			{
-				physicalDevices[adapterIndex] = new PhysicalDevice{ this, adapterIndex };
-			}
-		}
-	}
-
-	*numPhysicalDevice = (uint32_t)physicalDevices.size();
-	if (!ppPhysicalDevice)
-	{
-		return 0;
-	}
-	for (size_t i = 0; i < physicalDevices.size(); i++)
-	{
-		ppPhysicalDevice[i] = physicalDevices[i];
-	}
-
-	return 0;
-}
-
 void Instance::EnumerateAdapter(uint32_t deviceId, IDXGIAdapter1 **ppAdapter)
 {
 	Check(handle->EnumAdapters1(deviceId, ppAdapter));

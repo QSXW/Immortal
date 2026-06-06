@@ -34,6 +34,8 @@ public:
 
 protected:
 	HMODULE d3d12Library;
+
+	std::vector<URef<PhysicalDevice>> physicalDevices;
 };
 
 }

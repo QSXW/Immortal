@@ -5,7 +5,6 @@
 
 namespace Immortal
 {
-
 namespace D3D
 {
 
@@ -21,9 +20,7 @@ public:
 public:
 	Instance();
 
-	virtual ~Instance() override;
-
-	virtual int EnumeratePhysicalDevice(uint32_t *numPhysicalDevice, SuperPhysicalDevice **ppPhysicalDevice) override;
+	virtual ~Instance();
 
 public:
 	void EnumerateAdapter(uint32_t deviceId, IDXGIAdapter1 **ppAdapter);
