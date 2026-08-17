@@ -47,3 +47,6 @@
 [submodule "3rdparty/json"]
 	path = 3rdparty/json
 	url = https://github.com/nlohmann/json
+[submodule "3rdparty/gpr"]
+	path = 3rdparty/gpr
+	url = https://github.com/gopro/gpr.git

@@ -307,6 +307,14 @@ if (HAVE_FREETYPE)
         target_sources(imgui PRIVATE
             ${IMGUI_DIR}/imgui_msdfgen.cpp
             ${IMGUI_DIR}/imgui_msdfgen.h)
+        if (WIN32)
+            set(CMSDFGEN_RUNTIME "${IMGUI_DIR}/cmsdfgen.dll")
+            if (EXISTS "${CMSDFGEN_RUNTIME}")
+                list(APPEND IMMORTAL_3RDPARTY_RUNTIME "${CMSDFGEN_RUNTIME}")
+            else()
+                message(WARNING "CMsdfgen runtime was not found: ${CMSDFGEN_RUNTIME}")
+            endif()
+        endif()
     else()
         target_compile_definitions(imgui PRIVATE "IMGUI_ENABLE_FREETYPE")
     endif()
@@ -572,6 +580,105 @@ add_subdirectory(LibRaw-cmake)
 set_property(TARGET raw   PROPERTY FOLDER "3rdparty")
 set_property(TARGET raw_r PROPERTY FOLDER "3rdparty")
 
+# GoPro GPR SDK
+set(GPR_SDK_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/gpr")
+set(GPR_SDK_SOURCE_ROOT "${GPR_SDK_ROOT}/source/lib")
+set(GPR_SDK_PUBLIC_HEADER "${GPR_SDK_SOURCE_ROOT}/gpr_sdk/public/gpr.h")
+if(NOT EXISTS "${GPR_SDK_PUBLIC_HEADER}")
+    message(FATAL_ERROR "GoPro GPR SDK was not found at ${GPR_SDK_ROOT}")
+endif()
+
+file(GLOB GPR_SDK_SOURCES CONFIGURE_DEPENDS
+    "${GPR_SDK_SOURCE_ROOT}/common/private/*.c"
+    "${GPR_SDK_SOURCE_ROOT}/common/private/*.cpp"
+    "${GPR_SDK_SOURCE_ROOT}/vc5_common/*.c"
+    "${GPR_SDK_SOURCE_ROOT}/vc5_decoder/*.c"
+    "${GPR_SDK_SOURCE_ROOT}/dng_sdk/*.cpp"
+    "${GPR_SDK_SOURCE_ROOT}/gpr_sdk/private/*.cpp"
+    "${GPR_SDK_SOURCE_ROOT}/xmp_core/*.cpp"
+    "${GPR_SDK_SOURCE_ROOT}/expat_lib/*.c"
+    "${GPR_SDK_SOURCE_ROOT}/md5_lib/*.c")
+list(REMOVE_ITEM GPR_SDK_SOURCES
+    "${GPR_SDK_SOURCE_ROOT}/dng_sdk/dng_validate.cpp")
+
+# Upstream master has two stale C declarations that do not match gpr.cpp.
+# Generate a corrected public header without making the submodule dirty.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${GPR_SDK_PUBLIC_HEADER}")
+file(READ "${GPR_SDK_PUBLIC_HEADER}" GPR_SDK_HEADER_CONTENT)
+set(GPR_SDK_COPY_DECLARATION
+    "void gpr_parameters_construct_copy(const gpr_parameters* y, gpr_parameters* x);")
+set(GPR_SDK_CHECK_DECLARATION
+    "bool gpr_check_vc5( gpr_buffer* inp_dng_buffer, gpr_malloc mem_alloc, gpr_free mem_free );")
+string(FIND "${GPR_SDK_HEADER_CONTENT}" "${GPR_SDK_COPY_DECLARATION}" GPR_SDK_COPY_DECLARATION_OFFSET)
+string(FIND "${GPR_SDK_HEADER_CONTENT}" "${GPR_SDK_CHECK_DECLARATION}" GPR_SDK_CHECK_DECLARATION_OFFSET)
+if(GPR_SDK_COPY_DECLARATION_OFFSET EQUAL -1 OR GPR_SDK_CHECK_DECLARATION_OFFSET EQUAL -1)
+    message(FATAL_ERROR "GoPro GPR SDK public declarations changed; review the compatibility header generation")
+endif()
+string(REPLACE
+    "${GPR_SDK_COPY_DECLARATION}"
+    "void gpr_parameters_construct_copy(const gpr_parameters* y, gpr_parameters* x, gpr_malloc mem_alloc);"
+    GPR_SDK_HEADER_CONTENT
+    "${GPR_SDK_HEADER_CONTENT}")
+string(REPLACE
+    "${GPR_SDK_CHECK_DECLARATION}"
+    "bool gpr_check_vc5(const gpr_allocator* allocator, gpr_buffer* inp_dng_buffer);"
+    GPR_SDK_HEADER_CONTENT
+    "${GPR_SDK_HEADER_CONTENT}")
+set(GPR_SDK_COMPAT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gpr_sdk_compat")
+file(MAKE_DIRECTORY "${GPR_SDK_COMPAT_INCLUDE_DIR}")
+file(WRITE "${GPR_SDK_COMPAT_INCLUDE_DIR}/gpr.h" "${GPR_SDK_HEADER_CONTENT}")
+
+if(MSVC)
+    # The bundled Expat uses a GNU-only fallthrough attribute in xmltok.c.
+    # Hide that attribute from MSVC without modifying the GPR submodule.
+    set(GPR_EXPAT_MSVC_COMPAT_HEADER
+        "${GPR_SDK_COMPAT_INCLUDE_DIR}/expat_msvc_compat.h")
+    file(WRITE "${GPR_EXPAT_MSVC_COMPAT_HEADER}"
+        "#pragma once\n#define __attribute(arguments)\n")
+    set_source_files_properties(
+        "${GPR_SDK_SOURCE_ROOT}/expat_lib/xmltok.c"
+        PROPERTIES COMPILE_OPTIONS "/FI${GPR_EXPAT_MSVC_COMPAT_HEADER}")
+endif()
+
+add_library(GoProGPR STATIC ${GPR_SDK_SOURCES})
+add_library(gpr::sdk ALIAS GoProGPR)
+target_include_directories(GoProGPR SYSTEM
+    PUBLIC
+        "${GPR_SDK_COMPAT_INCLUDE_DIR}"
+        "${GPR_SDK_SOURCE_ROOT}/gpr_sdk/public"
+        "${GPR_SDK_SOURCE_ROOT}/common/public"
+    PRIVATE
+        "${GPR_SDK_SOURCE_ROOT}/common/private"
+        "${GPR_SDK_SOURCE_ROOT}/vc5_common"
+        "${GPR_SDK_SOURCE_ROOT}/vc5_decoder"
+        "${GPR_SDK_SOURCE_ROOT}/dng_sdk"
+        "${GPR_SDK_SOURCE_ROOT}/gpr_sdk/private"
+        "${GPR_SDK_SOURCE_ROOT}/xmp_core"
+        "${GPR_SDK_SOURCE_ROOT}/xmp_core/public/include"
+        "${GPR_SDK_SOURCE_ROOT}/expat_lib"
+        "${GPR_SDK_SOURCE_ROOT}/md5_lib")
+target_compile_definitions(GoProGPR
+    PUBLIC
+        GPR_READING=1
+        GPR_WRITING=0
+        GPR_JPEG_AVAILABLE=0
+        GPR_TIMING=0
+    PRIVATE
+        XML_STATIC=1
+        XMP_StaticBuild=1)
+if(NOT WIN32)
+    find_package(Threads REQUIRED)
+    target_link_libraries(GoProGPR PRIVATE Threads::Threads m)
+endif()
+set_target_properties(GoProGPR PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED YES
+    # Adobe DNG SDK 1.4 still uses std::auto_ptr.
+    CXX_STANDARD 14
+    CXX_STANDARD_REQUIRED YES
+    FOLDER "3rdparty")
+
 # libwebp
 set(IMMORTAL_DISABLE_LIBWEBP ON)
 set(IMMORTAL_DISABLE_LIBJXL ON)
@@ -670,6 +777,7 @@ target_link_libraries("external" INTERFACE
 add_library("ExternalVision" INTERFACE)
 target_link_libraries("ExternalVision" INTERFACE
     libraw::libraw
+    gpr::sdk
     $<$<BOOL:${DAV1D_FOUND}>:dav1d>
     $<$<BOOL:${MFX_FOUND}>:intel_mfx>
     ${OPENCV_LINK_TARGET}
