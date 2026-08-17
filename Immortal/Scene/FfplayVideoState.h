@@ -86,9 +86,14 @@ struct FfplayPacketQueue
 
 	int Put(Vision::CodedFrame &&pkt, int maxPackets, size_t maxBytes)
 	{
+		return PutIfSerial(std::move(pkt), maxPackets, maxBytes, serial.load(std::memory_order_relaxed));
+	}
+
+	int PutIfSerial(Vision::CodedFrame &&pkt, int maxPackets, size_t maxBytes, int expectedSerial)
+	{
 		const size_t bc = std::max(size_t(1), pkt.GetSize());
 		std::unique_lock<std::mutex> lk(mutex);
-		const int tag = serial.load(std::memory_order_relaxed);
+		const int tag = expectedSerial;
 		while (!abortRequest.load()
 		    && tag == serial.load(std::memory_order_relaxed)
 		    && !(nbPackets < maxPackets && sizeBytes + bc <= maxBytes))
@@ -145,14 +150,16 @@ struct FfplayPacketQueue
 
 struct AudioFrameSlot
 {
-	Picture picture;
-	int     packetSerial = 0;
+	Picture  picture;
+	int      packetSerial = 0;
+	uint32_t firstSampleOffset = 0;
 };
 
 struct FfplayVideoState
 {
 	FfplayPacketQueue videoq;
 	FfplayPacketQueue audioq;
+	FfplayPacketQueue subtitleq;
 
 	FfplayClock audclk{};
 	FfplayClock vidclk{};

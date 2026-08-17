@@ -78,10 +78,11 @@ void FilterGraphComponent::Execute(const std::vector<Ref<Texture>> &input, Async
 			{
 				for (auto &out : node->GetOutput())
 				{
+					Ref<Texture> refOutput = out;
 					if (out->GetMipLevels() > 1)
 					{
-						asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
-							commandBuffer->GenerateMipMaps(out, Filter::Linear);
+						asyncComputeThread->Execute<RecordingTask>([refOutput](CommandBuffer *commandBuffer) {
+							commandBuffer->GenerateMipMaps(refOutput, Filter::Linear);
 						});
 					}
 				}
@@ -90,12 +91,58 @@ void FilterGraphComponent::Execute(const std::vector<Ref<Texture>> &input, Async
 		}
 	}
 
+	for (auto &out : nextInputs)
+	{
+		Ref<Texture> refOutput = out;
+		asyncComputeThread->Execute<RecordingTask>([refOutput](CommandBuffer *commandBuffer) {
+			commandBuffer->SetImageLayout(
+				refOutput,
+				ImageLayout::General,
+				PipelineStage::ComputeShading,
+				PipelineStage::All);
+		});
+	}
+
 	output = nextInputs;
 }
 
 void FilterGraphComponent::Execute(FilterGraphComponent &input, AsyncComputeThread *asyncComputeThread )
 {
 	Execute(input.output, asyncComputeThread);
+}
+
+void FilterGraphComponent::InvalidateRenderedOutput()
+{
+	for (auto nodeIt = nodes.rbegin(); nodeIt != nodes.rend(); ++nodeIt)
+	{
+		const auto &nodeOutput = (*nodeIt)->GetOutput();
+		bool isRenderedOutput = false;
+		for (auto &candidate : nodeOutput)
+		{
+			if (!candidate)
+			{
+				continue;
+			}
+			for (auto &rendered : output)
+			{
+				if (rendered && candidate.Get() == rendered.Get())
+				{
+					isRenderedOutput = true;
+					break;
+				}
+			}
+			if (isRenderedOutput)
+			{
+				break;
+			}
+		}
+
+		if (isRenderedOutput)
+		{
+			(*nodeIt)->InvalidateOutput();
+			return;
+		}
+	}
 }
 
 const Ref<Texture> &FilterGraphComponent::QueryOutput(size_t index) const

@@ -86,9 +86,13 @@ struct VideoPlayerComponent : public IObject, public Component
 
     void Seek(MediaType type, int64_t pts, int64_t min, int64_t max);
 
-    void SeekToFrame(MediaType type, int64_t pts);
+    void SeekToFrame(MediaType type, int64_t pts, bool forceDecode = false);
 
     bool IsEof() const;
+
+    bool IsPlaybackDrained(MediaType type) const;
+
+    bool HasPendingSeek() const;
 
     void Swap(VideoPlayerComponent &other);
 
@@ -112,6 +116,12 @@ struct VideoPlayerComponent : public IObject, public Component
 
     CodecError SwitchTrack(MediaType mediaType, int index);
 
+    void SetSubtitlePreviewEnabled(bool enabled);
+
+    bool IsSubtitlePreviewEnabled() const;
+
+    Vision::SubtitleCue GetCurrentSubtitleCue(double seconds);
+
     bool HasStream(MediaType type) const;
 
     CodecError GetStreamInfo(MediaType type, CodecInfo &streamInfo);
@@ -123,6 +133,8 @@ struct VideoPlayerComponent : public IObject, public Component
     void SetAudioOutputSpec(const Vision::AudioFormatSpec &outputSpec);
 
     void Join();
+
+    void WaitUntilFinished();
 
     int64_t GetLastAudioTimestamp() const;
 
@@ -160,6 +172,8 @@ struct VideoPlayerComponent : public IObject, public Component
     int     lastVideoQueueSerialForFrameTimer = INT_MIN;
     int64_t videoSeekTargetPts = std::numeric_limits<int64_t>::min();
     Rational videoSeekTargetTimebase{};
+    uint64_t videoSeekRequestSerial = 0;
+    bool videoSeekForceDecode = false;
     int timelineSeekDirection = 0;
     TimelineFrameWindow timelineFrameWindow;
     int64_t timelinePinnedPicturePts = std::numeric_limits<int64_t>::min();

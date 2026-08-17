@@ -129,6 +129,11 @@ static void ApplyAudioVolume(void *buffer, uint32_t samples, int numChannel, For
     }
 }
 
+static bool IsValidAudioSpec(const Vision::AudioFormatSpec &spec)
+{
+	return spec.sampleRate > 0 && spec.numChannel > 0 && spec.format != Format::None;
+}
+
 static void SetClock(FfplayClock &c, double pts, int serial)
 {
 	SetClockAt(c, pts, serial, SteadyTimeSeconds());
@@ -389,6 +394,21 @@ static void ClearTimelineStepCaches(VideoPlayerComponent *component)
 	component->timelineFrameWindow.ClearStep();
 }
 
+static void ClearTimelineCaches(VideoPlayerComponent *component)
+{
+	if (!component)
+	{
+		return;
+	}
+
+	for (Picture &cached : component->timelineFrameWindow.recent)
+	{
+		cached = {};
+	}
+	component->timelineFrameWindow.recentCursor = 0;
+	component->timelineFrameWindow.ClearStep();
+}
+
 static void MoveCurrentToTimelineStepCache(VideoPlayerComponent *component, bool toForward)
 {
 	if (!component || !HasComparablePts(component->currentPicture))
@@ -485,7 +505,7 @@ public:
 
     VideoPlayerContext &operator=(const VideoPlayerContext &&other) = delete;
 
-    void Seek(MediaType type, int64_t pts, int64_t min, int64_t max);
+	uint64_t Seek(MediaType type, int64_t pts, int64_t min, int64_t max);
 
     Picture GetPicture();
 
@@ -501,6 +521,14 @@ public:
 
     void CreateAudioStream();
 
+	CodecError ReopenAudioDecoder();
+
+	void ResetAudioPlaybackState();
+
+	CodecError SwitchAudioTrackLocked(Vision::FFFormat *format, int index);
+
+	int GetAudioOutputChannelCount() const;
+
     uint32_t GetAudioData(uint8_t *data, uint32_t samples);
 
 	uint32_t WriteAudioData(void *data, uint32_t samples);
@@ -512,6 +540,10 @@ public:
 	void Join();
 
 	Picture ResampleAudioFrame(Picture &picture);
+
+	bool PrepareAudioFrameAfterSeek(Picture &picture, int packetSerial, uint32_t &firstSampleOffset);
+
+	void SetAudioSeekTarget(MediaType type, int64_t pts, int packetSerial);
 
 	void GetVideoPictures(CodedFrame &&codedFrame);
 
@@ -556,9 +588,64 @@ public:
 		return vs.eof.load();
     }
 
+    bool IsPlaybackDrained(MediaType type) const
+    {
+        if (!vs.eof.load(std::memory_order_acquire))
+        {
+            return false;
+        }
+
+        if (type == MediaType::Video)
+        {
+            const bool decoderIdle = mode == VideoPlayerMode::Playing
+                ? playbackVideoDecoderDrained.load(std::memory_order_acquire) &&
+                    playbackVideoDecodeBusy.load(std::memory_order_acquire) == 0 &&
+                    vs.videoq.PacketCount() == 0
+                : !videoThreadPool || videoThreadPool->TaskSize().load(std::memory_order_acquire) == 0;
+            return decoderIdle && pictures.empty() && !picture;
+        }
+
+        if (type == MediaType::Audio)
+        {
+            const bool decoderIdle = mode == VideoPlayerMode::Playing
+                ? playbackAudioDecoderDrained.load(std::memory_order_acquire) &&
+                    playbackAudioDecodeBusy.load(std::memory_order_acquire) == 0 &&
+                    vs.audioq.PacketCount() == 0
+                : !audioThreadPool || audioThreadPool->TaskSize().load(std::memory_order_acquire) == 0;
+            if (!decoderIdle || !audioFrameSlots.empty())
+            {
+                return false;
+            }
+
+            std::lock_guard lock{ outputAudioMutex };
+            return unconsumedSamples == 0;
+        }
+
+        return false;
+    }
+
+    bool HasPendingSeek() const
+    {
+        return vs.seekReq.load(std::memory_order_acquire) ||
+            playbackAppliedSeekSerial.load(std::memory_order_acquire) <
+                playbackSeekRequestSerial.load(std::memory_order_acquire);
+    }
+
+    bool IsSeekApplied(uint64_t serial) const
+    {
+        return serial == 0 ||
+            playbackAppliedSeekSerial.load(std::memory_order_acquire) >= serial;
+    }
+
     void SetPause(bool enabled)
     {
-		if (!enabled && vs.pause.load())
+		const bool wasPaused = vs.pause.load(std::memory_order_acquire);
+		if (wasPaused == enabled)
+		{
+			return;
+		}
+
+		if (!enabled && wasPaused)
 		{
 			double now = SteadyTimeSeconds();
 			vs.vidclk.ptsDrift += now - vs.vidclk.lastUpdated;
@@ -582,10 +669,13 @@ public:
 		demuxer.InterpretAs<Vision::FFFormat>()->EnumerateTracks(mediaType, tracks);
     }
 
-    CodecError SwitchTrack(MediaType mediaType, int index)
-	{
-		return demuxer.InterpretAs<Vision::FFFormat>()->SwitchTrack(mediaType, index);
-    }
+    CodecError SwitchTrack(MediaType mediaType, int index);
+
+	CodecError RequestAudioTrackSwitch(int index);
+
+	bool TakePendingAudioTrackSwitch(int &index);
+
+	bool ProcessPendingAudioTrackSwitch();
 
     Picture GetCurrentAudioFrame() const
     {
@@ -618,6 +708,18 @@ public:
 	{
 		callbacks = _callbacks;
 	}
+
+	void SetSubtitlePreviewEnabled(bool enabled);
+
+	Vision::SubtitleCue GetCurrentSubtitleCue(double seconds);
+
+	CodecError ReopenSubtitleDecoder();
+
+	CodecError SwitchSubtitleTrackLocked(Vision::FFFormat *format, int index);
+
+	void ResetSubtitlePlaybackState();
+
+	void SubtitleDecodeThreadPlayback();
 
 public:
 	VideoPlayerMode mode;
@@ -675,14 +777,14 @@ public:
     /// output audio clock fields. AudioMixer pulls samples from the audio
     /// callback thread while the demux/read thread may seek and reset the
     /// cached frame, so these fields must be updated atomically as a unit.
-    std::mutex outputAudioMutex;
+	mutable std::mutex outputAudioMutex;
 
     int kCacheSize;
 
     struct State
     {
         bool playing = false;
-        bool exited = false;
+		std::atomic_bool exited{ false };
         bool flush = false;
     } state;
 
@@ -702,13 +804,19 @@ public:
 
     double externalClock = -1.0f;
 
-    int64_t lastAudioTimestamp = 0;
+	std::atomic<int64_t> lastAudioTimestamp{ INT64_MIN };
 
     bool audioDeviceChanged = false;
 
     /// When true, the system AudioStream is not created.  Owners should pull
     /// decoded audio through `GetAudioData(...)` (e.g. Montage's AudioMixer).
-    bool audioMixerMode = false;
+	bool audioMixerMode = false;
+
+	Vision::DecodingPreference decodingPreference = Vision::DecodingPreference::Auto;
+
+	Vision::AudioFormatSpec audioOutputSpec{};
+
+	std::atomic<int> audioOutputNumChannel{2};
 
     std::atomic_bool muted{false};
     std::atomic<float> volume{1.0f};
@@ -757,11 +865,31 @@ public:
 
 	Thread videoDecodeThread;
 	Thread audioDecodeThread;
+	Thread subtitleDecodeThread;
 
 	ConcurrentQueue<AudioFrameSlot> audioFrameSlots;
 
 	std::atomic<int> playbackVideoDecodeBusy{ 0 };
 	std::atomic<int> playbackAudioDecodeBusy{ 0 };
+	std::atomic<int> playbackSubtitleDecodeBusy{ 0 };
+	std::atomic_bool playbackVideoDecoderDrained{ false };
+	std::atomic_bool playbackAudioDecoderDrained{ false };
+
+	std::atomic_bool subtitlePreviewEnabled{ false };
+	std::mutex subtitleCueMutex;
+	std::deque<Vision::SubtitleCue> subtitleCues;
+
+	std::atomic_bool playbackReadThreadActive{ false };
+
+	std::mutex playbackSeekMutex;
+	std::atomic_uint64_t playbackSeekRequestSerial{ 0 };
+	std::atomic_uint64_t playbackAppliedSeekSerial{ 0 };
+	std::atomic<int64_t> audioSeekTargetUs{ INT64_MIN };
+	std::atomic<int> audioSeekTargetSerial{ -1 };
+
+	std::mutex pendingAudioTrackSwitchMutex;
+	int pendingAudioTrackSwitchIndex = -1;
+	std::atomic_bool pendingAudioTrackSwitch{ false };
 
 	std::mutex          playbackPictureCapMutex;
 	std::condition_variable playbackPictureCapCv;
@@ -791,8 +919,6 @@ void VideoPlayerContext::GetPictures(bool eof = false)
 	{
 		if (filterGraph)
 		{
-			static bool hasScale = false;
-
 			if (format.IsType(Format::YUV) && !scaleFilter)
 			{
 				auto &format = picture.GetFormat();
@@ -802,8 +928,8 @@ void VideoPlayerContext::GetPictures(bool eof = false)
 				scaleFilter = filterGraph->Insert<ScaleFilter>(0, picture.GetFormat(), dstFormat, picture.GetWidth(), picture.GetHeight());
 			}
 
-			asyncComputeTaskCount++;
-			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::BeginRecording);
+			asyncComputeTaskCount.fetch_add(1, std::memory_order_acq_rel);
+			AsyncRecordingScope computeBatch{ asyncComputeThread };
 			filterGraph->Execute({picture}, asyncComputeThread);
 
 			Picture sourcePicture = picture;
@@ -818,18 +944,32 @@ void VideoPlayerContext::GetPictures(bool eof = false)
 			picture.SetColorSpace(sourcePicture.GetColorSpace());
 			picture.SetColorTransferCharacteristic(sourcePicture.GetColorTransferCharacteristic());
 			Graphics::Transfer(picture, output, asyncComputeThread);
-			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::EndRecording);
 			asyncComputeThread->Execute<ExecutionCompletedTask>([=, this]() {
-				callbacks.VideoDecodeFinishSlot(std::move((Picture &&)picture));
-				asyncComputeTaskCount--;
-				if (eof && asyncComputeTaskCount == 0)
+				auto completeTask = [this, eof] {
+					const int remaining = asyncComputeTaskCount.fetch_sub(1, std::memory_order_acq_rel) - 1;
+					if (eof && remaining == 0)
+					{
+						done = true;
+						done.notify_one();
+					}
+					condition.notify_all();
+				};
+
+				try
 				{
-					done = true;
-					done.notify_one();
+					callbacks.VideoDecodeFinishSlot(std::move((Picture &&)picture));
 				}
-				condition.notify_one();
+				catch (...)
+				{
+					completeTask();
+					throw;
+				}
+				completeTask();
 			});
-			asyncComputeThread->Execute<AsyncTask>(AsyncTaskType::Submiting);
+			if (state.exited)
+			{
+				break;
+			}
 		}
         else
         {
@@ -884,14 +1024,19 @@ void VideoPlayerContext::EndOfFile(Vision::Interface::Codec *decoder, const std:
 		}
 	}
 
-	if (type == MediaType::Audio && sampleConverter)
+	Picture remainingAudio;
+	if (type == MediaType::Audio)
 	{
-		Picture picture = sampleConverter.GetRemainingSamples();
-		if (picture && picture.GetWidth() > 0 && picture.GetFormat() != Format::None)
+		std::lock_guard lock{ sampleConverterMutex };
+		if (sampleConverter)
 		{
-			callback(std::move(picture));
-			audioSize++;
+			remainingAudio = sampleConverter.GetRemainingSamples();
 		}
+	}
+	if (remainingAudio && remainingAudio.GetWidth() > 0 && remainingAudio.GetFormat() != Format::None)
+	{
+		callback(std::move(remainingAudio));
+		audioSize++;
 	}
 
 	Picture picture = Picture{0, 0, Format::None};
@@ -932,13 +1077,354 @@ void VideoPlayerContext::StartPlay()
 	}
 }
 
+CodecError VideoPlayerContext::ReopenAudioDecoder()
+{
+	CodecInfo info{};
+	CodecError ret = demuxer->GetStreamInfo(MediaType::Audio, info);
+	if (ret != CodecError::Success)
+	{
+		audioDecoder = {};
+		return ret;
+	}
+
+	auto nextDecoder = new Vision::FFCodec{};
+	nextDecoder->SetPreference(decodingPreference);
+	ret = nextDecoder->OpenDecoder(info);
+	if (ret != CodecError::Success)
+	{
+		audioDecoder = {};
+		return ret;
+	}
+
+	auto animator = nextDecoder->GetAddress<Animator>();
+	*animator = demuxer->GetAnimator(MediaType::Audio);
+	audioDecoder = nextDecoder;
+
+	if (!audioThreadPool && mode != VideoPlayerMode::Playing)
+	{
+		audioThreadPool.reset(new ThreadPool{1});
+	}
+
+	return CodecError::Success;
+}
+
+void VideoPlayerContext::ResetAudioPlaybackState()
+{
+	audioSeekTargetSerial.store(-1, std::memory_order_release);
+	audioFrameSlots.clear();
+	ClearPictures(audioFramesLegacy, audioFrame, audioSize);
+	{
+		std::lock_guard lock{ outputAudioMutex };
+		outputAudioFrame = {};
+		unconsumedSamples = 0;
+		vs.audioClock = NAN;
+		vs.audioClockSerial = -1;
+		lastDequeuedAudioPacketSerial = -1;
+		outputAudioPacketSerial = -1;
+		lastAudioTimestamp = INT64_MIN;
+	}
+	{
+		std::lock_guard lock{ sampleConverterMutex };
+		sampleConverter.Reset();
+	}
+
+	vs.eof.store(false);
+	playbackAudioDecoderDrained.store(false, std::memory_order_release);
+	InitClock(vs.audclk, &vs.audioq.serial);
+	SyncClockToSlave(vs.extclk, vs.audclk);
+}
+
+CodecError VideoPlayerContext::SwitchAudioTrackLocked(Vision::FFFormat *format, int index)
+{
+	CodecError ret = format->SwitchTrack(MediaType::Audio, index);
+	if (ret != CodecError::Success)
+	{
+		return ret;
+	}
+
+	if (audioMixerMode)
+	{
+		std::lock_guard lock{ audioSpecMutex };
+		audioSpecReady.store(false);
+	}
+
+	if (audioStream)
+	{
+		audioStream->Stop();
+		audioStream->Reset();
+	}
+
+	if (mode == VideoPlayerMode::Playing)
+	{
+		playbackAudioCapCv.notify_all();
+		vs.audioq.Flush();
+		while (playbackAudioDecodeBusy.load() > 0)
+		{
+			playbackAudioCapCv.notify_all();
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	}
+	else if (audioThreadPool)
+	{
+		audioThreadPool->RemoveTasks();
+		audioThreadPool->Join();
+	}
+
+	if (audioDecoder)
+	{
+		audioDecoder->Flush();
+	}
+	ResetAudioPlaybackState();
+	double videoClock = GetClock(vs.vidclk);
+	if (!std::isnan(videoClock))
+	{
+		const int audioSerial = vs.audioq.SerialSnapshot();
+		vs.audioClock = videoClock;
+		vs.audioClockSerial = audioSerial;
+		SetClock(vs.audclk, videoClock, audioSerial);
+		SyncClockToSlave(vs.extclk, vs.audclk);
+	}
+
+	ret = ReopenAudioDecoder();
+	if (ret != CodecError::Success)
+	{
+		if (audioStream)
+		{
+			audioStream->Start();
+		}
+		return ret;
+	}
+
+	if (!audioMixerMode && !audioStream && mode == VideoPlayerMode::Playing)
+	{
+		AudioDevice *audioDevice = AudioDevice::GetInstance();
+		if (audioDevice)
+		{
+			CreateAudioStream();
+		}
+	}
+	else if (IsValidAudioSpec(audioOutputSpec))
+	{
+		SetAudioOutputSpec(audioOutputSpec);
+	}
+
+	if (!audioMixerMode)
+	{
+		audioSpecReady.store(true);
+	}
+
+	if (audioStream)
+	{
+		audioStream->Start();
+	}
+	condition.notify_all();
+	playbackAudioCapCv.notify_all();
+	audioSpecCv.notify_all();
+
+	return CodecError::Success;
+}
+
+CodecError VideoPlayerContext::ReopenSubtitleDecoder()
+{
+	CodecInfo info{};
+	CodecError ret = demuxer->GetStreamInfo(MediaType::Subtitle, info);
+	if (ret != CodecError::Success)
+	{
+		subtitleDecoder = {};
+		return ret;
+	}
+
+	auto nextDecoder = new Vision::FFCodec{};
+	nextDecoder->SetPreference(Vision::DecodingPreference::Software);
+	ret = nextDecoder->OpenDecoder(info);
+	if (ret != CodecError::Success)
+	{
+		subtitleDecoder = {};
+		return ret;
+	}
+
+	subtitleDecoder = nextDecoder;
+	return CodecError::Success;
+}
+
+void VideoPlayerContext::ResetSubtitlePlaybackState()
+{
+	{
+		std::lock_guard lock{ subtitleCueMutex };
+		subtitleCues.clear();
+	}
+	vs.subtitleq.Flush();
+	while (playbackSubtitleDecodeBusy.load() > 0)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	if (subtitleDecoder)
+	{
+		subtitleDecoder->Flush();
+	}
+}
+
+CodecError VideoPlayerContext::SwitchSubtitleTrackLocked(Vision::FFFormat *format, int index)
+{
+	CodecError ret = format->SwitchTrack(MediaType::Subtitle, index);
+	if (ret != CodecError::Success)
+	{
+		return ret;
+	}
+
+	ResetSubtitlePlaybackState();
+	ret = ReopenSubtitleDecoder();
+	condition.notify_all();
+	return ret;
+}
+
+void VideoPlayerContext::SetSubtitlePreviewEnabled(bool enabled)
+{
+	const bool previous = subtitlePreviewEnabled.exchange(enabled, std::memory_order_acq_rel);
+	if (previous == enabled)
+	{
+		return;
+	}
+
+	ResetSubtitlePlaybackState();
+	condition.notify_all();
+}
+
+Vision::SubtitleCue VideoPlayerContext::GetCurrentSubtitleCue(double seconds)
+{
+	if (!subtitlePreviewEnabled.load(std::memory_order_acquire))
+	{
+		return {};
+	}
+
+	static constexpr double SubtitleCueToleranceSeconds = 0.25;
+	std::lock_guard lock{ subtitleCueMutex };
+	subtitleCues.erase(
+		std::remove_if(
+			subtitleCues.begin(),
+			subtitleCues.end(),
+			[seconds](const Vision::SubtitleCue &cue) {
+				return cue.endSeconds + SubtitleCueToleranceSeconds < seconds;
+			}),
+		subtitleCues.end());
+
+	Vision::SubtitleCue current{};
+	for (const Vision::SubtitleCue &cue : subtitleCues)
+	{
+		if (seconds >= cue.startSeconds - SubtitleCueToleranceSeconds &&
+		    seconds <= cue.endSeconds + SubtitleCueToleranceSeconds &&
+		    (!current || cue.startSeconds >= current.startSeconds))
+		{
+			current = cue;
+		}
+	}
+	return current;
+}
+
+CodecError VideoPlayerContext::RequestAudioTrackSwitch(int index)
+{
+	if (index < 0)
+	{
+		return CodecError::InvalidArguments;
+	}
+
+	{
+		std::lock_guard lock{ pendingAudioTrackSwitchMutex };
+		pendingAudioTrackSwitchIndex = index;
+	}
+	pendingAudioTrackSwitch.store(true, std::memory_order_release);
+
+	vs.audioq.Flush();
+	playbackAudioCapCv.notify_all();
+	condition.notify_all();
+	audioSpecCv.notify_all();
+
+	return CodecError::Success;
+}
+
+bool VideoPlayerContext::TakePendingAudioTrackSwitch(int &index)
+{
+	if (!pendingAudioTrackSwitch.exchange(false, std::memory_order_acq_rel))
+	{
+		return false;
+	}
+
+	std::lock_guard lock{ pendingAudioTrackSwitchMutex };
+	index = pendingAudioTrackSwitchIndex;
+	pendingAudioTrackSwitchIndex = -1;
+	return index >= 0;
+}
+
+bool VideoPlayerContext::ProcessPendingAudioTrackSwitch()
+{
+	int index = -1;
+	if (!TakePendingAudioTrackSwitch(index))
+	{
+		return false;
+	}
+
+	auto *format = demuxer.InterpretAs<Vision::FFFormat>();
+	if (!format)
+	{
+		return true;
+	}
+
+	std::unique_lock lock{ mutex.demux };
+	CodecError ret = SwitchAudioTrackLocked(format, index);
+	if (ret != CodecError::Success)
+	{
+		CLOG_ERROR("Failed to switch audio track {}", index);
+	}
+	return true;
+}
+
+CodecError VideoPlayerContext::SwitchTrack(MediaType mediaType, int index)
+{
+	auto *format = demuxer.InterpretAs<Vision::FFFormat>();
+	if (!format)
+	{
+		return CodecError::ExternalFailed;
+	}
+
+	if (mediaType == MediaType::Audio)
+	{
+		if (mode == VideoPlayerMode::Playing && playbackReadThreadActive.load(std::memory_order_acquire))
+		{
+			return RequestAudioTrackSwitch(index);
+		}
+
+		std::unique_lock lock{ mutex.demux };
+		return SwitchAudioTrackLocked(format, index);
+	}
+	if (mediaType == MediaType::Subtitle)
+	{
+		std::unique_lock lock{ mutex.demux };
+		return SwitchSubtitleTrackLocked(format, index);
+	}
+
+	std::unique_lock lock{ mutex.demux };
+	return format->SwitchTrack(mediaType, index);
+}
+
+int VideoPlayerContext::GetAudioOutputChannelCount() const
+{
+	return std::max(1, audioOutputNumChannel.load());
+}
+
 void VideoPlayerContext::SetAudioOutputSpec(const Vision::AudioFormatSpec &outputSpec)
 {
+	audioOutputSpec = outputSpec;
+	audioOutputNumChannel.store(outputSpec.numChannel > 0 ? outputSpec.numChannel : 2);
+
 	auto decoder = audioDecoder.InterpretAs<Vision::FFCodec>();
 	if (!decoder)
 	{
 		// No audio stream — still mark the spec as "ready" so the decode
 		// thread (if it is somehow waiting) can exit cleanly.
+		{
+			std::lock_guard lock{ sampleConverterMutex };
+			sampleConverter.Reset();
+		}
 		{
 			std::lock_guard lock{ audioSpecMutex };
 			audioSpecReady.store(true);
@@ -957,6 +1443,10 @@ void VideoPlayerContext::SetAudioOutputSpec(const Vision::AudioFormatSpec &outpu
 			{
 				CLOG_ERROR("Error when creating sampleConverter. Audio playing maybe corrupted!");
 			}
+		}
+		else
+		{
+			sampleConverter.Reset();
 		}
 	}
 
@@ -1001,6 +1491,89 @@ Picture VideoPlayerContext::ResampleAudioFrame(Picture &picture)
 	return picture;
 }
 
+void VideoPlayerContext::SetAudioSeekTarget(MediaType type, int64_t pts, int packetSerial)
+{
+	audioSeekTargetSerial.store(-1, std::memory_order_release);
+	if (!audioDecoder || (type != MediaType::Audio && type != MediaType::Video))
+	{
+		return;
+	}
+
+	Animator &animator = demuxer->GetAnimator(type);
+	const Rational timebase = animator.TimebaseRational;
+	if (timebase.numerator <= 0 || timebase.denominator <= 0)
+	{
+		return;
+	}
+
+	int64_t targetUs = Vision::RationalRescale(pts, timebase, { 1, 1000000 });
+	targetUs = std::max<int64_t>(0, targetUs);
+	audioSeekTargetUs.store(targetUs, std::memory_order_relaxed);
+	audioSeekTargetSerial.store(packetSerial, std::memory_order_release);
+}
+
+bool VideoPlayerContext::PrepareAudioFrameAfterSeek(
+	Picture &picture,
+	int packetSerial,
+	uint32_t &firstSampleOffset)
+{
+	firstSampleOffset = 0;
+	if (audioSeekTargetSerial.load(std::memory_order_acquire) != packetSerial)
+	{
+		return true;
+	}
+
+	auto finishSeekPreroll = [&] {
+		int expectedSerial = packetSerial;
+		audioSeekTargetSerial.compare_exchange_strong(
+			expectedSerial,
+			-1,
+			std::memory_order_acq_rel,
+			std::memory_order_acquire);
+	};
+
+	const Rational timebase = picture.GetTimebase();
+	const int64_t timestamp = picture.GetTimestamp();
+	const uint32_t sampleRate = picture.GetSampleRate();
+	const uint32_t sampleCount = picture.GetWidth();
+	if (timestamp == INT64_MIN || timebase.numerator <= 0 || timebase.denominator <= 0 ||
+		sampleRate == 0 || sampleCount == 0)
+	{
+		finishSeekPreroll();
+		return true;
+	}
+
+	const int64_t targetUs = audioSeekTargetUs.load(std::memory_order_relaxed);
+	const int64_t frameStartUs = Vision::RationalRescale(timestamp, timebase, { 1, 1000000 });
+	const long double frameDurationUs =
+		(long double)sampleCount * 1000000.0L / (long double)sampleRate;
+	const long double frameEndUs = (long double)frameStartUs + frameDurationUs;
+	if (frameEndUs <= (long double)targetUs)
+	{
+		return false;
+	}
+
+	if (frameStartUs < targetUs)
+	{
+		const long double samplesToSkip = std::ceil(
+			(long double)(targetUs - frameStartUs) * (long double)sampleRate / 1000000.0L);
+		if (samplesToSkip >= (long double)sampleCount)
+		{
+			return false;
+		}
+
+		firstSampleOffset = (uint32_t)std::max<long double>(0.0L, samplesToSkip);
+		const int64_t skippedPts = Vision::RationalRescale(
+			firstSampleOffset,
+			{ 1, (int64_t)sampleRate },
+			timebase);
+		picture.SetTimestamp(timestamp + skippedPts);
+	}
+
+	finishSeekPreroll();
+	return true;
+}
+
 void VideoPlayerContext::CreateAudioStream()
 {
 	AudioDevice *audioDevice = AudioDevice::GetInstance();
@@ -1019,13 +1592,32 @@ void VideoPlayerContext::CreateAudioStream()
 		return GetAudioData((uint8_t *)data, samples);
 	});
 
-	audioStream->SetDebugName(demuxer->GetSource().GetString());
+	const String &source = demuxer->GetSource();
+	audioStream->SetDebugName(std::string{ source.c_str(), source.size() });
 	vs.audioHwBufSize = (int)audioStream->FfplayAudioHwBufferBytes();
 }
 
 void VideoPlayerContext::Join()
 {
+	if (mode != VideoPlayerMode::Transcoding)
+	{
+		return;
+	}
 
+	condition.notify_all();
+	demuxerThread.Join();
+	if (videoThreadPool)
+	{
+		videoThreadPool->Join();
+	}
+	if (audioThreadPool)
+	{
+		audioThreadPool->Join();
+	}
+	if (subtitleThreadPool)
+	{
+		subtitleThreadPool->Join();
+	}
 }
 
 void VideoPlayerContext::GetVideoPictures(CodedFrame &&codedFrame)
@@ -1141,6 +1733,8 @@ CodecError VideoPlayerContext::Open(const String &path, int cacheSize, const Vis
 
 CodecError VideoPlayerContext::Open(const String &path, const Vision::DecodingPreference &preference, StreamEnabledFlags flags)
 {
+	decodingPreference = preference;
+
 	demuxer = new Vision::FFFormat{};
 	if (demuxer->Open(path) != CodecError::Success)
 	{
@@ -1168,7 +1762,7 @@ CodecError VideoPlayerContext::Open(const String &path, const Vision::DecodingPr
 		if (demuxer->GetStreamInfo(kDecoderSlotMediaType[i], info) == CodecError::Success)
 		{
 			auto decoder = new Vision::FFCodec{};
-			decoder->SetPreference(preference);
+			decoder->SetPreference(kDecoderSlotMediaType[i] == MediaType::Subtitle ? Vision::DecodingPreference::Software : preference);
 			if (decoder->OpenDecoder(info) != CodecError::Success)
 			{
 				return CodecError::FailedToCallDecoder;
@@ -1195,6 +1789,9 @@ CodecError VideoPlayerContext::Open(const String &path, const Vision::DecodingPr
 // ---------------------------------------------------------------------------
 void VideoPlayerContext::Playback()
 {
+	playbackVideoDecoderDrained.store(false, std::memory_order_release);
+	playbackAudioDecoderDrained.store(false, std::memory_order_release);
+
 	if (audioDecoder && !audioMixerMode)
 	{
 		AudioDevice *audioDevice = AudioDevice::GetInstance();
@@ -1231,6 +1828,7 @@ void VideoPlayerContext::Playback()
 
 	vs.audioq.Start();
 	vs.videoq.Start();
+	vs.subtitleq.Start();
 
 	vs.audioDiffAvgCoef  = exp(log(0.01) / AUDIO_DIFF_AVG_NB);
 	vs.audioDiffAvgCount = 0;
@@ -1242,6 +1840,10 @@ void VideoPlayerContext::Playback()
 	if (audioDecoder)
 	{
 		audioDecodeThread.Start([this]() { AudioDecodeThreadPlayback(); });
+	}
+	if (subtitleDecoder)
+	{
+		subtitleDecodeThread.Start([this]() { SubtitleDecodeThreadPlayback(); });
 	}
 
 	task = [this]() { ReadThreadPlayback(); };
@@ -1255,7 +1857,9 @@ void VideoPlayerContext::ReadThreadPlayback()
 {
 	const int maxVideoPackets = std::max(MIN_FRAMES * 4, kCacheSize * 8);
 	const int maxAudioPackets = std::max(MIN_FRAMES * 4, kCacheSize * 8);
+	const int maxSubtitlePackets = std::max(8, kCacheSize * 4);
 
+	playbackReadThreadActive.store(true, std::memory_order_release);
 	while (true)
 	{
 		if (state.exited)
@@ -1263,6 +1867,11 @@ void VideoPlayerContext::ReadThreadPlayback()
 			double time = timer.Duration();
 			CLOG_INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
 			break;
+		}
+
+		if (ProcessPendingAudioTrackSwitch())
+		{
+			continue;
 		}
 
 		// IMPORTANT: process seek requests BEFORE the pause-sleep, otherwise
@@ -1284,55 +1893,116 @@ void VideoPlayerContext::ReadThreadPlayback()
 
 		bool videoFull = decoder && (vs.videoq.nbPackets >= maxVideoPackets || vs.videoq.sizeBytes >= MAX_QUEUE_SIZE);
 		bool audioFull = audioDecoder && (vs.audioq.nbPackets >= maxAudioPackets || vs.audioq.sizeBytes >= MAX_QUEUE_SIZE);
-		if (videoFull || audioFull)
+		bool subtitleFull = subtitlePreviewEnabled.load(std::memory_order_acquire) &&
+			subtitleDecoder && vs.subtitleq.nbPackets >= maxSubtitlePackets;
+		if (videoFull || audioFull || subtitleFull)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;
 		}
 
 		Vision::CodedFrame codedFrame;
-		auto ret = demuxer->Read(&codedFrame);
-		if (ret != CodecError::Success)
+		CodecError ret;
+		MediaType codedFrameType = MediaType::Data;
+		int videoQueueSerial = vs.videoq.SerialSnapshot();
+		int audioQueueSerial = vs.audioq.SerialSnapshot();
+		int subtitleQueueSerial = vs.subtitleq.SerialSnapshot();
+		bool queueVideoPacket = false;
+		bool queueAudioPacket = false;
+		bool queueSubtitlePacket = false;
 		{
-			if (ret == CodecError::EndOfFile)
+			std::unique_lock lock{ mutex.demux };
+			videoQueueSerial = vs.videoq.SerialSnapshot();
+			audioQueueSerial = vs.audioq.SerialSnapshot();
+			subtitleQueueSerial = vs.subtitleq.SerialSnapshot();
+			ret = demuxer->Read(&codedFrame);
+			if (ret == CodecError::Success)
+			{
+				codedFrameType = codedFrame.GetType();
+				switch (codedFrameType)
+				{
+				case MediaType::Video:
+					queueVideoPacket = decoder.Get() != nullptr;
+					break;
+				case MediaType::Audio:
+					queueAudioPacket = audioDecoder.Get() != nullptr;
+					break;
+				case MediaType::Subtitle:
+					queueSubtitlePacket =
+						subtitlePreviewEnabled.load(std::memory_order_acquire) &&
+						subtitleDecoder.Get() != nullptr;
+					break;
+				default:
+					break;
+				}
+			}
+			else if (ret == CodecError::EndOfFile)
 			{
 				if (!vs.eof.load())
 				{
-					if (decoder)
-					{
-						Vision::CodedFrame nullPkt{ (uint8_t *)nullptr };
-						vs.videoq.Put(std::move(nullPkt), 1, SIZE_MAX);
-					}
-					if (audioDecoder)
-					{
-						Vision::CodedFrame nullPkt{ (uint8_t *)nullptr };
-						vs.audioq.Put(std::move(nullPkt), 1, SIZE_MAX);
-					}
+					queueVideoPacket = decoder.Get() != nullptr;
+					queueAudioPacket = audioDecoder.Get() != nullptr;
+					queueSubtitlePacket =
+						subtitlePreviewEnabled.load(std::memory_order_acquire) &&
+						subtitleDecoder.Get() != nullptr;
 				}
 				vs.eof.store(true);
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
-			else if (ret == CodecError::Again)
+		}
+		if (ret == CodecError::Success)
+		{
+			switch (codedFrameType)
 			{
-				// Unrecognized stream packet — skip
+			case MediaType::Video:
+				if (queueVideoPacket)
+					vs.videoq.PutIfSerial(std::move(codedFrame), maxVideoPackets, MAX_QUEUE_SIZE, videoQueueSerial);
+				break;
+			case MediaType::Audio:
+				if (queueAudioPacket)
+					vs.audioq.PutIfSerial(std::move(codedFrame), maxAudioPackets, MAX_QUEUE_SIZE, audioQueueSerial);
+				break;
+			case MediaType::Subtitle:
+				if (queueSubtitlePacket)
+					vs.subtitleq.PutIfSerial(std::move(codedFrame), maxSubtitlePackets, MAX_QUEUE_SIZE, subtitleQueueSerial);
+				break;
+			default:
+				break;
 			}
 			continue;
 		}
-
-		switch (codedFrame.GetType())
+		if (ret == CodecError::EndOfFile)
 		{
-		case MediaType::Video:
-			if (decoder)
-				vs.videoq.Put(std::move(codedFrame), maxVideoPackets, MAX_QUEUE_SIZE);
-			break;
-		case MediaType::Audio:
-			if (audioDecoder)
-				vs.audioq.Put(std::move(codedFrame), maxAudioPackets, MAX_QUEUE_SIZE);
-			break;
-		default:
-			break;
+			if (queueVideoPacket)
+			{
+				Vision::CodedFrame nullPkt{ (uint8_t *)nullptr };
+				vs.videoq.PutIfSerial(std::move(nullPkt), maxVideoPackets, SIZE_MAX, videoQueueSerial);
+			}
+			if (queueAudioPacket)
+			{
+				Vision::CodedFrame nullPkt{ (uint8_t *)nullptr };
+				vs.audioq.PutIfSerial(std::move(nullPkt), maxAudioPackets, SIZE_MAX, audioQueueSerial);
+			}
+			if (queueSubtitlePacket)
+			{
+				Vision::CodedFrame nullPkt{ (uint8_t *)nullptr };
+				vs.subtitleq.PutIfSerial(std::move(nullPkt), maxSubtitlePackets, SIZE_MAX, subtitleQueueSerial);
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			continue;
 		}
+		if (ret == CodecError::Again)
+		{
+			// The demuxer can temporarily return EAGAIN/EINTR. Yield instead of
+			// converting a transient read condition into end-of-stream.
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			continue;
+		}
+
+		// A damaged packet or temporary I/O failure is not EOF. Back off so a
+		// persistent source error cannot turn the read thread into a busy loop.
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
+	playbackReadThreadActive.store(false, std::memory_order_release);
 }
 
 // ---------------------------------------------------------------------------
@@ -1397,6 +2067,7 @@ void VideoPlayerContext::VideoDecodeThreadPlayback()
 				err = decoder->Decode(pkt);
 				drainPictures();
 			}
+			playbackVideoDecoderDrained.store(true, std::memory_order_release);
 			playbackVideoDecodeBusy.fetch_sub(1);
 			continue;
 		}
@@ -1423,16 +2094,22 @@ void VideoPlayerContext::AudioDecodeThreadPlayback()
 	// frames into a stale/uninitialized converter (which would race with
 	// SetAudioOutputSpec's swr_alloc/init and produce
 	// "Context has not been initialized" errors).
-	if (audioMixerMode && !audioSpecReady.load())
-	{
+	auto waitForAudioSpec = [&]() -> bool {
+		if (!audioMixerMode || audioSpecReady.load())
+		{
+			return true;
+		}
+
 		std::unique_lock lk{ audioSpecMutex };
 		audioSpecCv.wait(lk, [&] {
 			return state.exited || audioSpecReady.load() || vs.audioq.abortRequest.load();
 		});
-		if (state.exited)
-		{
-			return;
-		}
+		return !state.exited && !vs.audioq.abortRequest.load();
+	};
+
+	if (!waitForAudioSpec())
+	{
+		return;
 	}
 
 	while (true)
@@ -1441,6 +2118,10 @@ void VideoPlayerContext::AudioDecodeThreadPlayback()
 		int tag = 0;
 		if (vs.audioq.Get(pkt, &tag, true) < 0)
 			break;
+		if (!waitForAudioSpec())
+			break;
+		if (!audioDecoder)
+			continue;
 
 		playbackAudioDecodeBusy.fetch_add(1);
 
@@ -1461,9 +2142,17 @@ void VideoPlayerContext::AudioDecodeThreadPlayback()
 				{
 					continue;
 				}
+
+				uint32_t firstSampleOffset = 0;
+				if (!PrepareAudioFrameAfterSeek(resampled, tag, firstSampleOffset))
+				{
+					continue;
+				}
+
 				AudioFrameSlot slot;
 				slot.picture = std::move(resampled);
 				slot.packetSerial = tag;
+				slot.firstSampleOffset = firstSampleOffset;
 
 				{
 					std::unique_lock<std::mutex> lk(playbackAudioCapMutex);
@@ -1495,9 +2184,12 @@ void VideoPlayerContext::AudioDecodeThreadPlayback()
 				err = audioDecoder->Decode(pkt);
 				drainAudio();
 			}
+			playbackAudioDecoderDrained.store(true, std::memory_order_release);
 			playbackAudioDecodeBusy.fetch_sub(1);
 			continue;
 		}
+
+		playbackAudioDecoderDrained.store(false, std::memory_order_release);
 
 		CodecError err = audioDecoder->Decode(pkt);
 		while (err == CodecError::Again && !shouldStopDraining())
@@ -1512,17 +2204,85 @@ void VideoPlayerContext::AudioDecodeThreadPlayback()
 }
 
 // ---------------------------------------------------------------------------
+// SubtitleDecodeThreadPlayback — text subtitle cue decode
+// ---------------------------------------------------------------------------
+void VideoPlayerContext::SubtitleDecodeThreadPlayback()
+{
+	while (true)
+	{
+		Vision::CodedFrame pkt;
+		int tag = 0;
+		if (vs.subtitleq.Get(pkt, &tag, true) < 0)
+		{
+			break;
+		}
+		if (!subtitleDecoder)
+		{
+			continue;
+		}
+
+		playbackSubtitleDecodeBusy.fetch_add(1);
+		const int currentSerial = vs.subtitleq.SerialSnapshot();
+		if (tag != currentSerial)
+		{
+			subtitleDecoder->Flush();
+			playbackSubtitleDecodeBusy.fetch_sub(1);
+			continue;
+		}
+
+		if (pkt && subtitlePreviewEnabled.load(std::memory_order_acquire))
+		{
+			Vision::SubtitleCue cue;
+			auto *ffCodec = subtitleDecoder.InterpretAs<Vision::FFCodec>();
+			CodecError ret = ffCodec ? ffCodec->DecodeSubtitleCue(pkt, cue) : CodecError::ExternalFailed;
+			if (ret == CodecError::Success && cue)
+			{
+				std::lock_guard lock{ subtitleCueMutex };
+				subtitleCues.emplace_back(std::move(cue));
+				while (subtitleCues.size() > 64)
+				{
+					subtitleCues.pop_front();
+				}
+			}
+		}
+
+		playbackSubtitleDecodeBusy.fetch_sub(1);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // HandleSeekInReadThread
 // ---------------------------------------------------------------------------
 void VideoPlayerContext::HandleSeekInReadThread()
 {
+	MediaType seekType = MediaType::Video;
+	int64_t seekPos = 0;
+	int64_t seekMin = 0;
+	int64_t seekMax = 0;
+	uint64_t seekSerial = 0;
+	{
+		std::lock_guard lock{ playbackSeekMutex };
+		if (!vs.seekReq.load(std::memory_order_acquire))
+		{
+			return;
+		}
+		seekType = vs.seekStreamType;
+		seekPos = vs.seekPos;
+		seekMin = vs.seekMin;
+		seekMax = vs.seekMax;
+		seekSerial = playbackSeekRequestSerial.load(std::memory_order_relaxed);
+	}
+
 	playbackPictureCapCv.notify_all();
 	playbackAudioCapCv.notify_all();
 
 	vs.videoq.Flush();
 	vs.audioq.Flush();
+	vs.subtitleq.Flush();
 
-	while (playbackVideoDecodeBusy.load() > 0 || playbackAudioDecodeBusy.load() > 0)
+	while (playbackVideoDecodeBusy.load() > 0 ||
+	       playbackAudioDecodeBusy.load() > 0 ||
+	       playbackSubtitleDecodeBusy.load() > 0)
 	{
 		playbackPictureCapCv.notify_all();
 		playbackAudioCapCv.notify_all();
@@ -1552,13 +2312,35 @@ void VideoPlayerContext::HandleSeekInReadThread()
 			std::lock_guard lock{ outputAudioMutex };
 			outputAudioFrame = {};
 			unconsumedSamples = 0;
+			lastAudioTimestamp = INT64_MIN;
 		}
 		audioSize = 0;
+
+		// swresample may retain delay-line samples from before the seek. Rebuild
+		// it now that the decoder is quiescent so no pre-seek audio can leak into
+		// the first frame at the new position.
+		if (IsValidAudioSpec(audioOutputSpec))
+		{
+			SetAudioOutputSpec(audioOutputSpec);
+		}
+		else
+		{
+			std::lock_guard lock{ sampleConverterMutex };
+			sampleConverter.Reset();
+		}
+	}
+	if (subtitleDecoder)
+	{
+		subtitleDecoder->Flush();
+		std::lock_guard lock{ subtitleCueMutex };
+		subtitleCues.clear();
 	}
 
 	vs.audioClock       = NAN;
 	vs.audioClockSerial = -1;
 	vs.eof.store(false);
+	playbackVideoDecoderDrained.store(false, std::memory_order_release);
+	playbackAudioDecoderDrained.store(false, std::memory_order_release);
 	lastDequeuedAudioPacketSerial = -1;
 	outputAudioPacketSerial       = -1;
 
@@ -1566,8 +2348,24 @@ void VideoPlayerContext::HandleSeekInReadThread()
 	InitClock(vs.vidclk, &vs.videoq.serial);
 	InitClock(vs.extclk, &vs.audioq.serial);
 
-	demuxer->Seek(vs.seekStreamType, vs.seekPos, vs.seekMin, vs.seekMax);
-	vs.seekReq.store(false);
+	CodecError seekResult = demuxer->Seek(seekType, seekPos, seekMin, seekMax);
+	if (seekResult == CodecError::Success)
+	{
+		SetAudioSeekTarget(seekType, seekPos, vs.audioq.SerialSnapshot());
+	}
+	else
+	{
+		audioSeekTargetSerial.store(-1, std::memory_order_release);
+		CLOG_ERROR("Failed to apply media seek to pts {}", seekPos);
+	}
+	playbackAppliedSeekSerial.store(seekSerial, std::memory_order_release);
+	{
+		std::lock_guard lock{ playbackSeekMutex };
+		if (playbackSeekRequestSerial.load(std::memory_order_relaxed) == seekSerial)
+		{
+			vs.seekReq.store(false, std::memory_order_release);
+		}
+	}
 
 	if (audioStream)
 	{
@@ -1599,9 +2397,7 @@ void VideoPlayerContext::UpdateAudioClockFromOutput(double callbackTime)
 {
 	if (!std::isnan(vs.audioClock))
 	{
-		int numChannel = 2;
-		if (sampleConverter)
-			numChannel = sampleConverter.GetOutputFormat().numChannel;
+		int numChannel = GetAudioOutputChannelCount();
 		int bytesPerFrame = outputAudioFrame ? (int)outputAudioFrame.GetFormat().GetTexelSize() * numChannel : 4;
 
 		int sampleRate = 48000;
@@ -1626,29 +2422,53 @@ void VideoPlayerContext::UpdateAudioClockFromOutput(double callbackTime)
 // ---------------------------------------------------------------------------
 void VideoPlayerContext::Transcode()
 {
-	ThreadPool *primaryThread = videoThreadPool ? videoThreadPool.get() : audioThreadPool.get();
-	if (primaryThread)
+	auto notifyCapacity = [=, this] {
+		condition.notify_one();
+	};
+	if (videoThreadPool)
 	{
-		primaryThread->OnNotify([=, this] {
-			condition.notify_one();
-		});
+		videoThreadPool->OnNotify(notifyCapacity);
+	}
+	if (audioThreadPool)
+	{
+		audioThreadPool->OnNotify(notifyCapacity);
+	}
+	if (subtitleThreadPool)
+	{
+		subtitleThreadPool->OnNotify(notifyCapacity);
 	}
 
-    task = [=, this]() {
-    while (true)
-    {
-        std::unique_lock lock{ mutex.demux };
-        condition.wait(lock, [=, this] {
-			bool hasTask = asyncComputeTaskCount + primaryThread->TaskSize() <= kCacheSize;
-			return state.exited || vs.eof.load() || hasTask;
-        });
+	task = [=, this]() {
+		auto canReadPacket = [this] {
+			const uint32_t videoTaskSize = videoThreadPool ? videoThreadPool->TaskSize().load(std::memory_order_acquire) : 0;
+			const uint32_t audioTaskSize = audioThreadPool ? audioThreadPool->TaskSize().load(std::memory_order_acquire) : 0;
+			const uint32_t subtitleTaskSize = subtitleThreadPool ? subtitleThreadPool->TaskSize().load(std::memory_order_acquire) : 0;
+			const int rawComputeTaskSize = asyncComputeTaskCount.load(std::memory_order_acquire);
+			const uint32_t computeTaskSize = rawComputeTaskSize > 0 ? (uint32_t)rawComputeTaskSize : 0;
+			const uint32_t cacheSize = std::max<uint32_t>(1, (uint32_t)kCacheSize);
+			return state.exited || vs.eof.load() ||
+			       videoTaskSize + audioTaskSize + subtitleTaskSize + computeTaskSize < cacheSize;
+		};
+		while (true)
+		{
+			std::unique_lock lock{ mutex.demux };
+			while (!condition.wait_for(lock, std::chrono::seconds{5}, canReadPacket))
+			{
+				CLOG_WARN(
+					"VideoPlayer transcode stalled before demux: videoTasks={} audioTasks={} subtitleTasks={} asyncCompute={} cacheSize={}",
+					videoThreadPool ? videoThreadPool->TaskSize().load(std::memory_order_acquire) : 0,
+					audioThreadPool ? audioThreadPool->TaskSize().load(std::memory_order_acquire) : 0,
+					subtitleThreadPool ? subtitleThreadPool->TaskSize().load(std::memory_order_acquire) : 0,
+					asyncComputeTaskCount.load(std::memory_order_acquire),
+					std::max(1, kCacheSize));
+			}
 
-        if (state.exited)
-        {
-			double time = timer.Duration();
-			CLOG_INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
-            break;
-        }
+			if (state.exited)
+			{
+				double time = timer.Duration();
+				CLOG_INFO("Decoding Statistic: frames:{}, time:{}, fps:{}", frames, time, frames / time);
+				break;
+			}
 
 		Vision::CodedFrame codedFrame;
 		auto ret = demuxer->Read(&codedFrame);
@@ -1673,6 +2493,7 @@ void VideoPlayerContext::Transcode()
 					}
                 }
 				vs.eof.store(true);
+				break;
             }
 			continue;
 		}
@@ -1726,16 +2547,30 @@ void VideoPlayerContext::Transcode()
 // ---------------------------------------------------------------------------
 // Seek — for Playback mode, set seekReq; for Transcode mode, use legacy
 // ---------------------------------------------------------------------------
-void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
+uint64_t VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
 	if (mode == VideoPlayerMode::Playing)
 	{
-		vs.seekStreamType = type;
-		vs.seekPos        = pts;
-		vs.seekMin        = min;
-		vs.seekMax        = max;
-		vs.seekReq.store(true);
-		return;
+		uint64_t requestSerial = 0;
+		{
+			std::lock_guard lock{ playbackSeekMutex };
+			vs.seekStreamType = type;
+			vs.seekPos        = pts;
+			vs.seekMin        = min;
+			vs.seekMax        = max;
+			requestSerial = playbackSeekRequestSerial.fetch_add(1, std::memory_order_relaxed) + 1;
+			vs.seekReq.store(true, std::memory_order_release);
+
+			// Interrupt queue waits immediately. The read thread may itself be
+			// blocked in PutIfSerial(), so waiting for HandleSeekInReadThread() to
+			// advance the queue serial would deadlock the seek request.
+			vs.videoq.Flush();
+			vs.audioq.Flush();
+			vs.subtitleq.Flush();
+		}
+		playbackPictureCapCv.notify_all();
+		playbackAudioCapCv.notify_all();
+		return requestSerial;
 	}
 
 	std::unique_lock lock{mutex.demux};
@@ -1782,6 +2617,8 @@ void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t 
 	{
 		audioStream->Start();
 	}
+
+	return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -1789,23 +2626,11 @@ void VideoPlayerContext::Seek(MediaType type, int64_t pts, int64_t min, int64_t 
 // ---------------------------------------------------------------------------
 VideoPlayerContext::~VideoPlayerContext()
 {
-	if (audioStream)
-	{
-		AudioDevice *audioDevice = AudioDevice::GetInstance();
-		if (audioDevice)
-		{
-			audioDevice->DestroyAudioStream(&audioStream);
-		}
-		else
-		{
-			audioStream = nullptr;
-		}
-	}
-
-    state.exited = true;
+	state.exited.store(true, std::memory_order_release);
 
 	vs.videoq.Abort();
 	vs.audioq.Abort();
+	vs.subtitleq.Abort();
 	playbackPictureCapCv.notify_all();
 	playbackAudioCapCv.notify_all();
 	audioSpecCv.notify_all();
@@ -1815,6 +2640,7 @@ VideoPlayerContext::~VideoPlayerContext()
     demuxerThread = {};
 	videoDecodeThread = {};
 	audioDecodeThread = {};
+	subtitleDecodeThread = {};
 
 	if (videoThreadPool)
 	{
@@ -1824,6 +2650,10 @@ VideoPlayerContext::~VideoPlayerContext()
 	{
 		audioThreadPool->RemoveTasks();
 	}
+	if (subtitleThreadPool)
+	{
+		subtitleThreadPool->RemoveTasks();
+	}
 
 	if (videoThreadPool)
 	{
@@ -1832,6 +2662,43 @@ VideoPlayerContext::~VideoPlayerContext()
 	if (audioThreadPool)
 	{
 		audioThreadPool->Join();
+	}
+	if (subtitleThreadPool)
+	{
+		subtitleThreadPool->Join();
+	}
+
+	// Decoders can leave a small number of reference-counted frames in the
+	// playback queues when Abort() wakes their threads. Release those frames
+	// explicitly while the codec objects that produced them are still alive.
+	ClearPictures(pictures, picture, pictureSize);
+	ClearPictures(audioFramesLegacy, audioFrame, audioSize);
+	audioFrameSlots.clear();
+	subtitles.clear();
+	{
+		std::lock_guard lock{ outputAudioMutex };
+		outputAudioFrame = {};
+		unconsumedSamples = 0;
+	}
+	{
+		std::lock_guard lock{ subtitleCueMutex };
+		subtitleCues.clear();
+	}
+
+	if (audioStream)
+	{
+		// No decoder can replace audioStream after the joins above. Quiesce the
+		// callback before releasing the final device reference.
+		audioStream->Stop();
+		AudioDevice *audioDevice = AudioDevice::GetInstance();
+		if (audioDevice)
+		{
+			audioDevice->DestroyAudioStream(&audioStream);
+		}
+		else
+		{
+			audioStream = nullptr;
+		}
 	}
 
     if (filterGraph)
@@ -1912,9 +2779,7 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
 			}
 			PopAudioFrame();
 			unconsumedSamples = outputAudioFrame.GetWidth();
-			int numChannel = 2;
-			if (sampleConverter)
-				numChannel = sampleConverter.GetOutputFormat().numChannel;
+			int numChannel = GetAudioOutputChannelCount();
 			size_t bytePerPixel = outputAudioFrame.GetFormat().GetTexelSize() * numChannel;
 			numSamples += WriteAudioData(&data[numSamples * bytePerPixel], samples - numSamples);
 		}
@@ -1945,7 +2810,15 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
 			continue;
 		}
 
-		unconsumedSamples = outputAudioFrame.GetWidth();
+		const uint32_t firstSampleOffset = std::min(
+			slot.firstSampleOffset,
+			outputAudioFrame.GetWidth());
+		unconsumedSamples = outputAudioFrame.GetWidth() - firstSampleOffset;
+		if (unconsumedSamples == 0)
+		{
+			outputAudioFrame = {};
+			continue;
+		}
 		lastAudioTimestamp = outputAudioFrame.GetTimestamp();
 
 		Rational tb = outputAudioFrame.GetTimebase();
@@ -1956,7 +2829,7 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
 		if (outputAudioFrame.GetTimestamp() != INT64_MIN && tb.denominator != 0)
 		{
 			double pts = (double)outputAudioFrame.GetTimestamp() * tb.Normalize();
-			vs.audioClock = pts + (double)outputAudioFrame.GetWidth() / (double)sampleRate;
+			vs.audioClock = pts + (double)unconsumedSamples / (double)sampleRate;
 			vs.audioClockSerial = slot.packetSerial;
 		}
 		else
@@ -1964,9 +2837,7 @@ uint32_t VideoPlayerContext::GetAudioData(uint8_t *data, uint32_t samples)
 			vs.audioClock = NAN;
 		}
 
-		int numChannel = 2;
-		if (sampleConverter)
-			numChannel = sampleConverter.GetOutputFormat().numChannel;
+		int numChannel = GetAudioOutputChannelCount();
 		size_t bytePerPixel = outputAudioFrame.GetFormat().GetTexelSize() * numChannel;
 		numSamples += WriteAudioData(&data[numSamples * bytePerPixel], samples - numSamples);
 	}
@@ -1994,11 +2865,7 @@ uint32_t VideoPlayerContext::WriteAudioData(void *data, uint32_t samples)
 
 		uint32_t request = std::min(unconsumedSamples, samples);
 
-        int numChannel = 2;
-        if (sampleConverter)
-        {
-			numChannel = sampleConverter.GetOutputFormat().numChannel;
-        }
+        int numChannel = GetAudioOutputChannelCount();
 
 		size_t bytePerPixel = outputAudioFrame.GetFormat().GetTexelSize() * numChannel;
 		if (bytePerPixel == 0 || !outputAudioFrame.GetData())
@@ -2046,6 +2913,17 @@ VideoPlayerComponent::VideoPlayerComponent(const String &path, int cacheSize, co
 
 VideoPlayerComponent::~VideoPlayerComponent()
 {
+	// Drop all externally cached decoder frames before destroying the player
+	// and its codec contexts. In particular, `recent` commonly holds the last
+	// two decoded pictures at shutdown.
+	currentPicture = {};
+	for (Picture &cached : timelineFrameWindow.recent)
+	{
+		cached = {};
+	}
+	timelineFrameWindow.recentCursor = 0;
+	timelineFrameWindow.ClearStep();
+
     player.Reset();
 }
 
@@ -2144,6 +3022,10 @@ Picture VideoPlayerComponent::GetLivePicture()
 	const bool seekRequestActive =
 	    videoSeekTargetPts != std::numeric_limits<int64_t>::min() &&
 	    videoSeekTargetTimebase.denominator != 0;
+	if (seekRequestActive && !player->IsSeekApplied(videoSeekRequestSerial))
+	{
+		return {};
+	}
 
 	if (vs.pause.load())
 	{
@@ -2170,21 +3052,39 @@ Picture VideoPlayerComponent::GetLivePicture()
 
 	double fallbackDur = animator ? animator->SecondsPerFrame : 1.0 / 30.0;
 	bool targetReached = false;
+	bool selectedPictureAlreadyPopped = false;
 
 	int64_t  picTimestamp = picture.GetTimestamp();
 	Rational picTimebase  = picture.GetTimebase();
 	double   picPts       = (picTimebase.denominator != 0) ? (double)picTimestamp * picTimebase.Normalize() : NAN;
 	if (seekRequestActive)
 	{
+		Picture closestBeforeTarget;
 		while (picture && ComparePicturePts(picture, videoSeekTargetPts, videoSeekTargetTimebase) < 0)
 		{
-			CacheTimelinePicture(this, picture);
-			CacheTimelineStepPicture(this, TimelineStepCacheSide::Backward, picture);
+			closestBeforeTarget = picture;
+			if (!videoSeekForceDecode)
+			{
+				CacheTimelinePicture(this, picture);
+				CacheTimelineStepPicture(this, TimelineStepCacheSide::Backward, picture);
+			}
 			player->PopPicture();
 			picture = player->GetPicture();
 			if (!picture)
 			{
-				return currentPicture;
+				if (closestBeforeTarget && player->IsPlaybackDrained(MediaType::Video))
+				{
+					picture = closestBeforeTarget;
+					picTimestamp = picture.GetTimestamp();
+					picTimebase = picture.GetTimebase();
+					picPts = picTimebase.denominator != 0
+						? (double)picTimestamp * picTimebase.Normalize()
+						: NAN;
+					targetReached = true;
+					selectedPictureAlreadyPopped = true;
+					break;
+				}
+				return {};
 			}
 			picTimestamp = picture.GetTimestamp();
 			picTimebase  = picture.GetTimebase();
@@ -2211,6 +3111,8 @@ Picture VideoPlayerComponent::GetLivePicture()
 		}
 		videoSeekTargetPts = std::numeric_limits<int64_t>::min();
 		videoSeekTargetTimebase = {};
+		videoSeekRequestSerial = 0;
+		videoSeekForceDecode = false;
 		videoFrameTimerInit = false;
 	}
 
@@ -2222,7 +3124,10 @@ Picture VideoPlayerComponent::GetLivePicture()
 		videoFrameTimerInit = true;
 		SetClock(vs.vidclk, picPts, queueSerial);
 		SyncClockToSlave(vs.extclk, vs.vidclk);
-		player->PopPicture();
+		if (!selectedPictureAlreadyPopped)
+		{
+			player->PopPicture();
+		}
 		CacheTimelinePicture(this, currentPicture);
 		if (seekRequestActive || targetReached)
 		{
@@ -2278,7 +3183,10 @@ Picture VideoPlayerComponent::GetLivePicture()
 		SetClock(vs.vidclk, picPts, queueSerial);
 		SyncClockToSlave(vs.extclk, vs.vidclk);
 
-		player->PopPicture();
+		if (!selectedPictureAlreadyPopped)
+		{
+			player->PopPicture();
+		}
 		currentPicture = picture;
 		return picture;
 	}
@@ -2307,7 +3215,11 @@ Picture VideoPlayerComponent::GetLivePicture()
 	player->PopPicture();
 
 	int framedrop = vs.framedrop;
-	bool canDrop = (framedrop > 0 || (framedrop < 0 && vs.avSyncType != FfplayAvSyncType::VideoMaster));
+	// Once demux reaches EOF, every remaining queued picture is part of the
+	// visible tail. Dropping late frames here makes playback jump from the last
+	// presented timestamp straight to the declared duration.
+	bool canDrop = !vs.eof.load(std::memory_order_acquire) &&
+		(framedrop > 0 || (framedrop < 0 && vs.avSyncType != FfplayAvSyncType::VideoMaster));
 	if (canDrop)
 	{
 		Picture next = player->GetPicture();
@@ -2361,10 +3273,10 @@ void VideoPlayerComponent::PopAudioFrame()
 
 void VideoPlayerComponent::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
-    player->Seek(type, pts, min, max);
+    (void)player->Seek(type, pts, min, max);
 }
 
-void VideoPlayerComponent::SeekToFrame(MediaType type, int64_t pts)
+void VideoPlayerComponent::SeekToFrame(MediaType type, int64_t pts, bool forceDecode)
 {
 	Animator *animator = GetAnimator(type);
 	if (type == MediaType::Video && animator)
@@ -2383,6 +3295,8 @@ void VideoPlayerComponent::SeekToFrame(MediaType type, int64_t pts)
 			currentPicture = picture;
 			videoSeekTargetPts = std::numeric_limits<int64_t>::min();
 			videoSeekTargetTimebase = {};
+			videoSeekRequestSerial = 0;
+			videoSeekForceDecode = false;
 			videoFrameTimerInit = false;
 			if (player->vs.pause.load())
 			{
@@ -2398,34 +3312,43 @@ void VideoPlayerComponent::SeekToFrame(MediaType type, int64_t pts)
 		};
 
 		Picture cached;
-		if (currentCmp > 0)
+		if (!forceDecode)
 		{
-			cached = TakeTimelineStepPicture(this, TimelineStepCacheSide::Backward, pts, targetTb);
-		}
-		else if (currentCmp < 0)
-		{
-			cached = TakeTimelineStepPicture(this, TimelineStepCacheSide::Forward, pts, targetTb);
-		}
-		if (!cached)
-		{
-			cached = FindTimelinePictureCache(this, pts, targetTb);
-		}
-		if (cached)
-		{
-			pinPicture(cached);
-			return;
+			if (currentCmp > 0)
+			{
+				cached = TakeTimelineStepPicture(this, TimelineStepCacheSide::Backward, pts, targetTb);
+			}
+			else if (currentCmp < 0)
+			{
+				cached = TakeTimelineStepPicture(this, TimelineStepCacheSide::Forward, pts, targetTb);
+			}
+			if (!cached)
+			{
+				cached = FindTimelinePictureCache(this, pts, targetTb);
+			}
+			if (cached)
+			{
+				pinPicture(cached);
+				return;
+			}
 		}
 
 		const int64_t distance = EstimateTimelineFrameDistance(currentPicture, pts, targetTb, animator);
 		const bool discontinuousSeek =
 		    distance == std::numeric_limits<int64_t>::max() || distance > TIMELINE_STEP_NEAR_FRAMES;
 
-		if (discontinuousSeek)
+		if (forceDecode)
+		{
+			// A forced demux seek never consumes timeline caches. Drop them before
+			// flushing the decoder so old hardware frames cannot pin decode surfaces.
+			ClearTimelineCaches(this);
+		}
+		else if (discontinuousSeek)
 		{
 			ClearTimelineStepCaches(this);
 		}
 
-		if (currentCmp != 0)
+		if (!forceDecode && currentCmp != 0)
 		{
 			CacheTimelinePicture(this, currentPicture);
 			if (!discontinuousSeek)
@@ -2436,18 +3359,37 @@ void VideoPlayerComponent::SeekToFrame(MediaType type, int64_t pts)
 
 		videoSeekTargetPts = pts;
 		videoSeekTargetTimebase = targetTb;
+		videoSeekForceDecode = forceDecode;
 		videoFrameTimerInit = false;
 		timelinePinnedPicturePts = std::numeric_limits<int64_t>::min();
 		timelinePinnedPictureTimebase = {};
 		timelineSeekDirection = seekDirection;
 		currentPicture = {};
 	}
-	player->Seek(type, pts, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+	uint64_t requestSerial = player->Seek(
+		type,
+		pts,
+		std::numeric_limits<int64_t>::min(),
+		std::numeric_limits<int64_t>::max());
+	if (type == MediaType::Video)
+	{
+		videoSeekRequestSerial = requestSerial;
+	}
 }
 
 bool VideoPlayerComponent::IsEof() const
 {
 	return player->IsEof();
+}
+
+bool VideoPlayerComponent::IsPlaybackDrained(MediaType type) const
+{
+    return player && player->IsPlaybackDrained(type);
+}
+
+bool VideoPlayerComponent::HasPendingSeek() const
+{
+	return player && player->HasPendingSeek();
 }
 
 void VideoPlayerComponent::Swap(VideoPlayerComponent &other)
@@ -2508,6 +3450,24 @@ CodecError VideoPlayerComponent::SwitchTrack(MediaType mediaType, int index)
 	return player->SwitchTrack(mediaType, index);
 }
 
+void VideoPlayerComponent::SetSubtitlePreviewEnabled(bool enabled)
+{
+	if (player)
+	{
+		player->SetSubtitlePreviewEnabled(enabled);
+	}
+}
+
+bool VideoPlayerComponent::IsSubtitlePreviewEnabled() const
+{
+	return player ? player->subtitlePreviewEnabled.load(std::memory_order_acquire) : false;
+}
+
+Vision::SubtitleCue VideoPlayerComponent::GetCurrentSubtitleCue(double seconds)
+{
+	return player ? player->GetCurrentSubtitleCue(seconds) : Vision::SubtitleCue{};
+}
+
 void VideoPlayerComponent::EnumerateTracks(MediaType mediaType, std::vector<Vision::TrackInfo> &tracks)
 {
 	player->EnumerateTracks(mediaType, tracks);
@@ -2559,7 +3519,15 @@ void VideoPlayerComponent::ConfigureMixerSpec(const Vision::AudioFormatSpec &out
 
 void VideoPlayerComponent::Join()
 {
-	player->Join();
+	WaitUntilFinished();
+}
+
+void VideoPlayerComponent::WaitUntilFinished()
+{
+	if (player)
+	{
+		player->Join();
+	}
 }
 
 bool VideoPlayerComponent::operator!()
@@ -2569,7 +3537,7 @@ bool VideoPlayerComponent::operator!()
 
 int64_t VideoPlayerComponent::GetLastAudioTimestamp() const
 {
-	return player->lastAudioTimestamp;
+	return player->lastAudioTimestamp.load(std::memory_order_acquire);
 }
 
 Rational VideoPlayerComponent::GetAudioTimebase() const
@@ -2583,6 +3551,17 @@ Rational VideoPlayerComponent::GetAudioTimebase() const
 	{
 		return {};
 	}
+
+	// FFCodec converts decoded audio timestamps to sample units in
+	// GetPicture(). The codec time base still describes the input packets; for
+	// MP3 it can be 1 / (sampleRate * 320), which makes the UI playhead advance
+	// 320 times too slowly if paired with a decoded-frame timestamp.
+	const Vision::AudioFormatSpec audioFormat = decoder->GetAudioFormat();
+	if (audioFormat.sampleRate > 0)
+	{
+		return { 1, audioFormat.sampleRate };
+	}
+
 	return decoder->GetTimebase();
 }
 

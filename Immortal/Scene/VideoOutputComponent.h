@@ -5,15 +5,18 @@
 #include "MediaFormat/FFFormat.h"
 #include "Shared/Async.h"
 #include "Framework/Timer.h"
+#include "Vision/Types.h"
 
 namespace Immortal
 {
 
 struct VideoEncodeCallbacks
 {
+    using ProgressListenerType = ProgressListener;
+
     std::function<void(int frame, int64_t timestamp, Rational timebase)> ReportProgress;
 
-    Ref<ProgressListener> progressListener;
+    Ref<ProgressListenerType> progressListener;
 };
 
 class VideoOutput;
@@ -39,11 +42,23 @@ public:
 
     void SetFilterGraph(const std::shared_ptr<FilterGraphComponent> &graph);
 
+    // Stop accepting new frames for active streams without waiting. Use when the
+    // producer wants to finish feeding frames but cannot block yet.
+    void RequestFinish();
+
+    // Wait for already-finished streams to drain. The producer must have sent
+    // EOF frames or called RequestFinish()/CloseAndJoin().
     void Join();
 
+    // Stop accepting frames, drain encoder/mux workers, close the muxer, and wait.
+    void CloseAndJoin();
+
+    // Legacy alias for CloseAndJoin().
     void Close();
 
     void Bind(const VideoEncodeCallbacks &value);
+
+    String Error() const;
 
     bool Blocking() const;
 

@@ -30,7 +30,7 @@ public:
 	template <class T, class... Args>
 	Ref<FilterNode> &Insert(int index, Args &&...args)
 	{
-		FilterNode *node = new T{device, std::forward<Args>(args)...};
+		FilterNode *node = new T(device, std::forward<Args>(args)...);
 		nodes.insert(nodes.begin() + index, std::move(node));
 		return nodes[index];
 	}
@@ -38,7 +38,7 @@ public:
 	template <class T, class... Args>
 	Ref<FilterNode> &Emplace(Args &&...args)
 	{
-		FilterNode *node = new T{device, std::forward<Args>(args)...};
+		FilterNode *node = new T(device, std::forward<Args>(args)...);
 		nodes.emplace_back(node);
 		return nodes.back();
 	}
@@ -71,6 +71,8 @@ public:
 	void Execute(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
 
 	void Execute(FilterGraphComponent &input, AsyncComputeThread *asyncComputeThread = Graphics::GetAsyncComputeThread());
+
+	void InvalidateRenderedOutput();
 
 	const Ref<Texture> &QueryOutput(size_t filterNodeInstance = 0) const;
 
