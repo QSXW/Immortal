@@ -28,11 +28,13 @@ public:
 	D3D12_OPERATOR_HANDLE()
 
 public:
-	Queue(Device *device, const D3D12_COMMAND_QUEUE_DESC &desc);
+	Queue(Device *device, QueueType type, QueuePriority priority);
 
     virtual ~Queue() override;
 
     virtual Anonymous GetBackendHandle() const;
+
+    virtual QueueType GetType() const override;
 
     virtual void WaitIdle(uint32_t timeout) override;
 
@@ -59,6 +61,8 @@ public:
     }
 
 protected:
+	QueueType type;
+
 	URef<GPUEvent> gpuEvent;
 };
 

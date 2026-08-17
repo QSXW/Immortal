@@ -19,8 +19,11 @@ class IMMORTAL_API Pipeline : public IObject
 public:
     enum State : uint32_t
     {
-        Depth = BIT(0),
-        Blend = BIT(1),
+        Depth  = BIT(0),
+        Blend  = BIT(1),
+		MSAA4X = BIT(2),
+		/** Directional shadow depth pass: front-face cull + depth bias (Sascha Willems-style). */
+		ShadowPass = BIT(3),
     };
 
     enum class PrimitiveType

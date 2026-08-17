@@ -318,6 +318,39 @@ struct DepthStencilDescription : public D3D12_DEPTH_STENCIL_DESC
         Primitive::FrontFace        = DefaultStencilOp;
         Primitive::BackFace         = DefaultStencilOp;
     }
+
+    explicit DepthStencilDescription(const Primitive &o) noexcept :
+        Primitive{ o }
+    {
+    }
+};
+
+struct ViewInstancingDescription : public D3D12_VIEW_INSTANCING_DESC
+{
+	using Primitive = D3D12_VIEW_INSTANCING_DESC;
+
+	explicit ViewInstancingDescription(const D3D12_VIEW_INSTANCING_DESC &o) noexcept :
+	    D3D12_VIEW_INSTANCING_DESC(o)
+	{
+
+    }
+
+	ViewInstancingDescription() noexcept
+	{
+		ViewInstanceCount      = 0;
+		pViewInstanceLocations = nullptr;
+		Flags                  = D3D12_VIEW_INSTANCING_FLAG_NONE;
+	}
+
+	explicit ViewInstancingDescription(
+	    UINT InViewInstanceCount,
+	    const D3D12_VIEW_INSTANCE_LOCATION *InViewInstanceLocations,
+	    D3D12_VIEW_INSTANCING_FLAGS InFlags) noexcept
+	{
+		ViewInstanceCount      = InViewInstanceCount;
+		pViewInstanceLocations = InViewInstanceLocations;
+		Flags                  = InFlags;
+	}
 };
 
 }

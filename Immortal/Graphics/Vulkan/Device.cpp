@@ -21,6 +21,22 @@ namespace Immortal
 namespace Vulkan
 {
 
+namespace
+{
+static Filter MergeFilters(Filter mipFilter, Filter minFilter, Filter magFilter)
+{
+	if (mipFilter == Filter::Anisotropic || minFilter == Filter::Anisotropic || magFilter == Filter::Anisotropic)
+	{
+		return Filter::Anisotropic;
+	}
+	if (mipFilter == Filter::Nearest && minFilter == Filter::Nearest && magFilter == Filter::Nearest)
+	{
+		return Filter::Nearest;
+	}
+	return Filter::Linear;
+}
+}
+
 Device::Device() :
     handle{},
     physicalDevice{},
@@ -137,6 +153,14 @@ Device::Device(PhysicalDevice *physicalDevice, std::unordered_map<const char*, b
     {
 		physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT);
 		physicalDevice->RequestExtensionFeatures<VkPhysicalDevicePipelineCreationCacheControlFeatures>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES);
+    }
+    if (IsEnabled(VK_EXT_MESH_SHADER_EXTENSION_NAME))
+    {
+		auto extension = physicalDevice->RequestExtensionFeatures<VkPhysicalDeviceMeshShaderFeaturesEXT>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+		extension->meshShader = VK_TRUE;
+		extension->taskShader = VK_TRUE;
+		extension->multiviewMeshShader = VK_FALSE;
+		extension->primitiveFragmentShadingRateMeshShader = VK_FALSE;
     }
 
     VkDeviceCreateInfo createInfo{};
@@ -329,10 +353,15 @@ SuperSwapchain *Device::CreateSwapchain(SuperQueue *_queue, Window *window, Form
 
 SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
 {
-    return new Sampler{ this, filter, addressMode, compareOperation, minLod, maxLod };
+    return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
 }
 
-SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
+SuperSampler *Device::CreateSampler(Filter mipFilter, Filter minFilter, Filter magFilter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
+{
+    return new Sampler{ this, MergeFilters(mipFilter, minFilter, magFilter), addressMode, compareOperation, minLod, maxLod };
+}
+
+SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
 {
     return new Shader{ this, name, stage, source, entryPoint };
 }
@@ -352,9 +381,14 @@ SuperTexture *Device::CreateTexture(Format format, uint32_t width, uint32_t heig
     return new Texture{ this, format, width, height, mipLevels, arrayLayers, type };
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
 {
     return new Buffer{ this, type, size };
+}
+
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride)
+{
+    return new Buffer{ this, type, size, memoryType, byteStride };
 }
 
 SuperDescriptorSet *Device::CreateDescriptorSet(SuperPipeline *pipeline)
@@ -367,7 +401,7 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &name)
     return new GPUEvent{ this };
 }
 
-SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues, uint32_t sampleCount)
 {
 	return new RenderTarget{ this, width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat };
 }
@@ -417,6 +451,19 @@ void Device::DestroyObjects()
         queue.pop();
         func();
     }
+}
+
+void Device::SetName(VkObjectType objectType, uint64_t handle, const char *name)
+{
+	VkDebugUtilsObjectNameInfoEXT nameInfo{
+	    .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+	    .pNext        = nullptr,
+	    .objectType   = objectType,
+	    .objectHandle = handle,
+        .pObjectName  = name
+    };
+
+    Check(SetDebugUtilsObjectNameEXT(&nameInfo));
 }
 
 VkResult Device::AllocateDescriptorSet(const VkDescriptorSetLayout *pDescriptorSetLayout, VkDescriptorSet *pDescriptorSets)

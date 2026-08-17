@@ -92,7 +92,7 @@ MFXCodec::~MFXCodec()
 CodecError MFXCodec::Decode(const CodedFrame &codedFrame)
 {
    
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 mfxStatus MFXCodec::CheckAdapterSupported()

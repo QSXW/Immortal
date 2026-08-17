@@ -10,6 +10,7 @@ namespace Immortal
 
 class Queue;
 class Buffer;
+class BufferView;
 class Texture;
 class Window;
 class Swapchain;
@@ -74,7 +75,22 @@ public:
     /**
      * @brief Create a sampler
      */
-    virtual Sampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = 0.0f, float maxLod = 1.0f) = 0;
+    virtual Sampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = 0.0f, float maxLod = 16.0f)
+    {
+        return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
+    }
+
+    /**
+     * @brief Create a sampler with independent mip/min/mag filters.
+     */
+    virtual Sampler *CreateSampler(
+        Filter mipFilter,
+        Filter minFilter,
+        Filter magFilter,
+        AddressMode addressMode,
+        CompareOperation compareOperation = CompareOperation::Never,
+        float minLod = 0.0f,
+        float maxLod = 16.0f) = 0;
 
     /**
      * @brief Create a shader
@@ -83,7 +99,12 @@ public:
      * @param source     The shader source code
      * @param entryPoint The entry point of the shader program
      */
-    virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) = 0;
+	virtual Shader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) = 0;
+    
+    virtual Shader *CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size)
+    {
+		return nullptr;
+    }
 
     /**
      * @brief Create a graphics pipeline
@@ -101,7 +122,28 @@ public:
      * @param size The size of the buffer
      * @param type The type of the buffer
      */
-    virtual Buffer *CreateBuffer(size_t size, BufferType type) = 0;
+	virtual Buffer *CreateBuffer(BufferType type, size_t size) = 0;
+
+    /**
+	 * @brief Create a buffer with format
+	 * @param size The size of the buffer
+	 * @param type The type of the buffer
+     * @param format of the buffer data
+	 */
+	virtual Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, Format format)
+    {
+		return CreateBuffer(type, size, memoryType, format != Format::None ? format.GetTexelSize() : 1);
+    }
+
+	virtual Buffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1)
+	{
+		return nullptr;
+	}
+
+	virtual BufferView *CreateBufferView(Buffer *buffer, Format format, uint32_t byteStride)
+	{
+		return nullptr;
+	}
 
     /**
 	 * @brief Create a texture
@@ -114,15 +156,14 @@ public:
     virtual DescriptorSet *CreateDescriptorSet(Pipeline *pipeline) = 0;
 
     /**
-     * @brief Create a gpu event for synchoronization.
+     * @brief Create a gpu event for synchronization.
      */
 	virtual GPUEvent *CreateGPUEvent(const std::string &name = {}) = 0;
-
 
     /**
      * @brief Create a render target
      */
-    virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) = 0;
+	virtual RenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 1) = 0;
 };
 
 using SuperDevice = Device;

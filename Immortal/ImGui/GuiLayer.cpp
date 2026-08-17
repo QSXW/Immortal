@@ -1,9 +1,17 @@
 #include "GuiLayer.h"
 
-#include <imgui.h>
-#include <imgui_internal.h>
 #include "ImGuizmo.h"
+#include "ImGuiNotify.hpp"
 #include "imgui_impl_immortal.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <system_error>
 
 #include "Framework/Application.h"
 #include "Render/Graphics.h"
@@ -16,6 +24,7 @@
 
 #ifdef _WIN32
 #include <backends/imgui_impl_win32.h>
+#include "Graphics/Window/DirectWindow.h"
 #endif
 #include <backends/imgui_impl_glfw.h>
 
@@ -37,6 +46,160 @@ GuiLayer *GuiLayer::This = nullptr;
 static uint64_t TotalFrame     = 0;
 static double TotalFrameRate = 0;
 
+namespace
+{
+
+struct WindowLayoutState
+{
+    std::filesystem::path path;
+    std::filesystem::path backupPath;
+};
+
+WindowLayoutState &GetWindowLayoutState()
+{
+    static WindowLayoutState state;
+    return state;
+}
+
+bool IsUsefulIniData(const std::string &data)
+{
+    return data.size() > 16 && data.find('[') != std::string::npos && data.find(']') != std::string::npos;
+}
+
+bool ReadUsefulIniFile(const std::filesystem::path &path, std::string &data)
+{
+    data.clear();
+    if (path.empty())
+    {
+        return false;
+    }
+
+    std::error_code ec;
+    if (!std::filesystem::exists(path, ec) || ec)
+    {
+        return false;
+    }
+
+    const uintmax_t size = std::filesystem::file_size(path, ec);
+    if (ec || size <= 16)
+    {
+        return false;
+    }
+
+    std::ifstream stream{ path, std::ios::binary };
+    if (!stream.is_open())
+    {
+        return false;
+    }
+
+    data.assign(
+        std::istreambuf_iterator<char>{ stream },
+        std::istreambuf_iterator<char>{});
+    return IsUsefulIniData(data);
+}
+
+bool WriteFileAtomically(const std::filesystem::path &path, const char *data, size_t size)
+{
+    if (path.empty() || !data || size == 0)
+    {
+        return false;
+    }
+
+    std::error_code ec;
+    const std::filesystem::path parent = path.parent_path();
+    if (!parent.empty())
+    {
+        std::filesystem::create_directories(parent, ec);
+        if (ec)
+        {
+            LOG::WARN("Failed to create ImGui layout directory {}: {}", parent.string(), ec.message());
+            return false;
+        }
+    }
+
+    std::filesystem::path temporaryPath = path;
+    temporaryPath += ".tmp";
+    std::filesystem::remove(temporaryPath, ec);
+    ec.clear();
+
+    {
+        std::ofstream stream{ temporaryPath, std::ios::binary | std::ios::trunc };
+        if (!stream.is_open())
+        {
+            LOG::WARN("Failed to open temporary ImGui layout file {}", temporaryPath.string());
+            return false;
+        }
+
+        stream.write(data, static_cast<std::streamsize>(size));
+        stream.flush();
+        if (!stream.good())
+        {
+            LOG::WARN("Failed to write temporary ImGui layout file {}", temporaryPath.string());
+            return false;
+        }
+    }
+
+    std::filesystem::remove(path, ec);
+    ec.clear();
+    std::filesystem::rename(temporaryPath, path, ec);
+    if (ec)
+    {
+        LOG::WARN("Failed to replace ImGui layout file {}: {}", path.string(), ec.message());
+        std::filesystem::remove(temporaryPath, ec);
+        return false;
+    }
+
+    return true;
+}
+
+bool SaveWindowLayoutToPath(const std::filesystem::path &path, bool updateBackup)
+{
+    WindowLayoutState &layout = GetWindowLayoutState();
+    size_t size = 0;
+    const char *data = ImGui::SaveIniSettingsToMemory(&size);
+    if (!data || !IsUsefulIniData(std::string{ data, size }))
+    {
+        LOG::WARN("Skipped saving ImGui layout because generated ini data is empty");
+        return false;
+    }
+
+    if (!WriteFileAtomically(path, data, size))
+    {
+        return false;
+    }
+
+    if (updateBackup && !layout.backupPath.empty())
+    {
+        WriteFileAtomically(layout.backupPath, data, size);
+    }
+
+    return true;
+}
+
+bool SaveWindowLayoutIfNeeded(bool force)
+{
+    WindowLayoutState &layout = GetWindowLayoutState();
+    if (layout.path.empty())
+    {
+        return false;
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    if (!force && !io.WantSaveIniSettings)
+    {
+        return true;
+    }
+
+    const bool saved = SaveWindowLayoutToPath(layout.path, true);
+    if (saved)
+    {
+        io.WantSaveIniSettings = false;
+    }
+    return saved;
+}
+
+}
+
 GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swapchain) :
     Layer{ "Immortal Graphics User Interface Layer" },
     dockspace{ new WDockerSpace{} },
@@ -49,10 +212,6 @@ GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swap
     This = this;
 
     themeEditor = new WWindow;
-    themeEditor
-        ->Connect([this] {
-            UpdateTheme();
-        });
 }
 
 GuiLayer::~GuiLayer()
@@ -62,6 +221,31 @@ GuiLayer::~GuiLayer()
     This = nullptr;
 
     LOG::INFO("Rendered {} frame(s), Avarage Frame Rate: {}", TotalFrame, TotalFrameRate / TotalFrame);
+}
+
+ImFont *AddFontFromImage(const String &path, float size_pixels, const ImFontConfig *font_cfg_template, const ImWchar *glyph_ranges)
+{
+    Picture picture = Vision::Read(path);
+    if (!picture)
+    {
+		LOG::ERR("Failed to read font {}", path);
+		return nullptr;
+    }
+
+	size_t pos = path.ReverseFind('.');
+	String dataPath = path.Substring(0, pos + 1);
+	dataPath += "dat";
+
+	Stream stream{dataPath, Stream::Mode::Read};
+	std::vector<uint8_t> data;
+	if (!stream.Readable())
+	{
+		LOG::ERR("Failed to read font data for {}", path);
+		return nullptr;
+	}
+	stream.Read(data);
+	ImGuiIO &io = ImGui::GetIO();
+	return io.Fonts->AddFontFromImageAndGlyphData(picture.GetData(), picture.GetWidth(), picture.GetHeight(), data.data(), data.size(), size_pixels, font_cfg_template, glyph_ranges);
 }
 
 void GuiLayer::OnAttach()
@@ -78,8 +262,7 @@ void GuiLayer::OnAttach()
     }
 
     ImGuiIO& io = ImGui::GetIO();
-
-    io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+    //io.ConfigFlags  |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
     io.ConfigFlags  |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags  |= ImGuiConfigFlags_ViewportsEnable;
@@ -89,45 +272,34 @@ void GuiLayer::OnAttach()
     style.WindowMinSize.y      = MinWindowSizeY;
     style.WindowBorderSize     = 0.0f;
     style.ScrollbarRounding    = 0.0f;
-    style.ScrollbarSize        = 12.0f;
-    style.DockingSeparatorSize = 1.0f;
-
+    style.ScrollbarSize        = 16.0f;
+    style.DockingSeparatorSize = 1.2f;
+	style.TabRounding            = 0.0f;
+	style.TabBorderSize          = 0.0f;
+	style.TabBarBorderSize       = 0.0f;
+	style.TabBarOverlineSize     = 2.0f;
+	style.AntiAliasedLines       = true;
+	style.AntiAliasedLinesUseTex = true;
+	style.AntiAliasedFill        = true;
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    io.DisplaySize.x = window->GetWidth();
-    io.DisplaySize.y = window->GetHeight();
-
-    Profiler p{ "Loading DemiLight File" };
-    NotoSans.Light = io.Fonts->AddFontFromFileTTF(
-       "Assets/Fonts/NotoSansCJKsc-Regular.otf",
-       20,
-       nullptr,
-       io.Fonts->GetGlyphRangesChineseFull()
-       );
-
-    NotoSans.Bold = io.Fonts->AddFontFromFileTTF(
-        "Assets/Fonts/NotoSansCJKsc-Bold.otf",
-        20,
-        nullptr,
-        io.Fonts->GetGlyphRangesChineseFull()
-        );
-
-#ifdef _WIN32
-   SimSun.Regular = io.Fonts->AddFontFromFileTTF(
-        std::string{SystemFontPath + std::string{"Simsun.ttc"}}.c_str(),
-        16,
-       nullptr,
-        io.Fonts->GetGlyphRangesChineseFull()
-       );
-#else
-   SimSun.Regular = NotoSans.Demilight;
+#ifndef IMGUI_DISABLE_SDF
+	style.WindowShadowSize = 0;
+	style.FrameShadowSize  = 0;
+    style.FontShadowSize   = 0;
 #endif
 
-    ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3);
+    unscaledStyle = style;
+    unscaledStyleReady = true;
+
+    io.DisplaySize.x = window->GetWidth();
+    io.DisplaySize.y = window->GetHeight();
+	ImGui_ImplImmortal_Init(device, window, queue, swapchain, 3, ImGuiBackendFlags_DefaultDesktop);
+
     decltype(&ImGui_ImplGlfw_NewFrame) NewWindowFrame;
     decltype(&ImGui_ImplGlfw_Shutdown) ShutDownWindow;
 
@@ -159,24 +331,182 @@ void GuiLayer::OnAttach()
     }
 }
 
+void GuiLayer::SetUiLayoutScale(float scale)
+{
+    if (!ImGui::GetCurrentContext() || !unscaledStyleReady)
+    {
+        return;
+    }
+
+    scale = std::max(0.01f, scale);
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 colors[ImGuiCol_COUNT];
+    for (int i = 0; i < ImGuiCol_COUNT; i++)
+    {
+        colors[i] = style.Colors[i];
+    }
+
+    const float fontSizeBase = style.FontSizeBase;
+    const float fontScaleDpi = style.FontScaleDpi;
+    const float nextFrameFontSizeBase = style._NextFrameFontSizeBase;
+    style = unscaledStyle;
+    for (int i = 0; i < ImGuiCol_COUNT; i++)
+    {
+        style.Colors[i] = colors[i];
+    }
+    style.FontSizeBase = fontSizeBase;
+    style.FontScaleMain = unscaledStyle.FontScaleMain * scale;
+    style.FontScaleDpi = fontScaleDpi;
+    style._NextFrameFontSizeBase = nextFrameFontSizeBase;
+    style.ScaleAllSizes(scale);
+}
+
 void GuiLayer::OnDetach()
 {
+    SaveWindowLayoutIfNeeded(true);
     platformSpecficWindow.ShutDown();
     ImGui_ImplImmortal_Shutdown();
 
     platformSpecficWindow = {};
 }
 
+void GuiLayer::SmoothScroll()
+{
+	auto &io = ImGui::GetIO();
+
+	const float kScrollSmoothing = 8.0f;
+	ImVec2 scroll = ImVec2(0.0f, 0.0f);
+	if (std::abs(scrollEnergy.x) > 0.01f)
+	{
+		scroll.x = scrollEnergy.x * io.DeltaTime * kScrollSmoothing;
+		scrollEnergy.x -= scroll.x;
+	}
+	else
+	{
+		scrollEnergy.x = 0.0f;
+	}
+	if (std::abs(scrollEnergy.y) > 0.01f)
+	{
+		scroll.y = scrollEnergy.y * io.DeltaTime * kScrollSmoothing;
+		scrollEnergy.y -= scroll.y;
+	}
+	else
+	{
+		scrollEnergy.y = 0.0f;
+	}
+
+	io.MouseWheel  =  scroll.y;
+	io.MouseWheelH = -scroll.x;
+}
+
 void GuiLayer::Begin()
 {
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
     ImGui_ImplImmortal_NewFrame();
 	platformSpecficWindow.NewFrame();
+    if (Application::This && Application::This->UsesInternalHiResUi())
+    {
+        // Preserve the platform density and add the internal UI render-target density.
+        const float scale = Application::This->GetUiRenderScale();
+        io.DisplayFramebufferScale.x *= scale;
+        io.DisplayFramebufferScale.y *= scale;
+    }
+
+    // This ImGui branch does not copy DisplayFramebufferScale into the main
+    // viewport. Keep the viewport, draw-data and font density on one scale.
+    ImGui::GetMainViewport()->FramebufferScale = io.DisplayFramebufferScale;
+    SmoothScroll();
     ImGui::NewFrame();
+    ImGui::GetMainViewport()->FramebufferScale = io.DisplayFramebufferScale;
+
+    if (pendingExternalFileDrop &&
+        ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
+    {
+		FileSystem::DirectoryEntry *entry = &dragDropSources;
+		ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, &entry, sizeof(entry));
+        ImGui::EndDragDropSource();
+        pendingExternalFileDrop = false;
+    }
 }
 
 void GuiLayer::End()
 {
+#ifdef _WIN32
+	/** So WM_NCHITTEST can return HTCLIENT on menu items (borderless drag uses HTCAPTION in the menu strip). */
+	if (ImGuiWindow *mb = ImGui::FindWindowByName("##MainMenuBar"))
+	{
+		const ImRect r = mb->Rect();
+		const ImVec2 mp = ImGui::GetIO().MousePos;
+		const bool inMenu = r.Contains(mp);
+		DirectWindow::SetBorderlessCaptionPreferClient(inMenu && ImGui::IsAnyItemHovered());
+	}
+	else
+	{
+		DirectWindow::SetBorderlessCaptionPreferClient(false);
+	}
+#endif
     ImGui::Render();
+    SaveWindowLayoutIfNeeded(false);
+}
+
+bool GuiLayer::LoadWindowLayout(const std::string &path)
+{
+	ImGuiIO &io = ImGui::GetIO();
+    WindowLayoutState &layout = GetWindowLayoutState();
+    layout.path = std::filesystem::path{ path };
+    layout.backupPath = layout.path;
+    layout.backupPath += ".bak";
+    io.IniFilename = nullptr;
+
+    std::string data;
+    if (ReadUsefulIniFile(layout.path, data))
+    {
+        ImGui::ClearIniSettings();
+        ImGui::LoadIniSettingsFromMemory(data.data(), data.size());
+        std::string backupData;
+        if (!ReadUsefulIniFile(layout.backupPath, backupData))
+        {
+            WriteFileAtomically(layout.backupPath, data.data(), data.size());
+        }
+        io.WantSaveIniSettings = false;
+        return true;
+    }
+
+    if (ReadUsefulIniFile(layout.backupPath, data))
+    {
+        ImGui::ClearIniSettings();
+        ImGui::LoadIniSettingsFromMemory(data.data(), data.size());
+        WriteFileAtomically(layout.path, data.data(), data.size());
+        io.WantSaveIniSettings = false;
+        LOG::WARN("Restored ImGui layout from backup {}", layout.backupPath.string());
+        return true;
+    }
+
+    io.WantSaveIniSettings = false;
+    LOG::WARN("No usable ImGui layout found at {} or {}", layout.path.string(), layout.backupPath.string());
+    return false;
+}
+
+bool GuiLayer::SaveWindowLayout(const String &path)
+{
+    if (!path.empty())
+    {
+        return SaveWindowLayoutToPath(std::filesystem::path{ path.c_str() }, false);
+    }
+
+    if (!GetWindowLayoutState().path.empty())
+    {
+        return SaveWindowLayoutIfNeeded(true);
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.IniFilename)
+    {
+        ImGui::SaveIniSettingsToDisk(io.IniFilename);
+        return true;
+    }
+    return false;
 }
 
 void GuiLayer::SetTheme()
@@ -251,21 +581,38 @@ void GuiLayer::OnEvent(Event &e)
 
     if (e.GetType() == Event::Type::WindowDragDrop)
     {
-		WindowDragDropEvent &dragDrapEvent = (WindowDragDropEvent &)e;
-        if (dragDrapEvent.GetSize() == 1)
+		WindowDragDropEvent &dragDropEvent = (WindowDragDropEvent &)e;
+		size_t size = dragDropEvent.GetSize();
+		if (size != 0)
         {
-			static FileSystem::DirectoryEntry dir;
-			dir = {
-				.path = dragDrapEvent.QueryFile(0),
-				.type = FileType::RegularFile
-			};
-		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
-		    {
-			    FileSystem::DirectoryEntry *entry = {&dir};
-			    ImGui::SetDragDropPayload("LOAD_FILE", (void *) &entry, sizeof(&entry));
-		    }
+			LOG::DEBUG("Queuing {} dropped file(s) for the ImGui target; first path: {}", size, dragDropEvent.QueryFile(0));
+			if (size > 1)
+            {
+				dragDropSources = {};
+				auto &sub = dragDropSources.subdirectories;
+				sub.resize(size);
+				for (size_t i = 0; i < size; i++)
+				{
+					sub[i] = {dragDropEvent.QueryFile(i), FileType::RegularFile};
+				}
+            }
+            else
+            {
+				dragDropSources = {
+				    dragDropEvent.QueryFile(0),
+				    FileType::RegularFile};
+            }
+			pendingExternalFileDrop = true;
         }
     }
+    else if (e.GetType() == Event::Type::MouseScrolled)
+    {
+        MouseScrolledEvent &event = (MouseScrolledEvent &)e;
+        scrollEnergy.x += event.GetOffsetX();
+        scrollEnergy.y += event.GetOffsetY();
+    }
+
+    dockspace->OnEvent(e);
 }
 
 void GuiLayer::UpdateTheme()
@@ -332,7 +679,7 @@ void GuiLayer::UpdateTheme()
      XX(ModalWindowDimBg);
  #undef XX
 
-     if (ImGui::Button(WordsMap::Get("Save Theme").c_str(), ImVec2{128.0f, 72.0f}))
+     if (ImGui::Button(Translator::Translate("Save Theme").c_str(), ImVec2{128.0f, 72.0f}))
      {
          GuiLayer *that = this;
          Async::Execute([&]() -> void {
@@ -345,63 +692,81 @@ void GuiLayer::UpdateTheme()
 
 void GuiLayer::Render()
 {
-    ImGui::PushFont(NotoSans.Light);
-    dockspace->Render();
-    ImGui::PopFont();
-
-    static char title[128] = { 0 };
-
-    const auto &io = ImGui::GetIO();
-
-    auto backendAPI = device->GetBackendAPI();
-    const char *apiName = "Unknown";
-    switch (backendAPI)
     {
-         case BackendAPI::D3D11:
-            apiName = "D3D11";
-            break;
-         case BackendAPI::D3D12:
-            apiName = "D3D12";
-            break;
-         case BackendAPI::Vulkan:
-            apiName = "Vulkan";
-            break;
-         case BackendAPI::Metal:
-            apiName = "Metal";
-            break;
-         case BackendAPI::OpenGL:
-            apiName = "OpenGL";
-            break;
-         default:
-            apiName = "Unknown";
-            break;
+		FontSizeStack fontSize{ NotoSans.Bold, 18.f};
+		StyleVarStack<float> styleVar1{
+		    { ImGuiStyleVar_ScrollbarRounding, 0.0f},
+		    { ImGuiStyleVar_ScrollbarSize,     16.0f}
+        };
+
+        StyleColorStack<uint32_t> styleColor2{
+            { ImGuiCol_WindowBg,             0xff222222},
+		    { ImGuiCol_ChildBg,              0xff222222},
+		    { ImGuiCol_Border,               0xff3b3b3b},
+            { ImGuiCol_Separator,            0xff3b3b3b},
+		    { ImGuiCol_TitleBg,              0xff222222},
+		    { ImGuiCol_TitleBgActive,        0xff222222},
+		    { ImGuiCol_Tab,                   0xff222222},
+		    { ImGuiCol_TabHovered,            0xff2d2d2d},
+		    { ImGuiCol_TabSelected,           0xff222222},
+		    { ImGuiCol_TabSelectedOverline,   0xffff8844},
+		    { ImGuiCol_TabDimmed,             0xff222222},
+		    { ImGuiCol_TabDimmedSelected,     0xff222222},
+		    { ImGuiCol_TabDimmedSelectedOverline, 0xff5a5a5a},
+            { ImGuiCol_ScrollbarBg,          0x0},
+            { ImGuiCol_ScrollbarGrab,        0x88444444},
+            { ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
+            { ImGuiCol_ScrollbarGrabActive,  0xdd444444},
+            { ImGuiCol_Button,               0xccff8844},
+		    { ImGuiCol_ButtonHovered,        0x33ff8844},
+		    { ImGuiCol_ButtonActive,         0x33ff8844},
+		    { ImGuiCol_Header,               0xccff8844},
+		    { ImGuiCol_HeaderHovered,        0x33ff8844},
+		    { ImGuiCol_HeaderActive,         0x33ff8844},
+        };
+
+		for (Widget *child : preDockspaceChildren)
+		{
+			if (child)
+			{
+				child->Draw();
+			}
+		}
+
+		dockspace->Render();
+
+        StyleVarStack<float> styleVar{
+		    { ImGuiStyleVar_WindowRounding,     0.f  },
+		    { ImGuiStyleVar_WindowBorderSize,   0.f  },
+		};
+
+        StyleColorStack<ImVec4> styleColor{
+			{ ImGuiCol_Button,        ImVec4(0.05f, 0.05f, 0.05f, 0.f)},
+			{ ImGuiCol_ButtonHovered, ImVec4(0.19f, 0.19f, 0.19f, 0.54f)},
+			{ ImGuiCol_ButtonActive,  ImVec4(0.20f, 0.22f, 0.23f, 1.00f)},
+			{ ImGuiCol_WindowBg,      ImVec4(0.10f, 0.10f, 0.10f, 1.00f)}
+        };
+
+
+
+		ImGui::RenderNotifications();
     }
 
-    sprintf(
-        title,
-        "%s (Graphics API: %s) %.3f ms/frame (%.1f FPS)",
-        Application::Name(),
-        apiName,
-        1000.0f / io.Framerate,
-        io.Framerate
-    );
+    static char title[128] = { 0 };
+    std::snprintf(title, sizeof(title), "%s", Application::Name());
 
+    const auto &io = ImGui::GetIO();
     TotalFrame++;
     TotalFrameRate += io.Framerate;
     Application::SetTitle(title);
 }
 
-void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
+void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue)
 {
-    auto &io = ImGui::GetIO();
-
-    auto width  = window->GetWidth();
-    auto height = window->GetHeight();
-    io.DisplaySize = { (float)width, (float)height };
-
     ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     // Update and Render additional Platform Windows
+    auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
          ImGui::UpdatePlatformWindows();
@@ -416,6 +781,14 @@ void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer)
 void GuiLayer::AddChild(Widget *widget)
 {
     dockspace->AddChild(widget);
+}
+
+void GuiLayer::AddPreDockspaceChild(Widget *widget)
+{
+    if (widget)
+    {
+        preDockspaceChildren.emplace_back(widget);
+    }
 }
 
 static inline std::string ThemePath = { "Assets/json/theme.json" };
@@ -446,6 +819,10 @@ void from_json(const JSON::SuperJSON &j, ImVec4 &v)
 bool GuiLayer::LoadTheme()
 {
     auto json = JSON::Parse(ThemePath);
+    if (json.is_null())
+    {
+		return false;
+    }
 
     ImGuiStyle *style = &ImGui::GetStyle();
     ImVec4 *colors = style->Colors;
@@ -588,6 +965,40 @@ bool GuiLayer::SaveTheme()
     stream.Write(json.dump(4));
 
     return true;
+}
+
+ImFont *GuiLayer::AddFont(
+    const std::string &path,
+    float fontSize,
+    const ImWchar *ranges,
+    float glyphMinAdvanceX,
+    bool mergeMode,
+    ImVec2 glyphOffset)
+{
+	auto &io = ImGui::GetIO();
+	ImFontConfig fontConfig = {};
+	fontConfig.MergeMode          = mergeMode;
+	fontConfig.SignedDistanceFont = true;
+	fontConfig.Flags              |= ImFontFlags_NoLoadError;
+	fontConfig.GlyphOffset         = glyphOffset;
+
+    if (glyphMinAdvanceX > 0.0f)
+	{
+		fontConfig.PixelSnapH = true;
+		fontConfig.GlyphMinAdvanceX = glyphMinAdvanceX;
+	}
+
+	if (auto font = io.Fonts->AddFontFromFileTTF(path.c_str(), fontSize, &fontConfig, ranges))
+		return font;
+
+	LOG::ERR("Failed to load font {}", path);
+	if (mergeMode)
+		return nullptr;
+
+	ImFontConfig fallbackConfig = {};
+	fallbackConfig.SizePixels = fontSize;
+	fallbackConfig.SignedDistanceFont = true;
+	return io.Fonts->AddFontDefaultVector(&fallbackConfig);
 }
 
 }

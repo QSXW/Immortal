@@ -5,105 +5,70 @@
  */
 
 #include "Device.h"
-#include "AudioSource.h"
+
+#ifdef _MSC_VER
+#include <immintrin.h>
+#endif
 
 namespace Immortal
 {
 
-static inline float Seconds2Nanoseconds(float seconds)
+static inline void MixAudioSamples(float *o, float *a, float *b, size_t size)
 {
-    return seconds * 1000000000;
+#if _MSC_VER
+    for (size_t i = 0; i < size; i += 8)
+    {
+		auto _a = _mm256_load_ps(&a[i]);
+		auto _b = _mm256_load_ps(&b[i]);
+		auto _c = _mm256_add_ps(_a, _b);
+		_c = _mm256_min_ps(_c, _mm256_set1_ps( 1.0f));
+		_c = _mm256_max_ps(_c, _mm256_set1_ps(-1.0f));
+		_mm256_store_ps(&o[i], _c);
+    }
+#else
+    for (size_t i = 0; i < size; i++)
+    {
+		o[i] = a[i] + b[i];
+    }
+#endif
 }
 
-struct StereoVector2
-{
-	float x;
-	float y;
-};
-
 AudioDevice::AudioDevice() :
-    context{ AudioRenderContext::CreateInstance() },
+    handle{ IAudioDevice::CreateInstance() },
     pts{ 0 },
     samples{ 0 },
     stopping{ false },
     startpts{ 0 },
     reset{ true },
-    status{false}
+    status{false},
+    defaultDeviceChanged{}
 {
     instance = this;
-    if (!context)
+    if (!handle)
     {
         return;
     }
 
-    thread = new Thread{ [=, this] {
-        uint64_t duration = 0;
-        context->Begin();
-		StereoVector2 buffer[2048] = {};
-		StereoVector2 *ptr = buffer;
-
-        static int lastSamples = 1024;
-        while (!stopping)
+    handle->SetOnEvent([=, this](Event &event) {
+        if (event.GetType() == Event::Type::AudioDefaultDeviceChanged)
         {
-            Picture picture{};
-            if (callBack)
-            {
-                callBack(picture);
-            }
-
-            if (picture)
-            {
-                if (reset)
-                {
-                    startpts = picture.GetTimestamp();
-                    samples  = picture.GetWidth();
-                    reset = false;
-                }
-                int frameLeft = 0;
-				lastSamples = picture.GetWidth();
-				if (picture.GetWidth() < 1024)
-                {
-                    size_t bytes = picture.GetWidth() << 3;
-					memcpy(ptr, picture.GetData(), bytes);
-					ptr += picture.GetWidth();
-                    size_t frames = ptr - buffer;
-                    if (frames > 1024)
-                    {
-                        frameLeft = context->PlaySamples(frames, (const uint8_t *)buffer);
-                        ptr = buffer;
-                    }
-                }
-                else
-                {
-					pts       = picture.GetTimestamp();
-                    samples   = picture.GetWidth();
-					frameLeft = context->PlaySamples(samples, picture.GetData());
-                }
-                duration = Seconds2Nanoseconds(((float)frameLeft / context->GetSampleRate()));
-            }
-            else
-            {
-                if (lastSamples >= 512)
-                {
-                    duration = Seconds2Nanoseconds(((float)1024 / context->GetSampleRate()));
-                }
-            }
-
-            duration >>= 1;
-            std::this_thread::sleep_for(std::chrono::nanoseconds(duration));
-
-            status.wait(true);
+			handle->OpenDevice();
         }
 
-        context->End();
-    } };
-
-    thread->Start();
-    thread->SetDebugDescription("AudioThread");
+        if (onEvent)
+		{
+			onEvent(event);
+		}
+	});
 }
 
 AudioDevice::~AudioDevice()
 {
+	if (instance == this)
+	{
+		instance = nullptr;
+	}
+
 	status = false;
 	status.notify_one();
 
@@ -113,43 +78,37 @@ AudioDevice::~AudioDevice()
         thread->Join();
         thread.Reset();
     }
-}
 
-void AudioDevice::PlayAudioStream(AudioSource *pAudioSource)
-{
-    uint64_t duration = Seconds2Nanoseconds((float)context->GetBufferSize() / context->GetSampleRate());
+	if (handle)
+	{
+		handle->SetOnEvent({});
+	}
+	onEvent = {};
 
-    context->Begin();
-    {
-        auto audioClip = pAudioSource->GetAudioClip();
-        context->PlaySamples(audioClip.frames, audioClip.pData);
+	std::vector<URef<IAudioStream>> closingStreams;
+	{
+		std::lock_guard lock{ mutex };
+		closingStreams.swap(streams);
+	}
+	for (auto &stream : closingStreams)
+	{
+		if (stream)
+		{
+			stream->Stop();
+		}
+	}
+	closingStreams.clear();
 
-        uint64_t duration = Seconds2Nanoseconds(((float)audioClip.frames / context->GetSampleRate()));
-        std::this_thread::sleep_for(std::chrono::nanoseconds(duration >> 1));
-    }
-    context->End();
-    std::this_thread::sleep_for(std::chrono::nanoseconds(duration >> 1));
-}
-
-void AudioDevice::PlayClip(AudioClip pAudioClip)
-{
-
-}
-
-void AudioDevice::PlayFrame(Picture picture)
-{
-
+	handle.Reset();
 }
 
 void AudioDevice::OnPauseDown()
 {
 	status = true;
-    context->Pause(true);
 }
 
 void AudioDevice::OnPauseRelease()
 {
-    context->Pause(false);
 	status = false;
 	status.notify_one();
 }
@@ -157,35 +116,75 @@ void AudioDevice::OnPauseRelease()
 void AudioDevice::Reset()
 {
     reset = true;
-    context->Reset();
 }
 
-double AudioDevice::GetPosition() const
+AudioFormat AudioDevice::GetFormat() const
 {
-	return context->GetPostion();
+	return handle->GetFormat();
 }
 
-double AudioDevice::Sync(uint64_t videoTimestamp, double framesPerSecond, double delta)
+bool AudioDevice::SetOnEvent(const std::function<void(Event &)> &callback)
 {
-    double start = (double)startpts * ((double)samples / context->GetSampleRate());
-    double time = (double)videoTimestamp * (1.0 / framesPerSecond) + delta;
-    return time - (start + GetPosition());
+	onEvent = callback;
+	return true;
 }
 
-uint64_t AudioDevice::Sync(double framesPerSecond)
+IAudioStream *AudioDevice::CreateAudioStream(const PFN_AudioStreamPlayCallback &callback)
 {
-    double audioTimestamp = (double)startpts * 512.0 / 48000.0; // ((double)samples / context->GetSampleRate());
-    audioTimestamp += GetPosition();
+	IAudioStream *stream = handle->CreateStream();
+    if (stream)
+    {
+        {
+            std::lock_guard lock{ mutex };
+            streams.emplace_back(stream);
+        }
+		stream->Start(callback);
+    }
 
-    double videoTimestamp = audioTimestamp / (1.0 / framesPerSecond);
-    return videoTimestamp;
+    return stream;
+}
+
+void AudioDevice::DestroyAudioStream(IAudioStream **ppStream)
+{
+    if (!ppStream || !*ppStream)
+    {
+        return;
+    }
+
+	IAudioStream *stream = *ppStream;
+    *ppStream = nullptr;
+
+    URef<IAudioStream> removed;
+    {
+        std::lock_guard lock{ mutex };
+        for (auto it = streams.begin(); it != streams.end(); it++)
+        {
+            if (stream == it->Get())
+            {
+                removed.Swap(*it);
+                streams.erase(it);
+                break;
+            }
+        }
+    }
+
+	if (removed)
+	{
+		removed->Stop();
+		removed.Reset();
+	}
+}
+
+int AudioDevice::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice)
+{
+	return handle->EnumeratorDevices(type, devices, numDevice);
+}
+
+AudioDevice *AudioDevice::GetInstance()
+{
+	return instance;
 }
 
 AudioDevice *AudioDevice::instance;
-
-int AudioDevice::GetSampleRate()
-{
-    return instance ? instance->context->GetSampleRate() : 48000;
-}
 
 }

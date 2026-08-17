@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022, by Wu Jianhua (toqsxw@outlook.com)
+ * Copyright (C) 2022-2024, by Wu Jianhua (toqsxw@outlook.com)
  *
  * This library is distributed under the Apache-2.0 license.
  */
@@ -13,14 +13,19 @@
 #include "Graphics/LightGraphics.h"
 #include "Render/Graphics.h"
 #include "Render/Mesh.h"
+#include "Vision/Picture.h"
 #include "SceneCamera.h"
 #include "Codec.h"
-#include "Demuxer.h"
+#include "MediaFormat.h"
+#include "Render/Material.h"
 #include <map>
+#include <vector>
+#include <cstdint>
 
 namespace Immortal
 {
 
+class Camera;
 class Scene;
 struct Component
 {
@@ -122,13 +127,13 @@ struct MeshComponent : public Component
 
     }
 
-    MeshComponent(std::shared_ptr<Immortal::Mesh> mesh) :
+    MeshComponent(Ref<Immortal::Mesh> mesh) :
         Mesh{ mesh }
     {
 
     }
 
-    operator std::shared_ptr<Immortal::Mesh>()
+    operator Ref<Immortal::Mesh>()
     {
         return Mesh;
     }
@@ -136,10 +141,32 @@ struct MeshComponent : public Component
     MeshComponent &operator=(const MeshComponent &other)
     {
         Mesh = other.Mesh;
+        SelectedDrawNodeIndex = other.SelectedDrawNodeIndex;
+        SubmeshLocalTransform = other.SubmeshLocalTransform;
         return *this;
     }
 
-    std::shared_ptr<Immortal::Mesh> Mesh;
+    /** Per draw-node transform relative to entity transform (`Transform * SubmeshLocalTransform[ni]`). Grows with `EnsureSubmeshLocalCount`. */
+    void EnsureSubmeshLocalCount(size_t n)
+    {
+        if (SubmeshLocalTransform.size() == n)
+        {
+            return;
+        }
+        const size_t old = SubmeshLocalTransform.size();
+        SubmeshLocalTransform.resize(n);
+        for (size_t i = old; i < n; i++)
+        {
+            SubmeshLocalTransform[i] = Matrix4(1.0f);
+        }
+    }
+
+    Ref<Immortal::Mesh> Mesh;
+
+    /** `NodeList()` index for material / hierarchy; `UINT32_MAX` = whole object (root gizmo, not a specific submesh). */
+    uint32_t SelectedDrawNodeIndex = UINT32_MAX;
+
+    std::vector<Matrix4> SubmeshLocalTransform;
 };
 
 struct MaterialComponent : public Component
@@ -154,28 +181,50 @@ struct MaterialComponent : public Component
     struct Reference
     {
         Reference() :
+		    Name{"Untitled"},
             AlbedoColor{ 0.995f, 0.995f, 0.995f, 1.0f },
-            Metallic{ 1.0f },
-            Roughness{ 1.0f }
+			Specular{ 0.0f, 0.0f, 0.0f, 1.0f },
+			Ambient{ 0.0f, 0.0f, 0.0f, 1.0f },
+		    Emissive{ 0.0f, 0.0f, 0.0f, 1.0f },
+            Metallic{ 0.0f },
+            Roughness{ 1.0f },
+		    Opacity{ 1.0f }
         {
-            Textures.Albedo = Graphics::Preset()->Textures.White;
-			Textures.Normal = Graphics::Preset()->Textures.Normal;
-            Textures.Metallic = Textures.Albedo;
+            Textures.Albedo    = Graphics::Preset()->Textures.White;
+			Textures.Normal    = Graphics::Preset()->Textures.Normal;
+            Textures.Specular  = Textures.Albedo;
+            Textures.Metallic  = Textures.Albedo;
             Textures.Roughness = Textures.Albedo;
-            Textures.AO = Textures.Albedo;
+			Textures.AmbientOcclusion = Textures.Albedo;
         }
 
         struct {
             Ref<Texture> Albedo;
             Ref<Texture> Normal;
-            Ref<Texture> Metallic;
+            Ref<Texture> Specular;
+			Ref<Texture> Metallic;
             Ref<Texture> Roughness;
-            Ref<Texture> AO;
+			Ref<Texture> AmbientOcclusion;
         } Textures;
 
+        struct
+		{
+			String Diffuse;
+			String Normal;
+			String Specular;
+			String Metallic;
+			String Roughness;
+			String AmbientOcclusion;
+		} Pathes;
+
+        std::string Name;
         Vector4 AlbedoColor;
+		Vector4 Specular;
+		Vector4 Ambient;
+		Vector4 Emissive;
         float   Metallic;
         float   Roughness;
+        float   Opacity;
     };
 
     std::vector<Reference> References;
@@ -185,8 +234,30 @@ struct LightComponent : public Component
 {
     DEFINE_COMPONENT_TYPE(Light)
 
+    enum class Type : uint32_t
+    {
+        Directional = 0,
+        Point       = 1,
+        Spot        = 2,
+    };
+
+    Type LightType = Type::Directional;
+    /** Linear sRGB color from UI (typically 0–1 per channel); final brightness uses `Intensity`. */
     Vector4 Radiance{ 1.0f };
+    /** Multiplier on `Radiance.rgb` when building scene light buffers (HDR-friendly). */
+    float Intensity = 1.0f;
+    float Range = 10.0f;
+    float InnerConeAngle = 30.0f;
+    float OuterConeAngle = 45.0f;
     bool Enabled = true;
+    /** When true (directional only), scene renders a depth shadow map for deferred resolve. */
+    bool CastShadows = true;
+
+    /** World-space unit toward the light (N·L). Directional + Spot use the same -R*Forward axis (cone axis for spot); Point uses camera→light fallback when degenerate. */
+    Vector3 DirectionWorld(const Camera &camera, const TransformComponent &transform) const;
+
+    /** Matches Scene / MeshletTask Phong fallback when no lights exist. */
+    static Vector3 DefaultDirectionalLightDirection();
 };
 
 struct SceneComponent : public Component
@@ -202,10 +273,6 @@ struct SpriteRendererComponent : public Component
 
     ~SpriteRendererComponent();
 
-    void UpdateSprite(const Vision::Picture &picture);
-
-    SpriteRendererComponent(const SpriteRendererComponent &other) = default;
-
     Ref<Texture> Sprite;
 
     Ref<Texture> Result = Sprite;
@@ -213,15 +280,6 @@ struct SpriteRendererComponent : public Component
 	Vector4 Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	float TilingFactor = 1.0f;
-
-protected:
-    Ref<DescriptorSet> descriptorSet;
-
-    Ref<Pipeline> pipeline;
-
-    Ref<Texture> input[3];
-
-    Ref<Buffer> buffer;
 };
 
 struct CameraComponent : public Component
@@ -339,66 +397,5 @@ struct ColorMixingComponent : public Component
 };
 
 inline size_t ColorMixingComponent::Length = sizeof(ColorMixingComponent) - offsetof(ColorMixingComponent, RGBA);
-
-enum class FilterType
-{
-    None,
-    GaussianBlur,
-    AverageBlur,
-    DCT
-};
-
-class VideoPlayerContext;
-struct VideoPlayerComponent : public Component
-{
-	SL_SWAPPABLE(VideoPlayerComponent)
-
-	DEFINE_COMPONENT_TYPE(VideoPlayer)
-
-	VideoPlayerComponent();
-
-    VideoPlayerComponent(Ref<Demuxer> demuxer, Ref<VideoCodec> decoder, Ref<VideoCodec> audioDecoder = nullptr);
-
-    ~VideoPlayerComponent();
-
-    Picture GetPicture();
-
-    Picture GetAudioFrame();
-
-    void PopPicture();
-
-    void PopAudioFrame();
-
-    void Seek(double seconds, int64_t min, int64_t max);
-
-    void Swap(VideoPlayerComponent &other);
-
-    Animator *GetAnimator() const;
-
-    const String &GetSource() const;
-
-public:
-	URef<VideoPlayerContext> player;
-};
-
-struct FilterComponent : public Component
-{
-public:
-    DEFINE_COMPONENT_TYPE(Filter)
-
-    FilterComponent() :
-        filters{}
-    {
-
-    }
-
-    void PushFilter(const std::string &name, const Ref<Pipeline> &filter)
-    {
-        filters[name] = filter;
-    }
-
-public:
-    std::map<std::string, Ref<Pipeline>> filters;
-};
 
 }

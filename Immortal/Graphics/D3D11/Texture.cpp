@@ -36,7 +36,7 @@ Texture::Texture(Device *device) :
 Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) :
     NonDispatchableHandle{ device }
 {
-	SetMeta(width, height, mipLevels, arrayLayers);
+	SetMeta(format, width, height, mipLevels, arrayLayers);
 	D3D11_TEXTURE2D_DESC desc = {
 		.Width          = width,
 		.Height         = height,

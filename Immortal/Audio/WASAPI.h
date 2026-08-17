@@ -9,59 +9,151 @@
 #ifndef WASAPI_CONTEXT_H_
 #define WASAPI_CONTEXT_H_
 
-#include "AudioRenderContext.h"
+#include "IAudioDevice.h"
+#include "AudioStream.h"
 
 #include <mutex>
-#include <audioclient.h>
+#include <Audioclient.h>
+
+#ifndef INITGUID
+#define INITGUID
+#endif
+
 #include <mmdeviceapi.h>
 #include <wrl/client.h>
 
 namespace Immortal
 {
+namespace WASAPI
+{
 
-using Microsoft::WRL::ComPtr;
-class WASAPIContext : public AudioRenderContext
+class Device;
+class DeviceChangeListener : public IClass, public IMMNotificationClient, public IObject
 {
 public:
-    using Super = AudioRenderContext;
+	DeviceChangeListener(Device *device);
 
+	ULONG STDMETHODCALLTYPE AddRef() override;
+
+	ULONG STDMETHODCALLTYPE Release() override;
+
+	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, VOID **ppvInterface) override;
+
+	HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR pwstrDeviceId, DWORD dwNewState) override;
+
+	HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR pwstrDeviceId) override;
+
+	HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR pwstrDeviceId) override;
+
+	HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId) override;
+
+	HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR pwstrDeviceId, const PROPERTYKEY key) override;
+
+protected:
+	Device *device;
+};
+
+using Microsoft::WRL::ComPtr;
+
+class AudioStream : public IClass, public IAudioStream
+{
 public:
-    WASAPIContext();
+	AudioStream(ComPtr<IMMDevice> &device, ComPtr<IAudioClient> &&audioClient);
 
-    virtual ~WASAPIContext();
+    virtual ~AudioStream() override;
 
-    virtual void OpenDevice() override;
+	virtual bool Start() override;
 
-    virtual void Begin() override;
+	virtual bool Stop() override;
 
-    virtual void End() override;
+	virtual bool Reset() override;
 
-    virtual void Reset() override;
+	virtual bool BeginRender(uint32_t frames) override;
 
-    virtual void Pause(bool enable) override;
+	virtual void WriteBuffer(const uint8_t *buffer, size_t size) override;
 
-    virtual int PlaySamples(uint32_t numberSamples, const uint8_t *pData) override;
+	virtual bool EndRender(uint32_t frames) override;
 
-    virtual double GetPostion() override;
+    virtual uint32_t GetAvailableFrameCount() override;
+
+	virtual AudioFormat GetFormat() override;
+
+    virtual bool OnDeviceChanged(IAudioDevice *device) override;
+
+	uint32_t FfplayAudioHwBufferBytes() const override;
+
+protected:
+	bool OpenStream();
 
     void Release();
+
+protected:
+	ComPtr<IMMDevice> device;
+
+    ComPtr<IAudioClient> audioClient;
+
+	ComPtr<IAudioRenderClient> renderClient;
+
+	ComPtr<IAudioClock> clock;
+
+    WAVEFORMATEX *waveFormat;
+
+    uint8_t *data;
+
+    uint32_t bufferSize;
+};
+
+class Device : public IClass, public IAudioDevice
+{
+public:
+    using Super = IAudioDevice;
+
+    friend class DeviceChangeListener;
+
+public:
+    Device();
+
+    virtual ~Device();
+
+    virtual bool OpenDevice(const AudioDeviceInfo &deviceInfo = {}) override;
+
+    virtual IAudioStream *CreateStream() override;
+
+    virtual AudioFormat GetFormat() override;
+
+    virtual bool SetOnEvent(const std::function<void(Event &)> &callback) override;
+
+    virtual int EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice) override;
+
+    bool OpenDefaultDevice();
+
+    void Release();
+
+    void OnEvent(AudioDeviceEvent type, Event &event);
+
+    ComPtr<IAudioClient> CreateAudioClient();
 
 protected:
     ComPtr<IMMDeviceEnumerator> enumerator;
 
     ComPtr<IMMDevice> handle;
 
-    ComPtr<IAudioClient> audioClient;
+    WAVEFORMATEX *waveFormat;
 
-    ComPtr<IAudioRenderClient> renderClient;
+    ComPtr<DeviceChangeListener> deviceChangeListener;
 
-    ComPtr<IAudioClock> clock;
+    EDataFlow flow;
+
+    ERole role;
 
     std::mutex mutex;
 
-    WAVEFORMATEX *waveFormat;
+    std::atomic_bool deviceChanged = false;
+
+    std::function<void(Event &)> callback;
 };
 
+}
 }
 
 #endif

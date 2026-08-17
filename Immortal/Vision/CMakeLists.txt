@@ -5,14 +5,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project("ImmortalVision")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(VISION_CORE_FILES
     Codec.h
     CodedFrame.cpp
     CodedFrame.h
-    Demuxer.h
+    MediaFormat.h
     Image.cpp
     Image.h
     Picture.cpp
@@ -28,6 +28,8 @@ list(TRANSFORM VISION_AUDIO_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Audio/")
 
 set(COMMON_FILES
     Animator.h
+    BitStream.h
+    ByteStream.h
     BitTracker.h
     Checksum.cpp
     Checksum.h
@@ -36,12 +38,14 @@ set(COMMON_FILES
     SamplingFactor.h)
 list(TRANSFORM COMMON_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Common/")
 
-set(DEMUX_FILES
-    FFDemuxer.cpp
-    FFDemuxer.h
-    IVFDemuxer.cpp
-    IVFDemuxer.h)
-list(TRANSFORM DEMUX_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Demux/")
+set(MEDIA_FORMAT_FILES
+    FFFormat.cpp
+    FFFormat.h
+    ImageFormat.cpp
+    ImageFormat.h
+    IVFFormat.cpp
+    IVFFormat.h)
+list(TRANSFORM MEDIA_FORMAT_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/MediaFormat/")
 
 set(VISION_INTERFACE_FILES
     MFXCodec.cpp
@@ -56,21 +60,43 @@ list(TRANSFORM LOOKUP_TABLE_FILE PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/LookupTabl
 set(IMAGE_CODEC_FILES
     BMP.cpp
     BMP.h
+    Exif.cpp
+    Exif.h
+    FFVideoImageCodec.cpp
+    FFVideoImageCodec.h
+    GprCodec.cpp
+    GprCodec.h
     Helper.h
+    ICC.cpp
+    ICC.h
     ImageCodec.h
     JPEG.cpp
     JPEG.h
+    Jxl.cpp
+    Jxl.h
     STBCodec.cpp
     STBCodec.h
     MFXJpegCodec.cpp
     MFXJpegCodec.h
+    NVJpegCodec.cpp
+    NVJpegCodec.h
     PPM.cpp
     PPM.h
     Raw.cpp
     Raw.h
     RawSpeed.h
+    ShellItemImage.cpp
+    ShellItemImage.h
+    TIFF.cpp
+    TIFF.h
     OpenCVCodec.cpp
-    OpenCVCodec.h)
+    OpenCVCodec.h
+    PNG.cpp
+    PNG.h
+    TurboJpegCodec.cpp
+    TurboJpegCodec.h
+    Webp.cpp
+    Webp.h)
 list(TRANSFORM IMAGE_CODEC_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Image/")
 
 set(VIDEO_CODEC_FILES
@@ -95,7 +121,9 @@ list(TRANSFORM VULKAN_VIDEO_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Video/Vul
 
 set(PROCESSING_FILES
     ColorSpace.cpp
-    ColorSpace.h)
+    ColorSpace.h
+    Scale.cpp
+    Scale.h)
 list(TRANSFORM PROCESSING_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/Processing/")
 
 set(EXTERNAL_FILES
@@ -103,10 +131,10 @@ set(EXTERNAL_FILES
     stb_image.h)
 list(TRANSFORM EXTERNAL_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/External/")
 
-source_group("\\"                FILES ${VISION_CORE_FILES}      )
+source_group("\\"                FILES ${VISION_CORE_FILES}     )
 source_group("\\Audio\\"         FILES ${VISION_AUDIO_FILES}    )
 source_group("\\Common\\"        FILES ${COMMON_FILES}          )
-source_group("\\Demux\\"         FILES ${DEMUX_FILES}           )
+source_group("\\MediaFormat\\"   FILES ${MEDIA_FORMAT_FILES}    )
 source_group("\\Interface\\"     FILES ${VISION_INTERFACE_FILES})
 source_group("\\LookupTable\\"   FILES ${LOOKUP_TABLE_FILE}     )
 source_group("\\Image\\"         FILES ${IMAGE_CODEC_FILES}     )
@@ -120,7 +148,7 @@ set(VISION_FILES
     ${VISION_CORE_FILES}
     ${VISION_AUDIO_FILES}
     ${COMMON_FILES}
-    ${DEMUX_FILES}
+    ${MEDIA_FORMAT_FILES}
     ${EXTERNAL_FILES}
     ${VISION_INTERFACE_FILES}
     ${LOOKUP_TABLE_FILE}
@@ -135,9 +163,10 @@ add_library(${PROJECT_NAME} STATIC ${VISION_FILES})
 target_link_libraries(${PROJECT_NAME} PRIVATE
     PUBLIC
         slapi
-        ExternalVision
         ImmortalShared
-        ImmortalGraphics)
+        ImmortalGraphics
+    PRIVATE
+        ExternalVision)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

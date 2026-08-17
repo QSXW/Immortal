@@ -8,7 +8,9 @@
 #include "Texture.h"
 #include "Algorithm/LightVector.h"
 #include "Math/Vector.h"
+#include "Material.h"
 
+#include <cfloat>
 #include <cmath>
 #include <vector>
 #include <set>
@@ -19,6 +21,8 @@ struct aiMesh;
 struct aiNode;
 namespace Immortal
 {
+
+struct MaterialComponent;
 
 struct SkeletonVertex
 {
@@ -137,6 +141,10 @@ struct Animation
 
     void Ticks(float deltaTime)
     {
+        if (Duration <= 1e-6f)
+        {
+            return;
+        }
         Timestamp += deltaTime * TicksPerSeconds;
         Timestamp = fmodf(Timestamp, Duration);
     }
@@ -185,7 +193,40 @@ public:
     LightVector<uint32_t> Meshes;
 };
 
-class IMMORTAL_API Mesh
+struct Meshlet
+{
+	uint32_t VertCount;
+	uint32_t VertOffset;
+	uint32_t PrimCount;
+	uint32_t PrimOffset;
+};
+
+struct Subset
+{
+	uint32_t Offset;
+	uint32_t Count;
+};
+
+union PackedTriangle
+{
+	struct
+	{
+		uint32_t i0 : 10;
+		uint32_t i1 : 10;
+		uint32_t i2 : 10;
+		uint32_t _unused : 2;
+	} indices;
+	uint32_t packed;
+};
+
+struct CullData
+{
+	Vector4 BoundingSphere;        // xyz = center, w = radius
+	uint8_t NormalCone[4];         // xyz = axis, w = sin(a + 90)
+	float ApexOffset;              // apex = center - axis * offset
+};
+
+class Mesh : public IObject
 {
 public:
     enum class Primitive
@@ -199,20 +240,54 @@ public:
         Torus
     };
 
-    static std::vector<std::shared_ptr<Mesh>> Primitives;
+    static std::vector<Ref<Mesh>> Primitives;
 
     template <Primitive I>
-    static inline std::shared_ptr<Mesh> Get()
+    static inline Ref<Mesh> Get()
     {
         return Primitives[static_cast<uint32_t>(I)];
     }
 
     static void LoadPrimitives();
 
-    static std::shared_ptr<Mesh> CreateSphere(float radius);
+    static Ref<Mesh> CreateSphere(float radius = 0.5f);
+
+    static Ref<Mesh> CreateCube(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, float size, bool rhcoords);
+
+    static Ref<Mesh> CreatePlane(float size = 1.0f);
+
+    static Ref<Mesh> CreateCube(float size = 1.0f);
+
+    static Ref<Mesh> CreateCylinder(float radius = 0.5f, float height = 1.0f, uint32_t segments = 32);
+
+    static Ref<Mesh> CreateCapsule(float radius = 0.25f, float cylinderHeight = 0.5f, uint32_t segments = 32, uint32_t rings = 8);
+
+    static Ref<Mesh> CreateCone(float radius = 0.5f, float height = 1.0f, uint32_t segments = 32);
+
+    static Ref<Mesh> CreateTorus(float majorRadius = 0.5f, float minorRadius = 0.15f, uint32_t majorSegments = 32, uint32_t minorSegments = 16);
 
 public:
-    struct Vertex
+    enum class VertexType
+    {
+        Simple,
+        Common,
+        Skeleton
+    };
+
+    struct DirectXSampleVertex
+    {
+		Vector3 Position;
+		Vector3 Normal;
+    };
+
+    struct SimpleVertex
+    {
+		Vector3 Position;
+		Vector3 Normal;
+		Vector2 Texcoord;
+    };
+
+    struct CommonVertex
     {
         Vector3 Position;
         Vector3 Normal;
@@ -238,46 +313,43 @@ public:
 
         }
 
-        Node(const char *name) :
-            Name{ name }
-        {
-
-        }
-
-        Node(const Node &other) :
-            Name{ other.Name },
-            Vertex{ other.Vertex },
-            Index{ other.Index },
-            MaterialIndex{ other.MaterialIndex }
-        {
-
-        }
-
-        Node(Node &&other) :
-            Name{ std::move(other.Name) },
-            Vertex{ std::move(other.Vertex) },
-            Index{ std::move(other.Index) },
-            MaterialIndex{ std::move(other.MaterialIndex) }
-        {
-
-        }
-
         std::string Name;
         Ref<Buffer> Vertex;
         Ref<Buffer> Index;
-
+		Ref<Buffer> Meshlets;
+		Ref<Buffer> UniqueVertexIndices;
+		Ref<Buffer> PrimitiveIndices;
+		uint32_t MeshletSubsetCount;
         uint32_t MaterialIndex = 0;
+
+		Ref<DescriptorSet> descriptorSet[5];
+
+		Ref<DescriptorSet> shadowDescriptorSet;
+
+		Ref<DescriptorSet> meshletSimpleDescriptorSet;
+
+		Ref<DescriptorSet> meshletLitDescriptorSet;
+
+		mutable uint32_t meshletLitDescriptorPipelineSlot = 0xFFFFFFFFu;
         bool Animated = false;
+
+		Vector3 AABBMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+		Vector3 AABBMax{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
+
+		Vector3 GetAABBCenter() const { return (AABBMin + AABBMax) * 0.5f; }
+		Vector3 GetAABBExtents() const { return (AABBMax - AABBMin) * 0.5f; }
     };
 
     using Index = Face;
 
 public:
-    Mesh(const std::string &filepath);
+	Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const std::string &filepath);
 
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<Index>& indicies);
+    Mesh(const std::vector<SimpleVertex> &vertices, const std::vector<Index> &indicies);
 
-    ~Mesh() { }
+    Mesh(AsyncComputeThread *asyncComputeThread, CommandBuffer *commandBuffer, const void *pVertex, size_t numVertex, const Index *pIndex, size_t numIndex, VertexType type, const std::string &name = "Untitled");
+
+    ~Mesh();
 
     const std::string &Source() const
     {
@@ -289,15 +361,45 @@ public:
         return nodes;
     }
 
+    void GetAABB(Vector3 &outMin, Vector3 &outMax) const
+    {
+        outMin = Vector3{ FLT_MAX, FLT_MAX, FLT_MAX };
+        outMax = Vector3{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
+        for (auto &n : nodes)
+        {
+            outMin.x = std::min(outMin.x, n.AABBMin.x);
+            outMin.y = std::min(outMin.y, n.AABBMin.y);
+            outMin.z = std::min(outMin.z, n.AABBMin.z);
+            outMax.x = std::max(outMax.x, n.AABBMax.x);
+            outMax.y = std::max(outMax.y, n.AABBMax.y);
+            outMax.z = std::max(outMax.z, n.AABBMax.z);
+        }
+    }
+
+    Vector3 GetAABBCenter() const
+    {
+        Vector3 mn, mx;
+        GetAABB(mn, mx);
+        return (mn + mx) * 0.5f;
+    }
+
     BoneNode *GetRootNode()
     {
         return rootNode;
+    }
+
+    const BoneNode *GetRootNode() const
+    {
+        return rootNode.Get();
     }
 
     size_t Size() const
     {
         return nodes.size();
     }
+
+	/** Fills `material.References` from embedded Assimp materials using each node's MaterialIndex. */
+	void PopulateMaterialComponent(MaterialComponent &material) const;
 
     std::vector<Animation> &GetAnimation()
     {
@@ -322,8 +424,16 @@ public:
 
     void CalculatedBoneTransform(const Matrix4 &parentTransform);
 
+    /** Upload CPU `transforms` to GPU bone matrix buffer (call after CalculatedBoneTransform). */
+    void UpdateBoneTransforms();
+
+    bool IsSkinned() const
+    {
+        return vertexType == VertexType::Skeleton;
+    }
+
 private:
-    void LoadModelData(const aiScene *scene);
+	void LoadModelData(const aiScene *scene, std::vector<CommonVertex> &vertices, std::vector<SkeletonVertex> &skeletonVertices, bool &useSkeletonVertices, std::vector<Face> &faces, std::vector <BufferBindInfo> &vertexBindInfo, std::vector<BufferBindInfo> &indexBindInfo);
 
     void LoadAnimationData(const aiScene *scene);
 
@@ -332,11 +442,17 @@ private:
     void ReadAssimpNode(BoneNode *boneNode, const aiNode *src);
 
 private:
+	VertexType vertexType;
+
+    std::vector<Material> materials;
+
     URef<Buffer> buffer;
 
     std::string path;
 
     std::vector<Node> nodes;
+
+    URef<Buffer> meshletBuffer;
 
     std::unordered_map<std::string, BoneInfo> bones;
 

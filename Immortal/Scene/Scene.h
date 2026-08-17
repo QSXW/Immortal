@@ -3,14 +3,15 @@
 #include "Core.h"
 #include "Math/Vector.h"
 
-#include "entt.hpp"
+#include <entt/entt.hpp>
 
-#include "Editor/EditorCamera.h"
 #include "ObserverCamera.h"
 #include "Shared/IObject.h"
+#include "String/IString.h"
 #include "Graphics/LightGraphics.h"
 #include "Component.h"
 #include "Graphics/Event/KeyEvent.h"
+#include "Render/Render2D.h"
 #include <map>
 
 namespace Immortal
@@ -49,23 +50,21 @@ public:
     };
 
 public:
-    Scene(const std::string &name = "Untitle");
+    Scene(const String &name = "Untitled", bool isEditorScene = false);
 
-    Scene(const std::string &name, bool isEditorScene = false);
-
-    ~Scene();
+    virtual ~Scene();
 
     void OnUpdate();
 
-    void OnGuiRender();
+    virtual void OnGuiRender();
 
     void OnEvent();
 
-    void OnRenderRuntime();
+    virtual void OnRenderRuntime();
 
-    void OnRenderEditor(const Camera &editorCamera);
+    void Render2DComponent(const Camera &camera, CommandBuffer *commandBuffer);
 
-    void OnRender(const Camera &camera);
+    void OnRender2D(const Camera &camera, RenderTarget *renderTarget);
 
     Object CreateObject(const std::string &name = "");
 
@@ -73,13 +72,9 @@ public:
 
     Object Query(const std::string &name);
 
-    void RenderAnimatedObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
+    virtual void SetViewportSize(const Vector2 &size);
 
-    void RenderObject(Ref<Pipeline::Graphics> pipeline, entt::entity object, TransformComponent &transform, MeshComponent &mesh, MaterialComponent &material);
-
-    void ApplyGaussianBlur(Ref<Image> &input, Ref<Image> &output, float sigma, int kernalSize);
-
-    void SetViewportSize(const Vector2 &size);
+    const Vector2 &GetViewportSize() const;
 
     void Select(Object *object);
 
@@ -111,22 +106,20 @@ public:
         return primaryCamera;
     }
 
-    Ref<RenderTarget> GetRenderTarget() const
+    virtual Ref<RenderTarget> GetRenderTarget() const
     {
-        return renderTarget;
+		return renderTarget;
     }
 
-private:
+	bool IsEditorScene() const { return isEditorScene; }
+
+    const ClearValue *GetRenderTargetClearValues() const { return renderTargetClearValues.data(); }
+
+protected:
     void Init();
 
-    void LoadEnvironment();
-
-    void ReloadSkyBoxCube();
-
-    void Equirect2Cube();
-
-private:
-    std::string name;
+protected:
+    String name;
 
     entt::registry registry;
 
@@ -137,46 +130,24 @@ private:
         uint32_t environmentResolution = 2048;
         float exposure = 4.5f;
         float gamma    = 2.2f;
-        int kernalSize = 3;
-        float sigma = 1.5;
         bool changed   = true;
     } settings;
 
-    struct {
-        std::shared_ptr<Mesh> skybox;
-    } meshes;
-
-    struct {
-        Ref<Texture> skybox;
-    } textures;
-
-    struct {
-       Ref<GraphicsPipeline> tonemap;
-       Ref<GraphicsPipeline> pbr;
-       Ref<GraphicsPipeline> basic;
-       Ref<GraphicsPipeline> outline;
-       Ref<GraphicsPipeline> skybox;
-       Ref<GraphicsPipeline> animatedBasic;
-       Ref<ComputePipeline>  colorMixing;
-       Ref<ComputePipeline>  horizontalGaussianBlur;
-       Ref<ComputePipeline>  verticalGaussianBlur;
-       Ref<ComputePipeline>  equirect2Cube;
-    } pipelines;
-
-    struct {
-        Ref<Buffer> host;
-        Ref<Buffer> transform;
-        Ref<Buffer> shading;
-        Ref<Buffer> gaussianKernal;
-    } uniforms;
-
     Ref<RenderTarget> renderTarget;
+
+    std::vector<ClearValue> renderTargetClearValues = {
+        { .color = { .float32 = { 0.0f, 0.0f, 0.0f, 0.0f } } },
+        { .depthStencil = { .depth = 1.0f, .stencil = 0 } },
+    };
 
     Vector2 viewportSize{ 0.0f, 0.0f };
 
     Object *selectedObject{ nullptr };
 
-private:
+    URef<Render2D> render2d;
+
+	bool isEditorScene = false;
+
     SceneCamera *primaryCamera = nullptr;
 
     ObserverCamera observerCamera;

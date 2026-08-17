@@ -6,6 +6,9 @@ namespace Immortal
 {
 
 static constexpr uint32_t TextureAlignment = 256;
+static constexpr uint64_t kMaxTimeOut      = (uint64_t)~0;
+
+using GpuVirtualAddress = uint64_t;
 
 enum class BackendAPI
 {
@@ -58,6 +61,12 @@ enum class CommandBufferType
     Secondary,
 };
 SL_ENABLE_BITWISE_OPERATOR(CommandBufferType)
+
+enum class MemoryType
+{
+    Host,
+    Device,
+};
 
 enum class BufferType
 {
@@ -116,6 +125,7 @@ enum class ShaderStage
     Intersection          = BIT(10),
     Callable              = BIT(11),
     Mesh                  = BIT(12),
+    WorkGraph             = BIT(13),
     Pixel                 = Fragment,
     Unspecified           = BIT(31)
 };
@@ -136,8 +146,7 @@ enum class ShaderBinaryType
 
 enum class ShaderCompilerType
 {
-    DirectXShaderCompiler,
-    glslang
+    DirectXShaderCompiler
 };
 
 enum class AddressMode
@@ -172,6 +181,80 @@ enum class CompareOperation
     Always         = 7,
 };
 
+enum class ImageLayout
+{
+    Undefined = 0,
+    General,
+    Present,
+    GenericRead,
+    RenderTarget,
+    UnorderedAccess,
+    DepthStencilWrite,
+    DepthStencilRead,
+    ShaderResource,
+    TransferSource,
+    TransferDestination,
+    ResolveSource,
+    ResolveDestination,
+    ShadingRateSource,
+    VideoDecodeRead,
+    VideoDecodeWrite,
+    VideoProcessRead,
+    VideoProcessWrite,
+    VideoEncodeRead,
+    VideoEncodeWrite,
+};
+
+enum class BarrierType
+{
+    Texture,
+    Buffer,
+    Global
+};
+
+enum class PipelineStage
+{
+	None           = 0,
+	All            = BIT(0),
+	Draw           = BIT(1),
+	VertexInput    = BIT(2),
+	VertexShading  = BIT(3),
+    PixelShading   = BIT(4),
+    DepthStencil   = BIT(5),
+    RenderTarget   = BIT(6),
+	ComputeShading = BIT(7),
+    Raytracing     = BIT(8),
+    Transfer       = BIT(9),
+    AllShading     = BIT(10),
+};
+SL_ENABLE_BITWISE_OPERATOR(PipelineStage)
+
+enum class AccessFlag
+{
+
+};
+SL_ENABLE_BITWISE_OPERATOR(AccessFlag)
+
+struct Barrier
+{
+	BarrierType   type;
+	PipelineStage srcStage;
+	PipelineStage dstStage;
+	AccessFlag    srcAccess;
+	AccessFlag    dstAccess;
+    void         *resource;
+};
+
+struct SubresourceRange
+{
+	uint32_t baseMipLevel;
+	uint32_t levelCount;
+	uint32_t baseArrayLayer;
+	uint32_t layerCount;
+};
+
+static SubresourceRange kAllSubresources = {};
+
 struct Rect2D
 {
     uint32_t left;
@@ -199,6 +282,85 @@ struct BufferBindInfo
 	BufferType type;
 	uint32_t size;
 	uint32_t offset;
+};
+
+struct ShaderMacro
+{
+	const char *name;
+	const char *definition;
+};
+
+union ClearColorValue
+{
+	float float32[4];
+	int32_t int32[4];
+	uint32_t uint32[4];
+};
+
+struct ClearDepthStencilValue
+{
+	float depth;
+	uint32_t stencil;
+};
+
+union ClearValue
+{
+	ClearColorValue color;
+	ClearDepthStencilValue depthStencil;
+};
+
+enum class DispatchMode
+{
+	NodeCpuInput      = 0,
+	NodeGpuInput      = 1,
+	MultiNodeCpuInput = 2,
+	MultiNodeGpuInput = 3
+};
+
+struct NodeCpuInput
+{
+	uint32_t entrypointIndex;
+	uint32_t numRecords;
+	const void *pRecords;
+	uint64_t recordStrideInBytes;
+};
+
+struct GpuVirtualAddressAndStride
+{
+	GpuVirtualAddress virtualAddress;
+	uint64_t sizeInBytes;
+};
+
+struct NodeGpuInput
+{
+	uint32_t entrypointIndex;
+	uint32_t numRecords;
+	GpuVirtualAddressAndStride records;
+};
+
+ struct MultiNodeCpuInput
+{
+	 uint32_t NumNodeInputs;
+	const NodeCpuInput *pNodeInputs;
+	uint64_t nodeInputStrideInBytes;
+};
+
+struct MultiNodeGpuInput
+{
+	uint32_t numNodeInputs;
+	GpuVirtualAddressAndStride nodeInputs;
+};
+
+struct DispatchGraphDescription
+{
+	DispatchMode mode;
+	union
+	{
+		NodeCpuInput nodeCpuInput;
+		GpuVirtualAddress nodeGpuInput;
+		MultiNodeCpuInput multiNodeCpuInput;
+		GpuVirtualAddress multiNodeGpuInput;
+	};
 };
 
 }

@@ -3,11 +3,11 @@
 #include <stack>
 
 #include "FileSystem/FileSystem.h"
-#include "Graphics/GLSLCompiler.h"
 #include "Device.h"
 #include "FileSystem/RF.h"
 #include "Shared/DLLLoader.h"
 #include "Graphics/DirectXShaderCompiler.h"
+#include "Graphics/SPIRVReflector.h"
 
 namespace Immortal
 {

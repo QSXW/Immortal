@@ -21,12 +21,12 @@ Window *Window::CreateInstance(Anonymous handle, WindowType type)
 	return new GLFWWindow{ handle };
 }
 
-Window *Window::CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type)
+Window *Window::CreateInstance(const std::string &title, uint32_t width, uint32_t height, WindowType type, bool borderlessWindow)
 {
 #ifdef _WIN32
-	if (type != WindowType::GLFW)
+	if (type == WindowType::None)
     {
-        return new DirectWindow{ title, width, height };
+        return new DirectWindow{ title, width, height, borderlessWindow };
     }
 #endif
     return new GLFWWindow{ title, width, height };

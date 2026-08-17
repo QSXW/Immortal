@@ -12,6 +12,7 @@ namespace D3D12
 {
 
 class Device;
+class DescriptorHeap;
 class Buffer : public SuperBuffer, public Resource, public NonDispatchableHandle
 {
 public:
@@ -58,15 +59,19 @@ public:
 public:
 	Buffer();
 
-    Buffer(Device *device, Type type, const size_t size, const void *data = nullptr);
+    Buffer(Device *device, Type type, const size_t size, MemoryType memoryType = MemoryType::Host, uint32_t byteStride = 1);
 
     virtual ~Buffer() override;
 
     virtual Anonymous GetBackendHandle() const override;
 
+    virtual GpuVirtualAddress GetGpuVirtualAddress() override;
+
     virtual void Map(void **ppData, size_t size, uint64_t offset) override;
 
 	virtual void Unmap() override;
+
+    virtual void SetName(const char *name) override;
 
     template <class T>
 	HRESULT Map(T **data)
@@ -91,10 +96,12 @@ public:
     }
 
 protected:
-    void Construct();
+    void Construct(MemoryType memoryType, uint32_t byteStride);
 
 protected:
     Descriptor descriptor;
+
+    DescriptorHeap *descriptorHeap;
 };
 
 }

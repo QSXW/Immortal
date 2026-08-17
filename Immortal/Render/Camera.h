@@ -18,13 +18,17 @@ public:
 
 public:
     Camera(ProjectionType type = ProjectionType::Perspective) :
-        projectionType{ type }
+        projectionType{ type },
+        clipNear{ 0.1f },
+        clipFar{ 200.0f }
     {
 
     }
 
     Camera(const Matrix4 &prj) :
-        projection{ prj }
+        projection{ prj },
+        clipNear{ 0.1f },
+        clipFar{ 200.0f }
     {
 
     }
@@ -61,14 +65,25 @@ public:
         return projection * view;
     }
 
+	/** World-space camera position (inverse(view) * origin). Override if view is not a standard world-to-camera matrix. */
+	virtual Vector3 GetWorldPosition() const
+	{
+		return Vector3{glm::vec3{Vector::Inverse(view)[3]}};
+	}
+
     virtual void SetViewportSize(Vector2 viewportSize)
     {
 
     }
 
-    virtual void OnUpdate()
+    virtual void OnUpdate(const float &deltaTime = Time::DeltaTime)
     {
 
+    }
+
+    virtual void OnEvent(Event &e)
+    {
+    
     }
 
     virtual bool OnMouseScrolled(MouseScrolledEvent &e)
@@ -81,6 +96,23 @@ public:
         return projectionType == ProjectionType::Orthographic;
     }
 
+	/** Shadow / CSM frustum fitting reads these (set whenever projection clip planes change). */
+	float ClipNear() const
+	{
+		return clipNear;
+	}
+
+	float ClipFar() const
+	{
+		return clipFar;
+	}
+
+	void SetClipPlanes(float nearPlane, float farPlane)
+	{
+		clipNear = nearPlane > 1e-6f ? nearPlane : 1e-6f;
+		clipFar = farPlane > clipNear + 1e-3f ? farPlane : clipNear + 1e-3f;
+	}
+
 protected:
     ProjectionType projectionType = ProjectionType::Perspective;
 
@@ -89,6 +121,9 @@ protected:
     Matrix4 projection{ 1.0f };
 
     float exposure{ 0.8f };
+
+	float clipNear = 0.1f;
+	float clipFar = 200.0f;
 };
 
 }

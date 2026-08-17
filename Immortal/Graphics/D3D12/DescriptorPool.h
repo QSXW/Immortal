@@ -10,13 +10,13 @@ namespace D3D12
 class DescriptorPool : public NonDispatchableHandle
 {
 public:
-    static constexpr uint32_t NumDescriptorPerPool = 256;
+    static constexpr uint32_t NumDescriptorPerPool = 64;
 	D3D_SWAPPABLE(DescriptorPool)
 
 public:
 	DescriptorPool();
 
-	DescriptorPool(Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+	DescriptorPool(Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount, D3D12_DESCRIPTOR_HEAP_FLAGS flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
     DescriptorPool(Device *device, uint32_t descriptorCountPerHeap, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
@@ -24,16 +24,11 @@ public:
 
     DescriptorHeap *AllocateNextDescriptorHeap();
 
-    void Allocate(DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount);
+    Descriptor AllocateWithMask(DescriptorHeap **ppHeap, uint32_t descriptorCount);
 
-    Descriptor Allocate(uint32_t descriptorCount);
+    void Free(DescriptorHeap *descriptorHeap, Descriptor descriptor, uint32_t descriptorCount);
 
 public:
-    uint32_t CountOfDescriptor()
-    {
-        return NumDescriptorPerPool - freeDescritorCount;
-    }
-
     uint32_t GetIncrementSize() const
     {
         return activeDescriptorHeap->GetIncrementSize();
@@ -42,6 +37,11 @@ public:
     void Swap(DescriptorPool &other)
     {
 		SLASSERT(false && "Don't swap DescriptorPool!");
+    }
+
+    DescriptorHeap *GetActiveDescriptorHeap() const
+    {
+		return activeDescriptorHeap;
     }
 
 protected:
@@ -57,7 +57,9 @@ protected:
 
     D3D12_DESCRIPTOR_HEAP_FLAGS flags;
 
-    uint32_t freeDescritorCount;
+    std::unordered_map<DescriptorHeap *, uint64_t> masks;
+
+    uint64_t fullMask;
 
     std::vector<URef<DescriptorHeap>> descriptorHeaps;
 };

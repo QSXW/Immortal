@@ -11,7 +11,7 @@ using namespace Immortal;
 class ImmortalEditor : public Application
 {
 public:
-    ImmortalEditor(BackendAPI api) : Application(api, "Immortal Editor", 1920, 1080)
+    ImmortalEditor(BackendAPI api, int deviceId) : Application(api, deviceId, "Immortal Editor", 0, 0)
     {
         auto renderLayer = new RenderLayer(Vector2{ 1920, 1080 }, "Debug Layer for Render");
         PushLayer(renderLayer);
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
             deviceId = std::atoi(device.c_str());
         }
 
-        URef<Application> app{ new ImmortalEditor{ type } };
+        URef<Application> app{new ImmortalEditor{type, deviceId}};
         app->Run();
     }
     catch (const std::exception &e)

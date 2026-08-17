@@ -24,6 +24,8 @@ struct AdapterProperty
 	DXGI_ADAPTER_DESC desc;
 };
 
+D3D12_COMMAND_LIST_TYPE CAST(QueueType type);
+
 class DescriptorPool;
 class DescriptorHeap;
 class Sampler;
@@ -51,7 +53,18 @@ public:
 
     virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
 
-    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+    virtual SuperSampler *CreateSampler(
+        Filter mipFilter,
+        Filter minFilter,
+        Filter magFilter,
+        AddressMode addressMode,
+        CompareOperation compareOperation,
+        float minLod,
+        float maxLod) override;
+
+    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
+
+    virtual SuperShader *CreateShader(ShaderStage stage, ShaderBinaryType type, const uint8_t *binary, uint32_t size) override;
 
     virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
@@ -59,18 +72,24 @@ public:
 
     virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
+
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride = 1) override;
+
+    virtual SuperBufferView *CreateBufferView(SuperBuffer *buffer, Format format, uint32_t byteStride) override;
 
     virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 
     virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 1) override;
 
 public:
 	IDXGIAdapter1 *GetAdapter() const;
 
 	IDXGIFactory4 *GetDXGIFactory() const;
+
+    bool CheckExtendFeatures();
 
     void CreateSampler(const D3D12_SAMPLER_DESC *pDesc, D3D12_CPU_DESCRIPTOR_HANDLE *pDestDescriptor);
 
@@ -78,9 +97,15 @@ public:
 
     Sampler *GetSampler(Filter filter);
 
-    Descriptor AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount = 1);
+    Descriptor AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, uint32_t descriptorCount = 1);
 
-    void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount);
+    void FreeDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *ppHeap, Descriptor descriptor, uint32_t descriptorCount = 1);
+
+    void AllocateShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount = 1);
+
+	void FreeShaderVisibleDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE type, DescriptorHeap *ppHeap, Descriptor descriptor, uint32_t descriptorCount = 1);
+
+    void PollInfoQueue();
 
 public:
 #define DEFINE_CRETE_FUNC(U, T, O) \
@@ -239,16 +264,26 @@ public:
     bool IsRayTracingSupported() const
     {
         D3D12_FEATURE_DATA_D3D12_OPTIONS5 features{};
-        Check(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features, sizeof(features)));
+        if (FAILED(handle->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &features, sizeof(features))))
+        {
+			return false;
+        }
         return features.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+    }
+
+    HRESULT GetRemovedReason()
+    {
+		return handle->GetDeviceRemovedReason();
     }
 
 protected:
 	PhysicalDevice *physicalDevice;
 
-	URef<DescriptorPool> descriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+    std::mutex descritorHeapMutex;
+	URef<DescriptorPool> descriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES][36];
 
-    URef<DescriptorPool> shaderVisibleDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+    std::mutex shaderVisibleDescriptorMutex;
+	URef<DescriptorPool> shaderVisibleDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER + 1][36];
 
     struct
     {
@@ -258,8 +293,6 @@ protected:
 
     std::shared_mutex pipelineMutex;
     std::unordered_map<std::string, URef<Pipeline>> pipelines;
-
-    ComPtr<ID3D12InfoQueue1> infoQueue;
 };
 
 }

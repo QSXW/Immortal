@@ -127,6 +127,14 @@ void CommandBuffer::SetBlendFactor(const float factor[4])
 
 }
 
+void CommandBuffer::SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+{
+	Submit([=, this] {
+		glPolygonOffset(depthBiasSlopeFactor, depthBiasConstantFactor);
+		(void)depthBiasClamp;
+	});
+}
+
 void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset)
 {
 	if (!pushConstant || pushConstant->GetSize() < size)
@@ -139,13 +147,9 @@ void CommandBuffer::PushConstants(ShaderStage stage, const void *pData, uint32_t
 	});
 }
 
-void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const float *pClearColor)
+void CommandBuffer::BeginRenderTarget(SuperRenderTarget *_renderTarget, const ClearValue *pClearValue)
 {
-	float red   = pClearColor[0];
-	float green = pClearColor[1];
-	float blue  = pClearColor[2];
-	float alpha = pClearColor[3];
-
+	auto &[red, green, blue, alpha] = pClearValue[0].color.float32;
 	RenderTarget *renderTarget = InterpretAs<RenderTarget>(_renderTarget);
 
 	Submit([=, this] {

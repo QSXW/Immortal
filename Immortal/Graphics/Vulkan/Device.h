@@ -1172,7 +1172,16 @@ public:
 
 	virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod) override;
 
-	virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+	virtual SuperSampler *CreateSampler(
+	    Filter mipFilter,
+	    Filter minFilter,
+	    Filter magFilter,
+	    AddressMode addressMode,
+	    CompareOperation compareOperation,
+	    float minLod,
+	    float maxLod) override;
+
+	virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
 	virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
@@ -1180,13 +1189,15 @@ public:
 
 	virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type) override;
 
-	virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+	virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
+
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size, MemoryType memoryType, uint32_t byteStride) override;
 
 	virtual SuperDescriptorSet *CreateDescriptorSet(SuperPipeline *pipeline) override;
 
 	virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 0) override;
 
 public:
     uint32_t GetQueueFailyIndex(VkQueueFlagBits queueFlag);
@@ -1194,6 +1205,8 @@ public:
     uint32_t GetMemoryType(uint32_t bits, VkMemoryPropertyFlags properties, VkBool32 *memoryTypeFound = nullptr);
 
     void DestroyObjects();
+
+    void SetName(VkObjectType objectType, uint64_t handle, const char *name);
 
 public:
     template <class T>

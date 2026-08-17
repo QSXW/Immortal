@@ -51,14 +51,14 @@ public:
 
         uint64_t GetBits(uint32_t n)
         {
-            if (n > bitsLeft)               
-            {                               
-                Move(n + 48);             
-            }                               
+            if (n > bitsLeft)
+            {
+                Move(n + 48);
+            }
 
             uint64_t ret = word;
-            bitsLeft -= n;                  
-            word <<= n;                     
+            bitsLeft -= n;
+            word <<= n;
 
             return ret >> (64 - n);
         }
@@ -134,7 +134,7 @@ public:
         RST5 = 0xD5,
         RST6 = 0xD6,
         RST7 = 0xD7,
-        SOF0 = 0xC0, // Baseline DCT           
+        SOF0 = 0xC0, // Baseline DCT
         SOF1 = 0xC1, // Extended sequential DCT
         SOF2 = 0xC2, // Progressive DCT
         DHT  = 0xC4,
@@ -193,7 +193,9 @@ public:
 
     ~JpegCodec();
 
-    void ParseHeader(const std::vector<uint8_t> &buffer);
+    void ParseHeader(const uint8_t *buffer,  size_t size, bool queryExif = false);
+
+    std::pair<uint32_t, uint32_t> ParseExifOffset(const uint8_t *data, size_t size);
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
@@ -201,7 +203,7 @@ private:
     template <class T>
     void ParseMarker(const uint8_t **data, T &&process);
 
-    void ParseAPP(const uint8_t *data);
+    void ParseAPP(const uint8_t *base, const uint8_t *data);
 
     void ParseDQT(const uint8_t *data);
 
@@ -228,6 +230,12 @@ private:
 
     CVector<uint8_t> data;
 
+    uint32_t width;
+
+    uint32_t height;
+
+    Format format;
+
     std::vector<Component> components;
 
     std::array<Block, 8> blocks;
@@ -253,6 +261,10 @@ private:
     uint8_t blocksInMCU = 0;
 
     uint8_t bitDepth;
+
+    uint32_t exifOffset = 0;
+
+    uint32_t exifSize = 0;
 
 #ifndef JPEG_CODEC_MINIMAL
     struct {

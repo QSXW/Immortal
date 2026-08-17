@@ -39,8 +39,7 @@ int main(int, char **)
 	Async::Init();
 
     // For more details about the rendering, please check HelloTriangleExample and HelloImGuiExample
-    BackendAPI backendAPI = BackendAPI::Vulkan;
-
+    BackendAPI backendAPI = BackendAPI::D3D12;
 
 	URef<Window> window = Window::CreateInstance("Hello Video Player(d3d12va) - Immortal Graphics Example", 1920, 1080, backendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
 	window->SetEventCallback(OnEvent);
@@ -48,7 +47,7 @@ int main(int, char **)
 	URef<Instance> instance = Instance::CreateInstance(backendAPI, window->GetType());
 
 	URef<Device> device = instance->CreateDevice(0);
-	Graphics::SetDevice(device);
+	Graphics::SetDevice(instance, device);
 
     queue = device->CreateQueue(Queue::Type::Graphics);
 	Graphics::Execute<SetQueueTask>(queue);
@@ -71,6 +70,7 @@ int main(int, char **)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	io.Fonts->Build();
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -106,13 +106,13 @@ int main(int, char **)
 
 	Timer timer;
     URef<VideoPlayerComponent> videoPlayerComponent;
-	URef<SpriteRendererComponent> sprite;
+	URef<FilterGraphComponent> filterGraphComponent;
 	Ref<Texture> texture;
 
     Ref<AudioDevice> audioDevice;
 	float progress = 0.0f;
 
-    std::string filepath = "Video Player Window";
+    String filepath = "Video Player Window";
 	while (!applicationExit)
     {
 		auto deltaTime = timer.tick<Timer::Seconds>();
@@ -131,63 +131,33 @@ int main(int, char **)
             {
 				filepath = path.value();
 
-                bool isPaused = false;
-                if (audioDevice)
-                {
-					audioDevice->OnPauseDown();
-					audioDevice->Reset();
-					isPaused = true;
-                }
-                else
-                {
-					audioDevice = new AudioDevice;
-                }
-
 				texture = {};
 
-				Ref<Vision::FFCodec> codec      = new Vision::FFCodec;
-				Ref<Vision::FFCodec> audioCodec = new Vision::FFCodec;
-				Ref<Demuxer>    demuxer = new Vision::FFDemuxer;
-				demuxer->Open(filepath, codec, audioCodec);
-				videoPlayerComponent = new VideoPlayerComponent{ demuxer, codec, audioCodec };
-				sprite = new SpriteRendererComponent;
-
-                if (isPaused)
-                {
-					audioDevice->OnPauseRelease();
-                }
-
-				audioDevice->SetCallBack(
-				    [&](Picture &picture) {
-					    if (videoPlayerComponent)
-					    {
-						    Picture audioFrame = videoPlayerComponent->GetAudioFrame();
-						    if (audioFrame)
-						    {
-							    videoPlayerComponent->PopAudioFrame();
-						    }
-						    picture = audioFrame;
-					    }
-				    });
+				videoPlayerComponent = new VideoPlayerComponent{filepath};
+				filterGraphComponent.Reset();
             }
         }
         Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
         if (videoPlayerComponent)
 		{
 			auto animator = videoPlayerComponent->GetAnimator();
-			if (animator->TryMoveToNextFrame(deltaTime))
+			Picture picture = videoPlayerComponent->GetLivePicture();
+			if (picture)
 			{
-				Picture picture = videoPlayerComponent->GetPicture();
-				if (picture)
-				{
-					videoPlayerComponent->PopPicture();
-					sprite->UpdateSprite(picture);
+                if (!filterGraphComponent)
+                {
+					auto &format = picture.GetFormat();
+					filterGraphComponent = new FilterGraphComponent;
+					filterGraphComponent->Insert<ScaleFilter>(0, picture.GetFormat(), format.IsType(Format::HightBitDepth) ? Format::RGBA16 : Format::RGBA8, picture.GetWidth(), picture.GetHeight());
+                }
 
-					texture = sprite->Sprite;
+				videoPlayerComponent->PopPicture();
+				filterGraphComponent->Execute({ picture });
 
-					auto current = picture.GetTimestamp();
-					progress = (float) current / animator->TotalFrames();
-				}
+				texture = filterGraphComponent->QueryOutput(0);
+
+				auto current = picture.GetTimestamp() * picture.GetTimebase().Normalize() * animator->FPS();
+				progress = (float) current / animator->TotalFrames();
 			}
         }
 
@@ -231,7 +201,7 @@ int main(int, char **)
 				progress = f;
 				Animator *animator = videoPlayerComponent->GetAnimator();
 				audioDevice->OnPauseDown();
-				videoPlayerComponent->Seek(animator->TotalSeconds() * progress, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
+				videoPlayerComponent->Seek(MediaType::Video, animator->TotalSeconds() * progress, std::numeric_limits<int64_t>::min(), std::numeric_limits<int64_t>::max());
 				audioDevice->Reset();
 				audioDevice->OnPauseRelease();
             }
@@ -249,12 +219,12 @@ int main(int, char **)
             ImGui::ShowDemoWindow(&show_demo_window);
 
         ImGui::Render();
-		const float clearValue[4] = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
+		const ClearValue clearValue = { clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w };
 
         auto &commandBuffer = commandBuffers[syncPoint];
         commandBuffer->Begin();
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-		commandBuffer->BeginRenderTarget(renderTarget, clearValue);
+		commandBuffer->BeginRenderTarget(renderTarget, &clearValue);
         ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
         commandBuffer->EndRenderTarget();
         commandBuffer->End();
@@ -283,7 +253,7 @@ int main(int, char **)
     queue->WaitIdle();
 
 	videoPlayerComponent.Reset();
-	sprite.Reset();
+	filterGraphComponent.Reset();
 	audioDevice.Reset();
 	Graphics::Release();
 
@@ -297,6 +267,7 @@ int main(int, char **)
     }
 
     // Cleanup
+	texture.Reset();
 	queue.Reset();
 	swapchain.Reset();
 	pEvent.Reset();

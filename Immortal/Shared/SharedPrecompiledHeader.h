@@ -12,6 +12,7 @@
 #include <atomic>
 
 #include "Async.h"
+#include "Coroutine.h"
 #include "DLLLoader.h"
 #include "IObject.h"
 #include "Log.h"

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
@@ -10,6 +14,7 @@
 #include "Event/KeyEvent.h"
 #include "Event/MouseEvent.h"
 #include "Graphics/LightGraphics.h"
+#include "String/IString.h"
 
 #define DEFINE_CPP_STRING_API(FN_NAME, ...) \
     template <class...  Args> \
@@ -17,6 +22,9 @@
     { \
         return ImGui::FN_NAME(label.c_str(), std::forward<Args>(args)...); \
     }
+
+
+#define kDragDropProxyDirectoryEntry "@DirectoryEntry"
 
 namespace ImGui
 {
@@ -62,8 +70,6 @@ static inline bool Begin(const std::string &name, bool *p_open = NULL, ImGuiWind
     return Begin(name.c_str(), p_open, flags);
 }
 
-DEFINE_CPP_STRING_API(CollapsingHeader)
-
 }
 
 namespace UI
@@ -94,6 +100,138 @@ enum class Language
     English,
 };
 
+template <class T>
+struct StyleColorStack
+{
+public:
+    StyleColorStack(std::initializer_list<std::pair<int, T>> &&styles) :
+        size{ int(styles.size()) }
+    {
+        for (auto &[style, value] : styles)
+        {
+            ImGui::PushStyleColor(style, value);
+        }
+    }
+
+    ~StyleColorStack()
+    {
+        ImGui::PopStyleColor(size);
+    }
+
+    int size;
+};
+
+template <class T>
+struct StyleVarStack
+{
+public:
+    StyleVarStack(std::initializer_list<std::pair<int, T>> &&styles) :
+        size{ int(styles.size()) }
+    {
+        for (auto &[style, value] : styles)
+        {
+            ImGui::PushStyleVar(style, value);
+        }
+    }
+
+    ~StyleVarStack()
+    {
+        ImGui::PopStyleVar(size);
+    }
+
+    int size;
+};
+
+struct CursorStack
+{
+    CursorStack(const ImVec2 &cursor) :
+	    backup{}
+    {
+		auto window = ImGui::GetCurrentWindow();
+		backup = window->DC.CursorPos;
+		window->DC.CursorPos = cursor;
+    }
+
+    ~CursorStack()
+    {
+		auto window = ImGui::GetCurrentWindow();
+		window->DC.CursorPos = backup;
+    }
+
+    ImVec2 backup;
+};
+
+struct WindowCursorSwitcher
+{
+	WindowCursorSwitcher(const ImVec2 &pos)
+    {
+		_pos = ImGui::GetCursorScreenPos();
+		_size = ImGui::GetWindowSize();
+		ImGui::SetCursorScreenPos(pos);
+    }
+
+    WindowCursorSwitcher(const ImVec2 &pos, const ImVec2 &size) :
+	    WindowCursorSwitcher{ pos }
+    {
+		ImGui::SetWindowSize(size);
+    }
+
+    ~WindowCursorSwitcher()
+    {
+		ImGui::SetCursorScreenPos(_pos);
+		ImGui::SetWindowSize(_size);
+    }
+
+    ImVec2 _pos;
+	ImVec2 _size;
+};
+
+struct FontSizeStack
+{
+public:
+	FontSizeStack(ImFont *font) :
+	    font{font},
+	    fontSize{0.0f}
+	{
+		ImGui::PushFont(font, 0.0f);
+	}
+
+	FontSizeStack(ImFont *font, float fontSize) :
+	    font{font},
+	    fontSize{fontSize}
+	{
+		ImGui::PushFont(font, fontSize);
+	}
+
+    FontSizeStack(float fontSize) :
+	    FontSizeStack{ nullptr, fontSize }
+    {
+
+    }
+
+	~FontSizeStack()
+	{
+		ImGui::PopFont();
+	}
+
+	ImFont *font;
+	float fontSize;
+};
+
+struct DisabledWhen
+{
+public:
+	DisabledWhen(bool condition = true)
+	{
+		ImGui::BeginDisabled(condition);
+	}
+
+	~DisabledWhen()
+	{
+		ImGui::EndDisabled();
+	}
+};
+
 class WWindow;
 class WDockerSpace;
 class RenderContext;
@@ -122,17 +260,29 @@ public:
 
     virtual void End();
 
-    void SubmitRenderDrawCommands(CommandBuffer *commandBuffer);
+    void SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue);
 
     void Render();
 
 	void AddChild(Widget *widget);
 
+    void AddPreDockspaceChild(Widget *widget);
+
     void SetTheme();
+
+    void SetUiLayoutScale(float scale);
 
     bool LoadTheme();
 
     bool SaveTheme();
+
+    static ImFont *AddFont(
+        const std::string &path,
+        float fontSize,
+        const ImWchar *ranges,
+        float glyphMinAdvanceX = 0.0f,
+        bool mergeMode = false,
+        ImVec2 glyphOffset = ImVec2(0.0f, 0.0f));
 
     void BlockEvent(bool block)
 	{
@@ -149,6 +299,16 @@ public:
         return NotoSans.Bold;
     }
 
+    BackendAPI GetBackendAPI() const
+    {
+		return device ? device->GetBackendAPI() : BackendAPI::D3D12;
+    }
+
+    void SetScrollEnergy(const ImVec2 &energy)
+    {
+		scrollEnergy = energy;
+    }
+
     void UpdateTheme();
 
     static void Inject2Dockspace(Widget *widget)
@@ -157,10 +317,20 @@ public:
 		This->AddChild(widget);
 	}
 
+    static void InjectBeforeDockspace(Widget *widget)
+	{
+		SLASSERT(This && "ImGui is not initialized yet!");
+		This->AddPreDockspaceChild(widget);
+	}
+
     static bool IsLanguage(Language lang)
     {
 		return This->language == lang;
     }
+
+    static bool LoadWindowLayout(const std::string &path);
+
+    static bool SaveWindowLayout(const String &path = {});
 
 protected:
 	void __Begin()
@@ -172,6 +342,8 @@ protected:
 	{
 		ImGui::Render();
 	}
+
+    void SmoothScroll();
 
 protected:
 	Device *device;
@@ -192,6 +364,8 @@ protected:
 
     Ref<WDockerSpace> dockspace;
 
+    std::vector<Widget *> preDockspaceChildren;
+
     bool blockEvents = true;
 
     float time = 0.0f;
@@ -201,6 +375,18 @@ protected:
     static GuiLayer *This;
 
     URef<WWindow> themeEditor;
+
+    ImVector<ImWchar> fontRanges;
+
+    ImVec2 scrollEnergy = ImVec2(0.0f, 0.0f);
+
+    ImGuiStyle unscaledStyle{};
+
+    bool unscaledStyleReady = false;
+
+    FileSystem::DirectoryEntry dragDropSources;
+
+    bool pendingExternalFileDrop = false;
 };
 
 using SuperGuiLayer = GuiLayer;

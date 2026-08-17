@@ -124,16 +124,40 @@ static inline FormatElement FormatElementTable[] = {
     { Format::R32G32B32A32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT,           DXF(DXGI_FORMAT_R32G32B32A32_FLOAT ), MTLF(MTL::PixelFormatRGBA32Float          ), GL_FORMAT_RGBA32F,             FS_C(float,    4)  },
     { Format::Depth32F,            VK_FORMAT_D32_SFLOAT,                    DXF(DXGI_FORMAT_D32_FLOAT          ), MTLF(MTL::PixelFormatDepth32Float         ), GL_FORMAT_DEPTH32F_STENCIL8,   FS_C(float,    1)  },
     { Format::Depth24Stencil8,     VK_FORMAT_D24_UNORM_S8_UINT,             DXF(DXGI_FORMAT_D24_UNORM_S8_UINT  ), MTLF(MTL::PixelFormatDepth24Unorm_Stencil8), GL_FORMAT_DEPTH24_STENCIL8,    FS_C(uint32_t, 1)  },
-    { Format::BayerLayerRGBG,      VK_FORMAT_R16_UNORM,                     DXF(DXGI_FORMAT_R16_UNORM          ), MTLF(MTL::PixelFormatR16Unorm             ), GL_FORMAT_R16,                 FS_C(uint16_t, 1)  },
-    { Format::YUV420P,             VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  3)  },
-    { Format::YUV422P,             VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM,     DXF(DXGI_FORMAT_YUY2               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  3)  },
-    { Format::YUV444P,             VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,     DXF(DXGI_FORMAT_AYUV               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  3)  },
-    { Format::YUV420P10,           VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,  DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 3)  },
-    { Format::YUV422P10,           VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,  DXF(DXGI_FORMAT_Y210               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 3)  },
-    { Format::YUV444P10,           VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,  DXF(DXGI_FORMAT_Y410               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 3)  },
-    { Format::NV12,                VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,      DXF(DXGI_FORMAT_NV12               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  3)  },
-    { Format::P010LE,              VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P010               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 3)  },
-    { Format::P016LE,              VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 3)  },
+    { Format::BayerLayerRGGB,      VK_FORMAT_R16_UNORM,                     DXF(DXGI_FORMAT_R16_UNORM          ), MTLF(MTL::PixelFormatR16Unorm             ), GL_FORMAT_R16,                 FS_C(uint16_t, 1)  },
+    { Format::Matric4,             VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(float,   16)  },
+    { Format::FLOAT8P,             VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_R32F,                FS_C(uint8_t,  1)  },
+    { Format::R8_UINTP,            VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
+    { Format::R16_SINTP,           VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(int16_t,  1)  },
+    { Format::R32_SINTP,           VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(int32_t,  1)  },
+    { Format::FLOAT16P,            VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(int16_t,  1)  },
+    { Format::FLOATP,              VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(float,    1)  },
+    { Format::DOUBLE,              VK_FORMAT_R64_SFLOAT,                    DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(double,   1)  },
+    { Format::DOUBLEP,             VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(double,   1)  },
+    { Format::R64_SINT,            VK_FORMAT_R64_SINT,                      DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(int64_t,  1)  },
+    { Format::R64_SINTP,           VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(int64_t,  1)  },
+    { Format::YUV420P,             VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
+    { Format::YUV422P,             VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM,     DXF(DXGI_FORMAT_YUY2               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
+    { Format::YUV444P,             VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,     DXF(DXGI_FORMAT_AYUV               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
+    { Format::YUV420P10,           VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,  DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV422P10,           VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,  DXF(DXGI_FORMAT_Y210               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV444P10,           VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,  DXF(DXGI_FORMAT_Y410               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV420P12,           VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,  DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV422P12,           VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,  DXF(DXGI_FORMAT_Y210               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV444P12,           VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,  DXF(DXGI_FORMAT_Y410               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV420P16,           VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,  DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV422P16,           VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,  DXF(DXGI_FORMAT_Y210               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::YUV444P16,           VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM,  DXF(DXGI_FORMAT_Y410               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::NV12,                VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,      DXF(DXGI_FORMAT_NV12               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
+    { Format::P010,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P010               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::P012,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::P016,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::P210,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P010               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::P212,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::P216,                VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,   DXF(DXGI_FORMAT_P016               ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint16_t, 1)  },
+    { Format::Y210,                VK_FORMAT_R16G16B16A16_UNORM,            DXF(DXGI_FORMAT_R16G16B16A16_UNORM ), MTLF(MTL::PixelFormatRGBA16Unorm          ), GL_FORMAT_RGB16,               FS_C(uint64_t, 1)  },
+    { Format::Y216,                VK_FORMAT_R16G16B16A16_UNORM,            DXF(DXGI_FORMAT_R16G16B16A16_UNORM ), MTLF(MTL::PixelFormatRGBA816norm          ), GL_FORMAT_RGB16,               FS_C(uint64_t, 1)  },
+    { Format::YUVA420P,            VK_FORMAT_UNDEFINED,                     DXF(DXGI_FORMAT_UNKNOWN            ), MTLF(MTL::PixelFormatInvalid              ), GL_FORMAT_INVALID,             FS_C(uint8_t,  1)  },
 };
 
 static const FormatElement &GetFormatElement(const Format &format)
@@ -194,6 +218,126 @@ size_t Format::Size() const
 size_t Format::GetTexelSize() const
 {
 	return ElementSize() * ComponentCount();
+}
+
+const char *Format::GetString() const
+{
+#define FORMAT_STR_CASE(name) case Format::name: return #name
+    switch (v)
+    {
+    FORMAT_STR_CASE(YUV);
+    FORMAT_STR_CASE(NV);
+    FORMAT_STR_CASE(YUYV);
+    FORMAT_STR_CASE(_10Bits);
+    FORMAT_STR_CASE(_12Bits);
+    FORMAT_STR_CASE(_16Bits);
+    FORMAT_STR_CASE(_420);
+    FORMAT_STR_CASE(_422);
+    FORMAT_STR_CASE(_444);
+    FORMAT_STR_CASE(None);
+    FORMAT_STR_CASE(R8_UNORM);
+    FORMAT_STR_CASE(R8_SNORM);
+    FORMAT_STR_CASE(R8_UINT);
+    FORMAT_STR_CASE(R8_SINT);
+    FORMAT_STR_CASE(R8_SRGB);
+    FORMAT_STR_CASE(R8G8_UNORM);
+    FORMAT_STR_CASE(R8G8_SNORM);
+    FORMAT_STR_CASE(R8G8_UINT);
+    FORMAT_STR_CASE(R8G8_SINT);
+    FORMAT_STR_CASE(R8G8_SRGB);
+    FORMAT_STR_CASE(R8G8B8_UNORM);
+    FORMAT_STR_CASE(R8G8B8_SNORM);
+    FORMAT_STR_CASE(R8G8B8_UINT);
+    FORMAT_STR_CASE(R8G8B8_SINT);
+    FORMAT_STR_CASE(R8G8B8_SRGB);
+    FORMAT_STR_CASE(B8G8R8_UNORM);
+    FORMAT_STR_CASE(B8G8R8_SNORM);
+    FORMAT_STR_CASE(B8G8R8_UINT);
+    FORMAT_STR_CASE(B8G8R8_SINT);
+    FORMAT_STR_CASE(B8G8R8_SRGB);
+    FORMAT_STR_CASE(R8G8B8A8_UNORM);
+    FORMAT_STR_CASE(R8G8B8A8_SNORM);
+    FORMAT_STR_CASE(R8G8B8A8_UINT);
+    FORMAT_STR_CASE(R8G8B8A8_SINT);
+    FORMAT_STR_CASE(R8G8B8A8_SRGB);
+    FORMAT_STR_CASE(B8G8R8A8_UNORM);
+    FORMAT_STR_CASE(B8G8R8A8_SNORM);
+    FORMAT_STR_CASE(B8G8R8A8_UINT);
+    FORMAT_STR_CASE(B8G8R8A8_SINT);
+    FORMAT_STR_CASE(B8G8R8A8_SRGB);
+    FORMAT_STR_CASE(R16_UNORM);
+    FORMAT_STR_CASE(R16_SNORM);
+    FORMAT_STR_CASE(R16_UINT);
+    FORMAT_STR_CASE(R16_SINT);
+    FORMAT_STR_CASE(R16_SFLOAT);
+    FORMAT_STR_CASE(R16G16_UNORM);
+    FORMAT_STR_CASE(R16G16_SNORM);
+    FORMAT_STR_CASE(R16G16_UINT);
+    FORMAT_STR_CASE(R16G16_SINT);
+    FORMAT_STR_CASE(R16G16_SFLOAT);
+    FORMAT_STR_CASE(R16G16B16_UNORM);
+    FORMAT_STR_CASE(R16G16B16_SNORM);
+    FORMAT_STR_CASE(R16G16B16_UINT);
+    FORMAT_STR_CASE(R16G16B16_SINT);
+    FORMAT_STR_CASE(R16G16B16_SFLOAT);
+    FORMAT_STR_CASE(R16G16B16A16_UNORM);
+    FORMAT_STR_CASE(R16G16B16A16_SNORM);
+    FORMAT_STR_CASE(R16G16B16A16_UINT);
+    FORMAT_STR_CASE(R16G16B16A16_SINT);
+    FORMAT_STR_CASE(R16G16B16A16_SFLOAT);
+    FORMAT_STR_CASE(R32_UINT);
+    FORMAT_STR_CASE(R32_SINT);
+    FORMAT_STR_CASE(R32_SFLOAT);
+    FORMAT_STR_CASE(R32G32_UINT);
+    FORMAT_STR_CASE(R32G32_SINT);
+    FORMAT_STR_CASE(R32G32_SFLOAT);
+    FORMAT_STR_CASE(R32G32B32_UINT);
+    FORMAT_STR_CASE(R32G32B32_SINT);
+    FORMAT_STR_CASE(R32G32B32_SFLOAT);
+    FORMAT_STR_CASE(R32G32B32A32_UINT);
+    FORMAT_STR_CASE(R32G32B32A32_SINT);
+    FORMAT_STR_CASE(R32G32B32A32_SFLOAT);
+    FORMAT_STR_CASE(Depth32F);
+    FORMAT_STR_CASE(Depth24Stencil8);
+    FORMAT_STR_CASE(BayerLayerRGGB);
+    FORMAT_STR_CASE(Matric4);
+    FORMAT_STR_CASE(FLOAT8P);
+    FORMAT_STR_CASE(R8_UINTP);
+    FORMAT_STR_CASE(R16_SINTP);
+    FORMAT_STR_CASE(R32_SINTP);
+    FORMAT_STR_CASE(FLOAT16P);
+    FORMAT_STR_CASE(FLOATP);
+    FORMAT_STR_CASE(DOUBLE);
+    FORMAT_STR_CASE(DOUBLEP);
+    FORMAT_STR_CASE(R64_SINT);
+    FORMAT_STR_CASE(R64_SINTP);
+    FORMAT_STR_CASE(ARGB);
+    FORMAT_STR_CASE(YUV420P);
+    FORMAT_STR_CASE(YUV422P);
+    FORMAT_STR_CASE(YUV444P);
+    FORMAT_STR_CASE(YUV420P10);
+    FORMAT_STR_CASE(YUV422P10);
+    FORMAT_STR_CASE(YUV444P10);
+    FORMAT_STR_CASE(YUV420P12);
+    FORMAT_STR_CASE(YUV422P12);
+    FORMAT_STR_CASE(YUV444P12);
+    FORMAT_STR_CASE(YUV420P16);
+    FORMAT_STR_CASE(YUV422P16);
+    FORMAT_STR_CASE(YUV444P16);
+    FORMAT_STR_CASE(NV12);
+    FORMAT_STR_CASE(P010);
+    FORMAT_STR_CASE(P012);
+    FORMAT_STR_CASE(P016);
+    FORMAT_STR_CASE(P210);
+    FORMAT_STR_CASE(P212);
+    FORMAT_STR_CASE(P216);
+    FORMAT_STR_CASE(Y210);
+    FORMAT_STR_CASE(Y216);
+    FORMAT_STR_CASE(YUVA420P);
+    default:
+        return "Unknown";
+    }
+#undef FORMAT_STR_CASE
 }
 
 Format::Format(VkFormat format) :

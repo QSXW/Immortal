@@ -23,16 +23,17 @@ PPMCodec::~PPMCodec()
 #define PPM_HEADER "P3\n%d %d\n255\n"
 CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
 {
+	return CodecError::EndOfFile;
     int width, height;
     size_t n = sizeof(PPM_HEADER);
-	auto ptr = (const char *)codedFrame.GetBuffer().data();
+	auto ptr = (const char *)codedFrame.GetData();
     sscanf(ptr, PPM_HEADER, &width, &height);
 
     uint8_t header[1024] = {};
-    picture = Picture{ width, height, Format::RGBA8 };
+    picture = Picture{ width, height, Format::RGBA8, true };
     for (int i = 0; i < height; i++)
     {
-        auto dst = picture.GetData() + i * width * picture.GetFormat().GetTexelSize();
+        auto dst = picture.GetData() + i * picture.GetStride(0);
         for (int j = 0; j < width; j++, dst += 4)
         {
             size_t size = n;
@@ -44,7 +45,7 @@ CodecError PPMCodec::Decode(const CodedFrame &codedFrame)
         }
     }
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 CodecError PPMCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
@@ -74,7 +75,7 @@ CodecError PPMCodec::Encode(const Picture &picture, CodedFrame &codedFrame)
 
     codedFrame = { std::move(buffer) };
 
-    return CodecError::Succeed;
+    return CodecError::Success;
 }
 
 }

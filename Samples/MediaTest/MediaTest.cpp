@@ -18,8 +18,8 @@ int main()
         THROWIF(!stream.Readable(), "Unable to open file");
 
         std::vector<uint8_t> buffer;
-        buffer.reserve(SLALIGN(stream.Size(), 64));
-        buffer.resize(stream.Size());
+        buffer.reserve(SLALIGN(stream.GetSize(), 64));
+        buffer.resize(stream.GetSize());
         stream.Read(buffer);
 
         Vision::HEVCCodec decoder;

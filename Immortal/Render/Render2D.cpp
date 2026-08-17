@@ -1,153 +1,147 @@
 #include "Render2D.h"
 
 #include "Graphics.h"
+#include "OrthographicCamera.h"
 #include "FileSystem/FileSystem.h"
 #include <array>
 
 namespace Immortal
 {
 
-Render2D::Data Render2D::data;
-
-Ref<GraphicsPipeline> Render2D::pipeline{ nullptr };
-
-Ref<Buffer> Render2D::uniform;
-
-void Render2D::Setup()
+Render2D::Render2D() :
+    rectIndexCount{},
+    commandBuffer{}
 {
-	//data.textureDescriptorBuffer = Render::CreateDescriptor<Texture>(Data::MaxTextureSlots);
+    auto device = Graphics::GetDevice();
+	URef<Shader> vertexShader = Graphics::GetShaderByName("render2d_VS", ShaderStage::Vertex, "VSMain");
+	URef<Shader> pixelShader  = Graphics::GetShaderByName("render2d_PS", ShaderStage::Pixel , "PSMain");
 
-    data.RectVertexBuffer.resize(data.MaxVertices);
-	//pipeline = Render::CreateGraphicsPipeline(Render::GetShader("Render2D"));
-	uniform = Graphics::CreateBuffer(sizeof(Matrix4), BufferType::ConstantBuffer);
-
-    //pipeline->Set({
-    //    { Format::VECTOR3, "POSITION"      },
-    //    { Format::VECTOR4, "COLOR"         },
-    //    { Format::VECTOR2, "TEXCOORD"      },
-    //    { Format::FLOAT,   "INDEX"         },
-    //    { Format::FLOAT,   "TILING_FACTOR" },
-    //    { Format::R32,     "OBJECT_ID"     }
-    //});
-
-    //pipeline->Set(Render::CreateBuffer(data.MaxVertices * sizeof(RectVertex), Buffer::Type::Vertex));
-
-    {
-        std::unique_ptr<uint32_t> rectIndices;
-        rectIndices.reset(new uint32_t[data.MaxIndices]);
-
-        auto ptr = rectIndices.get();
-        for (uint32_t i = 0, offset = 0; i < data.MaxIndices; i += 6)
+    Shader *shaders[] = { vertexShader, pixelShader };
+	pipeline = device->CreateGraphicsPipeline();
+	pipeline->Enable(Pipeline::State::Blend | Pipeline::State::Depth);
+	pipeline->Construct(shaders,
+        SL_ARRAY_LENGTH(shaders),
         {
-            ptr[i + 0] = offset + 0;
-            ptr[i + 1] = offset + 1;
-            ptr[i + 2] = offset + 2;
-
-            ptr[i + 3] = offset + 2;
-            ptr[i + 4] = offset + 3;
-            ptr[i + 5] = offset + 0;
-
-            offset += 4;
+            { Format::VECTOR3,  "POSITION"      },
+            { Format::VECTOR4,  "COLOR"         },
+            { Format::VECTOR2,  "TEXCOORD"      },
+            { Format::FLOAT,    "INDEX"         },
+            { Format::FLOAT,    "TILING_FACTOR" },
+            { Format::R32_UINT, "OBJECT_ID"     }
+        },
+        {
+            Format::RGBA8,
+            Format::R32G32_UINT,
+            Format::Depth24Stencil8
         }
-		//pipeline->Set(Render::CreateBuffer(data.MaxIndices * sizeof(uint32_t), Buffer::Type::Index), rectIndices.get());
-    }
-    pipeline->Enable(Pipeline::State::Blend);
-    //pipeline->Create(Render::Preset()->Target);
+    );
 
-    data.WhiteTexture = Graphics::Preset()->Textures.White;
+	descriptorSet = device->CreateDescriptorSet(pipeline);
 
-    for (uint32_t i = 0; i < data.MaxTextureSlots; i++)
+	pointSampler  = device->CreateSampler(Filter::Nearest, AddressMode::Clamp);
+	linearSampler = device->CreateSampler(Filter::Nearest, Filter::Linear, Filter::Linear, AddressMode::Clamp, CompareOperation::Never, 0.0f, 0.0f);
+	descriptorSet->Set(0, linearSampler);
+	sampler = linearSampler;
+
+    vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(RectVertex) * MaxVertices);
+    indexBuffer  = device->CreateBuffer(BufferType::Index,  sizeof(uint32_t)   * MaxIndices );
+
+    uint32_t *ptr = {};
+	indexBuffer->Map((void **)&ptr, indexBuffer->GetSize(), 0);
+    for (uint32_t i = 0, offset = 0; i < MaxIndices; i += 6)
     {
-		//data.WhiteTexture->As(data.textureDescriptorBuffer, i);
-        data.ActiveTextures[i] = data.WhiteTexture;
+        ptr[i + 0] = offset + 0;
+        ptr[i + 1] = offset + 1;
+        ptr[i + 2] = offset + 2;
+
+        ptr[i + 3] = offset + 2;
+        ptr[i + 4] = offset + 3;
+        ptr[i + 5] = offset + 0;
+
+        offset += 4;
     }
-    isTextureChanged = true;
-
-    data.RectVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
-    data.RectVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
-    data.RectVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
-    data.RectVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
-
-    data.pRectVertex = data.RectVertexBuffer.data();
+	indexBuffer->Unmap();
 }
 
-void Render2D::Release()
-{
-	data.textureDescriptorBuffer.Reset();
-    uniform.Reset();
-    data.WhiteTexture.Reset();
-    data.RectVertexBuffer.clear();
-    pipeline.Reset();
-
-    for (auto &t : data.ActiveTextures)
-    {
-        t.Reset();
-    }
-}
-
-void Render2D::Shutdown()
+Render2D::~Render2D()
 {
 
 }
 
 void Render2D::Flush()
 {
-    if (!data.RectIndexCount)
+    if (!rectIndexCount)
     {
         return;
     }
 
-    uint32_t dataSize = data.pRectVertex - data.RectVertexBuffer.data();
-    //pipeline->Update(dataSize, data.RectVertexBuffer.data());
+    if (pRectVertex)
+	{
+		vertexBuffer->Unmap();
+	}
 
-    if (isTextureChanged)
+    uint32_t indexCount = rectIndexCount;
+	Buffer *buffers[] = { vertexBuffer };
+	commandBuffer->SetPipeline(pipeline);
+	commandBuffer->SetVertexBuffers(0, 1, buffers, sizeof(RectVertex));
+	commandBuffer->SetIndexBuffer(indexBuffer, Format::R32_UINT);
+	commandBuffer->SetDescriptorSet(descriptorSet);
+	commandBuffer->PushConstants(ShaderStage::Vertex, &viewProjection, sizeof(viewProjection), 0);
+	commandBuffer->DrawIndexedInstance(indexCount, 1, 0, 0, 0);
+}
+
+void Render2D::StartBatch()
+{
+    rectIndexCount = 0;
+	vertexBuffer->Map((void **)&pRectVertex, vertexBuffer->GetSize(), 0);
+    textureIndex   = 0;
+}
+
+void Render2D::NextBatch()
+{
+    Flush();
+    StartBatch();
+}
+
+void Render2D::BeginScene(CommandBuffer *_commandBuffer, const Camera &camera)
+{
+	commandBuffer = _commandBuffer;
+	const OrthographicCamera &orthographicCamera = (const OrthographicCamera &)camera;
+    if (orthographicCamera.GetZoomLevel() <= 0.001)
     {
-  //      pipeline->AllocateDescriptorSet((uint64_t)&data);
-  //      pipeline->Bind(uniform,                       0);
-		//pipeline->Bind(data.textureDescriptorBuffer,  1);
-  //      isTextureChanged = false;
+        if (sampler != pointSampler)
+        {
+			sampler = pointSampler;
+			descriptorSet->Set(0, sampler);
+        }
+    }
+    else
+    {
+		if (sampler != linearSampler)
+		{
+			sampler = linearSampler;
+			descriptorSet->Set(0, sampler);
+		}
     }
 
-    //pipeline->ElementCount = data.RectIndexCount;
-    //Render::Draw(pipeline);
+    viewProjection = camera.ViewProjection();
+	NextBatch();
+}
 
-    data.RectIndexCount = 0;
-    data.pRectVertex = data.RectVertexBuffer.data();
-    data.Stats.DrawCalls++;
+void Render2D::EndScene()
+{
+	NextBatch();
+	commandBuffer = nullptr;
 }
 
 void Render2D::DrawRect(const Matrix4 &transform, const Vector4 &color, int object)
 {
-    constexpr size_t RectVertexCount  = 4;
-    constexpr float textureIndex      = 0.0f;
-    static Vector2 textureCoords[] = {
-        { 0.0f, 0.0f },
-        { 1.0f, 0.0f },
-        { 1.0f, 1.0f },
-        { 0.0f, 1.0f }
-    };
-    constexpr float tilingFactor = 1.0f;
-
-    if (data.RectIndexCount >= Data::MaxIndices)
-    {
-        NextBatch();
-    }
-
-    for (size_t i = 0; i < RectVertexCount; i++, data.pRectVertex++)
-    {
-        data.pRectVertex->Position     = Vector4{ transform * data.RectVertexPositions[i] };
-        data.pRectVertex->Color        = color;
-        data.pRectVertex->TexCoord     = textureCoords[i];
-        data.pRectVertex->TexIndex     = textureIndex;
-        data.pRectVertex->TilingFactor = tilingFactor;
-        data.pRectVertex->Object       = object;
-    }
-    data.RectIndexCount += 6;
-    data.Stats.RectCount++;
+	DrawRect(transform, Graphics::Preset()->Textures.White, 1.0f, color, object);
 }
 
 void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, float tilingFactor, const Vector4 &tintColor, int object)
 {
+	Graphics::SetSyncEvent((Ref<Texture> &)texture);
     constexpr size_t RectVertexCount = 4;
     static Vector2 textureCoords[] = {
         { 0.0f, 0.0f },
@@ -156,43 +150,49 @@ void Render2D::DrawRect(const Matrix4 &transform, const Ref<Texture> &texture, f
         { 0.0f, 1.0f }
     };
 
-    if (data.RectIndexCount >= Data::MaxIndices || data.TextureSlotIndex >= Data::MaxTextureSlots)
+    static Matrix4 RectVertexPosition = {
+		{ -0.5f, -0.5f, 0.0f, 1.0f },
+	    {  0.5f, -0.5f, 0.0f, 1.0f },
+	    {  0.5f,  0.5f, 0.0f, 1.0f },
+	    { -0.5f,  0.5f, 0.0f, 1.0f },
+    };
+
+    if (rectIndexCount >= MaxIndices || textureIndex >= MaxTextureSlots)
     {
         NextBatch();
     }
 
-    uint32_t textureIndex;
-    for (textureIndex = 0; textureIndex < SL_ARRAY_LENGTH(data.ActiveTextures); textureIndex++)
+    int index = 0;
+	for (; index < textureIndex; index++)
     {
-        //if (*data.ActiveTextures[textureIndex] == *texture)
+		if (textures[index] == texture)
         {
-            break;
+			break;
         }
     }
-    if (textureIndex == SL_ARRAY_LENGTH(data.ActiveTextures))
+
+    if (index == textureIndex)
     {
-        data.ActiveTextures[data.TextureSlotIndex] = texture;
-		//texture->As(data.textureDescriptorBuffer, data.TextureSlotIndex);
-        textureIndex = data.TextureSlotIndex++;
-        isTextureChanged = true;
+		index = textureIndex++;
+		descriptorSet->Set(textureIndex, texture);
+		textures[index] = texture;
+    }
+    else
+    {
+		index--;
     }
 
-    for (size_t i = 0; i < RectVertexCount; i++, data.pRectVertex++)
+    for (size_t i = 0; i < RectVertexCount; i++, pRectVertex++)
     {
-        data.pRectVertex->Position     = Vector4{ transform * data.RectVertexPositions[i] };
-        data.pRectVertex->Color        = tintColor;
-        data.pRectVertex->TexCoord     = textureCoords[i];
-        data.pRectVertex->TexIndex     = textureIndex;
-        data.pRectVertex->TilingFactor = tilingFactor;
-        data.pRectVertex->Object       = object;
+        pRectVertex->Position     = Vector4{ transform * RectVertexPosition[i] };
+        pRectVertex->Color        = tintColor;
+        pRectVertex->TexCoord     = textureCoords[i];
+		pRectVertex->TexIndex     = index;
+        pRectVertex->TilingFactor = tilingFactor;
+        pRectVertex->Object       = object;
     }
-    data.RectIndexCount += 6;
-    data.Stats.RectCount++;
-}
 
-Render2D::Statistics Render2D::Stats()
-{
-    return data.Stats;
+    rectIndexCount += 6;
 }
 
 }

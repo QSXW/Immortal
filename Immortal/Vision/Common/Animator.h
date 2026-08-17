@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Math/Math.h"
 #include <cmath>
 
 namespace Immortal
@@ -22,6 +23,7 @@ public:
         SecondsPerFrame{},
         FramesPerSecond{},
         Duration{},
+        DurationRational{0, 1},
         Step{}
     {
 
@@ -36,7 +38,7 @@ public:
     {
         return SecondsPerFrame;
     }
- 
+
     int64_t TotalSeconds() const
     {
         return Duration;
@@ -52,15 +54,15 @@ public:
         return Accumulator = fmodf(Accumulator, SecondsPerFrame);
     }
 
-    bool IsFrameDone() const
+    bool IsFrameDone(double speed) const
     {
-        return Accumulator >= SecondsPerFrame;
+		return (Accumulator * speed) >= SecondsPerFrame;
     }
 
-    bool TryMoveToNextFrame(float deltaTime)
+    bool TryMoveToNextFrame(float deltaTime, double speed)
     {
         Accumulator += deltaTime;
-        if (IsFrameDone())
+		if (IsFrameDone(speed))
         {
             MoveToNextFrame();
             return true;
@@ -83,6 +85,12 @@ public:
     double FramesPerSecond;
 
     int64_t Duration;
+
+    Rational TimebaseRational;
+
+    Rational Framerate;
+
+    Rational DurationRational;
 
     uint32_t Step;
 };

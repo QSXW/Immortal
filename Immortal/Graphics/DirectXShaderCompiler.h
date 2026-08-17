@@ -6,7 +6,7 @@
 class IDxcUtils;
 class IDxcCompiler3;
 class ID3D12ShaderReflection;
-
+class ID3D12LibraryReflection;
 namespace Immortal
 {
 
@@ -17,17 +17,21 @@ public:
 
 	~DirectXShaderCompiler();
 
-	bool Compile(const std::string           &name,
-					   ShaderSourceType       sourceType,
-	                   ShaderBinaryType       binaryType,
-	                   ShaderStage            stage,
-	                   uint32_t               size,
-	                   const char            *data,
-	                   const std::string     &entryPoint,
-	                   std::vector<uint8_t>  &binary,
-	                   std::string           &error);
+	bool Compile(const std::string    &name,
+				 ShaderSourceType       sourceType,
+	             ShaderBinaryType       binaryType,
+	             ShaderStage            stage,
+	             uint32_t               size,
+	             const char            *data,
+	             const std::string     &entryPoint,
+	             std::vector<uint8_t>  &binary,
+	             std::string           &error,
+				 const ShaderMacro     *pMacro   = nullptr,
+		         uint32_t               numMacro = 0);
 
 	bool Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12ShaderReflection **ppvReflection);
+
+	bool Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12LibraryReflection **ppvReflection);
 
 protected:
 	DLLLoader dxc;

@@ -16,11 +16,15 @@ GPUEvent::GPUEvent(Device *device) :
 
 GPUEvent::~GPUEvent()
 {
+	
 }
 
 void GPUEvent::Signal(uint64_t value)
 {
-	(void)value;
+	if (FAILED(fence.Signal(value)))
+	{
+		LOG::ERR("Failed to signal value {}", value);
+	}
 }
 
 void GPUEvent::Wait(uint64_t value, uint64_t timeout)
@@ -28,7 +32,11 @@ void GPUEvent::Wait(uint64_t value, uint64_t timeout)
 	uint64_t completion = GetCompletionValue();
 	if (completion < value)
 	{
-		fence.SetCompletion(value);
+		if (FAILED(fence.SetCompletion(value)))
+		{
+			LOG::ERR("Failed to set completion");
+			return;
+		}
 		fence.Wait(timeout);
 	}
 }

@@ -35,6 +35,11 @@ public:
     virtual Anonymous GetBackendHandle() const { return nullptr; }
 
     /**
+	 * @brief Get the queue type
+	 */
+	virtual QueueType GetType() const { return QueueType::Graphics; }
+
+    /**
 	 * @brief Wait for the queue to be idle
 	 */
     virtual void WaitIdle(uint32_t timeout = 0xffffffff) = 0;

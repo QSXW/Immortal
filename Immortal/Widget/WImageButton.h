@@ -11,6 +11,29 @@
 namespace Immortal
 {
 
+static inline ImVec2 CalculateFixedImageSize(float width, float height, float imageWidth, float imageHeight, float &xhalf, float &yhalf)
+{
+	float x = width;
+	float y = height;
+
+	xhalf = 0;
+	yhalf = 0;
+	if (imageWidth > imageHeight)
+	{
+		float scale = imageHeight / imageWidth;
+		y = x * scale;
+		yhalf = (height - y) * 0.5f;
+	}
+	else
+	{
+		float scale = imageWidth / imageHeight;
+		x = y * scale;
+		xhalf = (width - x) * 0.5f;
+	}
+
+    return { x, y };
+}
+
 class IMMORTAL_API WImageButton : public Widget
 {
 public:
@@ -31,42 +54,47 @@ public:
     WImageButton(Widget* v = nullptr) :
         Widget{ v }
     {
-        Connect([&]() {
-            WidgetLock lock{ this };
 
-            ImGuiWindow* window = ImGui::GetCurrentWindow();
-            window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
-            ImGui::PushStyleColor(ColorStyle::Button,        color);
-            ImGui::PushStyleColor(ColorStyle::ButtonHovered, hoveredColor);
-            ImGui::PushStyleColor(ColorStyle::ButtonActive,  activeColor);
+    }
 
-            auto resource = imageResources[status];
-            if (ImGui::ImageButton(
-                WIMAGE(resource.image),
-                { renderWidth, renderHeight },
-                resource.uv._0,
-                resource.uv._1,
-                0
-            ))
+    virtual bool Draw() override
+    {
+        WidgetLock lock{ this };
+
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        window->DC.CursorPos = window->DC.CursorPos + ImVec2{ padding.left, padding.top };
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ padding.right, padding.bottom });
+        ImGui::PushStyleColor(ImGuiCol_Button,        color);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  activeColor);
+
+        auto resource = imageResources[status];
+		
+        bool ret = false;
+		if ((ret = ImGui::ImageButton("###",
+            WIMAGE(resource.image),
+            { renderWidth, renderHeight },
+            resource.uv._0,
+            resource.uv._1
+        )))
+        {
+            if (callback)
             {
-                if (callback)
-                {
-                    callback((Status)status);
-                }
+                callback((Status)status);
             }
+        }
 
-            if (ImGui::IsItemClicked())
-            {
-                Toggle();
-            }
+        if (ImGui::IsItemClicked())
+        {
+            Toggle();
+        }
             
-            ImGui::PopStyleColor(3);
-            ImGui::PopStyleVar();
+        ImGui::PopStyleColor(3);
+        ImGui::PopStyleVar();
             
-            __RelativeTrampoline();
+        __RelativeTrampoline();
 
-            });
+        return ret;
     }
 
     void Toggle()

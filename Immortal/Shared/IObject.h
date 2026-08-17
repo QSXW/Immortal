@@ -6,6 +6,29 @@
 namespace Immortal
 {
 
+#define ICLASS IClass{__func__}
+class IClass
+{
+public:
+	IClass(const char *name = nullptr) :
+	    name{name}
+	{
+	}
+
+	const char *GetName() const
+	{
+		return name;
+	}
+
+    void SetName(const char *value)
+    {
+		name = value;
+    }
+
+private:
+	const char *name;
+};
+
 struct IMMORTAL_API IObject
 {
 public:
@@ -178,6 +201,20 @@ public:
     T *const* GetAddress() const
     {
         return &_obj;
+    }
+
+    template <class U>
+    void Attach(const U *obj)
+    {
+		Ref(nullptr).Swap(*this);
+		_obj = (T *)obj;
+    }
+
+    T *Detach()
+    {
+        T *p = _obj;
+        _obj = nullptr;
+        return p;
     }
 
 protected:

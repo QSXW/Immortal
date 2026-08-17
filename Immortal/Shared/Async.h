@@ -7,6 +7,8 @@
 #include <future>
 #include <functional>
 #include <atomic>
+#include <concurrentqueue.h>
+#include <lightweightsemaphore.h>
 
 #ifdef __APPLE__
 namespace std
@@ -17,6 +19,159 @@ using jthread = thread;
 
 namespace Immortal
 {
+
+//template <class T>
+//class ConcurrentQueue : public moodycamel::ConcurrentQueue<T>
+//{
+//
+//};
+
+#include <algorithm>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <queue>
+#include <utility>
+
+template <typename T>
+class ConcurrentQueue
+{
+private:
+	std::queue<T> queue_;
+	mutable std::mutex mutex_;
+	std::condition_variable cond_;
+
+public:
+	ConcurrentQueue() = default;
+
+	ConcurrentQueue(ConcurrentQueue &&other) noexcept
+	{
+		std::lock_guard<std::mutex> lock(other.mutex_);
+		queue_ = std::move(other.queue_);
+	}
+
+	ConcurrentQueue &operator=(ConcurrentQueue &&other) noexcept
+	{
+		if (this != &other)
+		{
+			std::scoped_lock lock(mutex_, other.mutex_);
+			queue_ = std::move(other.queue_);
+		}
+		return *this;
+	}
+
+	ConcurrentQueue(const ConcurrentQueue &) = delete;
+	ConcurrentQueue &operator=(const ConcurrentQueue &) = delete;
+
+	void enqueue(const T &item)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		queue_.push(item);
+		cond_.notify_one();
+	}
+
+	bool enqueue(T &&item)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		queue_.push(std::move(item));
+		cond_.notify_one();
+		return true;
+	}
+
+	template <typename... Args>
+	void emplace(Args &&...args)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		queue_.emplace(std::forward<Args>(args)...);
+		cond_.notify_one();
+	}
+
+	bool try_dequeue(T &item)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		if (queue_.empty())
+		{
+			return false;
+		}
+		item = std::move(queue_.front());
+		queue_.pop();
+		return true;
+	}
+
+	template <typename Rep, typename Period>
+	bool wait_for_pop(T &item, const std::chrono::duration<Rep, Period> &timeout)
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		if (!cond_.wait_for(lock, timeout, [this] { return !queue_.empty(); }))
+		{
+			return false;
+		}
+		item = std::move(queue_.front());
+		queue_.pop();
+		return true;
+	}
+
+	T wait_and_pop()
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		cond_.wait(lock, [this] { return !queue_.empty(); });
+		T item = std::move(queue_.front());
+		queue_.pop();
+		return item;
+	}
+
+	void swap(ConcurrentQueue &other)
+	{
+		if (this != &other)
+		{
+			std::scoped_lock lock(mutex_, other.mutex_);
+			std::swap(queue_, other.queue_);
+
+			if (!queue_.empty())
+			{
+				cond_.notify_all();
+			}
+			if (!other.queue_.empty())
+			{
+				other.cond_.notify_all();
+			}
+		}
+	}
+
+	friend void swap(ConcurrentQueue &a, ConcurrentQueue &b)
+	{
+		a.swap(b);
+	}
+
+	void clear()
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		std::queue<T>().swap(queue_);
+	}
+
+	bool empty() const
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		return queue_.empty();
+	}
+
+	size_t size() const
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		return queue_.size();
+	}
+
+	std::optional<T> try_peek() const
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		if (queue_.empty())
+		{
+			return std::nullopt;
+		}
+		return queue_.front();
+	}
+};
+
 
 class Thread
 {
@@ -42,7 +197,6 @@ public:
 
 public:
     Thread() :
-        stub{},
         handle{}
     {
 
@@ -51,10 +205,7 @@ public:
     template <class T>
     Thread(T task)
     {
-        auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
-        stub = [=] {
-            (*wrapper)();
-        };
+		Start(task);
     }
 
     ~Thread()
@@ -62,9 +213,10 @@ public:
 		Join();
     }
 
-    void Start()
+    template <class T>
+    void Start(T task)
     {
-        handle = std::jthread{ stub };
+        handle = std::jthread{ task };
     }
 
     void Join()
@@ -93,17 +245,111 @@ public:
 
     void Swap(Thread &other)
     {
-		std::swap(stub,   other.stub  );
 		std::swap(handle, other.handle);
     }
 
 protected:
-    std::function<void()> stub;
-
     std::jthread handle;
 };
 
 using Task = std::function<void()>;
+
+class TaskThread
+{
+public:
+	TaskThread() :
+	    size{},
+	    thread{},
+	    exited{false}
+    {
+		thread = std::move(std::thread{[=, this]() {
+            while (true)
+            {
+				size.wait(0);
+				if (exited.load(std::memory_order_acquire))
+				{
+					break;
+				}
+     //           if (size == 0xffffffff)
+     //           {
+					//break;
+     //           }
+				Task task{};
+                if (tasks.try_dequeue(task))
+                {
+					task();
+                }
+                else
+                {
+					size = 0;
+                }
+            }
+		}});
+    }
+
+    ~TaskThread()
+    {
+		Stop();
+    }
+
+	template <class T>
+	auto Enqueue(T task) -> std::future<decltype(task())>
+	{
+		auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
+		auto future = wrapper->get_future();
+		if (exited.load(std::memory_order_acquire))
+		{
+			return future;
+		}
+		{
+			Task t = [=]() -> void { (*wrapper)(); };
+            if (tasks.enqueue(std::move(t)))
+            {
+				size++;
+				size.notify_one();
+            }
+		}
+		return future;
+	}
+
+    const std::atomic<uint32_t> &TaskSize() const
+    {
+		return size;
+    }
+
+    void RemoveTasks()
+    {
+		size = 0;
+		ConcurrentQueue<Task> empty;
+		tasks.swap(empty);
+    }
+
+	void Stop()
+	{
+		exited.store(true, std::memory_order_release);
+		RemoveTasks();
+		size = 0xffffffff;
+		size.notify_one();
+		Join();
+	}
+
+    void Join()
+    {
+        if (thread.joinable())
+        {
+			thread.join();
+        }
+    }
+
+protected:
+	std::atomic_uint32_t size;
+
+	ConcurrentQueue<Task> tasks;
+
+	std::thread thread;
+
+    std::atomic_bool exited;
+};
 
 class ThreadPool
 {
@@ -136,12 +382,24 @@ public:
         return wrapper->get_future();
     }
 
+    void SetDebugDescription(uint32_t index, const std::string &description)
+	{
+		threads[index].SetDebugDescription(description);
+	}
+
+    void OnNotify(const std::function<void()> &value)
+    {
+		notify = value;
+    }
+
 protected:
-    std::vector<std::thread> threads;
-    
+    std::vector<Thread> threads;
+
     std::atomic<uint32_t> taskRef;
 
     std::atomic<bool> tasked;
+
+    std::function<void()> notify;
 
     std::condition_variable condition;
 
@@ -155,9 +413,9 @@ protected:
 class IMMORTAL_API Async
 {
 public:
-    static void Init()
+	static void Init(const uint32_t threadCount = std::thread::hardware_concurrency())
     {
-        threadPool.reset(new ThreadPool{ std::thread::hardware_concurrency() });
+		threadPool.reset(new ThreadPool{threadCount});
     }
 
     template <class T>

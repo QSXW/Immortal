@@ -80,7 +80,7 @@ public:
         vkCmdSetLineWidth(handle, lineWidth);
     }
 
-    void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+    virtual void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor) override
     {
         __Record();
         vkCmdSetDepthBias(handle, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
@@ -1199,7 +1199,7 @@ public:
 
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
 
-	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const float *pClearColor) override;
+	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const ClearValue *pClearValues) override;
 
 	virtual void EndRenderTarget() override;
 
@@ -1207,9 +1207,13 @@ public:
 
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
 
+    virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) override;
+
     virtual void MemoryCopy(SuperBuffer *buffer, uint32_t size, const void *data, uint32_t offset) override;
 
     virtual void MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) override;
+
+    virtual void MemoryCopy(SuperBuffer *dst, uint32_t dstOffset, SuperBuffer *src, uint32_t srcOffset, size_t size) override;
 
 	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
 
@@ -1222,6 +1226,12 @@ public:
 	virtual void DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
+
+    virtual void SetImageLayout(SuperTexture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
+
+	virtual void CopyTexture(SuperTexture *dst, SuperTexture *src) override;
+
+	virtual void MemoryBarrier(SuperTexture *texture) override;
 
 public:
     void Destroy(CommandPool *commandPool);
@@ -1301,11 +1311,6 @@ public:
         EndVideoCodingKHR(pEndInfo);
     }
 
-    void PushConstants(VkPipelineLayout pipelineLayout, Shader::Stage stage, uint32_t offset, uint32_t size, const void *data)
-    {
-        PushConstants(pipelineLayout, (VkShaderStageFlags)stage, offset, size, data);
-    }
-
 protected:
     void __Record()
     {
@@ -1331,7 +1336,9 @@ protected:
 
     Pipeline *pipeline;
 
-    LightArray<ImageBarrier> dynamicRenderingBarriers;
+    LightArray<ImageBarrier> colorImageBarriers;
+
+    LightArray<ImageBarrier, 1> depthImageBarriers;
 };
 
 }

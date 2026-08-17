@@ -58,7 +58,7 @@ Buffer::Buffer(Device *device) :
 
 }
 
-Buffer::Buffer(Device *device, Type type, size_t size, const void *data) :
+Buffer::Buffer(Device *device, Type type, size_t size, MemoryType memoryType, uint32_t byteStride) :
     Super{ type, size },
     device{ device },
     memory{VK_NULL_HANDLE},
@@ -68,15 +68,7 @@ Buffer::Buffer(Device *device, Type type, size_t size, const void *data) :
     persistent{ false }
 {
     ASSERT_ZERO_SIZE_BUFFER(size);
-
-    Construct();
-    if (data)
-    {
-		void *mapped = nullptr;
-		Map(&mapped);
-		memcpy(mapped, data, size);
-		Unmap();
-    }
+	Construct(memoryType, byteStride);
 }
 
 Buffer::~Buffer()
@@ -111,7 +103,7 @@ Anonymous Buffer::GetBackendHandle() const
 	return (void *)handle;
 }
 
-void Buffer::Construct()
+void Buffer::Construct(MemoryType memoryType, uint32_t byteStride)
 {
     VkBufferCreateInfo createInfo{};
     createInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -132,7 +124,12 @@ void Buffer::Construct()
     {
         allocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
-
+    if (memoryType == MemoryType::Device)
+    {
+		createInfo.usage              |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+		allocCreateInfo.usage          = VMA_MEMORY_USAGE_GPU_ONLY;
+		allocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    }
     Check(device->Create(&createInfo, &allocCreateInfo, &handle, &memory, &allocInfo));
 	descriptor.buffer = handle;
 
@@ -166,6 +163,11 @@ void Buffer::Unmap()
 		device->UnmapMemory(memory);
         mappedData = nullptr;
     }
+}
+
+void Buffer::SetName(const char *name)
+{
+	device->SetName(VK_OBJECT_TYPE_BUFFER, (uint64_t)handle, name);
 }
 
 void Buffer::Flush()

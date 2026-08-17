@@ -298,7 +298,8 @@ SuperDevice *Instance::CreateDevice(int deviceId)
 	    {VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,               false },
 #endif                                                    
 	    { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,          true  },
-	    { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,            true  },
+     //   { VK_KHR_RAY_QUERY_EXTENSION_NAME,                       true  },
+	    //{ VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,            true  },
 	    { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,           true  },
 	    { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,        true  },
 	    { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,             true  },
@@ -312,7 +313,9 @@ SuperDevice *Instance::CreateDevice(int deviceId)
 	    { VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,               false },
 	    { VK_KHR_MAINTENANCE1_EXTENSION_NAME,                    false },
         { VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, true  },
-        { VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,        true  }
+        { VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME,        true  },
+	    { VK_EXT_MESH_SHADER_EXTENSION_NAME,                     false },
+        { VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,  false }
 	};
 
     return new Device{ physicalDevice, deviceExtensions };

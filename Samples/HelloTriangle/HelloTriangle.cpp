@@ -66,11 +66,23 @@ void OnEvent(Event &e)
     }
 }
 
+std::string ReadFileToString(const std::string &filePath)
+{
+	std::ifstream file(filePath);
+	if (!file.is_open())
+	{
+		return "";
+	}
+	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	file.close();
+	return content;
+}    
+
 int main(int, char **)
 {
 	LOG::Init();
 
-	BackendAPI backendAPI = BackendAPI::Vulkan;
+	BackendAPI backendAPI = BackendAPI::D3D12;
 
 	// Create a window
 	uint32_t width  = 1280;
@@ -135,7 +147,7 @@ int main(int, char **)
         { { -0.25f, -0.25f * aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
     };
 
-    URef<Buffer> vertexBuffer = device->CreateBuffer(sizeof(triangleVertices), BufferType::Vertex);
+    URef<Buffer> vertexBuffer = device->CreateBuffer(BufferType::Vertex, sizeof(triangleVertices));
 
     // copy the vertices data to the vertex buffer
 	void *data = nullptr;
@@ -145,6 +157,176 @@ int main(int, char **)
 
     // Show the window. The window is not shown by default after it was created.
     window->Show();
+
+	uint32_t imageWidth = 4096;
+	uint32_t imageHeight = 2176;
+	Ref<Texture> texture = device->CreateTexture(Format::R16_UINT, imageWidth, imageHeight, 1, 1, TextureType::Storage);
+
+    struct IntraPredictionPlanarParams
+	{
+		int x;
+		int y;
+		int w;
+		int h;
+		int logw;
+		int logh;
+		int top_offset;
+		int left_offset;
+		int need_pdbc;
+	};
+
+	std::vector<uint16_t> tops;
+	tops.reserve(64 * 64);
+
+	std::vector<uint16_t> lefts;
+	lefts.reserve(64 * 64);
+
+	std::vector<IntraPredictionPlanarParams> params;
+	for (int y = 0; y < imageHeight; y += 64)
+	{
+		for (int x = 0; x < imageWidth; x += 64)
+		{
+			params.emplace_back(IntraPredictionPlanarParams {
+				.x = x,
+				.y = y,
+			    .w = 64,
+			    .h = 64,
+			    .logw = (int) std::log2(64),
+			    .logh = (int) std::log2(64),
+			    .top_offset = (int)tops.size(),
+			    .left_offset = (int) lefts.size(),
+			    .need_pdbc = 0}
+			);
+
+			tops.resize(tops.size() + 64 + 1);
+			for (int i = params.back().top_offset; i < tops.size(); i++)
+			{
+				tops[i] = 1 << (10 - 1);
+			}
+			lefts.resize(lefts.size() + 64 + 1);
+			for (int i = params.back().left_offset; i < lefts.size(); i++)
+			{
+				lefts[i] = 1 << (10 - 1);
+			}
+		}
+	}
+
+    auto intraPlanarShaderSource = ReadFileToString("C:/SDK/C/Montage/Assets/Shaders/hlsl/intra_palanar.hlsl");
+
+    URef<Shader> intraPlanarShader = device->CreateShader("intra_planar", ShaderStage::Compute, intraPlanarShaderSource, "pred_planar");
+	URef<ComputePipeline> computePipeline = device->CreateComputePipeline(intraPlanarShader);
+
+	auto dequantShaderSource = ReadFileToString("C:/SDK/C/Montage/Assets/Shaders/hlsl/dequant.hlsl");
+	URef<Shader> dequantShader = device->CreateShader("dequant", ShaderStage::Compute, dequantShaderSource, "dequant");
+	URef<ComputePipeline> dequantPipeline = device->CreateComputePipeline(dequantShader);
+
+	Ref<Buffer> stagingCoeffs = device->CreateBuffer(BufferType::TransferSource, (SLALIGN(imageWidth, TextureAlignment) * sizeof(uint32_t)) * imageHeight, MemoryType::Host);
+	Ref<Buffer> readbackCoeffs = device->CreateBuffer(BufferType::TransferDestination, (SLALIGN(imageWidth, TextureAlignment) * sizeof(uint32_t)) * imageHeight, MemoryType::Host);
+	Ref<Texture> coeffs = device->CreateTexture(Format::R32_SINT, imageWidth, imageHeight, 1, 1, TextureType::Storage);
+
+	Ref<Buffer> stagingScale = device->CreateBuffer(BufferType::TransferSource, (SLALIGN(imageWidth, TextureAlignment) * sizeof(int)) * imageHeight, MemoryType::Host);
+	Ref<Buffer> scale = device->CreateBuffer(BufferType::Storage, stagingScale->GetSize(), MemoryType::Device, sizeof(int));
+
+	{
+		int *coeffs;
+		stagingCoeffs->Map((void **) &coeffs, stagingCoeffs->GetSize(), 0);
+
+		static int testCoeffs[32 * 8] = {
+			+35, +4, -1,  -1, +2, +1, +1,  +0,
+			 +0, -1, +2,  +0, +1, +0, +0,  +1,
+			 +0, -1, +0,  +0, +0, +0, +0,  +0,
+			 +0, +0, +0,  +0, +0, +0, +0,  +0,
+		};
+
+		for (int y = 0; y < 8; y++)
+		{
+			for (int x = 0; x < 32; x++)
+			{
+				coeffs[y * 512 + x] = testCoeffs[y * 32 + x];
+			}
+		}
+		stagingCoeffs->Unmap();
+
+		int *pScale;
+		stagingScale->Map((void **) &pScale, stagingScale->GetSize(), 0);
+
+		for (int y = 0; y < 240; y++)
+		{
+			for (int x = 0; x < 416; x++)
+			{
+				pScale[y * 512 + x] = 16;
+			}
+		}
+		stagingScale->Unmap();
+	}
+
+	struct Constant
+	{
+		int width;
+		int height;
+	} c{texture->GetWidth(), texture->GetHeight()};
+
+    uint32_t paramsSize = sizeof(IntraPredictionPlanarParams) * params.size();
+	Ref<Buffer> stagingPredPlanarParams = device->CreateBuffer(BufferType::TransferSource, paramsSize, MemoryType::Host);
+	Ref<Buffer> predPlanarParams = device->CreateBuffer(BufferType::Storage, paramsSize, MemoryType::Device, sizeof(IntraPredictionPlanarParams));
+
+    Ref<DescriptorSet> descriptorSet = device->CreateDescriptorSet(computePipeline);
+
+    Ref<Buffer> stagingTop = device->CreateBuffer(BufferType::TransferSource, tops.size() * sizeof(uint16_t), MemoryType::Host);
+	Ref<Buffer> top = device->CreateBuffer(BufferType::Storage, stagingTop->GetSize(), MemoryType::Device, sizeof(uint16_t));
+	stagingTop->Fill(tops.data(), tops.size() * sizeof(uint16_t), 0);
+
+	Ref<Buffer> stagingLeft = device->CreateBuffer(BufferType::TransferSource, lefts.size() * sizeof(uint16_t), MemoryType::Host);
+	Ref<Buffer> left = device->CreateBuffer(BufferType::Storage, stagingLeft->GetSize(), MemoryType::Device, sizeof(uint16_t));
+	stagingLeft->Fill(lefts.data(), lefts.size() * sizeof(uint16_t), 0);
+
+	struct DequantParams
+	{
+		int x;
+		int y;
+		int w;
+		int h;
+		int min_scan_x;
+		int max_scan_x;
+		int min_scan_y;
+		int max_scan_y;
+		int scale;
+		int bd_shift;
+		int log2_transform_range;
+		int scale_m_offset;
+	};
+
+	std::vector<DequantParams> dequantParams;
+	dequantParams.emplace_back(DequantParams{
+	    .x = 0,
+	    .y = 0,
+	    .w = 32,
+	    .h = 8,
+	    .min_scan_x = 0,
+	    .max_scan_x = 17,
+	    .min_scan_y = 0,
+	    .max_scan_y = 6,
+		.scale = 5120,
+	    .bd_shift = 10,
+	    .log2_transform_range = 15,
+		.scale_m_offset = 0,
+	});
+	
+	uint32_t dequantParamsSize = sizeof(DequantParams) * dequantParams.size();
+	Ref<Buffer> stagingDequantParams = device->CreateBuffer(BufferType::TransferSource, dequantParamsSize);
+	Ref<Buffer> dequantParamsBuffer = device->CreateBuffer(BufferType::Storage, dequantParamsSize, MemoryType::Device, sizeof(DequantParams));
+
+	descriptorSet->Set(0, texture);
+	descriptorSet->Set(1, top);
+	descriptorSet->Set(2, left);
+	descriptorSet->Set(3, predPlanarParams);
+
+	Ref<Buffer> stagingImage = device->CreateBuffer(BufferType::TransferDestination, SLALIGN(texture->GetWidth() * sizeof(uint16_t), TextureAlignment) * texture->GetHeight(), MemoryType::Host);
+
+	Ref<DescriptorSet> dequantDescriptorSet = device->CreateDescriptorSet(dequantPipeline);
+	dequantDescriptorSet->Set(0, coeffs);
+	dequantDescriptorSet->Set(1, scale);
+	dequantDescriptorSet->Set(2, dequantParamsBuffer);
 
 	while (!applicationExit)
     {
@@ -157,11 +339,35 @@ int main(int, char **)
         // begin recording commands
         commandBuffer->Begin();
 
+        stagingPredPlanarParams->Fill(params.data(), paramsSize, 0);
+		commandBuffer->MemoryCopy(predPlanarParams, 0, stagingPredPlanarParams, 0, paramsSize);
+		commandBuffer->MemoryCopy(left, 0, stagingLeft, 0, left->GetSize());
+		commandBuffer->MemoryCopy(top, 0, stagingTop, 0, top->GetSize());
+
+		commandBuffer->MemoryCopy(scale, 0, stagingScale, 0, scale->GetSize());
+		commandBuffer->CopyBufferToImage(coeffs, 0, stagingCoeffs, SLALIGN(coeffs->GetWidth(), TextureAlignment) * sizeof(uint32_t), 0);
+
+		// intra prediction
+		commandBuffer->SetPipeline(computePipeline);
+		commandBuffer->SetDescriptorSet(descriptorSet);
+		//commandBuffer->PushConstants(ShaderStage::Compute, &c, sizeof(c), 0);
+		commandBuffer->Dispatch(params.size(), 1, 1);
+		// commandBuffer->Dispatch(texture->GetWidth(), texture->GetHeight(), 1);
+		commandBuffer->CopyImageToBuffer(stagingImage, texture, 0, SLALIGN(texture->GetWidth() * sizeof(uint16_t), TextureAlignment));
+
+		// dequant
+		stagingDequantParams->Fill(dequantParams.data(), dequantParamsSize, 0);
+		commandBuffer->MemoryCopy(dequantParamsBuffer, 0, stagingDequantParams, 0, dequantParamsSize);
+		commandBuffer->SetPipeline(dequantPipeline);
+		commandBuffer->SetDescriptorSet(dequantDescriptorSet);
+		commandBuffer->Dispatch(dequantParams.size(), 1, 1);
+		commandBuffer->CopyImageToBuffer(readbackCoeffs, coeffs, 0, SLALIGN(texture->GetWidth(), TextureAlignment) * sizeof(int));
+
         // get the rende target from swapchain for that we're going draw the triangle into the Window
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
 
-        const float clearColor[4] = {}; //{0.0f, 0.2f, 0.4f, 1.0f};
-		commandBuffer->BeginRenderTarget(renderTarget, clearColor);
+        const ClearValue clearValue = {}; //{0.0f, 0.2f, 0.4f, 1.0f};
+		commandBuffer->BeginRenderTarget(renderTarget, &clearValue);
 
         commandBuffer->SetPipeline(pipeline);
 		Buffer *vertexBuffers[] = { vertexBuffer };
@@ -181,6 +387,13 @@ int main(int, char **)
         // Submit the swapchain to the queue for presenting
         queue->Present(swapchain);
 
+		int *pData;
+		stagingImage->Map((void **) &pData, stagingImage->GetSize(), 0);
+		stagingImage->Unmap();
+
+		int *pCoeffs;
+		readbackCoeffs->Map((void **) &pCoeffs, stagingImage->GetSize(), 0);
+		readbackCoeffs->Unmap();
         // Poll and handle events
 		window->ProcessEvents();
     }

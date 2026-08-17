@@ -22,6 +22,9 @@ public:
 
     ImageView(Image *image, uint32_t baseMipLevel = 0, uint32_t baseArrayLayer = 0);
 
+    /** Single mip range / layer range (e.g. one array slice as a 2D view). */
+    ImageView(Image *image, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t mipLevelCount, uint32_t arrayLayerCount);
+
     ~ImageView();
 
     void Release();

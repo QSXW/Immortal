@@ -5,6 +5,8 @@
 #include "Types.h"
 #include "Format.h"
 
+#include <memory>
+
 namespace Immortal
 {
 
@@ -65,21 +67,40 @@ public:
 
 	virtual void SetBlendFactor(const float factor[4]) = 0;
 
+	/** Vulkan: vkCmdSetDepthBias. D3D12/Metal/OpenGL: optional no-op (bias may be baked in PSO). */
+	virtual void SetDepthBias(float depthBiasConstantFactor, float depthBiasClamp, float depthBiasSlopeFactor)
+	{
+		(void)depthBiasConstantFactor;
+		(void)depthBiasClamp;
+		(void)depthBiasSlopeFactor;
+	}
+
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) = 0;
 
-	virtual void BeginRenderTarget(RenderTarget *renderTarget, const float *pClearColor) = 0;
+	virtual void BeginRenderTarget(RenderTarget *renderTarget, const ClearValue *pClearValues) = 0;
 
 	virtual void EndRenderTarget() = 0;
 
 	virtual void GenerateMipMaps(Texture *texture, Filter filter) = 0;
 
+	virtual void CopyTextureRegion(Texture *texture, uint32_t subresource, uint32_t width, uint32_t height, uint32_t x, uint32_t y, uint32_t z, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) {}
+
 	virtual void CopyBufferToImage(Texture *texture, uint32_t subresource, Buffer *buffer, size_t bufferRowLength, uint32_t offset = 0) = 0;
+
+	virtual void CopyImageToBuffer(Buffer *buffer, Texture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) {}
 
 	virtual void CopyPlatformSpecificSubresource(Texture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) {}
 
 	virtual void MemoryCopy(Buffer *buffer, uint32_t size, const void *data, uint32_t offset) = 0;
 
 	virtual void MemoryCopy(Texture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) = 0;
+
+	virtual void MemoryCopy(Buffer *dst, uint32_t dstOffset, Buffer *src, uint32_t srcOffset, size_t size) {}
+
+	virtual void Memset(Buffer *buffer, const ClearValue *pClearValue, Format format)
+	{
+
+	}
 
 	/**
 	 * @brief Submit a secondary command buffer. Only support Vulkan and D3D12 backend
@@ -95,6 +116,52 @@ public:
 	virtual void DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) = 0;
 
     virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) = 0;
+
+	virtual void DispatchGraph(const DispatchGraphDescription *pDesc)
+	{
+
+	}
+
+	virtual void SetImageLayout(Texture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange = std::addressof(kAllSubresources))
+	{
+
+	}
+	
+	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address)
+	{
+
+	}
+
+	virtual void ResolveImage(Texture *dst, Texture *src)
+	{
+
+	}
+
+	/** Full-subresource color copy; textures must match in format, size, mips, and layers. */
+	virtual void CopyTexture(Texture *dst, Texture *src)
+	{
+		(void)dst;
+		(void)src;
+	}
+
+	/**
+	 * @brief Insert a UAV (unordered-access) memory barrier so subsequent
+	 *        dispatches/draws see the writes from previous dispatches.
+	 *
+	 * Required between successive compute dispatches that write the same
+	 * UAV resource (e.g. a multi-pass post-processing chain or a per-layer
+	 * compositor). Backends that already serialize compute work (D3D11,
+	 * single-queue OpenGL) can leave the default no-op.
+	 */
+	virtual void MemoryBarrier(Texture *texture)
+	{
+		(void)texture;
+	}
+
+	void BeginEvent(const std::string &event)
+	{
+		BeginEvent(event.c_str(), event.size() + 1);
+	}
 };
 
 using SuperCommandBuffer = CommandBuffer;

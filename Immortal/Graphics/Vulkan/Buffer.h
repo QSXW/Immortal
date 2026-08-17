@@ -21,7 +21,7 @@ public:
 public:
 	Buffer(Device *device = nullptr);
 
-    Buffer(Device *device, Type type, size_t size, const void *data = nullptr);
+    Buffer(Device *device, Type type, size_t size, MemoryType memoryType = MemoryType::Host, uint32_t byteStride = 1);
 
     virtual ~Buffer() override;
 
@@ -31,10 +31,12 @@ public:
 
     virtual void Unmap() override;
 
+    virtual void SetName(const char *name) override;
+
 public:
     VkDeviceAddress GetDeviceAddress() const;
 
-    void Construct();
+    void Construct(MemoryType memoryType, uint32_t byteStride);
 
     void Flush();
 

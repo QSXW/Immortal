@@ -8,19 +8,22 @@ namespace Immortal
 
 #define NEG(N) -(N)
 
-enum CodecError
+enum class CodecError
 {
-    CorruptedBitstream = NEG(1114),
-    OutOfMemory,
-    UnsupportFormat,
-    ExternalFailed,
-    FailedToOpenFile,
-    FailedToCallDecoder,
-    EndOfFile,
-    Repeat,
-    Again,
-    NotImplement,
-    Succeed = 0,
+	CorruptedBitstream = NEG(1114),
+	OutOfMemory,
+	UnsupportFormat,
+	ExternalFailed,
+	FailedToOpenFile,
+	FailedToCallDecoder,
+	EndOfFile,
+	Repeat,
+	Again,
+	NotFound,
+	NotImplement,
+	InvalidArguments,
+    CorruptStream,
+	Success = 0,
     Preparing
 };
 

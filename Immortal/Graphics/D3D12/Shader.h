@@ -46,19 +46,19 @@ struct ShaderByteCode : public D3D12_SHADER_BYTECODE
     }
 };
 
-class Shader : public SuperShader
+class Shader : public SuperShader, public IClass
 {
 public:
     using Super = SuperShader;
 
 public:
-    Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint);
+	Shader(const std::string &name, Stage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0);
 
     Shader(Stage stage, ShaderBinaryType type, const void *binary, uint32_t size);
 
     virtual ~Shader() override;
 
-    void LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint);
+    void LoadByteCodes(const std::string &source, const std::string &name, ShaderStage stage, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0);
 
 public:
     D3D12_SHADER_BYTECODE GetByteCodes() const
@@ -79,6 +79,11 @@ public:
 		return pushConstants;
     }
 
+    ShaderStage GetStage() const
+    {
+		return stage;
+    }
+
     D3D12_SHADER_VISIBILITY GetVisibility() const
     {
 		return visibility;
@@ -92,9 +97,13 @@ public:
 protected:
     void Reflect();
 
-    void SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> reflector);
+    void SetupDescriptorRanges(ComPtr<ID3D12ShaderReflection> shaderReflection);
+
+    void SetupDescriptorRanges(ComPtr<ID3D12LibraryReflection> libraryReflection);
 
 protected:
+	ShaderStage stage;
+
 	std::vector<uint8_t> dxil;
 
     std::vector<DescriptorRange> descriptorRanges;

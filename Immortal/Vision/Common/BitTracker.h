@@ -39,7 +39,7 @@ public:
     template <size_t bytes>
     uint64_t GetBytes()
     {
-        static_assert(bytes > 4 && "Unsupported bytes number");
+        // static_assert(bytes > 4 && "Unsupported bytes number");
         return GetBits(bytes * BitsPerByte);
     }
 

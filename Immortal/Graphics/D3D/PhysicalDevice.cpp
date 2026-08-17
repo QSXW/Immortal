@@ -33,6 +33,18 @@ PhysicalDevice::~PhysicalDevice()
 	handle.Reset();
 }
 
+PhysicalDeviceDescription PhysicalDevice::GetDescription()
+{
+	auto desc = GetAdapterDesc();
+
+	PhysicalDeviceDescription ret{};
+	memcpy(ret.description, desc.Description, sizeof(desc.Description));
+	ret.venderId = desc.VendorId;
+	ret.deviceId = desc.DeviceId;
+
+	return ret;
+ }
+
 DXGI_ADAPTER_DESC PhysicalDevice::GetAdapterDesc()
 {
     DXGI_ADAPTER_DESC desc{};

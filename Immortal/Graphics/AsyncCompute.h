@@ -4,6 +4,15 @@
 #include "Queue.h"
 #include "LightGraphics.h"
 
+#include <functional>
+#include <mutex>
+
+#define IMMORTAL_ASYNC_COMPUTE_STACK_TRACE 0
+
+#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
+#include <stacktrace>
+#endif
+
 namespace Immortal
 {
 
@@ -23,7 +32,10 @@ class AsyncTask
 {
 public:
 	AsyncTask(AsyncTaskType type) :
-        type{ type }
+	    type{type}
+#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
+	    , stacktrace{std::stacktrace::current()}
+#endif
     {
 
     }
@@ -45,6 +57,9 @@ public:
 
 protected:
 	AsyncTaskType type;
+#if IMMORTAL_ASYNC_COMPUTE_STACK_TRACE
+	std::stacktrace stacktrace;
+#endif
 };
 
 class SetQueueTask : public AsyncTask
@@ -78,8 +93,8 @@ public:
     RecordingTask(T callback) :
 	    AsyncTask{ AsyncTaskType::Recording }
     {
-		callbackWarpper = [=](uint64_t sync, CommandBuffer *commandBuffer) -> void {
-			callback(sync, commandBuffer);
+		callbackWarpper = [=](CommandBuffer *commandBuffer) -> void {
+			callback(commandBuffer);
 		};
     }
 
@@ -88,13 +103,13 @@ public:
 
     }
 
-    void Recording(uint64_t sync, CommandBuffer *commandBuffer)
+    void Recording(CommandBuffer *commandBuffer)
     {
-		callbackWarpper(sync, commandBuffer);
+		callbackWarpper(commandBuffer);
     }
 
 protected:
-    std::function<void(uint64_t, CommandBuffer *)> callbackWarpper;
+    std::function<void(CommandBuffer *)> callbackWarpper;
 };
 
 class QueueTask : public AsyncTask
@@ -130,7 +145,7 @@ public:
     ExecutionCompletedTask(T &&callback) :
         AsyncTask{ AsyncTaskType::ExecutionCompleted }
     {
-        callbackWarpper = [=]() -> void {
+        callbackWarpper = [=]() mutable -> void {
             callback();
         };
     }
@@ -145,43 +160,103 @@ public:
         callbackWarpper();
     }
 
+    void operator()()
+    {
+		callbackWarpper();
+    }
+
 protected:
 	std::function<void()> callbackWarpper;
 };
 
-class AsyncComputeThread
+class AsyncComputeThread : public IClass
 {
 public:
     AsyncComputeThread(Device *device);
+
+    ~AsyncComputeThread();
 
     bool IsExecutionCompleted(uint64_t value);
 
     void WaitIdle();
 
+    // Opens and submits a standalone recording batch, then invokes callback on
+    // the serial completion thread. Never call this inside an existing batch.
+    void SubmitStandaloneCompletion(std::function<void()> callback);
+
     void Join();
+
+    void SetDescription(const std::string &description);
 
 public:
     template <class T, class ... Args>
 	void Execute(Args &&...args)
     {
+		std::lock_guard<std::recursive_mutex> lock{ enqueueMutex };
 		URef<AsyncTask> task = new T{std::forward<Args>(args)...};
-        std::unique_lock lock{ mutex };
-        tasks.push(std::move(task));
-        condition.notify_one();
+		tasks.enqueue(std::move(task));
+		semaphore.signal();
+    }
+
+    void Execute(AsyncTaskType type)
+    {
+		Execute<AsyncTask>(type);
+    }
+
+    void Begin()
+    {
+		Execute(AsyncTaskType::BeginRecording);
+    }
+
+    void End()
+    {
+		Execute(AsyncTaskType::EndRecording);
+    }
+
+    void Submit()
+    {
+		Execute(AsyncTaskType::Submiting);
     }
 
 protected:
+    friend class AsyncRecordingScope;
+
     Thread thread;
 
-    std::condition_variable condition;
+    ThreadPool executionCompletedThread{1};
 
-    std::mutex mutex;
+    moodycamel::details::Semaphore semaphore;
 
-    std::queue<URef<AsyncTask>> tasks;
+    ConcurrentQueue<URef<AsyncTask>> tasks;
 
-    std::queue<std::pair<uint64_t, URef<AsyncTask>>> executionCompletedTasks;
+    std::vector<std::pair<uint64_t, URef<AsyncTask>>> executionCompletedTasks;
 
-    URef<GPUEvent> gpuEvent;
+    std::recursive_mutex enqueueMutex;
+};
+
+// Owns one standalone Begin/End/Submit recording batch. Application UI frames
+// already keep Graphics' async thread inside a recording batch, so UI update
+// code must enqueue directly instead of creating this scope.
+class AsyncRecordingScope
+{
+public:
+	explicit AsyncRecordingScope(AsyncComputeThread *thread) :
+	    thread{ thread },
+	    enqueueGuard{ thread->enqueueMutex }
+    {
+		thread->Begin();
+    }
+
+    ~AsyncRecordingScope()
+    {
+		thread->End();
+		thread->Submit();
+    }
+
+protected:
+	AsyncComputeThread *thread;
+
+	std::unique_lock<std::recursive_mutex> enqueueGuard;
 };
 
 }

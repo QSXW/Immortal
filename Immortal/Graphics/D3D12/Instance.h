@@ -3,6 +3,7 @@
 #include "Graphics/Instance.h"
 #include "Graphics/Device.h"
 #include "Common.h"
+#include "Config.h"
 
 namespace Immortal
 {
@@ -33,9 +34,11 @@ public:
 	static PFN_D3D12SerializeVersionedRootSignature SerializeVersionedRootSignature;
 
 protected:
-	HMODULE d3d12Library;
+#if HAVE_AGILITY_SDK
+	HMODULE d3d12CoreLibrary;
+#endif
 
-	std::vector<URef<PhysicalDevice>> physicalDevices;
+	HMODULE d3d12Library;
 };
 
 }

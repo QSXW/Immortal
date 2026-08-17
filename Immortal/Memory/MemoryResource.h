@@ -19,12 +19,14 @@
 namespace Immortal
 {
 
-#if !defined(SL_ARCH_X86) && defined(__GNUC__)
 static inline uint64_t CountTrailingZeros64(uint64_t value)
 {
+#if !defined(SL_ARCH_X86) && defined(__GNUC__)
     return (uint64_t)__builtin_ctzll(value);
-}
+#else
+	return _tzcnt_u64(value);
 #endif
+}
 
 class MarkBuffer
 {
@@ -66,11 +68,7 @@ public:
         {
             return nullptr;
         }
-#ifdef SL_ARCH_X86
-        auto index = _tzcnt_u64(mark);
-#else
         auto index = CountTrailingZeros64(mark);
-#endif
         Unmark(index);
         return &data[index * size];
     }

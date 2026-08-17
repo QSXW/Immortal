@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include "ImGui/GuiLayer.h"
 
 namespace Immortal
 {
@@ -44,7 +45,7 @@ struct Vector2 : public glm::vec2
 
     Vector2 &operator+=(const Vector2 &v)
     {
-        Primitive{ *this } += Primitive{ v };
+        (Primitive &)(*this) += (Primitive &)v;
         return *this;
     }
 
@@ -72,6 +73,17 @@ struct Vector2 : public glm::vec2
     {
         return glm::normalize(*this);
     }
+
+	constexpr Vector2(const ImVec2 &f)
+       : Primitive{ f.x, f.y }
+	{
+
+    }
+
+	operator ImVec2() const
+	{
+		return { x, y };
+	}
 };
 
 struct Vector4;
@@ -116,6 +128,22 @@ struct Vector3 : public glm::vec3
         else
         {
             p += v;
+        }
+        return *this;
+    }
+
+    template <class T>
+    Vector3 &operator-=(T v)
+    {
+        Primitive &p = *this;
+
+        if constexpr (std::is_same_v<T, Vector3>)
+        {
+            p -= Primitive{ v };
+        }
+        else
+        {
+            p -= v;
         }
         return *this;
     }
@@ -223,15 +251,21 @@ using Matrix4    = mat4;
 using Quaternion = glm::quat;
 
 template <class T>
-constexpr inline auto Normalize(T v)
+constexpr inline T Normalize(const T &v)
 {
     return glm::normalize(v);
 }
 
 template <class T>
-constexpr inline auto Cross(T v1, T v2)
+constexpr inline T Cross(const T &x, const T &y)
 {
-    return glm::cross(v1, v2);
+    return glm::cross(x, y);
+}
+
+template <class T>
+constexpr inline float Dot(const T &x, const T &y)
+{
+	return glm::dot((const T::Primitive &)x, (const T::Primitive &)y);
 }
 
 inline auto Radians(float degrees)
@@ -286,6 +320,28 @@ inline auto Ortho(float left, float right, float bottom, float top, float zNear,
     return glm::ortho(left, right, bottom, top, zNear, zFar);
 }
 
+inline Matrix4 LookAt(const Vector3 &eye, const Vector3 &center, const Vector3 &up)
+{
+	return glm::lookAt(glm::vec3(eye), glm::vec3(center), glm::vec3(up));
+}
+
+/** Window-space `win` (x,y in pixels, z depth) to world; `model` is usually the view matrix, `proj` the projection matrix. */
+inline Vector3 UnProject(const Vector3 &win, const Matrix4 &model, const Matrix4 &proj, const Vector4 &viewport)
+{
+	return glm::unProject(glm::vec3(win), model, proj, glm::vec4(viewport));
+}
+
+inline Vector3 Lerp(const Vector3 &a, const Vector3 &b, float t)
+{
+	return glm::mix(glm::vec3(a), glm::vec3(b), t);
+}
+
+/** Homogeneous transform of a point (w = 1); avoids mat4 * Vector4 overload ambiguities in some TU setups. */
+inline Vector4 Mul(const Matrix4 &m, const Vector3 &v, float w = 1.0f)
+{
+	return Vector4(m * glm::vec4(glm::vec3(v), w));
+}
+
 inline auto PerspectiveFOV(float fov, float width, float height, float zNear, float zFar)
 {
     return glm::perspectiveFov(fov, width, height, zNear, zFar);
@@ -320,9 +376,45 @@ inline auto Epsilon()
 }
 
 template <class T>
-inline auto Length(T &q)
+inline auto Length(const T &v)
 {
-    return glm::length(q);
+    return glm::length(v);
+}
+
+template <class T>
+inline auto Length2(const T &v)
+{
+	return glm::length2(v);
+}
+
+template <class T>
+inline auto Greater(T &x, T &y)
+{
+	return glm::all(glm::greaterThan(x, y));
+}
+
+template <class T>
+inline auto Min(T &x, T &y)
+{
+	return glm::min(x, y);
+}
+
+template <class T>
+inline auto Max(T &x, T &y)
+{
+	return glm::max(x, y);
+}
+
+template <class T>
+inline auto Clamp(const T &v, const T &min, const T &max)
+{
+	return glm::clamp((const T::Primitive &)v, (const T::Primitive &)min, (const T::Primitive &)max);
+}
+
+template <class T>
+inline auto Log(const T &v)
+{
+	return glm::log(v);
 }
 
 namespace Detail = glm::detail;

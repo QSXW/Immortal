@@ -25,13 +25,22 @@ public:
 
     virtual SuperSwapchain *CreateSwapchain(SuperQueue *queue, Window *window, Format format, uint32_t bufferCount, SwapchainMode mode) override;
 
-    virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = .0f, float maxLod = 1.0f) override;
+    virtual SuperSampler *CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation = CompareOperation::Never, float minLod = .0f, float maxLod = 16.0f) override;
 
-    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint) override;
+    virtual SuperSampler *CreateSampler(
+        Filter mipFilter,
+        Filter minFilter,
+        Filter magFilter,
+        AddressMode addressMode,
+        CompareOperation compareOperation = CompareOperation::Never,
+        float minLod = .0f,
+        float maxLod = 16.0f) override;
+
+    virtual SuperShader *CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro = nullptr, uint32_t numMacro = 0) override;
 
     virtual SuperGraphicsPipeline *CreateGraphicsPipeline() override;
 
-    virtual SuperBuffer *CreateBuffer(size_t size, BufferType type) override;
+    virtual SuperBuffer *CreateBuffer(BufferType type, size_t size) override;
 
     virtual SuperTexture *CreateTexture(Format format, uint32_t width, uint32_t height, uint16_t mipLevels = 1, uint16_t arrayLayers = 1, TextureType type = TextureType::None) override;
 
@@ -39,7 +48,7 @@ public:
 
     virtual SuperGPUEvent *CreateGPUEvent(const std::string &name) override;
 
-    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}) override;
+    virtual SuperRenderTarget *CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat = {}, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 0) override;
 
 protected:
 	bool loaded;

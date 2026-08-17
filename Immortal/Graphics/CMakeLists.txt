@@ -5,7 +5,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project("ImmortalGraphics" LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(D3D_FILES
@@ -63,6 +63,8 @@ set(D3D12_FILES
     AccelerationStructure.h
     Buffer.cpp
     Buffer.h
+    BufferView.cpp
+    BufferView.h
     CommandAllocator.cpp
     CommandAllocator.h
     CommandBuffer.cpp
@@ -269,6 +271,7 @@ set(GRAPHICS_FILES
     AsyncCompute.h
     Buffer.cpp
     Buffer.h
+    BufferView.h
     CommandBuffer.h
     Descriptor.h
     DescriptorSet.h
@@ -278,8 +281,6 @@ set(GRAPHICS_FILES
     GPUEvent.h
     Format.cpp
     Format.h
-    GLSLCompiler.cpp
-    GLSLCompiler.h
     Instance.cpp
     Instance.h
     LightGraphics.h
@@ -293,6 +294,8 @@ set(GRAPHICS_FILES
     Input.h
     Sampler.h
     Shader.h
+    SPIRVReflector.cpp
+    SPIRVReflector.h
     Swapchain.h
     Texture.cpp
     Texture.h
@@ -343,8 +346,7 @@ add_library(${PROJECT_NAME} STATIC
     ${WINDOW_FILES})
 
 if (NOT DISABLE_VULKAN_BACKEND)
-    set(VULKAN_DEPENDENCIES glslang glslang-default-resource-limits
-        SPIRV spirv-cross-glsl)
+    set(VULKAN_DEPENDENCIES spirv-cross-glsl)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -355,6 +357,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan-Headers GPUOpen::VulkanMemoryAllocator
     $<$<PLATFORM_ID:Darwin>:metal-cpp>
     DirectXShaderCompilerHeaders
+    D3D12AgilitySDK
     ImmortalShared
 )
 

@@ -2,11 +2,7 @@
 
 #include <cstdio>
 
-#include <imgui.h>
-#include <imgui_internal.h>
-
 #include "Audio/Device.h"
-#include "Audio/AudioSource.h"
 
 #include "Core.h"
 #include "Config.h"
@@ -38,23 +34,25 @@
 #include "Helper/json.h"
 
 #include "Render/Graphics.h"
+#include "Render/GObject.h"
 #include "Render/OrthographicCamera.h"
 #include "Render/Render2D.h"
 #include "Render/Mesh.h"
 
 #include "Sync/Semaphore.h"
 
-#include "Editor/EditorCamera.h"
+#include "Scene/EditorCamera.h"
 
 #include "Script/ScriptEngine.h"
 
 #include "Scene/Object.h"
 #include "Scene/Scene.h"
+#include "Scene/GameScene.h"
 #include "Scene/Component.h"
 #include "Scene/GameObject.h"
 #include "Scene/ObserverCamera.h"
 
-#include "Serializer/SceneSerializer.h"
+#include "Scene/SceneSerializer.h"
 
 #include "String/LanguageSettings.h"
 

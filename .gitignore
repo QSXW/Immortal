@@ -4,6 +4,9 @@
 /3rdparty/libmfx*
 /3rdparty/mono*
 /3rdparty/FFmpeg*
+/3rdparty/freetype*
+/3rdparty/libjpeg-turbo*
+/3rdparty/D3D12AgilitySDK*
 
 Config.h
 *.spirv

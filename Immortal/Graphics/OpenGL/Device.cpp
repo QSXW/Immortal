@@ -19,6 +19,22 @@ namespace Immortal
 namespace OpenGL
 {
 
+namespace
+{
+static Filter MergeFilters(Filter mipFilter, Filter minFilter, Filter magFilter)
+{
+	if (mipFilter == Filter::Anisotropic || minFilter == Filter::Anisotropic || magFilter == Filter::Anisotropic)
+	{
+		return Filter::Anisotropic;
+	}
+	if (mipFilter == Filter::Nearest && minFilter == Filter::Nearest && magFilter == Filter::Nearest)
+	{
+		return Filter::Nearest;
+	}
+	return Filter::Linear;
+}
+}
+
 void OpenGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned severity, int length, const char *message, const void *userParam)
 {
 	switch (severity)
@@ -93,10 +109,15 @@ SuperSwapchain *Device::CreateSwapchain(SuperQueue *queue, Window *window, Forma
 
 SuperSampler *Device::CreateSampler(Filter filter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
 {
-	return new Sampler{ filter, addressMode, compareOperation, minLod, maxLod };
+	return CreateSampler(filter, filter, filter, addressMode, compareOperation, minLod, maxLod);
 }
 
-SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint)
+SuperSampler *Device::CreateSampler(Filter mipFilter, Filter minFilter, Filter magFilter, AddressMode addressMode, CompareOperation compareOperation, float minLod, float maxLod)
+{
+	return new Sampler{ MergeFilters(mipFilter, minFilter, magFilter), addressMode, compareOperation, minLod, maxLod };
+}
+
+SuperShader *Device::CreateShader(const std::string &name, ShaderStage stage, const std::string &source, const std::string &entryPoint, const ShaderMacro *pMacro, uint32_t numMacro)
 {
 	return new Shader{ name, stage, source, entryPoint };
 }
@@ -106,7 +127,7 @@ SuperGraphicsPipeline *Device::CreateGraphicsPipeline()
 	return new Pipeline{};
 }
 
-SuperBuffer *Device::CreateBuffer(size_t size, BufferType type)
+SuperBuffer *Device::CreateBuffer(BufferType type, size_t size)
 {
 	return new Buffer{ size, type };
 }
@@ -126,7 +147,7 @@ SuperGPUEvent *Device::CreateGPUEvent(const std::string &/*name*/)
 	return new GPUEvent{};
 }
 
-SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat)
+SuperRenderTarget *Device::CreateRenderTarget(uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues, uint32_t sampleCount)
 {
 	return new RenderTarget{ width, height, pColorAttachmentFormats, colorAttachmentCount, depthAttachmentFormat };
 }

@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mo
 
 project("Immortal Engine")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(WORKSPACE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,11 +24,11 @@ if (UNIX AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 add_subdirectory(3rdparty)
-set(IMMORTAL_ASSET_DIR "${WORKSPACE}//Assets")
-set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${FFMPEG_SHARED} ${DXC_SHARED})
+set(IMMORTAL_ASSET_DIR "${WORKSPACE}/Assets")
+set(IMMORTAL_RUNTIME ${ASSIMP_SHARED} ${OPENCV_SHARED} ${MONO_SHARED} ${DAV1D_SHARED} ${IMMORTAL_3RDPARTY_RUNTIME} ${DXC_SHARED})
 
 add_subdirectory(Immortal)
-add_subdirectory(Assets)
+add_subdirectory(HLSL)
 add_subdirectory(Samples/UnitTest)
 add_subdirectory(Samples/ImmortalEditor)
 add_subdirectory(Samples/MediaTest)
@@ -36,7 +36,10 @@ add_subdirectory(Samples/ScriptBenchmark)
 add_subdirectory(Samples/RawExtractor)
 add_subdirectory(Samples/ImGuiExample)
 add_subdirectory(Samples/HelloTriangle)
+add_subdirectory(Samples/HelloMeshShader)
 add_subdirectory(Samples/HelloVideoPlayer)
+add_subdirectory(Samples/HelloWorkGraph)
 
 set(IMMORTAL_ASSET_DIR ${IMMORTAL_ASSET_DIR} PARENT_SCOPE)
 set(IMMORTAL_RUNTIME ${IMMORTAL_RUNTIME} PARENT_SCOPE)
+set(AgilitySDK_SHARED ${AgilitySDK_SHARED} PARENT_SCOPE)

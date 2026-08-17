@@ -18,6 +18,7 @@ class CommandList;
 class Pipeline;
 class GraphicsPipeline;
 class ComputePipeline;
+class RenderTarget;
 class IMMORTAL_API CommandBuffer : public SuperCommandBuffer, public NonDispatchableHandle
 {
 public:
@@ -53,19 +54,27 @@ public:
 
 	virtual void PushConstants(ShaderStage stage, const void *pData, uint32_t size, uint32_t offset) override;
 
-	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const float *pClearColor) override;
+	virtual void BeginRenderTarget(SuperRenderTarget *renderTarget, const ClearValue *pClearValue) override;
 
 	virtual void EndRenderTarget() override;
 
 	virtual void GenerateMipMaps(SuperTexture *texture, Filter filter) override;
 
+	virtual void CopyTextureRegion(SuperTexture *texture, uint32_t subresource, uint32_t width, uint32_t height, uint32_t x, uint32_t y, uint32_t z, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0);
+
 	virtual void CopyBufferToImage(SuperTexture *texture, uint32_t subresource, SuperBuffer *buffer, size_t bufferRowLength, uint32_t offset = 0) override;
+
+	virtual void CopyImageToBuffer(SuperBuffer *buffer, SuperTexture *texture, uint32_t subresource, size_t bufferRowLength, const Rect2D *pRect = nullptr) override;
 
 	virtual void CopyPlatformSpecificSubresource(SuperTexture *dst, uint32_t dstSubresource, void *src, uint32_t srcSubresource) override;
 
 	virtual void MemoryCopy(SuperBuffer *_buffer, uint32_t size, const void *data, uint32_t offset) override;
 
 	virtual void MemoryCopy(SuperTexture *texture, const void *data, uint32_t width, uint32_t height, uint32_t rowPitch) override;
+
+	virtual void MemoryCopy(SuperBuffer *dst, uint32_t dstOffset, SuperBuffer *src, uint32_t srcOffset, size_t size) override;
+
+	virtual void Memset(SuperBuffer *buffer, const ClearValue *pClearValue, Format format) override;
 
 	virtual void SubmitCommandBuffer(SuperCommandBuffer *secondaryCommandBuffer) override;
 
@@ -78,6 +87,18 @@ public:
 	virtual void DispatchMeshTasks(uint32_t nGroupX, uint32_t nGroupY, uint32_t nGroupZ) override;
 
 	virtual void DispatchRays(const DeviceAddressRegion *rayGenerationShaderRecord, const DeviceAddressRegion *missShaderTable, const DeviceAddressRegion *hitGroupTable, const DeviceAddressRegion *callableShaderTable, uint32_t width, uint32_t height, uint32_t depth) override;
+
+	virtual void DispatchGraph(const DispatchGraphDescription *pDesc) override;
+
+	virtual void SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange) override;
+
+	virtual void SetShaderResource(uint32_t slot, GpuVirtualAddress address) override;
+
+	virtual void ResolveImage(SuperTexture *dst, SuperTexture *src) override;
+
+	virtual void CopyTexture(SuperTexture *dst, SuperTexture *src) override;
+
+	virtual void MemoryBarrier(SuperTexture *texture) override;
 
 public:
 	void SetGraphicsPipeline(GraphicsPipeline *graphicsPipeline);
@@ -95,6 +116,8 @@ protected:
 
 	CommandList commandList;
 
+	D3D12_COMMAND_LIST_TYPE commandListType;
+
 	std::array<Barrier<BarrierType::Transition>, 8> barriers;
 
 	uint32_t activeBarrier;
@@ -107,6 +130,8 @@ protected:
 
 	using PFN_SetRootDescriptorTable = void (*)(CommandList *, uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE);
 	PFN_SetRootDescriptorTable SetRootDescriptorTable;
+
+	RenderTarget *renderTarget;
 };
 
 }

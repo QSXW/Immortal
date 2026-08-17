@@ -1,7 +1,8 @@
 #include "Texture.h"
 
 #include "Device.h"
-#include "Barrier.h"
+
+#include <algorithm>
 
 namespace Immortal
 {
@@ -48,7 +49,7 @@ Texture::Texture(Device *device, Format format, uint32_t width, uint32_t height,
     Image{},
     view{}
 {
-	SetMeta(width, height, mipLevels, arrayLayers);
+	SetMeta(format, width, height, mipLevels, arrayLayers);
 	Construct(device, format, width, height, mipLevels, arrayLayers, CAST(type));
 }
 
@@ -61,8 +62,22 @@ Texture::Texture(Device *device, Image &&image, ImageView &&/*view*/) :
 
 Texture::~Texture()
 {
+	Device *d = Get<Device>();
+	for (VkImageView v : storageMipViews)
+	{
+		if (v && d)
+		{
+			d->DestroyAsync(v);
+		}
+	}
+	storageMipViews.clear();
     view.Release();
 	Image::Release();
+}
+
+void Texture::SetName(const char *name)
+{
+	device->SetName(VK_OBJECT_TYPE_IMAGE, (uint64_t)handle, name);
 }
 
 void Texture::Construct(Device *device, VkFormat format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, VkImageUsageFlags usage, VkSampleCountFlags sampleFlags)
@@ -97,6 +112,70 @@ void Texture::Construct(Device *device, VkFormat format, uint32_t width, uint32_
         }.Swap(*this);
 
     view = ImageView{ GetImage() };
+}
+
+VkDescriptorImageInfo Texture::GetStorageDescriptorInfo(uint32_t mipLevel) const
+{
+	const uint32_t levels = GetMipLevels();
+	const uint32_t mip = levels > 0 ? (std::min)(mipLevel, levels - 1u) : 0u;
+
+	if (storageMipViews.size() < levels)
+	{
+		storageMipViews.resize(levels, VK_NULL_HANDLE);
+	}
+
+	if (storageMipViews[mip] == VK_NULL_HANDLE)
+	{
+		Device *dev = const_cast<Texture *>(this)->Get<Device>();
+		if (!dev || !handle)
+		{
+			return VkDescriptorImageInfo{ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED };
+		}
+
+		const uint32_t layers = GetArrayLayers();
+
+		/* RWTexture2DArray / SPIR-V storage is always a 2D array image, not cube—even for 6-face cube-compatible images. */
+		VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+		if (GetType() == VK_IMAGE_TYPE_2D && layers > 1u)
+		{
+			viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		}
+		else if (GetType() == VK_IMAGE_TYPE_1D)
+		{
+			viewType = layers > 1u ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+		}
+		else if (GetType() == VK_IMAGE_TYPE_3D)
+		{
+			viewType = VK_IMAGE_VIEW_TYPE_3D;
+		}
+
+		VkImageSubresourceRange range{
+			.aspectMask = GetAspectMask(),
+			.baseMipLevel = mip,
+			.levelCount = 1u,
+			.baseArrayLayer = 0u,
+			.layerCount = layers,
+		};
+
+		VkImageViewCreateInfo viewInfo{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = {},
+			.image = handle,
+			.viewType = viewType,
+			.format = GetFormat(),
+			.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
+			.subresourceRange = range,
+		};
+
+		Check(dev->Create(&viewInfo, &storageMipViews[mip]));
+	}
+
+	return VkDescriptorImageInfo{
+		.sampler = VK_NULL_HANDLE,
+		.imageView = storageMipViews[mip],
+		.imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+	};
 }
 
 }

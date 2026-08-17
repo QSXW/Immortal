@@ -79,6 +79,9 @@ Instance *Instance::CreateInstance(BackendAPI apiType, Window::Type windowType)
                 break;
 #endif
             default:
+#ifdef _WIN32
+				instanceExtensions.insert({"VK_KHR_win32_surface", false});
+#endif
                 break;
             }
 

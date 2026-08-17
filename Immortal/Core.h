@@ -44,6 +44,11 @@
 
 #define AUTO_DEVICE_ID -1
 
+#define SL_ENABLE_COPY(T) T &operator=(const T &other) { if (this != &other) { T(other).Swap(*this); } return *this; }
+#define SL_ENABLE_MOVE(T)           \
+T(T &&other) : T{} { Swap(other); } \
+T &operator=(T &&other) { assert(this != &other); other.Swap(*this); return *this; }
+
 namespace Immortal
 {
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Shared/IObject.h"
+#include "Types.h"
 
 #include <cstdint>
 #include <vector>
@@ -19,8 +20,12 @@ public:
 
 public:
 	SharedCodedFrameData() :
-	    buffer{},
+        data{},
+        size{},
+	    anonymous{},
 	    type{},
+	    timestamp{},
+        flags{},
 	    release{}
     {
 
@@ -34,32 +39,42 @@ public:
         }
     }
 
-    void Assign(std::vector<uint8_t> &&other)
+    void UpdateAnonymous()
     {
-        buffer = std::move(other);
+		data = anonymous.data();
+		size = anonymous.size();
     }
 
     template <class T>
     void RefTo(const T *ptr)
     {
-        buffer.resize(sizeof(T *));
-        memcpy(buffer.data(), &ptr, sizeof(T *));
+		anonymous.resize(sizeof(T *));
+		memcpy(anonymous.data(), &ptr, sizeof(T *));
+    }
+
+    void Assign(std::vector<uint8_t> &&other)
+	{
+		anonymous = std::move(other);
+		UpdateAnonymous();
+	}
+
+    template <class T>
+	void Assign(const T *ptr, size_t size)
+    {
+		anonymous.resize(size);
+		memcpy(anonymous.data(), ptr, size);
+		UpdateAnonymous();
     }
 
     template <class T>
 	T *InterpretAs() const
 	{
-		return *(T **)buffer.data();
+		return *(T **)anonymous.data();
 	}
 
     operator bool() const
     {
-        return !buffer.empty();
-    }
-
-    const std::vector<uint8_t> &GetBuffer() const
-    {
-		return buffer;
+        return !!data;
     }
 
     void SetRelease(std::function<void(void *)> &&func)
@@ -67,10 +82,28 @@ public:
 		release = func;
     }
 
+    const int64_t &GetTimestamp() const
+    {
+		return timestamp;
+    }
+
+    void SetTimestamp(int64_t value)
+    {
+		timestamp = value;
+    }
+
 protected:
-	std::vector<uint8_t> buffer;
+	uint8_t *data;
+
+    size_t size;
+
+	std::vector<uint8_t> anonymous;
 
 	MediaType type;
+
+    int64_t timestamp;
+
+    PictureFlags flags;
 
 	std::function<void(void *)> release;
 };
@@ -91,6 +124,14 @@ public:
 		_shared->RefTo(data);
     }
 
+    template <class T>
+	CodedFrame(const T *data, size_t size) :
+	    _shared{new SharedCodedFrameData}
+	{
+		_shared->data = (uint8_t *)data;
+		_shared->size = size;
+	}
+
 	CodedFrame(std::vector<uint8_t> &&data) :
 	    _shared{new SharedCodedFrameData}
 	{
@@ -100,6 +141,12 @@ public:
     ~CodedFrame()
     {
 
+    }
+
+    template <class T>
+    void SetAnonymous(T *obj)
+    {
+		_shared->RefTo(obj);
     }
 
     void SetType(MediaType value)
@@ -131,12 +178,7 @@ public:
 
     operator bool() const
     {
-		return !_shared->GetBuffer().empty();
-    }
-
-    const std::vector<uint8_t> &GetBuffer() const
-    {
-		return _shared->GetBuffer();
+		return _shared && *_shared;
     }
 
     void SetRelease(std::function<void(void *)> &&func)
@@ -144,9 +186,52 @@ public:
 		_shared->SetRelease(std::move(func));
     }
 
+    size_t GetSize() const
+    {
+        if (!_shared)
+        {
+			return 0;
+        }
+
+        return _shared->size;
+    }
+
+    const uint8_t *GetData() const
+	{
+		if (!_shared)
+		{
+			return nullptr;
+		}
+
+		return _shared->data;
+	}
+
+    const int64_t &GetTimestamp() const
+	{
+		return _shared->GetTimestamp();
+	}
+
+	void SetTimestamp(int64_t value)
+	{
+		_shared->SetTimestamp(value);
+	}
+
+    void SetFlags(PictureFlags flags)
+	{
+		_shared->flags |= flags;
+	}
+
+	PictureFlags GetFlags() const
+	{
+		return _shared->flags;
+	}
+
 public:
 	Ref<SharedCodedFrameData> _shared;
 };
 
 }
+
+using CodedFrame = Vision::CodedFrame;
+
 }

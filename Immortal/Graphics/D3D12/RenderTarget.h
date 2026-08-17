@@ -157,7 +157,11 @@ public:
 public:
     RenderTarget(Device *device = nullptr);
 
+    RenderTarget(Device *device, uint32_t width, uint32_t height, const Format *pColorAttachmentFormats, uint32_t colorAttachmentCount, Format depthAttachmentFormat, const ClearValue *pClearValues = nullptr, uint32_t sampleCount = 0);
+
     ~RenderTarget();
+
+    virtual void SetName(const char *name) override;
 
     virtual void Resize(uint32_t width, uint32_t height) override;
 
@@ -168,12 +172,14 @@ public:
 public:
     void SetColorAttachment(uint32_t index, Ref<Texture> &texture);
 
+    void BuildRenderTargetView(uint32_t sampleCount = 1);
+
 	void SetDepthAttachment(Ref<Texture> &texture);
 
 public:
-    const Descriptor *GetDescriptor() const
+    Descriptor &GetDescriptor()
     {
-        return descriptors;
+		return descriptors;
     }
 
     const std::vector<Ref<Texture>> &GetColorBuffers() const
@@ -193,18 +199,30 @@ public:
 
     uint32_t GetWidth() const
     {
-		return colorBuffers[0]->GetWidth();
+		if (!colorBuffers.empty())
+		{
+			return colorBuffers[0]->GetWidth();
+		}
+		return depth->GetWidth();
     }
 
     uint32_t GetHeight() const
     {
-		return colorBuffers[0]->GetHeight();
+		if (!colorBuffers.empty())
+		{
+			return colorBuffers[0]->GetHeight();
+		}
+		return depth->GetHeight();
     }
 
 protected:
-    Descriptor descriptors[32];
+    Descriptor descriptors;
 
     Descriptor depthDescriptor;
+
+    DescriptorHeap *renderTargetViewDescriptorHeap;
+
+	DescriptorHeap *depthViewDescriptorHeap;
 
     std::vector<Ref<Texture>> colorBuffers;
 

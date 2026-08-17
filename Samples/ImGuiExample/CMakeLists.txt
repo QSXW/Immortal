@@ -22,5 +22,5 @@ target_link_libraries(${PROJECT_NAME}
     imgui
 )
 
-target_link_runtime(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR})
+immortal_target_link_runtime_dependency(${PROJECT_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE})
 set_property(TARGET ${PROJECT_NAME} PROPERTY FOLDER "Examples")

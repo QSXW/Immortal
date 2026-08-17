@@ -19,6 +19,8 @@ struct MenuItem
 	std::string tips;
 	std::function<void()> callback;
 	MenuItemType type;
+
+	std::vector<MenuItem> nextItems;
 };
 
 class IMMORTAL_API WMenu : public Widget
@@ -27,94 +29,19 @@ public:
 	WIDGET_SET_PROPERTIES(WMenu)
 	WIDGET_PROPERTY_TEXT
 	WIDGET_PROPERTY_COLOR
+	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t)
 
 public:
-    WMenu(Widget *parent = nullptr) :
-        Widget{ parent }
-    {
-		Connect([this] {
-			ImVec4 popbgColor = ImGui::GetStyleColorVec4(ImGuiCol_PopupBg);
-			popbgColor.w *= factor;
-			ImGui::PushStyleColor(ImGuiCol_PopupBg, popbgColor);
+	WMenu(Widget *parent = nullptr);
 
-            if (ImGui::BeginMenu(text.c_str()))
-            {
-				if (t < 1.0f)
-				{
-					t += Time::DeltaTime * 8.0f;
+	virtual bool Draw() override;
 
-					auto easeInOut = [](float t, float b, float c, float d)
-					{
-						return c * Math::Sin(t / d * (Math::PI / 2)) + b;
-					};
-					
-					factor = easeInOut(t, 0.0, 1.0f, 1.0f);
-				}
-				// factor = std::min(factor + Time::DeltaTime * 4.f, (float) (0.5f * Math::PI));
-			    for (auto &item : items)
-				{
-					if (item.type == MenuItemType::Item)
-					{
-						if (ImGui::MenuItem(item.name.c_str(), item.tips.c_str()))
-						{
-							item.callback();
-						}
-					}
-					else
-					{
-						if (ImGui::BeginMenu(item.name.c_str()))
-						{
-							item.callback();
-						}
-					}
-				}
-				ImGui::EndMenu();
-            }
-			else
-			{
-				t = 0.0f;
-				factor = 0.0f;
-			}
-			ImGui::PopStyleColor();
-		});
-    }
+    WMenu *Item(MenuItem &&item);
 
-    WMenu *Item(MenuItem &&item)
-    {
-		if (!GuiLayer::IsLanguage(Language::English))
-		{
-			item.name = WordsMap::Get(item.name);
-		}
-		item.type = MenuItemType::Item;
-		items.emplace_back(std::move(item));
-		return this;
-    }
-
-	WMenu *Sub(MenuItem &&item)
-	{
-		if (!GuiLayer::IsLanguage(Language::English))
-		{
-			item.name = WordsMap::Get(item.name);
-		}
-		item.type = MenuItemType::Menu;
-		items.emplace_back(std::move(item));
-		return this;
-	}
-
-	WMenu *HoveredColor(const ImVec4 &color)
-	{
-		colors.hovered = color;
-
-		return this;
-	}
+	WMenu *Sub(MenuItem &&item);
 
 protected:
 	std::list<MenuItem> items;
-
-	struct
-	{
-		ImVec4 hovered;
-	} colors;
 	
 	float t = 0.0f;
 
@@ -127,41 +54,32 @@ public:
 	WIDGET_SET_PROPERTIES(WMenuBar)
 	WIDGET_PROPERTY_COLOR
 	WIDGET_PROPERTY_BACKGROUND_COLOR
+	WIDGET_SET_PROPERTY(PopupBackgroundColor, popupBackgroundColor, uint32_t, IM_COL32(252, 252, 254, 247))
+	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t, IM_COL32(218, 218, 221, 255))
+	WIDGET_SET_PROPERTY(PressedColor, pressedColor, uint32_t, IM_COL32(204, 204, 208, 255))
+	WIDGET_SET_PROPERTY(OpenColor, openColor, uint32_t, IM_COL32(226, 226, 230, 255))
+	WIDGET_SET_PROPERTY(AccentColor, accentColor, uint32_t, IM_COL32(0, 120, 212, 255))
+	WIDGET_SET_PROPERTY(PopupBorderColor, popupBorderColor, uint32_t, IM_COL32(198, 198, 204, 150))
+	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
+	WIDGET_SET_PROPERTY(OnEvent, onEvent, std::function<void(Event &)>)
+	WIDGET_SET_PROPERTY(OnRightSideDraw, onRightSideDraw, std::function<void(float &, float)>)
 
 public:
-	WMenuBar(Widget *parent = nullptr) :
-	    Widget{parent},
-	    spacing{}
+	WMenuBar(Widget *parent = nullptr);
+
+	virtual bool Draw() override;
+
+	/** Win32 无边框窗口：在菜单栏右侧绘制系统风格的最小化 / 最大化 / 关闭（需自行开启）。 */
+	WMenuBar *ShowCaptionButtons(bool value)
 	{
-		Connect([this] {
-			__PreCalculateSize();
-
-			ImGui::PushStyleColor(ImGuiCol_Text, color);
-			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, backgroundColor);
-			ImGui::PushStyleColor(ImGuiCol_PopupBg, backgroundColor);
-            if (ImGui::BeginMainMenuBar())
-            {
-				position = ImGui::GetItemRectMin();
-				auto [x, y] = ImGui::GetWindowSize();
-				renderWidth = x;
-				renderHeight = y;
-
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, spacing);
-				for (auto &child : children)
-				{
-					child->render();
-				}
-				ImGui::PopStyleVar(1);
-				ImGui::EndMainMenuBar();
-            }
-			ImGui::PopStyleColor(3);
-		});
+		showCaptionButtons = value;
+		return this;
 	}
-
-	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
 
 protected:
 	ImVec2 spacing;
+
+	bool showCaptionButtons = false;
 };
 
 struct WItem
@@ -175,49 +93,17 @@ class WItemList : public Widget
 public:
 	WIDGET_SET_PROPERTIES(WItemList)
 	WIDGET_PROPERTY_COLOR
+	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t)
 
 public:
-	WItemList(Widget *parent = nullptr) :
-	    Widget{parent}
-	{
-		Connect([&] {
-			__PreCalculateSize();
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, colors.hovered);
-			ImGui::PushStyleColor(ImGuiCol_Text, color);
-			for (auto &item : items)
-			{
-				if (ImGui::MenuItem(item.name.c_str()))
-				{
-					item.callback();
-				}
-			}
-			ImGui::PopStyleColor(2);
-		});
-	}
+	WItemList(Widget *parent = nullptr);
 
-	WItemList *Item(WItem &&item)
-	{
-		if (!GuiLayer::IsLanguage(Language::English))
-		{
-			item.name = WordsMap::Get(item.name);
-		}
-		items.emplace_back(std::move(item));
-		return this;
-	}
+	virtual bool Draw() override;
 
-	WItemList *HoveredColor(const ImVec4 &color)
-	{
-		colors.hovered = color;
-		return this;
-	}
+	WItemList *Item(WItem &&item);
 
 private:
 	std::list<WItem> items;
-
-	struct
-	{
-		ImVec4 hovered;
-	} colors;
 };
 
 }

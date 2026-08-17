@@ -1,6 +1,8 @@
 #include "Application.h"
 
 #include "Log.h"
+#include <algorithm>
+#include <cmath>
 #include "Async.h"
 #include "Render/Graphics.h"
 #include "Script/ScriptEngine.h"
@@ -11,7 +13,23 @@ namespace Immortal
 
 Application *Application::This = nullptr;
 
-Application::Application(BackendAPI graphicsBackendAPI, const std::string &title, uint32_t width, uint32_t height) :
+static bool UiScaleUsesComputePath(BackendAPI api, float scale)
+{
+	return std::abs(scale - 1.0f) > 1e-5f && (api == BackendAPI::D3D12 || api == BackendAPI::Vulkan);
+}
+
+static float CanonicalUiScale(float scale)
+{
+	if (!std::isfinite(scale) || scale <= 1e-6f)
+	{
+		return 1.0f;
+	}
+
+	scale = std::round(scale * 100.0f) / 100.0f;
+	return std::abs(scale - 1.0f) < 0.005f ? 1.0f : scale;
+}
+
+Application::Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height, bool borderlessWindow) :
     eventSink{ this },
     name{ title }
 {
@@ -21,22 +39,24 @@ Application::Application(BackendAPI graphicsBackendAPI, const std::string &title
     eventSink.Listen(&Application::OnWindowResize, Event::Type::WindowResize);
     eventSink.Listen(&Application::OnWindowMove,   Event::Type::WindowMove);
 
-    Async::Init();
+    Async::Init(1);
 
-	window = Window::CreateInstance(title, width, height, graphicsBackendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None);
+	window = Window::CreateInstance(title, width, height, graphicsBackendAPI == BackendAPI::OpenGL ? WindowType::GLFW : WindowType::None, borderlessWindow);
     window->SetIcon("Assets/Icon/Terminal.png");
     window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
     instance = Instance::CreateInstance(graphicsBackendAPI, window->GetType());
-    device = instance->CreateDevice(0);
+	device = instance->CreateDevice(deviceId == AUTO_DEVICE_ID ? 0 :deviceId);
     queue = device->CreateQueue(QueueType::Graphics);
 
-	Graphics::SetDevice(device);
+	Graphics::SetDevice(instance, device);
 	Graphics::Execute<SetQueueTask>(queue);
 	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
     Graphics::ConstructGlobalVariables();
 
     swapchain = device->CreateSwapchain(queue, window, Format::BGRA8, bufferCount, SwapchainMode::VerticalSync);
+
+	RefreshUiCompositeTargets();
 
     commandBuffers.resize(bufferCount);
     for (size_t i = 0; i < bufferCount; i++)
@@ -92,48 +112,261 @@ Layer *Application::PushOverlay(Layer *overlay)
     return overlay;
 }
 
+CommandBuffer *Application::GetCurrentCommandBuffer() const
+{
+	return commandBuffers[syncPoint];
+}
+
+void Application::SetWindowFullscreen(bool value)
+{
+	if (window)
+	{
+        if (!pendingWindowFullscreen && window->IsFullscreen() == value)
+        {
+            return;
+        }
+        pendingWindowFullscreen = true;
+        pendingWindowFullscreenState = value;
+        windowModeTransition = true;
+	}
+}
+
+bool Application::IsWindowFullscreen() const
+{
+	return window && (pendingWindowFullscreen ? pendingWindowFullscreenState : window->IsFullscreen());
+}
+
+void Application::SetUiRenderScale(float scale)
+{
+	const float nextScale = CanonicalUiScale(scale);
+	const float requestedScale = uiRenderScalePending ? pendingUiRenderScale : uiRenderScale;
+	if (std::abs(nextScale - requestedScale) <= 1e-6f)
+	{
+		return;
+	}
+
+	// Rebuild at the next frame boundary so the target size and ImGui density change together.
+	pendingUiRenderScale = nextScale;
+	uiRenderScalePending = true;
+}
+
+void Application::SetUiLayoutScale(float scale)
+{
+	const float nextScale = std::clamp(CanonicalUiScale(scale), 1.0f, 2.5f);
+	const float requestedScale = uiLayoutScalePending ? pendingUiLayoutScale : uiLayoutScale;
+	if (std::abs(nextScale - requestedScale) <= 1e-6f)
+	{
+		return;
+	}
+
+	pendingUiLayoutScale = nextScale;
+	uiLayoutScalePending = true;
+}
+
+bool Application::UsesInternalHiResUi() const
+{
+	return highResolutionRenderTarget != nullptr;
+}
+
+void Application::RebuildUiCompositeTargets(uint32_t swapWidth, uint32_t swapHeight)
+{
+	const uint32_t iw = std::max(1u, (uint32_t)std::lroundf((float)swapWidth * uiRenderScale));
+	const uint32_t ih = std::max(1u, (uint32_t)std::lroundf((float)swapHeight * uiRenderScale));
+	Format format = Format::BGRA8;
+
+	if (sampleCount > 1)
+	{
+		uiInternalMsaaRT = device->CreateRenderTarget(iw, ih, &format, 1, Format::None, nullptr, sampleCount);
+		uiInternalColorRT = device->CreateRenderTarget(iw, ih, &format, 1, Format::None, nullptr, 1);
+	}
+	else
+	{
+		uiInternalColorRT = device->CreateRenderTarget(iw, ih, &format, 1, Format::None, nullptr, 1);
+	}
+
+	highResolutionRenderTarget = (sampleCount > 1) ? uiInternalMsaaRT : uiInternalColorRT;
+
+	uiPresentScale.EnsureScratch(device, swapWidth, swapHeight);
+}
+
+void Application::RefreshUiCompositeTargets()
+{
+	if (!device || !swapchain)
+	{
+		return;
+	}
+
+	RenderTarget *rt = swapchain->GetCurrentRenderTarget();
+	Texture *tc = rt->GetColorAttachment(0);
+	const uint32_t sw = tc->GetWidth();
+	const uint32_t sh = tc->GetHeight();
+
+	// These targets may still be referenced by one of the other buffered D3D12
+	// command lists. Keep them alive through the renderer's deferred-release window.
+	Graphics::ReleaseResource(MSAARenderTarget);
+	Graphics::ReleaseResource(highResolutionRenderTarget);
+	Graphics::ReleaseResource(uiInternalColorRT);
+	Graphics::ReleaseResource(uiInternalMsaaRT);
+	MSAARenderTarget.Reset();
+	highResolutionRenderTarget.Reset();
+	uiInternalColorRT.Reset();
+	uiInternalMsaaRT.Reset();
+
+	if (UiScaleUsesComputePath(device->GetBackendAPI(), uiRenderScale))
+	{
+		if (!uiPresentScale.IsReady() && !uiPresentScale.Build(device))
+		{
+			LOG::WARN("Ui render scale {} ignored: ui_present_scale shader missing or failed to build.", uiRenderScale);
+			uiRenderScale = 1.0f;
+		}
+
+		if (uiPresentScale.IsReady())
+		{
+			RebuildUiCompositeTargets(sw, sh);
+			return;
+		}
+	}
+
+	if (sampleCount > 1)
+	{
+		Format format = Format::BGRA8;
+		MSAARenderTarget = device->CreateRenderTarget(sw, sh, &format, 1, {}, nullptr, sampleCount);
+	}
+}
+
 void Application::OnRender()
 {
+	if (rendering)
+	{
+		return;
+	}
+	rendering = true;
+
+    if (pendingWindowFullscreen && window)
+    {
+        if (queue)
+        {
+            queue->WaitIdle(0xffffffff);
+        }
+        window->SetFullscreen(pendingWindowFullscreenState);
+        pendingWindowFullscreen = false;
+        fullscreenTransitionNeedsClear = true;
+        rendering = false;
+        return;
+    }
+
     Time::DeltaTime = timer.tick<Timer::Seconds>();
+	uint64_t syncValue = gpuEvent->GetSyncPoint() + 1;
+
+    if (!runtime.minimized)
+	{
+		if (uiLayoutScalePending)
+		{
+			uiLayoutScale = pendingUiLayoutScale;
+			uiLayoutScalePending = false;
+			gui->SetUiLayoutScale(uiLayoutScale);
+		}
+
+		bool refreshUiTargets = false;
+		if (uiRenderScalePending)
+		{
+			refreshUiTargets = std::abs(pendingUiRenderScale - uiRenderScale) > 1e-6f;
+			uiRenderScale = pendingUiRenderScale;
+			uiRenderScalePending = false;
+		}
+
+		if (pendingWindowResize)
+		{
+			queue->WaitIdle(0xffffffff);
+			swapchain->Resize(pendingWindowResizeWidth, pendingWindowResizeHeight);
+			pendingWindowResize = false;
+			RefreshUiCompositeTargets();
+			refreshUiTargets = false;
+		}
+		if (refreshUiTargets)
+		{
+			RefreshUiCompositeTargets();
+		}
+        if (fullscreenTransitionNeedsClear && !pendingWindowResize)
+        {
+            windowModeTransition = false;
+            fullscreenTransitionNeedsClear = false;
+        }
+
+		gpuEvent->Wait(syncValues[syncPoint], kMaxTimeOut);
+		swapchain->PrepareNextFrame();
+		Graphics::SetRenderIndex(gpuEvent, syncValue);
+
+		CommandBuffer *commandBuffer = GetCurrentCommandBuffer();
+		commandBuffer->Begin();
+    }
 
 	Graphics::Execute<AsyncTask>(AsyncTaskType::BeginRecording);
-    for (Layer *layer : layerStack)
-    {
-        layer->OnUpdate();
-    }
-	Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
+
+    if (!runtime.minimized)
+	{
+		gui->Begin();
+		gui->Render();
+		gui->End();
+
+		for (Layer *layer : layerStack)
+		{
+			layer->OnUpdate();
+		}
+	}
+
+    Graphics::Execute<AsyncTask>(AsyncTaskType::EndRecording);
 	Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
 
     if (!runtime.minimized)
-    {
-        gui->Begin();
-        gui->Render();
-        gui->End();
+	{
+		CommandBuffer *commandBuffer = GetCurrentCommandBuffer();
 
-        swapchain->PrepareNextFrame();
-        gpuEvent->Wait(syncValues[syncPoint], 0xffffffffff);
-	    Graphics::SetRenderIndex(syncValues[syncPoint]);
-
-        CommandBuffer *commandBuffer = commandBuffers[syncPoint];
-
-        const float clearColor[4] = { 0, 0, 0, 0 };
-	    commandBuffer->Begin();
+        ClearValue clearValues = {};
         RenderTarget *renderTarget = swapchain->GetCurrentRenderTarget();
-	    commandBuffer->BeginRenderTarget(renderTarget, clearColor);
-        gui->SubmitRenderDrawCommands(commandBuffer);
-	    commandBuffer->EndRenderTarget();
+		Texture *swapColor = renderTarget->GetColorAttachment(0);
+
+		RenderTarget *imguiRenderTarget = highResolutionRenderTarget ? highResolutionRenderTarget.Get()
+		                                                                : (MSAARenderTarget ? MSAARenderTarget.Get() : renderTarget);
+		commandBuffer->BeginRenderTarget(imguiRenderTarget, &clearValues);
+		commandBuffer->BeginEvent("ImGui::Render");
+		gui->SubmitRenderDrawCommands(commandBuffer, gpuEvent, syncValue);
+		commandBuffer->EndEvent();
+		commandBuffer->EndRenderTarget();
+
+		if (highResolutionRenderTarget)
+		{
+			if (sampleCount > 1 && uiInternalMsaaRT)
+			{
+				commandBuffer->BeginEvent("ImGui::Render::ResolveImage");
+				commandBuffer->ResolveImage(uiInternalColorRT->GetColorAttachment(0), uiInternalMsaaRT->GetColorAttachment(0));
+				commandBuffer->EndEvent();
+			}
+
+			commandBuffer->BeginEvent("ImGui::Render::ScaleComposite");
+			uiPresentScale.Composite(commandBuffer, uiInternalColorRT->GetColorAttachment(0), swapColor, swapColor->GetWidth(), swapColor->GetHeight());
+			commandBuffer->EndEvent();
+		}
+		else if (MSAARenderTarget)
+		{
+			commandBuffer->BeginEvent("ImGui::Render::ResolveImage");
+			commandBuffer->ResolveImage(renderTarget->GetColorAttachment(0), MSAARenderTarget->GetColorAttachment(0));
+			commandBuffer->EndEvent();
+		}
 	    commandBuffer->End();
 
-        GPUEvent *submitGPUEvent[] = { gpuEvent };
-	    queue->Submit(&commandBuffer, 1, submitGPUEvent, 1, swapchain);
+		queue->Submit(commandBuffer, gpuEvent, swapchain);
 		queue->Present(swapchain, nullptr, 0);
 
-	    syncValues[syncPoint] = gpuEvent->GetSyncPoint();
-
+	    syncValues[syncPoint] = syncValue;
 	    SLROTATE(syncPoint, bufferCount);
     }
+    else
+    {
+		std::this_thread::sleep_for(std::chrono::duration(std::chrono::microseconds(16669)));
+    }
 
-    window->ProcessEvents();
+	rendering = false;
 }
 
 void Application::Run()
@@ -142,10 +375,16 @@ void Application::Run()
 	Graphics::Execute<AsyncTask>(AsyncTaskType::Submiting);
 	Graphics::WaitIdle();
 
+	windowShown = false;
+	OnRender();
 	window->Show();
+	windowShown = true;
+	window->ProcessEvents();
+
     while (runtime.running)
     {
         OnRender();
+		window->ProcessEvents();
     }
 }
 
@@ -182,25 +421,62 @@ bool Application::OnWindowClosed(WindowCloseEvent &e)
 
 bool Application::OnWindowResize(WindowResizeEvent &e)
 {
-    auto width  = e.Width();
+    if (!swapchain)
+    {
+		return false;
+    }
+
+	auto width  = e.Width();
     auto height = e.Height();
 
 	runtime.minimized = e.Width() == 0 || e.Height() == 0;
 
+	if (runtime.minimized)
+	{
+		pendingWindowResize = false;
+		return runtime.minimized;
+	}
+
+	if (rendering || windowModeTransition)
+	{
+		pendingWindowResize = true;
+		pendingWindowResizeWidth = width;
+		pendingWindowResizeHeight = height;
+		return false;
+	}
+
     if (!runtime.minimized)
     {
+		if (uiRenderScalePending)
+		{
+			uiRenderScale = pendingUiRenderScale;
+			uiRenderScalePending = false;
+		}
 		queue->WaitIdle(0xffffffff);
 		swapchain->Resize(width, height);
+		RefreshUiCompositeTargets();
     }
 
-    OnRender();
+	if (windowShown && !rendering && !windowModeTransition)
+	{
+		OnRender();
+	}
 
     return runtime.minimized;
 }
 
 bool Application::OnWindowMove(WindowMoveEvent &e)
 {
-    OnRender();
+	if (!swapchain)
+	{
+		return false;
+    }
+
+	if (windowShown && !rendering && !windowModeTransition && !pendingWindowResize)
+	{
+		OnRender();
+	}
+
     return true;
 }
 

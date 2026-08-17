@@ -9,53 +9,39 @@
 #include "Core.h"
 #include "Shared/Async.h"
 #include "Shared/IObject.h"
-#include "Audio/AudioSource.h"
-#include "AudioRenderContext.h"
+#include "IAudioDevice.h"
+#include "AudioStream.h"
 
 namespace Immortal
 {
 
-class AudioClip;
-class AudioSource;
-class AudioDevice : public IObject
+class IMMORTAL_API AudioDevice : public IObject
 {
 public:
     AudioDevice();
 
     ~AudioDevice();
 
-    void PlayAudioStream(AudioSource *pAudioSource);
-
-    void PlayClip(AudioClip pAudioClip);
-
-    void PlayFrame(Picture picture);
-
     void Reset();
 
     void OnPauseDown();
 
     void OnPauseRelease();
+   
+    AudioFormat GetFormat() const;
 
-    double GetPosition() const;
+    IAudioStream *CreateAudioStream(const PFN_AudioStreamPlayCallback &callback);
 
-    double Sync(uint64_t videoTimestamp, double framesPerSecond, double delta);
+    void DestroyAudioStream(IAudioStream **ppStream);
 
-    uint64_t Sync(double framesPerSecond);
+    bool SetOnEvent(const std::function<void(Event &)> &callback);
 
-public:
-	template <class T>
-	void SetCallBack(T &&task)
-	{
-		callBack = std::move(task);
-	}
+    void OnEvent();
 
-    void DisableCallBack()
-    {
-		callBack = {};
-    }
+    int EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice);
 
 public:
-    static int GetSampleRate();
+	static AudioDevice *GetInstance();
 
 protected:
     static AudioDevice *instance;
@@ -63,13 +49,17 @@ protected:
 protected:
     URef<Thread> thread;
 
-    URef<AudioRenderContext> context;
+    URef<IAudioDevice> handle;
 
     std::mutex mutex;
 
     std::atomic_bool status;
 
-    std::function<void(Picture &)> callBack;
+    std::atomic_bool defaultDeviceChanged;
+
+    std::vector<URef<IAudioStream>> streams;
+
+    std::function<void(Event &)> onEvent;
 
     uint64_t pts;
 

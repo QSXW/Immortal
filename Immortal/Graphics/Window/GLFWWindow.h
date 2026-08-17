@@ -29,6 +29,10 @@ public:
 
     virtual void Show() override;
 
+    virtual void SetFullscreen(bool value) override;
+
+    virtual bool IsFullscreen() const override;
+
     virtual void ProcessEvents() override;
 
     virtual void SetTitle(const std::string &title) override;
@@ -52,6 +56,16 @@ protected:
     uint32_t childWindow;
 
     bool owned;
+
+    bool fullscreen;
+
+    int windowedX;
+
+    int windowedY;
+
+    int windowedWidth;
+
+    int windowedHeight;
 
     std::unique_ptr<Input> input;
 };

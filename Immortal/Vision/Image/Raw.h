@@ -2,15 +2,16 @@
 
 #include "Vision/Codec.h"
 
+class LibRaw;
 namespace Immortal
 {
 namespace Vision
 {
 
-enum class RawBitDepth
+struct RawParams
 {
-    _8  = 8,
-    _16 = 16,
+	float black[4];
+	float scale[4];
 };
 
 class RawCodec : public Interface::Codec
@@ -19,22 +20,30 @@ public:
     using Super = Interface::Codec;
 
 public:
-	RawCodec();
+	RawCodec(Format outputFormat = Format::BayerLayerRGGB, int scale = 1);
 
     virtual ~RawCodec() override;
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
-public:
-    void SetBits(RawBitDepth value)
-    {
-        bitDepth = value;
-    }
+    virtual CodecError DecodeHeader(CodedFrame &codedFrame, CodecInfo &Info) override;
+
+    void GetParams(RawParams *pParams);
+
+    void GetProjectionMatrix(float matrix[4][4]);
+
+    void GetCurve(float *curve);
+
+    DisplayOrientation GetDisplayOrientation();
+
+    Picture DecodeThumbnail(const CodedFrame &codedFrame);
 
 protected:
     Format format;
 
-    RawBitDepth bitDepth;
+    int scale;
+
+    std::shared_ptr<LibRaw> processor;
 };
 
 }

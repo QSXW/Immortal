@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "Shared/DLLLoader.h"
 #include "Shared/Log.h"
+#include "String/IString.h"
 
 #include <dxcapi.h>
 
@@ -26,6 +27,10 @@ static inline const wchar_t *GetShaderTarget(ShaderStage stage)
             return L"ps_6_1";
         case ShaderStage::Compute:
             return L"cs_6_1";
+		case ShaderStage::Mesh:
+			return L"ms_6_5";
+		case ShaderStage::WorkGraph:
+			return L"lib_6_8";
         default:
             return nullptr;
     }
@@ -54,6 +59,7 @@ DirectXShaderCompiler::DirectXShaderCompiler() :
 		LOG::ERR("Failed to get handle to DxcCreateInstance!");
 		return;
     }
+
     if (FAILED(pDxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler))))
     {
 		LOG::ERR("Failed to init DirectX Shader Compiler");
@@ -81,14 +87,46 @@ DirectXShaderCompiler::~DirectXShaderCompiler()
     }
 }
 
-bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType sourceType, ShaderBinaryType binaryType, ShaderStage stage, uint32_t size, const char *data, const std::string &entryPoint, std::vector<uint8_t> &binary, std::string &error)
+bool DirectXShaderCompiler::Compile(const std::string     &name,
+				                    ShaderSourceType       sourceType,
+	                                ShaderBinaryType       binaryType,
+	                                ShaderStage            stage,
+	                                uint32_t               size,
+	                                const char            *data,
+	                                const std::string     &entryPoint,
+	                                std::vector<uint8_t>  &binary,
+	                                std::string           &error,
+				                    const ShaderMacro     *pMacro,
+		                            uint32_t               numMacro)
 {
 	std::wstring lEntryPoint = {entryPoint.begin(), entryPoint.end()};
     std::vector<LPCWSTR> arguments = {
         L"name",
 	    L"-E", lEntryPoint.c_str(),
-        L"-T", GetShaderTarget(stage)
+        L"-T", GetShaderTarget(stage),
     };
+    if (binaryType == ShaderBinaryType::SPIRV)
+    {
+		arguments.emplace_back(L"-fvk-use-scalar-layout");
+    }
+
+	arguments.reserve(arguments.size() + numMacro * 2);
+
+    std::vector<std::wstring> macros;
+	macros.reserve(numMacro * 2);
+    for (uint32_t i = 0; i < numMacro; i++)
+    {
+		std::wstring definition = String2WString(pMacro[i].name);
+        if (pMacro[i].definition)
+        {
+			definition += L"=" + String2WString(pMacro[i].definition);
+        }
+
+		macros.emplace_back(std::move(definition));
+
+		arguments.emplace_back(L"-D");
+		arguments.emplace_back(macros.back().c_str());
+    }
 
     if (binaryType == ShaderBinaryType::SPIRV)
     {
@@ -101,7 +139,7 @@ bool DirectXShaderCompiler::Compile(const std::string &name, ShaderSourceType so
 	    buffer.Encoding = DXC_CP_ACP
     };
 
-    CComPtr<IDxcResult> result{nullptr};
+    CComPtr<IDxcOperationResult> result{nullptr};
     auto hres = compiler->Compile(
         &buffer,
         arguments.data(),
@@ -142,6 +180,23 @@ bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vect
 	    .Size     = binary.size(),
         .Encoding = 0,
     };
+
+    if (FAILED(utils->CreateReflection(&buffer, IID_PPV_ARGS(ppvReflection))))
+    {
+		LOG::ERR("Failed to create shader reflection!");
+		return false;
+    }
+
+    return true;
+}
+
+bool DirectXShaderCompiler::Reflect(ShaderBinaryType binaryType, const std::vector<uint8_t> &binary, ID3D12LibraryReflection **ppvReflection)
+{
+    DxcBuffer buffer = {
+         .Ptr     = binary.data(),
+	    .Size     = binary.size(),
+        .Encoding = 0,
+	};
 
     if (FAILED(utils->CreateReflection(&buffer, IID_PPV_ARGS(ppvReflection))))
     {

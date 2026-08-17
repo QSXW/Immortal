@@ -3,8 +3,16 @@
 #include "Input.h"
 #include "Math/Math.h"
 
+#include <algorithm>
+
 namespace Immortal
 {
+
+EditorCamera::EditorCamera(float fov, float width, float height, float zNear, float zFar) :
+    EditorCamera{Vector::PerspectiveFOV(Vector::Radians(fov), width, height, zNear, zFar)}
+{
+	SetClipPlanes(zNear, zFar);
+}
 
 EditorCamera::EditorCamera(const Matrix4 &projection) :
     Camera{ projection }
@@ -15,6 +23,8 @@ EditorCamera::EditorCamera(const Matrix4 &projection) :
     pitch = 0.0f;
 
     UpdateView();
+
+	SetClipPlanes(0.1f, 1000.0f);
 }
 
 void EditorCamera::Focus(const Vector3 & focusPoint)
@@ -27,7 +37,7 @@ void EditorCamera::Focus(const Vector3 & focusPoint)
     }
 }
 
-void EditorCamera::OnUpdate()
+void EditorCamera::OnUpdate(const float &deltaTime)
 {
     if (Input::IsKeyPressed(KeyCode::LeftAlt))
     {
@@ -156,6 +166,30 @@ float EditorCamera::ZoomSpeed() const
 void EditorCamera::SetViewportSize(Vector2 size)
 {
     viewportSize = size;
-    SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, (float)0.1, 1000));
+	SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, clipNear, clipFar));
+}
+
+void EditorCamera::ExportOrbitSnapshot(Vector3 &outFocal, float &outDist, float &outPitchDeg, float &outYawDeg, float &outFovDeg) const
+{
+	outFocal     = focalPoint;
+	outDist      = distance;
+	outPitchDeg  = pitch;
+	outYawDeg    = yaw;
+	outFovDeg    = FOV;
+}
+
+void EditorCamera::ImportOrbitSnapshot(const Vector3 &focal, float dist, float pitchDeg, float yawDeg, float fovDeg, float zNear, float zFar)
+{
+	focalPoint = focal;
+	distance   = dist;
+	pitch      = pitchDeg;
+	yaw        = yawDeg;
+	FOV        = fovDeg;
+	UpdateView();
+	if (viewportSize.x > 0.0f && viewportSize.y > 0.0f)
+	{
+		SetProjection(Vector::PerspectiveFOV(FOV, viewportSize.x, viewportSize.y, zNear, zFar));
+		SetClipPlanes(zNear, zFar);
+	}
 }
 }

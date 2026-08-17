@@ -1,3 +1,7 @@
+#if _MSC_VER
+#	pragma optimize("gt", on)
+#endif
+
 /* stb_image - v2.27 - public domain image loader - http://nothings.org/stb
                                   no warranty implied; use at your own risk
 
@@ -8005,3 +8009,6 @@ ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ------------------------------------------------------------------------------
 */
+#ifdef _MSC_VER
+#	pragma optimize("", on)
+#endif

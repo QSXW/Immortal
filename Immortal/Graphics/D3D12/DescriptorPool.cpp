@@ -1,4 +1,5 @@
 #include "DescriptorPool.h"
+#include "Memory/MemoryResource.h"
 
 namespace Immortal
 {
@@ -10,16 +11,19 @@ DescriptorPool::DescriptorPool() :
 	type{},
 	flags{},
     activeDescriptorHeap{},
-    freeDescritorCount{},
 	avtiveDescriptor{}
 {
 
 }
 
-DescriptorPool::DescriptorPool(Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags) :
-    DescriptorPool{ device, NumDescriptorPerPool, type, flags }
+DescriptorPool::DescriptorPool(Device *device, D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorCount, D3D12_DESCRIPTOR_HEAP_FLAGS flags) :
+    DescriptorPool{ device, NumDescriptorPerPool * descriptorCount, type, flags }
 {
+	descriptorCountPerHeap  = 256 / descriptorCount;
+	descriptorCountPerHeap  = std::min(descriptorCountPerHeap, uint32_t(64));
+	fullMask = ((1ll << (descriptorCountPerHeap - 1)) << 1) - 1;
 
+	descriptorCountPerHeap *= descriptorCount;
 }
 
 DescriptorPool::DescriptorPool(Device *device, uint32_t descriptorCountPerHeap, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags) :
@@ -28,8 +32,8 @@ DescriptorPool::DescriptorPool(Device *device, uint32_t descriptorCountPerHeap, 
     type{ type },
     flags{ flags },
     activeDescriptorHeap{},
-    freeDescritorCount{},
-    avtiveDescriptor{}
+    avtiveDescriptor{},
+    fullMask{}
 {
 
 }
@@ -48,33 +52,54 @@ DescriptorHeap *DescriptorPool::AllocateNextDescriptorHeap()
 	return descriptorHeaps.back();
 }
 
-Descriptor DescriptorPool::Allocate(uint32_t descriptorCount)
+Descriptor DescriptorPool::AllocateWithMask(DescriptorHeap **ppHeap, uint32_t descriptorCount)
 {
-	DescriptorHeap *descriptorHeap = nullptr;
-	ShaderVisibleDescriptor descriptor;
-	Allocate(&descriptorHeap, &descriptor, descriptorCount);
-
-	return descriptor.descriptor;
-}
-
-void DescriptorPool::Allocate(DescriptorHeap **ppHeap, ShaderVisibleDescriptor *pBaseDescriptor, uint32_t descriptorCount)
-{
-	if (!activeDescriptorHeap || freeDescritorCount < descriptorCount)
+	uint64_t mask  = 0;
+	uint64_t cmask = (1ll << 1/*descriptorCount */) - 1ll;
+	uint64_t index = 0;
+	for (auto &[descriptorHeap, _mask] : masks)
 	{
+		if (_mask)
+		{
+			index = CountTrailingZeros64(_mask);
+			bool available = ((_mask >> index) & cmask) == cmask;
+			if (available)
+			{
+				mask = _mask;
+				*ppHeap = descriptorHeap;
+				break;
+			}
+		}
+	}
+
+	if (!mask)
+	{
+		index = 0;
+		mask  = fullMask;
 		activeDescriptorHeap        = AllocateNextDescriptorHeap();
-		avtiveDescriptor.descriptor = activeDescriptorHeap->GetCPUDescriptorHandle();
+		masks[activeDescriptorHeap] = mask;
 		if (flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
 		{
 			avtiveDescriptor.shaderVisibleDescriptor = activeDescriptorHeap->GetGPUDescriptorHandle();
 		}
-		freeDescritorCount = NumDescriptorPerPool;
+		*ppHeap = activeDescriptorHeap;
 	}
-	
-	*ppHeap          = activeDescriptorHeap;
-	*pBaseDescriptor = avtiveDescriptor;
-	avtiveDescriptor.Offset(descriptorCount);
 
-	freeDescritorCount -= descriptorCount;
+	mask ^= cmask << index;
+	masks[*ppHeap] = mask;
+
+	Descriptor descriptor = (*ppHeap)->GetCPUDescriptorHandle();
+	descriptor.Offset(index, descriptorCount * GetIncrementSize());
+
+	return descriptor;
+}
+
+void DescriptorPool::Free(DescriptorHeap *descriptorHeap, Descriptor descriptor, uint32_t descriptorCount)
+{
+	Descriptor base = descriptorHeap->GetCPUDescriptorHandle();
+	auto index = (descriptor.ptr - base.ptr) / (descriptorCount * base.GetIncrementSize());
+	auto &mask = masks[descriptorHeap];
+	mask |= ((1ll << 1) - 1ll) << index;
 }
 
 }

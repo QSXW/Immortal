@@ -20,11 +20,13 @@ public:
     using Super = SuperTexture;
 
 public:
-    Texture(Device *device, ID3D12Resource *resource, D3D12_RESOURCE_STATES state);
+	Texture(Device *device, const ComPtr<ID3D12Resource> &, D3D12_RESOURCE_STATES state);
 
-    Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
+    Texture(Device *device, Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount = 1, const ClearValue *pOptimizedClearValue = nullptr);
 
     virtual ~Texture() override;
+
+    virtual void SetName(const char *name) override;
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetDescriptor(uint32_t subresource = 0);
 
@@ -37,9 +39,11 @@ public:
     }
 
 protected:
-    void Construct(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type);
+	void Construct(Format format, uint32_t width, uint32_t height, uint16_t mipLevels, uint16_t arrayLayers, TextureType type, uint32_t sampleCount, const ClearValue *pOptimizedClearValue = nullptr);
 
     void ConstructShaderResourceView();
+
+    void ConstructDepthShaderResourceView();
 
 protected:
     DXGI_FORMAT format;
@@ -47,6 +51,10 @@ protected:
     Descriptor descriptor;
 
     Descriptor uav;
+
+    DescriptorHeap *descriptorHeap;
+
+    DescriptorHeap *uavDescriptorHeap;
 };
 
 }

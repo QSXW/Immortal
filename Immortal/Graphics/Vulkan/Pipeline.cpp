@@ -3,6 +3,9 @@
 #include "RenderTarget.h"
 #include "Texture.h"
 
+#include <algorithm>
+#include <vector>
+
 namespace Immortal
 {
 namespace Vulkan
@@ -12,7 +15,6 @@ VkPrimitiveTopology CAST(GraphicsPipeline::PrimitiveType type)
 {
     switch (type)
     {
-
     case GraphicsPipeline::PrimitiveType::Point:
         return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     case GraphicsPipeline::PrimitiveType::Line:
@@ -52,6 +54,18 @@ void Pipeline::Destroy()
 
 void Pipeline::ConstructPipelineLayout(const std::vector<VkDescriptorSetLayoutBinding> &descriptorSetLayoutBindings, const std::vector<VkPushConstantRange> &pushConstantRanges)
 {
+	uint32_t maxBindingExclusive = 0;
+	for (const auto &b : descriptorSetLayoutBindings)
+	{
+		maxBindingExclusive = (std::max)(maxBindingExclusive, b.binding + 1u);
+	}
+	bindDescriptorTypes.assign(maxBindingExclusive, VkDescriptorType{});
+	for (size_t i = 0; i < descriptorSetLayoutBindings.size(); i++)
+	{
+		auto &descriptorSetLayout = descriptorSetLayoutBindings[i];
+		bindDescriptorTypes[descriptorSetLayout.binding] = descriptorSetLayout.descriptorType;
+    }
+
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
         .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext        = nullptr,
@@ -70,7 +84,7 @@ void Pipeline::ConstructPipelineLayout(const std::vector<VkDescriptorSetLayoutBi
         .pushConstantRangeCount  = uint32_t(pushConstantRanges.size()),
         .pPushConstantRanges     = pushConstantRanges.data()
     };
-
+    
     PipelineLayout{
 	    *device,
 	    &pipelineLayoutCreateInfo
@@ -125,7 +139,24 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         }
 
         pushConstantRanges.insert(pushConstantRanges.end(), shader->GetPushConstantRanges().begin(), shader->GetPushConstantRanges().end());
-		descriptorSetLayoutBindings.insert(descriptorSetLayoutBindings.end(), shader->GetDescriptorSetLayoutBinding().begin(), shader->GetDescriptorSetLayoutBinding().end());
+
+        for (auto &binding : shader->GetDescriptorSetLayoutBinding())
+        {
+			size_t j = 0;
+            for (; j < descriptorSetLayoutBindings.size(); j++)
+            {
+                if (binding.binding == descriptorSetLayoutBindings[j].binding)
+                {
+					descriptorSetLayoutBindings[j].stageFlags |= binding.stageFlags;
+					break;
+                }
+            }
+            if (j == descriptorSetLayoutBindings.size())
+            {
+				descriptorSetLayoutBindings.emplace_back(binding);
+            }
+        }
+		// descriptorSetLayoutBindings.insert(descriptorSetLayoutBindings.end(), shader->GetDescriptorSetLayoutBinding().begin(), shader->GetDescriptorSetLayoutBinding().end());
     }
 
     ConstructPipelineLayout(descriptorSetLayoutBindings, pushConstantRanges);
@@ -181,9 +212,20 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .depthBiasSlopeFactor    = 0,
         .lineWidth               = 1.0f,
     };
+	if (flags & Pipeline::State::ShadowPass)
+	{
+		rasterizationStateCreateInfo.cullMode = VK_CULL_MODE_NONE;
+		rasterizationStateCreateInfo.depthBiasEnable = VK_TRUE;
+	}
 
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
-	colorBlendAttachmentStates.resize(outputDescription.size());
+	size_t colorBlendSize = outputDescription.size();
+	if (outputDescription.back().IsDepth())
+    {
+		colorBlendSize--;
+    }
+
+	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
+	colorBlendAttachmentStates.resize(colorBlendSize);
 	for (size_t i = 0; i < colorBlendAttachmentStates.size(); i++)
     {
 		auto &colorBlendAttachmentState = colorBlendAttachmentStates[i];
@@ -221,7 +263,7 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .pNext                 = nullptr,
 	    .flags                 = {},
         .depthTestEnable       = flags & Pipeline::State::Depth ? VK_TRUE : VK_FALSE,
-        .depthWriteEnable      = VK_TRUE,
+	    .depthWriteEnable      = depthStencilStateCreateInfo.depthTestEnable,
         .depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL,
         .depthBoundsTestEnable = VK_FALSE,
         .stencilTestEnable     = VK_FALSE,
@@ -238,6 +280,7 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .minDepthBounds  = 0,
         .maxDepthBounds  = 0,
 	};
+
 
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {
         .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -261,18 +304,22 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .alphaToOneEnable      = {},
 	};
 
-    const VkDynamicState dynamicState[] = {
+    std::vector<VkDynamicState> dynamicStates = {
 	    VK_DYNAMIC_STATE_VIEWPORT,
 	    VK_DYNAMIC_STATE_SCISSOR,
 	    VK_DYNAMIC_STATE_BLEND_CONSTANTS,
     };
+	if (flags & Pipeline::State::ShadowPass)
+	{
+		dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+	}
 
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {
         .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .pNext             = nullptr,
         .flags             = 0,
-		.dynamicStateCount = SL_ARRAY_LENGTH(dynamicState),
-        .pDynamicStates    = dynamicState,
+		.dynamicStateCount = uint32_t(dynamicStates.size()),
+        .pDynamicStates    = dynamicStates.data(),
     };
 
     VkFormat depthAttachmentFormat   = VK_FORMAT_UNDEFINED;
@@ -306,8 +353,8 @@ void GraphicsPipeline::Construct(SuperShader **_ppShader, size_t shaderCount, co
         .flags               = 0,
 	    .stageCount          = uint32_t(stageCreateInfo.size()),
         .pStages             = stageCreateInfo.data(),
-        .pVertexInputState   = &vertexInputStateCreateInfo,
-        .pInputAssemblyState = &inputAssemblyStateCreateInfo,
+        .pVertexInputState   = description.Size() == 0 ? nullptr : &vertexInputStateCreateInfo,
+	    .pInputAssemblyState = description.Size() == 0 ? nullptr : &inputAssemblyStateCreateInfo,
         .pTessellationState  = nullptr,
         .pViewportState      = &viewportStateCreateInfo,
         .pRasterizationState = &rasterizationStateCreateInfo,

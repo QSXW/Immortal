@@ -8,7 +8,8 @@
 #include <spdlog/fmt/ostr.h>
 #pragma warning(pop)
 
-#include <time.h>
+#include "IObject.h"
+#include <filesystem>
 
 namespace Immortal
 {
@@ -16,22 +17,19 @@ namespace Immortal
 class LOG
 {
 public:
-    static void Setup(bool async = false);
+	static void Setup(bool async = false, const std::filesystem::path &path = {});
 
     static void Release();
 
-    static void Init(bool async = false)
+    static void Init(bool async = false, const std::filesystem::path &path = {})
     {
-        Setup(async);
+		Setup(async, path);
     }
 
-    template <bool On = true, class... Args>
+    template <class... Args>
     static inline void WARN(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
-        if constexpr (On)
-        {
-            logger->warn(fmt, std::forward<Args>(args)...);
-        }
+        logger->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <class... Args>
@@ -40,13 +38,10 @@ public:
         logger->info(fmt, std::forward<Args>(args)...);
     }
 
-    template <bool On = true, class... Args>
+    template <class... Args>
     static inline void DEBUG(spdlog::format_string_t<Args...> fmt, Args && ... args)
     {
-        if constexpr (On)
-        {
-            logger->debug(fmt, std::forward<Args>(args)...);
-        }
+        logger->debug(fmt, std::forward<Args>(args)...);
     }
 
     template <class... Args>
@@ -61,8 +56,68 @@ public:
         logger->critical(fmt, std::forward<Args>(args)...);
     }
 
-private:
+public:
     static std::shared_ptr<spdlog::logger> logger;
 };
+
+#define LOG_INFO(...)    LOG::INFO(__VA_ARGS__)
+#define LOG_ERROR(...)   LOG::ERR(__VA_ARGS__)
+#define LOG_WARNING(...) LOG::WARN(__VA_ARGS__)
+#define LOG_DEBUG(...)   LOG::DEBUG(__VA_ARGS__)
+
+template <class T>
+inline const char *IClassGetName(T *_this)
+requires std::derived_from<T, IClass>
+{
+	return InterpretAs<IClass>(_this)->GetName();
+}
+
+//template <class F, class T, class... Args>
+//inline void ClogLevel(spdlog::format_string_t<Args...> fmt, T *_this, Args &&...args)
+//{
+//	if constexpr (std::derived_from<std::remove_pointer_t<decltype(_this), IClass>)
+//	{
+//		F(fmt, _this->GetName(), std::forward<Args>(args)...);
+//	}
+//	else
+//	{
+//		F(fmt, std::forward<Args>(args)...);
+//	}
+//}
+
+#define CLOG_LEVEL(L)                                                                              \
+template <class T, class... Args>                                                                  \
+requires(std::is_base_of_v<IClass, T>)                                                             \
+inline void Clog##L(spdlog::format_string_t<const char *, Args...> s, T * _this, Args && ...args)  \
+{                                                                                                  \
+	LOG::L(s, _this->GetName(), std::forward<Args>(args)...);                                      \
+}                                                                                                  \
+                                                                                                   \
+template <class T, class... Args>                                                                  \
+requires(!std::is_base_of_v<IClass, T>)                                                            \
+inline void Clog##L(spdlog::format_string_t<Args...> s, T * _this, Args && ...args)                \
+{                                                                                                  \
+	LOG::L(s, std::forward<Args>(args)...);                                                        \
+}                                                                                                  \
+
+CLOG_LEVEL(INFO )
+CLOG_LEVEL(ERR  )
+CLOG_LEVEL(WARN )
+CLOG_LEVEL(DEBUG)
+
+#define CLOG_LEVEL(L, S, ...)                                                       \
+	if constexpr (std::is_base_of_v<IClass, std::remove_pointer_t<decltype(this)>>) \
+	{                                                                               \
+		Clog##L("[{}] " S, this, ##__VA_ARGS__);                                    \
+	}                                                                               \
+	else                                                                            \
+	{                                                                               \
+		Clog##L(" " S, this, ##__VA_ARGS__);                                        \
+	}
+
+#define CLOG_INFO(S, ...)    CLOG_LEVEL(INFO,    S, ##__VA_ARGS__)
+#define CLOG_ERROR(S, ...)   CLOG_LEVEL(ERR,     S, ##__VA_ARGS__)
+#define CLOG_WARN(S, ...)    CLOG_LEVEL(WARN,    S, ##__VA_ARGS__)
+#define CLOG_DEBUG(S, ...)   CLOG_LEVEL(DEBUG,   S, ##__VA_ARGS__)
 
 }
