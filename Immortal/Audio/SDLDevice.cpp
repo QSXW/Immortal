@@ -84,24 +84,30 @@ static uint8_t SilenceByteForFormat(Uint16 fmt)
 	}
 }
 
-static std::atomic_int gSdlAudioSubsystemRefs{ 0 };
+static std::mutex gSdlAudioSubsystemMutex;
+static int gSdlAudioSubsystemRefs = 0;
 
-static void RefSdlAudioSubsystem(const char *logContext)
+static bool RefSdlAudioSubsystem(const char *logContext)
 {
 	(void)logContext;
-	if (gSdlAudioSubsystemRefs.fetch_add(1, std::memory_order_acq_rel) == 0)
+	std::lock_guard lock{ gSdlAudioSubsystemMutex };
+	if (gSdlAudioSubsystemRefs == 0 && SDL_InitSubSystem(SDL_INIT_AUDIO) != 0)
 	{
-		if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0)
-		{
-			LOG::ERR("SDL_InitSubSystem(SDL_INIT_AUDIO): {}", SDL_GetError());
-			gSdlAudioSubsystemRefs.fetch_sub(1, std::memory_order_relaxed);
-		}
+		LOG::ERR("SDL_InitSubSystem(SDL_INIT_AUDIO): {}", SDL_GetError());
+		return false;
 	}
+	++gSdlAudioSubsystemRefs;
+	return true;
 }
 
 static void UnrefSdlAudioSubsystem()
 {
-	if (gSdlAudioSubsystemRefs.fetch_sub(1, std::memory_order_acq_rel) == 1)
+	std::lock_guard lock{ gSdlAudioSubsystemMutex };
+	if (gSdlAudioSubsystemRefs <= 0)
+	{
+		return;
+	}
+	if (--gSdlAudioSubsystemRefs == 0)
 	{
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 	}
@@ -289,11 +295,31 @@ AudioStream::~AudioStream()
 
 void AudioStream::CloseDevice()
 {
-	if (deviceId)
+	std::lock_guard lifecycleLock{ lifecycleMutex };
+	closing.store(true, std::memory_order_release);
+
+	const SDL_AudioDeviceID closingDevice = deviceId;
+	deviceId = 0;
+	if (closingDevice)
 	{
-		SDL_CloseAudioDevice(deviceId);
-		deviceId = 0;
+		// Pause first so an in-flight callback has finished before its owner and
+		// callback functor are released. SDL_CloseAudioDevice then only has to
+		// terminate the already-quiescent backend thread.
+		SDL_PauseAudioDevice(closingDevice, 1);
 	}
+	{
+		std::lock_guard callbackLock{ mutex };
+		callback = {};
+	}
+	if (closingDevice)
+	{
+		SDL_CloseAudioDevice(closingDevice);
+	}
+
+	have = {};
+	bytesPerFrame = 0;
+	bytePerSample = 0;
+	silenceByte = 0;
 	if (streamHoldsSdlSubsystemRef)
 	{
 		UnrefSdlAudioSubsystem();
@@ -304,7 +330,8 @@ void AudioStream::CloseDevice()
 
 bool AudioStream::Start()
 {
-	if (deviceId)
+	std::lock_guard lifecycleLock{ lifecycleMutex };
+	if (deviceId && !closing.load(std::memory_order_acquire))
 	{
 		SDL_PauseAudioDevice(deviceId, 0);
 		return true;
@@ -314,6 +341,7 @@ bool AudioStream::Start()
 
 bool AudioStream::Stop()
 {
+	std::lock_guard lifecycleLock{ lifecycleMutex };
 	if (deviceId)
 	{
 		SDL_PauseAudioDevice(deviceId, 1);
@@ -324,6 +352,7 @@ bool AudioStream::Stop()
 
 bool AudioStream::Reset()
 {
+	std::lock_guard lifecycleLock{ lifecycleMutex };
 	if (deviceId)
 	{
 		SDL_PauseAudioDevice(deviceId, 1);
@@ -357,6 +386,7 @@ uint32_t AudioStream::GetAvailableFrameCount()
 
 AudioFormat AudioStream::GetFormat()
 {
+	std::lock_guard lifecycleLock{ lifecycleMutex };
 	if (!have.format)
 	{
 		return owner ? owner->GetFormat() : AudioFormat{};
@@ -373,6 +403,7 @@ bool AudioStream::OnDeviceChanged(IAudioDevice *device)
 
 uint32_t AudioStream::FfplayAudioHwBufferBytes() const
 {
+	std::lock_guard lifecycleLock{ lifecycleMutex };
 	if (!have.format || !bytesPerFrame)
 	{
 		return 0;
@@ -382,15 +413,26 @@ uint32_t AudioStream::FfplayAudioHwBufferBytes() const
 
 void AudioStream::Start(const PFN_AudioStreamPlayCallback &value)
 {
-	callback = value;
+	std::lock_guard lifecycleLock{ lifecycleMutex };
+	closing.store(false, std::memory_order_release);
+	{
+		std::lock_guard callbackLock{ mutex };
+		callback = value;
+	}
 
 	if (!owner)
 	{
 		return;
 	}
 
-	RefSdlAudioSubsystem("AudioStream::Start");
-	streamHoldsSdlSubsystemRef = true;
+	streamHoldsSdlSubsystemRef = RefSdlAudioSubsystem("AudioStream::Start");
+	if (!streamHoldsSdlSubsystemRef)
+	{
+		closing.store(true, std::memory_order_release);
+		std::lock_guard callbackLock{ mutex };
+		callback = {};
+		return;
+	}
 
 	SDL_AudioSpec want;
 	SDL_zero(want);
@@ -420,6 +462,11 @@ void AudioStream::Start(const PFN_AudioStreamPlayCallback &value)
 	if (!deviceId)
 	{
 		CLOG_ERROR("SDL_OpenAudioDevice: {}", SDL_GetError());
+		closing.store(true, std::memory_order_release);
+		{
+			std::lock_guard callbackLock{ mutex };
+			callback = {};
+		}
 		if (streamHoldsSdlSubsystemRef)
 		{
 			UnrefSdlAudioSubsystem();
@@ -446,8 +493,18 @@ void SDLCALL AudioStream::SdlAudioCallback(void *userdata, Uint8 *stream, int le
 	{
 		return;
 	}
+	if (self->closing.load(std::memory_order_acquire))
+	{
+		std::memset(stream, self->silenceByte, (size_t)len);
+		return;
+	}
 
 	std::lock_guard lock{ self->mutex };
+	if (self->closing.load(std::memory_order_acquire))
+	{
+		std::memset(stream, self->silenceByte, (size_t)len);
+		return;
+	}
 
 	if (!self->bytesPerFrame)
 	{

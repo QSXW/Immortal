@@ -62,6 +62,12 @@ protected:
 protected:
 	Device *owner;
 
+	/// Serializes open/pause/close so shutdown cannot race playback controls.
+	mutable std::mutex lifecycleMutex;
+
+	/// Prevents a callback from entering its owner while SDL is closing the device.
+	std::atomic_bool closing{ false };
+
 	SDL_AudioDeviceID deviceId = 0;
 
 	SDL_AudioSpec have{};

@@ -64,10 +64,10 @@ AudioDevice::AudioDevice() :
 
 AudioDevice::~AudioDevice()
 {
-    if (instance == this)
-    {
-        instance = nullptr;
-    }
+	if (instance == this)
+	{
+		instance = nullptr;
+	}
 
 	status = false;
 	status.notify_one();
@@ -78,6 +78,28 @@ AudioDevice::~AudioDevice()
         thread->Join();
         thread.Reset();
     }
+
+	if (handle)
+	{
+		handle->SetOnEvent({});
+	}
+	onEvent = {};
+
+	std::vector<URef<IAudioStream>> closingStreams;
+	{
+		std::lock_guard lock{ mutex };
+		closingStreams.swap(streams);
+	}
+	for (auto &stream : closingStreams)
+	{
+		if (stream)
+		{
+			stream->Stop();
+		}
+	}
+	closingStreams.clear();
+
+	handle.Reset();
 }
 
 void AudioDevice::OnPauseDown()
@@ -145,6 +167,12 @@ void AudioDevice::DestroyAudioStream(IAudioStream **ppStream)
             }
         }
     }
+
+	if (removed)
+	{
+		removed->Stop();
+		removed.Reset();
+	}
 }
 
 int AudioDevice::EnumeratorDevices(AudioDeviceType type, AudioDeviceInfo *devices, uint32_t *numDevice)
