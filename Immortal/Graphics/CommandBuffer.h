@@ -5,6 +5,8 @@
 #include "Types.h"
 #include "Format.h"
 
+#include <memory>
+
 namespace Immortal
 {
 
@@ -120,7 +122,7 @@ public:
 
 	}
 
-	virtual void SetImageLayout(Texture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange = &kAllSubresources)
+	virtual void SetImageLayout(Texture *texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange = std::addressof(kAllSubresources))
 	{
 
 	}

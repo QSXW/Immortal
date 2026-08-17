@@ -5,6 +5,8 @@
 #include "Format.h"
 #include "Shared/IObject.h"
 
+#include <mutex>
+
 namespace Immortal
 {
 
@@ -71,6 +73,8 @@ protected:
     }
 
 protected:
+	std::mutex eventMutex;
+
 	GPUEvent *_event;
 
     uint64_t _value;

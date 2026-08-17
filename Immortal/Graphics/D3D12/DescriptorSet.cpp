@@ -24,7 +24,8 @@ DescriptorSet::DescriptorSet(Device *device, Pipeline *pipeline) :
     descriptors{},
     descriptorCount{},
     indexMap{},
-    pipeline{ pipeline }
+	pipeline{ pipeline },
+	textureBindings{}
 {
 	for (uint32_t i = 0; i < SL_ARRAY_LENGTH(descriptorHeaps); i++)
 	{
@@ -57,7 +58,10 @@ DescriptorSet::DescriptorSet(Device *device, uint32_t descriptorCount, D3D12_DES
     descriptorHeaps{},
     descriptors{},
     descriptorCount{descriptorCount},
-    indexMap{}
+	indexMap{},
+	pipeline{},
+	rangeTypes{},
+	textureBindings{}
 {
 	if (descriptorCount > 0)
 	{
@@ -82,6 +86,7 @@ DescriptorSet::~DescriptorSet()
 
 void DescriptorSet::Set(uint32_t slot, SuperBuffer *buffer)
 {
+	ClearTextureBinding(slot);
 	constexpr auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	auto &rangeType = rangeTypes[slot];
 	auto descriptor = InterpretAs<Buffer>(buffer)->GetDescriptor();
@@ -90,6 +95,7 @@ void DescriptorSet::Set(uint32_t slot, SuperBuffer *buffer)
 
 void DescriptorSet::Set(uint32_t slot, SuperBufferView *view)
 {
+	ClearTextureBinding(slot);
 	constexpr auto type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	auto &rangeType = rangeTypes[slot];
 	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = D3D12_CPU_DESCRIPTOR_HANDLE(InterpretAs<BufferView>(view)->GetDescriptor());
@@ -104,6 +110,7 @@ void DescriptorSet::Set(uint32_t slot, SuperTexture *_texture)
 	auto &rangeType = rangeTypes[slot];
 	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = rangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV ? texture->GetUAVDescriptor(0) : texture->GetDescriptor();
 	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptorHandle, type);
+	TrackTextureBinding(slot, texture, rangeType);
 }
 
 void DescriptorSet::SetUavMip(uint32_t slot, SuperTexture *_texture, uint32_t mipSlice)
@@ -119,6 +126,34 @@ void DescriptorSet::SetUavMip(uint32_t slot, SuperTexture *_texture, uint32_t mi
 	const uint32_t mip = mipSlice > maxMip ? maxMip : mipSlice;
 	D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = texture->GetUAVDescriptor(mip);
 	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptorHandle, type);
+	TrackTextureBinding(slot, texture, rangeType);
+}
+
+void DescriptorSet::TrackTextureBinding(uint32_t slot, Texture *texture, D3D12_DESCRIPTOR_RANGE_TYPE rangeType)
+{
+	for (auto &binding : textureBindings)
+	{
+		if (binding.slot == slot)
+		{
+			binding.texture = texture;
+			binding.rangeType = rangeType;
+			return;
+		}
+	}
+
+	textureBindings.push_back({ slot, texture, rangeType });
+}
+
+void DescriptorSet::ClearTextureBinding(uint32_t slot)
+{
+	for (auto it = textureBindings.begin(); it != textureBindings.end(); ++it)
+	{
+		if (it->slot == slot)
+		{
+			textureBindings.erase(it);
+			return;
+		}
+	}
 }
 
 void DescriptorSet::Set(uint32_t slot, SuperSampler *sampler)
@@ -129,6 +164,7 @@ void DescriptorSet::Set(uint32_t slot, SuperSampler *sampler)
 
 void DescriptorSet::Set(uint32_t slot, D3D12_CPU_DESCRIPTOR_HANDLE descriptor, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_RANGE_TYPE rangeType)
 {
+	ClearTextureBinding(slot);
 	SetDescriptorSlot(this, descriptors[type], indexMap[rangeType][slot], descriptor, type);
 }
 

@@ -66,31 +66,20 @@ void MeshletTask::Build(AsyncComputeThread *asyncComputeThread)
 	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 		auto device = Graphics::GetDevice();
 
-		const char *kHlsl = "MeshletTask.hlsl";
-		auto loadOrCompile = [&](ShaderStage st, const std::string &dxilName, const char *entry) -> URef<Shader> {
-			URef<Shader> s{ Graphics::GetShaderByName(dxilName, st, entry) };
-			if (s)
-			{
-				return s;
-			}
-			auto src = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / kHlsl);
-			if (src.empty())
-			{
-				return {};
-			}
-			return device->CreateShader(dxilName, st, src, entry);
+		auto loadShader = [](ShaderStage stage, const std::string &name, const char *entryPoint) -> URef<Shader> {
+			return Graphics::GetShaderByName(name, stage, entryPoint);
 		};
 
-		URef<Shader> meshShader = loadOrCompile(ShaderStage::Mesh,  "meshlet_MS",            "MSMain"       );
-		URef<Shader> psUnlit    = loadOrCompile(ShaderStage::Pixel, "meshlet_PS",            "PSMain"       );
-		URef<Shader> psPhong    = loadOrCompile(ShaderStage::Pixel, "meshlet_PSMainPhong",   "PSMainPhong"  );
-		URef<Shader> psPbr      = loadOrCompile(ShaderStage::Pixel, "meshlet_PSMainPBR",     "PSMainPBR"    );
-		URef<Shader> psNpr      = loadOrCompile(ShaderStage::Pixel, "meshlet_PSMainNPR",     "PSMainNPR"    );
-		URef<Shader> psGbuf     = loadOrCompile(ShaderStage::Pixel, "meshlet_PSMainGBuffer", "PSMainGBuffer");
+		URef<Shader> meshShader = loadShader(ShaderStage::Mesh,  "meshlet_MS",            "MSMain"       );
+		URef<Shader> psUnlit    = loadShader(ShaderStage::Pixel, "meshlet_PS",            "PSMain"       );
+		URef<Shader> psPhong    = loadShader(ShaderStage::Pixel, "meshlet_PSMainPhong",   "PSMainPhong"  );
+		URef<Shader> psPbr      = loadShader(ShaderStage::Pixel, "meshlet_PSMainPBR",     "PSMainPBR"    );
+		URef<Shader> psNpr      = loadShader(ShaderStage::Pixel, "meshlet_PSMainNPR",     "PSMainNPR"    );
+		URef<Shader> psGbuf     = loadShader(ShaderStage::Pixel, "meshlet_PSMainGBuffer", "PSMainGBuffer");
 
 		if (!meshShader || !psUnlit || !psPhong || !psPbr || !psNpr || !psGbuf)
 		{
-			LOG::ERR("MeshletTask: failed to load/compile shaders ({}).", kHlsl);
+			LOG::ERR("MeshletTask: failed to load meshlet shaders.");
 			return;
 		}
 
@@ -266,7 +255,7 @@ void MeshletTask::Composite(CommandBuffer *, const SceneParameters &)
 
 void MeshletTask::OnFrameGraphDebugGui()
 {
-	ImGui::TextUnformatted("Meshlets: static (MeshletTask.hlsl) + skinned (meshlet_skinned.hlsl, bone buffer t6).");
+	ImGui::TextUnformatted("Meshlets: static (meshlet.hlsl) + skinned (meshlet_skinned.hlsl, bone buffer t6).");
 	ImGui::BulletText("Skinned shadow uses meshlet_skinned_shadow_depth.hlsl in shadow passes.");
 	const char *vizItems[] = {
 		"Off (lit shading)",

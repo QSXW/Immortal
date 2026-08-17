@@ -243,6 +243,8 @@ public:
 
     size_t GetTexelSize() const;
 
+    const char *GetString() const;
+
     operator VkFormat() const;
 
     operator DXGI_FORMAT() const;

@@ -116,6 +116,8 @@ protected:
 
 	CommandList commandList;
 
+	D3D12_COMMAND_LIST_TYPE commandListType;
+
 	std::array<Barrier<BarrierType::Transition>, 8> barriers;
 
 	uint32_t activeBarrier;

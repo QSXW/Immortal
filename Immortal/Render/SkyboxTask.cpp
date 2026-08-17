@@ -71,9 +71,12 @@ void SkyboxTask::Build(AsyncComputeThread *asyncComputeThread)
 
         commandBuffer->SetImageLayout(textureCube, ImageLayout::ShaderResource, PipelineStage::All, PipelineStage::All);
 
-        std::string shaderSource = Graphics::ReadShaderSource("Assets/Shaders/hlsl/skybox.hlsl");
-        Ref<Shader> vertexShader = device->CreateShader("SkyboxVertex", ShaderStage::Vertex, shaderSource, "VSMain");
-        Ref<Shader> pixelShader  = device->CreateShader("SkyboxPixel",  ShaderStage::Pixel,  shaderSource, "PSMain");
+        Ref<Shader> vertexShader = Graphics::GetShaderByName("skybox_VS", ShaderStage::Vertex, "VSMain");
+        Ref<Shader> pixelShader  = Graphics::GetShaderByName("skybox_PS", ShaderStage::Pixel, "PSMain");
+        if (!vertexShader || !pixelShader)
+        {
+            return;
+        }
         Shader *shaders[] = {
             vertexShader,
             pixelShader

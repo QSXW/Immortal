@@ -48,6 +48,7 @@ float Texture::GetRatio() const
 
 void Texture::SetEvent(GPUEvent *event, uint64_t value)
 {
+	std::lock_guard lock{ eventMutex };
 	_event = event;
 	_value = value;
 }
@@ -63,10 +64,19 @@ void Texture::SetMeta(Format format, uint32_t width, uint32_t height, uint16_t m
 
 void Texture::WaitLockRelease()
 {
-	if (_event)
+	GPUEvent *event = nullptr;
+	uint64_t value = 0;
 	{
-		_event->Wait(_value, kMaxTimeOut);
-		_event = {};
+		std::lock_guard lock{ eventMutex };
+		event = _event;
+		value = _value;
+		_event = nullptr;
+		_value = 0;
+	}
+
+	if (event)
+	{
+		event->Wait(value, kMaxTimeOut);
 	}
 }
 

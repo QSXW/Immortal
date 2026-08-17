@@ -48,21 +48,8 @@ void PostProcessTask::Build(AsyncComputeThread *asyncComputeThread)
 {
 	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *) {
 		auto *device = Graphics::GetDevice();
-		std::string src = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "post_hdr_present.hlsl");
-		if (src.empty())
-		{
-			LOG::ERR("PostProcessTask: failed to read post_hdr_present.hlsl");
-			return;
-		}
-		auto load = [&](ShaderStage st, const char *dxilName, const char *entry) -> Ref<Shader> {
-			if (Shader *cached = Graphics::GetShaderByName(dxilName, st, std::string(entry)))
-			{
-				return Ref<Shader>{ cached };
-			}
-			return device->CreateShader(dxilName, st, src, std::string(entry));
-		};
-		Ref<Shader> vs = load(ShaderStage::Vertex, "post_hdr_present_VS", "VSMain");
-		Ref<Shader> ps = load(ShaderStage::Pixel, "post_hdr_present_PS", "PSMain");
+		Ref<Shader> vs = Graphics::GetShaderByName("post_hdr_present_VS", ShaderStage::Vertex, "VSMain");
+		Ref<Shader> ps = Graphics::GetShaderByName("post_hdr_present_PS", ShaderStage::Pixel, "PSMain");
 		if (!vs || !ps)
 		{
 			LOG::ERR("PostProcessTask: shader compile failed");

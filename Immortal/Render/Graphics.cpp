@@ -132,6 +132,8 @@ void Graphics::Release()
 
 Graphics::~Graphics()
 {
+    shuttingDown.store(true, std::memory_order_release);
+
     data.Textures.White.Reset();
     data.Textures.Black.Reset();
     data.Textures.Transparent.Reset();
@@ -231,7 +233,7 @@ Ref<Texture> Graphics::CreateTexture(Format format, uint32_t width, uint32_t hei
         }
     });
 
-    asyncComputeThread->Execute<ExecutionCompletedTask>([buffer]() {
+    asyncComputeThread->Execute<ExecutionCompletedTask>([buffer, texture]() {
 		ReleaseCachedBuffer(BufferType::TransferSource, buffer);
     });
 
@@ -343,7 +345,7 @@ void Graphics::Transfer(Picture &picture, const std::vector<Ref<Texture>> &textu
 		uint32_t width;
 		uint32_t height;
 		uint32_t stride;
-		uint32_t offset;
+		size_t   byteSize;
         Format   format;
 		uint32_t subresource;
 		uint32_t index;
@@ -351,32 +353,46 @@ void Graphics::Transfer(Picture &picture, const std::vector<Ref<Texture>> &textu
 
     TransferData data[4] = {};
 
-    std::vector<Ref<Buffer>> bufs;
-	bufs.resize(textures.size());
+	if (!picture || textures.empty() || !textures[0] || !asyncComputeThread)
+	{
+		return;
+	}
 
     SamplingFactor factors[4];
 	GetSamplingFactor(picture.GetFormat(), factors);
 
     bool isPlanar = false;
 
-    size_t size = textures.size();
-	if (size == 1)
+	size_t planeCount = textures.size();
+	if (planeCount == 1)
     {
 		auto &format = textures[0]->GetFormat();
 		isPlanar = format == Format::NV12 || format == Format::P010 ||
                    format == Format::P012 || format == Format::P016;
 		if (isPlanar)
 		{
-			size = 2;
+			planeCount = 2;
 		}
     }
+	if (planeCount > SL_ARRAY_LENGTH(data))
+	{
+		LOG::ERR("Unsupported texture plane count: {}", planeCount);
+		return;
+	}
+
+	std::vector<Ref<Buffer>> bufs(planeCount);
 
 	auto &texture = textures[0];
-	for (size_t i = 0; i < size; i++)
+	for (size_t i = 0; i < planeCount; i++)
 	{
-		auto &[width, height, stride, offset, format, subresource, index] = data[i];
+		if ((!isPlanar && !textures[i]) || !picture.GetData(i))
+		{
+			LOG::ERR("Invalid texture readback plane {}", i);
+			return;
+		}
 
-		offset = size;
+		auto &[width, height, stride, byteSize, format, subresource, index] = data[i];
+
 		width  = texture->GetWidth();
 		height = texture->GetHeight();
 		if (!picture.GetFormat().IsType(Format::YUYV))
@@ -391,30 +407,36 @@ void Graphics::Transfer(Picture &picture, const std::vector<Ref<Texture>> &textu
 			format = texture->GetFormat() == Format::NV12 ? kFormatsNV12[i] : kFormatsP016[i];
 			subresource = i;
 		}
-        else
+		else
 		{
 			format = textures[i]->GetFormat();
 			index = i;
-        }
+		}
 		stride = SLALIGN(width * format.GetTexelSize(), TextureAlignment);
 
-		size_t size = stride * height;
-		bufs[i] = GetCachedBuffer(BufferType::TransferDestination, stride * height);
+		byteSize = size_t(stride) * height;
+		bufs[i] = GetCachedBuffer(BufferType::TransferDestination, byteSize);
 	}
 
 	asyncComputeThread->Execute<RecordingTask>([=](CommandBuffer *commandBuffer) {
-        for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < planeCount; i++)
 		{
 			commandBuffer->CopyImageToBuffer(bufs[i], textures[data[i].index], data[i].subresource, data[i].stride);
         }
 	});
 
    asyncComputeThread->Execute<ExecutionCompletedTask>([=]() {
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < planeCount; i++)
 		{
 			auto &buf = bufs[i];
 			uint8_t *mapped = nullptr;
-			buf->Map((void **)&mapped, size, 0);
+			buf->Map((void **)&mapped, data[i].byteSize, 0);
+			if (!mapped)
+			{
+				LOG::ERR("Failed to map texture readback plane {}", i);
+				ReleaseCachedBuffer(BufferType::TransferDestination, buf);
+				continue;
+			}
 			MemoryCopyImage(picture.GetData(i), picture.GetStride(i), mapped, data[i].stride, data[i].format, data[i].width, data[i].height);
 			buf->Unmap();
 			ReleaseCachedBuffer(BufferType::TransferDestination, buf);
@@ -445,28 +467,54 @@ void ExpireResource(std::mutex &mutex, uint64_t index, std::unordered_map<uint64
 	}
 }
 
+static bool CanDeferResourceRelease()
+{
+    return Graphics::This.Get() &&
+           !Graphics::This->shuttingDown.load(std::memory_order_acquire);
+}
+
 void Graphics::ReleaseResource(const Ref<RenderTarget> &renderTarget, uint64_t offset)
 {
+    if (!CanDeferResourceRelease())
+    {
+        return;
+    }
 	ExpireResource(This->discardedMutex, This->index, This->expiredRenderTargets, renderTarget, offset);
 }
 
 void Graphics::ReleaseResource(const Ref<Texture> &texture, uint64_t offset)
 {
+    if (!CanDeferResourceRelease())
+    {
+        return;
+    }
 	ExpireResource(This->discardedMutex, This->index, This->expiredTextures, texture, offset);
 }
 
 void Graphics::ReleaseResource(const Ref<Buffer> &buffer, uint64_t offset)
 {
+    if (!CanDeferResourceRelease())
+    {
+        return;
+    }
 	ExpireResource(This->discardedMutex, This->index, This->expiredBuffers, buffer, offset);
 }
 
 void Graphics::ReleaseResource(const Ref<DescriptorSet> &descriptorSet, uint64_t offset)
 {
+    if (!CanDeferResourceRelease())
+    {
+        return;
+    }
 	ExpireResource(This->discardedMutex, This->index, This->expiredDescriptorSets, descriptorSet, offset);
 }
 
 void Graphics::ReleaseResource(const Ref<Pipeline> &pipeline, uint64_t offset)
 {
+    if (!CanDeferResourceRelease())
+    {
+        return;
+    }
 	ExpireResource(This->discardedMutex, This->index, This->expiredPipelines, pipeline, offset);
 }
 
@@ -477,7 +525,7 @@ void Graphics::Release(void *pointer, ObjectType type, uint64_t offset)
         return;
     }
 
-    if (!This)
+    if (!This || This->shuttingDown.load(std::memory_order_acquire))
     {
         DestroyObject({ pointer, type });
         return;
@@ -596,21 +644,22 @@ void Graphics::SetSyncEvent(Ref<Texture> &texture)
 
 Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
 {
+    std::lock_guard lock{This->pipelineMutex};
+
     struct ShaderCreateInfo
     {
-        std::string path;
         ShaderStage stage;
-        std::string entryPoint;
+        const char *entryPoint;
     };
 
     static const std::unordered_map<std::string, ShaderCreateInfo> pipelineShaders = {
-        { "color_space_nv122rgba", { "Assets/Shaders/hlsl/color_space_nv122rgba.hlsl", ShaderStage::Compute, "main" } },
-        { "color_space_yuvp2rgba", { "Assets/Shaders/hlsl/color_space_yuvp2rgba.hlsl", ShaderStage::Compute, "main" } },
-        { "color_space_y2102rgba", { "Assets/Shaders/hlsl/color_space_y2102rgba.hlsl", ShaderStage::Compute, "main" } },
-	    { "equirect2cube",         { "Assets/Shaders/hlsl/equirect2cube.hlsl",         ShaderStage::Compute, "main" } },
-	    { "ibl_irradiance",        { "Assets/Shaders/hlsl/ibl_irradiance.hlsl",        ShaderStage::Compute, "main" } },
-	    { "ibl_prefilter",         { "Assets/Shaders/hlsl/ibl_prefilter.hlsl",         ShaderStage::Compute, "main" } },
-	    { "brdf_lut",              { "Assets/Shaders/hlsl/brdf_lut.hlsl",              ShaderStage::Compute, "main" } },
+        { "color_space_nv122rgba", { ShaderStage::Compute, "main" } },
+        { "color_space_yuvp2rgba", { ShaderStage::Compute, "main" } },
+        { "color_space_y2102rgba", { ShaderStage::Compute, "main" } },
+	    { "equirect2cube",         { ShaderStage::Compute, "main" } },
+	    { "ibl_irradiance",        { ShaderStage::Compute, "main" } },
+	    { "ibl_prefilter",         { ShaderStage::Compute, "main" } },
+	    { "brdf_lut",              { ShaderStage::Compute, "main" } },
     };
 
     auto it = This->pipelines.find(name);
@@ -622,13 +671,10 @@ Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
     auto shaderIt = pipelineShaders.find(name);
     if (shaderIt != pipelineShaders.end())
     {
-        auto &[first, createInfo] = *shaderIt;
-        Stream stream = { createInfo.path, Stream::Mode::Read };
-        if (stream.Readable())
+        auto &createInfo = shaderIt->second;
+        URef<Shader> shader = Graphics::GetShaderByName(name, createInfo.stage, createInfo.entryPoint);
+        if (shader)
         {
-            std::string source;
-            stream.Read(source);
-            URef<Shader> shader    = This->device->CreateShader(name, createInfo.stage, source, createInfo.entryPoint);
             Ref<Pipeline> pipeline = This->device->CreateComputePipeline(shader);
             This->pipelines[name]  = pipeline;
             return pipeline;
@@ -640,6 +686,7 @@ Ref<Pipeline> Graphics::GetPipeline(const std::string &name)
 
 void Graphics::StorePipeline(const std::string &name, const Ref<Pipeline> &pipeline)
 {
+	std::lock_guard lock{This->pipelineMutex};
 	This->pipelines[name] = pipeline;
 }
 
@@ -710,15 +757,6 @@ static FileSystem::Path ResolveShaderHlslPath(const std::string &name)
 		return direct;
 	}
 
-	if (name.rfind("MeshletTask_", 0) == 0)
-	{
-		FileSystem::Path p = assetRoot / "MeshletTask.hlsl";
-		if (std::filesystem::exists(p))
-		{
-			return p;
-		}
-	}
-
 	const auto pos = name.rfind('_');
 	if (pos != std::string::npos && pos + 1 < name.size())
 	{
@@ -731,7 +769,7 @@ static FileSystem::Path ResolveShaderHlslPath(const std::string &name)
 				return stemPath;
 			}
 		}
-		/* e.g. MeshletTask_PSMainPhong -> MeshletTask.hlsl */
+		/* e.g. meshlet_PSMainPhong -> meshlet.hlsl */
 		FileSystem::Path stemPath2 = assetRoot / (name.substr(0, pos) + ".hlsl");
 		if (std::filesystem::exists(stemPath2))
 		{
@@ -746,9 +784,12 @@ Shader *Graphics::GetShaderByName(const std::string &name, ShaderStage stage, co
 {
 	auto *device = Graphics::GetDevice();
 	const FileSystem::Path dxilPath = Graphics::GetShaderAssetPath() / (name + ".dxil");
-	if (std::filesystem::exists(dxilPath))
+	if (device->GetBackendAPI() == BackendAPI::D3D12 && std::filesystem::exists(dxilPath))
 	{
-		return Graphics::CreateShaderFromDXIL(device, dxilPath, stage);
+		if (Shader *shader = Graphics::CreateShaderFromDXIL(device, dxilPath, stage))
+		{
+			return shader;
+		}
 	}
 
 	FileSystem::Path hlslPath = ResolveShaderHlslPath(name);

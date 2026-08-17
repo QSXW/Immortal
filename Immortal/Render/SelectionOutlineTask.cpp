@@ -30,15 +30,8 @@ void SelectionOutlineTask::Build(AsyncComputeThread *asyncComputeThread)
 	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 		auto device = Graphics::GetDevice();
 
-		std::string src = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "selection_outline.hlsl");
-		if (src.empty())
-		{
-			LOG::ERR("SelectionOutlineTask: failed to read selection_outline.hlsl");
-			return;
-		}
-
-		Ref<Shader> vs = device->CreateShader("OutlineVS", ShaderStage::Vertex, src, "VSMain");
-		Ref<Shader> ps = device->CreateShader("OutlinePS", ShaderStage::Pixel,  src, "PSMain");
+		Ref<Shader> vs = Graphics::GetShaderByName("selection_outline_VS", ShaderStage::Vertex, "VSMain");
+		Ref<Shader> ps = Graphics::GetShaderByName("selection_outline_PS", ShaderStage::Pixel, "PSMain");
 		if (!vs || !ps)
 		{
 			LOG::ERR("SelectionOutlineTask: shader compile failed");

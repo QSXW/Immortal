@@ -11,7 +11,49 @@ namespace Immortal
 namespace D3D12
 {
 
-static D3D12_RESOURCE_STATES CAST(ImageLayout layout)
+static bool HasStage(PipelineStage stages, PipelineStage stage)
+{
+	return !!(stages & stage);
+}
+
+static D3D12_RESOURCE_STATES CastShaderResourceState(D3D12_COMMAND_LIST_TYPE commandListType, PipelineStage stage)
+{
+	if (commandListType == D3D12_COMMAND_LIST_TYPE_COMPUTE)
+	{
+		return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	}
+
+	const bool computeOnly =
+		HasStage(stage, PipelineStage::ComputeShading) &&
+		!HasStage(stage, PipelineStage::PixelShading) &&
+		!HasStage(stage, PipelineStage::Draw) &&
+		!HasStage(stage, PipelineStage::RenderTarget) &&
+		!HasStage(stage, PipelineStage::All) &&
+		!HasStage(stage, PipelineStage::AllShading);
+	if (computeOnly)
+	{
+		return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+	}
+
+	return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+}
+
+static D3D12_RESOURCE_STATES SanitizeResourceStateForCommandList(D3D12_RESOURCE_STATES state, D3D12_COMMAND_LIST_TYPE commandListType)
+{
+	if (commandListType != D3D12_COMMAND_LIST_TYPE_COMPUTE)
+	{
+		return state;
+	}
+
+	if (state & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+	{
+		state = (D3D12_RESOURCE_STATES)(state & ~D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		state = (D3D12_RESOURCE_STATES)(state | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	}
+	return state;
+}
+
+static D3D12_RESOURCE_STATES CAST(ImageLayout layout, D3D12_COMMAND_LIST_TYPE commandListType, PipelineStage stage = PipelineStage::All)
 {
 	switch (layout)
 	{
@@ -38,7 +80,7 @@ static D3D12_RESOURCE_STATES CAST(ImageLayout layout)
 			return D3D12_RESOURCE_STATE_DEPTH_READ;
 
 		case ImageLayout::ShaderResource:
-			return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+			return CastShaderResourceState(commandListType, stage);
 
 		case ImageLayout::TransferSource:
 			return D3D12_RESOURCE_STATE_COPY_SOURCE;
@@ -91,6 +133,7 @@ void SetComputeRootDescriptorTable(CommandList *commandList, uint32_t index, D3D
 CommandBuffer::CommandBuffer(Device *device, D3D12_COMMAND_LIST_TYPE type) :
     NonDispatchableHandle{device},
     allocatorPool{ device, type },
+	commandListType{ type },
     allocator{},
     activeBarrier{},
     renderTarget{}
@@ -198,6 +241,50 @@ void CommandBuffer::SetPipeline(SuperPipeline *_pipeline)
 void CommandBuffer::SetDescriptorSet(SuperDescriptorSet *_descriptorSet)
 {
 	DescriptorSet *descriptorSet = InterpretAs<DescriptorSet>(_descriptorSet);
+	if (pipeline && pipeline->GetType() == Pipeline::Type::Compute)
+	{
+		const auto &bindings = descriptorSet->GetTextureBindings();
+		for (size_t i = 0; i < bindings.size(); i++)
+		{
+			Texture *texture = bindings[i].texture;
+			if (!texture)
+			{
+				continue;
+			}
+
+			bool firstBinding = true;
+			bool unorderedAccess = false;
+			for (size_t j = 0; j < bindings.size(); j++)
+			{
+				if (bindings[j].texture != texture)
+				{
+					continue;
+				}
+				if (j < i)
+				{
+					firstBinding = false;
+				}
+				unorderedAccess |= bindings[j].rangeType == D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+			}
+
+			if (!firstBinding)
+			{
+				continue;
+			}
+			if (unorderedAccess)
+			{
+				texture->WaitLockRelease();
+			}
+
+			SetImageLayout(
+				texture,
+				unorderedAccess ? ImageLayout::UnorderedAccess : ImageLayout::ShaderResource,
+				PipelineStage::All,
+				PipelineStage::ComputeShading,
+				nullptr);
+		}
+	}
+
 	DescriptorHeap *shaderResourceDescriptorHeap = descriptorSet->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DescriptorHeap *samplerDescriptorHeap = descriptorSet->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
@@ -393,20 +480,23 @@ void CommandBuffer::EndRenderTarget()
 		return;
 	}
 
-	for (auto &barrier : barriers)
+	for (uint32_t i = 0; i < activeBarrier; i++)
 	{
-		barrier.Swap();
+		barriers[i].Swap();
 	}
 	commandList.ResourceBarrier(barriers.data(), activeBarrier);
 
 	auto &colorBuffers = renderTarget->GetColorBuffers();
+	uint32_t barrierIndex = 0;
 	for (auto &colorBuffer : colorBuffers)
 	{
-		colorBuffer->SetState(D3D12_RESOURCE_STATE_COMMON);
+		const auto &barrier = static_cast<const D3D12_RESOURCE_BARRIER &>(barriers[barrierIndex++]);
+		colorBuffer->SetState(barrier.Transition.StateAfter);
 	}
 	if (Texture *depthBuffer = renderTarget->GetDepthBuffer())
 	{
-		depthBuffer->SetState(D3D12_RESOURCE_STATE_COMMON);
+		const auto &barrier = static_cast<const D3D12_RESOURCE_BARRIER &>(barriers[barrierIndex]);
+		depthBuffer->SetState(barrier.Transition.StateAfter);
 	}
 
 	activeBarrier = 0;
@@ -451,13 +541,18 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 	SuperCommandBuffer::BeginEvent(name);
 
 	descriptorSets.reserve(descriptorSets.size() + mipLevels);
-	Barrier<BarrierType::Transition> barrier{ *texture, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS };
-	commandList.ResourceBarrier(&barrier);
+	const D3D12_RESOURCE_STATES previousState = SanitizeResourceStateForCommandList(texture->GetState(), commandListType);
+	if (previousState != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	{
+		Barrier<BarrierType::Transition> barrier{ *texture, previousState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS };
+		commandList.ResourceBarrier(&barrier);
+	}
+	texture->SetState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	for (uint32_t i = 1; i < mipLevels; i++)
 	{
 		URef<DescriptorSet>	descriptorSet = new DescriptorSet{ device, pipeline };
-		uint32_t width  = texture->GetWidth() >> i;
-		uint32_t height = texture->GetHeight() >> i;
+		uint32_t width  = std::max(texture->GetWidth() >> i, 1u);
+		uint32_t height = std::max(texture->GetHeight() >> i, 1u);
 		descriptorSet->Set(0, sampler);
 		descriptorSet->Set(0, texture->GetDescriptor(i - 1), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
 		descriptorSet->Set(1, texture->GetUAVDescriptor(i),  D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV);
@@ -477,8 +572,9 @@ void CommandBuffer::GenerateMipMaps(SuperTexture *_texture, Filter filter)
 		Barrier<BarrierType::UAV> barrier{ *texture };
 		commandList.ResourceBarrier(&barrier);
 	}
-	barrier.Swap();
-	commandList.ResourceBarrier(&barrier);
+	Barrier<BarrierType::Transition> toCommon{ *texture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON };
+	commandList.ResourceBarrier(&toCommon);
+	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 
 	EndEvent();
 }
@@ -509,23 +605,27 @@ void CommandBuffer::CopyTextureRegion(SuperTexture *_texture, uint32_t subresour
 	    .SubresourceIndex = subresource
 	};
 
-	auto state = texture->GetState();
-
-	Barrier<BarrierType::Transition> barrier{
-        *texture,
-        D3D12_RESOURCE_STATE_COMMON,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-    };
-
-	if (!(state & D3D12_RESOURCE_STATE_COPY_DEST))
+	const D3D12_RESOURCE_STATES previousState = SanitizeResourceStateForCommandList(texture->GetState(), commandListType);
+	if (previousState != D3D12_RESOURCE_STATE_COPY_DEST)
 	{
+		Barrier<BarrierType::Transition> barrier{
+			*texture,
+			previousState,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+		};
 		commandList.ResourceBarrier(&barrier, 1);
 	}
+	texture->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 
 	commandList.CopyTextureRegion(&dstLocation, x, y, z, &srcLocation, nullptr);
-	barrier.Swap();
-	commandList.ResourceBarrier(&barrier, 1);
+	Barrier<BarrierType::Transition> toCommon{
+		*texture,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+	};
+	commandList.ResourceBarrier(&toCommon, 1);
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 }
 
@@ -561,18 +661,18 @@ void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_textu
 	    .SubresourceIndex = subresource
 	};
 
-	auto state = texture->GetState();
-	Barrier<BarrierType::Transition> barrier{
-        *texture,
-        D3D12_RESOURCE_STATE_COMMON,
-	    D3D12_RESOURCE_STATE_COPY_SOURCE,
-        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-    };
-
-	if (!(state & D3D12_RESOURCE_STATE_COPY_SOURCE))
+	const D3D12_RESOURCE_STATES previousState = SanitizeResourceStateForCommandList(texture->GetState(), commandListType);
+	if (previousState != D3D12_RESOURCE_STATE_COPY_SOURCE)
 	{
+		Barrier<BarrierType::Transition> barrier{
+			*texture,
+			previousState,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+		};
 		commandList.ResourceBarrier(&barrier, 1);
 	}
+	texture->SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 	D3D12_BOX box;
 	D3D12_BOX *pBox = nullptr;
@@ -594,8 +694,13 @@ void CommandBuffer::CopyImageToBuffer(SuperBuffer *_buffer, SuperTexture *_textu
 	}
 
 	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, pBox);
-	barrier.Swap();
-	commandList.ResourceBarrier(&barrier, 1);
+	Barrier<BarrierType::Transition> toCommon{
+		*texture,
+		D3D12_RESOURCE_STATE_COPY_SOURCE,
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+	};
+	commandList.ResourceBarrier(&toCommon, 1);
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 }
 
@@ -614,26 +719,32 @@ void CommandBuffer::CopyPlatformSpecificSubresource(SuperTexture *dst, uint32_t 
 	    .SubresourceIndex = dstSubresource,
 	};
 
-	Barrier<Transition> barriers[] = {
-		{ srcLocation.pResource, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_SOURCE, srcSubresource  },
-		{ dstLocation.pResource, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST,   dstSubresource  },
-	};
-
-	auto state = texture->GetState();
-	if (!(state & D3D12_RESOURCE_STATE_COPY_DEST))
+	const D3D12_RESOURCE_STATES previousState = SanitizeResourceStateForCommandList(texture->GetState(), commandListType);
+	Barrier<Transition> toCopy[2] = {};
+	uint32_t toCopyCount = 0;
+	toCopy[toCopyCount++].Transition(
+		srcLocation.pResource,
+		D3D12_RESOURCE_STATE_COMMON,
+		D3D12_RESOURCE_STATE_COPY_SOURCE,
+		srcSubresource);
+	if (previousState != D3D12_RESOURCE_STATE_COPY_DEST)
 	{
-		commandList.ResourceBarrier(barriers, SL_ARRAY_LENGTH(barriers));
+		toCopy[toCopyCount++].Transition(
+			dstLocation.pResource,
+			previousState,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 	}
-	else
-	{
-		commandList.ResourceBarrier(barriers, 1);
-	}
+	commandList.ResourceBarrier(toCopy, toCopyCount);
+	texture->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 
 	commandList.CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
 
-	barriers[0].Swap();
-	barriers[1].Swap();
-	commandList.ResourceBarrier(barriers, SL_ARRAY_LENGTH(barriers));
+	Barrier<Transition> toCommon[] = {
+		{ srcLocation.pResource, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_COMMON, srcSubresource },
+		{ dstLocation.pResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES },
+	};
+	commandList.ResourceBarrier(toCommon, SL_ARRAY_LENGTH(toCommon));
 	texture->SetState(D3D12_RESOURCE_STATE_COMMON);
 }
 
@@ -791,11 +902,12 @@ void CommandBuffer::DispatchGraph(const DispatchGraphDescription *pDesc)
 void CommandBuffer::SetImageLayout(SuperTexture *_texture, ImageLayout layout, PipelineStage from, PipelineStage to, const SubresourceRange *pSubresourceRange)
 {
 	Texture *texture = InterpretAs<Texture>(_texture);
-	D3D12_RESOURCE_STATES oldState = texture->GetState();
-	D3D12_RESOURCE_STATES newState = CAST(layout);
+	D3D12_RESOURCE_STATES oldState = SanitizeResourceStateForCommandList(texture->GetState(), commandListType);
+	D3D12_RESOURCE_STATES newState = SanitizeResourceStateForCommandList(CAST(layout, commandListType, to), commandListType);
 
 	if (newState == oldState)
 	{
+		texture->SetState(newState);
 		return;
 	}
 
@@ -859,28 +971,11 @@ void CommandBuffer::ResolveImage(SuperTexture *_dst, SuperTexture *_src)
 	}
 	commandList.Handle()->ResolveSubresource(*dst, 0, *src, 0, dst->GetFormat());
 
-	Barrier<BarrierType::Transition> fromResolve[2] = {};
-	uint32_t m = 0;
-	if (srcBefore != D3D12_RESOURCE_STATE_RESOLVE_SOURCE)
-	{
-		fromResolve[m++].Transition(*src, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcBefore);
-	}
-	else
-	{
-		fromResolve[m++].Transition(*src, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_COMMON);
-	}
-	if (dstBefore != D3D12_RESOURCE_STATE_RESOLVE_DEST)
-	{
-		fromResolve[m++].Transition(*dst, D3D12_RESOURCE_STATE_RESOLVE_DEST, dstBefore);
-	}
-	else
-	{
-		fromResolve[m++].Transition(*dst, D3D12_RESOURCE_STATE_RESOLVE_DEST, D3D12_RESOURCE_STATE_COMMON);
-	}
-	if (m)
-	{
-		commandList.Handle()->ResourceBarrier(m, fromResolve);
-	}
+	Barrier<BarrierType::Transition> fromResolve[] = {
+		{ *src, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_COMMON },
+		{ *dst, D3D12_RESOURCE_STATE_RESOLVE_DEST, D3D12_RESOURCE_STATE_COMMON },
+	};
+	commandList.Handle()->ResourceBarrier(SL_ARRAY_LENGTH(fromResolve), fromResolve);
 	src->SetState(D3D12_RESOURCE_STATE_COMMON);
 	dst->SetState(D3D12_RESOURCE_STATE_COMMON);
 }

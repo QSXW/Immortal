@@ -1,6 +1,9 @@
 #include "AsyncCompute.h"
 #include "Coroutine.h"
 
+#include <exception>
+#include <future>
+
 namespace Immortal
 {
 
@@ -20,12 +23,31 @@ const char *GetTaskTypeStr(AsyncTaskType type)
 	}
 }
 
+static void InvokeExecutionCompletedTasks(std::vector<std::pair<uint64_t, URef<AsyncTask>>> &tasks)
+{
+	for (auto &[sync, executionCompleted] : tasks)
+	{
+		try
+		{
+			(*executionCompleted.InterpretAs<ExecutionCompletedTask>())();
+		}
+		catch (const std::exception &exception)
+		{
+			LOG::ERR("Async compute completion {} failed: {}", sync, exception.what());
+		}
+		catch (...)
+		{
+			LOG::ERR("Async compute completion {} failed with an unknown exception", sync);
+		}
+	}
+}
+
 AsyncComputeThread::AsyncComputeThread(Device *device) :
     ICLASS,
     thread{}
 {
     thread = std::move(Thread{[=, this] {
-        uint64_t recording = 0;
+		uint64_t recording = 0;
         uint64_t nextSyncValue = 1;
         Queue *queue = nullptr;
         CommandBuffer *commandBuffer = nullptr;
@@ -64,14 +86,24 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                 case AsyncTaskType::Recording:
                 {
-                    recording++;
+                    if (!commandBuffer)
+                    {
+                        LOG::ERR("Async compute recording task was submitted outside a recording batch");
+                        break;
+                    }
                     RecordingTask *recordingTask = task.InterpretAs<RecordingTask>();
                     recordingTask->Recording(commandBuffer);
+					recording++;
                     break;
                 }
 
                 case AsyncTaskType::BeginRecording:
                 {
+                    if (!queue)
+                    {
+                        LOG::ERR("Async compute cannot begin recording before a queue is assigned");
+                        break;
+                    }
                     if (!commandBuffer)
                     {
                         if (!commandBuffers.empty())
@@ -87,15 +119,24 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                         if (!commandBuffer)
                         {
-							SLASSERT(queue != nullptr && "The queue must have set before invoke any recording tasks");
                             commandBuffer = device->CreateCommandBuffer(queue->GetType());
 							gpuEvent = device->CreateGPUEvent();
+							if (!commandBuffer || !gpuEvent)
+							{
+								LOG::ERR("Async compute failed to allocate a command buffer or GPU event");
+								delete commandBuffer;
+								delete gpuEvent;
+								commandBuffer = nullptr;
+								gpuEvent = nullptr;
+								break;
+							}
 							CLOG_DEBUG("Allocate CommandBuffer@{}", (void *)commandBuffer);
                         }
                     }
 					else
 					{
-						SLASSERT(false && "Double command buffer begin!");
+						LOG::ERR("Async compute received a nested begin-recording request");
+						break;
                     }
 
                     status = AsyncTaskType::BeginRecording;
@@ -105,42 +146,48 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                 case AsyncTaskType::EndRecording:
                 {
-					SLASSERT(commandBuffer && "CommandBuffer isn't begined!");
-					SLASSERT(status != AsyncTaskType::EndRecording && "CommandBuffer is ended!");
+					if (!commandBuffer)
+					{
+						LOG::ERR("Async compute cannot end recording without a command buffer");
+						break;
+					}
+					if (status == AsyncTaskType::EndRecording)
+					{
+						LOG::ERR("Async compute received a duplicate end-recording request");
+						break;
+					}
                     
                     status = AsyncTaskType::EndRecording;
                     commandBuffer->End();
                     break;
                 }
 
-                case AsyncTaskType::Submiting:
+				case AsyncTaskType::Submiting:
                 {
 					status = AsyncTaskType::Submiting;
-                    if (!recording)
-					{
-						auto onCompletedTasks = std::make_shared<std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
-						for (auto &[sync, executionCompleted] : *onCompletedTasks)
+					SLASSERT(commandBuffer && "CommandBuffer is not able to submit!");
+					SLASSERT(gpuEvent && "GPUEvent is not able to submit!");
+					SLASSERT(queue && "Queue is not able to submit!");
+
+					if (recording)
+                    {
+						queue->Submit(commandBuffer, gpuEvent);
+						if (!executionCompletedTasks.empty())
 						{
-							(*executionCompleted.InterpretAs<ExecutionCompletedTask>())();
+							uint64_t syncValue = gpuEvent->GetSyncPoint();
+							auto onCompletedTasks = std::make_shared<std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
+							executionCompletedThread.Enqueue([=, this] {
+								gpuEvent->Wait(syncValue, kMaxTimeOut);
+								InvokeExecutionCompletedTasks(*onCompletedTasks);
+							});
 						}
                     }
+					else if (!executionCompletedTasks.empty())
 					{
-						recording = 0;
-						SLASSERT(commandBuffer && "CommandBuffer is not able to submit!");
-						queue->Submit(commandBuffer, gpuEvent);
-                        if (!executionCompletedTasks.empty())
-                        {
-						    uint64_t syncValue = gpuEvent->GetSyncPoint();
-						    auto onCompletedTasks = std::make_shared <std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
-						    executionCompletedThread.Enqueue([=, this] {
-							    gpuEvent->Wait(syncValue, kMaxTimeOut);
-							    for (auto &[sync, executionCompleted] : *onCompletedTasks)
-							    {
-								    (*executionCompleted.InterpretAs<ExecutionCompletedTask>())();
-							    }
-						    });
-                        }
+						auto onCompletedTasks = std::make_shared<std::vector<std::pair<uint64_t, URef<AsyncTask>>>>(std::move(executionCompletedTasks));
+						InvokeExecutionCompletedTasks(*onCompletedTasks);
                     }
+					recording = 0;
 
                     if (commandBuffers.size() < 4)
 					{
@@ -164,13 +211,16 @@ AsyncComputeThread::AsyncComputeThread(Device *device) :
 
                 case AsyncTaskType::ExecutionCompleted:
                 {
-					executionCompletedTasks.emplace_back(std::pair{nextSyncValue, std::move(task)});
+					executionCompletedTasks.emplace_back(std::pair{nextSyncValue++, std::move(task)});
                     break;
                 }
 
                 case AsyncTaskType::Terminate:
                 {
-					queue->WaitIdle();
+					if (queue)
+					{
+						queue->WaitIdle();
+					}
                     if (commandBuffer)
                     {
                         delete commandBuffer;
@@ -216,7 +266,26 @@ bool AsyncComputeThread::IsExecutionCompleted(uint64_t value)
 
 void AsyncComputeThread::WaitIdle()
 {
+	auto queueBarrier = std::make_shared<std::promise<void>>();
+	auto queueBarrierFuture = queueBarrier->get_future();
+	SubmitStandaloneCompletion([queueBarrier] {
+		queueBarrier->set_value();
+	});
+	queueBarrierFuture.wait();
+}
 
+void AsyncComputeThread::SubmitStandaloneCompletion(std::function<void()> callback)
+{
+	if (!callback)
+	{
+		return;
+	}
+
+	// This explicit recording task makes the batch submit a queue fence, keeping
+	// the callback asynchronous and ordered after submissions queued before it.
+	AsyncRecordingScope completionBatch{ this };
+	Execute<RecordingTask>([](CommandBuffer *) {});
+	Execute<ExecutionCompletedTask>(std::move(callback));
 }
 
 void AsyncComputeThread::Join()

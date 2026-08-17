@@ -9,6 +9,7 @@
 #include <cstring>
 #include <algorithm>
 #include <cfloat>
+#include <filesystem>
 
 namespace Immortal
 {
@@ -132,30 +133,35 @@ void DeferredTask::Build(AsyncComputeThread *asyncComputeThread)
 		ClearValue shadowDepthClear[1] = { { .depthStencil = { 1.0f, 0 } } };
 		fallbackShadowDepthRT = device->CreateRenderTarget(1, 1, nullptr, 0, Format::Depth24Stencil8, shadowDepthClear);
 
-		auto loadOrCompile = [&](ShaderStage st, const std::string &dxilName, const char *entry, const std::string &src, const ShaderMacro *macros = nullptr, uint32_t numMacro = 0) -> Ref<Shader> {
-			if (Shader *cached = Graphics::GetShaderByName(dxilName, st, std::string(entry)))
+		std::string srcGBuffer;
+		bool sourceLoadAttempted = false;
+		auto loadOrCompile = [&](ShaderStage st, const std::string &dxilName, const char *entry, const ShaderMacro *macros = nullptr, uint32_t numMacro = 0) -> Ref<Shader> {
+			const auto dxilPath = Graphics::GetShaderAssetPath() / (dxilName + ".dxil");
+			if (device->GetBackendAPI() == BackendAPI::D3D12 && std::filesystem::exists(dxilPath))
 			{
-				return Ref<Shader>{ cached };
+				if (Shader *shader = Graphics::CreateShaderFromDXIL(device, dxilPath, st))
+				{
+					return Ref<Shader>{ shader };
+				}
 			}
-			if (src.empty())
+			if (!sourceLoadAttempted)
+			{
+				srcGBuffer = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "gbuffer_screen_resolve.hlsl");
+				sourceLoadAttempted = true;
+			}
+			if (srcGBuffer.empty())
 			{
 				return {};
 			}
-			return device->CreateShader(dxilName, st, src, std::string(entry), macros, numMacro);
+			return device->CreateShader(dxilName, st, srcGBuffer, std::string(entry), macros, numMacro);
 		};
 
-		std::string srcGBuffer = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "gbuffer_screen_resolve.hlsl");
-		if (srcGBuffer.empty())
-		{
-			LOG::ERR("DeferredTask: failed to read gbuffer_screen_resolve.hlsl");
-			return;
-		}
 		static const ShaderMacro kGBufferVariantPhong[] = { { "IMMORTAL_GBUFFER_SCREEN_VARIANT", "0" } };
 		static const ShaderMacro kGBufferVariantPbr[]  = { { "IMMORTAL_GBUFFER_SCREEN_VARIANT", "1" } };
 		static const ShaderMacro kGBufferVariantNpr[]  = { { "IMMORTAL_GBUFFER_SCREEN_VARIANT", "2" } };
 
-		Ref<Shader> vs  = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", srcGBuffer, kGBufferVariantPhong, 1u);
-		Ref<Shader> ps  = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainPhong", "PSMainPhong", srcGBuffer, kGBufferVariantPhong, 1u);
+		Ref<Shader> vs  = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", kGBufferVariantPhong, 1u);
+		Ref<Shader> ps  = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainPhong", "PSMainPhong", kGBufferVariantPhong, 1u);
 		if (!vs || !ps)
 		{
 			LOG::ERR("DeferredTask: gbuffer_screen_resolve.hlsl (Phong) compile failed");
@@ -188,10 +194,9 @@ void DeferredTask::Build(AsyncComputeThread *asyncComputeThread)
 			}
 		}
 
-		if (!srcGBuffer.empty())
 		{
-			Ref<Shader> vsPbr = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", srcGBuffer, kGBufferVariantPbr, 1u);
-			Ref<Shader> psPbr = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainPBR", "PSMainPBR", srcGBuffer, kGBufferVariantPbr, 1u);
+			Ref<Shader> vsPbr = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", kGBufferVariantPbr, 1u);
+			Ref<Shader> psPbr = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainPBR", "PSMainPBR", kGBufferVariantPbr, 1u);
 			if (vsPbr && psPbr)
 			{
 				Shader *shadersPbr[] = { vsPbr, psPbr };
@@ -219,10 +224,9 @@ void DeferredTask::Build(AsyncComputeThread *asyncComputeThread)
 			}
 		}
 
-		if (!srcGBuffer.empty())
 		{
-			Ref<Shader> vsNpr = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", srcGBuffer, kGBufferVariantNpr, 1u);
-			Ref<Shader> psNpr = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainNPR", "PSMainNPR", srcGBuffer, kGBufferVariantNpr, 1u);
+			Ref<Shader> vsNpr = loadOrCompile(ShaderStage::Vertex, "gbuffer_screen_resolve_VS", "VSMain", kGBufferVariantNpr, 1u);
+			Ref<Shader> psNpr = loadOrCompile(ShaderStage::Pixel, "gbuffer_screen_resolve_PSMainNPR", "PSMainNPR", kGBufferVariantNpr, 1u);
 			if (vsNpr && psNpr)
 			{
 				Shader *shadersNpr[] = { vsNpr, psNpr };

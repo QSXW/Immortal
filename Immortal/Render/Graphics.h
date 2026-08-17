@@ -5,6 +5,8 @@
 #include "Vision/Picture.h"
 #include "FileSystem/FileSystem.h"
 
+#include <atomic>
+#include <mutex>
 #include <set>
 #include <unordered_map>
 
@@ -197,6 +199,8 @@ public:
 
     std::unordered_map<uint64_t, std::vector<DeferredObject>> expiredObjects;
 
+    std::mutex pipelineMutex;
+
     std::unordered_map<std::string, Ref<Pipeline>> pipelines;
 
     ThreadPool releaseThread;
@@ -204,6 +208,8 @@ public:
     GPUEvent *gpuEvent;
 
     uint64_t syncValue;
+
+    std::atomic_bool shuttingDown = false;
 
     static URef<Graphics> This;
 };

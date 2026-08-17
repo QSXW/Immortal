@@ -26,20 +26,12 @@ void EditorGridTask::Build(AsyncComputeThread *asyncComputeThread)
 	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 		auto device = Graphics::GetDevice();
 
-		std::string srcUnder = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "editor_grid_underlay.hlsl");
-		std::string srcPost = Graphics::ReadShaderSource(Graphics::GetShaderAssetPath() / "editor_grid_post.hlsl");
-		if (srcUnder.empty() || srcPost.empty())
-		{
-			LOG::ERR("EditorGridTask: failed to read editor_grid_underlay.hlsl or editor_grid_post.hlsl");
-			return;
-		}
-
 		bindGuardTexture = Graphics::Preset()->Textures.Black;
 
-		Ref<Shader> vsUnder = device->CreateShader("EditorGridVSUnder", ShaderStage::Vertex, srcUnder, "VSMain");
-		Ref<Shader> psUnder = device->CreateShader("EditorGridPSUnder", ShaderStage::Pixel, srcUnder, "PSMain");
-		Ref<Shader> vsPost = device->CreateShader("EditorGridVSPost", ShaderStage::Vertex, srcPost, "VSMain");
-		Ref<Shader> psPost = device->CreateShader("EditorGridPSPost", ShaderStage::Pixel, srcPost, "PSMain");
+		Ref<Shader> vsUnder = Graphics::GetShaderByName("editor_grid_underlay_VS", ShaderStage::Vertex, "VSMain");
+		Ref<Shader> psUnder = Graphics::GetShaderByName("editor_grid_underlay_PS", ShaderStage::Pixel, "PSMain");
+		Ref<Shader> vsPost = Graphics::GetShaderByName("editor_grid_post_VS", ShaderStage::Vertex, "VSMain");
+		Ref<Shader> psPost = Graphics::GetShaderByName("editor_grid_post_PS", ShaderStage::Pixel, "PSMain");
 		if (!vsUnder || !psUnder || !vsPost || !psPost)
 		{
 			LOG::ERR("EditorGridTask: shader compile failed");
