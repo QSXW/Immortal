@@ -318,8 +318,18 @@ bool FileManagement::MoveFileToReclycleBin(const std::vector<std::filesystem::pa
 
 bool FileManagement::RevealInFileExplorer(const std::filesystem::path &path)
 {
-	system(("explorer.exe /select, " + path.string()).c_str());
-	return true;
+	std::error_code ec;
+	const std::filesystem::path target = std::filesystem::absolute(path, ec);
+	const std::filesystem::path revealPath = ec ? path : target;
+	if (std::filesystem::is_directory(revealPath, ec) && !ec)
+	{
+		return (INT_PTR)ShellExecuteW(nullptr, L"open", revealPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL) > 32;
+	}
+
+	std::wstring parameters = L"/select,\"";
+	parameters += revealPath.wstring();
+	parameters += L"\"";
+	return (INT_PTR)ShellExecuteW(nullptr, L"open", L"explorer.exe", parameters.c_str(), nullptr, SW_SHOWNORMAL) > 32;
 }
 
 static uint32_t GetFormat(Clipboard::DataType type)

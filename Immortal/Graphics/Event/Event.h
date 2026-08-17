@@ -43,6 +43,7 @@ public:
         WindowLostFocus,
         WindowMoved,
         WindowDragDrop,
+        DeviceChanged,
         AppTick,
         AppUpdate,
         AppRender,

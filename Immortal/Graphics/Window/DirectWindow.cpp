@@ -7,6 +7,7 @@
 #include <locale>
 #include <codecvt>
 #include <shellapi.h>
+#include <dbt.h>
 #include <windowsx.h>
 #include <wincodec.h>
 
@@ -609,6 +610,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
+        case WM_ERASEBKGND:
+            return 1;
+
         case WM_NCHITTEST:
         {
             DirectWindow *dw = (DirectWindow *)::GetWindowLongPtrW(hWnd, GWLP_USERDATA);
@@ -676,6 +680,12 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             };
 		    DirectWindow::EventDispatcher(moveEvent);
 			break;
+        }
+        case WM_DEVICECHANGE:
+        {
+            DeviceChangedEvent deviceChangedEvent{ static_cast<uint64_t>(wParam) };
+            DirectWindow::EventDispatcher(deviceChangedEvent);
+            break;
         }
         case WM_KEYDOWN:
         case WM_KEYUP:
@@ -866,18 +876,28 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_DROPFILES:
         {
-            char path[1024] = {};
             HDROP hDrop = (HDROP)wParam;
 
             WindowDragDropEvent dragDropEvent;
-            for (uint32_t i = 0; ; i++)
+            const UINT fileCount = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+            for (UINT i = 0; i < fileCount; i++)
             {
-				uint32_t length = DragQueryFileA(hDrop, i, path, SL_ARRAY_LENGTH(path));
-                if (!length)
+				const UINT length = DragQueryFileW(hDrop, i, nullptr, 0);
+                if (length == 0)
                 {
-					break;
+					continue;
                 }
-				dragDropEvent.AddFilePath(path);
+
+                std::wstring path(length + 1, L'\0');
+                const UINT copied = DragQueryFileW(hDrop, i, path.data(), static_cast<UINT>(path.size()));
+                if (copied == 0)
+                {
+                    continue;
+                }
+                path.resize(copied);
+				String droppedPath{ path };
+                LOG::DEBUG("Window received dropped file: {}", droppedPath);
+				dragDropEvent.AddFilePath(std::move(droppedPath));
             }
             DragFinish(hDrop);
 			DirectWindow::EventDispatcher(dragDropEvent);

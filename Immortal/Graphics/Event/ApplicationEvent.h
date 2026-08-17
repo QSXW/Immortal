@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Event.h"
+#include "String/IString.h"
+
+#include <utility>
 
 namespace Immortal
 {
@@ -105,9 +108,9 @@ class IMMORTAL_API WindowDragDropEvent : public Event
 public:
     WindowDragDropEvent() = default;
 
-    void AddFilePath(const char *path)
+    void AddFilePath(String path)
     {
-		files.emplace_back(path);
+		files.emplace_back(std::move(path));
     }
 
     size_t GetSize() const
@@ -115,7 +118,7 @@ public:
 		return files.size();
     }
 
-    const std::string &QueryFile(size_t index) const
+    const String &QueryFile(size_t index) const
     {
 		return files[index];
     }
@@ -124,7 +127,28 @@ public:
     DEFINE_EVENT_CATEGORY(Category::Application)
 
 protected:
-    std::vector<std::string> files;
+    std::vector<String> files;
+};
+
+class IMMORTAL_API DeviceChangedEvent : public Event
+{
+public:
+    explicit DeviceChangedEvent(uint64_t change) :
+        change{ change }
+    {
+
+    }
+
+    uint64_t Change() const
+    {
+        return change;
+    }
+
+    DEFINE_EVENT_TYPE(DeviceChanged)
+    DEFINE_EVENT_CATEGORY(Category::Application)
+
+private:
+    uint64_t change = 0;
 };
 
 class AppTickEvent : public Event
