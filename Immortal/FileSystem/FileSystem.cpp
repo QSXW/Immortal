@@ -65,7 +65,7 @@ bool HasSubdirectory(const Path &path)
 
 #ifdef _WIN32
 
-void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter)
+void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter, bool includeHidden)
 {
 	WIN32_FIND_DATAW fileData;
 	HANDLE hFind = FindFirstFileW((_path.wstring() + L"\\*").c_str(), &fileData);
@@ -84,8 +84,13 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 			continue;
 		}
 
-		if (fileData.cFileName[0] != '.' &&
-			fileData.cFileName[0] != '$')
+		const bool navigationEntry = !wcscmp(fileData.cFileName, L".") || !wcscmp(fileData.cFileName, L"..");
+		const bool protectedSystemEntry = !wcscmp(fileData.cFileName, L"System Volume Information");
+		const bool hiddenEntry =
+			fileData.cFileName[0] == '.' ||
+			fileData.cFileName[0] == '$' ||
+			(fileData.dwFileAttributes & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)) != 0;
+		if (!navigationEntry && !protectedSystemEntry && (includeHidden || !hiddenEntry))
 		{
 			DirectoryEntry entry = { (_path / fileData.cFileName).u8string(), type };
 			entry.creationUnixSec   = FileTimeToUnixSeconds(fileData.ftCreationTime);
@@ -102,7 +107,7 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 }
 
 #else
-void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter)
+void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, FileType filter, bool includeHidden)
 {
 	try
 	{
@@ -122,15 +127,16 @@ void ListDirectory(const Path &_path, std::vector<DirectoryEntry> &directories, 
 			{
 				entry.fileSize = directory.file_size();
 			}
-			if (entry.GetFileName()[0] == '$' || entry.GetFileName()[0] == '.' ||
-				!strcmp(entry.GetFileName(), "System Volume Information"))
+			const bool protectedSystemEntry = !strcmp(entry.GetFileName(), "System Volume Information");
+			const bool hiddenEntry = entry.GetFileName()[0] == '$' || entry.GetFileName()[0] == '.';
+			if (protectedSystemEntry || (!includeHidden && hiddenEntry))
 			{
 				continue;
 			}
 
 #ifdef _WIN32
 			auto attribute = GetFileAttributesW(path.native().c_str());
-			if (attribute & FILE_ATTRIBUTE_SYSTEM)
+			if (!includeHidden && (attribute & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM)))
 			{
 				continue;
 			}

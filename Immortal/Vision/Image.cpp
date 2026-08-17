@@ -10,68 +10,6 @@ namespace Immortal
 namespace Vision
 {
 
-static Picture ReadDemuxedStillImage(const String &path)
-{
-#if HAVE_FFMPEG
-    URef<FFFormat> demuxer = new FFFormat;
-    if (demuxer->Open(path) != CodecError::Success)
-    {
-        return {};
-    }
-
-    CodecInfo info{};
-    if (demuxer->GetStreamInfo(MediaType::Video, info) != CodecError::Success)
-    {
-        return {};
-    }
-
-    URef<FFCodec> decoder = new FFCodec;
-    if (decoder->OpenDecoder(info) != CodecError::Success)
-    {
-        return {};
-    }
-
-    auto receivePicture = [&decoder]() -> Picture {
-        Picture picture{};
-        return decoder->GetPicture(picture) == CodecError::Success ? picture : Picture{};
-    };
-
-    for (;;)
-    {
-        CodedFrame codedFrame;
-        const CodecError readErr = demuxer->Read(&codedFrame);
-        if (readErr == CodecError::EndOfFile)
-        {
-            decoder->Decode(CodedFrame{ (AVPacket *)nullptr });
-            return receivePicture();
-        }
-        if (readErr == CodecError::Again)
-        {
-            continue;
-        }
-        if (readErr != CodecError::Success)
-        {
-            return {};
-        }
-
-        const CodecError decodeErr = decoder->Decode(codedFrame);
-        if (decodeErr != CodecError::Success && decodeErr != CodecError::Again)
-        {
-            return {};
-        }
-
-        Picture picture = receivePicture();
-        if (picture)
-        {
-            return picture;
-        }
-    }
-#else
-    (void)path;
-    return {};
-#endif
-}
-
 static CodedFrame WriteDemuxedStillImage(const Picture &picture, const String &path, const ImageEncodeInfo &encodeInfo)
 {
 #if HAVE_FFMPEG
@@ -137,7 +75,21 @@ static CodedFrame WriteDemuxedStillImage(const Picture &picture, const String &p
 
 Codec *SelectSuitableCodec(const std::string &path, bool decoder, const ImageEncodeInfo &info)
 {
-    switch (FileSystem::DumpFileId(path))
+    (void)decoder;
+    const FileFormat fileFormat = FileSystem::DumpFileId(path);
+    if (fileFormat == FileFormat::GPR)
+    {
+        return new GprCodec{
+            Format::RGBA8,
+            String{ path, StringEncoding::UTF8 } };
+    }
+
+    if (FileSystem::IsRawImage(fileFormat))
+    {
+        return new RawCodec{ Format::RGBA8 };
+    }
+
+    switch (fileFormat)
     {
     case FileFormat::BMP:
         return new BMPCodec;
@@ -168,7 +120,10 @@ Codec *SelectSuitableCodec(const std::string &path, bool decoder, const ImageEnc
 		return new FFJpegxlCodec;
 
     case FileFormat::AVIF:
-        return new AVIFCodec;
+    case FileFormat::HEIF:
+    case FileFormat::HEIC:
+    case FileFormat::HIF:
+        return new FFVideoImageCodec;
 
     case FileFormat::TIFF:
     case FileFormat::TIF:
@@ -178,17 +133,6 @@ Codec *SelectSuitableCodec(const std::string &path, bool decoder, const ImageEnc
     case FileFormat::PGM:
     case FileFormat::PNM:
         return new PPMCodec;
-
-    case FileFormat::DNG:
-    case FileFormat::ARW:
-    case FileFormat::NEF:
-    case FileFormat::CR2:
-	case FileFormat::CR3:
-	case FileFormat::FFF:
-	case FileFormat::_3FR:
-	case FileFormat::RAF:
-	case FileFormat::RW2:
-        return new RawCodec{ Format::RGBA8 };
 
     case FileFormat::WEBP:
 #if HAVE_WEBP
@@ -247,11 +191,6 @@ Codec *SelectSuitableCodec(const std::string &path, bool decoder, const ImageEnc
 
 Picture Read(const String &path)
 {
-    if (FileSystem::IsFormat<FileFormat::AVIF>(path))
-    {
-        return ReadDemuxedStillImage(path);
-    }
-
     Vision::CodedFrame codedFrame{ FileSystem::ReadBinary(path) };
     if (!codedFrame.GetData())
     {

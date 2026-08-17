@@ -117,6 +117,41 @@ struct TrackInfo
 	void *handle;
 };
 
+struct SubtitleCue
+{
+	struct BitmapRect
+	{
+		std::vector<uint8_t> rgba;
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t stride = 0;
+		float x = 0.0f;
+		float y = 0.0f;
+		float widthRatio = 0.0f;
+		float heightRatio = 0.0f;
+
+		operator bool() const
+		{
+			return !rgba.empty() && width > 0 && height > 0 && stride >= width * 4;
+		}
+	};
+
+	std::string text;
+	std::vector<BitmapRect> bitmaps;
+	double startSeconds = 0.0;
+	double endSeconds = 0.0;
+	float x = 0.0f;
+	float y = 0.0f;
+	float width = 0.0f;
+	float height = 0.0f;
+	bool hasRect = false;
+
+	operator bool() const
+	{
+		return (!text.empty() || !bitmaps.empty()) && endSeconds > startSeconds;
+	}
+};
+
 enum class DecodingPreference
 {
 	Auto,
@@ -335,6 +370,9 @@ enum class CodecId
 	AV1_NVENC,
 	AV1_QSV,
 	AAC,
+	MP3,
+	OPUS,
+	VORBIS,
 	FLAC,
 	TIFF,
 	PNG,
@@ -358,6 +396,7 @@ enum class CodecId
 	MPEG4,
 	RAW,
 	PCM_S16,
+	APV,
 	H264 = AVC,
 	H265 = HEVC,
 	H266 = VVC,
@@ -392,6 +431,7 @@ struct CodecInfo
 	int crf = 0;
 	int maxBitRate = 0;
 	int bufferSize = 0;
+	int hardwareDeviceIndex = -1;
 };
 
 }

@@ -279,19 +279,23 @@ public:
 		switch (entry.type)
 		{
 			case IFDType::ASCII:
-				return entry.v.str;
+				if (entry.values.empty())
+				{
+					return {};
+				}
+				return String{ entry.v.str, StringEncoding::UTF8 };
 
 			case IFDType::SHORT:
 				if (entry.count == 1)
 				{
-					return std::to_string((int16_t)*v.shorts);
+					return String{ std::to_string((int16_t)*v.shorts), StringEncoding::ASCII };
 				}
 				return {};
 
 			case IFDType::LONG:
 				if (entry.count == 1)
 				{
-					return std::to_string((uint32_t)*v.uint);
+					return String{ std::to_string((uint32_t)*v.uint), StringEncoding::ASCII };
 				}
 				return {};
 
@@ -299,7 +303,7 @@ public:
 				if (entry.count == 1)
 				{
 					auto &r = *v.rational;
-					return std::to_string(r.numerator) + "/" + std::to_string(r.dominator);
+					return String{ std::to_string(r.numerator) + "/" + std::to_string(r.dominator), StringEncoding::ASCII };
 				}
 				return {};
 
@@ -309,14 +313,14 @@ public:
 			case IFDType::SSHORT:
 				if (entry.count == 1)
 				{
-					return std::to_string((uint32_t) *v.shorts);
+					return String{ std::to_string((uint32_t)*v.shorts), StringEncoding::ASCII };
 				}
 				return {};
 
 			case IFDType::SLONG:
 				if (entry.count == 1)
 				{
-					return std::to_string((int32_t) *v.sint);
+					return String{ std::to_string((int32_t)*v.sint), StringEncoding::ASCII };
 				}
 				return {};
 
@@ -324,21 +328,21 @@ public:
 				if (entry.count == 1)
 				{
 					auto &r = *v.srational;
-					return std::to_string(r.numerator) + "/" + std::to_string(r.dominator);
+					return String{ std::to_string(r.numerator) + "/" + std::to_string(r.dominator), StringEncoding::ASCII };
 				}
 				return {};
 
 			case IFDType::FLOAT:
 				if (entry.count == 1)
 				{
-					return std::to_string(*(float *)v.dbl);
+					return String{ std::to_string(*(float *)v.dbl), StringEncoding::ASCII };
 				}
 				return {};
 
 			case IFDType::DOUBLE:
 				if (entry.count == 1)
 				{
-					return std::to_string(*v.dbl);
+					return String{ std::to_string(*v.dbl), StringEncoding::ASCII };
 				}
 				return {};
 

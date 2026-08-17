@@ -68,6 +68,8 @@ public:
 
     void Release();
 
+    void Reset();
+
     bool SetOptions(const AudioFormatSpec &outputFormat, const AudioFormatSpec &inputFormat);
 
     int RescaleRound(int numSamples);
@@ -135,6 +137,8 @@ public:
 
     virtual CodecError Decode(const CodedFrame &codedFrame) override;
 
+    CodecError DecodeSubtitleCue(const CodedFrame &codedFrame, SubtitleCue &cue);
+
     virtual CodecError GetPicture(Picture &picture) override;
 
     virtual CodecError Encode(const Picture &picture, CodedFrame &codedFrame) override;
@@ -164,6 +168,11 @@ public:
     Rational GetTimebase() const;
 
     AudioFormatSpec GetAudioFormat() const;
+
+    const String &LastError() const
+    {
+        return lastError;
+    }
 
 public:
     void SetPreference(DecodingPreference value)
@@ -236,6 +245,8 @@ protected:
     const AVStream *decoderStream = nullptr;
     int decoderCodecId = 0;
     bool hardwareFallbackAttempted = false;
+
+    mutable String lastError;
 #endif // HAVE_FFMPEG
 };
 
@@ -272,8 +283,6 @@ using FFTiffCodec      = TFFImageCodec<CodecId::TIFF>;
 using FFPngCodec       = TFFImageCodec<CodecId::PNG>;
 using FFWebpCodec      = TFFImageCodec<CodecId::WEBP>;
 using FFJpegxlCodec    = TFFImageCodec<CodecId::JPEGXL>;
-using FFAvifCodec      = TFFImageCodec<CodecId::AVIF>;
-using AVIFCodec        = FFAvifCodec;
 using FFMjpegCodec     = TFFImageCodec<CodecId::MJPEG>;
 using FFJpeg2000Codec  = TFFImageCodec<CodecId::JPEG2000>;
 using FFDPXCodec       = TFFImageCodec<CodecId::DPX>;

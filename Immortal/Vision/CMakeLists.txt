@@ -62,6 +62,10 @@ set(IMAGE_CODEC_FILES
     BMP.h
     Exif.cpp
     Exif.h
+    FFVideoImageCodec.cpp
+    FFVideoImageCodec.h
+    GprCodec.cpp
+    GprCodec.h
     Helper.h
     ICC.cpp
     ICC.h

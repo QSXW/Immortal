@@ -143,20 +143,63 @@ enum class FileFormat : uint64_t
     JPEG  = MakeIdentifier('J', 'P', 'E', 'G'),
     JXL   = MakeIdentifier('J', 'X', 'L'     ),
     HDR   = MakeIdentifier('H', 'D', 'R'     ),
+
+    /** Camera RAW still image formats */
+    _3FR  = MakeIdentifier('3', 'F', 'R'     ),
+    ARQ   = MakeIdentifier('A', 'R', 'Q'     ),
     ARW   = MakeIdentifier('A', 'R', 'W'     ),
-    NEF   = MakeIdentifier('N', 'E', 'F'     ),
+    BAY   = MakeIdentifier('B', 'A', 'Y'     ),
+    BMQ   = MakeIdentifier('B', 'M', 'Q'     ),
+    CAP   = MakeIdentifier('C', 'A', 'P'     ),
     CR2   = MakeIdentifier('C', 'R', '2'     ),
     CR3   = MakeIdentifier('C', 'R', '3'     ),
-    AVIF  = MakeIdentifier('A', 'V', 'I', 'F'),
-    FFF   = MakeIdentifier('F', 'F', 'F'     ),
-    _3FR  = MakeIdentifier('3', 'F', 'R'     ),
-    RAF   = MakeIdentifier('R', 'A', 'F'     ),
-    EXR   = MakeIdentifier('E', 'X', 'R'     ),
-    RW2   = MakeIdentifier('R', 'W', '2'     ),
-    WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
-    HEIC  = MakeIdentifier('H', 'E', 'I', 'C'),
-    TIFF  = MakeIdentifier('T', 'I', 'F', 'F'),
+    CRW   = MakeIdentifier('C', 'R', 'W'     ),
+    CS1   = MakeIdentifier('C', 'S', '1'     ),
+    DC2   = MakeIdentifier('D', 'C', '2'     ),
+    DCR   = MakeIdentifier('D', 'C', 'R'     ),
+    DCS   = MakeIdentifier('D', 'C', 'S'     ),
     DNG   = MakeIdentifier('D', 'N', 'G'     ),
+    DRF   = MakeIdentifier('D', 'R', 'F'     ),
+    ERF   = MakeIdentifier('E', 'R', 'F'     ),
+    FFF   = MakeIdentifier('F', 'F', 'F'     ),
+    GPR   = MakeIdentifier('G', 'P', 'R'     ),
+    IA    = MakeIdentifier('I', 'A'          ),
+    IIQ   = MakeIdentifier('I', 'I', 'Q'     ),
+    K25   = MakeIdentifier('K', '2', '5'     ),
+    KC2   = MakeIdentifier('K', 'C', '2'     ),
+    KDC   = MakeIdentifier('K', 'D', 'C'     ),
+    MDC   = MakeIdentifier('M', 'D', 'C'     ),
+    MEF   = MakeIdentifier('M', 'E', 'F'     ),
+    MFW   = MakeIdentifier('M', 'F', 'W'     ),
+    MOS   = MakeIdentifier('M', 'O', 'S'     ),
+    MRW   = MakeIdentifier('M', 'R', 'W'     ),
+    NEF   = MakeIdentifier('N', 'E', 'F'     ),
+    NRW   = MakeIdentifier('N', 'R', 'W'     ),
+    ORF   = MakeIdentifier('O', 'R', 'F'     ),
+    ORI   = MakeIdentifier('O', 'R', 'I'     ),
+    PEF   = MakeIdentifier('P', 'E', 'F'     ),
+    PXN   = MakeIdentifier('P', 'X', 'N'     ),
+    QTK   = MakeIdentifier('Q', 'T', 'K'     ),
+    RAF   = MakeIdentifier('R', 'A', 'F'     ),
+    RAW   = MakeIdentifier('R', 'A', 'W'     ),
+    RDC   = MakeIdentifier('R', 'D', 'C'     ),
+    RW1   = MakeIdentifier('R', 'W', '1'     ),
+    RW2   = MakeIdentifier('R', 'W', '2'     ),
+    RWL   = MakeIdentifier('R', 'W', 'L'     ),
+    RWZ   = MakeIdentifier('R', 'W', 'Z'     ),
+    SR2   = MakeIdentifier('S', 'R', '2'     ),
+    SRF   = MakeIdentifier('S', 'R', 'F'     ),
+    SRW   = MakeIdentifier('S', 'R', 'W'     ),
+    STI   = MakeIdentifier('S', 'T', 'I'     ),
+    X3F   = MakeIdentifier('X', '3', 'F'     ),
+
+    AVIF  = MakeIdentifier('A', 'V', 'I', 'F'),
+    EXR   = MakeIdentifier('E', 'X', 'R'     ),
+    WEBP  = MakeIdentifier('W', 'E', 'B', 'P'),
+    HEIF  = MakeIdentifier('H', 'E', 'I', 'F'),
+    HEIC  = MakeIdentifier('H', 'E', 'I', 'C'),
+    HIF   = MakeIdentifier('H', 'I', 'F'     ),
+    TIFF  = MakeIdentifier('T', 'I', 'F', 'F'),
 
     /** Video file format extensions */
     AVI   = MakeIdentifier('A', 'V', 'I'     ),
@@ -319,7 +362,6 @@ enum class FileFormat : uint64_t
     R3D    = MakeIdentifier('R', '3', 'D'          ),
     RA     = MakeIdentifier('R', 'A'               ),
     RAS    = MakeIdentifier('R', 'A', 'S'          ),
-    RAW    = MakeIdentifier('R', 'A', 'W'          ),
     RKA    = MakeIdentifier('R', 'K', 'A'          ),
     RL2    = MakeIdentifier('R', 'L', '2'          ),
     RM     = MakeIdentifier('R', 'M'               ),
@@ -432,15 +474,60 @@ static inline bool Is3DModel(const std::string &path)
 
 static inline bool IsRawImage(FileFormat id)
 {
-    return IsFormat<FileFormat::CR2>(id)  ||
-	       IsFormat<FileFormat::_3FR>(id) ||
-           IsFormat<FileFormat::ARW>(id)  ||
-           IsFormat<FileFormat::NEF>(id)  ||
-           IsFormat<FileFormat::FFF>(id)  ||
-	       IsFormat<FileFormat::_3FR>(id) ||
-           IsFormat<FileFormat::RAF>(id)  ||
-           IsFormat<FileFormat::RW2>(id)  ||
-           IsFormat<FileFormat::DNG>(id);
+    switch (id)
+    {
+    case FileFormat::_3FR:
+    case FileFormat::ARQ:
+    case FileFormat::ARW:
+    case FileFormat::BAY:
+    case FileFormat::BMQ:
+    case FileFormat::CAP:
+    case FileFormat::CR2:
+    case FileFormat::CR3:
+    case FileFormat::CRW:
+    case FileFormat::CS1:
+    case FileFormat::DC2:
+    case FileFormat::DCR:
+    case FileFormat::DCS:
+    case FileFormat::DNG:
+    case FileFormat::DRF:
+    case FileFormat::ERF:
+    case FileFormat::FFF:
+    case FileFormat::GPR:
+    case FileFormat::IA:
+    case FileFormat::IIQ:
+    case FileFormat::K25:
+    case FileFormat::KC2:
+    case FileFormat::KDC:
+    case FileFormat::MDC:
+    case FileFormat::MEF:
+    case FileFormat::MFW:
+    case FileFormat::MOS:
+    case FileFormat::MRW:
+    case FileFormat::NEF:
+    case FileFormat::NRW:
+    case FileFormat::ORF:
+    case FileFormat::ORI:
+    case FileFormat::PEF:
+    case FileFormat::PXN:
+    case FileFormat::QTK:
+    case FileFormat::RAF:
+    case FileFormat::RAW:
+    case FileFormat::RDC:
+    case FileFormat::RW1:
+    case FileFormat::RW2:
+    case FileFormat::RWL:
+    case FileFormat::RWZ:
+    case FileFormat::SR2:
+    case FileFormat::SRF:
+    case FileFormat::SRW:
+    case FileFormat::STI:
+    case FileFormat::X3F:
+        return true;
+
+    default:
+        return false;
+    }
 }
 
 static inline bool IsImage(FileFormat id)
@@ -456,7 +543,9 @@ static inline bool IsImage(FileFormat id)
            IsFormat<FileFormat::WEBP>(id) ||
            IsFormat<FileFormat::TIFF>(id) ||
            IsFormat<FileFormat::TIF>(id) ||
+           IsFormat<FileFormat::HEIF>(id) ||
            IsFormat<FileFormat::HEIC>(id) ||
+           IsFormat<FileFormat::HIF>(id) ||
            IsFormat<FileFormat::AVIF>(id) ||
            IsFormat<FileFormat::GIF>(id) ||
            IsFormat<FileFormat::CIN>(id) ||
@@ -535,6 +624,7 @@ static inline bool IsVideo(FileFormat id)
            IsFormat<FileFormat::AA3>(id) ||
            IsFormat<FileFormat::ANM>(id) ||
            IsFormat<FileFormat::APC>(id) ||
+           IsFormat<FileFormat::APV>(id) ||
            IsFormat<FileFormat::AVC>(id) ||
            IsFormat<FileFormat::AVS>(id) ||
            IsFormat<FileFormat::BCSTM>(id) ||
@@ -581,7 +671,6 @@ static inline bool IsVideo(FileFormat id)
            IsFormat<FileFormat::PVA>(id) ||
            IsFormat<FileFormat::R3D>(id) ||
            IsFormat<FileFormat::RA>(id) ||
-           IsFormat<FileFormat::RAW>(id) ||
            IsFormat<FileFormat::RKA>(id) ||
            IsFormat<FileFormat::RL2>(id) ||
            IsFormat<FileFormat::RM>(id) ||
@@ -704,6 +793,7 @@ static FileType GetFileType(const std::string &path)
         return FileType::OBJ;
 
     case FileFormat::IVF:
+    case FileFormat::APV:
     case FileFormat::H264:
     case FileFormat::H265:
     case FileFormat::MKV:
@@ -711,6 +801,11 @@ static FileType GetFileType(const std::string &path)
     case FileFormat::M2TS:
     case FileFormat::WEBM:
         return FileType::Video;
+
+    case FileFormat::HEIF:
+    case FileFormat::HEIC:
+    case FileFormat::HIF:
+        return FileType::Picture;
 
     CASE(CPP )
     CASE(EXE )
@@ -1134,7 +1229,11 @@ struct DirectoryEntry
 
 bool HasSubdirectory(const Path &path);
 
-void ListDirectory(const Path &path, std::vector<DirectoryEntry> &directories, FileType filter = FileType::Directory | FileType::RegularFile);
+void ListDirectory(
+    const Path &path,
+    std::vector<DirectoryEntry> &directories,
+    FileType filter = FileType::Directory | FileType::RegularFile,
+    bool includeHidden = false);
 
 static inline bool Exists(const String &path)
 {

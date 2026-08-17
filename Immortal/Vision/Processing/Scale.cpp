@@ -8,6 +8,9 @@
 #include "Scale.h"
 #include "Common/SamplingFactor.h"
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 
 namespace Immortal
 {
@@ -194,77 +197,224 @@ void BicubicConvolutionInterpolate(Picture &dst, const Picture &src)
 }
 
 template <class T, size_t offset = 0, size_t elements = 1>
-void TNearestInterpolate(T *dst, size_t dstStride, T *src, size_t srcStride, uint32_t dstWidth, uint32_t dstHeight, uint32_t srcWidth, uint32_t srcHeight)
+bool TNearestInterpolateLayoutIsValid(const T *dst, size_t dstStride, const T *src, size_t srcStride, uint32_t dstWidth, uint32_t dstHeight, uint32_t srcWidth, uint32_t srcHeight)
 {
-	float widthRatio  = (float)srcWidth  / dstWidth;
-	float heightRatio = (float)srcHeight / dstHeight;
+	static_assert(elements > 0);
+	static_assert(offset < elements);
 
-	if constexpr (std::is_same_v<T, uint16_t>)
+	if (!dst || !src || dstWidth == 0 || dstHeight == 0 || srcWidth == 0 || srcHeight == 0)
 	{
-		srcStride >>= 1;
-		dstStride >>= 1;
+		return false;
 	}
+	if ((reinterpret_cast<std::uintptr_t>(dst) % alignof(T)) != 0 ||
+		(reinterpret_cast<std::uintptr_t>(src) % alignof(T)) != 0)
+	{
+		return false;
+	}
+
+	if ((dstStride % sizeof(T)) != 0 || (srcStride % sizeof(T)) != 0)
+	{
+		return false;
+	}
+	dstStride /= sizeof(T);
+	srcStride /= sizeof(T);
+
+	if (dstStride == 0 || srcStride == 0)
+	{
+		return false;
+	}
+
+	constexpr size_t maximum = std::numeric_limits<size_t>::max();
+	auto minimumStride = [] (uint32_t width, size_t &value) {
+		const size_t lastPixel = size_t(width) - 1;
+		if (lastPixel > (std::numeric_limits<size_t>::max() - offset - 1) / elements)
+		{
+			return false;
+		}
+		value = lastPixel * elements + offset + 1;
+		return true;
+	};
+
+	size_t dstMinimumStride = 0;
+	size_t srcMinimumStride = 0;
+	if (!minimumStride(dstWidth, dstMinimumStride) || !minimumStride(srcWidth, srcMinimumStride))
+	{
+		return false;
+	}
+	if (dstStride < dstMinimumStride || srcStride < srcMinimumStride)
+	{
+		return false;
+	}
+
+	const size_t dstRows = size_t(dstHeight) - 1;
+	const size_t srcRows = size_t(srcHeight) - 1;
+	if ((dstRows != 0 && dstStride > (maximum - dstMinimumStride) / dstRows) ||
+		(srcRows != 0 && srcStride > (maximum - srcMinimumStride) / srcRows))
+	{
+		return false;
+	}
+
+	const size_t dstElements = dstRows * dstStride + dstMinimumStride;
+	const size_t srcElements = srcRows * srcStride + srcMinimumStride;
+	const size_t maximumPointerElements = static_cast<size_t>(std::numeric_limits<std::ptrdiff_t>::max()) / sizeof(T);
+	if (dstElements > maximumPointerElements || srcElements > maximumPointerElements)
+	{
+		return false;
+	}
+
+	auto addressRangeIsValid = [] (const T *data, size_t elementCount) {
+		const size_t lastByteOffset = (elementCount - 1) * sizeof(T) + sizeof(T) - 1;
+		const std::uintptr_t address = reinterpret_cast<std::uintptr_t>(data);
+		return lastByteOffset <= std::numeric_limits<std::uintptr_t>::max() - address;
+	};
+	if (!addressRangeIsValid(dst, dstElements) || !addressRangeIsValid(src, srcElements))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+template <class T, size_t offset = 0, size_t elements = 1>
+bool TNearestInterpolate(T *dst, size_t dstStride, const T *src, size_t srcStride, uint32_t dstWidth, uint32_t dstHeight, uint32_t srcWidth, uint32_t srcHeight)
+{
+	if (!TNearestInterpolateLayoutIsValid<T, offset, elements>(dst, dstStride, src, srcStride, dstWidth, dstHeight, srcWidth, srcHeight))
+	{
+		return false;
+	}
+
+	dstStride /= sizeof(T);
+	srcStride /= sizeof(T);
 
 	for (uint32_t iy = 0; iy < dstHeight; iy++)
 	{
-		T *data = &dst[iy * dstStride];
+		const uint32_t srcY = std::min<uint32_t>(
+			srcHeight - 1,
+			static_cast<uint32_t>((uint64_t(iy) * srcHeight) / dstHeight));
+		T *dstRow = dst + size_t(iy) * dstStride;
+		const T *srcRow = src + size_t(srcY) * srcStride;
 		for (uint32_t ix = 0; ix < dstWidth; ix++)
 		{
-			uint32_t srcX = (uint32_t)(ix * widthRatio + 0.5f);
-			uint32_t srcY = (uint32_t)(iy * heightRatio + 0.5f);
-
-			srcX = srcX >= srcWidth  ? srcWidth  - 1 : srcX;
-			srcY = srcY >= srcHeight ? srcHeight - 1 : srcY;
-
-			data[ix * elements + offset] = src[srcY * srcStride + srcX * elements + offset];
+			const uint32_t srcX = std::min<uint32_t>(
+				srcWidth - 1,
+				static_cast<uint32_t>((uint64_t(ix) * srcWidth) / dstWidth));
+			dstRow[size_t(ix) * elements + offset] = srcRow[size_t(srcX) * elements + offset];
 		}
 	}
+
+	return true;
 }
 
 void NearestInterpolate(Picture &dst, const Picture &src)
 {
+	if (!dst || !src ||
+		dst.GetWidth() == 0 || dst.GetHeight() == 0 ||
+		src.GetWidth() == 0 || src.GetHeight() == 0 ||
+		dst.GetFormat() != src.GetFormat() ||
+		dst.GetMemoryType() != PictureMemoryType::System ||
+		src.GetMemoryType() != PictureMemoryType::System)
+	{
+		return;
+	}
+
 	SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
 	GetSamplingFactor(dst.GetFormat(), factors);
 
 	auto &format = src.GetFormat();
 
-	if (format.IsType(Format::YUV))
+	if (format == Format::Y210 || format == Format::Y216)
 	{
+		const uint32_t dstPackedWidth = dst.GetWidth() / 2 + dst.GetWidth() % 2;
+		const uint32_t srcPackedWidth = src.GetWidth() / 2 + src.GetWidth() % 2;
+		TNearestInterpolate<uint64_t>(
+			(uint64_t *)dst.GetData(0), dst.GetStride(0),
+			(const uint64_t *)src.GetData(0), src.GetStride(0),
+			dstPackedWidth, dst.GetHeight(), srcPackedWidth, src.GetHeight());
+	}
+	else if (format.IsType(Format::YUV))
+	{
+		const size_t planeCount = format.IsType(Format::NV) ? 2 : (format == Format::YUVA420P ? 4 : 3);
+		for (size_t i = 0; i < planeCount; ++i)
+		{
+			if (!dst.GetData(i) || !src.GetData(i))
+			{
+				return;
+			}
+
+			const uint32_t dstPlaneWidth = dst.GetWidth() >> factors[i].x;
+			const uint32_t dstPlaneHeight = dst.GetHeight() >> factors[i].y;
+			const uint32_t srcPlaneWidth = src.GetWidth() >> factors[i].x;
+			const uint32_t srcPlaneHeight = src.GetHeight() >> factors[i].y;
+			const bool valid = format.IsType(Format::HightBitDepth)
+				? ((format.IsType(Format::NV) && i == 1)
+					? TNearestInterpolateLayoutIsValid<uint16_t, 1, 2>(
+						(const uint16_t *)dst.GetData(i), dst.GetStride(i),
+						(const uint16_t *)src.GetData(i), src.GetStride(i),
+						dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight)
+					: TNearestInterpolateLayoutIsValid<uint16_t>(
+						(const uint16_t *)dst.GetData(i), dst.GetStride(i),
+						(const uint16_t *)src.GetData(i), src.GetStride(i),
+						dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight))
+				: ((format.IsType(Format::NV) && i == 1)
+					? TNearestInterpolateLayoutIsValid<uint8_t, 1, 2>(
+						dst.GetData(i), dst.GetStride(i), src.GetData(i), src.GetStride(i),
+						dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight)
+					: TNearestInterpolateLayoutIsValid<uint8_t>(
+						dst.GetData(i), dst.GetStride(i), src.GetData(i), src.GetStride(i),
+						dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight));
+			if (!valid)
+			{
+				return;
+			}
+		}
+
 		if (format.IsType(Format::HightBitDepth))
 		{
-			for (size_t i = 0; src.GetData(i); i++)
+			for (size_t i = 0; i < planeCount; i++)
 			{
 				uint16_t *pDst = (uint16_t *) dst.GetData(i);
-				uint16_t *pSrc = (uint16_t *) src.GetData(i);
-				TNearestInterpolate<uint16_t>(
-				    pDst,
-				    dst.GetStride(i),
-				    pSrc,
-				    src.GetStride(i),
-				    dst.GetWidth() >> factors[i].x,
-				    dst.GetHeight() >> factors[i].y,
-				    src.GetWidth() >> factors[i].x,
-				    src.GetHeight() >> factors[i].y);
+				const uint16_t *pSrc = (const uint16_t *) src.GetData(i);
+				const uint32_t dstPlaneWidth = dst.GetWidth() >> factors[i].x;
+				const uint32_t dstPlaneHeight = dst.GetHeight() >> factors[i].y;
+				const uint32_t srcPlaneWidth = src.GetWidth() >> factors[i].x;
+				const uint32_t srcPlaneHeight = src.GetHeight() >> factors[i].y;
+				if (format.IsType(Format::NV) && i == 1)
+				{
+					TNearestInterpolate<uint16_t, 0, 2>(pDst, dst.GetStride(i), pSrc, src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+					TNearestInterpolate<uint16_t, 1, 2>(pDst, dst.GetStride(i), pSrc, src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+				}
+				else
+				{
+					TNearestInterpolate<uint16_t>(pDst, dst.GetStride(i), pSrc, src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+				}
 			}
 		}
 		else
 		{
-			for (size_t i = 0; src.GetData(i); i++)
+			for (size_t i = 0; i < planeCount; i++)
 			{
-				TNearestInterpolate<uint8_t>(
-				    dst.GetData(i),
-				    dst.GetStride(i),
-				    src.GetData(i),
-				    src.GetStride(i),
-				    dst.GetWidth() >> factors[i].x,
-				    dst.GetHeight() >> factors[i].y,
-				    src.GetWidth() >> factors[i].x,
-				    src.GetHeight() >> factors[i].y);
+				const uint32_t dstPlaneWidth = dst.GetWidth() >> factors[i].x;
+				const uint32_t dstPlaneHeight = dst.GetHeight() >> factors[i].y;
+				const uint32_t srcPlaneWidth = src.GetWidth() >> factors[i].x;
+				const uint32_t srcPlaneHeight = src.GetHeight() >> factors[i].y;
+				if (format.IsType(Format::NV) && i == 1)
+				{
+					TNearestInterpolate<uint8_t, 0, 2>(dst.GetData(i), dst.GetStride(i), src.GetData(i), src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+					TNearestInterpolate<uint8_t, 1, 2>(dst.GetData(i), dst.GetStride(i), src.GetData(i), src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+				}
+				else
+				{
+					TNearestInterpolate<uint8_t>(dst.GetData(i), dst.GetStride(i), src.GetData(i), src.GetStride(i), dstPlaneWidth, dstPlaneHeight, srcPlaneWidth, srcPlaneHeight);
+				}
 			}
 		}
 	}
 	else if (format == Format::RGBA8 || format == Format::BGRA8)
 	{
+		if (!TNearestInterpolateLayoutIsValid<uint8_t, 3, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight()))
+		{
+			return;
+		}
 		TNearestInterpolate<uint8_t, 0, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 1, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 2, 4>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
@@ -272,6 +422,10 @@ void NearestInterpolate(Picture &dst, const Picture &src)
 	}
 	else if (format == Format::RGBA16 || format == Format::R16G16B16A16_UINT)
 	{
+		if (!TNearestInterpolateLayoutIsValid<uint16_t, 3, 4>((uint16_t *)dst.GetData(0), dst.GetStride(0), (const uint16_t *)src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight()))
+		{
+			return;
+		}
 		TNearestInterpolate<uint16_t, 0, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint16_t, 1, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint16_t, 2, 4>((uint16_t *) dst.GetData(0), dst.GetStride(0), (uint16_t *) src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
@@ -279,6 +433,10 @@ void NearestInterpolate(Picture &dst, const Picture &src)
 	}
 	else if (format == Format::R8G8B8_UNORM || format == Format::B8G8R8_UNORM)
 	{
+		if (!TNearestInterpolateLayoutIsValid<uint8_t, 2, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight()))
+		{
+			return;
+		}
 		TNearestInterpolate<uint8_t, 0, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 1, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());
 		TNearestInterpolate<uint8_t, 2, 3>(dst.GetData(0), dst.GetStride(0), src.GetData(0), src.GetStride(0), dst.GetWidth(), dst.GetHeight(), src.GetWidth(), src.GetHeight());

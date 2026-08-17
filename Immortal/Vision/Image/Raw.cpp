@@ -92,11 +92,12 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 
 		int err = 0;
 		libraw_processed_image_t *image = processor->dcraw_make_mem_image(&err);
-        if (err != LIBRAW_SUCCESS)
+		if (err != LIBRAW_SUCCESS || !image)
 		{
+			LibRaw::dcraw_clear_mem(image);
 			LOG::ERR("Failed to make memory image");
-		    return CodecError::ExternalFailed;
-        }
+			return CodecError::ExternalFailed;
+		}
 
 		if (format == Format::RGBA16)
 		{
@@ -109,6 +110,7 @@ CodecError RawCodec::Decode(const CodedFrame &codedFrame)
 			ReadPixelsToPicture<uint8_t>(picture.GetData(), picture.GetStride(0), image->data, image->width, image->height, image->colors);
 		}
 
+		LibRaw::dcraw_clear_mem(image);
         processor->recycle();
     }
 	else

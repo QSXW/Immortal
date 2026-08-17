@@ -7,6 +7,7 @@
 
 #include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <list>
 #include <cmath>
 #include <limits>
@@ -22,9 +23,13 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#include <libavutil/channel_layout.h>
 #include <libavutil/dict.h>
 #include <libavutil/display.h>
 #include <libavutil/pixfmt.h>
+#include <libavutil/pixdesc.h>
+#include <libavutil/rational.h>
+#include <libavutil/samplefmt.h>
 }
 #endif
 
@@ -36,6 +41,12 @@ namespace Vision
 #if HAVE_FFMPEG
 
 #define AVERR_STR(ret) av_make_error_string(err, 64, ret)
+
+static String FFmpegFormatErrorText(const char *prefix, int ret)
+{
+	char err[64] = {};
+	return String{ prefix, StringEncoding::ASCII } + String{ av_make_error_string(err, sizeof(err), ret), StringEncoding::UTF8 };
+}
 
 #ifdef _WIN32
 struct Win32AVIOOpaque
@@ -155,11 +166,28 @@ static CodecId CAST(AVCodecID codecId)
     case AV_CODEC_ID_AV1:
         return CodecId::AV1;
 
+#if LIBAVCODEC_VERSION_MAJOR >= 62
+    case AV_CODEC_ID_APV:
+        return CodecId::APV;
+#endif
+
     case AV_CODEC_ID_AAC:
         return CodecId::AAC;
 
+    case AV_CODEC_ID_MP3:
+        return CodecId::MP3;
+
+    case AV_CODEC_ID_OPUS:
+        return CodecId::OPUS;
+
+    case AV_CODEC_ID_VORBIS:
+        return CodecId::VORBIS;
+
     case AV_CODEC_ID_FLAC:
         return CodecId::FLAC;
+
+    case AV_CODEC_ID_PCM_S16LE:
+        return CodecId::PCM_S16;
 
     case AV_CODEC_ID_TIFF:
         return CodecId::TIFF;
@@ -223,6 +251,340 @@ static void SetDefaultInputOpenOptions(AVDictionary **options)
 	// ffplay-style probing budget for MP4/MOV files with late SPS/PPS or sparse indexes.
 	av_dict_set(options, "probesize", "67108864", 0);
 	av_dict_set(options, "analyzeduration", "10000000", 0);
+
+	// The MP3 demuxer does not populate its Xing/Info seek table by default.
+	// Unknown private options remain in the dictionary for other demuxers and
+	// are freed by the caller, so this only changes raw MP2/MP3 inputs.
+	av_dict_set(options, "usetoc", "1", 0);
+}
+
+static void SetDirectShowInputOpenOptions(AVDictionary **options)
+{
+	// FFmpeg's roughly 3 MiB default can be smaller than a single high-resolution raw frame.
+	// Keep enough scheduling headroom for live capture without applying this memory budget to files.
+	av_dict_set(options, "rtbufsize", "67108864", 0);
+}
+
+static bool IsRawMp3Input(const AVFormatContext *context)
+{
+	return context && context->iformat && context->iformat->name &&
+		std::strcmp(context->iformat->name, "mp3") == 0;
+}
+
+static std::string FormatInteger(int64_t value)
+{
+	return std::to_string(value);
+}
+
+static std::string FormatBitrate(int64_t bitRate)
+{
+	if (bitRate <= 0)
+	{
+		return {};
+	}
+
+	if (bitRate >= 1000000)
+	{
+		char buffer[64] = {};
+		std::snprintf(buffer, sizeof(buffer), "%.3f Mb/s", double(bitRate) / 1000000.0);
+		return buffer;
+	}
+	if (bitRate >= 1000)
+	{
+		char buffer[64] = {};
+		std::snprintf(buffer, sizeof(buffer), "%.0f kb/s", double(bitRate) / 1000.0);
+		return buffer;
+	}
+	return std::to_string(bitRate) + " b/s";
+}
+
+static std::string FormatDurationSeconds(double seconds)
+{
+	if (!std::isfinite(seconds) || seconds < 0.0)
+	{
+		return {};
+	}
+
+	const int64_t milliseconds = int64_t(seconds * 1000.0 + 0.5);
+	const int64_t hours = milliseconds / 3600000;
+	const int64_t minutes = (milliseconds / 60000) % 60;
+	const int64_t wholeSeconds = (milliseconds / 1000) % 60;
+	const int64_t ms = milliseconds % 1000;
+	char buffer[64] = {};
+	std::snprintf(buffer, sizeof(buffer), "%02lld:%02lld:%02lld.%03lld",
+		(long long)hours,
+		(long long)minutes,
+		(long long)wholeSeconds,
+		(long long)ms);
+	return buffer;
+}
+
+static std::string FormatAVTime(int64_t timestamp, AVRational timebase)
+{
+	if (timestamp == AV_NOPTS_VALUE || timebase.den == 0)
+	{
+		return {};
+	}
+	return FormatDurationSeconds(double(timestamp) * av_q2d(timebase));
+}
+
+static std::string FormatRational(AVRational rational)
+{
+	if (rational.num == 0 || rational.den == 0)
+	{
+		return {};
+	}
+	return std::to_string(rational.num) + "/" + std::to_string(rational.den);
+}
+
+static bool IsValidRational(AVRational rational)
+{
+	return rational.num > 0 && rational.den > 0;
+}
+
+static AVRational ResolveSampleAspectRatio(const AVFormatContext *format, const AVStream *stream, bool fallbackToSquare = true)
+{
+	if (!stream)
+	{
+		return fallbackToSquare ? AVRational{ 1, 1 } : AVRational{};
+	}
+
+	AVRational sar = av_guess_sample_aspect_ratio(
+		const_cast<AVFormatContext *>(format),
+		const_cast<AVStream *>(stream),
+		nullptr);
+	if (!IsValidRational(sar) && stream->codecpar)
+	{
+		sar = stream->codecpar->sample_aspect_ratio;
+	}
+	if (!IsValidRational(sar))
+	{
+		return fallbackToSquare ? AVRational{ 1, 1 } : AVRational{};
+	}
+	av_reduce(&sar.num, &sar.den, sar.num, sar.den, std::numeric_limits<int>::max());
+	return sar;
+}
+
+static std::string FormatRate(AVRational rational, const char *suffix)
+{
+	if (rational.num == 0 || rational.den == 0)
+	{
+		return {};
+	}
+
+	char buffer[96] = {};
+	std::snprintf(buffer, sizeof(buffer), "%s (%.3f %s)", FormatRational(rational).c_str(), av_q2d(rational), suffix);
+	return buffer;
+}
+
+static const char *MediaTypeDisplayName(AVMediaType type)
+{
+	switch (type)
+	{
+	case AVMEDIA_TYPE_VIDEO:
+		return "Video";
+
+	case AVMEDIA_TYPE_AUDIO:
+		return "Audio";
+
+	case AVMEDIA_TYPE_DATA:
+		return "Data";
+
+	case AVMEDIA_TYPE_SUBTITLE:
+		return "Subtitle";
+
+	case AVMEDIA_TYPE_ATTACHMENT:
+		return "Attachment";
+
+	default:
+		break;
+	}
+
+	const char *name = av_get_media_type_string(type);
+	return name && name[0] ? name : "Unknown";
+}
+
+static std::string FormatCodecTag(uint32_t codecTag)
+{
+	if (!codecTag)
+	{
+		return {};
+	}
+
+	char tag[AV_FOURCC_MAX_STRING_SIZE] = {};
+	av_fourcc_make_string(tag, codecTag);
+	return std::string{ tag } + " / 0x" + [&] {
+		char hex[16] = {};
+		std::snprintf(hex, sizeof(hex), "%08x", codecTag);
+		return std::string{ hex };
+	}();
+}
+
+static std::string FormatStreamTitle(const AVFormatContext *handle, const AVStream *stream)
+{
+	std::string title = "Stream #0:" + std::to_string(stream->index);
+	if (stream->id >= 0)
+	{
+		char id[32] = {};
+		std::snprintf(id, sizeof(id), "[0x%x]", stream->id);
+		title += id;
+	}
+	title += " ";
+	title += MediaTypeDisplayName(stream->codecpar->codec_type);
+
+	AVDictionaryEntry *language = av_dict_get(stream->metadata, "language", nullptr, 0);
+	if (language && language->value && language->value[0])
+	{
+		title += " (";
+		title += language->value;
+		title += ")";
+	}
+	if (stream->disposition & AV_DISPOSITION_DEFAULT)
+	{
+		title += " default";
+	}
+	(void)handle;
+	return title;
+}
+
+static void AddMetadataProperty(FFFormat::MetadataSection &section, const char *name, const std::string &value)
+{
+	if (value.empty())
+	{
+		return;
+	}
+	section.properties.emplace_back(FFFormat::MetadataProperty{
+		String{ name, StringEncoding::UTF8 },
+		String{ value, StringEncoding::UTF8 }
+	});
+}
+
+static void AddMetadataProperty(FFFormat::MetadataSection &section, const char *name, const char *value)
+{
+	if (!value || !value[0])
+	{
+		return;
+	}
+	section.properties.emplace_back(FFFormat::MetadataProperty{
+		String{ name, StringEncoding::UTF8 },
+		String{ value, StringEncoding::UTF8 }
+	});
+}
+
+static void AddMetadataDictionary(FFFormat::MetadataSection &section, AVDictionary *metadata)
+{
+	AVDictionaryEntry *tag = nullptr;
+	while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+	{
+		if (tag->key && tag->value)
+		{
+			AddMetadataProperty(section, tag->key, tag->value);
+		}
+	}
+}
+
+static void AddDisplayMatrixMetadata(FFFormat::MetadataSection &section, const AVStream *stream)
+{
+	const AVPacketSideData *sideData = av_packet_side_data_get(
+		stream->codecpar->coded_side_data,
+		stream->codecpar->nb_coded_side_data,
+		AV_PKT_DATA_DISPLAYMATRIX);
+	if (!sideData || !sideData->data || sideData->size < 9 * sizeof(int32_t))
+	{
+		return;
+	}
+
+	const double rotation = av_display_rotation_get(reinterpret_cast<const int32_t *>(sideData->data));
+	if (!std::isfinite(rotation))
+	{
+		return;
+	}
+
+	char buffer[64] = {};
+	std::snprintf(buffer, sizeof(buffer), "%.2f degrees", rotation);
+	AddMetadataProperty(section, "Display Matrix Rotation", buffer);
+}
+
+static FFFormat::MetadataSection BuildFormatMetadataSection(const AVFormatContext *handle)
+{
+	FFFormat::MetadataSection section;
+	section.title = "Format";
+	if (handle->iformat)
+	{
+		AddMetadataProperty(section, "Format Name", handle->iformat->name);
+		AddMetadataProperty(section, "Format Long Name", handle->iformat->long_name);
+	}
+	AddMetadataProperty(section, "Duration", FormatAVTime(handle->duration, AVRational{ 1, AV_TIME_BASE }));
+	AddMetadataProperty(section, "Start Time", FormatAVTime(handle->start_time, AVRational{ 1, AV_TIME_BASE }));
+	AddMetadataProperty(section, "Bitrate", FormatBitrate(handle->bit_rate));
+	AddMetadataProperty(section, "Stream Count", FormatInteger(handle->nb_streams));
+	AddMetadataDictionary(section, handle->metadata);
+	return section;
+}
+
+static FFFormat::MetadataSection BuildStreamMetadataSection(const AVFormatContext *handle, const AVStream *stream)
+{
+	const AVCodecParameters *codecpar = stream->codecpar;
+	FFFormat::MetadataSection section;
+	section.title = FormatStreamTitle(handle, stream);
+
+	AddMetadataProperty(section, "Type", MediaTypeDisplayName(codecpar->codec_type));
+	AddMetadataProperty(section, "Codec", avcodec_get_name(codecpar->codec_id));
+	AddMetadataProperty(section, "Codec Tag", FormatCodecTag(codecpar->codec_tag));
+
+	const char *profile = avcodec_profile_name(codecpar->codec_id, codecpar->profile);
+	AddMetadataProperty(section, "Profile", profile);
+	AddMetadataProperty(section, "Bitrate", FormatBitrate(codecpar->bit_rate));
+	AddMetadataProperty(section, "Time Base", FormatRational(stream->time_base));
+	AddMetadataProperty(section, "Start Time", FormatAVTime(stream->start_time, stream->time_base));
+	AddMetadataProperty(section, "Duration", FormatAVTime(stream->duration, stream->time_base));
+
+	switch (codecpar->codec_type)
+	{
+	case AVMEDIA_TYPE_VIDEO:
+	{
+		const AVRational sampleAspectRatio = ResolveSampleAspectRatio(handle, stream);
+		AddMetadataProperty(section, "Resolution", std::to_string(codecpar->width) + "x" + std::to_string(codecpar->height));
+		AddMetadataProperty(section, "Pixel Format", av_get_pix_fmt_name(static_cast<AVPixelFormat>(codecpar->format)));
+		AddMetadataProperty(section, "Sample Aspect Ratio", FormatRational(sampleAspectRatio));
+		if (sampleAspectRatio.num > 0 && sampleAspectRatio.den > 0 && codecpar->height > 0)
+		{
+			const int64_t darNum = int64_t(codecpar->width) * sampleAspectRatio.num;
+			const int64_t darDen = int64_t(codecpar->height) * sampleAspectRatio.den;
+			AVRational dar{};
+			av_reduce(&dar.num, &dar.den, darNum, darDen, std::numeric_limits<int>::max());
+			AddMetadataProperty(section, "Display Aspect Ratio", FormatRational(dar));
+		}
+		AddMetadataProperty(section, "Frame Rate", FormatRate(stream->r_frame_rate, "fps"));
+		AddMetadataProperty(section, "Average Frame Rate", FormatRate(stream->avg_frame_rate, "fps"));
+		AddMetadataProperty(section, "Color Range", av_color_range_name(codecpar->color_range));
+		AddMetadataProperty(section, "Color Space", av_color_space_name(codecpar->color_space));
+		AddMetadataProperty(section, "Color Primaries", av_color_primaries_name(codecpar->color_primaries));
+		AddMetadataProperty(section, "Transfer Characteristics", av_color_transfer_name(codecpar->color_trc));
+		AddDisplayMatrixMetadata(section, stream);
+		break;
+	}
+
+	case AVMEDIA_TYPE_AUDIO:
+		AddMetadataProperty(section, "Sample Rate", codecpar->sample_rate > 0 ? std::to_string(codecpar->sample_rate) + " Hz" : std::string{});
+		AddMetadataProperty(section, "Sample Format", av_get_sample_fmt_name(static_cast<AVSampleFormat>(codecpar->format)));
+		if (codecpar->ch_layout.nb_channels > 0)
+		{
+			char layout[256] = {};
+			if (av_channel_layout_describe(&codecpar->ch_layout, layout, sizeof(layout)) >= 0)
+			{
+				AddMetadataProperty(section, "Channel Layout", layout);
+			}
+			AddMetadataProperty(section, "Channels", FormatInteger(codecpar->ch_layout.nb_channels));
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	AddMetadataDictionary(section, stream->metadata);
+	return section;
 }
 
 FFFormat::FFFormat() :
@@ -364,7 +726,9 @@ void FFFormat::SetAnimator()
 		auto fps = stream->r_frame_rate;
 		animator->FramesPerSecond = fps.den != 0 ? av_q2d(fps) : 24.0f;
 		animator->SecondsPerFrame = 1 / animator->FramesPerSecond;
-		animator->Duration = handle->duration != AV_NOPTS_VALUE ? handle->duration / AV_TIME_BASE : -1;
+		animator->Duration = handle->duration != AV_NOPTS_VALUE
+			? (double)handle->duration / (double)AV_TIME_BASE
+			: -1.0;
 
 		animator->Framerate = {fps.num, fps.den};
 		if (fps.den == 0)
@@ -378,7 +742,8 @@ void FFFormat::SetAnimator()
 		{
 			int64_t num = (int64_t) stream->duration * (int64_t) stream->time_base.num;
 			int den = stream->time_base.den;
-			animator->DurationRational = Rational((int) num, den);
+			animator->DurationRational = Rational(num, den);
+			animator->DurationRational.Reduce();
 		}
 		else if (handle->duration != AV_NOPTS_VALUE)
 		{
@@ -404,8 +769,9 @@ CodecError FFFormat::Open(const String &_filepath)
     }
 
     char err[64];
+	const bool directShowInput = filepath.size() > 6 && !memcmp(filepath.c_str(), "video=", 6);
 	const AVInputFormat *inputFormat = nullptr;
-	if (filepath.size() > 6 && !memcmp(filepath.c_str(), "video=", 6))
+	if (directShowInput)
 	{
 		avdevice_register_all();
 		inputFormat = av_find_input_format("dshow");
@@ -413,6 +779,10 @@ CodecError FFFormat::Open(const String &_filepath)
 
 	AVDictionary *openOpts = nullptr;
 	SetDefaultInputOpenOptions(&openOpts);
+	if (directShowInput)
+	{
+		SetDirectShowInputOpenOptions(&openOpts);
+	}
 
 	int ret = avformat_open_input(&handle, filepath.c_str(), inputFormat, &openOpts);
 	av_dict_free(&openOpts);
@@ -451,13 +821,21 @@ CodecError FFFormat::Open(const String &_filepath)
 		return CodecError::ExternalFailed;
 	}
 
+	// Xing/Info provides a coarse VBR table and `usetoc` turns it into an
+	// FFmpeg index. FAST_SEEK additionally gives CBR and legacy MP3 files
+	// without a TOC a byte-scaled, frame-synchronised fallback instead of a
+	// potentially full-file linear scan.
+	if (IsRawMp3Input(handle))
+	{
+		handle->flags |= AVFMT_FLAG_FAST_SEEK;
+	}
+
 	auto options = GenerateStreamInfo(handle);
 	ret = avformat_find_stream_info(handle, options);
 	if (ret < 0)
 	{
 		CLOG_ERROR("Failed to find stream info {} - {}", filepath, AVERR_STR(ret));
 	}
-	av_dump_format(handle, 0, filepath.c_str(), 0);
 
 	streamIndex[AVMEDIA_TYPE_VIDEO]    = av_find_best_stream(handle, AVMEDIA_TYPE_VIDEO,    streamIndex[AVMEDIA_TYPE_VIDEO],    -1,                              nullptr, 0);
 	streamIndex[AVMEDIA_TYPE_AUDIO]    = av_find_best_stream(handle, AVMEDIA_TYPE_AUDIO,    streamIndex[AVMEDIA_TYPE_AUDIO],    streamIndex[AVMEDIA_TYPE_VIDEO], nullptr, 0);
@@ -489,9 +867,28 @@ static AVCodecID CAST(const CodecId id)
 	case CodecId::AV1_NVENC:
 	case CodecId::AV1_QSV:
 		return AV_CODEC_ID_AV1;
+#if LIBAVCODEC_VERSION_MAJOR >= 62
+    case CodecId::APV:
+		return AV_CODEC_ID_APV;
+#endif
 
     case CodecId::AAC:
 		return AV_CODEC_ID_AAC;
+
+    case CodecId::MP3:
+		return AV_CODEC_ID_MP3;
+
+    case CodecId::OPUS:
+		return AV_CODEC_ID_OPUS;
+
+    case CodecId::VORBIS:
+		return AV_CODEC_ID_VORBIS;
+
+    case CodecId::FLAC:
+		return AV_CODEC_ID_FLAC;
+
+    case CodecId::PCM_S16:
+		return AV_CODEC_ID_PCM_S16LE;
 
     default:
         return AV_CODEC_ID_NONE;
@@ -502,32 +899,49 @@ CodecError FFFormat::Open(const String &_filepath, Codec **pCodec, const CodecIn
 {
 	int ret = 0;
 	char err[64] = {};
+	lastError = String{};
 
     const char *filepath = _filepath.c_str();
 	avformat_alloc_output_context2(&handle, nullptr, nullptr, filepath);
     if (!handle)
     {
+		lastError = String{ "Failed to allocate output format context.", StringEncoding::ASCII };
 		CLOG_ERROR("Failed to alloc output context2 for format context");
 		return CodecError::ExternalFailed;
     }
 
     if (!pCodec)
     {
+		lastError = String{ "Invalid output codec list.", StringEncoding::ASCII };
 		return CodecError::InvalidArguments;
     }
 
     auto fmt = handle->oformat;
 	for (uint32_t i = 0; i < numCodec; i++)
     {
-		AVCodecContext *codec = ((FFCodec *)pCodec[i])->GetHandle();
+		FFCodec *ffCodec = InterpretAs<FFCodec>(pCodec[i]);
+		if (!ffCodec || !ffCodec->GetHandle())
+		{
+			const String codecError = ffCodec ? ffCodec->LastError() : String{};
+			lastError = codecError.empty() ? String{ "Invalid output codec context.", StringEncoding::ASCII } : codecError;
+			return CodecError::InvalidArguments;
+		}
+
+		AVCodecContext *codec = ffCodec->GetHandle();
 		codecs[i] = codec;
 		AVStream *stream  = avformat_new_stream(handle, NULL);
+		if (!stream)
+		{
+			lastError = String{ "Failed to create output stream.", StringEncoding::ASCII };
+			return CodecError::OutOfMemory;
+		}
 		stream->id        = handle->nb_streams - 1;
 		stream->time_base = codec->time_base;
 
 		int ret = avcodec_parameters_from_context(stream->codecpar, codec);
         if (ret < 0)
         {
+			lastError = FFmpegFormatErrorText("Failed to copy codec parameters from codec: ", ret);
 			CLOG_ERROR("Failed to copy codec parameters from codec");
 			return CodecError::ExternalFailed;
         }
@@ -576,6 +990,7 @@ CodecError FFFormat::Open(const String &_filepath, Codec **pCodec, const CodecIn
 		ret = avio_open(&handle->pb, filepath, AVIO_FLAG_WRITE);
 		if (ret < 0)
 		{
+			lastError = FFmpegFormatErrorText("Could not open output file: ", ret);
 			CLOG_ERROR("Could not open '{}': {}", filepath, AVERR_STR(ret));
 			return CodecError::ExternalFailed;
 		}
@@ -591,6 +1006,7 @@ CodecError FFFormat::Open(const String &_filepath, Codec **pCodec, const CodecIn
 		avformat_free_context(handle);
 		handle = nullptr;
 
+		lastError = FFmpegFormatErrorText("Error occurred when opening output file for writing header: ", ret);
 		CLOG_ERROR("Error occurred when opening output file for writing header: {}", AVERR_STR(ret));
 		return CodecError::ExternalFailed;
 	}
@@ -611,10 +1027,11 @@ void FFFormat::Close()
 
 	if (handle->oformat)
 	{
-		if (av_write_trailer(handle) < 0)
+		ret = av_write_trailer(handle);
+		if (ret < 0)
 		{
+			lastError = FFmpegFormatErrorText("Error writing trailer: ", ret);
 			CLOG_ERROR("Error writing trailer: {}", AVERR_STR(ret));
-			return;
 		}
 
 		if (!(handle->oformat && (handle->oformat->flags & AVFMT_NOFILE)))
@@ -650,8 +1067,12 @@ CodecError FFFormat::Read(CodedFrame *pCodedFrame)
 			*pCodedFrame = {(AVPacket *)nullptr};
 			return CodecError::EndOfFile;
         }
+		if (ret == AVERROR(EAGAIN) || ret == AVERROR(EINTR))
+		{
+			return CodecError::Again;
+		}
 		CLOG_ERROR("Failed to read frame: {}", AVERR_STR(ret));
-        return CodecError::EndOfFile;
+        return CodecError::ExternalFailed;
     }
 
   //  if (!(packet->flags & AV_PKT_FLAG_KEY))
@@ -709,6 +1130,7 @@ CodecError FFFormat::Write(const CodedFrame &codedFrame, int stream)
     if (ret < 0)
     {
 		char err[64] = {};
+		lastError = FFmpegFormatErrorText("Error while writing output packet: ", ret);
 		CLOG_ERROR("Error while writing output packet : {}", AVERR_STR(ret));
 		return CodecError::ExternalFailed;
     }
@@ -718,22 +1140,45 @@ CodecError FFFormat::Write(const CodedFrame &codedFrame, int stream)
 
 CodecError FFFormat::Seek(MediaType type, int64_t pts, int64_t min, int64_t max)
 {
+	if (!handle || type < MediaType::Video || type > MediaType::Subtitle)
+	{
+		return CodecError::InvalidArguments;
+	}
+
 	int index = streamIndex[(int)type];
-	if (index < 0)
+	if (index < 0 || index >= (int)handle->nb_streams)
 	{
 		return CodecError::InvalidArguments;
 	}
 
 	auto stream = handle->streams[index];
-	int64_t startTime = stream->start_time == AV_NOPTS_VALUE ? 0 : stream->start_time;
-	int64_t seekPts = pts + startTime;
-	int64_t seekMin = min == std::numeric_limits<int64_t>::min() ? min : min + startTime;
-	int64_t seekMax = max == std::numeric_limits<int64_t>::max() ? max : max + startTime;
-	if (avformat_seek_file(handle, index, seekMin, seekPts, seekMax, AVSEEK_FLAG_BACKWARD) < 0)
+	if (!stream || stream->time_base.num <= 0 || stream->time_base.den <= 0)
 	{
+		return CodecError::InvalidArguments;
+	}
+
+	int64_t startTime = stream->start_time == AV_NOPTS_VALUE ? 0 : stream->start_time;
+	int64_t seekPts = av_sat_add64(pts, startTime);
+	int64_t seekMin = min == std::numeric_limits<int64_t>::min() ? min : av_sat_add64(min, startTime);
+	int64_t seekMax = max == std::numeric_limits<int64_t>::max() ? max : av_sat_add64(max, startTime);
+
+	int ret = avformat_seek_file(handle, index, seekMin, seekPts, seekMax, AVSEEK_FLAG_BACKWARD);
+	if (ret < 0 && IsRawMp3Input(handle))
+	{
+		// Raw MP3 implements the legacy read_seek callback. Calling it directly
+		// is a final fallback for files whose generic min/max seek cannot find an
+		// entry (notably MP3 without Xing/VBRI metadata).
+		ret = av_seek_frame(handle, index, seekPts, AVSEEK_FLAG_BACKWARD);
+	}
+	if (ret < 0)
+	{
+		lastError = FFmpegFormatErrorText("Failed to seek input: ", ret);
+		char err[64] = {};
+		CLOG_ERROR("Failed to seek {} to pts {} on stream {} - {}", filepath, seekPts, index, AVERR_STR(ret));
 		return CodecError::ExternalFailed;
 	}
 
+	lastError = {};
 	return CodecError::Success;
 }
 
@@ -743,10 +1188,11 @@ CodecError FFFormat::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
     if (index < 0)
     {
 		return CodecError::NotFound;
-    }
+	}
 
 	auto stream = handle->streams[index];
     auto &codecpar = stream->codecpar;
+	const AVRational sampleAspectRatio = ResolveSampleAspectRatio(handle, stream, false);
 	streamInfo = CodecInfo{
         .handle    = stream,
 		.mediaType = type,
@@ -758,7 +1204,7 @@ CodecError FFFormat::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
 		.gopSize   = 0,
 		.framerate = { codecpar->framerate.num, codecpar->framerate.den },
 		.timeBase  = { stream->time_base.num, stream->time_base.den },
-		.sampleAspectRatio = { codecpar->sample_aspect_ratio.num, codecpar->sample_aspect_ratio.den },
+		.sampleAspectRatio = { sampleAspectRatio.num, sampleAspectRatio.den },
 		.displayOrientation = {}
 	};
 
@@ -768,6 +1214,38 @@ CodecError FFFormat::GetStreamInfo(MediaType type, CodecInfo &streamInfo)
     }
 
     return CodecError::Success;
+}
+
+CodecError FFFormat::GetMetadata(MetadataSections &sections) const
+{
+	sections.clear();
+	if (!handle)
+	{
+		return CodecError::InvalidArguments;
+	}
+
+	MetadataSection formatSection = BuildFormatMetadataSection(handle);
+	if (!formatSection.properties.empty())
+	{
+		sections.emplace_back(std::move(formatSection));
+	}
+
+	for (unsigned int i = 0; i < handle->nb_streams; ++i)
+	{
+		const AVStream *stream = handle->streams[i];
+		if (!stream || !stream->codecpar)
+		{
+			continue;
+		}
+
+		MetadataSection streamSection = BuildStreamMetadataSection(handle, stream);
+		if (!streamSection.properties.empty())
+		{
+			sections.emplace_back(std::move(streamSection));
+		}
+	}
+
+	return sections.empty() ? CodecError::NotFound : CodecError::Success;
 }
 
 void FFFormat::EnumerateTracks(MediaType mediaType, std::vector<TrackInfo> &tracks)
@@ -792,6 +1270,19 @@ CodecError FFFormat::SwitchTrack(MediaType mediaType, int index)
     {
 		return CodecError::InvalidArguments;
     }
+	if (!handle)
+	{
+		return CodecError::InvalidArguments;
+	}
+	if (index < 0 || index >= (int)handle->nb_streams)
+	{
+		return CodecError::InvalidArguments;
+	}
+	AVStream *stream = handle->streams[index];
+	if (!stream || !stream->codecpar || stream->codecpar->codec_type != (AVMediaType)mediaType)
+	{
+		return CodecError::InvalidArguments;
+	}
 
 	streamIndex[int(mediaType)] = index;
 
@@ -817,6 +1308,14 @@ double FFFormat::GetMaxFrameDurationForSync() const
 		return 10.0;
 	}
 	return 3600.0;
+}
+
+#else
+
+CodecError FFFormat::GetMetadata(MetadataSections &sections) const
+{
+	sections.clear();
+	return CodecError::NotImplement;
 }
 
 #endif

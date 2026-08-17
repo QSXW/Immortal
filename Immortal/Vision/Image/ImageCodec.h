@@ -5,6 +5,8 @@
 
 #include "Helper.h"
 #include "BMP.h"
+#include "FFVideoImageCodec.h"
+#include "GprCodec.h"
 #include "STBCodec.h"
 #include "TIFF.h"
 #include "OpenCVCodec.h"

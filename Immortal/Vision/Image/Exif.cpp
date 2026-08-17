@@ -88,10 +88,9 @@ void IFDEntry::ReadValues(ByteStream &bs, bool be)
 		case IFDType::SBYTE:
 		case IFDType::ASCII:
 			valid = ReadValue<uint8_t>(bs, be);
-			if (type == IFDType::ASCII && values.back() != 0)
+			if (type == IFDType::ASCII && valid && (values.empty() || values.back() != 0))
 			{
-				values.resize(values.size() + 1);
-				values.back() = 0;
+				values.push_back(0);
 				v.ptr = values.data();
 			}
 			break;

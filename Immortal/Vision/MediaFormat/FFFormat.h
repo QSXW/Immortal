@@ -6,6 +6,8 @@
 #include "FileSystem/Stream.h"
 #include "String/IString.h"
 
+#include <vector>
+
 struct AVCodec;
 struct AVStream;
 struct AVPacket;
@@ -21,6 +23,21 @@ namespace Vision
 
 class IMMORTAL_API FFFormat : public MediaFormat
 {
+public:
+    struct MetadataProperty
+    {
+        String name;
+        String value;
+    };
+
+    struct MetadataSection
+    {
+        String title;
+        std::vector<MetadataProperty> properties;
+    };
+
+    using MetadataSections = std::vector<MetadataSection>;
+
 #if HAVE_FFMPEG
 public:
 	struct Params
@@ -54,6 +71,14 @@ public:
     virtual Animator &GetAnimator(MediaType mediaType);
 
     double GetMaxFrameDurationForSync() const;
+#endif
+
+    const String &LastError() const
+    {
+        return lastError;
+    }
+
+    CodecError GetMetadata(MetadataSections &sections) const;
 
 private:
 	void SetAnimator();
@@ -76,13 +101,14 @@ private:
     AVCodecContext *codecs[4];
 
     std::vector<AVStream *> streams;
-#endif
 
 public:
     virtual const String &GetSource() const override;
 
 protected:
     String filepath;
+
+    String lastError;
 };
 
 }
