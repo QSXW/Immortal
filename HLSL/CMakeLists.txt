@@ -13,7 +13,18 @@ set(COMPUTE_HLSL_FILES
     ibl_prefilter.hlsl
     brdf_lut.hlsl
     depth2rgb_cs.hlsl
+    equirect2cube.hlsl
     ui_present_scale.hlsl
+)
+
+set(COMPUTE_HLSL_VARIANTS
+    "${HLSL_DIR}/GaussianBlur.hlsl|Blur|GaussianBlur"
+    "${HLSL_DIR}/lut.hlsl|InterpolateNearest|lut_nearest"
+    "${HLSL_DIR}/lut.hlsl|InterpolateTrilinear|lut_trilinear"
+)
+set(COMPUTE_HLSL_VARIANT_SOURCE_FILES
+    "${HLSL_DIR}/GaussianBlur.hlsl"
+    "${HLSL_DIR}/lut.hlsl"
 )
 
 set(GRAPHICS_HLSL_FILES
@@ -27,6 +38,7 @@ set(GRAPHICS_HLSL_FILES
     editor_grid_post.hlsl
     selection_outline.hlsl
     render2d.hlsl
+    skybox.hlsl
 )
 
 # Mesh + PS: "file.hlsl" (pixel entry PSMain) or "file.hlsl|PixelEntry" — see Scripts/cmake/utils.cmake add_shader_library.
@@ -59,7 +71,12 @@ list(REMOVE_DUPLICATES GRAPHICS_MESH_SOURCE_GROUP_FILES)
 list(TRANSFORM COMPUTE_HLSL_FILES PREPEND "${HLSL_DIR}/")
 list(TRANSFORM GRAPHICS_HLSL_FILES PREPEND "${HLSL_DIR}/")
 
-source_group("\\" FILES ${COMPUTE_HLSL_FILES} ${GRAPHICS_HLSL_FILES} ${GRAPHICS_MESH_SOURCE_GROUP_FILES})
+source_group("\\" FILES
+    ${COMPUTE_HLSL_FILES}
+    ${COMPUTE_HLSL_VARIANT_SOURCE_FILES}
+    ${GRAPHICS_HLSL_FILES}
+    ${GRAPHICS_MESH_SOURCE_GROUP_FILES}
+)
 
 # Match copy target: multi-config uses $<CONFIG>; single-config uses CMAKE_BUILD_TYPE (Ninja has empty $<CONFIG>).
 if(CMAKE_CONFIGURATION_TYPES)
@@ -75,7 +92,8 @@ endif()
 add_shader_library(${PROJECT_NAME}
     HLSL_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     OUTPUT_DIR "${SHADER_OUTPUT_DIR}"
-    COMPUTE "${COMPUTE_HLSL_FILES}"
+    COMPUTE "${COMPUTE_HLSL_FILES}" "${COMPUTE_HLSL_VARIANTS}"
     GRAPHICS "${GRAPHICS_HLSL_FILES}"
     GRAPHICS_MESH "${GRAPHICS_MESH_HLSL_FILES}"
+    RUNTIME_HLSL "flip.hlsl"
 )

@@ -10,21 +10,37 @@ RWTexture2D<float4> OutputImage : register(u1);
 [numthreads(32, 32, 1)]
 void Flip(uint3 DTid : SV_DispatchThreadID)
 {
-    int2 size;
-    OutputImage.GetDimensions(size.x, size.y);
+    uint inputWidth;
+    uint inputHeight;
+    uint outputWidth;
+    uint outputHeight;
+    InputImage0.GetDimensions(inputWidth, inputHeight);
+    OutputImage.GetDimensions(outputWidth, outputHeight);
+    if (DTid.x >= outputWidth || DTid.y >= outputHeight)
+    {
+        return;
+    }
 
-    int2 pos = DTid.xy;
-#if defined(HFLIP) && defined(VFLIP)
-    pos = size - int2(pos.xy);
-#elif defined(HFLIP)
-    pos = int2(size.x - pos.x, pos.y);
-#elif defined(VFLIP)
-    pos = int2(pos.x, size.y - pos.y);
+    int2 pos = int2(DTid.xy);
+#if defined(ROTATE_90)
+    pos = int2(int(inputWidth) - 1 - int(DTid.y), int(DTid.x));
+#elif defined(ROTATE_180)
+    pos = int2(int(inputWidth) - 1 - int(DTid.x), int(inputHeight) - 1 - int(DTid.y));
+#elif defined(ROTATE_270)
+    pos = int2(int(DTid.y), int(inputHeight) - 1 - int(DTid.x));
 #endif
 
-#ifdef TRANSPOSE
-    pos = int2(size.y - pos.y, pos.x);
+#ifdef HFLIP
+    pos.x = int(inputWidth) - 1 - pos.x;
 #endif
+#ifdef VFLIP
+    pos.y = int(inputHeight) - 1 - pos.y;
+#endif
+
+    if (any(pos < 0) || pos.x >= int(inputWidth) || pos.y >= int(inputHeight))
+    {
+        return;
+    }
 
     float4 pixel  = InputImage0[pos];
     OutputImage[DTid.xy] = pixel;
