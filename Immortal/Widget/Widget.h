@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <functional>
 #include <initializer_list>
@@ -340,7 +342,13 @@ protected:                           \
 #define WIDGET_SET_KCSTR(U, ...) WIDGET_SET_CSTR(U, k##U, __VA_ARGS__)
 #define WIDGET_SET_KCSTR_ID(U, ...) \
     WIDGET_SET_CSTR(U, k##U, Translator::Translate(__VA_ARGS__)) \
-    WIDGET_SET_CSTR(ID##U, id##U, k##U + "###" __VA_ARGS__)
+public: \
+    const String &ID##U() const \
+    { \
+        return id##U; \
+    } \
+protected: \
+    const String id##U = k##U + String{ "###" __VA_ARGS__, StringEncoding::ASCII };
 
 #define WIDGET_PROPERTY_VAR_COLOR(U, L, ...)                  \
     WIDGET_SET_PROPERTY(U, L, uint32_t, 0xff000000)
@@ -691,6 +699,7 @@ public:
 	WIDGET_PROPERTY_COLOR
 	WIDGET_SET_PROPERTY(WindowId, windowId, String)
 	WIDGET_SET_PROPERTY(Flags,   flags,   ImGuiWindowFlags, 0   )
+	WIDGET_SET_PROPERTY(DockNodeFlags, dockNodeFlags, ImGuiDockNodeFlags, 0)
 	WIDGET_SET_PROPERTY(Visible, visible, bool,             true)
 
 public:
@@ -718,10 +727,11 @@ public:
 		state.isHovered |= enabled;
     }
 
-    void SetFocus()
+    void SetFocus();
+
+    void RequestFocus()
     {
-		const String title = BeginTitle();
-		ImGui::SetWindowFocus(title.c_str());
+        focusNextDraw = true;
     }
 
     void ResetState()
@@ -744,6 +754,8 @@ protected:
 	WidgetState state;
 
     ImVec2 scroll;
+
+    bool focusNextDraw = false;
 };
 
 class PropertyList
@@ -1563,18 +1575,23 @@ public:
     template <class T>
 
 
-    bool Draw(int popupId, bool opended, const ImRect &bb, const ImVec2 &pos, float width, float height, T &data, int &selected, uint32_t hoveredColor)
+    bool Draw(int popupId, bool opended, const ImRect &bb, const ImVec2 &pos, float width, float height, T &data, int &selected, uint32_t hoveredColor, uint32_t selectedColor, uint32_t activeColor, uint32_t accentColor)
     {
         using namespace ImGui;
+        (void)popupId;
+        (void)opended;
+        (void)bb;
+        (void)pos;
 
-        ImGuiContext &g         = *GImGui;
-        const ImGuiStyle &style = g.Style;
-
-        auto textColor       = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Text]);
-        auto backgroundColor = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_FrameBg]);
-        auto activeColor     = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_HeaderActive]);
+        ImGuiContext &g = *GImGui;
 
         EXPORT_WINDOW
+        StyleColorStack<uint32_t> styleColor{
+            { ImGuiCol_Header, selectedColor },
+            { ImGuiCol_HeaderHovered, hoveredColor },
+            { ImGuiCol_HeaderActive, activeColor }
+        };
+
         bool valueChanged = false;
         for (int i = 0; i < data.size(); i++)
         {
@@ -1599,7 +1616,12 @@ public:
 				auto labelSize = CalcTextSize(s, e);
 
 				ImVec2 primaryLabelPos{bb.Min.x + 8, bb.Min.y + linePadding};
-				RenderTextClipped(primaryLabelPos, bb.Max, s, e, &labelSize);
+                ImVec2 textMax{ bb.Max.x - 26.0f, bb.Max.y };
+				RenderTextClipped(primaryLabelPos, textMax, s, e, &labelSize);
+                if (itemSelected && accentColor != 0)
+                {
+                    window->DrawList->AddCircleFilled({ bb.Max.x - 14.0f, bb.Min.y + bb.GetHeight() * 0.5f }, 3.0f, accentColor, 12);
+                }
 			}
 
    //         auto id = window->GetID(itemText);
@@ -1667,10 +1689,22 @@ public:
     using WidgetType = WCombo;
     WIDGET_SET_PROPERTY(TextStartOffset, textStartOffset, float,       8.0f      )
     WIDGET_SET_PROPERTY(Color,           color,           uint32_t,    0xff1f1f1f)
+    WIDGET_SET_PROPERTY(HoverColor,      hoverColor,      uint32_t,    0xff1f1f1f)
+    WIDGET_SET_PROPERTY(ActiveColor,     activeColor,     uint32_t,    0xff1f1f1f)
     WIDGET_SET_PROPERTY(BorderColor,     borderColor,     uint32_t,    0xff121212)
     WIDGET_SET_PROPERTY(BorderSize,      borderSize,      float,       1         )
     WIDGET_SET_PROPERTY(Rounding,        rounding,        float,       2         )
+    WIDGET_SET_PROPERTY(PopupRounding,   popupRounding,   float,       4         )
+    WIDGET_SET_PROPERTY(PopupBorderSize, popupBorderSize, float,       0         )
+    WIDGET_SET_PROPERTY(PopupColor,      popupColor,      uint32_t,    0xff1f1f1f)
+    WIDGET_SET_PROPERTY(PopupHoverColor, popupHoverColor, uint32_t,    0x33ff8844)
+    WIDGET_SET_PROPERTY(SelectedColor,   selectedColor,   uint32_t,    0         )
+    WIDGET_SET_PROPERTY(AccentColor,     accentColor,     uint32_t,    0         )
 	WIDGET_SET_PROPERTY(MaxVisibleItem,  maxVisibleItem,  uint32_t,    0xffffffff)
+    WIDGET_SET_PROPERTY(FrameHeight,     frameHeight,     float,       0.0f      )
+    WIDGET_SET_PROPERTY(UseOverlayStyle, useOverlayStyle, bool,        false     )
+    WIDGET_SET_PROPERTY(WheelSelectionEnabled, wheelSelectionEnabled, bool,      true)
+    WIDGET_SET_PROPERTY(WheelSelectionThreshold, wheelSelectionThreshold, float, 1.0f)
     WIDGET_SET_PROPERTY(Selected,        selected,        int,         0         )
     WIDGET_SET_PROPERTY(SeletableUI,     seletableUI,     WSelectable            )
     WIDGET_SET_PROPERTY(PaddingY,        paddingY,        float,       2.0f      )
@@ -1712,7 +1746,7 @@ public:
 
 		auto width = ImGui::CalcItemWidth();
         auto lineHeight = GetTextLineHeight();
-        auto height = GetFrameHeight();
+        auto height = FrameHeight() > 0.0f ? std::max(GetFrameHeight(), FrameHeight()) : GetFrameHeight();
 		auto padding = (height - lineHeight) * 0.5f;
 
         auto text = data[selected];
@@ -1732,26 +1766,38 @@ public:
         bool held    = false;
         bool pressed = ButtonBehavior({ bb.Min, {bb.Max.x - height, bb.Max.y} }, id, &hovered, &held);
 
-        if (hovered)
+        const bool wheelHovered = IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+            IsMouseHoveringRect(bb.Min, bb.Max, true);
+        if (WheelSelectionEnabled() && wheelHovered)
 		{
+			// Mouse-wheel scrolling is dispatched before widgets draw. Claim the
+			// wheel while hovered so the next wheel event cannot also scroll the
+			// containing properties window.
 			SetKeyOwner(ImGuiKey_MouseWheelY, id, ImGuiInputFlags_LockUntilRelease);
-			if (io.MouseWheel > 1.0f)
+			SetNextFrameWantCaptureMouse(true);
+			const float threshold = std::max(0.001f, WheelSelectionThreshold());
+			if (std::abs(io.MouseWheel) >= threshold)
 			{
-				selected = std::max(0, selected - 1);
-				selectedChange = true;
-				Application::Reference().GetGuiLayer()->SetScrollEnergy({});
-			}
-			else if (io.MouseWheel < -1.0f)
-			{
-				selected = std::min((int) data.size() - 1, selected + 1);
-				selectedChange = true;
+				const int previous = selected;
+				selected = io.MouseWheel > 0.0f
+					? std::max(0, selected - 1)
+					: std::min((int)data.size() - 1, selected + 1);
+				selectedChange = selected != previous;
 				Application::Reference().GetGuiLayer()->SetScrollEnergy({});
 			}
         }
 
-        auto textColor    = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Text]);
-        auto hoveredColor = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_HeaderHovered]);
-        window->DrawList->AddRectFilled(bb.Min, bb.Max, Color(), Rounding(), ImDrawFlags_None);
+        auto textColor = ColorConvertFloat4ToU32(style.Colors[ImGuiCol_Text]);
+        uint32_t frameColor = Color();
+        if (UseOverlayStyle() && (held || Opened()))
+        {
+            frameColor = ActiveColor();
+        }
+        else if (UseOverlayStyle() && hovered)
+        {
+            frameColor = HoverColor();
+        }
+        window->DrawList->AddRectFilled(bb.Min, bb.Max, frameColor, Rounding(), ImDrawFlags_None);
         window->DrawList->AddRect(bb.Min, bb.Max, BorderColor(), Rounding(), ImDrawFlags_None, BorderSize());
 
         ImRect textRect{ { bb.Min.x + TextStartOffset(), bb.Min.y + padding }, {bb.Max.x - height, bb.Max.y - padding }};
@@ -1768,24 +1814,16 @@ public:
         );
 
         {
-            ImGui::SameLine();
             auto iconId = ImHashStr("##Arrow", 0, id);
             ImRect bbIcon = { {bb.Max.x - height, bb.Min.y}, bb.Max };
-            WindowCursorSwitcher s(bbIcon.Min);
-
-            auto size = bbIcon.Max - bbIcon.Min;
-            ItemSize(size, 0);
-            if (!ItemAdd(bbIcon, iconId))
-                return false;
-
-            bool hovered;
-            bool held;
-            pressed |= ButtonBehavior(bbIcon, iconId, &hovered, &held);
+            if (ItemAdd(bbIcon, iconId))
             {
-				FontSizeStack font{Icon::Font};
-				window->DrawList->AddText(bbIcon.Min, (hovered || Opened()) ? textColor : 0xffaaaaaa, Icon::Icons.KeyboardArrowDown);
+                bool iconHovered = false;
+                bool iconHeld = false;
+                pressed |= ButtonBehavior(bbIcon, iconId, &iconHovered, &iconHeld);
+                FontSizeStack font{Icon::Font};
+                window->DrawList->AddText(bbIcon.Min, (iconHovered || Opened()) ? textColor : 0xffaaaaaa, Opened() ? Icon::Icons.KeyboardArrowUp : Icon::Icons.KeyboardArrowDown);
             }
-
         }
 
         if (hovered)
@@ -1842,7 +1880,7 @@ public:
 
 		if (!(flags & WComboFlagBit_NoFixedWidth))
 		{
-			height = ImGui::GetFrameHeight();
+			height = FrameHeight() > 0.0f ? std::max(ImGui::GetFrameHeight(), FrameHeight()) : ImGui::GetFrameHeight();
 			//height += PaddingY() * 4;
 
 			ImVec2 popupSize = {width, height * std::min(maxVisibleItem, uint32_t(data.size()))};
@@ -1858,10 +1896,10 @@ public:
 
         {
 			StyleVarStack<float> styleVar{
-                { ImGuiStyleVar_WindowRounding,  4.0f },
-			    { ImGuiStyleVar_PopupRounding,   4.0f },
-			    { ImGuiStyleVar_PopupBorderSize, 0.0f },
-			    { ImGuiStyleVar_FrameRounding,   4.0f }
+                { ImGuiStyleVar_WindowRounding,  UseOverlayStyle() ? PopupRounding() : 4.0f },
+			    { ImGuiStyleVar_PopupRounding,   UseOverlayStyle() ? PopupRounding() : 4.0f },
+			    { ImGuiStyleVar_PopupBorderSize, UseOverlayStyle() ? PopupBorderSize() : 0.0f },
+			    { ImGuiStyleVar_FrameRounding,   UseOverlayStyle() ? Rounding() : 4.0f }
 			};
 
             bool hasScrollBar = maxVisibleItem < data.size();
@@ -1872,18 +1910,29 @@ public:
 				windowFlags |= ImGuiWindowFlags_NoScrollbar;
             }
 
+            const uint32_t popupBgColor = UseOverlayStyle() ? PopupColor() : GetColorU32(ImGuiCol_WindowBg);
+            const uint32_t selectedRowColor = UseOverlayStyle() ? SelectedColor() : GetColorU32(ImGuiCol_Header);
+            const uint32_t activeRowColor = UseOverlayStyle() ? SelectedColor() : GetColorU32(ImGuiCol_HeaderActive);
+            const uint32_t popupHoverColor = UseOverlayStyle() ? PopupHoverColor() : 0x33ff8844;
+            const uint32_t selectedAccentColor = UseOverlayStyle() ? AccentColor() : 0;
+			StyleColorStack<uint32_t> styleColor{
+			    { ImGuiCol_WindowBg, popupBgColor},
+			    { ImGuiCol_PopupBg, popupBgColor},
+			    { ImGuiCol_Border, UseOverlayStyle() ? BorderColor() : GetColorU32(ImGuiCol_Border)},
+			    { ImGuiCol_Header, selectedRowColor},
+			    { ImGuiCol_HeaderHovered, popupHoverColor},
+			    { ImGuiCol_HeaderActive, activeRowColor},
+			    { ImGuiCol_ScrollbarBg, 0x0},
+			    { ImGuiCol_ScrollbarGrab, 0x88444444},
+			    { ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
+			    { ImGuiCol_ScrollbarGrabActive, 0xdd444444}};
+
 			if (Begin(name, nullptr, windowFlags))
 			{
 				Indent(4.0f);
 				StyleVarStack<ImVec2> styleVar = {
 				    {ImGuiStyleVar_ItemSpacing, {0, 0}},
                 };
-				StyleColorStack<uint32_t> styleColor{
-				    {ImGuiCol_ScrollbarBg, 0x0},
-				    {ImGuiCol_ScrollbarGrab, 0x88444444},
-				    {ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
-				    {ImGuiCol_ScrollbarGrabActive, 0xdd444444},
-				    {ImGuiCol_HeaderHovered, 0x33ff8844}};
 
                 float itemWidth = width - 8.0f;
                 if (hasScrollBar)
@@ -1891,7 +1940,7 @@ public:
 					ImGuiStyle &style = GetStyle();
 					itemWidth -= style.ScrollbarSize;
                 }
-				selectedChange |= seletableUI.Draw(popupId, Opened(), bb, {bb.Min.x, bb.Max.y}, itemWidth, height, data, selected, hoveredColor);
+				selectedChange |= seletableUI.Draw(popupId, Opened(), bb, {bb.Min.x, bb.Max.y}, itemWidth, height, data, selected, popupHoverColor, selectedRowColor, activeRowColor, selectedAccentColor);
 				Unindent();
 			}
 
@@ -2010,13 +2059,24 @@ public:
         String text;
         std::function<void()> callback;
         std::vector<Item> children;
+        bool enabled = true;
 
         Item() = default;
 
         Item(const String &value, std::function<void()> valueCallback = {}) :
             text{ value },
             callback{ std::move(valueCallback) },
-            children{}
+            children{},
+            enabled{ true }
+        {
+
+        }
+
+        Item(const String &value, std::function<void()> valueCallback, bool valueEnabled) :
+            text{ value },
+            callback{ std::move(valueCallback) },
+            children{},
+            enabled{ valueEnabled }
         {
 
         }
@@ -2024,7 +2084,8 @@ public:
         Item(const String &value, std::initializer_list<Item> childItems) :
             text{ value },
             callback{},
-            children{ childItems }
+            children{ childItems },
+            enabled{ true }
         {
 
         }
@@ -2046,6 +2107,8 @@ public:
 
 	WidgetType *Items(std::initializer_list<std::pair<const String &, std::function<void()>>> &&list);
     WidgetType *MenuItems(std::initializer_list<Item> &&list);
+    WidgetType *SetMenuItems(std::vector<Item> &&list);
+    WidgetType *SetSubmenuItems(const String &text, std::vector<Item> &&children);
 
 	void Open();
 

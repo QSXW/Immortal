@@ -189,7 +189,14 @@ struct WindowCursorSwitcher
 struct FontSizeStack
 {
 public:
-	FontSizeStack(ImFont *font, float fontSize = ImGui::GetFontSize()) :
+	FontSizeStack(ImFont *font) :
+	    font{font},
+	    fontSize{0.0f}
+	{
+		ImGui::PushFont(font, 0.0f);
+	}
+
+	FontSizeStack(ImFont *font, float fontSize) :
 	    font{font},
 	    fontSize{fontSize}
 	{
@@ -263,11 +270,19 @@ public:
 
     void SetTheme();
 
+    void SetUiLayoutScale(float scale);
+
     bool LoadTheme();
 
     bool SaveTheme();
 
-    static ImFont *AddFont(const std::string &path, float fontSize, const ImWchar *ranges, float glyphMinAdvanceX = 0.0f, bool mergeMode = false);
+    static ImFont *AddFont(
+        const std::string &path,
+        float fontSize,
+        const ImWchar *ranges,
+        float glyphMinAdvanceX = 0.0f,
+        bool mergeMode = false,
+        ImVec2 glyphOffset = ImVec2(0.0f, 0.0f));
 
     void BlockEvent(bool block)
 	{
@@ -313,7 +328,9 @@ public:
 		return This->language == lang;
     }
 
-    static void SaveWindowLayout(const String &path = {});
+    static bool LoadWindowLayout(const std::string &path);
+
+    static bool SaveWindowLayout(const String &path = {});
 
 protected:
 	void __Begin()
@@ -361,9 +378,15 @@ protected:
 
     ImVector<ImWchar> fontRanges;
 
-	ImVec2 scrollEnergy = ImVec2(0.0f, 0.0f);
+    ImVec2 scrollEnergy = ImVec2(0.0f, 0.0f);
+
+    ImGuiStyle unscaledStyle{};
+
+    bool unscaledStyleReady = false;
 
     FileSystem::DirectoryEntry dragDropSources;
+
+    bool pendingExternalFileDrop = false;
 };
 
 using SuperGuiLayer = GuiLayer;

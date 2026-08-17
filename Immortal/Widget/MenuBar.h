@@ -56,6 +56,10 @@ public:
 	WIDGET_PROPERTY_BACKGROUND_COLOR
 	WIDGET_SET_PROPERTY(PopupBackgroundColor, popupBackgroundColor, uint32_t, IM_COL32(252, 252, 254, 247))
 	WIDGET_SET_PROPERTY(HoveredColor, hoveredColor, uint32_t, IM_COL32(218, 218, 221, 255))
+	WIDGET_SET_PROPERTY(PressedColor, pressedColor, uint32_t, IM_COL32(204, 204, 208, 255))
+	WIDGET_SET_PROPERTY(OpenColor, openColor, uint32_t, IM_COL32(226, 226, 230, 255))
+	WIDGET_SET_PROPERTY(AccentColor, accentColor, uint32_t, IM_COL32(0, 120, 212, 255))
+	WIDGET_SET_PROPERTY(PopupBorderColor, popupBorderColor, uint32_t, IM_COL32(198, 198, 204, 150))
 	WIDGET_SET_PROPERTY_FUNC(Spacing, spacing, ImVec2)
 	WIDGET_SET_PROPERTY(OnEvent, onEvent, std::function<void(Event &)>)
 	WIDGET_SET_PROPERTY(OnRightSideDraw, onRightSideDraw, std::function<void(float &, float)>)

@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include "Log.h"
+#include <algorithm>
 #include <cmath>
 #include "Async.h"
 #include "Render/Graphics.h"
@@ -15,6 +16,17 @@ Application *Application::This = nullptr;
 static bool UiScaleUsesComputePath(BackendAPI api, float scale)
 {
 	return std::abs(scale - 1.0f) > 1e-5f && (api == BackendAPI::D3D12 || api == BackendAPI::Vulkan);
+}
+
+static float CanonicalUiScale(float scale)
+{
+	if (!std::isfinite(scale) || scale <= 1e-6f)
+	{
+		return 1.0f;
+	}
+
+	scale = std::round(scale * 100.0f) / 100.0f;
+	return std::abs(scale - 1.0f) < 0.005f ? 1.0f : scale;
 }
 
 Application::Application(BackendAPI graphicsBackendAPI, int deviceId, const std::string &title, uint32_t width, uint32_t height, bool borderlessWindow) :
@@ -126,11 +138,29 @@ bool Application::IsWindowFullscreen() const
 
 void Application::SetUiRenderScale(float scale)
 {
-	uiRenderScale = scale > 1e-6f ? scale : 1.0f;
-	if (swapchain)
+	const float nextScale = CanonicalUiScale(scale);
+	const float requestedScale = uiRenderScalePending ? pendingUiRenderScale : uiRenderScale;
+	if (std::abs(nextScale - requestedScale) <= 1e-6f)
 	{
-		RefreshUiCompositeTargets();
+		return;
 	}
+
+	// Rebuild at the next frame boundary so the target size and ImGui density change together.
+	pendingUiRenderScale = nextScale;
+	uiRenderScalePending = true;
+}
+
+void Application::SetUiLayoutScale(float scale)
+{
+	const float nextScale = std::clamp(CanonicalUiScale(scale), 1.0f, 2.5f);
+	const float requestedScale = uiLayoutScalePending ? pendingUiLayoutScale : uiLayoutScale;
+	if (std::abs(nextScale - requestedScale) <= 1e-6f)
+	{
+		return;
+	}
+
+	pendingUiLayoutScale = nextScale;
+	uiLayoutScalePending = true;
 }
 
 bool Application::UsesInternalHiResUi() const
@@ -140,10 +170,6 @@ bool Application::UsesInternalHiResUi() const
 
 void Application::RebuildUiCompositeTargets(uint32_t swapWidth, uint32_t swapHeight)
 {
-	highResolutionRenderTarget.Reset();
-	uiInternalColorRT.Reset();
-	uiInternalMsaaRT.Reset();
-
 	const uint32_t iw = std::max(1u, (uint32_t)std::lroundf((float)swapWidth * uiRenderScale));
 	const uint32_t ih = std::max(1u, (uint32_t)std::lroundf((float)swapHeight * uiRenderScale));
 	Format format = Format::BGRA8;
@@ -175,6 +201,17 @@ void Application::RefreshUiCompositeTargets()
 	const uint32_t sw = tc->GetWidth();
 	const uint32_t sh = tc->GetHeight();
 
+	// These targets may still be referenced by one of the other buffered D3D12
+	// command lists. Keep them alive through the renderer's deferred-release window.
+	Graphics::ReleaseResource(MSAARenderTarget);
+	Graphics::ReleaseResource(highResolutionRenderTarget);
+	Graphics::ReleaseResource(uiInternalColorRT);
+	Graphics::ReleaseResource(uiInternalMsaaRT);
+	MSAARenderTarget.Reset();
+	highResolutionRenderTarget.Reset();
+	uiInternalColorRT.Reset();
+	uiInternalMsaaRT.Reset();
+
 	if (UiScaleUsesComputePath(device->GetBackendAPI(), uiRenderScale))
 	{
 		if (!uiPresentScale.IsReady() && !uiPresentScale.Build(device))
@@ -185,23 +222,15 @@ void Application::RefreshUiCompositeTargets()
 
 		if (uiPresentScale.IsReady())
 		{
-			MSAARenderTarget.Reset();
 			RebuildUiCompositeTargets(sw, sh);
 			return;
 		}
 	}
 
-	highResolutionRenderTarget.Reset();
-	uiInternalColorRT.Reset();
-	uiInternalMsaaRT.Reset();
 	if (sampleCount > 1)
 	{
 		Format format = Format::BGRA8;
 		MSAARenderTarget = device->CreateRenderTarget(sw, sh, &format, 1, {}, nullptr, sampleCount);
-	}
-	else
-	{
-		MSAARenderTarget.Reset();
 	}
 }
 
@@ -231,11 +260,31 @@ void Application::OnRender()
 
     if (!runtime.minimized)
 	{
+		if (uiLayoutScalePending)
+		{
+			uiLayoutScale = pendingUiLayoutScale;
+			uiLayoutScalePending = false;
+			gui->SetUiLayoutScale(uiLayoutScale);
+		}
+
+		bool refreshUiTargets = false;
+		if (uiRenderScalePending)
+		{
+			refreshUiTargets = std::abs(pendingUiRenderScale - uiRenderScale) > 1e-6f;
+			uiRenderScale = pendingUiRenderScale;
+			uiRenderScalePending = false;
+		}
+
 		if (pendingWindowResize)
 		{
 			queue->WaitIdle(0xffffffff);
 			swapchain->Resize(pendingWindowResizeWidth, pendingWindowResizeHeight);
 			pendingWindowResize = false;
+			RefreshUiCompositeTargets();
+			refreshUiTargets = false;
+		}
+		if (refreshUiTargets)
+		{
 			RefreshUiCompositeTargets();
 		}
         if (fullscreenTransitionNeedsClear && !pendingWindowResize)
@@ -327,8 +376,10 @@ void Application::Run()
 	Graphics::WaitIdle();
 
 	windowShown = false;
+	OnRender();
 	window->Show();
 	windowShown = true;
+	window->ProcessEvents();
 
     while (runtime.running)
     {
@@ -396,6 +447,11 @@ bool Application::OnWindowResize(WindowResizeEvent &e)
 
     if (!runtime.minimized)
     {
+		if (uiRenderScalePending)
+		{
+			uiRenderScale = pendingUiRenderScale;
+			uiRenderScalePending = false;
+		}
 		queue->WaitIdle(0xffffffff);
 		swapchain->Resize(width, height);
 		RefreshUiCompositeTargets();

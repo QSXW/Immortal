@@ -478,21 +478,39 @@ namespace ImGui
     inline void PlayToastNotificationSound(const ImGuiToast& toast)
     {
 #ifdef _WIN32
-        if (toast.getType() != ImGuiToastType::Error)
-        {
-            return;
-        }
-
+        static auto lastInfoBeep = std::chrono::steady_clock::time_point{};
+        static auto lastWarningBeep = std::chrono::steady_clock::time_point{};
         static auto lastErrorBeep = std::chrono::steady_clock::time_point{};
+
+        unsigned int sound = 0;
+        std::chrono::steady_clock::time_point* lastBeep = nullptr;
+        switch (toast.getType())
+        {
+        case ImGuiToastType::Info:
+            sound = 0x00000040U;
+            lastBeep = &lastInfoBeep;
+            break;
+        case ImGuiToastType::Warning:
+            sound = 0x00000030U;
+            lastBeep = &lastWarningBeep;
+            break;
+        case ImGuiToastType::Error:
+            sound = 0x00000010U;
+            lastBeep = &lastErrorBeep;
+            break;
+        default:
+            return;
+        }
+
         const auto now = std::chrono::steady_clock::now();
-        if (lastErrorBeep.time_since_epoch().count() != 0 &&
-            now - lastErrorBeep < std::chrono::milliseconds{ 300 })
+        if (lastBeep->time_since_epoch().count() != 0 &&
+            now - *lastBeep < std::chrono::milliseconds{ 300 })
         {
             return;
         }
 
-        lastErrorBeep = now;
-        ::MessageBeep(0x00000010U);
+        *lastBeep = now;
+        ::MessageBeep(sound);
 #else
         (void)toast;
 #endif

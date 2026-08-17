@@ -4,7 +4,14 @@
 #include "ImGuiNotify.hpp"
 #include "imgui_impl_immortal.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <string>
+#include <system_error>
 
 #include "Framework/Application.h"
 #include "Render/Graphics.h"
@@ -18,7 +25,6 @@
 #ifdef _WIN32
 #include <backends/imgui_impl_win32.h>
 #include "Graphics/Window/DirectWindow.h"
-#include <imgui_internal.h>
 #endif
 #include <backends/imgui_impl_glfw.h>
 
@@ -39,6 +45,160 @@ GuiLayer *GuiLayer::This = nullptr;
 
 static uint64_t TotalFrame     = 0;
 static double TotalFrameRate = 0;
+
+namespace
+{
+
+struct WindowLayoutState
+{
+    std::filesystem::path path;
+    std::filesystem::path backupPath;
+};
+
+WindowLayoutState &GetWindowLayoutState()
+{
+    static WindowLayoutState state;
+    return state;
+}
+
+bool IsUsefulIniData(const std::string &data)
+{
+    return data.size() > 16 && data.find('[') != std::string::npos && data.find(']') != std::string::npos;
+}
+
+bool ReadUsefulIniFile(const std::filesystem::path &path, std::string &data)
+{
+    data.clear();
+    if (path.empty())
+    {
+        return false;
+    }
+
+    std::error_code ec;
+    if (!std::filesystem::exists(path, ec) || ec)
+    {
+        return false;
+    }
+
+    const uintmax_t size = std::filesystem::file_size(path, ec);
+    if (ec || size <= 16)
+    {
+        return false;
+    }
+
+    std::ifstream stream{ path, std::ios::binary };
+    if (!stream.is_open())
+    {
+        return false;
+    }
+
+    data.assign(
+        std::istreambuf_iterator<char>{ stream },
+        std::istreambuf_iterator<char>{});
+    return IsUsefulIniData(data);
+}
+
+bool WriteFileAtomically(const std::filesystem::path &path, const char *data, size_t size)
+{
+    if (path.empty() || !data || size == 0)
+    {
+        return false;
+    }
+
+    std::error_code ec;
+    const std::filesystem::path parent = path.parent_path();
+    if (!parent.empty())
+    {
+        std::filesystem::create_directories(parent, ec);
+        if (ec)
+        {
+            LOG::WARN("Failed to create ImGui layout directory {}: {}", parent.string(), ec.message());
+            return false;
+        }
+    }
+
+    std::filesystem::path temporaryPath = path;
+    temporaryPath += ".tmp";
+    std::filesystem::remove(temporaryPath, ec);
+    ec.clear();
+
+    {
+        std::ofstream stream{ temporaryPath, std::ios::binary | std::ios::trunc };
+        if (!stream.is_open())
+        {
+            LOG::WARN("Failed to open temporary ImGui layout file {}", temporaryPath.string());
+            return false;
+        }
+
+        stream.write(data, static_cast<std::streamsize>(size));
+        stream.flush();
+        if (!stream.good())
+        {
+            LOG::WARN("Failed to write temporary ImGui layout file {}", temporaryPath.string());
+            return false;
+        }
+    }
+
+    std::filesystem::remove(path, ec);
+    ec.clear();
+    std::filesystem::rename(temporaryPath, path, ec);
+    if (ec)
+    {
+        LOG::WARN("Failed to replace ImGui layout file {}: {}", path.string(), ec.message());
+        std::filesystem::remove(temporaryPath, ec);
+        return false;
+    }
+
+    return true;
+}
+
+bool SaveWindowLayoutToPath(const std::filesystem::path &path, bool updateBackup)
+{
+    WindowLayoutState &layout = GetWindowLayoutState();
+    size_t size = 0;
+    const char *data = ImGui::SaveIniSettingsToMemory(&size);
+    if (!data || !IsUsefulIniData(std::string{ data, size }))
+    {
+        LOG::WARN("Skipped saving ImGui layout because generated ini data is empty");
+        return false;
+    }
+
+    if (!WriteFileAtomically(path, data, size))
+    {
+        return false;
+    }
+
+    if (updateBackup && !layout.backupPath.empty())
+    {
+        WriteFileAtomically(layout.backupPath, data, size);
+    }
+
+    return true;
+}
+
+bool SaveWindowLayoutIfNeeded(bool force)
+{
+    WindowLayoutState &layout = GetWindowLayoutState();
+    if (layout.path.empty())
+    {
+        return false;
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    if (!force && !io.WantSaveIniSettings)
+    {
+        return true;
+    }
+
+    const bool saved = SaveWindowLayoutToPath(layout.path, true);
+    if (saved)
+    {
+        io.WantSaveIniSettings = false;
+    }
+    return saved;
+}
+
+}
 
 GuiLayer::GuiLayer(Device *device, Queue *queue, Window *window, Swapchain *swapchain) :
     Layer{ "Immortal Graphics User Interface Layer" },
@@ -114,6 +274,10 @@ void GuiLayer::OnAttach()
     style.ScrollbarRounding    = 0.0f;
     style.ScrollbarSize        = 16.0f;
     style.DockingSeparatorSize = 1.2f;
+	style.TabRounding            = 0.0f;
+	style.TabBorderSize          = 0.0f;
+	style.TabBarBorderSize       = 0.0f;
+	style.TabBarOverlineSize     = 2.0f;
 	style.AntiAliasedLines       = true;
 	style.AntiAliasedLinesUseTex = true;
 	style.AntiAliasedFill        = true;
@@ -128,6 +292,9 @@ void GuiLayer::OnAttach()
 	style.FrameShadowSize  = 0;
     style.FontShadowSize   = 0;
 #endif
+
+    unscaledStyle = style;
+    unscaledStyleReady = true;
 
     io.DisplaySize.x = window->GetWidth();
     io.DisplaySize.y = window->GetHeight();
@@ -164,8 +331,39 @@ void GuiLayer::OnAttach()
     }
 }
 
+void GuiLayer::SetUiLayoutScale(float scale)
+{
+    if (!ImGui::GetCurrentContext() || !unscaledStyleReady)
+    {
+        return;
+    }
+
+    scale = std::max(0.01f, scale);
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImVec4 colors[ImGuiCol_COUNT];
+    for (int i = 0; i < ImGuiCol_COUNT; i++)
+    {
+        colors[i] = style.Colors[i];
+    }
+
+    const float fontSizeBase = style.FontSizeBase;
+    const float fontScaleDpi = style.FontScaleDpi;
+    const float nextFrameFontSizeBase = style._NextFrameFontSizeBase;
+    style = unscaledStyle;
+    for (int i = 0; i < ImGuiCol_COUNT; i++)
+    {
+        style.Colors[i] = colors[i];
+    }
+    style.FontSizeBase = fontSizeBase;
+    style.FontScaleMain = unscaledStyle.FontScaleMain * scale;
+    style.FontScaleDpi = fontScaleDpi;
+    style._NextFrameFontSizeBase = nextFrameFontSizeBase;
+    style.ScaleAllSizes(scale);
+}
+
 void GuiLayer::OnDetach()
 {
+    SaveWindowLayoutIfNeeded(true);
     platformSpecficWindow.ShutDown();
     ImGui_ImplImmortal_Shutdown();
 
@@ -197,16 +395,39 @@ void GuiLayer::SmoothScroll()
 		scrollEnergy.y = 0.0f;
 	}
 
-    io.MouseWheel  =  scroll.y;
+	io.MouseWheel  =  scroll.y;
 	io.MouseWheelH = -scroll.x;
 }
 
 void GuiLayer::Begin()
 {
-    SmoothScroll();
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
     ImGui_ImplImmortal_NewFrame();
 	platformSpecficWindow.NewFrame();
+    if (Application::This && Application::This->UsesInternalHiResUi())
+    {
+        // Preserve the platform density and add the internal UI render-target density.
+        const float scale = Application::This->GetUiRenderScale();
+        io.DisplayFramebufferScale.x *= scale;
+        io.DisplayFramebufferScale.y *= scale;
+    }
+
+    // This ImGui branch does not copy DisplayFramebufferScale into the main
+    // viewport. Keep the viewport, draw-data and font density on one scale.
+    ImGui::GetMainViewport()->FramebufferScale = io.DisplayFramebufferScale;
+    SmoothScroll();
     ImGui::NewFrame();
+    ImGui::GetMainViewport()->FramebufferScale = io.DisplayFramebufferScale;
+
+    if (pendingExternalFileDrop &&
+        ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
+    {
+		FileSystem::DirectoryEntry *entry = &dragDropSources;
+		ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, &entry, sizeof(entry));
+        ImGui::EndDragDropSource();
+        pendingExternalFileDrop = false;
+    }
 }
 
 void GuiLayer::End()
@@ -226,12 +447,66 @@ void GuiLayer::End()
 	}
 #endif
     ImGui::Render();
+    SaveWindowLayoutIfNeeded(false);
 }
 
-void GuiLayer::SaveWindowLayout(const String &path)
+bool GuiLayer::LoadWindowLayout(const std::string &path)
 {
 	ImGuiIO &io = ImGui::GetIO();
-	ImGui::SaveIniSettingsToDisk(!path.empty() ? path.c_str() : io.IniFilename);
+    WindowLayoutState &layout = GetWindowLayoutState();
+    layout.path = std::filesystem::path{ path };
+    layout.backupPath = layout.path;
+    layout.backupPath += ".bak";
+    io.IniFilename = nullptr;
+
+    std::string data;
+    if (ReadUsefulIniFile(layout.path, data))
+    {
+        ImGui::ClearIniSettings();
+        ImGui::LoadIniSettingsFromMemory(data.data(), data.size());
+        std::string backupData;
+        if (!ReadUsefulIniFile(layout.backupPath, backupData))
+        {
+            WriteFileAtomically(layout.backupPath, data.data(), data.size());
+        }
+        io.WantSaveIniSettings = false;
+        return true;
+    }
+
+    if (ReadUsefulIniFile(layout.backupPath, data))
+    {
+        ImGui::ClearIniSettings();
+        ImGui::LoadIniSettingsFromMemory(data.data(), data.size());
+        WriteFileAtomically(layout.path, data.data(), data.size());
+        io.WantSaveIniSettings = false;
+        LOG::WARN("Restored ImGui layout from backup {}", layout.backupPath.string());
+        return true;
+    }
+
+    io.WantSaveIniSettings = false;
+    LOG::WARN("No usable ImGui layout found at {} or {}", layout.path.string(), layout.backupPath.string());
+    return false;
+}
+
+bool GuiLayer::SaveWindowLayout(const String &path)
+{
+    if (!path.empty())
+    {
+        return SaveWindowLayoutToPath(std::filesystem::path{ path.c_str() }, false);
+    }
+
+    if (!GetWindowLayoutState().path.empty())
+    {
+        return SaveWindowLayoutIfNeeded(true);
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.IniFilename)
+    {
+        ImGui::SaveIniSettingsToDisk(io.IniFilename);
+        return true;
+    }
+    return false;
 }
 
 void GuiLayer::SetTheme()
@@ -306,10 +581,11 @@ void GuiLayer::OnEvent(Event &e)
 
     if (e.GetType() == Event::Type::WindowDragDrop)
     {
-		WindowDragDropEvent &dragDrapEvent = (WindowDragDropEvent &)e;
-		size_t size = dragDrapEvent.GetSize();
+		WindowDragDropEvent &dragDropEvent = (WindowDragDropEvent &)e;
+		size_t size = dragDropEvent.GetSize();
 		if (size != 0)
         {
+			LOG::DEBUG("Queuing {} dropped file(s) for the ImGui target; first path: {}", size, dragDropEvent.QueryFile(0));
 			if (size > 1)
             {
 				dragDropSources = {};
@@ -317,42 +593,23 @@ void GuiLayer::OnEvent(Event &e)
 				sub.resize(size);
 				for (size_t i = 0; i < size; i++)
 				{
-					sub[i] = {dragDrapEvent.QueryFile(i), FileType::RegularFile};
+					sub[i] = {dragDropEvent.QueryFile(i), FileType::RegularFile};
 				}
             }
             else
             {
 				dragDropSources = {
-				    dragDrapEvent.QueryFile(0),
+				    dragDropEvent.QueryFile(0),
 				    FileType::RegularFile};
             }
-		    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceExtern))
-		    {
-				FileSystem::DirectoryEntry *entry = {&dragDropSources};
-				ImGui::SetDragDropPayload(kDragDropProxyDirectoryEntry, (void *) &entry, sizeof(&entry));
-		    }
+			pendingExternalFileDrop = true;
         }
     }
     else if (e.GetType() == Event::Type::MouseScrolled)
     {
-		MouseScrolledEvent &event = (MouseScrolledEvent &)e;
-
-        float wheelX = event.GetOffsetX();
-		float wheelY = event.GetOffsetY();
-
-        constexpr float multiplier = 2.0f;
-		wheelX *= multiplier;
-		wheelY *= multiplier;
-		if (scrollEnergy.x * wheelX < 0.0f)
-		{
-			scrollEnergy.x = 0.0f;
-		}
-		if (scrollEnergy.y * wheelY < 0.0f)
-		{
-			scrollEnergy.y = 0.0f;
-		}
-		scrollEnergy.x += wheelX;
-		scrollEnergy.y += wheelY;
+        MouseScrolledEvent &event = (MouseScrolledEvent &)e;
+        scrollEnergy.x += event.GetOffsetX();
+        scrollEnergy.y += event.GetOffsetY();
     }
 
     dockspace->OnEvent(e);
@@ -449,11 +706,13 @@ void GuiLayer::Render()
             { ImGuiCol_Separator,            0xff3b3b3b},
 		    { ImGuiCol_TitleBg,              0xff222222},
 		    { ImGuiCol_TitleBgActive,        0xff222222},
-		    //{ ImGuiCol_Tab,                  0xff222222},
-		    { ImGuiCol_TabHovered,           0x33ff8844},
-		    //{ ImGuiCol_TabActive,            0x33ff8844},
-		    { ImGuiCol_TabUnfocused,         0xff333333},
-		    { ImGuiCol_TabUnfocusedActive,   0xff222222},
+		    { ImGuiCol_Tab,                   0xff222222},
+		    { ImGuiCol_TabHovered,            0xff2d2d2d},
+		    { ImGuiCol_TabSelected,           0xff222222},
+		    { ImGuiCol_TabSelectedOverline,   0xffff8844},
+		    { ImGuiCol_TabDimmed,             0xff222222},
+		    { ImGuiCol_TabDimmedSelected,     0xff222222},
+		    { ImGuiCol_TabDimmedSelectedOverline, 0xff5a5a5a},
             { ImGuiCol_ScrollbarBg,          0x0},
             { ImGuiCol_ScrollbarGrab,        0x88444444},
             { ImGuiCol_ScrollbarGrabHovered, 0xdd444444},
@@ -504,25 +763,10 @@ void GuiLayer::Render()
 
 void GuiLayer::SubmitRenderDrawCommands(CommandBuffer *commandBuffer, GPUEvent *gpuEvent, uint64_t syncValue)
 {
-    auto &io = ImGui::GetIO();
-     
-    auto width  = window->GetWidth();
-    auto height = window->GetHeight();
-    io.DisplaySize = { (float)width, (float)height };
-
-	if (Application::This && Application::This->UsesInternalHiResUi())
-	{
-		const float s = Application::This->GetUiRenderScale();
-		io.DisplayFramebufferScale = ImVec2(s, s);
-	}
-	else
-	{
-		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
-	}
-
     ImGui_ImplImmortal_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     // Update and Render additional Platform Windows
+    auto &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
          ImGui::UpdatePlatformWindows();
@@ -723,25 +967,38 @@ bool GuiLayer::SaveTheme()
     return true;
 }
 
-ImFont *GuiLayer::AddFont(const std::string &path, float fontSize, const ImWchar *ranges, float glyphMinAdvanceX, bool mergeMode)
+ImFont *GuiLayer::AddFont(
+    const std::string &path,
+    float fontSize,
+    const ImWchar *ranges,
+    float glyphMinAdvanceX,
+    bool mergeMode,
+    ImVec2 glyphOffset)
 {
 	auto &io = ImGui::GetIO();
 	ImFontConfig fontConfig = {};
 	fontConfig.MergeMode          = mergeMode;
 	fontConfig.SignedDistanceFont = true;
+	fontConfig.Flags              |= ImFontFlags_NoLoadError;
+	fontConfig.GlyphOffset         = glyphOffset;
 
     if (glyphMinAdvanceX > 0.0f)
 	{
-		float scaling = 1.0f;
 		fontConfig.PixelSnapH = true;
-		fontConfig.GlyphMinAdvanceX = 0;//glyphMinAdvanceX;
-		fontConfig.GlyphOffset      = { 0, glyphMinAdvanceX * (0.5f * scaling - 0.25f) };
+		fontConfig.GlyphMinAdvanceX = glyphMinAdvanceX;
 	}
 
-	auto font = io.Fonts->AddFontFromFileTTF(path.c_str(), fontSize, &fontConfig, ranges);
-	io.Fonts->AddFontDefault(&fontConfig);
+	if (auto font = io.Fonts->AddFontFromFileTTF(path.c_str(), fontSize, &fontConfig, ranges))
+		return font;
 
-    return font;
+	LOG::ERR("Failed to load font {}", path);
+	if (mergeMode)
+		return nullptr;
+
+	ImFontConfig fallbackConfig = {};
+	fallbackConfig.SizePixels = fontSize;
+	fallbackConfig.SignedDistanceFont = true;
+	return io.Fonts->AddFontDefaultVector(&fallbackConfig);
 }
 
 }

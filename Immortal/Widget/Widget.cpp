@@ -1,6 +1,8 @@
 #include "Widget.h"
 #include "ImGui/GuiLayer.h"
 
+#include <algorithm>
+
 namespace Immortal
 {
 
@@ -29,14 +31,56 @@ void SetWidgetArrows(ImFont *font, const char *left, const char *right, const ch
 namespace
 {
 
-constexpr float kRightClickMenuRounding = 6.f;
-constexpr float kRightClickItemRounding = 6.f;
+constexpr float kRightClickMenuRounding = 8.f;
+constexpr float kRightClickItemRounding = 5.f;
 constexpr float kRightClickPad = 8.f;
-constexpr float kRightClickTextIndent = 36.f;
-constexpr float kRightClickItemWidth = 304.f;
+constexpr float kRightClickTextIndent = 12.f;
+constexpr float kRightClickMinItemWidth = 220.f;
+constexpr float kRightClickMaxItemWidth = 284.f;
 constexpr float kRightClickItemHeight = 34.f;
-constexpr ImU32 kRightClickSepCol = IM_COL32(226, 226, 230, 255);
-constexpr ImU32 kRightClickBorderCol = IM_COL32(198, 198, 204, 110);
+constexpr float kRightClickShadowSize = 20.f;
+constexpr ImU32 kRightClickSepCol = IM_COL32(255, 255, 255, 18);
+constexpr ImU32 kRightClickBorderCol = IM_COL32(255, 255, 255, 24);
+constexpr ImU32 kRightClickActiveCol = IM_COL32(83, 128, 187, 150);
+constexpr ImU32 kRightClickAccentCol = IM_COL32(96, 165, 250, 255);
+constexpr ImU32 kRightClickShadowStartCol = IM_COL32(0, 0, 0, 126);
+constexpr ImU32 kRightClickShadowEndCol = IM_COL32(0, 0, 0, 0);
+
+void SelectDockedWindow(ImGuiWindow *window)
+{
+	if (!window || !window->DockNode)
+	{
+		return;
+	}
+
+	ImGuiDockNode *node = window->DockNode;
+	node->SelectedTabId = window->TabId;
+	if (node->TabBar)
+	{
+		node->TabBar->SelectedTabId = window->TabId;
+		node->TabBar->NextSelectedTabId = window->TabId;
+		node->TabBar->VisibleTabId = window->TabId;
+	}
+
+	// ImGui's no-tab-bar path always renders Windows[0] and ignores focus.
+	// Put the requested window first so custom view switchers can select it.
+	if (node->IsNoTabBar() || node->IsHiddenTabBar())
+	{
+		for (int i = 0; i < node->Windows.Size; ++i)
+		{
+			if (node->Windows[i] == window)
+			{
+				if (i != 0)
+				{
+					std::swap(node->Windows[0], node->Windows[i]);
+				}
+				break;
+			}
+		}
+	}
+
+	node->VisibleWindow = window;
+}
 
 float RightClickPopupContentHeight(const std::vector<WRightClickPopup::Item> &items)
 {
@@ -49,9 +93,33 @@ float RightClickPopupContentHeight(const std::vector<WRightClickPopup::Item> &it
 	return contentH;
 }
 
+float RightClickPopupItemWidth(const std::vector<WRightClickPopup::Item> &items)
+{
+	float widestText = 0.0f;
+	bool hasSubmenu = false;
+	for (const auto &item : items)
+	{
+		if (item.text.empty())
+		{
+			continue;
+		}
+		widestText = std::max(widestText, ImGui::CalcTextSize(item.text.c_str()).x);
+		hasSubmenu |= !item.children.empty();
+	}
+
+	const float submenuSpace = hasSubmenu ? 24.0f : 0.0f;
+	return std::clamp(
+		widestText + kRightClickTextIndent + kRightClickPad + submenuSpace,
+		kRightClickMinItemWidth,
+		kRightClickMaxItemWidth);
+}
+
 ImVec2 RightClickPopupWindowSize(const std::vector<WRightClickPopup::Item> &items)
 {
-	return { kRightClickItemWidth + kRightClickPad * 2.f, RightClickPopupContentHeight(items) + kRightClickPad * 2.f };
+	return {
+		RightClickPopupItemWidth(items) + kRightClickPad * 2.f,
+		RightClickPopupContentHeight(items) + kRightClickPad * 2.f
+	};
 }
 
 ImVec2 ClampRightClickSubmenuPos(const ImRect &rowBb, const ImVec2 &size)
@@ -74,6 +142,7 @@ WRightClickPopup::Item TranslateRightClickPopupItem(const WRightClickPopup::Item
 	WRightClickPopup::Item translated;
 	translated.text = item.text.empty() ? item.text : Translator::Translate(item.text);
 	translated.callback = item.callback;
+	translated.enabled = item.enabled;
 	translated.children.reserve(item.children.size());
 	for (const auto &child : item.children)
 	{
@@ -82,7 +151,13 @@ WRightClickPopup::Item TranslateRightClickPopupItem(const WRightClickPopup::Item
 	return translated;
 }
 
-bool DrawRightClickPopupItems(const std::vector<WRightClickPopup::Item> &items, ImU32 textF, ImU32 hoverF, ImGuiWindowFlags windowFlags)
+bool DrawRightClickPopupItems(
+	const std::vector<WRightClickPopup::Item> &items,
+	float itemWidth,
+	ImU32 textF,
+	ImU32 hoverF,
+	ImU32 activeF,
+	ImGuiWindowFlags windowFlags)
 {
 	bool activated = false;
 	const float lineHeight = ImGui::GetTextLineHeight();
@@ -96,9 +171,9 @@ bool DrawRightClickPopupItems(const std::vector<WRightClickPopup::Item> &items, 
 
 		if (item.text.empty())
 		{
-			ImGui::Dummy(ImVec2(kRightClickItemWidth, kRightClickPad));
+			ImGui::Dummy(ImVec2(itemWidth, kRightClickPad));
 			ImGui::Separator();
-			ImGui::Dummy(ImVec2(kRightClickItemWidth, kRightClickPad));
+			ImGui::Dummy(ImVec2(itemWidth, kRightClickPad));
 			continue;
 		}
 
@@ -108,7 +183,7 @@ bool DrawRightClickPopupItems(const std::vector<WRightClickPopup::Item> &items, 
 		const ImGuiID submenuId = hasChildren ? window->GetID("##submenu") : 0;
 		const bool submenuOpen = hasChildren && ImGui::IsPopupOpen(submenuId, 0);
 		const ImVec2 pos = window->DC.CursorPos;
-		const ImVec2 size = ImVec2(kRightClickItemWidth, kRightClickItemHeight);
+		const ImVec2 size = ImVec2(itemWidth, kRightClickItemHeight);
 		const ImRect bb(pos, pos + size);
 
 		ImGui::ItemSize(size, 0.f);
@@ -120,40 +195,62 @@ bool DrawRightClickPopupItems(const std::vector<WRightClickPopup::Item> &items, 
 
 		bool held = false;
 		bool buttonHovered = false;
-		const bool buttonPressed = ImGui::ButtonBehavior(bb, rowId, &buttonHovered, &held);
-		const bool hovered = buttonHovered ||
+		const bool buttonPressed = item.enabled && ImGui::ButtonBehavior(bb, rowId, &buttonHovered, &held);
+		const bool hovered = item.enabled && (buttonHovered ||
 			(ImGui::IsMouseHoveringRect(bb.Min, bb.Max, false) &&
-			 ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
+			 ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)));
 		const bool pressed = buttonPressed || (hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left));
 		const bool rowActive = hovered || submenuOpen;
-		window->DrawList->AddRectFilled(bb.Min, bb.Max, rowActive ? hoverF : IM_COL32(0, 0, 0, 0), kRightClickItemRounding);
+		const ImU32 rowColor = held ? activeF : (rowActive ? hoverF : IM_COL32(0, 0, 0, 0));
+		window->DrawList->AddRectFilled(bb.Min, bb.Max, rowColor, kRightClickItemRounding);
+		if (held)
+		{
+			window->DrawList->AddRectFilled(
+				ImVec2{ bb.Min.x, bb.Min.y + 7.0f },
+				ImVec2{ bb.Min.x + 2.0f, bb.Max.y - 7.0f },
+				kRightClickAccentCol,
+				1.0f);
+		}
 
 		const float textY = bb.Min.y + ImMax(0.f, (kRightClickItemHeight - lineHeight) * 0.5f);
 		window->DrawList->PushClipRect(bb.Min, bb.Max, true);
-		window->DrawList->AddText(ImVec2(bb.Min.x + kRightClickTextIndent, textY), textF, item.text.c_str());
+		const ImU32 itemTextColor = item.enabled ? textF : ImGui::GetColorU32(ImGuiCol_TextDisabled);
+		window->DrawList->AddText(ImVec2(bb.Min.x + kRightClickTextIndent, textY), itemTextColor, item.text.c_str());
 		if (hasChildren)
 		{
-			const char *arrow = ">";
-			const ImVec2 arrowSize = ImGui::CalcTextSize(arrow);
-			window->DrawList->AddText(ImVec2(bb.Max.x - kRightClickPad - arrowSize.x, textY), textF, arrow);
+			ImFont *arrowFont = Icon::Font ? Icon::Font : ImGui::GetFont();
+			const char *arrow = Icon::Arrows[0] && *Icon::Arrows[0] ? Icon::Arrows[0] : "";
+			const ImVec2 arrowSize = arrowFont->CalcTextSizeA(lineHeight, 1000000.0f, 0.0f, arrow);
+			window->DrawList->AddText(
+				arrowFont,
+				lineHeight,
+				ImVec2(bb.Max.x - kRightClickPad - arrowSize.x, textY),
+				itemTextColor,
+				arrow);
 		}
 		window->DrawList->PopClipRect();
 
 		if (hasChildren)
 		{
+			const ImVec2 submenuSize = RightClickPopupWindowSize(item.children);
 			if (hovered || pressed)
 			{
 				ImGui::OpenPopupEx(submenuId);
 			}
 			if (hovered || submenuOpen)
 			{
-				const ImVec2 submenuSize = RightClickPopupWindowSize(item.children);
 				ImGui::SetNextWindowPos(ClampRightClickSubmenuPos(bb, submenuSize), ImGuiCond_Always);
 				ImGui::SetNextWindowSize(submenuSize);
 			}
 			if (ImGui::BeginPopupEx(submenuId, windowFlags))
 			{
-				if (DrawRightClickPopupItems(item.children, textF, hoverF, windowFlags))
+				if (DrawRightClickPopupItems(
+					item.children,
+					submenuSize.x - kRightClickPad * 2.0f,
+					textF,
+					hoverF,
+					activeF,
+					windowFlags))
 				{
 					activated = true;
 					ImGui::CloseCurrentPopup();
@@ -204,7 +301,10 @@ bool WDockerSpace::Draw()
 	static bool optionalPadding = false;
 	static bool optionalFullScreen = true;
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+	ImGuiWindowFlags window_flags =
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse;
 
 	if (optionalFullScreen)
 	{
@@ -288,6 +388,14 @@ String WFrame::BeginTitle() const
 	return String{ title, StringEncoding::UTF8 };
 }
 
+void WFrame::SetFocus()
+{
+	const String title = BeginTitle();
+	SelectDockedWindow(ImGui::FindWindowByName(title.c_str()));
+	ImGui::SetWindowFocus(title.c_str());
+	focusNextDraw = true;
+}
+
 bool WFrame::Draw()
 {
 	if (!visible)
@@ -312,9 +420,29 @@ bool WFrame::Draw()
 	float titleBarHeight = 0;
 	bool isFocused = false;
 	float borderOffset = 1.0f;
+	state.isFocused = false;
+	state.isHovered = false;
 
 	using namespace ImGui;
-	if (Begin(str, nullptr, Flags() | ImGuiWindowFlags_NoCollapse))
+	if (DockNodeFlags() != 0)
+	{
+		ImGuiWindowClass windowClass;
+		windowClass.DockNodeFlagsOverrideSet = DockNodeFlags();
+		SetNextWindowClass(&windowClass);
+	}
+	if (focusNextDraw)
+	{
+		SelectDockedWindow(FindWindowByName(str));
+		SetNextWindowFocus();
+	}
+	const bool opened = Begin(str, nullptr, Flags() | ImGuiWindowFlags_NoCollapse);
+	if (focusNextDraw)
+	{
+		SelectDockedWindow(GetCurrentWindow());
+		SetWindowFocus();
+		focusNextDraw = false;
+	}
+	if (opened)
 	{
 		windowPos      = GetWindowPos();
 		windowSize     = GetWindowSize();
@@ -322,11 +450,14 @@ bool WFrame::Draw()
 
 		state.isFocused = IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 		state.isHovered = IsWindowHovered(ImGuiFocusedFlags_ChildWindows);
-		auto [x, y] = ImGui::GetContentRegionAvail();
-		RenderWidth(x - borderOffset);
-		RenderHeight(y - borderOffset);
+		ImVec2 childSize = ImGui::GetContentRegionAvail();
+		childSize.x = std::max(1.0f, childSize.x - borderOffset);
+		childSize.y = std::max(1.0f, childSize.y - borderOffset);
+		RenderWidth(childSize.x);
+		RenderHeight(childSize.y);
 
-		bool opened = BeginChild("##ChildFrame");
+		const ImGuiWindowFlags childFlags = Flags() & (ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		bool opened = BeginChild("##ChildFrame", childSize, 0, childFlags);
 		if (opened)
 		{
 			ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -361,12 +492,11 @@ WRightClickPopup::WRightClickPopup(Widget *parent) :
     callback{},
     id{}
 {
-	using tweeny::easing;
-	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::quadraticInOut);
+	tween = tweeny::from(0.0f).to(1.0f).during(500).via(tweeny::easing::quadraticOut);
 
-	Color(IM_COL32(42, 42, 44, 255));
-	BackgroundColor(IM_COL32(252, 252, 254, 247));
-	HoveredColor(IM_COL32(218, 218, 221, 255));
+	Color(IM_COL32(228, 230, 234, 255));
+	BackgroundColor(IM_COL32(32, 33, 36, 252));
+	HoveredColor(IM_COL32(255, 255, 255, 16));
 }
 
 bool WRightClickPopup::Draw()
@@ -423,17 +553,20 @@ bool WRightClickPopup::DrawForOwner(ImGuiID ownerForGate)
 	const ImU32 sepF = mulAlpha(kRightClickSepCol, fade);
 	const ImU32 textF = mulAlpha(color, fade);
 	const ImU32 hoverF = mulAlpha(hoveredColor, fade);
+	const ImU32 activeF = mulAlpha(kRightClickActiveCol, fade);
 
 	StyleColorStack<uint32_t> styleColorStack{
 	    { ImGuiCol_PopupBg, popupBgF },
 	    { ImGuiCol_Border, borderF },
 	    { ImGuiCol_Separator, sepF },
+	    { ImGuiCol_WindowShadowStart, mulAlpha(kRightClickShadowStartCol, fade) },
+	    { ImGuiCol_WindowShadowEnd, kRightClickShadowEndCol },
 	};
 
 	StyleVarStack<float> styleVarStack{
 	    { ImGuiStyleVar_PopupRounding, kRightClickMenuRounding },
 	    { ImGuiStyleVar_PopupBorderSize, 1.0f },
-	    { ImGuiStyleVar_WindowShadowSize, 2.0f },
+	    { ImGuiStyleVar_WindowShadowSize, kRightClickShadowSize },
 	};
 
 	ImVec2 windowSize = RightClickPopupWindowSize(items);
@@ -464,7 +597,13 @@ bool WRightClickPopup::DrawForOwner(ImGuiID ownerForGate)
 				callback();
 			}
 
-			if (DrawRightClickPopupItems(items, textF, hoverF, windowFlags))
+			if (DrawRightClickPopupItems(
+				items,
+				windowSize.x - kRightClickPad * 2.0f,
+				textF,
+				hoverF,
+				activeF,
+				windowFlags))
 			{
 				CloseCurrentPopup();
 			}
@@ -492,6 +631,39 @@ WRightClickPopup *WRightClickPopup::MenuItems(std::initializer_list<Item> &&list
 		items.emplace_back(TranslateRightClickPopupItem(item));
 	}
 
+	return this;
+}
+
+WRightClickPopup *WRightClickPopup::SetMenuItems(std::vector<Item> &&list)
+{
+	items.clear();
+	items.reserve(list.size());
+	for (const auto &item : list)
+	{
+		items.emplace_back(TranslateRightClickPopupItem(item));
+	}
+
+	return this;
+}
+
+WRightClickPopup *WRightClickPopup::SetSubmenuItems(const String &text, std::vector<Item> &&children)
+{
+	const String translatedText = Translator::Translate(text);
+	for (auto &item : items)
+	{
+		if (item.text != translatedText)
+		{
+			continue;
+		}
+
+		item.children.clear();
+		item.children.reserve(children.size());
+		for (const auto &child : children)
+		{
+			item.children.emplace_back(TranslateRightClickPopupItem(child));
+		}
+		break;
+	}
 	return this;
 }
 

@@ -101,6 +101,14 @@ public:
 		return uiRenderScale;
 	}
 
+	/** Logical ImGui scale for fonts and style geometry; independent of the framebuffer render scale. */
+	void SetUiLayoutScale(float scale);
+
+	float GetUiLayoutScale() const
+	{
+		return uiLayoutScale;
+	}
+
 	/** True when UI is rendered off-screen at GetUiRenderScale() × window resolution and composited with compute. */
 	bool UsesInternalHiResUi() const;
 
@@ -169,6 +177,16 @@ private:
 	UiPresentScale uiPresentScale;
 
 	float uiRenderScale = 1.0f;
+
+	float pendingUiRenderScale = 1.0f;
+
+	bool uiRenderScalePending = false;
+
+	float uiLayoutScale = 1.0f;
+
+	float pendingUiLayoutScale = 1.0f;
+
+	bool uiLayoutScalePending = false;
 
     uint32_t sampleCount = 1;
 
