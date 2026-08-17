@@ -11,7 +11,10 @@
 namespace Immortal
 {
 
-#define RAW_FILES L"*.cr2;*.fff;*.3fr;*.arw;*.nef;*.dng;*.raf;*.rw2;*.pef;*.srw;*.orf;*.rwz;*.bay;*.erf;*.mef;*.mos;*.mrw;*.nrw;*.raw;*.rwl;*.srw;*.x3f"
+#define RAW_FILES \
+    L"*.3fr;*.arq;*.arw;*.bay;*.bmq;*.cap;*.cr2;*.cr3;*.crw;*.cs1;*.dc2;*.dcr;*.dcs;*.dng;*.drf;*.erf;*.fff;*.gpr;" \
+    L"*.ia;*.iiq;*.k25;*.kc2;*.kdc;*.mdc;*.mef;*.mfw;*.mos;*.mrw;*.nef;*.nrw;*.orf;*.ori;*.pef;*.pxn;*.qtk;*.raf;*.raw;" \
+    L"*.rdc;*.rw1;*.rw2;*.rwl;*.rwz;*.sr2;*.srf;*.srw;*.sti;*.x3f"
 
 class FileFilter
 {
@@ -21,7 +24,7 @@ public:
     };
 
     static inline const std::vector<COMDLG_FILTERSPEC> Image = {
-        { L"Image Files", L"*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif" RAW_FILES },
+        { L"Image Files", L"*.bmp;*.ico;*.gif;*.jpeg;*.jpg;*.png;*.tif;*.tiff;*.tga;*.hdr;*.heif;*.heic;*.hif;" RAW_FILES },
         { L"Raw Files", RAW_FILES }
     };
 
