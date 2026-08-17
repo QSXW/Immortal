@@ -15,8 +15,8 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
     FilterNode{},
     device{device}
 {
-    std::string source = Graphics::ReadShaderSource("Assets/Shaders/hlsl/GaussianBlur.hlsl");
-    if (source.empty())
+    URef<Shader> shader = Graphics::CreateShaderByName("GaussianBlur", "Blur");
+    if (!shader)
     {
         return;
     }
@@ -46,12 +46,6 @@ GaussianBlurFilter::GaussianBlurFilter(Device *device, float sigma, int kernalSi
 
     kernalSizes[kHorizontal] = kernalSize;
     kernalSizes[kVertical]   = verticalKernalSize;
-
-    URef<Shader> shader = device->CreateShader("GaussiaBlur", ShaderStage::Compute, source, "Blur");
-    if (!shader)
-    {
-        return;
-    }
 
     pipelines[kHorizontal] = device->CreateComputePipeline(shader);
     pipelines[kVertical]   = device->CreateComputePipeline(shader);

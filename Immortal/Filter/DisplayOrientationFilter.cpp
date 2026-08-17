@@ -9,19 +9,24 @@
 namespace Immortal
 {
 
+namespace
+{
+
+int NormalizeDisplayRotation(int rotation)
+{
+	rotation %= 360;
+	return rotation < 0 ? -rotation : rotation;
+}
+
+}
+
 DisplayOrientationFilter::DisplayOrientationFilter(Device *device, int hflip, int vflip, int anticlockwiseRotation) :
     FilterNode{},
     device{ device },
-    hflip{ hflip },
-    vflip{ vflip },
-    anticlockwiseRotation{ anticlockwiseRotation }
-{
-	if (anticlockwiseRotation == 180)
-	{
-		this->hflip = hflip ^ 1;
-		this->vflip = vflip ^ 1;
-	}
-}
+	hflip{ hflip != 0 },
+	vflip{ vflip != 0 },
+	anticlockwiseRotation{ NormalizeDisplayRotation(anticlockwiseRotation) }
+{}
 
 void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
 {
@@ -54,10 +59,18 @@ void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, Async
 			macros[numMacro++] = { "VFLIP", nullptr };
 		}
 
-		auto rotation = std::abs(anticlockwiseRotation);
+		const int rotation = anticlockwiseRotation;
 		if (rotation == 90)
 		{
-			macros[numMacro++] = { "TRANSPOSE", nullptr };
+			macros[numMacro++] = { "ROTATE_90", nullptr };
+		}
+		else if (rotation == 180)
+		{
+			macros[numMacro++] = { "ROTATE_180", nullptr };
+		}
+		else if (rotation == 270)
+		{
+			macros[numMacro++] = { "ROTATE_270", nullptr };
 		}
 
 		URef<Shader> shader = device->CreateShader("Flip", ShaderStage::Compute, source, "Flip", macros, numMacro);
@@ -87,8 +100,8 @@ void DisplayOrientationFilter::Run(const std::vector<Ref<Texture>> &input, Async
 	asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
 		for (size_t i = 0; i < input.size(); i++)
 		{
-			uint32_t nThreadX = SLALIGN(output[i]->GetWidth()  / 32, 32);
-			uint32_t nThreadY = SLALIGN(output[i]->GetHeight() / 32, 32);
+			uint32_t nThreadX = (output[i]->GetWidth() + 31) / 32;
+			uint32_t nThreadY = (output[i]->GetHeight() + 31) / 32;
 			commandBuffer->SetPipeline(pipeline);
 			commandBuffer->SetDescriptorSet(descriptorSets[i]);
 			commandBuffer->Dispatch(nThreadX, nThreadY, 1);

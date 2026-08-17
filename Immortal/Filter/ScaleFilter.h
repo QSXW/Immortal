@@ -15,7 +15,15 @@ namespace Immortal
 class ScaleFilter : public FilterNode
 {
 public:
-	ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uint32_t width, uint32_t height, ColorSpace colorSpace = ColorSpace::BT709, bool fullRange = false);
+	ScaleFilter(
+        Device *device,
+        Format srcFormat,
+        Format dstFormat,
+        uint32_t width,
+        uint32_t height,
+        ColorSpace colorSpace = ColorSpace::BT709,
+        bool fullRange = false,
+        uint32_t outputMipLevels = 0);
 
     virtual ~ScaleFilter() override;
 
@@ -42,6 +50,8 @@ protected:
     Matrix4 transform;
 
     int transformIndex;
+
+    uint32_t outputMipLevels;
 };
 
 }

@@ -29,6 +29,8 @@ public:
 
 	bool LoadLutFile(const String &filepath);
 
+	bool Ready() const;
+
 protected:
 	Device *device;
 

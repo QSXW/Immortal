@@ -65,6 +65,15 @@ public:
 		output = value;
     }
 
+	void InvalidateOutput()
+	{
+		for (auto &texture : output)
+		{
+			Graphics::ReleaseResource(texture);
+		}
+		output.clear();
+	}
+
     const bool &Enabled() const
     {
 		return enabled;

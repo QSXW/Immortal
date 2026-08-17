@@ -6,6 +6,9 @@
 
 #include "Transfer.h"
 
+#include <algorithm>
+#include <array>
+
 namespace Immortal
 {
 
@@ -123,34 +126,81 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
         return;
     }
 
-    TransferProxyData data[3] = {};
+    std::array<TransferProxyData, SamplingFactor::kMaxSublayer> data{};
     size_t totalSize = 0;
-    size_t i;
-    size_t texelSize = format.IsType(Format::HightBitDepth) ? 8 : 4;
-    for (i = 0; picture[i]; i++)
+    size_t planeCount = 0;
+    while (planeCount < data.size() && formats[planeCount] != Format::None)
     {
-        data[i].format   = formats[format.IsType(Format::NV) ? i : 0];
+        planeCount++;
+    }
+    if (!planeCount)
+    {
+        LOG::ERR("TransferNode cannot determine component formats for {}", format.GetString());
+        return;
+    }
+
+    size_t texelSize = format.IsType(Format::HightBitDepth) ? 8 : 4;
+    for (size_t i = 0; i < planeCount; i++)
+    {
+        data[i].format = formats[i];
+        if (!picture.GetStride(i) ||
+            (picture.GetMemoryType() == Vision::PictureMemoryType::System && !picture.GetData(i)))
+        {
+            LOG::ERR("TransferNode cannot upload plane {} of format {}", i, format.GetString());
+            return;
+        }
         data[i].width    = picture.GetWidth()  >> factors[i].x;
         data[i].height   = picture.GetHeight() >> factors[i].y;
-		data[i].rowPitch = SLALIGN(isRgb ? data[i].width * texelSize : picture.GetStride(i), TextureAlignment);
+        const size_t minimumRowPitch = data[i].width * data[i].format.GetTexelSize();
+        if (!isRgb && picture.GetMemoryType() == Vision::PictureMemoryType::System &&
+            picture.GetStride(i) < minimumRowPitch)
+        {
+            LOG::ERR(
+                "TransferNode plane {} of format {} has stride {}, but {} bytes are required",
+                i,
+                format.GetString(),
+                picture.GetStride(i),
+                minimumRowPitch);
+            return;
+        }
+        data[i].rowPitch = SLALIGN(
+            isRgb ? data[i].width * texelSize : std::max<size_t>(picture.GetStride(i), minimumRowPitch),
+            TextureAlignment);
         data[i].size     = SLALIGN(data[i].rowPitch * data[i].height, 512);
         totalSize += data[i].size;
     }
 
     uint32_t width  = picture.GetWidth();
     uint32_t height = picture.GetHeight();
-    if (output.empty())
+    bool recreateOutput = output.size() != planeCount;
+    for (size_t i = 0; !recreateOutput && i < planeCount; i++)
+    {
+        recreateOutput = !output[i] ||
+                         output[i]->GetFormat() != data[i].format ||
+                         output[i]->GetWidth() != data[i].width ||
+                         output[i]->GetHeight() != data[i].height;
+    }
+
+    if (recreateOutput)
     {
         auto device = Graphics::GetDevice();
-        for (size_t i = 0; picture.GetStride(i); i++)
+        for (auto &texture : output)
+        {
+            Graphics::ReleaseResource(texture);
+        }
+        output.clear();
+        output.reserve(planeCount);
+        for (size_t i = 0; i < planeCount; i++)
         {
 			output.emplace_back(device->CreateTexture(data[i].format, data[i].width, data[i].height, 1, 1, TextureType::TransferDestination | TextureType::Storage));
         }
+    }
 
-        if (picture.GetMemoryType() == Vision::PictureMemoryType::System)
-        {
-			buffer = device->CreateBuffer(BufferType::TransferSource, totalSize);
-        }
+    std::vector<Ref<Texture>> uploadOutputs = output;
+    Ref<Buffer> uploadBuffer;
+    if (picture.GetMemoryType() == Vision::PictureMemoryType::System)
+    {
+        uploadBuffer = Graphics::GetCachedBuffer(BufferType::TransferSource, totalSize);
     }
 
 #ifdef _WIN32
@@ -158,7 +208,7 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
     {
         ID3D12Fence *fence = (ID3D12Fence *)picture[1];
         uint64_t     value = (uint64_t)picture[2];
-        asyncComputeThread->Execute<QueueTask>([=, this](Queue *_queue) {
+        asyncComputeThread->Execute<QueueTask>([fence, value](Queue *_queue) {
             auto queue = (ID3D12CommandQueue *)_queue->GetBackendHandle();
             if (FAILED(queue->Wait(fence, value)))
             {
@@ -168,22 +218,29 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
     }
 #endif
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
+    asyncComputeThread->Execute<RecordingTask>([picture, uploadOutputs, uploadBuffer, data, planeCount, totalSize, isRgb, width, height](CommandBuffer *commandBuffer) {
+        if (!commandBuffer)
+        {
+            LOG::ERR("TransferNode upload was recorded without an active command buffer");
+            return;
+        }
 #ifdef _WIN32
         if (picture.GetMemoryType() == Vision::PictureMemoryType::Device)
         {
-            commandBuffer->CopyPlatformSpecificSubresource(output[0], 0, (ID3D12Resource *)picture[0], 0);
-            commandBuffer->CopyPlatformSpecificSubresource(output[1], 0, (ID3D12Resource *)picture[0], 1);
+            for (size_t i = 0; i < planeCount; i++)
+            {
+                commandBuffer->CopyPlatformSpecificSubresource(uploadOutputs[i], 0, (ID3D12Resource *)picture[0], i);
+            }
         }
         else
 #endif  
         {
             uint8_t *mapped = nullptr;
-            buffer->Map((void **) &mapped, totalSize, 0);
+            uploadBuffer->Map((void **) &mapped, totalSize, 0);
             size_t offset = 0;
-            for (size_t i = 0; picture[i]; i++)
+            for (size_t i = 0; i < planeCount; i++)
             {
-				auto &format = data[i].format;
+				auto &planeFormat = data[i].format;
 				if (isRgb)
 				{
 					if (picture.GetFormat() == Format::ARGB)
@@ -215,16 +272,21 @@ void TransferNode::Upload(const Picture &picture, AsyncComputeThread *asyncCompu
 				}
 				else
 				{
-					Graphics::MemoryCopyImage(mapped + offset, data[i].rowPitch, picture[i], picture.GetStride(i), format, data[i].width, data[i].height);
+					Graphics::MemoryCopyImage(mapped + offset, data[i].rowPitch, picture[i], picture.GetStride(i), planeFormat, data[i].width, data[i].height);
 				}
-				commandBuffer->CopyBufferToImage(output[i], 0, buffer, data[i].rowPitch, offset);
+				commandBuffer->CopyBufferToImage(uploadOutputs[i], 0, uploadBuffer, data[i].rowPitch, offset);
                 offset += data[i].size;
             }
-            buffer->Unmap();
+            uploadBuffer->Unmap();
         }
     });
 
-    asyncComputeThread->Execute<ExecutionCompletedTask>([picture, this]() {});
+    asyncComputeThread->Execute<ExecutionCompletedTask>([picture, uploadOutputs, uploadBuffer]() {
+        if (uploadBuffer)
+        {
+            Graphics::ReleaseCachedBuffer(BufferType::TransferSource, uploadBuffer);
+        }
+    });
 }
 
 }

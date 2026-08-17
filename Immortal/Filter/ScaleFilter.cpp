@@ -6,6 +6,8 @@
 
 #include "ScaleFilter.h"
 
+#include <algorithm>
+
 namespace Immortal
 {
 
@@ -108,13 +110,14 @@ static bool IsRGBA(Format format)
 	return format == Format::RGBA16 || format == Format::RGBA8;
 }
 
-ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uint32_t width, uint32_t height, ColorSpace colorSpace, bool fullRange) :
+ScaleFilter::ScaleFilter(Device *device, Format srcFormat, Format dstFormat, uint32_t width, uint32_t height, ColorSpace colorSpace, bool fullRange, uint32_t outputMipLevels) :
     FilterNode{},
     device{ device },
     srcFormat{ srcFormat },
     dstFormat{ dstFormat },
     colorSpace{colorSpace == ColorSpace::Unspecified ? (colorSpace = ColorSpace::BT709) : colorSpace},
-    transformIndex{ 0 }
+	transformIndex{ 0 },
+	outputMipLevels{ outputMipLevels }
 {
     if (width != 0 && height != 0)
     {
@@ -209,35 +212,54 @@ ScaleFilter::~ScaleFilter()
 
 void ScaleFilter::CreateOutputs(uint32_t width, uint32_t height)
 {
-	Format formats[3] = {};
+	Format formats[SamplingFactor::kMaxSublayer] = {};
 
-	SamplingFactor factors[3] = {};
+	SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
 	FillComponentFormat(dstFormat, formats);
 	GetSamplingFactor(dstFormat, factors);
 
-	auto &f = dstFormat;
 	for (size_t i = 0; i < SL_ARRAY_LENGTH(formats); i++)
 	{
 		auto &format = formats[i];
 		if (format != Format::None)
 		{
-			uint32_t w = width >> factors[i].x;
-			uint32_t h = height >> factors[i].y;
-			output.emplace_back(device->CreateTexture(format, w, h, Texture::CalculateMipmapLevels(w, h), 1, TextureType::Storage));
+			uint32_t w = std::max<uint32_t>(1, width >> factors[i].x);
+			uint32_t h = std::max<uint32_t>(1, height >> factors[i].y);
+			const uint32_t availableMipLevels = Texture::CalculateMipmapLevels(w, h);
+			const uint32_t mipLevels = outputMipLevels == 0 ? availableMipLevels : std::clamp(outputMipLevels, 1u, availableMipLevels);
+			output.emplace_back(device->CreateTexture(format, w, h, mipLevels, 1, TextureType::Storage));
 		}
 	}
 }
 
 void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
 {
-    if (!pipeline)
+    if (!asyncComputeThread || !pipeline || !descriptorSet || input.empty())
     {
 		return;
     }
+	for (const auto &texture : input)
+	{
+		if (!texture)
+		{
+			return;
+		}
+	}
 
     if (output.empty())
 	{
 		CreateOutputs(input[0]->GetWidth(), input[0]->GetHeight());
+	}
+	if (output.empty())
+	{
+		return;
+	}
+	for (const auto &texture : output)
+	{
+		if (!texture)
+		{
+			return;
+		}
 	}
 
     uint32_t slot = 0;
@@ -250,17 +272,37 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 		descriptorSet->Set(slot++, output[i]);
 	}
 
-    asyncComputeThread->Execute<RecordingTask>([=, this](CommandBuffer *commandBuffer) {
-        commandBuffer->SetPipeline(pipeline);
-        uint32_t nThreadX = SLALIGN(output[0]->GetWidth()  / 32, 32);
-        uint32_t nThreadY = SLALIGN(output[0]->GetHeight() / 32, 32);
+    const Ref<Pipeline> taskPipeline = pipeline;
+    const Ref<DescriptorSet> taskDescriptorSet = descriptorSet;
+    const uint32_t taskOutputWidth = output[0]->GetWidth();
+    const uint32_t taskOutputHeight = output[0]->GetHeight();
+    const Format taskSrcFormat = srcFormat;
+    const Format taskDstFormat = dstFormat;
+    const Matrix4 taskTransform = transform;
+    asyncComputeThread->Execute<RecordingTask>([
+        taskPipeline,
+        taskDescriptorSet,
+        taskOutputWidth,
+        taskOutputHeight,
+        taskSrcFormat,
+        taskDstFormat,
+        taskTransform](CommandBuffer *commandBuffer) {
+        if (!commandBuffer)
+        {
+            LOG::ERR("ScaleFilter received a null command buffer");
+            return;
+        }
+
+        commandBuffer->SetPipeline(taskPipeline);
+        uint32_t nThreadX = SLALIGN(taskOutputWidth  / 32, 32);
+        uint32_t nThreadY = SLALIGN(taskOutputHeight / 32, 32);
 
         SamplingFactor factors[SamplingFactor::kMaxSublayer] = {};
-		GetSamplingFactor(dstFormat, factors);
-        if (dstFormat == Format::YUV420P ||
-            dstFormat == Format::YUV420P10 ||
-            dstFormat == Format::YUV420P12 ||
-            dstFormat == Format::YUV420P16)
+		GetSamplingFactor(taskDstFormat, factors);
+        if (taskDstFormat == Format::YUV420P ||
+            taskDstFormat == Format::YUV420P10 ||
+            taskDstFormat == Format::YUV420P12 ||
+            taskDstFormat == Format::YUV420P16)
         {
 			nThreadX >>= factors[1].x;
 			nThreadY >>= factors[1].y;
@@ -274,26 +316,26 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
         };
 
         float normalizedFactor = 1.0f;
-		if (dstFormat.IsType(Format::YUV) &&
-            !dstFormat.IsType(Format::YUYV) &&
-            !dstFormat.IsType(Format::NV))
+		if (taskDstFormat.IsType(Format::YUV) &&
+            !taskDstFormat.IsType(Format::YUYV) &&
+            !taskDstFormat.IsType(Format::NV))
 		{
-			if (dstFormat.IsType(Format::_12Bits))
+			if (taskDstFormat.IsType(Format::_12Bits))
 			{
 				normalizedFactor = 4095.0f / 65535.0f;
 			}
-			else if (dstFormat.IsType(Format::_10Bits))
+			else if (taskDstFormat.IsType(Format::_10Bits))
 			{
 				normalizedFactor = 1023.0f / 65535.0f;
 			}
 		}
-        else if (srcFormat.IsType(Format::YUV))
+        else if (taskSrcFormat.IsType(Format::YUV))
         {
-            if (srcFormat.IsType(Format::_12Bits))
+            if (taskSrcFormat.IsType(Format::_12Bits))
             {
 				normalizedFactor = 16.0f; // 65535.0f / 4095.0f;
             }
-            else if (srcFormat.IsType(Format::_10Bits))
+            else if (taskSrcFormat.IsType(Format::_10Bits))
             {
 				normalizedFactor = 64.0f; //65535.0f / 1023.0f;
             }
@@ -301,26 +343,27 @@ void ScaleFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 
         PushConstant pushConstant = {
 		    .samplingFactor = {
-		        1.0f / (output[0]->GetWidth()  << factors[0].x),
-		        1.0f / (output[0]->GetHeight() << factors[0].y),
+		        1.0f / (taskOutputWidth  << factors[0].x),
+		        1.0f / (taskOutputHeight << factors[0].y),
 		    },
 		    .nomalizedFactor = normalizedFactor
         };
 
         void *ps = &pushConstant.samplingFactor;
         uint32_t size = sizeof(pushConstant.samplingFactor) + sizeof(pushConstant.nomalizedFactor);
-		if (!(IsRGBA(srcFormat) && IsRGBA(dstFormat)))
+		if (!(IsRGBA(taskSrcFormat) && IsRGBA(taskDstFormat)))
 		{
-			memcpy(&pushConstant.transform, &transform, sizeof(Matrix4));
+			memcpy(&pushConstant.transform, &taskTransform, sizeof(Matrix4));
 			size = sizeof(pushConstant);
 			ps = &pushConstant;
 		}
 
         commandBuffer->PushConstants(ShaderStage::Compute, ps, size, 0);
 
-        commandBuffer->SetDescriptorSet(descriptorSet);
+        commandBuffer->SetDescriptorSet(taskDescriptorSet);
         commandBuffer->Dispatch(nThreadX, nThreadY, 1);
     });
+    asyncComputeThread->Execute<ExecutionCompletedTask>([taskPipeline, taskDescriptorSet] {});
 }
 
 }

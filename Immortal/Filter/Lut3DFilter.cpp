@@ -87,6 +87,21 @@ static inline const char *GetEntryPoint(Lut3DFilter::Type type)
     }
 }
 
+static inline const char *GetShaderName(Lut3DFilter::Type type)
+{
+    switch (type)
+    {
+        case Lut3DFilter::Type::Nearest:
+            return "lut_nearest";
+
+        case Lut3DFilter::Type::Trilinear:
+            return "lut_trilinear";
+
+        default:
+            return nullptr;
+    }
+}
+
 static bool LoadCube(Device *device, const String &path, Ref<Buffer> &stagingLut, int &lutSize)
 {
 	std::fstream file(path, std::ios::in);
@@ -104,19 +119,29 @@ static bool LoadCube(Device *device, const String &path, Ref<Buffer> &stagingLut
         if (!strncmp(line, "LUT_3D_SIZE", 11))
         {
             int size   = std::atoi(line + 12);
-            int size2d = size * size;
             if (size < 2 || size > 256)
             {
                 LOG::ERR("unsupported LUT_3D_SIZE - `{}`", size);
+				return false;
             }
+			int size2d = size * size;
 
             lutSize = size;
 
             size_t lutWidth = size2d * size;
 			stagingLut = device->CreateBuffer(BufferType::TransferSource, SLALIGN(lutWidth * sizeof(Vector3), TextureAlignment));
+			if (!stagingLut)
+			{
+				return false;
+			}
 
-            Vector3 *data;
+			Vector3 *data = nullptr;
             stagingLut->Map((void **) &data, stagingLut->GetSize(), 0);
+			if (!data)
+			{
+				stagingLut = {};
+				return false;
+			}
             for (int k = 0; k < size; k++)
             {
                 for (int j = 0; j < size; j++)
@@ -129,6 +154,8 @@ static bool LoadCube(Device *device, const String &path, Ref<Buffer> &stagingLut
                             ret = ParseText(file, line, min, max);
                             if (ret == ParseResult::InvalidData)
                             {
+								stagingLut->Unmap();
+								stagingLut = {};
                                 return false;
                             }
                         } while (ret == ParseResult::Text);
@@ -136,6 +163,8 @@ static bool LoadCube(Device *device, const String &path, Ref<Buffer> &stagingLut
                         Vector3 *rgb = &data[i * size2d + j * size + k];
                         if (sscanf(line, "%f %f %f", &rgb->r, &rgb->g, &rgb->b) != 3)
                         {
+							stagingLut->Unmap();
+							stagingLut = {};
                             return false;
                         }
                     }
@@ -155,35 +184,35 @@ Lut3DFilter::Lut3DFilter(Device *device, const String &filepath, Type type) :
     lutSize{}
 {
 	auto entryPoint = GetEntryPoint(type);
-	if (!entryPoint)
+	auto shaderName = GetShaderName(type);
+	if (!entryPoint || !shaderName)
 	{
 		LOG::ERR("Incorrect lut3d type specified - `{}`", uint32_t(type));
 		return;
 	}
 
-	std::string name = "lut.hlsl.";
-	name += entryPoint;
-
-    pipeline = Graphics::GetPipeline(name);
+	pipeline = Graphics::GetPipeline(shaderName);
 	if (!pipeline)
 	{
-		Stream stream{Graphics::GetShaderAssetPath() / "lut.hlsl", StreamMode::Read};
-        if (!stream.Readable())
-        {
-            LOG::ERR("Failed to open `{}`", stream.GetFilePath());
-            return;
-        }
-
-        std::string source;
-        stream.Read(source);
-
-        URef<Shader> shader = device->CreateShader("Lut3D", ShaderStage::Compute, source, entryPoint);
-
+		URef<Shader> shader = Graphics::CreateShaderByName(shaderName, entryPoint);
+		if (!shader)
+		{
+			return;
+		}
         pipeline = device->CreateComputePipeline(shader);
+		if (!pipeline)
+		{
+			return;
+		}
+		Graphics::StorePipeline(shaderName, pipeline);
     }
     descriptorSet = device->CreateDescriptorSet(pipeline);
+	if (!descriptorSet)
+	{
+		return;
+	}
 
-    if (!LoadCube(device, filepath, stagingLut, lutSize))
+	if (!LoadLutFile(filepath))
 	{
 		return;
 	}
@@ -196,12 +225,31 @@ Lut3DFilter::~Lut3DFilter()
 
 bool Lut3DFilter::LoadLutFile(const String &filepath)
 {
-	return LoadCube(device, filepath, stagingLut, lutSize);
+	if (!pipeline || !descriptorSet)
+	{
+		return false;
+	}
+
+	Ref<Buffer> nextStagingLut;
+	int nextLutSize = 0;
+	if (!LoadCube(device, filepath, nextStagingLut, nextLutSize) || !nextStagingLut || nextLutSize < 2)
+	{
+		return false;
+	}
+
+	stagingLut = nextStagingLut;
+	lutSize = nextLutSize;
+	return true;
+}
+
+bool Lut3DFilter::Ready() const
+{
+	return pipeline && descriptorSet && lutSize >= 2 && (stagingLut || lut);
 }
 
 void Lut3DFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread *asyncComputeThread)
 {
-    if (input.empty())
+	if (!Ready() || input.size() != 1 || !input[0])
     {
 		return;
     }
@@ -214,6 +262,11 @@ void Lut3DFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
 	{
 		output.clear();
 		output.emplace_back(device->CreateTexture(Format::RGBA16, width, height, Texture::CalculateMipmapLevels(width, height), 1, TextureType::Storage));
+		if (!output[0])
+		{
+			output.clear();
+			return;
+		}
     }
 
     uint32_t slot = 0;
@@ -229,9 +282,15 @@ void Lut3DFilter::Run(const std::vector<Ref<Texture>> &input, AsyncComputeThread
         ref = stagingLut;
         if (!lut || lut->GetSize() < stagingLut->GetSize())
         {
-			lut = device->CreateBuffer(BufferType::Storage, SLALIGN(stagingLut->GetSize(), TextureAlignment), MemoryType::Device, sizeof(Vector3));
-			descriptorSet->Set(slot, lut);
+			Ref<Buffer> nextLut = device->CreateBuffer(BufferType::Storage, SLALIGN(stagingLut->GetSize(), TextureAlignment), MemoryType::Device, sizeof(Vector3));
+			if (!nextLut)
+			{
+				output.clear();
+				return;
+			}
+			lut = nextLut;
         }
+		descriptorSet->Set(slot, lut);
 		stagingLut = {};
     }
 
